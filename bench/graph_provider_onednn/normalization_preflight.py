@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import statistics
 import struct
 import subprocess
@@ -20,6 +22,32 @@ from hyle_perf.runner import _apply_sampling_policy, _child_environment
 
 PREFIX = "# HYLE_NORMALIZATION_RUN "
 STATUS = "hyle-normalization-workload-aa.status"
+
+
+def stage_runtime(binaries: dict[str, Path], build: Path) -> dict[str, str]:
+    # The qualified runner invokes this validator before any benchmark process.
+    # Stage the compiler's x64 CRT next to every measured executable.
+    redist = Path("C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Redist/MSVC")
+    versions = sorted(p for p in redist.iterdir()
+                      if (p / "x64/Microsoft.VC145.CRT").is_dir())
+    if not versions:
+        raise RuntimeError("MSVC x64 CRT is missing")
+    libraries = sorted((versions[-1] / "x64/Microsoft.VC145.CRT").glob("*.dll"))
+    if not libraries:
+        raise RuntimeError("MSVC x64 CRT contains no DLLs")
+    directories = {path.parent for path in binaries.values()}
+    directories.update(path.parent for path in build.rglob("hyle_perf_control_bench.exe"))
+    receipt = {}
+    for directory in sorted(directories):
+        for source in libraries:
+            destination = directory / source.name
+            expected = hashlib.sha256(source.read_bytes()).hexdigest()
+            if not destination.exists():
+                shutil.copy2(source, destination)
+            if hashlib.sha256(destination.read_bytes()).hexdigest() != expected:
+                raise RuntimeError(f"runtime DLL differs: {destination}")
+            receipt[str(destination.relative_to(build))] = expected
+    return receipt
 
 
 def text_size(path: Path) -> int:
@@ -50,6 +78,8 @@ def main() -> int:
         if len(matches) != 1:
             raise RuntimeError(f"ambiguous {variant} executable: {matches}")
         binaries[variant] = matches[0]
+    ctypes.WinDLL("kernel32", use_last_error=True).SetErrorMode(0x8003)
+    runtime = stage_runtime(binaries, build)
     receipts = {path.parent / STATUS for path in binaries.values()}
     for receipt in receipts:
         receipt.write_text("FAIL\n", encoding="ascii")
@@ -71,7 +101,8 @@ def main() -> int:
     titles = {item["id"]: item["title"] for item in
               contract["extensions"]["runner"]["executables"][0]["workloads"]}
     runs = []
-    print(json.dumps({"child_policy": policy, "text_sizes": sizes}), flush=True)
+    print(json.dumps({"child_policy": policy, "text_sizes": sizes,
+                      "runtime_dlls": runtime}), flush=True)
     for route in ("selected", "peer"):
         for variant, binary in binaries.items():
             for order in ("candidate-first", "peer-first"):

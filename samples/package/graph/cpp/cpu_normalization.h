@@ -62,10 +62,13 @@ inline hyle::Status run() {
   // Ordinary route first. The second pass explicitly qualifies the installed
   // mature region even if a future default rule selects another valid route.
   for (bool qualify_region : {false, true}) {
-    HYLE_ASSIGN_OR_RETURN(
-        auto context, qualify_region ? c::Context::create(c::cpu::device(),
-                                                          g::onednn::provider())
-                                     : g::cpu::create_context());
+    c::Context context;
+    if (qualify_region) {
+      HYLE_ASSIGN_OR_RETURN(
+          context, c::Context::create(c::cpu::device(), g::onednn::provider()));
+    } else {
+      HYLE_ASSIGN_OR_RETURN(context, g::cpu::create_context());
+    }
     HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
     HYLE_ASSIGN_OR_RETURN(auto compiled, g::compile(logical, context));
     if (qualify_region &&

@@ -1,0 +1,3307 @@
+{
+  "schema": "hyle.onednn-normalization-delivery/v1",
+  "candidate": "58543f8c08dc3f8d22efeaf3620f3e74eaa33091",
+  "product_candidate": "2c9338e1c3a01d793aeda6aef1c4898709b8fe47",
+  "component": "compute",
+  "environment": "W1 Windows MSVC19.50 x64 Release",
+  "execution": "parallel2; serial heavy gates; CRT/HYLE DLLs adjacent; PATH unset; SetErrorMode0x8003",
+  "dependency_source": "locked oneDNN71094df; FULLY_DISCONNECTED; native CPU route",
+  "results": [
+    {
+      "journey": "source",
+      "gate": "PASS",
+      "executable_sha256": {
+        "source-build\\hyle_selected_source_consumer.exe": "aaf0228f1bda51a29722689958226e2132b2a2ec50041ad3434f66c5e6ba8e6b"
+      }
+    },
+    {
+      "journey": "shared",
+      "gate": "PASS",
+      "executable_sha256": {
+        "shared-consumer\\hyle_package_compute_cpp.exe": "f4545bb17dd2db5556b564e98ac721144497c93611552d0c62fece9fd690cabf"
+      }
+    },
+    {
+      "journey": "static",
+      "gate": "PASS",
+      "executable_sha256": {
+        "static-consumer\\hyle_package_compute_cpp.exe": "7c86f56d79fae835c62a14b7e9231ca7c1cb18387305847d31bf43abddeae7e9"
+      }
+    }
+  ],
+  "installed_artifacts": {
+    "shared": {
+      "bin\\hyle_compute.dll": {
+        "bytes": 166400,
+        "sha256": "98c72276bb008d77a5ca3287aadde9cc2a97665b231e892051f1116126ae09c4"
+      },
+      "bin\\hyle_compute_backend_cpu.dll": {
+        "bytes": 16384,
+        "sha256": "7b8db6be4365d2ee000d471175d0de4074121eb023b2b219a4330e889d3e0671"
+      },
+      "bin\\hyle_compute_ops.dll": {
+        "bytes": 61440,
+        "sha256": "6c27e8cd09e8dcb2a3ae00ff41f2e63b00ceac65bf86dc5c7961389c42512e29"
+      },
+      "bin\\hyle_compute_provider_native.dll": {
+        "bytes": 289792,
+        "sha256": "6f12f8a93f396c38d9d676119d57fafe77f40f72278564fde45d39ff90d1e374"
+      },
+      "bin\\hyle_compute_provider_onednn.dll": {
+        "bytes": 14154752,
+        "sha256": "2cf2b2b4db3abc61cfe73f98eac79ee7f775453e06a425b756550d30cc23b693"
+      },
+      "bin\\hyle_compute_route_cpu.dll": {
+        "bytes": 11264,
+        "sha256": "492cdb13dde90b0f6c6f7811fc4cea78214207e5465626df0a43d9f8182c234f"
+      },
+      "bin\\hyle_container.dll": {
+        "bytes": 41472,
+        "sha256": "ded27d704c5e5c7de9090ba1b2cb33805e30cfb216187fcef50d029153dcb27f"
+      },
+      "bin\\hyle_error.dll": {
+        "bytes": 28160,
+        "sha256": "24b4f86e9639b4ad96eb7844687c42d8c3be5306a6ed46b5d3a6e6b70c4e596c"
+      },
+      "bin\\hyle_mem.dll": {
+        "bytes": 230912,
+        "sha256": "ebce55732d0618bd5bd5cb4005c32df20c370273a03288c863ed47dbbb128582"
+      },
+      "bin\\hyle_platform.dll": {
+        "bytes": 85504,
+        "sha256": "d14146a4344d22ffda0e7284bba4d2ff458d87ac542f40dd3add2931efcfe471"
+      },
+      "bin\\hyle_platform_thread.dll": {
+        "bytes": 25088,
+        "sha256": "1c02164fc6afc5f0e330fc9736ddd268bf86d23193ece876bde5b024fa277331"
+      },
+      "bin\\hyle_simd.dll": {
+        "bytes": 1571328,
+        "sha256": "57a8990e04b6d07d0b48c4b6d5721f8f3e6393be3120499748ba1f0aac339980"
+      },
+      "bin\\hyle_time.dll": {
+        "bytes": 20992,
+        "sha256": "24e04cdb98015fb1f33fff8c3e78ffe5f3a98d0c4fee0cd2236a022a0a091d44"
+      },
+      "include\\hyle\\compute\\backends\\cpu.h": {
+        "bytes": 1814,
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      "include\\hyle\\compute\\completion.h": {
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      "include\\hyle\\compute\\cpu.h": {
+        "bytes": 927,
+        "sha256": "9a56fc112f193c14a748e4217456aeed36671cef3a74c6e00c50064ad6e609e6"
+      },
+      "include\\hyle\\compute\\custom_kernel.h": {
+        "bytes": 14974,
+        "sha256": "ec1b58fda1aef1ef145de1a02e3d0a08259d2d98df743570c244e7270ebecdc3"
+      },
+      "include\\hyle\\compute\\delegated_operation.h": {
+        "bytes": 5929,
+        "sha256": "4d263d736399f16ab69997ac9daa9f3c3258b067507df58eb5fa1b8d1020f7a7"
+      },
+      "include\\hyle\\compute\\detail\\backend_extension.h": {
+        "bytes": 2822,
+        "sha256": "0a67fcfb43e69f7106a2b4628442a74d14e9e18f0efe691109973b701d065cd4"
+      },
+      "include\\hyle\\compute\\detail\\command_capture.h": {
+        "bytes": 2962,
+        "sha256": "6f40aeb2b44d2b0820e895bfb6667e0308c6dbb12ba4374571dbc076287aa6b0"
+      },
+      "include\\hyle\\compute\\detail\\completion_access.h": {
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      "include\\hyle\\compute\\detail\\context_ref.h": {
+        "bytes": 1401,
+        "sha256": "0e44878fc04ea7b7378078e81045dcfb4760a27d44a5fc843b874ff612051ab3"
+      },
+      "include\\hyle\\compute\\detail\\generated_result.h": {
+        "bytes": 4852,
+        "sha256": "a749ef701a6352f2ce5a07b5ee1edd25f3ab226a9abc022b2ee79822ed23b700"
+      },
+      "include\\hyle\\compute\\detail\\prepared_callbacks.h": {
+        "bytes": 2376,
+        "sha256": "2d00a2e823af0bcdaa9fc0330aa441b18ce6932f090dc903be876f1b08e449a1"
+      },
+      "include\\hyle\\compute\\detail\\provider_extension.h": {
+        "bytes": 3608,
+        "sha256": "fd2441737a83d03544fac2b63092c5d4ca880bebeb009fc65bfddbf022b8909d"
+      },
+      "include\\hyle\\compute\\detail\\queue_sequence.h": {
+        "bytes": 7044,
+        "sha256": "fbb8da2ae4e99517da7483ae0e52ad5c0c0e66353696108724eec416856157ff"
+      },
+      "include\\hyle\\compute\\detail\\resource_binding.h": {
+        "bytes": 333,
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      "include\\hyle\\compute\\device.h": {
+        "bytes": 7171,
+        "sha256": "2bfd6db2298bcdd51a3fb2faf4ce0cab27ece7493a7ec57e1b33e2330b04f256"
+      },
+      "include\\hyle\\compute\\operation.h": {
+        "bytes": 20826,
+        "sha256": "e68c2743d339ccf5b84df510b797e0c6a41589a4df3b7166577e202cab679bd5"
+      },
+      "include\\hyle\\compute\\ops_visibility.h": {
+        "bytes": 237,
+        "sha256": "ae84b32667858fd2dd679bf2ba68e50d7405e9164ec0fd317173f20086b5fa6d"
+      },
+      "include\\hyle\\compute\\prepared_operation.h": {
+        "bytes": 18278,
+        "sha256": "fa6d941e937b3095d529bc958f36bb0c5d959d43207ecbe71aa5b2e00c4d628d"
+      },
+      "include\\hyle\\compute\\provider.h": {
+        "bytes": 9637,
+        "sha256": "69c840564ad4b138d6333478cfbad1e529886857a12728b4344e5a26b912bcd4"
+      },
+      "include\\hyle\\compute\\providers\\native.h": {
+        "bytes": 395,
+        "sha256": "a9769766b7d14fcec8cd1eb026533d7f60093af81219ccb5794331dc7ee9b9d0"
+      },
+      "include\\hyle\\compute\\providers\\onednn.h": {
+        "bytes": 726,
+        "sha256": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b"
+      },
+      "include\\hyle\\compute\\resource_requirement.h": {
+        "bytes": 749,
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      "include\\hyle\\compute\\result.h": {
+        "bytes": 4645,
+        "sha256": "7e4e55a4dbd1dde6deeca6630f023045ea18740867746ae1827d4f45b806d9ee"
+      },
+      "include\\hyle\\compute\\tensor.h": {
+        "bytes": 1980,
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      "include\\hyle\\compute\\tensor_desc.h": {
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      "include\\hyle\\compute\\transfer.h": {
+        "bytes": 2259,
+        "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+      },
+      "include\\hyle\\compute\\visibility.h": {
+        "bytes": 1131,
+        "sha256": "fb05970d03d232298d57da8921c3a441cd93cd0d9dbb6cbcfcaa5b6a51964aa5"
+      },
+      "include\\hyle\\container\\btree.h": {
+        "bytes": 62654,
+        "sha256": "cdabf1dd740a88281a461a64394c231da56830054864f22d8e5944b0ce0d8be1"
+      },
+      "include\\hyle\\container\\btree_map.h": {
+        "bytes": 48,
+        "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+      },
+      "include\\hyle\\container\\btree_set.h": {
+        "bytes": 48,
+        "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+      },
+      "include\\hyle\\container\\circular_buffer.h": {
+        "bytes": 6305,
+        "sha256": "3934a4e6b40418c5be12d3badba23aa4328a5a3602d141123539d4809869d542"
+      },
+      "include\\hyle\\container\\detail\\adaptive_mutex.h": {
+        "bytes": 2442,
+        "sha256": "600d1fb746f5a35438eb29177ecd281c08f662c7b8558b83df1045a0d264c472"
+      },
+      "include\\hyle\\container\\detail\\adaptive_rw_lock.h": {
+        "bytes": 6010,
+        "sha256": "a70ad907ba44d399f36284c87318022b0517314755d112ccf43a5e053b1825ae"
+      },
+      "include\\hyle\\container\\detail\\flat_hash_probe.h": {
+        "bytes": 11389,
+        "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+      },
+      "include\\hyle\\container\\detail\\flat_hash_table.h": {
+        "bytes": 44213,
+        "sha256": "4e53aee82efdbb4b2bd6d50b523dc4ddc868f0d636d9f2e1dae1cfecd8cbf977"
+      },
+      "include\\hyle\\container\\detail\\intrusive_member.h": {
+        "bytes": 1822,
+        "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+      },
+      "include\\hyle\\container\\dynamic_bitset.h": {
+        "bytes": 7464,
+        "sha256": "8c0425e6f12e97dbe0880bb0b4881b7eea563438f406ba8cd5d548aa7d6a8036"
+      },
+      "include\\hyle\\container\\flat_hash_map.h": {
+        "bytes": 65,
+        "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+      },
+      "include\\hyle\\container\\flat_hash_set.h": {
+        "bytes": 56,
+        "sha256": "42a57cbe47983cdbb92041f374112e1b1f3ccd67401bed5748c8f865096dbdc9"
+      },
+      "include\\hyle\\container\\flat_map.h": {
+        "bytes": 54,
+        "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+      },
+      "include\\hyle\\container\\flat_set.h": {
+        "bytes": 54,
+        "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+      },
+      "include\\hyle\\container\\flat_sorted.h": {
+        "bytes": 40527,
+        "sha256": "82bf77a6c6dc3d9d162c9f7949218c1e4946468b54df4913c3f5f4d31cad9537"
+      },
+      "include\\hyle\\container\\hash.h": {
+        "bytes": 28870,
+        "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+      },
+      "include\\hyle\\container\\inplace_vector.h": {
+        "bytes": 56,
+        "sha256": "decc3c909b493af3ab1dba1d379aa0cf3b6b398dc9a850482e718e72ecb8b82b"
+      },
+      "include\\hyle\\container\\intrusive_forward_list.h": {
+        "bytes": 16797,
+        "sha256": "7e3c36a91067eb8b1ec8e9370b8fb001545804b2842e19c776eb02f1633bbb46"
+      },
+      "include\\hyle\\container\\intrusive_hlist.h": {
+        "bytes": 15077,
+        "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+      },
+      "include\\hyle\\container\\intrusive_list.h": {
+        "bytes": 33222,
+        "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+      },
+      "include\\hyle\\container\\lru_cache.h": {
+        "bytes": 10852,
+        "sha256": "0744e618e9500c0135c1a4d56cc38eea862360073d71a845578deb0199b96e24"
+      },
+      "include\\hyle\\container\\pod_vector.h": {
+        "bytes": 17833,
+        "sha256": "8b933769d0123a3c320007ae6bd0f98e3537d7700a622adad5b5630dd012e387"
+      },
+      "include\\hyle\\container\\ring_deque.h": {
+        "bytes": 15154,
+        "sha256": "e588950a503951eda12b2ba7e4e3123eaf38b74cf7c4f0262b88bacc018ab3c3"
+      },
+      "include\\hyle\\container\\small_vector.h": {
+        "bytes": 30022,
+        "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+      },
+      "include\\hyle\\container\\sparse_set.h": {
+        "bytes": 3699,
+        "sha256": "02ade678ec0254381c5669fd0913a7ca02785fb8df939e82efeefa272a4f80b3"
+      },
+      "include\\hyle\\container\\static_vector.h": {
+        "bytes": 22481,
+        "sha256": "d7531ee32750aeabdc8699893853da0caf80fa27469b69ab5caaf270dfdafc33"
+      },
+      "include\\hyle\\container\\visibility.h": {
+        "bytes": 842,
+        "sha256": "431ce63538dd91c9f32742f654ab3f8eaaa6cfc16f004ea6bb8b0b171063d332"
+      },
+      "include\\hyle\\core\\assert.h": {
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      "include\\hyle\\core\\cache.h": {
+        "bytes": 3625,
+        "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+      },
+      "include\\hyle\\core\\compiler.h": {
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      "include\\hyle\\core\\detail\\compiler_attributes.h": {
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      "include\\hyle\\core\\detail\\preprocessor.h": {
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      "include\\hyle\\core\\environment.h": {
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      "include\\hyle\\error\\format.h": {
+        "bytes": 2914,
+        "sha256": "2a10b7dfa4dafd3e5c7af610fa50a4ba6bb2520e5409fd01038871875261fa68"
+      },
+      "include\\hyle\\error\\result.h": {
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      "include\\hyle\\error\\status.h": {
+        "bytes": 18286,
+        "sha256": "e45875924420148b2af5d6195b1cdac86ef40d312fa963f1b3839acfbe071575"
+      },
+      "include\\hyle\\error\\system_error.h": {
+        "bytes": 3096,
+        "sha256": "b02c11cd7cea737899d72d9dcea93f246fee021bdfc697ab6d744b0cc26d0f0c"
+      },
+      "include\\hyle\\math\\scalar.h": {
+        "bytes": 17828,
+        "sha256": "10ca4013013fafc5383310bb0128ce6f11f389e77c815648b8c48bb06a00210a"
+      },
+      "include\\hyle\\mem\\alignment.h": {
+        "bytes": 3645,
+        "sha256": "3ae961e6556cf2a3e5e56f5de9c80db224c7a50a591ce998d81b347a8c4be9ae"
+      },
+      "include\\hyle\\mem\\allocator.h": {
+        "bytes": 11717,
+        "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+      },
+      "include\\hyle\\mem\\arena.h": {
+        "bytes": 347,
+        "sha256": "186d9f90620d9b81688c568cb0bcfc1fc0bef9e4a415ea6c99800822a6b7bc77"
+      },
+      "include\\hyle\\mem\\buffer.h": {
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      "include\\hyle\\mem\\buffer_pool.h": {
+        "bytes": 4331,
+        "sha256": "b5bfcd6b861d2b54425c619097fdca65eb5ac6add7f0b443c815784c1e661951"
+      },
+      "include\\hyle\\mem\\fixed_pool.h": {
+        "bytes": 23485,
+        "sha256": "1c7687075438c812a374c70df955c510cadc18498d62502fa063cb8b7bf4f828"
+      },
+      "include\\hyle\\mem\\growable_pool.h": {
+        "bytes": 12352,
+        "sha256": "02f73b151d81f4e83d6be1a7929ffae6b9c24b5d6dfbbb63f25bad304e154f3b"
+      },
+      "include\\hyle\\mem\\heap.h": {
+        "bytes": 2589,
+        "sha256": "a1bb4ea396d735d1de598e2d3656014066a80888a41aaf40c8f66a094a5cb2d2"
+      },
+      "include\\hyle\\mem\\large_page_reservation.h": {
+        "bytes": 2094,
+        "sha256": "40bd1bf19d7582fca6a2af57c18cdc6b4d0045349bf8912c6d62b0845e9a0ffc"
+      },
+      "include\\hyle\\mem\\lifetime_plan.h": {
+        "bytes": 7018,
+        "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+      },
+      "include\\hyle\\mem\\object_pool.h": {
+        "bytes": 10517,
+        "sha256": "ddf1379e9dbcbe42f1dab99f3fcc28bac6af86e5dd6f3a818659b865a244a964"
+      },
+      "include\\hyle\\mem\\pmr.h": {
+        "bytes": 5439,
+        "sha256": "bd3c370b8729b5d82eeb62fa86798f020b8ffe22afdbaef023acbe7105e9f38f"
+      },
+      "include\\hyle\\mem\\pool.h": {
+        "bytes": 576,
+        "sha256": "092acd7e9799aafb99db7c9b3f8d484a609ccc8ad07852e4b49dc068feb7c112"
+      },
+      "include\\hyle\\mem\\pool_cache.h": {
+        "bytes": 7232,
+        "sha256": "992b1684e2409aacb207dff234301a2a39fff9d6a2d4dc28dd02a086210eba91"
+      },
+      "include\\hyle\\mem\\pool_loan.h": {
+        "bytes": 1601,
+        "sha256": "9ad610a96ad71f9ca9eb64241d57e60d036aed6ac939d36fd143a1c1e06fa8c0"
+      },
+      "include\\hyle\\mem\\quota_allocator.h": {
+        "bytes": 7124,
+        "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+      },
+      "include\\hyle\\mem\\range_allocator.h": {
+        "bytes": 4780,
+        "sha256": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c"
+      },
+      "include\\hyle\\mem\\region.h": {
+        "bytes": 17710,
+        "sha256": "d2e83898337b974a8b70d8bdceff37d4644ef17eaa781a030420430813f64baf"
+      },
+      "include\\hyle\\mem\\resource.h": {
+        "bytes": 7378,
+        "sha256": "3fc711a80803758b4a2cc573ffa5faee0703a7abf8ac3d45e248da257845d51e"
+      },
+      "include\\hyle\\mem\\shared_pool.h": {
+        "bytes": 40019,
+        "sha256": "461e00d3021be144472781aba73ded3c271bf55e548f6ef3cb7cd7ff963e1649"
+      },
+      "include\\hyle\\mem\\stack_allocator.h": {
+        "bytes": 4753,
+        "sha256": "dc64cfd68e49403d359fe96987c8f2c4c39891b2f4f2f7968f7a620a4eaff89c"
+      },
+      "include\\hyle\\mem\\stats.h": {
+        "bytes": 11884,
+        "sha256": "aa52b5b04711711db64bb1b3bb770fe8118f4e436d95c929b8381e49a863a75c"
+      },
+      "include\\hyle\\mem\\std_allocator.h": {
+        "bytes": 5150,
+        "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+      },
+      "include\\hyle\\mem\\system_inline.h": {
+        "bytes": 8673,
+        "sha256": "989e58ea45a94a6480c45cd1a8c7dc1ecade5507239c0aa9d827ee11d262ce04"
+      },
+      "include\\hyle\\mem\\visibility.h": {
+        "bytes": 379,
+        "sha256": "c50f284339daa23058f71da43b99404a2c7cf523ccb350509c43b5b00cbcd76f"
+      },
+      "include\\hyle\\obs\\trace.h": {
+        "bytes": 8554,
+        "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+      },
+      "include\\hyle\\platform\\cpu.h": {
+        "bytes": 14082,
+        "sha256": "b403d4fd1f967048358e7a3914b72356adef91adcb4d774ca8611055d584e9d8"
+      },
+      "include\\hyle\\platform\\cpu_convenience.h": {
+        "bytes": 2201,
+        "sha256": "08bc95125239b63678d47571f6dd63e8059ad84af9dc09a0015e308906bbeaaf"
+      },
+      "include\\hyle\\platform\\dynlib.h": {
+        "bytes": 3927,
+        "sha256": "39c8553b815e6af94377c7d9e911c6b03a38757e671d089509b74ff0fec54b3e"
+      },
+      "include\\hyle\\platform\\environment.h": {
+        "bytes": 795,
+        "sha256": "4b28bf70cc14f979b9a6b5c9a05bf3d3778814354c2a02c45ab312b349b4a5e9"
+      },
+      "include\\hyle\\platform\\environment_convenience.h": {
+        "bytes": 1298,
+        "sha256": "468efe77558862d8801936bb1a175621c969c3113321fde2fbd037c0efdff117"
+      },
+      "include\\hyle\\platform\\host_memory.h": {
+        "bytes": 2915,
+        "sha256": "b190afc8630d8dd6a30d6b0b917338a150c5e4a52dfcb1ae1d85897208b72df1"
+      },
+      "include\\hyle\\platform\\numa.h": {
+        "bytes": 8400,
+        "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+      },
+      "include\\hyle\\platform\\process.h": {
+        "bytes": 1281,
+        "sha256": "8f03d24953d964f8097be427616b7e40845f285a110e62a7d2ca24260c3f83c3"
+      },
+      "include\\hyle\\platform\\random.h": {
+        "bytes": 481,
+        "sha256": "2d7157339e2c8f2a6db20d6f82a7d33e3464ab066f14b18b2ca8800acaae6b04"
+      },
+      "include\\hyle\\platform\\thread.h": {
+        "bytes": 8423,
+        "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+      },
+      "include\\hyle\\platform\\thread_convenience.h": {
+        "bytes": 1260,
+        "sha256": "f0d0c6e5b5a7f0943bb35f26b5ecf1ef8c90eea7a98c227a70a60ce2d6ae2eda"
+      },
+      "include\\hyle\\platform\\thread_visibility.h": {
+        "bytes": 253,
+        "sha256": "e81f90677f996179981bfd377cffa4fb5d439198afb813992f7a9881752aee87"
+      },
+      "include\\hyle\\platform\\virtual_memory.h": {
+        "bytes": 10485,
+        "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+      },
+      "include\\hyle\\platform\\visibility.h": {
+        "bytes": 225,
+        "sha256": "49b4328d0b32ba9d211f2ce49b7b9ffa217baeff20a4ab855f8ffb7f874a781b"
+      },
+      "include\\hyle\\platform\\wait.h": {
+        "bytes": 4708,
+        "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+      },
+      "include\\hyle\\simd\\bitpack.h": {
+        "bytes": 5615,
+        "sha256": "0f097b727d8989a7f0bdb9cf3dcfa6bdb7618164bacf851f9fd75e93b164ea90"
+      },
+      "include\\hyle\\simd\\dtype.h": {
+        "bytes": 12213,
+        "sha256": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8"
+      },
+      "include\\hyle\\simd\\dtype_ops.h": {
+        "bytes": 2711,
+        "sha256": "67f53a3095f2a27fda8445c378d3154385fba06a70b28408cb082be333d8a822"
+      },
+      "include\\hyle\\simd\\fat_kernel.h": {
+        "bytes": 5233,
+        "sha256": "82ebf7c6ab617b67bd18f2d2544f12c1900abe233d720fbb8423a0b1ff3dd989"
+      },
+      "include\\hyle\\simd\\math.h": {
+        "bytes": 24767,
+        "sha256": "fbc4f22a4bd329c37fdb7cf08b6be2f56ba24cb1fbe2781bd1babf11c5c50dd6"
+      },
+      "include\\hyle\\simd\\narrow_ops.h": {
+        "bytes": 3404,
+        "sha256": "98f9b01e898fc2f38deb0951e2f6c771ccb00c17e1882749ab1d9ab0a4df2298"
+      },
+      "include\\hyle\\simd\\ops.h": {
+        "bytes": 5114,
+        "sha256": "7ca600d232b2dfcf0b0b3143678818a250d8aba2216febaee0438e1b94c1fd45"
+      },
+      "include\\hyle\\simd\\random.h": {
+        "bytes": 5292,
+        "sha256": "b258ce03e1687fffbb898efdc0be62ec1883344b7399248d22484a31583655f3"
+      },
+      "include\\hyle\\simd\\runtime.h": {
+        "bytes": 1481,
+        "sha256": "9bce97120633ed2b1b9e17e040a8b8726ab3800ffb8c9d63d9c13ffaedb7e166"
+      },
+      "include\\hyle\\simd\\scan.h": {
+        "bytes": 2156,
+        "sha256": "c3712705333942794196603254345f9b8860e7398d64fb497aebf33c543eaa57"
+      },
+      "include\\hyle\\simd\\search.h": {
+        "bytes": 2790,
+        "sha256": "b1a753bcddefeb3a6dbe74e821be15f80f094777a3ce84a00464e59bb3878ff2"
+      },
+      "include\\hyle\\simd\\sort.h": {
+        "bytes": 12596,
+        "sha256": "5d3b5cd320fef2e6922e6ca7b68a52adcf7895828aa2e96bdb521ecc9396005a"
+      },
+      "include\\hyle\\simd\\target.h": {
+        "bytes": 2812,
+        "sha256": "c6f6b7e3b4f9b1cca02b3957d4d0ff59e352c0da791c08aa16b5442e6c6e22b8"
+      },
+      "include\\hyle\\simd\\types.h": {
+        "bytes": 1658,
+        "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+      },
+      "include\\hyle\\simd\\visibility.h": {
+        "bytes": 209,
+        "sha256": "e6220681c938d0b898165975736f412d3025050e10597b57f62ee7b49799eb03"
+      },
+      "include\\hyle\\time\\clock.h": {
+        "bytes": 30827,
+        "sha256": "78febfa3783722c360f4ad548b7b28c750296666c7897434918d8489a3a47f4e"
+      },
+      "include\\hyle\\time\\native_interop.h": {
+        "bytes": 1913,
+        "sha256": "b435bd3f7ba07dbf575dc0de837e959f854aa369df6b5f0d136bcbc855cd2ddf"
+      },
+      "include\\hyle\\time\\unix_timestamp.h": {
+        "bytes": 11791,
+        "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+      },
+      "include\\hyle\\util\\borrow.h": {
+        "bytes": 2417,
+        "sha256": "c8940170d33e227c0861fafa63334502b00fa78cf86a808777d2555c0ab20cac"
+      },
+      "include\\hyle\\util\\function_ref.h": {
+        "bytes": 19444,
+        "sha256": "e06e706944fd0a6a05ff21f3abd863ca47595775c8cdaf454f1182545643e304"
+      },
+      "include\\hyle\\util\\random.h": {
+        "bytes": 12750,
+        "sha256": "28463daa826c69f453b5a9f2081b174002bcccc58394cb5833fdfe92757425df"
+      },
+      "include\\hyle\\util\\ref_counted.h": {
+        "bytes": 15931,
+        "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6"
+      },
+      "include\\hyle\\util\\scope_guard.h": {
+        "bytes": 7381,
+        "sha256": "eec76c62b7b3035c978182a31405e145e3cd1c9faa4ee3f15d04e4bf91cdc13d"
+      },
+      "include\\hyle\\util\\spin_lock.h": {
+        "bytes": 4393,
+        "sha256": "2de2d1d1718fdd07a46335fdda7f61bbf2b84f214a9f3ccbc661707141095fce"
+      },
+      "include\\hyle\\util\\type_name.h": {
+        "bytes": 3282,
+        "sha256": "ff992e70082c80d595b024a73d7e1d9470b1e779c6c2529937c01a924d71a066"
+      },
+      "include\\hyle\\util\\unique_resource.h": {
+        "bytes": 11625,
+        "sha256": "4a10bf96cef94563c068c4d06b194b20efbfdf19b468681375d148d8f685f4e4"
+      },
+      "include\\hyle\\version.h": {
+        "bytes": 1322,
+        "sha256": "eb910c915e9ea9bf52c69d0e1cd7fef16dba76bac8916cf42b895c92b7fa6dea"
+      },
+      "include\\hyle\\visibility.h": {
+        "bytes": 638,
+        "sha256": "c6207853e7c4c90bdc9ebde3157581eb88b4a59c6e3be87e7aecfafd35da7165"
+      },
+      "lib\\cmake\\Hyle\\HyleConfig.cmake": {
+        "bytes": 3104,
+        "sha256": "a531086abc211313d2be2ca08638e5b8540ffd218497464b250ab9ef3327841e"
+      },
+      "lib\\cmake\\Hyle\\HyleConfigVersion.cmake": {
+        "bytes": 3360,
+        "sha256": "0b02c89a9a3ece5a1c6df8276fdc44e86e86d6c0108f3baa0dc3c39d6a39bf55"
+      },
+      "lib\\cmake\\Hyle\\HyleDispatch.cmake": {
+        "bytes": 26405,
+        "sha256": "99942c5e5a8669b8a6c321c963cdb2d0314772c07e5274e3a566aec1f4c3ee70"
+      },
+      "lib\\cmake\\Hyle\\HyleIsa.cmake": {
+        "bytes": 11132,
+        "sha256": "6c2a12a1921fd875fdec90314f70bf98ce6278bab086e96f6a91c1a429a33bc6"
+      },
+      "lib\\cmake\\Hyle\\HyleRuntimeStaging.cmake": {
+        "bytes": 2252,
+        "sha256": "f0b8d600e6bc563334265d9f8c47ec399147abc2adb69bf3be671e2f4cec677f"
+      },
+      "lib\\cmake\\Hyle\\HyleTargets-release.cmake": {
+        "bytes": 8903,
+        "sha256": "978454d23135d3defea5f324c0a2640efabfa2badfdbf34b66681086c50c9839"
+      },
+      "lib\\cmake\\Hyle\\HyleTargets.cmake": {
+        "bytes": 13435,
+        "sha256": "2160e0c407139ea19bdd7b53fb2df2f43cd69e45483ec1ea28d31da71d9de874"
+      },
+      "lib\\hyle_compute.lib": {
+        "bytes": 145868,
+        "sha256": "226b6cbdf05ad60f64a3d01aaa99883fa504ef3f7be413dd11283c068ac84159"
+      },
+      "lib\\hyle_compute_backend_cpu.lib": {
+        "bytes": 3152,
+        "sha256": "34ff0302fe3dead8383ec705e50e58223b528a0a32ae4134f02ee2f43a0fb7a1"
+      },
+      "lib\\hyle_compute_ops.lib": {
+        "bytes": 36346,
+        "sha256": "fde94d7cf26454b1e100042618ebd2689aca55f2f2e6d8cf0f2530c394285084"
+      },
+      "lib\\hyle_compute_provider_native.lib": {
+        "bytes": 2324,
+        "sha256": "d73a3506cd5c6d915cf277850ff5ec8f9e51312920b13bbe6850cfc23a490e67"
+      },
+      "lib\\hyle_compute_provider_onednn.lib": {
+        "bytes": 10118,
+        "sha256": "e422fab07b3ac9391a4a07e795abc4ae5062d7c0e979c9417586e99d0cdb7b97"
+      },
+      "lib\\hyle_compute_route_cpu.lib": {
+        "bytes": 2446,
+        "sha256": "049126fb6355017a47be127048dfa464281e0d7b533812fa9520df2d57eb9a8c"
+      },
+      "lib\\hyle_container.lib": {
+        "bytes": 17322,
+        "sha256": "c4c132cdc4905495cba26311cff1fc274adb5aa83ae3fa6c50ec959e137a55f1"
+      },
+      "lib\\hyle_error.lib": {
+        "bytes": 13126,
+        "sha256": "172dbc572a1ef3c6242b11378a4077de7873d8f73a687668e56b30698a51f0c1"
+      },
+      "lib\\hyle_mem.lib": {
+        "bytes": 61490,
+        "sha256": "fa68219ce04de6f88ec449dd662969da88ab6ea8653fd753af9bdb6820fc25ea"
+      },
+      "lib\\hyle_platform.lib": {
+        "bytes": 31446,
+        "sha256": "5b43fb02f69b2491e3ac83901b7bf475074bf0e2b6b9d1dfa5b18a056266ccb9"
+      },
+      "lib\\hyle_platform_thread.lib": {
+        "bytes": 11330,
+        "sha256": "aae49e3a3cc70dc336313e38f427e4908dc6dadb4853b343c2b4ec330e41d15d"
+      },
+      "lib\\hyle_simd.lib": {
+        "bytes": 136202,
+        "sha256": "93c0ea5503e4c0b26289eb1854b9df31e0466c52af4f6b1a645de8c3125aec2b"
+      },
+      "lib\\hyle_time.lib": {
+        "bytes": 11380,
+        "sha256": "b39a8d40c88a2af5967787478c4243738d5a1699e4136e9fedb9469685be7607"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\abort.h": {
+        "bytes": 338,
+        "sha256": "2d0f4f0b6e9390324efa4e45258adf3a19308936c15d9a30cd4d2bb46f19062b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\aligned_allocator.h": {
+        "bytes": 23067,
+        "sha256": "283bac6e3d878963923373affc5870fed99c7c52805ed2b9bf490e4d30abcf19"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\auto_tune.h": {
+        "bytes": 19827,
+        "sha256": "b5474dc4a856fc55ef141bd6730c1c38c654ff4161018c3ba9f745d7483fad61"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\base.h": {
+        "bytes": 121335,
+        "sha256": "5ee6cbed6de029572262510b8475935e030d698c2dae7c7094ccee065b758754"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\bit_set.h": {
+        "bytes": 11984,
+        "sha256": "caa32ab69f075da4f0e9f135b128602123ca724c3d946bcaf508d101ce34f26c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\cache_control.h": {
+        "bytes": 5449,
+        "sha256": "22a0c4d288dffeea5a2b7931ee7162fae797d1b2d8fb5e5ed07893542718f125"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\copy-inl.h": {
+        "bytes": 5166,
+        "sha256": "076c6feae94d57fb667bbb755fb9efc1ce22fb6f3f9ed89cfc70fd72c1919da2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\count-inl.h": {
+        "bytes": 16191,
+        "sha256": "b3b16ef7bd303fccea288df241bb06dfbbc9c2e8687d11d67f8f74a62e8b6055"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\find-inl.h": {
+        "bytes": 7156,
+        "sha256": "07abfdfba064f1e1b024a201fcc0bfd193a12471f8b90d6390933ae6db96ed87"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\is_sorted-inl.h": {
+        "bytes": 3733,
+        "sha256": "a3a56034ecd5109691ce3c2237df5a1799c48f9f04ec9290488539a2ea20529d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\minmax-inl.h": {
+        "bytes": 10663,
+        "sha256": "0bea2ae54d27f514a6f335ae388cfae39319d900be0fc1d795a18ca73ce39337"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\transform-inl.h": {
+        "bytes": 8138,
+        "sha256": "19dde250bc003fd91afc1194f35b1594b54bf018faed8d43b2f5925591c85a54"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\base64\\base64-inl.h": {
+        "bytes": 17097,
+        "sha256": "6b43f12f2c7e6494e74d12a67925af33e158f86a66e017710feb999664dfd812"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\bit_pack\\bit_pack-inl.h": {
+        "bytes": 115796,
+        "sha256": "f6020b3cf0b66bfcdd8309f569926914efe0f7e5ff483e5ed0fa038d46ef2999"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree-inl.h": {
+        "bytes": 104299,
+        "sha256": "97648f823ca7f310262372b080f659b0a1c88eb4aec4901f25e833e858e58316"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_map.h": {
+        "bytes": 22545,
+        "sha256": "ac94ac496b23c1185805c352a6ca8ccffe9708b915886ed457a891b8ad5943ab"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_nodes.h": {
+        "bytes": 15894,
+        "sha256": "56cbeec2d950ed5e4662589fd029e1886c6c9ae0c8d48b75d698a66e01435a35"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_set.h": {
+        "bytes": 16375,
+        "sha256": "8a261d5f3891c676d9745bc9af97999e6461e48a4955770408264c2875a36b3a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_test_util-inl.h": {
+        "bytes": 28399,
+        "sha256": "94481abdc355f233ad0e1397c716c442fdbef124ba63dd2288da9e4369c0513c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btreemap_impl-inl.h": {
+        "bytes": 12192,
+        "sha256": "1437e4df47879fb968b0185463b7a5d4b8e0fa0421951525fc4de8b0d2911729"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btreeset_impl-inl.h": {
+        "bytes": 9454,
+        "sha256": "0f0929fa38ce358f87a286f3ed9383fc56b9a9a92a4579074544456d3e43bf08"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\coder\\range_coder-inl.h": {
+        "bytes": 9084,
+        "sha256": "33f2f325bcfd61be592480cab6b456f9be964eab26d536aa97a5b5f413c1060f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\coder\\range_coder.h": {
+        "bytes": 7950,
+        "sha256": "050e154ff2fc23daadd68e0e8816bfb31e31746a41d4d8a1e2a9ebd917820531"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\crc\\crc-inl.h": {
+        "bytes": 4970,
+        "sha256": "0a73f605cedfe677020c760669ff3c521a8fd828e67e9b5738894e5b3cdb5cea"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\dot\\dot-inl.h": {
+        "bytes": 17983,
+        "sha256": "e81d6f561abeddec26b347f1d168b20e971ec404e9d2c2f3df587fed88f4fd11"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\cuckoo-inl.h": {
+        "bytes": 57378,
+        "sha256": "f08c691a47bd64cf3837834d2643d379111e135debbfdcb20bb1ab1e2dfb50e9"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\cuckoo2x2-inl.h": {
+        "bytes": 7503,
+        "sha256": "72ecffcdd70f2b64c721e126261935a16af2660130cd6ebd25585e8b0d07053b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\cuckoo2x2.h": {
+        "bytes": 2810,
+        "sha256": "a122a94413f4f7f124f952cd7923e1ce851e7724e606901f13e73f697f2b254a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\hash-inl.h": {
+        "bytes": 34014,
+        "sha256": "188b3cbc49e32a26420a4d53536ec68f34baac908ddde981591a3d28082c1a65"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\highwayhash-inl.h": {
+        "bytes": 13685,
+        "sha256": "2f64ae8f1c5d22e009c0cdbf736ec5a4f1dbb0e4eef710f49c7c481486d59751"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\phast-inl.h": {
+        "bytes": 12182,
+        "sha256": "a736dac00526c69a42307a5962089570c30e9fd365a58ef4e31ed69e50436732"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\phast.h": {
+        "bytes": 4750,
+        "sha256": "9d9f2bc3bcffddde19731d7e64566cbb584c943e50e368c313a6d337f3ed3b2f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\shardmul-inl.h": {
+        "bytes": 10933,
+        "sha256": "240313bd45ad991979b390fff35ebf4bac77a42f5f9eb139e842a74936a0d8f4"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\shardmul.h": {
+        "bytes": 2360,
+        "sha256": "3f74d407b6a6d7c61811f4e229cf284caa5174b5bb8de9c95276c77f69253e8b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\iguana\\ans-inl.h": {
+        "bytes": 13634,
+        "sha256": "11a060713884c436ac590831093953978e7c9ec4b8dc8340f12bbfd955f6ea50"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\iguana\\ans.h": {
+        "bytes": 4102,
+        "sha256": "173af932290f321ae48c57d1e7d036b7088790b26e73a924d60a5452035d60bb"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\iguana\\ans_detail.h": {
+        "bytes": 1638,
+        "sha256": "55c4c6d8017fc9da3693e10976b34bba2ca1206307f81d15222be1270f020b4a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\image\\image.h": {
+        "bytes": 17282,
+        "sha256": "067762b8ce1bc072fb5a72599ebdccf93e1992c2fae1be5d87370a219d112dd2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\intdiv\\intdiv-inl.h": {
+        "bytes": 24419,
+        "sha256": "66860e69aa1fad87cca972613df23c8f1a1b642f6f373b2b3ab9c85089b7c26f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\f16_math-inl.h": {
+        "bytes": 10917,
+        "sha256": "11ab3ca0db7b67377e0fa01d1cf059c9979b0f28741bec053b1ec88afd0c3bd8"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\fast_math-inl.h": {
+        "bytes": 63678,
+        "sha256": "9f36a233bd0b7100d0cb8df6d29503549457abf513a253acd9362aa812618135"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\float_manip-inl.h": {
+        "bytes": 6871,
+        "sha256": "653a695f9e5d293eb2760e32ecc2aa7f40e006ddc7943d73dd8503cf9def9bb1"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\fp_arith-inl.h": {
+        "bytes": 8483,
+        "sha256": "f514b86729d7eb8b706df3683be644c3e59444edc253ef97251c4d842bd8bf30"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\math-inl.h": {
+        "bytes": 111492,
+        "sha256": "1eea9d4098198f337fda9c8ca0ac6da1ff98a600b9cd3490ba622ae4a8f35a9e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\math_test-inl.h": {
+        "bytes": 18653,
+        "sha256": "a73a4885f6f9ad58d40487602be18ec7fce71eeaa595252ed1be1d12e1946c0e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\matvec\\matvec-inl.h": {
+        "bytes": 19278,
+        "sha256": "d7ace09ae6c88a233c0121adc0753d35f3341c396f3ee2f46d35a5ed79053a4e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\random\\random-inl.h": {
+        "bytes": 18008,
+        "sha256": "1985ab3786c02da5ba08694f56be412ffdae04b735b799144710358623edb85f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\algo-inl.h": {
+        "bytes": 17475,
+        "sha256": "ac4d9a11121ede644571a8e41c59770633a00ff9fa04a9cb53bb9e8d657fb24d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\order.h": {
+        "bytes": 1191,
+        "sha256": "7cbf6e26f5afc2fc09e731ea2fa2e70bbda10230980fda7da77a10923d271611"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\result-inl.h": {
+        "bytes": 10781,
+        "sha256": "4e6867567774ca42971c608f03848cba5e1301ab0dec5650ec42583239b0bd43"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\shared-inl.h": {
+        "bytes": 6959,
+        "sha256": "33f82431094562db3073886b107d4b5c80f3c5a4eee29575cda2557e32eb0a08"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\sorting_networks-inl.h": {
+        "bytes": 29131,
+        "sha256": "a19f665d2d458894d412629a6dfd5e42214618167d93e62a114cdd3b9b55635c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\traits-inl.h": {
+        "bytes": 20512,
+        "sha256": "1ff31627d815e2f9690ecb1fdfdd53132c7b11858036bc4b645d848e1503cab7"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\traits128-inl.h": {
+        "bytes": 18345,
+        "sha256": "d3a73079d9d4121f5a5dcd0ddb9d8d8d17e5d50b43a670b7caafcd5951a94697"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\vqsort-inl.h": {
+        "bytes": 88895,
+        "sha256": "875e989c559e1f982394bc61cf8dcb8c2ac636885c033381144c251a049306c3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\vqsort.h": {
+        "bytes": 16471,
+        "sha256": "2a42b87118d9d9cd9824365b0338cdd73981b9594a66c48bccbdeb701a8cc426"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\futex.h": {
+        "bytes": 11025,
+        "sha256": "9edb48ce1d6f3e2bbe84752820b1083e28c356552948eb9419d4c8712de6957b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\index_range.h": {
+        "bytes": 3941,
+        "sha256": "bb46fa1a3716ad63a63897c91bd6fdf3b1db0d5c70bd3268fbf50535cf66a69e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\spin.h": {
+        "bytes": 10902,
+        "sha256": "c1a6fd2d9f169bcb9a80686b1fac228ca47afea423dc8a81053615d4e819cda2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\thread_pool.h": {
+        "bytes": 65236,
+        "sha256": "f6b5668d6b6d773cca9da515422dbc731c679f72e0fe340528330ffd3a0d4a87"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\topology.h": {
+        "bytes": 5186,
+        "sha256": "725152eaf587d906f921fd2727a3720c6f0996bf8bbd1cab55826de7c36376e5"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\unroller\\unroller-inl.h": {
+        "bytes": 14545,
+        "sha256": "7d32ee2ebe4146501a34390a59128aaed7c79e331a2f840be1cc34fb3f762740"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\detect_compiler_arch.h": {
+        "bytes": 16268,
+        "sha256": "51f5fca69dd6eeca3a47504289a2a9c3a5fd932d7212b3e015f73710a8183948"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\detect_targets.h": {
+        "bytes": 38233,
+        "sha256": "9ff4759c9bc3c16581ab644d553e6079b456ef8a7c27d62314dc917d39e9deb0"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\examples\\skeleton-inl.h": {
+        "bytes": 2571,
+        "sha256": "9008dfd18348f9ea4c662caed87c726a58149b09807bb657a3899f73def01248"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\examples\\skeleton.h": {
+        "bytes": 1512,
+        "sha256": "c1e505a2a405e0ffc170aff96499135ad4f1ff9c3a2a84dafeefc13fe31aaa8c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\foreach_target.h": {
+        "bytes": 10330,
+        "sha256": "880295b229488bba5227d5279504f355f9363330bf1d98ab63baf553deedee03"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\highway.h": {
+        "bytes": 28605,
+        "sha256": "de01622abb3e9e85a07d24897daef408a30f7a1967bb0b01a57c1637d3c87f9d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\highway_export.h": {
+        "bytes": 2074,
+        "sha256": "8a883413b083c721f879163780630aa3ec741b386b3db6d05ac042292b904d45"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\nanobenchmark.h": {
+        "bytes": 7053,
+        "sha256": "81c65b91f754c36e3792ed0ae9c9f535092d997254a02508bea06a03f7a67f79"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\arm_neon-inl.h": {
+        "bytes": 452107,
+        "sha256": "a46245f21dcafbd3c245401960a67266a234c9068aeaaf779c1efb47af3daeb5"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\arm_sve-inl.h": {
+        "bytes": 272862,
+        "sha256": "d7aa2a5915cdbcb6640f6ee4870501d86f2aafa293d674a850b6836f07d567c3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\emu128-inl.h": {
+        "bytes": 90190,
+        "sha256": "758b3b45ab49ff28d3c8cf36959d48567678b737d0b12209ab564b2e49c0fac4"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\generic_ops-inl.h": {
+        "bytes": 331908,
+        "sha256": "c0f0765c357e02ff449b9ebe9767e7c13631730519e1e512ead0fdc19d27dd90"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\inside-inl.h": {
+        "bytes": 24270,
+        "sha256": "bf0d846b39ff97e31e44b475dbf33cb8dde435d1be89846e98a35a733f8a9904"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\loongarch_lasx-inl.h": {
+        "bytes": 180339,
+        "sha256": "224a25ea70a39b40d73f7d91cf7ef9be021f25c11c0645a440872b5c1b3f8703"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\loongarch_lsx-inl.h": {
+        "bytes": 230580,
+        "sha256": "98774075a451999d39017543a6532fbdf14019ee7ed3342ab0726c9b4f395fd2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\ppc_vsx-inl.h": {
+        "bytes": 278321,
+        "sha256": "51f1c6049e99a222da03bee4576da7360babbfe1d39c9d85aa30e823c162b0db"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\rvv-inl.h": {
+        "bytes": 320424,
+        "sha256": "497d9cd4315495c7a9e143927f5b4c086a48e9fccc237ac4dcde2d6032683c81"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\scalar-inl.h": {
+        "bytes": 69208,
+        "sha256": "fbd56d4ec4e49767e89bc025add403ed97cf29f4263b6b544ec3441e96085ba6"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\set_macros-inl.h": {
+        "bytes": 27651,
+        "sha256": "b64d5cf6a5b94727b7a10f0d9f1326dac45018a4cdcd7b8e13d9f153311ab85a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\shared-inl.h": {
+        "bytes": 31538,
+        "sha256": "c5f8b0a9aebc8b5a3606d3ab0e24a610c47533eb0c4dac36700272a133c510ea"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\wasm_128-inl.h": {
+        "bytes": 233294,
+        "sha256": "a25e9c5831b17a80f00fdfabedbafe6c8ff31e15796f6bf100438e01f655d51d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\wasm_256-inl.h": {
+        "bytes": 80880,
+        "sha256": "f69b919288c0d3ca819c734e1acc555ed22c00c3f9b403512782e1c988951b2d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_128-inl.h": {
+        "bytes": 593917,
+        "sha256": "f02334c27ea3c485ab6f94a4a9b4212e191587288af5c4f931dc8549111c669e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_256-inl.h": {
+        "bytes": 390515,
+        "sha256": "bcd945ca34bb92088c3d3f43d252e9667fc60a67cd6e118f6d15044ed3dcb847"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_512-inl.h": {
+        "bytes": 350506,
+        "sha256": "6a59f8134ce318352c75de51709948890b60ac52bfd87103edcc1dd567a59e76"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_avx3-inl.h": {
+        "bytes": 19232,
+        "sha256": "3ba1ac7fb9b2eb033d4d7bc9fe3101a875c95d24336095de650ff3d1867652ab"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\per_target.h": {
+        "bytes": 1811,
+        "sha256": "8b44bd7565119df2df3e123a9dbfa82e25166c749979a3fde12e387165e2f0e1"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\perf_counters.h": {
+        "bytes": 5554,
+        "sha256": "2a93e3725b30c66f86460ee83286f543103debb83db123eab1856416f07cbb99"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\print-inl.h": {
+        "bytes": 1936,
+        "sha256": "35ddebacfc9f665df899c8258d1cbafe83c687f71222b4ee475ceba7f948edae"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\print.h": {
+        "bytes": 2100,
+        "sha256": "56b755654ac1e40f6fda306f95811770ac9c4802ef6840019f479ad09a6880b3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\profiler.h": {
+        "bytes": 33017,
+        "sha256": "b1e2a0f09e3ad9c91f2c8a46c05c179703ec54fc319e347cbe966ec2aa8e2fbb"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\robust_statistics.h": {
+        "bytes": 4965,
+        "sha256": "5b38542e48986e2be1a080733c536be8117d07c012799c447fbb79d80932b55a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\stats.h": {
+        "bytes": 6810,
+        "sha256": "29e584dbfa4649fae0db403ac4dde7fec0519e4ce2cb81369a5fdb55f4427bbe"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\targets.h": {
+        "bytes": 15830,
+        "sha256": "27301595b3bea53b4580382188b7d997a734ec66212cb4752ee8538893bdf25d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\tests\\hwy_gtest.h": {
+        "bytes": 31512,
+        "sha256": "ae83d7884f1cfb81eb1d73a49e428ae50eaeae9e8240864510b8355b6f86aa1d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\tests\\test_util-inl.h": {
+        "bytes": 27234,
+        "sha256": "bb2aab9ad8946ca79f93774bf92deffa2a9c8ee38c0cf0fcb962b14c76665bc1"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\tests\\test_util.h": {
+        "bytes": 12965,
+        "sha256": "6d57a09135f1bda83e7725ef84589a3ab36d0c9eb41ecdf1e4d0683d3916eeb4"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\timer-inl.h": {
+        "bytes": 1450,
+        "sha256": "1fcbc017922560c04ffb26c2210a8856a2356eb9bca11076dd808b8e32ca87bf"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\timer.h": {
+        "bytes": 9878,
+        "sha256": "20a69178dac619083fbf78be089aa5c7aed1701850c09baa1caf2b501efd1dc3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\x86_cpuid.h": {
+        "bytes": 2237,
+        "sha256": "238c85bd9d54c01ca52d0c7719efe143b63e124345a88a6dbc9c4cf901c75d19"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_arithmetic.hpp": {
+        "bytes": 19331,
+        "sha256": "d18e433eab1fe155498cd8386e36c4a37c41f065a6314710389c3ab867677b28"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_bit.hpp": {
+        "bytes": 7049,
+        "sha256": "c2b1a08e282269780e6e6122874024310671717ac4b38255e3c5b9832ffb25bd"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_cast.hpp": {
+        "bytes": 1682,
+        "sha256": "261c6c2a4e584af50542e7501edc26f65cab46e387a3ef81bb8bcd90b2361bb2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_complex.hpp": {
+        "bytes": 4070,
+        "sha256": "b1eb0532431fafff78ce672e62a261c0b34daff8cc0dc7f2ad916b8f7bd50626"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_details.hpp": {
+        "bytes": 18398,
+        "sha256": "0d1f7874bb1195d16500dd388dbb182f7fdeddaa5b8a9b1cb244b6e2a3ddb18c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_logical.hpp": {
+        "bytes": 9854,
+        "sha256": "08f8fab399dfb0e3d9150d646aacbee47f0ee81efcb1fa1eca7b6528c88b22d2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_math.hpp": {
+        "bytes": 117833,
+        "sha256": "20348ff725d99707393d448bd691c82aaadf243485062fd267fac003f68f5070"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_memory.hpp": {
+        "bytes": 49356,
+        "sha256": "51f48c954d4ea6e88fbcf08bfcef6206df59151a37eb729f73ca5d92e1502339"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_rounding.hpp": {
+        "bytes": 2748,
+        "sha256": "03b2818e8f1a5451da1e3f89e1a6e4d6113435fc9d8acb9c5caea6ea77eb31d1"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_swizzle.hpp": {
+        "bytes": 7608,
+        "sha256": "32a10892ec749d623455e3500eb624eee2da0647b0d076a51f6dda252dbc026f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_trigo.hpp": {
+        "bytes": 46494,
+        "sha256": "53054ba39490c3fe919b4fb1918d05543fcfbfb351266d2d9edba11f474e9d55"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\utils\\shifts.hpp": {
+        "bytes": 3555,
+        "sha256": "6660c43cf9ba4592c457879be5f0a00b53718c0158808cd7fcc1a00a015d213d"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx.hpp": {
+        "bytes": 109609,
+        "sha256": "6d917349ea9a27d39a207af3df3e05c9373791de564719d0a709f88046f3838d"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx2.hpp": {
+        "bytes": 70563,
+        "sha256": "3d6424ea077a22438027b13f23dfb56ddfd33a5d29dc65e9412b25d1976edef3"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx2_128.hpp": {
+        "bytes": 10366,
+        "sha256": "609f565729c346405abdd33a45ea8990c54dd80d4bf0c603d898995f645f33f9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512bw.hpp": {
+        "bytes": 32423,
+        "sha256": "bb061fbd1785d48807e1200b7ed48e8900d6a66af110a38f2e1ce3d2498026e3"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512cd.hpp": {
+        "bytes": 979,
+        "sha256": "c414188ffaf45d5aeb3b965e1a77416abcf937891601869758ef64189980dac9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512dq.hpp": {
+        "bytes": 12663,
+        "sha256": "5887673e738fa64ed641eda73221963630fff25e7f75fac261fe24b5e493fd39"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512er.hpp": {
+        "bytes": 892,
+        "sha256": "f1ec63d2e0125be5f13eac4018c7ebce5fed309e18700fc4b71922e6f49d9bc8"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512f.hpp": {
+        "bytes": 148342,
+        "sha256": "cd9a73bfb6511dfd2e56e449a2dc9f1076521c423f4fa6c54af27b3591c81c33"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512ifma.hpp": {
+        "bytes": 898,
+        "sha256": "79aca2091b432df74da97278dbf8a4b94ecae97b69d2b5b9ffdbf8ec3497834e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512pf.hpp": {
+        "bytes": 892,
+        "sha256": "def9fa5ad8cc1445f9049c95abd0e627b6d0660322bdef05cd38ed51f15895cc"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vbmi.hpp": {
+        "bytes": 3382,
+        "sha256": "2044ddc9bee2ca1b1ab43e89e1afd2be3e30d0807085a465032edf33b897e753"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vbmi2.hpp": {
+        "bytes": 5517,
+        "sha256": "71dd7ad59986603fb53c6a8bbccf3b9a730a3f24f1071b546834d393468c21ec"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vl.hpp": {
+        "bytes": 972,
+        "sha256": "c844788bedbc5ed8651024b8c9d0a731ab95b7cabb23d1ddaf99e05de8bc8ac4"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vl_128.hpp": {
+        "bytes": 45078,
+        "sha256": "5c9c481ffb1ce3b26d073da3bc31e4a5ea4890597ffdf0d6f3d00428b53baa4f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vl_256.hpp": {
+        "bytes": 50898,
+        "sha256": "e627371c9d21e3a5ccf898afafad3a6019f6598f5eeebd8eb6581591db78ac23"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vnni_avx512bw.hpp": {
+        "bytes": 927,
+        "sha256": "873349dfdc937ad57c50ea0cf8ea608669871a7296b93ec68235e32f6ff7ae29"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vnni_avx512vbmi2.hpp": {
+        "bytes": 934,
+        "sha256": "6a55adec450aebb9f433982910e22c974d53e436077063205a29771cb9fb2dc2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx_128.hpp": {
+        "bytes": 9993,
+        "sha256": "5244007cfd3e3b96e8f8665b6cc800acfabf1c2eb40bdaad85bcb7482cbc6ecc"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avxvnni.hpp": {
+        "bytes": 889,
+        "sha256": "d73d598a949acf37ed9dac52220ac38cf12c2ed2196cf4d36eb83b836544779c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_common.hpp": {
+        "bytes": 1281,
+        "sha256": "a4056d41a509f232933e3e2009838031baff4540f1264e9fc8125d5be34a402e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_common_fwd.hpp": {
+        "bytes": 8389,
+        "sha256": "f4c0337c21a9fa4e5c196a841eeb1e1f4378b111cdd6dc483c36f6ea64e1bdd9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_constants.hpp": {
+        "bytes": 14116,
+        "sha256": "bad5aa1ca93f03921f031899eb4f7cf7e2bdab5dbaef27c1a13b54eb4fd4a8b5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_emulated.hpp": {
+        "bytes": 36767,
+        "sha256": "20552e573955d0eb9ad49aef74d2b87128d283161716fbfef41d425be0db3e54"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_avx.hpp": {
+        "bytes": 3564,
+        "sha256": "507673bf1e94bf69994f34a0330f1d3ecc3aeb8ab95c48b78d7ff48df0a13b2c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_avx2.hpp": {
+        "bytes": 1592,
+        "sha256": "714d6a4fa54198b5be2d41622c920a410a30d50b171cf398b37d11445497c024"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_avx2_128.hpp": {
+        "bytes": 1699,
+        "sha256": "c12fe9cbcf556bc919da1bdb40e79ed35fa9690aa51a6f9d3d8ebf2ce0ef1840"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_sse.hpp": {
+        "bytes": 3816,
+        "sha256": "506e5bbd4eefc2aaf2bba5121de1a2c0b8dd6bdb0dcd13f3bd7a37ee5a8aed7a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma4.hpp": {
+        "bytes": 3461,
+        "sha256": "6fc4c78329a0d0d3c88d04dc8abe62f40bc083ec2ab1bccf25e62995520c266f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_i8mm_neon64.hpp": {
+        "bytes": 901,
+        "sha256": "38284fc1973f3062bef664ce3322d5b33ba10ca82284df0d85069e119092012a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_isa.hpp": {
+        "bytes": 3993,
+        "sha256": "b29f5cad5ef49a980f25c9dad262bb9e40fdf427eae0c85c33b41d16f9a4fc5d"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_neon.hpp": {
+        "bytes": 191984,
+        "sha256": "b52dc778daf8ecd5520c247e543650b9894279ed8234bca9b0938fb09eceb730"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_neon64.hpp": {
+        "bytes": 69384,
+        "sha256": "55269295ece9f1621732def7733c701742e3d53c4c241e79306ffe5ed55b758c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_rvv.hpp": {
+        "bytes": 74983,
+        "sha256": "09019db55c6ebc286c03f94f22b278eba4e60396a48e1f5ef74e9cf20e9c80ea"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_scalar.hpp": {
+        "bytes": 36465,
+        "sha256": "ee1f83e1f7319dd8905f7089c5378a8ee852f0f78c6f855dcd8ab9913f25ce4e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse2.hpp": {
+        "bytes": 103301,
+        "sha256": "48d05ea03370d6534676cfc7f2bcdc3fa38fd01018496828068a6e15f8fdfcbe"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse3.hpp": {
+        "bytes": 2423,
+        "sha256": "04fbde53364f512206d30957466a1170a25092ad4eeebb68cf3e412ef0492f10"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse4_1.hpp": {
+        "bytes": 22814,
+        "sha256": "018dd42f0565dd01e81d68101663ab411a651836bbf0f13014398d5a7772f726"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse4_2.hpp": {
+        "bytes": 1697,
+        "sha256": "5427efc61b42af9e1d39aa48ad370c1235c46b21c34035faddba49f5871287b1"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_ssse3.hpp": {
+        "bytes": 8263,
+        "sha256": "b591d5100d4489fd35f6acae237e412f20efbce5a3e8765491c36a43856447f8"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sve.hpp": {
+        "bytes": 54456,
+        "sha256": "26a4588b2c6a105ab41fb1bdc23e660c21038702522d6c9fef786f387f286649"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_vsx.hpp": {
+        "bytes": 41799,
+        "sha256": "7111935e29b1ca08afb7c29f875ba529f215a4aae8f01511186f8e406d090b4e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_vxe.hpp": {
+        "bytes": 34511,
+        "sha256": "25d0ef8fc0ccde36113cf65eb33af912dea0ac9514199b5c5b551e0fe6732940"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_wasm.hpp": {
+        "bytes": 76139,
+        "sha256": "160aac98998727bc5495ebae5b43321ae16d696fda79b6dad4c62487675ddf9f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_arch.hpp": {
+        "bytes": 7854,
+        "sha256": "f89a8949e6a3cce705b2027ba0e61f140b820f776f631bbb994cba4b4658884b"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_config.hpp": {
+        "bytes": 15487,
+        "sha256": "a93d969472a92684ea4182166c7de02cf4f3e1734a91455a4c9da445a27e993c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features.hpp": {
+        "bytes": 2140,
+        "sha256": "1d7a72465e57d3c5fc2d59b699009c7b8ca91efd07b09de5d9347d3793c7dd0f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_arm.hpp": {
+        "bytes": 4126,
+        "sha256": "1647ea22ff51e69c1b9466398a62b3a3daaa25e6d361dfac1e8dc1e6d697e5a5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_ppc.hpp": {
+        "bytes": 1877,
+        "sha256": "17764a32b3b0aa884f05ba18e11b162aa5b572b887f785628bba8bff479f3204"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_riscv.hpp": {
+        "bytes": 2928,
+        "sha256": "e8f7e2222fa8feb9a882ada0358ded28ccb1f5f735a680ed7240400eb90d1d11"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_s390x.hpp": {
+        "bytes": 2024,
+        "sha256": "1c395695a87c7f9e07b7866bdb85a3256e16e6f3d5a82c1336cd915531941a2f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_x86.hpp": {
+        "bytes": 45053,
+        "sha256": "8455cf1e6378bfee55d1b554051fefa4c358b49d2c3b5e8d5cc15c8cad8b46a2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpuid.hpp": {
+        "bytes": 5510,
+        "sha256": "06fc1c26c0f010ec0b6f87a62c8394ca01f0dbea39e947a7698d87f63cb4008e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_getauxval.hpp": {
+        "bytes": 4621,
+        "sha256": "a74c4d6d0a4d521d1a2c3bb71445c11bd91ae1207fbbf22904fc22c32a2e8ae5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_macros.hpp": {
+        "bytes": 1395,
+        "sha256": "d80ce03767531b919d0a92793133eb457f74af4f7b0df5dd3788301eaee02bba"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\math\\xsimd_rem_pio2.hpp": {
+        "bytes": 25191,
+        "sha256": "effa16e706bc4620c28a4c4bf10673c10c7e4ea1488d10b5f8ca14c2c9c2e1af"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\memory\\xsimd_aligned_allocator.hpp": {
+        "bytes": 11427,
+        "sha256": "f9fde2ec61c81e1aa42b3efa23d7bd02dc75969d452890dd292609fb97e3460c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\memory\\xsimd_alignment.hpp": {
+        "bytes": 2919,
+        "sha256": "cd92a8518b962ea8b08dfffa396aa6ee62fb6bc58e1d1e4d0907d91eaf49ee05"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_all_registers.hpp": {
+        "bytes": 2228,
+        "sha256": "0f9374791539041b506c927dd5db3f37ffc0c8dc9698fbbfed676d39c954ca7c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_api.hpp": {
+        "bytes": 111857,
+        "sha256": "e17a1b636d45da21de034d29e85e31a54e43eff91f208e7d4caa106a4056b78a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx2_register.hpp": {
+        "bytes": 1881,
+        "sha256": "244026ff7fcdba869bb337cfbc79771fc9f3c45b8d80b0605cded364f13bcab1"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512bw_register.hpp": {
+        "bytes": 1658,
+        "sha256": "2394aea8629dfde3633f3d7714cbcf3c8985b1ca57fcb29249888567f40107b2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512cd_register.hpp": {
+        "bytes": 1653,
+        "sha256": "af32732c1062536a3291d5672fdf2ed6533f59526f90340db864695a8b34a14a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512dq_register.hpp": {
+        "bytes": 1658,
+        "sha256": "f2599dd89e16e2de2d9f847c9efdf104f801f61ac33639d4007efc3697a2765f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512er_register.hpp": {
+        "bytes": 1658,
+        "sha256": "9b4f923c10b66fdbf8fa0039daf0b3ff9e6b53fbe040bae3f0c166e8b6972c27"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512f_register.hpp": {
+        "bytes": 3168,
+        "sha256": "cd3f16ab57b63b52305e769ecaae4635fe4498e6525e1bf8ce6e05a75f221a72"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512ifma_register.hpp": {
+        "bytes": 1678,
+        "sha256": "8cfc7b2218cdb5f0c410b7a48b6fb27e9bd48b711d60c61c1c9eb9ad0f756328"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512pf_register.hpp": {
+        "bytes": 1658,
+        "sha256": "964c52f624a4857aec4b7bc51fd4ef93f9b7034556ac2e08d1d36b8282ecd88f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vbmi2_register.hpp": {
+        "bytes": 1697,
+        "sha256": "28462da59d3d961fb7d451d7e9456c971141fd028e9b83bcf40fa31e15c5dda2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vbmi_register.hpp": {
+        "bytes": 1688,
+        "sha256": "ae3cbb9a995e05f39e888a5c01d96921d54cc025500fb51f6b1cd5c0c71c6556"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vl_register.hpp": {
+        "bytes": 3027,
+        "sha256": "c882e96c26fe082c4113f0b383710b55f1e92b9ba2dd8ea99887ceee7912d6f0"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vnni_avx512bw_register.hpp": {
+        "bytes": 1830,
+        "sha256": "c2b27a8d58acb0e974515bb460cfdb7e30007754863b6a6287f617940b643cc9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vnni_avx512vbmi2_register.hpp": {
+        "bytes": 1871,
+        "sha256": "8a9d7257f1c804842ad280cc6298892d80b60fefb8a6f2f48cde9c640691e711"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx_register.hpp": {
+        "bytes": 2876,
+        "sha256": "9eb1c52d1166d2517f54c65d8cfb5d8e1143957a0de0c33c7ea6d058378731de"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avxvnni_register.hpp": {
+        "bytes": 1984,
+        "sha256": "d55c5e931a58a90492596ea92efdaa5816dc5f3a51223b81f9edbbdf8d39df9b"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_batch.hpp": {
+        "bytes": 70333,
+        "sha256": "54f89ede119b737f4ce65bf71530e4e29cdb74a07382ef86eba5228460da19de"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_batch_constant.hpp": {
+        "bytes": 23328,
+        "sha256": "f016acb59f0a3bc8bb50a1c98e3b74e0b8d288e62044afd303e907e8fb69c8a5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_batch_fwd.hpp": {
+        "bytes": 1573,
+        "sha256": "233d166c1674247d2429f5fc4990d677945395c305c9de23d5fb5e499c656173"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_common_arch.hpp": {
+        "bytes": 1857,
+        "sha256": "20edba0afc92c2944174d907a0d3bf91b9aaead440238ebf805bbf1a5232ea43"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_emulated_register.hpp": {
+        "bytes": 3083,
+        "sha256": "a9f48e88b111a1b8002aef427b085cae0b3cd2161db19f40cbdaaef69cc1dfea"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_avx2_128_register.hpp": {
+        "bytes": 1693,
+        "sha256": "773145ddbdbc01b88d1e3a16eca3cda3888d36ab74d88dde80d8d1716d5ed396"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_avx2_register.hpp": {
+        "bytes": 1559,
+        "sha256": "57dc7599895dc4f2b72317642eef2ff1bfcc23bef8ec6480615e1d01072e2785"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_avx_register.hpp": {
+        "bytes": 1545,
+        "sha256": "5228c5dfa63afb530f354314a4f21ed4fd7a7646126f1e813b926c24bfe9479c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_sse_register.hpp": {
+        "bytes": 1575,
+        "sha256": "b2cffe9898ea1113a8e72038668c17cca76a5d9bf8188fda2605da1cac114c36"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma4_register.hpp": {
+        "bytes": 1518,
+        "sha256": "93946b42ce0acd9de731634175695505fd5209a9a30a80a650bc0ba2e806b483"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_i8mm_neon64_register.hpp": {
+        "bytes": 1754,
+        "sha256": "8775064187eeabe2fc6a5cc1cb946c89ccb490327ab17012c89e82dbca60feb6"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_neon64_register.hpp": {
+        "bytes": 1849,
+        "sha256": "6fc0c1322e83d2b4202e6a40c7618a2948ade9120f60f74c863ff5768f950ef3"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_neon_register.hpp": {
+        "bytes": 5026,
+        "sha256": "18bb9dbf5b3b0e7cb65a40e1cdd1a53c25fae334ccfee3f4fc3c204ed155cbb5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_register.hpp": {
+        "bytes": 4217,
+        "sha256": "a6254914665ba72d319a4416d642d7bd023f6b7675d96b1f6ad242fb78e64764"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_rvv_register.hpp": {
+        "bytes": 23555,
+        "sha256": "d5765eedbe184c7722837aa01b440fec501c907489a8f89b75861d2da92e3b5c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse2_register.hpp": {
+        "bytes": 2395,
+        "sha256": "ebe1e9ab15ecfbbea43501d71b0110993f14522764ec342202faf983d77f4f23"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse3_register.hpp": {
+        "bytes": 1498,
+        "sha256": "0e9f3fef6dc2ae52588a5e59e4fb91cec40c84a1f9b87f2403c55db5fa6eb721"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse4_1_register.hpp": {
+        "bytes": 1522,
+        "sha256": "9bf8350d809d854942ad7276093bac75221a83e040967563aa5c3c232a2eee50"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse4_2_register.hpp": {
+        "bytes": 1527,
+        "sha256": "913f01f22edde378b5d85ee61e1120fcc9c9418fa091063ce5cf6d3eea096870"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_ssse3_register.hpp": {
+        "bytes": 1507,
+        "sha256": "46e266831797d3fecc23feac71876fb487e46eb7f2de8adad413e88e1b94a920"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sve_register.hpp": {
+        "bytes": 9004,
+        "sha256": "dddc633af8846d3c262d7f2545cf1bebb20947eafd24f08eb03cbd37c3e40ac7"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_traits.hpp": {
+        "bytes": 11369,
+        "sha256": "f2a4076fe95ffa8d0984fad41d2f34c27857e194bc12e1cf7c21a51f47d6d6cd"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_utils.hpp": {
+        "bytes": 12058,
+        "sha256": "ea43eede0a7a1ff0ee212b7f566bbd638b7545c8143ff7367138e32f3ccd0245"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_vsx_register.hpp": {
+        "bytes": 3879,
+        "sha256": "883fa4918fb48d61f4f380fc7bcbbd6194be1a96b890aac0dbc8a90473f81601"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_vxe_register.hpp": {
+        "bytes": 4033,
+        "sha256": "95fd9e528dd4eb3b69d28e9e846d4b065fcce81477e94e97a3225515dc047f2c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_wasm_register.hpp": {
+        "bytes": 2441,
+        "sha256": "3f1a87a2d7499235d26cc816567d344937fbb8edfc1d2142663405652d80c685"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\utils\\bits.hpp": {
+        "bytes": 5358,
+        "sha256": "e50c445d3ccfc27934db71a8b255ca51d4e2eeb1ae9aff28b85317da0b4e5c87"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\utils\\xsimd_type_traits.hpp": {
+        "bytes": 4707,
+        "sha256": "9b758b0914417ffe4b5f8abb3d866ca762174df4a41b5889c2c255aebd641dc7"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\xsimd.hpp": {
+        "bytes": 1682,
+        "sha256": "7fdeb22a8f18e929db2c6a03b6f22c29691bffea1d5eb2aad5d21e39d5e79f67"
+      },
+      "share\\licenses\\Hyle\\highway-LICENSE": {
+        "bytes": 20786,
+        "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7"
+      },
+      "share\\licenses\\Hyle\\highway-upstream-LICENSE": {
+        "bytes": 13435,
+        "sha256": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44"
+      },
+      "share\\licenses\\Hyle\\HYLE-LICENSE": {
+        "bytes": 1906,
+        "sha256": "edcbc4391ee471753cc9a7f8b410ad6fe8f65a3dc5a368a5c2fa06122316f478"
+      },
+      "share\\licenses\\Hyle\\mimalloc-LICENSE": {
+        "bytes": 1096,
+        "sha256": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9"
+      },
+      "share\\licenses\\Hyle\\oneDNN-LICENSE": {
+        "bytes": 11607,
+        "sha256": "e9fc874fc09801b9acf3411ba72394098473704d832d713404b6c4861a086318"
+      },
+      "share\\licenses\\Hyle\\rust-parker-LICENSE-MIT": {
+        "bytes": 1068,
+        "sha256": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1"
+      },
+      "share\\licenses\\Hyle\\THIRD_PARTY-NOTICES.md": {
+        "bytes": 4325,
+        "sha256": "ca4ee1f7c2267665231ae83169b1042fbf07e700528f594194de140f71a4b16e"
+      },
+      "share\\licenses\\Hyle\\wyhash-LICENSE": {
+        "bytes": 1212,
+        "sha256": "6a90b88421a0d9b090e121daa11b3c6d55eed5eeb3281a2fcc454d6a28b5547c"
+      },
+      "share\\licenses\\Hyle\\xsimd-upstream-LICENSE": {
+        "bytes": 1606,
+        "sha256": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940"
+      },
+      "share\\licenses\\Hyle\\xxhash-LICENSE": {
+        "bytes": 1389,
+        "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+      }
+    },
+    "static": {
+      "include\\hyle\\compute\\backends\\cpu.h": {
+        "bytes": 1814,
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      "include\\hyle\\compute\\completion.h": {
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      "include\\hyle\\compute\\cpu.h": {
+        "bytes": 927,
+        "sha256": "9a56fc112f193c14a748e4217456aeed36671cef3a74c6e00c50064ad6e609e6"
+      },
+      "include\\hyle\\compute\\custom_kernel.h": {
+        "bytes": 14974,
+        "sha256": "ec1b58fda1aef1ef145de1a02e3d0a08259d2d98df743570c244e7270ebecdc3"
+      },
+      "include\\hyle\\compute\\delegated_operation.h": {
+        "bytes": 5929,
+        "sha256": "4d263d736399f16ab69997ac9daa9f3c3258b067507df58eb5fa1b8d1020f7a7"
+      },
+      "include\\hyle\\compute\\detail\\backend_extension.h": {
+        "bytes": 2822,
+        "sha256": "0a67fcfb43e69f7106a2b4628442a74d14e9e18f0efe691109973b701d065cd4"
+      },
+      "include\\hyle\\compute\\detail\\command_capture.h": {
+        "bytes": 2962,
+        "sha256": "6f40aeb2b44d2b0820e895bfb6667e0308c6dbb12ba4374571dbc076287aa6b0"
+      },
+      "include\\hyle\\compute\\detail\\completion_access.h": {
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      "include\\hyle\\compute\\detail\\context_ref.h": {
+        "bytes": 1401,
+        "sha256": "0e44878fc04ea7b7378078e81045dcfb4760a27d44a5fc843b874ff612051ab3"
+      },
+      "include\\hyle\\compute\\detail\\generated_result.h": {
+        "bytes": 4852,
+        "sha256": "a749ef701a6352f2ce5a07b5ee1edd25f3ab226a9abc022b2ee79822ed23b700"
+      },
+      "include\\hyle\\compute\\detail\\prepared_callbacks.h": {
+        "bytes": 2376,
+        "sha256": "2d00a2e823af0bcdaa9fc0330aa441b18ce6932f090dc903be876f1b08e449a1"
+      },
+      "include\\hyle\\compute\\detail\\provider_extension.h": {
+        "bytes": 3608,
+        "sha256": "fd2441737a83d03544fac2b63092c5d4ca880bebeb009fc65bfddbf022b8909d"
+      },
+      "include\\hyle\\compute\\detail\\queue_sequence.h": {
+        "bytes": 7044,
+        "sha256": "fbb8da2ae4e99517da7483ae0e52ad5c0c0e66353696108724eec416856157ff"
+      },
+      "include\\hyle\\compute\\detail\\resource_binding.h": {
+        "bytes": 333,
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      "include\\hyle\\compute\\device.h": {
+        "bytes": 7171,
+        "sha256": "2bfd6db2298bcdd51a3fb2faf4ce0cab27ece7493a7ec57e1b33e2330b04f256"
+      },
+      "include\\hyle\\compute\\operation.h": {
+        "bytes": 20826,
+        "sha256": "e68c2743d339ccf5b84df510b797e0c6a41589a4df3b7166577e202cab679bd5"
+      },
+      "include\\hyle\\compute\\ops_visibility.h": {
+        "bytes": 237,
+        "sha256": "ae84b32667858fd2dd679bf2ba68e50d7405e9164ec0fd317173f20086b5fa6d"
+      },
+      "include\\hyle\\compute\\prepared_operation.h": {
+        "bytes": 18278,
+        "sha256": "fa6d941e937b3095d529bc958f36bb0c5d959d43207ecbe71aa5b2e00c4d628d"
+      },
+      "include\\hyle\\compute\\provider.h": {
+        "bytes": 9637,
+        "sha256": "69c840564ad4b138d6333478cfbad1e529886857a12728b4344e5a26b912bcd4"
+      },
+      "include\\hyle\\compute\\providers\\native.h": {
+        "bytes": 395,
+        "sha256": "a9769766b7d14fcec8cd1eb026533d7f60093af81219ccb5794331dc7ee9b9d0"
+      },
+      "include\\hyle\\compute\\providers\\onednn.h": {
+        "bytes": 726,
+        "sha256": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b"
+      },
+      "include\\hyle\\compute\\resource_requirement.h": {
+        "bytes": 749,
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      "include\\hyle\\compute\\result.h": {
+        "bytes": 4645,
+        "sha256": "7e4e55a4dbd1dde6deeca6630f023045ea18740867746ae1827d4f45b806d9ee"
+      },
+      "include\\hyle\\compute\\tensor.h": {
+        "bytes": 1980,
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      "include\\hyle\\compute\\tensor_desc.h": {
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      "include\\hyle\\compute\\transfer.h": {
+        "bytes": 2259,
+        "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+      },
+      "include\\hyle\\compute\\visibility.h": {
+        "bytes": 1131,
+        "sha256": "fb05970d03d232298d57da8921c3a441cd93cd0d9dbb6cbcfcaa5b6a51964aa5"
+      },
+      "include\\hyle\\container\\btree.h": {
+        "bytes": 62654,
+        "sha256": "cdabf1dd740a88281a461a64394c231da56830054864f22d8e5944b0ce0d8be1"
+      },
+      "include\\hyle\\container\\btree_map.h": {
+        "bytes": 48,
+        "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+      },
+      "include\\hyle\\container\\btree_set.h": {
+        "bytes": 48,
+        "sha256": "bc452a21c1c6e75a427a6eb3bc6772db3516c10e0e646103173ae1edd7667b13"
+      },
+      "include\\hyle\\container\\circular_buffer.h": {
+        "bytes": 6305,
+        "sha256": "3934a4e6b40418c5be12d3badba23aa4328a5a3602d141123539d4809869d542"
+      },
+      "include\\hyle\\container\\detail\\adaptive_mutex.h": {
+        "bytes": 2442,
+        "sha256": "600d1fb746f5a35438eb29177ecd281c08f662c7b8558b83df1045a0d264c472"
+      },
+      "include\\hyle\\container\\detail\\adaptive_rw_lock.h": {
+        "bytes": 6010,
+        "sha256": "a70ad907ba44d399f36284c87318022b0517314755d112ccf43a5e053b1825ae"
+      },
+      "include\\hyle\\container\\detail\\flat_hash_probe.h": {
+        "bytes": 11389,
+        "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+      },
+      "include\\hyle\\container\\detail\\flat_hash_table.h": {
+        "bytes": 44213,
+        "sha256": "4e53aee82efdbb4b2bd6d50b523dc4ddc868f0d636d9f2e1dae1cfecd8cbf977"
+      },
+      "include\\hyle\\container\\detail\\intrusive_member.h": {
+        "bytes": 1822,
+        "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+      },
+      "include\\hyle\\container\\dynamic_bitset.h": {
+        "bytes": 7464,
+        "sha256": "8c0425e6f12e97dbe0880bb0b4881b7eea563438f406ba8cd5d548aa7d6a8036"
+      },
+      "include\\hyle\\container\\flat_hash_map.h": {
+        "bytes": 65,
+        "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+      },
+      "include\\hyle\\container\\flat_hash_set.h": {
+        "bytes": 56,
+        "sha256": "42a57cbe47983cdbb92041f374112e1b1f3ccd67401bed5748c8f865096dbdc9"
+      },
+      "include\\hyle\\container\\flat_map.h": {
+        "bytes": 54,
+        "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+      },
+      "include\\hyle\\container\\flat_set.h": {
+        "bytes": 54,
+        "sha256": "ed57615f51dad6355458fa0ae12c4f3804b092a1d7f6fcbe527935af3e5d0b8a"
+      },
+      "include\\hyle\\container\\flat_sorted.h": {
+        "bytes": 40527,
+        "sha256": "82bf77a6c6dc3d9d162c9f7949218c1e4946468b54df4913c3f5f4d31cad9537"
+      },
+      "include\\hyle\\container\\hash.h": {
+        "bytes": 28870,
+        "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+      },
+      "include\\hyle\\container\\inplace_vector.h": {
+        "bytes": 56,
+        "sha256": "decc3c909b493af3ab1dba1d379aa0cf3b6b398dc9a850482e718e72ecb8b82b"
+      },
+      "include\\hyle\\container\\intrusive_forward_list.h": {
+        "bytes": 16797,
+        "sha256": "7e3c36a91067eb8b1ec8e9370b8fb001545804b2842e19c776eb02f1633bbb46"
+      },
+      "include\\hyle\\container\\intrusive_hlist.h": {
+        "bytes": 15077,
+        "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+      },
+      "include\\hyle\\container\\intrusive_list.h": {
+        "bytes": 33222,
+        "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+      },
+      "include\\hyle\\container\\lru_cache.h": {
+        "bytes": 10852,
+        "sha256": "0744e618e9500c0135c1a4d56cc38eea862360073d71a845578deb0199b96e24"
+      },
+      "include\\hyle\\container\\pod_vector.h": {
+        "bytes": 17833,
+        "sha256": "8b933769d0123a3c320007ae6bd0f98e3537d7700a622adad5b5630dd012e387"
+      },
+      "include\\hyle\\container\\ring_deque.h": {
+        "bytes": 15154,
+        "sha256": "e588950a503951eda12b2ba7e4e3123eaf38b74cf7c4f0262b88bacc018ab3c3"
+      },
+      "include\\hyle\\container\\small_vector.h": {
+        "bytes": 30022,
+        "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+      },
+      "include\\hyle\\container\\sparse_set.h": {
+        "bytes": 3699,
+        "sha256": "02ade678ec0254381c5669fd0913a7ca02785fb8df939e82efeefa272a4f80b3"
+      },
+      "include\\hyle\\container\\static_vector.h": {
+        "bytes": 22481,
+        "sha256": "d7531ee32750aeabdc8699893853da0caf80fa27469b69ab5caaf270dfdafc33"
+      },
+      "include\\hyle\\container\\visibility.h": {
+        "bytes": 842,
+        "sha256": "431ce63538dd91c9f32742f654ab3f8eaaa6cfc16f004ea6bb8b0b171063d332"
+      },
+      "include\\hyle\\core\\assert.h": {
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      "include\\hyle\\core\\cache.h": {
+        "bytes": 3625,
+        "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+      },
+      "include\\hyle\\core\\compiler.h": {
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      "include\\hyle\\core\\detail\\compiler_attributes.h": {
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      "include\\hyle\\core\\detail\\preprocessor.h": {
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      "include\\hyle\\core\\environment.h": {
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      "include\\hyle\\error\\format.h": {
+        "bytes": 2914,
+        "sha256": "2a10b7dfa4dafd3e5c7af610fa50a4ba6bb2520e5409fd01038871875261fa68"
+      },
+      "include\\hyle\\error\\result.h": {
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      "include\\hyle\\error\\status.h": {
+        "bytes": 18286,
+        "sha256": "e45875924420148b2af5d6195b1cdac86ef40d312fa963f1b3839acfbe071575"
+      },
+      "include\\hyle\\error\\system_error.h": {
+        "bytes": 3096,
+        "sha256": "b02c11cd7cea737899d72d9dcea93f246fee021bdfc697ab6d744b0cc26d0f0c"
+      },
+      "include\\hyle\\math\\scalar.h": {
+        "bytes": 17828,
+        "sha256": "10ca4013013fafc5383310bb0128ce6f11f389e77c815648b8c48bb06a00210a"
+      },
+      "include\\hyle\\mem\\alignment.h": {
+        "bytes": 3645,
+        "sha256": "3ae961e6556cf2a3e5e56f5de9c80db224c7a50a591ce998d81b347a8c4be9ae"
+      },
+      "include\\hyle\\mem\\allocator.h": {
+        "bytes": 11717,
+        "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+      },
+      "include\\hyle\\mem\\arena.h": {
+        "bytes": 347,
+        "sha256": "186d9f90620d9b81688c568cb0bcfc1fc0bef9e4a415ea6c99800822a6b7bc77"
+      },
+      "include\\hyle\\mem\\buffer.h": {
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      "include\\hyle\\mem\\buffer_pool.h": {
+        "bytes": 4331,
+        "sha256": "b5bfcd6b861d2b54425c619097fdca65eb5ac6add7f0b443c815784c1e661951"
+      },
+      "include\\hyle\\mem\\fixed_pool.h": {
+        "bytes": 23485,
+        "sha256": "1c7687075438c812a374c70df955c510cadc18498d62502fa063cb8b7bf4f828"
+      },
+      "include\\hyle\\mem\\growable_pool.h": {
+        "bytes": 12352,
+        "sha256": "02f73b151d81f4e83d6be1a7929ffae6b9c24b5d6dfbbb63f25bad304e154f3b"
+      },
+      "include\\hyle\\mem\\heap.h": {
+        "bytes": 2589,
+        "sha256": "a1bb4ea396d735d1de598e2d3656014066a80888a41aaf40c8f66a094a5cb2d2"
+      },
+      "include\\hyle\\mem\\large_page_reservation.h": {
+        "bytes": 2094,
+        "sha256": "40bd1bf19d7582fca6a2af57c18cdc6b4d0045349bf8912c6d62b0845e9a0ffc"
+      },
+      "include\\hyle\\mem\\lifetime_plan.h": {
+        "bytes": 7018,
+        "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+      },
+      "include\\hyle\\mem\\object_pool.h": {
+        "bytes": 10517,
+        "sha256": "ddf1379e9dbcbe42f1dab99f3fcc28bac6af86e5dd6f3a818659b865a244a964"
+      },
+      "include\\hyle\\mem\\pmr.h": {
+        "bytes": 5439,
+        "sha256": "bd3c370b8729b5d82eeb62fa86798f020b8ffe22afdbaef023acbe7105e9f38f"
+      },
+      "include\\hyle\\mem\\pool.h": {
+        "bytes": 576,
+        "sha256": "092acd7e9799aafb99db7c9b3f8d484a609ccc8ad07852e4b49dc068feb7c112"
+      },
+      "include\\hyle\\mem\\pool_cache.h": {
+        "bytes": 7232,
+        "sha256": "992b1684e2409aacb207dff234301a2a39fff9d6a2d4dc28dd02a086210eba91"
+      },
+      "include\\hyle\\mem\\pool_loan.h": {
+        "bytes": 1601,
+        "sha256": "9ad610a96ad71f9ca9eb64241d57e60d036aed6ac939d36fd143a1c1e06fa8c0"
+      },
+      "include\\hyle\\mem\\quota_allocator.h": {
+        "bytes": 7124,
+        "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+      },
+      "include\\hyle\\mem\\range_allocator.h": {
+        "bytes": 4780,
+        "sha256": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c"
+      },
+      "include\\hyle\\mem\\region.h": {
+        "bytes": 17710,
+        "sha256": "d2e83898337b974a8b70d8bdceff37d4644ef17eaa781a030420430813f64baf"
+      },
+      "include\\hyle\\mem\\resource.h": {
+        "bytes": 7378,
+        "sha256": "3fc711a80803758b4a2cc573ffa5faee0703a7abf8ac3d45e248da257845d51e"
+      },
+      "include\\hyle\\mem\\shared_pool.h": {
+        "bytes": 40019,
+        "sha256": "461e00d3021be144472781aba73ded3c271bf55e548f6ef3cb7cd7ff963e1649"
+      },
+      "include\\hyle\\mem\\stack_allocator.h": {
+        "bytes": 4753,
+        "sha256": "dc64cfd68e49403d359fe96987c8f2c4c39891b2f4f2f7968f7a620a4eaff89c"
+      },
+      "include\\hyle\\mem\\stats.h": {
+        "bytes": 11884,
+        "sha256": "aa52b5b04711711db64bb1b3bb770fe8118f4e436d95c929b8381e49a863a75c"
+      },
+      "include\\hyle\\mem\\std_allocator.h": {
+        "bytes": 5150,
+        "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+      },
+      "include\\hyle\\mem\\system_inline.h": {
+        "bytes": 8673,
+        "sha256": "989e58ea45a94a6480c45cd1a8c7dc1ecade5507239c0aa9d827ee11d262ce04"
+      },
+      "include\\hyle\\mem\\visibility.h": {
+        "bytes": 379,
+        "sha256": "c50f284339daa23058f71da43b99404a2c7cf523ccb350509c43b5b00cbcd76f"
+      },
+      "include\\hyle\\obs\\trace.h": {
+        "bytes": 8554,
+        "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+      },
+      "include\\hyle\\platform\\cpu.h": {
+        "bytes": 14082,
+        "sha256": "b403d4fd1f967048358e7a3914b72356adef91adcb4d774ca8611055d584e9d8"
+      },
+      "include\\hyle\\platform\\cpu_convenience.h": {
+        "bytes": 2201,
+        "sha256": "08bc95125239b63678d47571f6dd63e8059ad84af9dc09a0015e308906bbeaaf"
+      },
+      "include\\hyle\\platform\\dynlib.h": {
+        "bytes": 3927,
+        "sha256": "39c8553b815e6af94377c7d9e911c6b03a38757e671d089509b74ff0fec54b3e"
+      },
+      "include\\hyle\\platform\\environment.h": {
+        "bytes": 795,
+        "sha256": "4b28bf70cc14f979b9a6b5c9a05bf3d3778814354c2a02c45ab312b349b4a5e9"
+      },
+      "include\\hyle\\platform\\environment_convenience.h": {
+        "bytes": 1298,
+        "sha256": "468efe77558862d8801936bb1a175621c969c3113321fde2fbd037c0efdff117"
+      },
+      "include\\hyle\\platform\\host_memory.h": {
+        "bytes": 2915,
+        "sha256": "b190afc8630d8dd6a30d6b0b917338a150c5e4a52dfcb1ae1d85897208b72df1"
+      },
+      "include\\hyle\\platform\\numa.h": {
+        "bytes": 8400,
+        "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+      },
+      "include\\hyle\\platform\\process.h": {
+        "bytes": 1281,
+        "sha256": "8f03d24953d964f8097be427616b7e40845f285a110e62a7d2ca24260c3f83c3"
+      },
+      "include\\hyle\\platform\\random.h": {
+        "bytes": 481,
+        "sha256": "2d7157339e2c8f2a6db20d6f82a7d33e3464ab066f14b18b2ca8800acaae6b04"
+      },
+      "include\\hyle\\platform\\thread.h": {
+        "bytes": 8423,
+        "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+      },
+      "include\\hyle\\platform\\thread_convenience.h": {
+        "bytes": 1260,
+        "sha256": "f0d0c6e5b5a7f0943bb35f26b5ecf1ef8c90eea7a98c227a70a60ce2d6ae2eda"
+      },
+      "include\\hyle\\platform\\thread_visibility.h": {
+        "bytes": 253,
+        "sha256": "e81f90677f996179981bfd377cffa4fb5d439198afb813992f7a9881752aee87"
+      },
+      "include\\hyle\\platform\\virtual_memory.h": {
+        "bytes": 10485,
+        "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+      },
+      "include\\hyle\\platform\\visibility.h": {
+        "bytes": 225,
+        "sha256": "49b4328d0b32ba9d211f2ce49b7b9ffa217baeff20a4ab855f8ffb7f874a781b"
+      },
+      "include\\hyle\\platform\\wait.h": {
+        "bytes": 4708,
+        "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+      },
+      "include\\hyle\\simd\\bitpack.h": {
+        "bytes": 5615,
+        "sha256": "0f097b727d8989a7f0bdb9cf3dcfa6bdb7618164bacf851f9fd75e93b164ea90"
+      },
+      "include\\hyle\\simd\\dtype.h": {
+        "bytes": 12213,
+        "sha256": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8"
+      },
+      "include\\hyle\\simd\\dtype_ops.h": {
+        "bytes": 2711,
+        "sha256": "67f53a3095f2a27fda8445c378d3154385fba06a70b28408cb082be333d8a822"
+      },
+      "include\\hyle\\simd\\fat_kernel.h": {
+        "bytes": 5233,
+        "sha256": "82ebf7c6ab617b67bd18f2d2544f12c1900abe233d720fbb8423a0b1ff3dd989"
+      },
+      "include\\hyle\\simd\\math.h": {
+        "bytes": 24767,
+        "sha256": "fbc4f22a4bd329c37fdb7cf08b6be2f56ba24cb1fbe2781bd1babf11c5c50dd6"
+      },
+      "include\\hyle\\simd\\narrow_ops.h": {
+        "bytes": 3404,
+        "sha256": "98f9b01e898fc2f38deb0951e2f6c771ccb00c17e1882749ab1d9ab0a4df2298"
+      },
+      "include\\hyle\\simd\\ops.h": {
+        "bytes": 5114,
+        "sha256": "7ca600d232b2dfcf0b0b3143678818a250d8aba2216febaee0438e1b94c1fd45"
+      },
+      "include\\hyle\\simd\\random.h": {
+        "bytes": 5292,
+        "sha256": "b258ce03e1687fffbb898efdc0be62ec1883344b7399248d22484a31583655f3"
+      },
+      "include\\hyle\\simd\\runtime.h": {
+        "bytes": 1481,
+        "sha256": "9bce97120633ed2b1b9e17e040a8b8726ab3800ffb8c9d63d9c13ffaedb7e166"
+      },
+      "include\\hyle\\simd\\scan.h": {
+        "bytes": 2156,
+        "sha256": "c3712705333942794196603254345f9b8860e7398d64fb497aebf33c543eaa57"
+      },
+      "include\\hyle\\simd\\search.h": {
+        "bytes": 2790,
+        "sha256": "b1a753bcddefeb3a6dbe74e821be15f80f094777a3ce84a00464e59bb3878ff2"
+      },
+      "include\\hyle\\simd\\sort.h": {
+        "bytes": 12596,
+        "sha256": "5d3b5cd320fef2e6922e6ca7b68a52adcf7895828aa2e96bdb521ecc9396005a"
+      },
+      "include\\hyle\\simd\\target.h": {
+        "bytes": 2812,
+        "sha256": "c6f6b7e3b4f9b1cca02b3957d4d0ff59e352c0da791c08aa16b5442e6c6e22b8"
+      },
+      "include\\hyle\\simd\\types.h": {
+        "bytes": 1658,
+        "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+      },
+      "include\\hyle\\simd\\visibility.h": {
+        "bytes": 209,
+        "sha256": "e6220681c938d0b898165975736f412d3025050e10597b57f62ee7b49799eb03"
+      },
+      "include\\hyle\\time\\clock.h": {
+        "bytes": 30827,
+        "sha256": "78febfa3783722c360f4ad548b7b28c750296666c7897434918d8489a3a47f4e"
+      },
+      "include\\hyle\\time\\native_interop.h": {
+        "bytes": 1913,
+        "sha256": "b435bd3f7ba07dbf575dc0de837e959f854aa369df6b5f0d136bcbc855cd2ddf"
+      },
+      "include\\hyle\\time\\unix_timestamp.h": {
+        "bytes": 11791,
+        "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+      },
+      "include\\hyle\\util\\borrow.h": {
+        "bytes": 2417,
+        "sha256": "c8940170d33e227c0861fafa63334502b00fa78cf86a808777d2555c0ab20cac"
+      },
+      "include\\hyle\\util\\function_ref.h": {
+        "bytes": 19444,
+        "sha256": "e06e706944fd0a6a05ff21f3abd863ca47595775c8cdaf454f1182545643e304"
+      },
+      "include\\hyle\\util\\random.h": {
+        "bytes": 12750,
+        "sha256": "28463daa826c69f453b5a9f2081b174002bcccc58394cb5833fdfe92757425df"
+      },
+      "include\\hyle\\util\\ref_counted.h": {
+        "bytes": 15931,
+        "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6"
+      },
+      "include\\hyle\\util\\scope_guard.h": {
+        "bytes": 7381,
+        "sha256": "eec76c62b7b3035c978182a31405e145e3cd1c9faa4ee3f15d04e4bf91cdc13d"
+      },
+      "include\\hyle\\util\\spin_lock.h": {
+        "bytes": 4393,
+        "sha256": "2de2d1d1718fdd07a46335fdda7f61bbf2b84f214a9f3ccbc661707141095fce"
+      },
+      "include\\hyle\\util\\type_name.h": {
+        "bytes": 3282,
+        "sha256": "ff992e70082c80d595b024a73d7e1d9470b1e779c6c2529937c01a924d71a066"
+      },
+      "include\\hyle\\util\\unique_resource.h": {
+        "bytes": 11625,
+        "sha256": "4a10bf96cef94563c068c4d06b194b20efbfdf19b468681375d148d8f685f4e4"
+      },
+      "include\\hyle\\version.h": {
+        "bytes": 1322,
+        "sha256": "eb910c915e9ea9bf52c69d0e1cd7fef16dba76bac8916cf42b895c92b7fa6dea"
+      },
+      "include\\hyle\\visibility.h": {
+        "bytes": 638,
+        "sha256": "c6207853e7c4c90bdc9ebde3157581eb88b4a59c6e3be87e7aecfafd35da7165"
+      },
+      "include\\oneapi\\dnnl\\dnnl.h": {
+        "bytes": 198766,
+        "sha256": "355b2c9ff14c9d844c618ce114568f08a21d4405639183e564c0a4de91f767b7"
+      },
+      "include\\oneapi\\dnnl\\dnnl.hpp": {
+        "bytes": 665616,
+        "sha256": "a5137e4f6e68a29ff38d5ba7ad471a8a6a9912ca02847d4a9087bca1c37bb7c5"
+      },
+      "include\\oneapi\\dnnl\\dnnl_common.h": {
+        "bytes": 5651,
+        "sha256": "7435e33852c41b5efe64acf801967a78d006dc0a380091669a38847761ca1b5a"
+      },
+      "include\\oneapi\\dnnl\\dnnl_common.hpp": {
+        "bytes": 15791,
+        "sha256": "082d8adf81dc82222ff6ca0f1d129cc37f7d00d6062b56870aadd8491075b119"
+      },
+      "include\\oneapi\\dnnl\\dnnl_common_types.h": {
+        "bytes": 8336,
+        "sha256": "60a5ef4c94684bcf78c21bc61781cb43fb40998e29804f2053473b8682ae47ff"
+      },
+      "include\\oneapi\\dnnl\\dnnl_config.h": {
+        "bytes": 6655,
+        "sha256": "81e12679e03b769d0977b2f3e505645210a667a7b835370bb6eb8623b554f6bf"
+      },
+      "include\\oneapi\\dnnl\\dnnl_config.h.in": {
+        "bytes": 6717,
+        "sha256": "518f5089384c5bd5eef126348132f64e8db75db2801fdf964c4a216732f7cbae"
+      },
+      "include\\oneapi\\dnnl\\dnnl_debug.h": {
+        "bytes": 2343,
+        "sha256": "737255059373638b739f73b8ec82b72dcebc54c1f72e6d10827c8651f38c9601"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph.h": {
+        "bytes": 36396,
+        "sha256": "b13ec1a19ee4fbf8f01d7d0c8bf31d4f90880d5c9a82bac05aeb871d06c7e59c"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph.hpp": {
+        "bytes": 70133,
+        "sha256": "ad5d91a5aa49776843fc648922b624adcf062331e5d65903568112095a89aba6"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph_ocl.h": {
+        "bytes": 6947,
+        "sha256": "39a14c4c64037623f31a6eb9821e3a1b13dad39fbf710a2c783b6671f3364acd"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph_ocl.hpp": {
+        "bytes": 7018,
+        "sha256": "16623ec6c0097c6d7fcca3969e6a7423b7c21b39ba69c44653f61dc0eb5c995b"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph_sycl.h": {
+        "bytes": 4759,
+        "sha256": "fb46a3967a9634325561ae61e462a4ad674f27a9422840a5fc63db57d9168207"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph_sycl.hpp": {
+        "bytes": 5805,
+        "sha256": "5642b4992adb8759e8b65da5bbf38250b29663ddddb14109df7277abc9c39314"
+      },
+      "include\\oneapi\\dnnl\\dnnl_graph_types.h": {
+        "bytes": 17829,
+        "sha256": "acb74d3c162fae2f2f28ea0cc999703033eb2a65e6d104feaf482bee4484aa13"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ocl.h": {
+        "bytes": 11617,
+        "sha256": "2e35be3ab737cf351ab4add2b5c2803cc02bfbb9ba47b86261787240db2c71b3"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ocl.hpp": {
+        "bytes": 15317,
+        "sha256": "785517fd20a6d45eca5b89fec6e52be159a617e8ce9baef4990d0f8937111b04"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ocl_types.h": {
+        "bytes": 1338,
+        "sha256": "277ad6e8e046ece8035ce26a2cc2f18ec3425213ef3ad58d03d842ed1b377e1c"
+      },
+      "include\\oneapi\\dnnl\\dnnl_sycl.h": {
+        "bytes": 8308,
+        "sha256": "cf1f3c04151b97c142ddf688374344d7a1b827fbb50c49f00b4258c61d017471"
+      },
+      "include\\oneapi\\dnnl\\dnnl_sycl.hpp": {
+        "bytes": 12840,
+        "sha256": "cd5b3fc5eb43f71e99424bf8800d5619dbc94d41111ae83d515c728a5224743d"
+      },
+      "include\\oneapi\\dnnl\\dnnl_sycl_types.h": {
+        "bytes": 1345,
+        "sha256": "f3a835e05d576ff5cba4d2017d478ba71d42f6957b57ab7a12863790f4595a2c"
+      },
+      "include\\oneapi\\dnnl\\dnnl_threadpool.h": {
+        "bytes": 4519,
+        "sha256": "fc4bcc4f28fb0d79221632de4f798e46b2f98325567e46833aea09b488a3e7dc"
+      },
+      "include\\oneapi\\dnnl\\dnnl_threadpool.hpp": {
+        "bytes": 4322,
+        "sha256": "e73041c4f60205f4fec433d8dd9e3694e91a90d428570e4175f6ffe4af91a580"
+      },
+      "include\\oneapi\\dnnl\\dnnl_threadpool_iface.hpp": {
+        "bytes": 2498,
+        "sha256": "7b699e06672143650e5e58cc8a3d8b140e0185d3497ceb23c90eb8c350e5fa2b"
+      },
+      "include\\oneapi\\dnnl\\dnnl_types.h": {
+        "bytes": 102593,
+        "sha256": "83bb13dba2e7eaa09fbf2512aa35bb10e8a5c322da3b76a72e3b2f9524a95360"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ukernel.h": {
+        "bytes": 13783,
+        "sha256": "458f586b3aa5a1506855f9dc42f0395a133a5c03e7ece3952c52d08ccd8ab869"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ukernel.hpp": {
+        "bytes": 17679,
+        "sha256": "9b99be1058b9f5d60ca2076847d9ccce8b5013d7e9f87a46864a09764917f316"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ukernel_types.h": {
+        "bytes": 2703,
+        "sha256": "9204c0b50d72b12a8678e01ad72b893c075ce0308b52cd04ffd7fa471c2983ed"
+      },
+      "include\\oneapi\\dnnl\\dnnl_version.h": {
+        "bytes": 1041,
+        "sha256": "eedfa0d1d3fb6a75b8f8b9c6b03a90eea04c34341c483a100b21c873a97c7406"
+      },
+      "include\\oneapi\\dnnl\\dnnl_version.h.in": {
+        "bytes": 1064,
+        "sha256": "ed9d36b4c24d5e4cda7f17235d2362d7876b4762ed73e542820c586a8478229f"
+      },
+      "include\\oneapi\\dnnl\\dnnl_version_hash.h": {
+        "bytes": 1240,
+        "sha256": "2d4f13e92c75bec88c319a8af409f33c1e5b88b50db51e65cf0bdd090fa87988"
+      },
+      "include\\oneapi\\dnnl\\dnnl_version_hash.h.in": {
+        "bytes": 1225,
+        "sha256": "27efff8ecdc7d81695843f8136507fd3b65bf40da1873521453781d0c761db9a"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ze.h": {
+        "bytes": 9177,
+        "sha256": "28649c51905cae6ae8863ee2f1ec93bf33b027ee0b6b721af7445ca01b5eb6fa"
+      },
+      "include\\oneapi\\dnnl\\dnnl_ze.hpp": {
+        "bytes": 11923,
+        "sha256": "bcca4c31a2db0508b9469f2cafd9478145c858d6033904cd9b5d9f5e05d07ed0"
+      },
+      "lib\\cmake\\Hyle\\HyleConfig.cmake": {
+        "bytes": 3103,
+        "sha256": "24b16ab311be118f33714d22784af49190ccc42fc0c1c10725fb9c82ac78c48c"
+      },
+      "lib\\cmake\\Hyle\\HyleConfigVersion.cmake": {
+        "bytes": 3360,
+        "sha256": "0b02c89a9a3ece5a1c6df8276fdc44e86e86d6c0108f3baa0dc3c39d6a39bf55"
+      },
+      "lib\\cmake\\Hyle\\HyleDispatch.cmake": {
+        "bytes": 26405,
+        "sha256": "99942c5e5a8669b8a6c321c963cdb2d0314772c07e5274e3a566aec1f4c3ee70"
+      },
+      "lib\\cmake\\Hyle\\HyleIsa.cmake": {
+        "bytes": 11132,
+        "sha256": "6c2a12a1921fd875fdec90314f70bf98ce6278bab086e96f6a91c1a429a33bc6"
+      },
+      "lib\\cmake\\Hyle\\HyleRuntimeStaging.cmake": {
+        "bytes": 2252,
+        "sha256": "f0b8d600e6bc563334265d9f8c47ec399147abc2adb69bf3be671e2f4cec677f"
+      },
+      "lib\\cmake\\Hyle\\HyleTargets-release.cmake": {
+        "bytes": 8544,
+        "sha256": "f76293e083053a194bf61774ba7544e83ca3870838849e1e178ea8e43c065d5d"
+      },
+      "lib\\cmake\\Hyle\\HyleTargets.cmake": {
+        "bytes": 15294,
+        "sha256": "56146283d004eb81c421cd4b02e9b586ae5988be58446f41953203a6d70823ea"
+      },
+      "lib\\dnnl.lib": {
+        "bytes": 745344406,
+        "sha256": "c7bced82ce1731b7a8a87875c07d1ee2a5d9dfebd1a2e29e26d99d1191097b40"
+      },
+      "lib\\hyle_compute.lib": {
+        "bytes": 1844224,
+        "sha256": "aa4f819f2d5405c84de259bd3e3ff33d3a2b2e58410b0c954fed01b14cefbb9c"
+      },
+      "lib\\hyle_compute_backend_cpu.lib": {
+        "bytes": 82920,
+        "sha256": "ef577a287f28fa19eac36d95be51f0ade484e393c096a09aba7693907eb3ca9f"
+      },
+      "lib\\hyle_compute_ops.lib": {
+        "bytes": 584376,
+        "sha256": "865f960ad352549dacc91e9554ba256f60b4b5dc97b00e820b3c610ca902377e"
+      },
+      "lib\\hyle_compute_provider_native.lib": {
+        "bytes": 2257550,
+        "sha256": "0ff618f398921b4feff9b55a37c8889bd60385144a624699410af92a64c708c2"
+      },
+      "lib\\hyle_compute_provider_onednn.lib": {
+        "bytes": 464260,
+        "sha256": "4ba211099eb5bc395f197ae24edff84dbe0b40086a581f0a1fadb6dd86903275"
+      },
+      "lib\\hyle_compute_route_cpu.lib": {
+        "bytes": 9282,
+        "sha256": "98633310a7d385cef87f498c9583fc92e0758d5ab89facf48e48515506e8158c"
+      },
+      "lib\\hyle_container.lib": {
+        "bytes": 300974,
+        "sha256": "657cc4f377bd2c59e02c5f620b445e80296245d85a9e7d418c00922ae51a18ba"
+      },
+      "lib\\hyle_error.lib": {
+        "bytes": 136944,
+        "sha256": "7ae6b655b58e029d2e7befbdba0bc6c0628ec6a9ad9d5e76c24f311fd7ffbf8b"
+      },
+      "lib\\hyle_mem.lib": {
+        "bytes": 1280756,
+        "sha256": "6f84f6d9b2e7f935f4d4869f59cc8b6724b9d43bc5152eb9d1d27b0a8db2d01b"
+      },
+      "lib\\hyle_platform.lib": {
+        "bytes": 760064,
+        "sha256": "10dcb93d8d22d04ae0b744ea07f5723021f96422d2f95f71077ca542456944db"
+      },
+      "lib\\hyle_platform_thread.lib": {
+        "bytes": 119712,
+        "sha256": "599f2d7cb5a767d9f20a472d3a4c4c84e2ad919a5051a9d9a50b8ed61dc6aa43"
+      },
+      "lib\\hyle_simd.lib": {
+        "bytes": 27180136,
+        "sha256": "5cf2d7f3c9063d26346d99f5f5dd6424e87de38cf465401b42d6fad5d066becd"
+      },
+      "lib\\hyle_time.lib": {
+        "bytes": 113598,
+        "sha256": "176762c8ec95e7687aaee150ec90c70ff90fcb2647acce70bf42cfecaba430e7"
+      },
+      "lib\\mimalloc_static.lib": {
+        "bytes": 989662,
+        "sha256": "bc27e89a4f32698d1c1dcc37ff2c0bd224147da46c1e59b6287eaaa7f85e57de"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\abort.h": {
+        "bytes": 338,
+        "sha256": "2d0f4f0b6e9390324efa4e45258adf3a19308936c15d9a30cd4d2bb46f19062b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\aligned_allocator.h": {
+        "bytes": 23067,
+        "sha256": "283bac6e3d878963923373affc5870fed99c7c52805ed2b9bf490e4d30abcf19"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\auto_tune.h": {
+        "bytes": 19827,
+        "sha256": "b5474dc4a856fc55ef141bd6730c1c38c654ff4161018c3ba9f745d7483fad61"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\base.h": {
+        "bytes": 121335,
+        "sha256": "5ee6cbed6de029572262510b8475935e030d698c2dae7c7094ccee065b758754"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\bit_set.h": {
+        "bytes": 11984,
+        "sha256": "caa32ab69f075da4f0e9f135b128602123ca724c3d946bcaf508d101ce34f26c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\cache_control.h": {
+        "bytes": 5449,
+        "sha256": "22a0c4d288dffeea5a2b7931ee7162fae797d1b2d8fb5e5ed07893542718f125"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\copy-inl.h": {
+        "bytes": 5166,
+        "sha256": "076c6feae94d57fb667bbb755fb9efc1ce22fb6f3f9ed89cfc70fd72c1919da2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\count-inl.h": {
+        "bytes": 16191,
+        "sha256": "b3b16ef7bd303fccea288df241bb06dfbbc9c2e8687d11d67f8f74a62e8b6055"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\find-inl.h": {
+        "bytes": 7156,
+        "sha256": "07abfdfba064f1e1b024a201fcc0bfd193a12471f8b90d6390933ae6db96ed87"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\is_sorted-inl.h": {
+        "bytes": 3733,
+        "sha256": "a3a56034ecd5109691ce3c2237df5a1799c48f9f04ec9290488539a2ea20529d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\minmax-inl.h": {
+        "bytes": 10663,
+        "sha256": "0bea2ae54d27f514a6f335ae388cfae39319d900be0fc1d795a18ca73ce39337"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\algo\\transform-inl.h": {
+        "bytes": 8138,
+        "sha256": "19dde250bc003fd91afc1194f35b1594b54bf018faed8d43b2f5925591c85a54"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\base64\\base64-inl.h": {
+        "bytes": 17097,
+        "sha256": "6b43f12f2c7e6494e74d12a67925af33e158f86a66e017710feb999664dfd812"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\bit_pack\\bit_pack-inl.h": {
+        "bytes": 115796,
+        "sha256": "f6020b3cf0b66bfcdd8309f569926914efe0f7e5ff483e5ed0fa038d46ef2999"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree-inl.h": {
+        "bytes": 104299,
+        "sha256": "97648f823ca7f310262372b080f659b0a1c88eb4aec4901f25e833e858e58316"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_map.h": {
+        "bytes": 22545,
+        "sha256": "ac94ac496b23c1185805c352a6ca8ccffe9708b915886ed457a891b8ad5943ab"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_nodes.h": {
+        "bytes": 15894,
+        "sha256": "56cbeec2d950ed5e4662589fd029e1886c6c9ae0c8d48b75d698a66e01435a35"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_set.h": {
+        "bytes": 16375,
+        "sha256": "8a261d5f3891c676d9745bc9af97999e6461e48a4955770408264c2875a36b3a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btree_test_util-inl.h": {
+        "bytes": 28399,
+        "sha256": "94481abdc355f233ad0e1397c716c442fdbef124ba63dd2288da9e4369c0513c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btreemap_impl-inl.h": {
+        "bytes": 12192,
+        "sha256": "1437e4df47879fb968b0185463b7a5d4b8e0fa0421951525fc4de8b0d2911729"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\btree\\btreeset_impl-inl.h": {
+        "bytes": 9454,
+        "sha256": "0f0929fa38ce358f87a286f3ed9383fc56b9a9a92a4579074544456d3e43bf08"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\coder\\range_coder-inl.h": {
+        "bytes": 9084,
+        "sha256": "33f2f325bcfd61be592480cab6b456f9be964eab26d536aa97a5b5f413c1060f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\coder\\range_coder.h": {
+        "bytes": 7950,
+        "sha256": "050e154ff2fc23daadd68e0e8816bfb31e31746a41d4d8a1e2a9ebd917820531"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\crc\\crc-inl.h": {
+        "bytes": 4970,
+        "sha256": "0a73f605cedfe677020c760669ff3c521a8fd828e67e9b5738894e5b3cdb5cea"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\dot\\dot-inl.h": {
+        "bytes": 17983,
+        "sha256": "e81d6f561abeddec26b347f1d168b20e971ec404e9d2c2f3df587fed88f4fd11"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\cuckoo-inl.h": {
+        "bytes": 57378,
+        "sha256": "f08c691a47bd64cf3837834d2643d379111e135debbfdcb20bb1ab1e2dfb50e9"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\cuckoo2x2-inl.h": {
+        "bytes": 7503,
+        "sha256": "72ecffcdd70f2b64c721e126261935a16af2660130cd6ebd25585e8b0d07053b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\cuckoo2x2.h": {
+        "bytes": 2810,
+        "sha256": "a122a94413f4f7f124f952cd7923e1ce851e7724e606901f13e73f697f2b254a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\hash-inl.h": {
+        "bytes": 34014,
+        "sha256": "188b3cbc49e32a26420a4d53536ec68f34baac908ddde981591a3d28082c1a65"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\highwayhash-inl.h": {
+        "bytes": 13685,
+        "sha256": "2f64ae8f1c5d22e009c0cdbf736ec5a4f1dbb0e4eef710f49c7c481486d59751"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\phast-inl.h": {
+        "bytes": 12182,
+        "sha256": "a736dac00526c69a42307a5962089570c30e9fd365a58ef4e31ed69e50436732"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\phast.h": {
+        "bytes": 4750,
+        "sha256": "9d9f2bc3bcffddde19731d7e64566cbb584c943e50e368c313a6d337f3ed3b2f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\shardmul-inl.h": {
+        "bytes": 10933,
+        "sha256": "240313bd45ad991979b390fff35ebf4bac77a42f5f9eb139e842a74936a0d8f4"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\hash\\shardmul.h": {
+        "bytes": 2360,
+        "sha256": "3f74d407b6a6d7c61811f4e229cf284caa5174b5bb8de9c95276c77f69253e8b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\iguana\\ans-inl.h": {
+        "bytes": 13634,
+        "sha256": "11a060713884c436ac590831093953978e7c9ec4b8dc8340f12bbfd955f6ea50"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\iguana\\ans.h": {
+        "bytes": 4102,
+        "sha256": "173af932290f321ae48c57d1e7d036b7088790b26e73a924d60a5452035d60bb"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\iguana\\ans_detail.h": {
+        "bytes": 1638,
+        "sha256": "55c4c6d8017fc9da3693e10976b34bba2ca1206307f81d15222be1270f020b4a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\image\\image.h": {
+        "bytes": 17282,
+        "sha256": "067762b8ce1bc072fb5a72599ebdccf93e1992c2fae1be5d87370a219d112dd2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\intdiv\\intdiv-inl.h": {
+        "bytes": 24419,
+        "sha256": "66860e69aa1fad87cca972613df23c8f1a1b642f6f373b2b3ab9c85089b7c26f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\f16_math-inl.h": {
+        "bytes": 10917,
+        "sha256": "11ab3ca0db7b67377e0fa01d1cf059c9979b0f28741bec053b1ec88afd0c3bd8"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\fast_math-inl.h": {
+        "bytes": 63678,
+        "sha256": "9f36a233bd0b7100d0cb8df6d29503549457abf513a253acd9362aa812618135"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\float_manip-inl.h": {
+        "bytes": 6871,
+        "sha256": "653a695f9e5d293eb2760e32ecc2aa7f40e006ddc7943d73dd8503cf9def9bb1"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\fp_arith-inl.h": {
+        "bytes": 8483,
+        "sha256": "f514b86729d7eb8b706df3683be644c3e59444edc253ef97251c4d842bd8bf30"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\math-inl.h": {
+        "bytes": 111492,
+        "sha256": "1eea9d4098198f337fda9c8ca0ac6da1ff98a600b9cd3490ba622ae4a8f35a9e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\math\\math_test-inl.h": {
+        "bytes": 18653,
+        "sha256": "a73a4885f6f9ad58d40487602be18ec7fce71eeaa595252ed1be1d12e1946c0e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\matvec\\matvec-inl.h": {
+        "bytes": 19278,
+        "sha256": "d7ace09ae6c88a233c0121adc0753d35f3341c396f3ee2f46d35a5ed79053a4e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\random\\random-inl.h": {
+        "bytes": 18008,
+        "sha256": "1985ab3786c02da5ba08694f56be412ffdae04b735b799144710358623edb85f"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\algo-inl.h": {
+        "bytes": 17475,
+        "sha256": "ac4d9a11121ede644571a8e41c59770633a00ff9fa04a9cb53bb9e8d657fb24d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\order.h": {
+        "bytes": 1191,
+        "sha256": "7cbf6e26f5afc2fc09e731ea2fa2e70bbda10230980fda7da77a10923d271611"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\result-inl.h": {
+        "bytes": 10781,
+        "sha256": "4e6867567774ca42971c608f03848cba5e1301ab0dec5650ec42583239b0bd43"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\shared-inl.h": {
+        "bytes": 6959,
+        "sha256": "33f82431094562db3073886b107d4b5c80f3c5a4eee29575cda2557e32eb0a08"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\sorting_networks-inl.h": {
+        "bytes": 29131,
+        "sha256": "a19f665d2d458894d412629a6dfd5e42214618167d93e62a114cdd3b9b55635c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\traits-inl.h": {
+        "bytes": 20512,
+        "sha256": "1ff31627d815e2f9690ecb1fdfdd53132c7b11858036bc4b645d848e1503cab7"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\traits128-inl.h": {
+        "bytes": 18345,
+        "sha256": "d3a73079d9d4121f5a5dcd0ddb9d8d8d17e5d50b43a670b7caafcd5951a94697"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\vqsort-inl.h": {
+        "bytes": 88895,
+        "sha256": "875e989c559e1f982394bc61cf8dcb8c2ac636885c033381144c251a049306c3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\sort\\vqsort.h": {
+        "bytes": 16471,
+        "sha256": "2a42b87118d9d9cd9824365b0338cdd73981b9594a66c48bccbdeb701a8cc426"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\futex.h": {
+        "bytes": 11025,
+        "sha256": "9edb48ce1d6f3e2bbe84752820b1083e28c356552948eb9419d4c8712de6957b"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\index_range.h": {
+        "bytes": 3941,
+        "sha256": "bb46fa1a3716ad63a63897c91bd6fdf3b1db0d5c70bd3268fbf50535cf66a69e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\spin.h": {
+        "bytes": 10902,
+        "sha256": "c1a6fd2d9f169bcb9a80686b1fac228ca47afea423dc8a81053615d4e819cda2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\thread_pool.h": {
+        "bytes": 65236,
+        "sha256": "f6b5668d6b6d773cca9da515422dbc731c679f72e0fe340528330ffd3a0d4a87"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\thread_pool\\topology.h": {
+        "bytes": 5186,
+        "sha256": "725152eaf587d906f921fd2727a3720c6f0996bf8bbd1cab55826de7c36376e5"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\contrib\\unroller\\unroller-inl.h": {
+        "bytes": 14545,
+        "sha256": "7d32ee2ebe4146501a34390a59128aaed7c79e331a2f840be1cc34fb3f762740"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\detect_compiler_arch.h": {
+        "bytes": 16268,
+        "sha256": "51f5fca69dd6eeca3a47504289a2a9c3a5fd932d7212b3e015f73710a8183948"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\detect_targets.h": {
+        "bytes": 38233,
+        "sha256": "9ff4759c9bc3c16581ab644d553e6079b456ef8a7c27d62314dc917d39e9deb0"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\examples\\skeleton-inl.h": {
+        "bytes": 2571,
+        "sha256": "9008dfd18348f9ea4c662caed87c726a58149b09807bb657a3899f73def01248"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\examples\\skeleton.h": {
+        "bytes": 1512,
+        "sha256": "c1e505a2a405e0ffc170aff96499135ad4f1ff9c3a2a84dafeefc13fe31aaa8c"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\foreach_target.h": {
+        "bytes": 10330,
+        "sha256": "880295b229488bba5227d5279504f355f9363330bf1d98ab63baf553deedee03"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\highway.h": {
+        "bytes": 28605,
+        "sha256": "de01622abb3e9e85a07d24897daef408a30f7a1967bb0b01a57c1637d3c87f9d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\highway_export.h": {
+        "bytes": 2074,
+        "sha256": "8a883413b083c721f879163780630aa3ec741b386b3db6d05ac042292b904d45"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\nanobenchmark.h": {
+        "bytes": 7053,
+        "sha256": "81c65b91f754c36e3792ed0ae9c9f535092d997254a02508bea06a03f7a67f79"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\arm_neon-inl.h": {
+        "bytes": 452107,
+        "sha256": "a46245f21dcafbd3c245401960a67266a234c9068aeaaf779c1efb47af3daeb5"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\arm_sve-inl.h": {
+        "bytes": 272862,
+        "sha256": "d7aa2a5915cdbcb6640f6ee4870501d86f2aafa293d674a850b6836f07d567c3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\emu128-inl.h": {
+        "bytes": 90190,
+        "sha256": "758b3b45ab49ff28d3c8cf36959d48567678b737d0b12209ab564b2e49c0fac4"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\generic_ops-inl.h": {
+        "bytes": 331908,
+        "sha256": "c0f0765c357e02ff449b9ebe9767e7c13631730519e1e512ead0fdc19d27dd90"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\inside-inl.h": {
+        "bytes": 24270,
+        "sha256": "bf0d846b39ff97e31e44b475dbf33cb8dde435d1be89846e98a35a733f8a9904"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\loongarch_lasx-inl.h": {
+        "bytes": 180339,
+        "sha256": "224a25ea70a39b40d73f7d91cf7ef9be021f25c11c0645a440872b5c1b3f8703"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\loongarch_lsx-inl.h": {
+        "bytes": 230580,
+        "sha256": "98774075a451999d39017543a6532fbdf14019ee7ed3342ab0726c9b4f395fd2"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\ppc_vsx-inl.h": {
+        "bytes": 278321,
+        "sha256": "51f1c6049e99a222da03bee4576da7360babbfe1d39c9d85aa30e823c162b0db"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\rvv-inl.h": {
+        "bytes": 320424,
+        "sha256": "497d9cd4315495c7a9e143927f5b4c086a48e9fccc237ac4dcde2d6032683c81"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\scalar-inl.h": {
+        "bytes": 69208,
+        "sha256": "fbd56d4ec4e49767e89bc025add403ed97cf29f4263b6b544ec3441e96085ba6"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\set_macros-inl.h": {
+        "bytes": 27651,
+        "sha256": "b64d5cf6a5b94727b7a10f0d9f1326dac45018a4cdcd7b8e13d9f153311ab85a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\shared-inl.h": {
+        "bytes": 31538,
+        "sha256": "c5f8b0a9aebc8b5a3606d3ab0e24a610c47533eb0c4dac36700272a133c510ea"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\wasm_128-inl.h": {
+        "bytes": 233294,
+        "sha256": "a25e9c5831b17a80f00fdfabedbafe6c8ff31e15796f6bf100438e01f655d51d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\wasm_256-inl.h": {
+        "bytes": 80880,
+        "sha256": "f69b919288c0d3ca819c734e1acc555ed22c00c3f9b403512782e1c988951b2d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_128-inl.h": {
+        "bytes": 593917,
+        "sha256": "f02334c27ea3c485ab6f94a4a9b4212e191587288af5c4f931dc8549111c669e"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_256-inl.h": {
+        "bytes": 390515,
+        "sha256": "bcd945ca34bb92088c3d3f43d252e9667fc60a67cd6e118f6d15044ed3dcb847"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_512-inl.h": {
+        "bytes": 350506,
+        "sha256": "6a59f8134ce318352c75de51709948890b60ac52bfd87103edcc1dd567a59e76"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\ops\\x86_avx3-inl.h": {
+        "bytes": 19232,
+        "sha256": "3ba1ac7fb9b2eb033d4d7bc9fe3101a875c95d24336095de650ff3d1867652ab"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\per_target.h": {
+        "bytes": 1811,
+        "sha256": "8b44bd7565119df2df3e123a9dbfa82e25166c749979a3fde12e387165e2f0e1"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\perf_counters.h": {
+        "bytes": 5554,
+        "sha256": "2a93e3725b30c66f86460ee83286f543103debb83db123eab1856416f07cbb99"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\print-inl.h": {
+        "bytes": 1936,
+        "sha256": "35ddebacfc9f665df899c8258d1cbafe83c687f71222b4ee475ceba7f948edae"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\print.h": {
+        "bytes": 2100,
+        "sha256": "56b755654ac1e40f6fda306f95811770ac9c4802ef6840019f479ad09a6880b3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\profiler.h": {
+        "bytes": 33017,
+        "sha256": "b1e2a0f09e3ad9c91f2c8a46c05c179703ec54fc319e347cbe966ec2aa8e2fbb"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\robust_statistics.h": {
+        "bytes": 4965,
+        "sha256": "5b38542e48986e2be1a080733c536be8117d07c012799c447fbb79d80932b55a"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\stats.h": {
+        "bytes": 6810,
+        "sha256": "29e584dbfa4649fae0db403ac4dde7fec0519e4ce2cb81369a5fdb55f4427bbe"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\targets.h": {
+        "bytes": 15830,
+        "sha256": "27301595b3bea53b4580382188b7d997a734ec66212cb4752ee8538893bdf25d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\tests\\hwy_gtest.h": {
+        "bytes": 31512,
+        "sha256": "ae83d7884f1cfb81eb1d73a49e428ae50eaeae9e8240864510b8355b6f86aa1d"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\tests\\test_util-inl.h": {
+        "bytes": 27234,
+        "sha256": "bb2aab9ad8946ca79f93774bf92deffa2a9c8ee38c0cf0fcb962b14c76665bc1"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\tests\\test_util.h": {
+        "bytes": 12965,
+        "sha256": "6d57a09135f1bda83e7725ef84589a3ab36d0c9eb41ecdf1e4d0683d3916eeb4"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\timer-inl.h": {
+        "bytes": 1450,
+        "sha256": "1fcbc017922560c04ffb26c2210a8856a2356eb9bca11076dd808b8e32ca87bf"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\timer.h": {
+        "bytes": 9878,
+        "sha256": "20a69178dac619083fbf78be089aa5c7aed1701850c09baa1caf2b501efd1dc3"
+      },
+      "share\\Hyle\\dependencies\\highway\\hwy\\x86_cpuid.h": {
+        "bytes": 2237,
+        "sha256": "238c85bd9d54c01ca52d0c7719efe143b63e124345a88a6dbc9c4cf901c75d19"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_arithmetic.hpp": {
+        "bytes": 19331,
+        "sha256": "d18e433eab1fe155498cd8386e36c4a37c41f065a6314710389c3ab867677b28"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_bit.hpp": {
+        "bytes": 7049,
+        "sha256": "c2b1a08e282269780e6e6122874024310671717ac4b38255e3c5b9832ffb25bd"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_cast.hpp": {
+        "bytes": 1682,
+        "sha256": "261c6c2a4e584af50542e7501edc26f65cab46e387a3ef81bb8bcd90b2361bb2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_complex.hpp": {
+        "bytes": 4070,
+        "sha256": "b1eb0532431fafff78ce672e62a261c0b34daff8cc0dc7f2ad916b8f7bd50626"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_details.hpp": {
+        "bytes": 18398,
+        "sha256": "0d1f7874bb1195d16500dd388dbb182f7fdeddaa5b8a9b1cb244b6e2a3ddb18c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_logical.hpp": {
+        "bytes": 9854,
+        "sha256": "08f8fab399dfb0e3d9150d646aacbee47f0ee81efcb1fa1eca7b6528c88b22d2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_math.hpp": {
+        "bytes": 117833,
+        "sha256": "20348ff725d99707393d448bd691c82aaadf243485062fd267fac003f68f5070"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_memory.hpp": {
+        "bytes": 49356,
+        "sha256": "51f48c954d4ea6e88fbcf08bfcef6206df59151a37eb729f73ca5d92e1502339"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_rounding.hpp": {
+        "bytes": 2748,
+        "sha256": "03b2818e8f1a5451da1e3f89e1a6e4d6113435fc9d8acb9c5caea6ea77eb31d1"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_swizzle.hpp": {
+        "bytes": 7608,
+        "sha256": "32a10892ec749d623455e3500eb624eee2da0647b0d076a51f6dda252dbc026f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\common\\xsimd_common_trigo.hpp": {
+        "bytes": 46494,
+        "sha256": "53054ba39490c3fe919b4fb1918d05543fcfbfb351266d2d9edba11f474e9d55"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\utils\\shifts.hpp": {
+        "bytes": 3555,
+        "sha256": "6660c43cf9ba4592c457879be5f0a00b53718c0158808cd7fcc1a00a015d213d"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx.hpp": {
+        "bytes": 109609,
+        "sha256": "6d917349ea9a27d39a207af3df3e05c9373791de564719d0a709f88046f3838d"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx2.hpp": {
+        "bytes": 70563,
+        "sha256": "3d6424ea077a22438027b13f23dfb56ddfd33a5d29dc65e9412b25d1976edef3"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx2_128.hpp": {
+        "bytes": 10366,
+        "sha256": "609f565729c346405abdd33a45ea8990c54dd80d4bf0c603d898995f645f33f9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512bw.hpp": {
+        "bytes": 32423,
+        "sha256": "bb061fbd1785d48807e1200b7ed48e8900d6a66af110a38f2e1ce3d2498026e3"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512cd.hpp": {
+        "bytes": 979,
+        "sha256": "c414188ffaf45d5aeb3b965e1a77416abcf937891601869758ef64189980dac9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512dq.hpp": {
+        "bytes": 12663,
+        "sha256": "5887673e738fa64ed641eda73221963630fff25e7f75fac261fe24b5e493fd39"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512er.hpp": {
+        "bytes": 892,
+        "sha256": "f1ec63d2e0125be5f13eac4018c7ebce5fed309e18700fc4b71922e6f49d9bc8"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512f.hpp": {
+        "bytes": 148342,
+        "sha256": "cd9a73bfb6511dfd2e56e449a2dc9f1076521c423f4fa6c54af27b3591c81c33"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512ifma.hpp": {
+        "bytes": 898,
+        "sha256": "79aca2091b432df74da97278dbf8a4b94ecae97b69d2b5b9ffdbf8ec3497834e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512pf.hpp": {
+        "bytes": 892,
+        "sha256": "def9fa5ad8cc1445f9049c95abd0e627b6d0660322bdef05cd38ed51f15895cc"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vbmi.hpp": {
+        "bytes": 3382,
+        "sha256": "2044ddc9bee2ca1b1ab43e89e1afd2be3e30d0807085a465032edf33b897e753"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vbmi2.hpp": {
+        "bytes": 5517,
+        "sha256": "71dd7ad59986603fb53c6a8bbccf3b9a730a3f24f1071b546834d393468c21ec"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vl.hpp": {
+        "bytes": 972,
+        "sha256": "c844788bedbc5ed8651024b8c9d0a731ab95b7cabb23d1ddaf99e05de8bc8ac4"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vl_128.hpp": {
+        "bytes": 45078,
+        "sha256": "5c9c481ffb1ce3b26d073da3bc31e4a5ea4890597ffdf0d6f3d00428b53baa4f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vl_256.hpp": {
+        "bytes": 50898,
+        "sha256": "e627371c9d21e3a5ccf898afafad3a6019f6598f5eeebd8eb6581591db78ac23"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vnni_avx512bw.hpp": {
+        "bytes": 927,
+        "sha256": "873349dfdc937ad57c50ea0cf8ea608669871a7296b93ec68235e32f6ff7ae29"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx512vnni_avx512vbmi2.hpp": {
+        "bytes": 934,
+        "sha256": "6a55adec450aebb9f433982910e22c974d53e436077063205a29771cb9fb2dc2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avx_128.hpp": {
+        "bytes": 9993,
+        "sha256": "5244007cfd3e3b96e8f8665b6cc800acfabf1c2eb40bdaad85bcb7482cbc6ecc"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_avxvnni.hpp": {
+        "bytes": 889,
+        "sha256": "d73d598a949acf37ed9dac52220ac38cf12c2ed2196cf4d36eb83b836544779c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_common.hpp": {
+        "bytes": 1281,
+        "sha256": "a4056d41a509f232933e3e2009838031baff4540f1264e9fc8125d5be34a402e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_common_fwd.hpp": {
+        "bytes": 8389,
+        "sha256": "f4c0337c21a9fa4e5c196a841eeb1e1f4378b111cdd6dc483c36f6ea64e1bdd9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_constants.hpp": {
+        "bytes": 14116,
+        "sha256": "bad5aa1ca93f03921f031899eb4f7cf7e2bdab5dbaef27c1a13b54eb4fd4a8b5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_emulated.hpp": {
+        "bytes": 36767,
+        "sha256": "20552e573955d0eb9ad49aef74d2b87128d283161716fbfef41d425be0db3e54"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_avx.hpp": {
+        "bytes": 3564,
+        "sha256": "507673bf1e94bf69994f34a0330f1d3ecc3aeb8ab95c48b78d7ff48df0a13b2c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_avx2.hpp": {
+        "bytes": 1592,
+        "sha256": "714d6a4fa54198b5be2d41622c920a410a30d50b171cf398b37d11445497c024"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_avx2_128.hpp": {
+        "bytes": 1699,
+        "sha256": "c12fe9cbcf556bc919da1bdb40e79ed35fa9690aa51a6f9d3d8ebf2ce0ef1840"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma3_sse.hpp": {
+        "bytes": 3816,
+        "sha256": "506e5bbd4eefc2aaf2bba5121de1a2c0b8dd6bdb0dcd13f3bd7a37ee5a8aed7a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_fma4.hpp": {
+        "bytes": 3461,
+        "sha256": "6fc4c78329a0d0d3c88d04dc8abe62f40bc083ec2ab1bccf25e62995520c266f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_i8mm_neon64.hpp": {
+        "bytes": 901,
+        "sha256": "38284fc1973f3062bef664ce3322d5b33ba10ca82284df0d85069e119092012a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_isa.hpp": {
+        "bytes": 3993,
+        "sha256": "b29f5cad5ef49a980f25c9dad262bb9e40fdf427eae0c85c33b41d16f9a4fc5d"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_neon.hpp": {
+        "bytes": 191984,
+        "sha256": "b52dc778daf8ecd5520c247e543650b9894279ed8234bca9b0938fb09eceb730"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_neon64.hpp": {
+        "bytes": 69384,
+        "sha256": "55269295ece9f1621732def7733c701742e3d53c4c241e79306ffe5ed55b758c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_rvv.hpp": {
+        "bytes": 74983,
+        "sha256": "09019db55c6ebc286c03f94f22b278eba4e60396a48e1f5ef74e9cf20e9c80ea"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_scalar.hpp": {
+        "bytes": 36465,
+        "sha256": "ee1f83e1f7319dd8905f7089c5378a8ee852f0f78c6f855dcd8ab9913f25ce4e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse2.hpp": {
+        "bytes": 103301,
+        "sha256": "48d05ea03370d6534676cfc7f2bcdc3fa38fd01018496828068a6e15f8fdfcbe"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse3.hpp": {
+        "bytes": 2423,
+        "sha256": "04fbde53364f512206d30957466a1170a25092ad4eeebb68cf3e412ef0492f10"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse4_1.hpp": {
+        "bytes": 22814,
+        "sha256": "018dd42f0565dd01e81d68101663ab411a651836bbf0f13014398d5a7772f726"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sse4_2.hpp": {
+        "bytes": 1697,
+        "sha256": "5427efc61b42af9e1d39aa48ad370c1235c46b21c34035faddba49f5871287b1"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_ssse3.hpp": {
+        "bytes": 8263,
+        "sha256": "b591d5100d4489fd35f6acae237e412f20efbce5a3e8765491c36a43856447f8"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_sve.hpp": {
+        "bytes": 54456,
+        "sha256": "26a4588b2c6a105ab41fb1bdc23e660c21038702522d6c9fef786f387f286649"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_vsx.hpp": {
+        "bytes": 41799,
+        "sha256": "7111935e29b1ca08afb7c29f875ba529f215a4aae8f01511186f8e406d090b4e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_vxe.hpp": {
+        "bytes": 34511,
+        "sha256": "25d0ef8fc0ccde36113cf65eb33af912dea0ac9514199b5c5b551e0fe6732940"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\arch\\xsimd_wasm.hpp": {
+        "bytes": 76139,
+        "sha256": "160aac98998727bc5495ebae5b43321ae16d696fda79b6dad4c62487675ddf9f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_arch.hpp": {
+        "bytes": 7854,
+        "sha256": "f89a8949e6a3cce705b2027ba0e61f140b820f776f631bbb994cba4b4658884b"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_config.hpp": {
+        "bytes": 15487,
+        "sha256": "a93d969472a92684ea4182166c7de02cf4f3e1734a91455a4c9da445a27e993c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features.hpp": {
+        "bytes": 2140,
+        "sha256": "1d7a72465e57d3c5fc2d59b699009c7b8ca91efd07b09de5d9347d3793c7dd0f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_arm.hpp": {
+        "bytes": 4126,
+        "sha256": "1647ea22ff51e69c1b9466398a62b3a3daaa25e6d361dfac1e8dc1e6d697e5a5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_ppc.hpp": {
+        "bytes": 1877,
+        "sha256": "17764a32b3b0aa884f05ba18e11b162aa5b572b887f785628bba8bff479f3204"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_riscv.hpp": {
+        "bytes": 2928,
+        "sha256": "e8f7e2222fa8feb9a882ada0358ded28ccb1f5f735a680ed7240400eb90d1d11"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_s390x.hpp": {
+        "bytes": 2024,
+        "sha256": "1c395695a87c7f9e07b7866bdb85a3256e16e6f3d5a82c1336cd915531941a2f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpu_features_x86.hpp": {
+        "bytes": 45053,
+        "sha256": "8455cf1e6378bfee55d1b554051fefa4c358b49d2c3b5e8d5cc15c8cad8b46a2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_cpuid.hpp": {
+        "bytes": 5510,
+        "sha256": "06fc1c26c0f010ec0b6f87a62c8394ca01f0dbea39e947a7698d87f63cb4008e"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_getauxval.hpp": {
+        "bytes": 4621,
+        "sha256": "a74c4d6d0a4d521d1a2c3bb71445c11bd91ae1207fbbf22904fc22c32a2e8ae5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\config\\xsimd_macros.hpp": {
+        "bytes": 1395,
+        "sha256": "d80ce03767531b919d0a92793133eb457f74af4f7b0df5dd3788301eaee02bba"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\math\\xsimd_rem_pio2.hpp": {
+        "bytes": 25191,
+        "sha256": "effa16e706bc4620c28a4c4bf10673c10c7e4ea1488d10b5f8ca14c2c9c2e1af"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\memory\\xsimd_aligned_allocator.hpp": {
+        "bytes": 11427,
+        "sha256": "f9fde2ec61c81e1aa42b3efa23d7bd02dc75969d452890dd292609fb97e3460c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\memory\\xsimd_alignment.hpp": {
+        "bytes": 2919,
+        "sha256": "cd92a8518b962ea8b08dfffa396aa6ee62fb6bc58e1d1e4d0907d91eaf49ee05"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_all_registers.hpp": {
+        "bytes": 2228,
+        "sha256": "0f9374791539041b506c927dd5db3f37ffc0c8dc9698fbbfed676d39c954ca7c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_api.hpp": {
+        "bytes": 111857,
+        "sha256": "e17a1b636d45da21de034d29e85e31a54e43eff91f208e7d4caa106a4056b78a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx2_register.hpp": {
+        "bytes": 1881,
+        "sha256": "244026ff7fcdba869bb337cfbc79771fc9f3c45b8d80b0605cded364f13bcab1"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512bw_register.hpp": {
+        "bytes": 1658,
+        "sha256": "2394aea8629dfde3633f3d7714cbcf3c8985b1ca57fcb29249888567f40107b2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512cd_register.hpp": {
+        "bytes": 1653,
+        "sha256": "af32732c1062536a3291d5672fdf2ed6533f59526f90340db864695a8b34a14a"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512dq_register.hpp": {
+        "bytes": 1658,
+        "sha256": "f2599dd89e16e2de2d9f847c9efdf104f801f61ac33639d4007efc3697a2765f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512er_register.hpp": {
+        "bytes": 1658,
+        "sha256": "9b4f923c10b66fdbf8fa0039daf0b3ff9e6b53fbe040bae3f0c166e8b6972c27"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512f_register.hpp": {
+        "bytes": 3168,
+        "sha256": "cd3f16ab57b63b52305e769ecaae4635fe4498e6525e1bf8ce6e05a75f221a72"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512ifma_register.hpp": {
+        "bytes": 1678,
+        "sha256": "8cfc7b2218cdb5f0c410b7a48b6fb27e9bd48b711d60c61c1c9eb9ad0f756328"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512pf_register.hpp": {
+        "bytes": 1658,
+        "sha256": "964c52f624a4857aec4b7bc51fd4ef93f9b7034556ac2e08d1d36b8282ecd88f"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vbmi2_register.hpp": {
+        "bytes": 1697,
+        "sha256": "28462da59d3d961fb7d451d7e9456c971141fd028e9b83bcf40fa31e15c5dda2"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vbmi_register.hpp": {
+        "bytes": 1688,
+        "sha256": "ae3cbb9a995e05f39e888a5c01d96921d54cc025500fb51f6b1cd5c0c71c6556"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vl_register.hpp": {
+        "bytes": 3027,
+        "sha256": "c882e96c26fe082c4113f0b383710b55f1e92b9ba2dd8ea99887ceee7912d6f0"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vnni_avx512bw_register.hpp": {
+        "bytes": 1830,
+        "sha256": "c2b27a8d58acb0e974515bb460cfdb7e30007754863b6a6287f617940b643cc9"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx512vnni_avx512vbmi2_register.hpp": {
+        "bytes": 1871,
+        "sha256": "8a9d7257f1c804842ad280cc6298892d80b60fefb8a6f2f48cde9c640691e711"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avx_register.hpp": {
+        "bytes": 2876,
+        "sha256": "9eb1c52d1166d2517f54c65d8cfb5d8e1143957a0de0c33c7ea6d058378731de"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_avxvnni_register.hpp": {
+        "bytes": 1984,
+        "sha256": "d55c5e931a58a90492596ea92efdaa5816dc5f3a51223b81f9edbbdf8d39df9b"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_batch.hpp": {
+        "bytes": 70333,
+        "sha256": "54f89ede119b737f4ce65bf71530e4e29cdb74a07382ef86eba5228460da19de"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_batch_constant.hpp": {
+        "bytes": 23328,
+        "sha256": "f016acb59f0a3bc8bb50a1c98e3b74e0b8d288e62044afd303e907e8fb69c8a5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_batch_fwd.hpp": {
+        "bytes": 1573,
+        "sha256": "233d166c1674247d2429f5fc4990d677945395c305c9de23d5fb5e499c656173"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_common_arch.hpp": {
+        "bytes": 1857,
+        "sha256": "20edba0afc92c2944174d907a0d3bf91b9aaead440238ebf805bbf1a5232ea43"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_emulated_register.hpp": {
+        "bytes": 3083,
+        "sha256": "a9f48e88b111a1b8002aef427b085cae0b3cd2161db19f40cbdaaef69cc1dfea"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_avx2_128_register.hpp": {
+        "bytes": 1693,
+        "sha256": "773145ddbdbc01b88d1e3a16eca3cda3888d36ab74d88dde80d8d1716d5ed396"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_avx2_register.hpp": {
+        "bytes": 1559,
+        "sha256": "57dc7599895dc4f2b72317642eef2ff1bfcc23bef8ec6480615e1d01072e2785"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_avx_register.hpp": {
+        "bytes": 1545,
+        "sha256": "5228c5dfa63afb530f354314a4f21ed4fd7a7646126f1e813b926c24bfe9479c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma3_sse_register.hpp": {
+        "bytes": 1575,
+        "sha256": "b2cffe9898ea1113a8e72038668c17cca76a5d9bf8188fda2605da1cac114c36"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_fma4_register.hpp": {
+        "bytes": 1518,
+        "sha256": "93946b42ce0acd9de731634175695505fd5209a9a30a80a650bc0ba2e806b483"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_i8mm_neon64_register.hpp": {
+        "bytes": 1754,
+        "sha256": "8775064187eeabe2fc6a5cc1cb946c89ccb490327ab17012c89e82dbca60feb6"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_neon64_register.hpp": {
+        "bytes": 1849,
+        "sha256": "6fc0c1322e83d2b4202e6a40c7618a2948ade9120f60f74c863ff5768f950ef3"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_neon_register.hpp": {
+        "bytes": 5026,
+        "sha256": "18bb9dbf5b3b0e7cb65a40e1cdd1a53c25fae334ccfee3f4fc3c204ed155cbb5"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_register.hpp": {
+        "bytes": 4217,
+        "sha256": "a6254914665ba72d319a4416d642d7bd023f6b7675d96b1f6ad242fb78e64764"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_rvv_register.hpp": {
+        "bytes": 23555,
+        "sha256": "d5765eedbe184c7722837aa01b440fec501c907489a8f89b75861d2da92e3b5c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse2_register.hpp": {
+        "bytes": 2395,
+        "sha256": "ebe1e9ab15ecfbbea43501d71b0110993f14522764ec342202faf983d77f4f23"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse3_register.hpp": {
+        "bytes": 1498,
+        "sha256": "0e9f3fef6dc2ae52588a5e59e4fb91cec40c84a1f9b87f2403c55db5fa6eb721"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse4_1_register.hpp": {
+        "bytes": 1522,
+        "sha256": "9bf8350d809d854942ad7276093bac75221a83e040967563aa5c3c232a2eee50"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sse4_2_register.hpp": {
+        "bytes": 1527,
+        "sha256": "913f01f22edde378b5d85ee61e1120fcc9c9418fa091063ce5cf6d3eea096870"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_ssse3_register.hpp": {
+        "bytes": 1507,
+        "sha256": "46e266831797d3fecc23feac71876fb487e46eb7f2de8adad413e88e1b94a920"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_sve_register.hpp": {
+        "bytes": 9004,
+        "sha256": "dddc633af8846d3c262d7f2545cf1bebb20947eafd24f08eb03cbd37c3e40ac7"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_traits.hpp": {
+        "bytes": 11369,
+        "sha256": "f2a4076fe95ffa8d0984fad41d2f34c27857e194bc12e1cf7c21a51f47d6d6cd"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_utils.hpp": {
+        "bytes": 12058,
+        "sha256": "ea43eede0a7a1ff0ee212b7f566bbd638b7545c8143ff7367138e32f3ccd0245"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_vsx_register.hpp": {
+        "bytes": 3879,
+        "sha256": "883fa4918fb48d61f4f380fc7bcbbd6194be1a96b890aac0dbc8a90473f81601"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_vxe_register.hpp": {
+        "bytes": 4033,
+        "sha256": "95fd9e528dd4eb3b69d28e9e846d4b065fcce81477e94e97a3225515dc047f2c"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\types\\xsimd_wasm_register.hpp": {
+        "bytes": 2441,
+        "sha256": "3f1a87a2d7499235d26cc816567d344937fbb8edfc1d2142663405652d80c685"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\utils\\bits.hpp": {
+        "bytes": 5358,
+        "sha256": "e50c445d3ccfc27934db71a8b255ca51d4e2eeb1ae9aff28b85317da0b4e5c87"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\utils\\xsimd_type_traits.hpp": {
+        "bytes": 4707,
+        "sha256": "9b758b0914417ffe4b5f8abb3d866ca762174df4a41b5889c2c255aebd641dc7"
+      },
+      "share\\Hyle\\dependencies\\xsimd\\include\\xsimd\\xsimd.hpp": {
+        "bytes": 1682,
+        "sha256": "7fdeb22a8f18e929db2c6a03b6f22c29691bffea1d5eb2aad5d21e39d5e79f67"
+      },
+      "share\\licenses\\Hyle\\highway-LICENSE": {
+        "bytes": 20786,
+        "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7"
+      },
+      "share\\licenses\\Hyle\\highway-upstream-LICENSE": {
+        "bytes": 13435,
+        "sha256": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44"
+      },
+      "share\\licenses\\Hyle\\HYLE-LICENSE": {
+        "bytes": 1906,
+        "sha256": "edcbc4391ee471753cc9a7f8b410ad6fe8f65a3dc5a368a5c2fa06122316f478"
+      },
+      "share\\licenses\\Hyle\\mimalloc-LICENSE": {
+        "bytes": 1096,
+        "sha256": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9"
+      },
+      "share\\licenses\\Hyle\\oneDNN-LICENSE": {
+        "bytes": 11607,
+        "sha256": "e9fc874fc09801b9acf3411ba72394098473704d832d713404b6c4861a086318"
+      },
+      "share\\licenses\\Hyle\\rust-parker-LICENSE-MIT": {
+        "bytes": 1068,
+        "sha256": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1"
+      },
+      "share\\licenses\\Hyle\\THIRD_PARTY-NOTICES.md": {
+        "bytes": 4325,
+        "sha256": "ca4ee1f7c2267665231ae83169b1042fbf07e700528f594194de140f71a4b16e"
+      },
+      "share\\licenses\\Hyle\\wyhash-LICENSE": {
+        "bytes": 1212,
+        "sha256": "6a90b88421a0d9b090e121daa11b3c6d55eed5eeb3281a2fcc454d6a28b5547c"
+      },
+      "share\\licenses\\Hyle\\xsimd-upstream-LICENSE": {
+        "bytes": 1606,
+        "sha256": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940"
+      },
+      "share\\licenses\\Hyle\\xxhash-LICENSE": {
+        "bytes": 1389,
+        "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+      }
+    }
+  },
+  "checks": "existing smoke source embedding, dependency/features/license/export checks, relocated independent C++ consumers",
+  "fixture_failure": "PowerShell argument forwarding rejected the first CTest launch; corrected $args and resumed with no initial build-root deletion",
+  "raw_sha256": "b424bb253a48e64c8c733ea9a00081094b27cd043b33ec1398a93073536fb8f1",
+  "raw_bytes": 95469,
+  "scope": "This delivery gate only. Full selector, P1/default rules, elimination and whole C1 remain unfinished.",
+  "disk_cleanup": {
+    "candidate": "58543f8c08dc3f8d22efeaf3620f3e74eaa33091",
+    "component": "compute",
+    "removed": [
+      {
+        "path": "C:\\hyle-scratch\\active-cpu\\aa\\selected-compute\\source-build",
+        "logical_bytes": 1520543410
+      },
+      {
+        "path": "C:\\hyle-scratch\\active-cpu\\aa\\selected-compute\\shared-sdk-build",
+        "logical_bytes": 1498418041
+      },
+      {
+        "path": "C:\\hyle-scratch\\active-cpu\\aa\\selected-compute\\static-sdk-build",
+        "logical_bytes": 1515958772
+      }
+    ],
+    "retained": "verified evidence archive and receipts; relocated SDKs and independent consumers; all shared source caches"
+  },
+  "raw_archive": "onednn-normalization-compute-delivery-raw.zip"
+}

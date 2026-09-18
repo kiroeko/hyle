@@ -164,3 +164,26 @@ Provider 组合冲突，移除该旧实现假设，保留图结构、资源、�
 region 两次独立消费：RMSNorm→Mul(vector)→Add(input)，两个变化输入的固定 replay、独立 double
 oracle；后者保证 installed SDK 确实交付并执行原生融合，即使后续默认优选规则选择别的合法实现。
 该改动只在现有 AA04 的样例/验收范围，不改产品 API 或调度检查。
+
+### AA04：Compute 三交付结果与 Graph 样例修正
+
+候选 `58543f8c` 的 Windows CPU Compute 源码嵌入、installed shared/static 独立 C++ consumer
+均已实际通过；两种 SDK 都先移走原安装目录，再由新路径构建/运行消费者。原有依赖、feature、
+许可证和 shared export 检查全部执行，shared 检查13个 HYLE库/1005个导出。三次 consumer
+均使用邻置的 HYLE/CRT DLL、PATH unset 和禁弹窗的进程设置。
+[结构化记录](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-compute-delivery.json)和
+[原始证据](../../../../evidence/correctness/compute-llm-moe-c1/onednn-normalization-compute-delivery-raw.zip)
+保留原始命令、cache、测试日志、安装文件哈希和已知限制。
+
+首个 CTest 启动在 PowerShell 参数转发处失败，测试尚未运行；改为原样传递参数后，从已有构建
+恢复，所有检查保持原样。没有因此修改产品或省略验收。证据核对后删除本轮三个重复 build 目录，
+共4,534,920,223 logical bytes，保留 relocated SDK、独立消费者和共享源码缓存。
+统一脚本对 `58543f8c` 仍统计46,941实现行/193文件，详见原始包中的 `delivery-loc.json`。
+
+Graph 首次 source consumer 编译在新增样例的条件表达式处报 `C2280`：MSVC 尝试复制只可移动
+Context 的 Result。样例改为两个显式分支后移动赋值，不改 Result、Context 或产品 API；Graph
+三交付仍待实际执行通过，Compute 已完成证据不因样例/说明修改重跑。性能预检另补齐 CRT 邻置
+及 DLL 哈希记录，执行前设置禁弹窗；这是 benchmark 启动准备，不是运行过 A/A 或 P1。
+
+完整 selector 扩展门、合格性能、默认优选和 Native 重复域清理仍未裁决。以上结果只完成本批
+Windows Compute 交付，不代签 Graph、其他路线、C1 整包或自研算子淘汰。
