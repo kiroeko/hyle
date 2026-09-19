@@ -472,6 +472,10 @@ _hyle_declare_component(graph_route_vulkan
 _hyle_declare_component(compute_provider_ggml_vulkan
   PRIVATE_DEPS core compute_ops error mem platform)
 
+# Reserved M1-G source-patch/runtime owner. No target or dependency is enabled
+# until its fallible resource seam and native build contract are audited.
+_hyle_declare_component(compute_ggml_runtime QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
