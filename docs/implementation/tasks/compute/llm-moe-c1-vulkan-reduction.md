@@ -84,3 +84,29 @@ Air首次build在新增测试的按值range-for触发Clang `-Wrange-loop-constru
 保持，三owner继续AUDITED。Compute/Graph统一实现48,737行/197文件（不含测试/第三方）。
 本批清理过期build-local第三方源码及Mini上一验证源码副本191,054,277逻辑字节，保留活动
 构建、当前源码、SDK与共享缓存。
+
+### 实际张量三交付及公开头：已完成
+
+固定源码包候选`923895c5`（产品与`05581df8`相同），W1/Air的source/static/shared共六条
+消费全部通过，每条72例/216次执行，合计432例/1296次。输入只取本地2B既有embedding
+fixture，F32/BF16，形状`1×1×128`、`1×17×129`、`2×257×128`；Sum/Mean、无mask/
+Boolean/additive Softmax和L2，独立FP64公式及操作合同中的F32边界，原容差不变。
+两个独立运行槽、三次变输入/mask、L2 published平方和、旧结果/close读取及quota归零通过。
+源码构建复用为static producer；安装路径搬迁并隐藏producer后再消费两个SDK。Windows的DLL
+邻exe、PATH隔离、禁弹窗沿既定约定；所有重型步骤串行，parallel2。
+
+消费端共两次有限纠正，原始首败均保留：①显式构造`Operation(Reduce/Softmax)`，MSVC拒绝
+隐式转换；②七个Direct Invocation组成的L2链在重复执行时，后续槽仍绑定并保活上一轮的
+上游输出，正确触发`result tensor is still retained`。多步Direct组合改用已有Recorder与两套
+固定caller buffers，单算子和Graph继续Invocation；没有放松检查、改公式/门限或产品API。
+这是不同公开入口的correctness消费，没有用不同输出责任做性能比较。产品/算法纠正仍0。
+
+W1/Air/Mini各两个Vulkan公开头检查通过，共6门。完整
+[交付记录与冻结consumer](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-reduction/delivery-progress.json)
+绑定源码包、输入、消费者、首败、编译/链接/运行日志和SDK清单；归档逐成员SHA/CRC核对，
+回传后核对归档身份。本阶段清理两平台的重复producer和已解包源码1,868,242,674逻辑字节，
+保留SDK、安装消费者、当前模块缓存和共享依赖。
+
+本组correctness/交付停止重复。112项selected的其余工程门仍未完成，聚合资格未签收；
+C1其他Provider覆盖、完整成本优选/淘汰及CPU Q2 BLOCKED保持，不签C1完成、不进入C2。
+实现统计仍为48,737行/197文件；本阶段仅增加外部消费者与证据，产品没有新增算子或代码。

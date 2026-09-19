@@ -76,6 +76,10 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 已经 ready 的常量。示例把 weight 捕获并冷 packing；变化的 RHS 可以改传其描述，随后
 `slot.bind(input, weight)`。变化 RHS 的布局转换发生在 GPU 程序内，成本与 scratch 不会消失。
 
+多个已准备操作需要在固定缓冲上反复组合时，可使用下文的Recorder；需要图规划时使用Graph。
+Invocation的输入绑定会保活上游Tensor：下游槽仍绑定某个结果时，上游槽会拒绝覆盖它。
+Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时使用独立的一套缓冲。
+
 当前 typed 域包括：
 
 - 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
@@ -158,7 +162,7 @@ Softmax 的广播 mask 按实际域适配：Boolean mask 在缩放后用 Select 
 Min/Max、LogSoftmax、空域、scalar归约和设备条件不适用成熟路径的已支持域仍使用原生实现。
 原生 Reduce 一次 dispatch，无额外 device scratch；原生概率路径的缓存或两阶段临时存储
 仍按实际条件计入 Graph 容量和 quota。以上成熟接入已通过 W1 static/shared、Air/Mini 的
-适用模块回归；本地真实张量的三交付和完整成本优选仍待
+适用模块回归，W1/Air本地真实张量的source/static/shared消费及三环境公开头检查；完整成本优选仍待
 [C1-Y34](../implementation/tasks/compute/llm-moe-c1-vulkan-reduction.md) 验收。
 
 TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score_description)`；

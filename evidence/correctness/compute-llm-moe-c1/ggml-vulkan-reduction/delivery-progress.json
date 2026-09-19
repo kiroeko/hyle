@@ -1,0 +1,114 @@
+{
+  "status": "PARTIAL",
+  "scope": "C1-Y34 real local2B Reduction/Softmax/L2 delivery and public headers",
+  "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+  "product_candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+  "deliveries": 6,
+  "cases": 432,
+  "runs": 1296,
+  "public_header_gates": 6,
+  "consumer_contract": {
+    "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+    "product_candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+    "state": "FROZEN_NOT_RUN",
+    "scope": "C1-Y34 local2B tensor Reduction/Softmax/L2; not model forward",
+    "consumer": {
+      "CMakeLists.txt": "eb09ce2f16bf386b2a0da7f8d0f9562d06c2b505e14b6095301ec9be2f921db1",
+      "main.cc": "64db81912af536044f15727bcad2fbd12c317ffebf0b1119c93caa9e25c6df2f"
+    },
+    "storage": [
+      "F32",
+      "BF16"
+    ],
+    "shapes": [
+      [
+        1,
+        1,
+        128
+      ],
+      [
+        1,
+        17,
+        129
+      ],
+      [
+        2,
+        257,
+        128
+      ]
+    ],
+    "modes": [
+      "Sum",
+      "Mean",
+      "Softmax",
+      "Softmax Boolean mask",
+      "Softmax additive mask",
+      "L2"
+    ],
+    "L2": "CastF32 -> square -> Sum(keepdim) -> add epsilon1e-6F -> Rsqrt -> Multiply -> CastBack; publish square sum too",
+    "reference": "independent scalar FP64 formulas, explicit operation-level F32 boundaries and final F32/BF16 RNE",
+    "tolerance": {
+      "F32": {
+        "relative": 6e-06,
+        "absolute": 2e-06
+      },
+      "BF16": {
+        "relative": 0.008,
+        "absolute": 2e-07
+      }
+    },
+    "per_journey": {
+      "cases": 72,
+      "runs": 216,
+      "retained_close": 72,
+      "quota_zero": 72
+    },
+    "slot_schedule": "one retained first slot and one working slot used twice; Direct L2 uses existing Recorder with fixed caller buffers; other modes/Graph use Invocation",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+    "consumer_compile_correction_budget": 2,
+    "consumer_compile_corrections": 1,
+    "performance": false,
+    "initial_consumer": {
+      "CMakeLists.txt": "eb09ce2f16bf386b2a0da7f8d0f9562d06c2b505e14b6095301ec9be2f921db1",
+      "main.cc": "11c1cbbfa89c4033a8ca22db81aafce0e0277a033423dda86e6d8d9912833a84"
+    },
+    "correction": "Explicit Operation(Reduce/Softmax) construction in operation helper; MSVC rejected implicit conversion. No product/oracle change, no GPU execution before correction.",
+    "previous_consumer": {
+      "CMakeLists.txt": "eb09ce2f16bf386b2a0da7f8d0f9562d06c2b505e14b6095301ec9be2f921db1",
+      "main.cc": "a07ca9437c6e90f484cef092592aa2f973abed21f5213bbf1fb1ce5118a08318"
+    },
+    "consumer_lifecycle_corrections": 1,
+    "consumer_corrections_total": 2,
+    "lifecycle_correction": "Repeated seven-invocation Direct L2 retained upstream outputs through downstream input bindings; correct result lifetime guard rejected overwrite. Use existing Recorder for multi-operation Direct composition with two independent fixed-buffer recordings, upload changed input and resubmit. Single-op/Graph still use Invocation. No product, formula, shape or tolerance changes."
+  },
+  "corrections": {
+    "consumer_compile": 1,
+    "consumer_lifecycle": 1,
+    "product": 0,
+    "algorithm": 0
+  },
+  "lifetime_scope": "Invocation owns generated results; Direct multi-op L2 uses existing Recorder and fixed caller buffers. First slot stays unchanged; working slot replays. No performance comparison between these responsibilities.",
+  "engineering_selector": {
+    "selected": 112,
+    "skipped": 8,
+    "aggregate": "INCONCLUSIVE"
+  },
+  "remaining": [
+    "remaining selected engineering gates",
+    "C1 other mature-provider coverage",
+    "C1 full-cost performance/default rules/redundant implementation decisions",
+    "CPU Q2 measurement qualification BLOCKED"
+  ],
+  "performance_runs": 0,
+  "implementation_code_lines": 48737,
+  "implementation_files": 197,
+  "cleanup_logical_bytes_this_batch": 1868242674,
+  "evidence": {
+    "air-delivery.json": "9df5b1afbcbd74981788f5e2046875e0dfae8461d6b6ae1f3e0848db5474a686",
+    "air-producer-cleanup.json": "6c88cfea53caf73d2c4094c3bdc416a6a14bf46b75f3f5aab08e5c4d35d148ae",
+    "delivery-inputs-and-headers.json": "7d5e11b3ac575ba96fa4f83182999ce077c5a39408cee690d62e04ee4991dab3",
+    "windows-delivery-cleanup.json": "85e3fdced977883afe80e682ce6d37cdf0ed7bbc65be1f7bfe3b2d8ce27f3c74",
+    "windows-delivery.json": "29ad2e6cce66edd99f8c3ac953456e04f68860817e5f80b20e85334d8a66afb6"
+  }
+}

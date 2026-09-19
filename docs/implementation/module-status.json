@@ -504,18 +504,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared 136/135项；测试修正11804be7通过Air136、Mini135项（验证层专用1项跳过），W1 Direct增量91项通过。真实2B L2/概率三交付、selected112工程余门及整包优选/淘汰未完成；CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared、Air/Mini适用模块回归；923895c5的W1/Air真实2B归约/概率/L2六交付432例/1296次执行及三环境公开头通过。产品纠正0；selected112工程余门、C1其余Provider覆盖及完整成本优选/淘汰仍待完成，CPU Q2 BLOCKED保持。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared 136/135项；测试修正11804be7通过Air136、Mini135项（验证层专用1项跳过），W1 Direct增量91项通过。真实2B L2/概率三交付、selected112工程余门及整包优选/淘汰未完成；CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared、Air/Mini适用模块回归；923895c5的W1/Air真实2B归约/概率/L2六交付432例/1296次执行及三环境公开头通过。产品纠正0；selected112工程余门、C1其余Provider覆盖及完整成本优选/淘汰仍待完成，CPU Q2 BLOCKED保持。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared 136/135项；测试修正11804be7通过Air136、Mini135项（验证层专用1项跳过），W1 Direct增量91项通过。真实2B L2/概率三交付、selected112工程余门及整包优选/淘汰未完成；CPU Q2 BLOCKED保持。",
+      "summary": "LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared、Air/Mini适用模块回归；923895c5的W1/Air真实2B归约/概率/L2六交付432例/1296次执行及三环境公开头通过。产品纠正0；selected112工程余门、C1其余Provider覆盖及完整成本优选/淘汰仍待完成，CPU Q2 BLOCKED保持。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

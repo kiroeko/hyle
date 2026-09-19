@@ -1,0 +1,58 @@
+{
+  "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+  "platform": "Windows",
+  "status": "PASS",
+  "scope": "Y34 actual-weight Reduction Direct/Graph; no full C1/model/performance acceptance",
+  "source_archive_sha256": "247349ff5fc612c3cfb0322eeae48e53fd70a515925b82a4f2a06a836ebf7c06",
+  "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+  "consumer_files": {
+    "CMakeLists.txt": "eb09ce2f16bf386b2a0da7f8d0f9562d06c2b505e14b6095301ec9be2f921db1",
+    "main.cc": "64db81912af536044f15727bcad2fbd12c317ffebf0b1119c93caa9e25c6df2f"
+  },
+  "executables": {
+    "bs/hyle_c1_reduction": "f8c9c026160609f2bcb6ef56a7454c4db4c1cf179f30dd7e9e99642447456b71",
+    "consumer-static/hyle_c1_reduction": "51728f4a5b5e801ee3307fb53ce0bcac55b79db47ce3f154127950d1973f8f89",
+    "consumer-shared/hyle_c1_reduction": "bd8af8ba352ceca242c80d8516df3c3731f3b5552043ae39997c4c78ff7ec339"
+  },
+  "tests": {
+    "bs": {
+      "sha256": "248984850503498935f6991141d5107e03cf53d31543bca1209b8e51b90d5671",
+      "cases": 72,
+      "runs": 216,
+      "retained_after_close": 72,
+      "quota_zero": 72
+    },
+    "consumer-static": {
+      "sha256": "784a36c7c3bf89c4c79c869ff9eb04bc1c767adac5b428eaf69c1780024f32d1",
+      "cases": 72,
+      "runs": 216,
+      "retained_after_close": 72,
+      "quota_zero": 72
+    },
+    "consumer-shared": {
+      "sha256": "469da2311abab55162837c6dab42b0900e4d703a1cd360f6932b4f3249e22a7d",
+      "cases": 72,
+      "runs": 216,
+      "retained_after_close": 72,
+      "quota_zero": 72
+    }
+  },
+  "slot_schedule": {
+    "Direct_and_Graph": {
+      "snapshot_slots": 1,
+      "working_slots": 1,
+      "runs": 3
+    }
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "archive": "windows-delivery.zip",
+  "archive_sha256": "479f022677d05c7de6c927e58862d123f3f699571b7576639ee43b189a851fa7",
+  "archive_bytes": 108662,
+  "payloads_in_archive": false,
+  "not_claimed": [
+    "complete C1",
+    "model inference",
+    "performance",
+    "all selected global package gates"
+  ]
+}

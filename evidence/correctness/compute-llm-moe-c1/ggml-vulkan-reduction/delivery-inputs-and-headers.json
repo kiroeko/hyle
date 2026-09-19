@@ -1,0 +1,162 @@
+{
+  "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+  "status": "PASS",
+  "scope": "Two Vulkan public-header gates on W1/Air/Mini; frozen delivery inputs and correction history",
+  "headers": {
+    "windows": {
+      "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+      "scope": "Only two selected Vulkan public-header gates; not all112 gates",
+      "plan_sha256": "753fe88703e338acbab5faa5560b62caa46b9b3cffb2364c3830c56ab6dd5c59",
+      "build_cache_sha256": "f0d7337775b0886436f1fdef9c24cf15e045cdabef6604da09fab37970af4814",
+      "commands": [
+        {
+          "id": "headers:compute_route_vulkan",
+          "argv": [
+            "C:/Program Files/CMake/bin/ctest.exe",
+            "--test-dir",
+            "C:\\hyle-scratch\\active-vk\\static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_route_vulkan$",
+            "-R",
+            "_header_self_contained_test$"
+          ],
+          "exit_code": 0,
+          "log": "headers-compute_route_vulkan.log",
+          "sha256": "c288d160b1f9ce44c87c7b81e08f75b4de5a4a5ab6bf67069089aa2656655e84"
+        },
+        {
+          "id": "headers:graph_route_vulkan",
+          "argv": [
+            "C:/Program Files/CMake/bin/ctest.exe",
+            "--test-dir",
+            "C:\\hyle-scratch\\active-vk\\static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^graph_route_vulkan$",
+            "-R",
+            "_header_self_contained_test$"
+          ],
+          "exit_code": 0,
+          "log": "headers-graph_route_vulkan.log",
+          "sha256": "39907a18325ce53391550b91bcbd58f924fb977fb4c1e7fc8e2d84badba33d9c"
+        }
+      ],
+      "status": "PASS",
+      "compiler_PATH_retained": true
+    },
+    "air": {
+      "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+      "validation_checkout": "11804be7e8661cafb535d2b372544e474bc9b1a6",
+      "headers": {
+        "include/hyle/compute/vulkan.h": "7a6e5c2b912f080a51726c57b0ed1a61c2a141167363c0873a3bfbaf1fca1784",
+        "include/hyle/graph/vulkan.h": "621301bc273a062710fcc0d6603c289034e6b892eb728a8f2d0cdfa1d213c078"
+      },
+      "scope": "Two public Vulkan headers only, same canonical header inputs",
+      "platform": "air",
+      "commands": [
+        {
+          "id": "headers:compute_route_vulkan",
+          "argv": [
+            "/opt/homebrew/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_route_vulkan$",
+            "-R",
+            "_header_self_contained_test$"
+          ],
+          "exit_code": 0,
+          "log": "compute_route_vulkan.log",
+          "sha256": "4fc124bcb6e574ae2babaab10fbca9924f610ef387417fdd7aea73631026a7f9"
+        },
+        {
+          "id": "headers:graph_route_vulkan",
+          "argv": [
+            "/opt/homebrew/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^graph_route_vulkan$",
+            "-R",
+            "_header_self_contained_test$"
+          ],
+          "exit_code": 0,
+          "log": "graph_route_vulkan.log",
+          "sha256": "8680f6195ea8c5e1194c848f1e10e6a65fc8f12e16b14377573500a0c6791e39"
+        }
+      ],
+      "status": "PASS",
+      "cache_sha256": "fd5b76bd1d2f50fb42c3e6c00aa585995a6beaac292f854c55eb2f81b804dacb"
+    },
+    "mini": {
+      "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+      "validation_checkout": "11804be7e8661cafb535d2b372544e474bc9b1a6",
+      "headers": {
+        "include/hyle/compute/vulkan.h": "7a6e5c2b912f080a51726c57b0ed1a61c2a141167363c0873a3bfbaf1fca1784",
+        "include/hyle/graph/vulkan.h": "621301bc273a062710fcc0d6603c289034e6b892eb728a8f2d0cdfa1d213c078"
+      },
+      "scope": "Two public Vulkan headers only, same canonical header inputs",
+      "platform": "mini",
+      "commands": [
+        {
+          "id": "headers:compute_route_vulkan",
+          "argv": [
+            "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_route_vulkan$",
+            "-R",
+            "_header_self_contained_test$"
+          ],
+          "exit_code": 0,
+          "log": "compute_route_vulkan.log",
+          "sha256": "a16821cd8d8e93712f3dba256f2559f2c09f07dd20ff89b2cd5a79a73af9cfb6"
+        },
+        {
+          "id": "headers:graph_route_vulkan",
+          "argv": [
+            "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^graph_route_vulkan$",
+            "-R",
+            "_header_self_contained_test$"
+          ],
+          "exit_code": 0,
+          "log": "graph_route_vulkan.log",
+          "sha256": "9cccca57708d0075ada8ce92070983f5e3d88e1f2b5c26f51d26458266c5bd42"
+        }
+      ],
+      "status": "PASS",
+      "cache_sha256": "e3d51d0f251d031e2b667ccae350015536a4a711b62a8cd19506a816d26da7ac"
+    }
+  },
+  "archive": "delivery-inputs-and-headers.zip",
+  "archive_sha256": "a18b19c204939bf85c026c77d94cce1c5c27f53c8f1a773a0f5157ad21f70f04",
+  "archive_bytes": 52625
+}

@@ -1,0 +1,33 @@
+{
+  "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+  "status": "PASS",
+  "scope": "Y34 two delivery producers and extracted package only",
+  "qualification_archive_sha256": "479f022677d05c7de6c927e58862d123f3f699571b7576639ee43b189a851fa7",
+  "targets": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\d34\\bs-hidden",
+      "files": 4478,
+      "logical_bytes": 454869383
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\d34\\bd-hidden",
+      "files": 4483,
+      "logical_bytes": 433854942
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\d34\\complete-source-hidden",
+      "files": 5704,
+      "logical_bytes": 93992598
+    }
+  ],
+  "logical_bytes_removed": 982716923,
+  "retained": [
+    "relocated SDKs",
+    "installed consumers",
+    "fixtures",
+    "logs",
+    "source archive",
+    "active module caches",
+    "shared dependencies and tools"
+  ]
+}
