@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 #include "gate_norm_test_support.h"
 #include "vulkan_internal.h"
 #include "vulkan_program_internal.h"
@@ -39,7 +41,7 @@ TEST(VulkanGateNorm, LayerNormUsesMatureRegionsThroughHighRankStorageAdapters) {
       std::vector<v::Argument> arguments;
       for (const auto &tensor : tensors)
         arguments.emplace_back(tensor.description());
-      auto program = v::prepare(context, c::LayerNorm{},
+      auto program = v::prepare(context, c::Operation(c::LayerNorm{}),
                                 std::span<const v::Argument>(arguments));
       ASSERT_TRUE(program) << program.error().message();
       const auto &dispatches = v::detail::Access::program(*program)->dispatches;
