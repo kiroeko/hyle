@@ -1,0 +1,38 @@
+{
+  "schema": "hyle.c1-vulkan-layernorm-source-audit/v1",
+  "status": "AUDITED_INPUT_ONLY",
+  "owner": "/root",
+  "baseline": "5f61546cd0f09ff735b2c01f3f28e33fa3044a2c",
+  "requirement": "F04.2",
+  "peer_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "peer_clean": true,
+  "peer_files": {
+    "src/ggml.c": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+    "src/ggml-vulkan/ggml-vulkan.cpp": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+    "src/ggml-vulkan/vulkan-shaders/norm.comp": "ca26cdf00c148c7b2c9b2be821402c83dfe70552fbbb038580b89805fbd3ead2",
+    "src/ggml-vulkan/vulkan-shaders/group_norm.comp": "0aad37cca193bf38db1df5aaa8fe53e6fb7a839554b41e04f2fc06f5de74f605"
+  },
+  "hyle_files": {
+    "include/hyle/compute/operation.h": "e68c2743d339ccf5b84df510b797e0c6a41589a4df3b7166577e202cab679bd5",
+    "src/compute_ops/operation.cc": "90bb6c8f4fc15c2326ec583c854af9a58f24eecd2d57a6813a11740510639261",
+    "src/compute_provider_ggml_vulkan/region.cc": "52bef4776754777424dcda67da35b8ca598565e49b521c343e616540a4efece7",
+    "src/compute_route_vulkan/vulkan_region.cc": "52f1d472bfa50fd30d840d1c2775c946a5229a423a4c071221fdeb163ada06d7",
+    "src/compute_route_vulkan/vulkan_tensor.cc": "88d65f238bb8b019344c13bc30ed465e912178e26172412c8120cc3299d48497",
+    "tests/compute_route_vulkan/gate_norm_test.cc": "28e7379d41cca51334b19aaf0f0adea92529bd5b0d10f11076656085ab5c4352"
+  },
+  "findings": [
+    "Current typed region does not bind LayerNorm; existing native shader remains the implementation.",
+    "Original norm.comp uses mean of squares minus square of mean. Original group_norm.comp first reduces mean, then sums squared centered values.",
+    "Canonical ggml shape [width,1,1,rows] with one group normalizes each contiguous row; original Vulkan dispatch is rows groups in X with 512 invocations per group.",
+    "Generic vk_op_push_constants does not carry byte-origin offsets and asserts descriptor alignment; ordinary cold region adapters must supply aligned storage.",
+    "GroupNorm output must be restored to HYLE logical shape; a published view alone is not an owning output port. No-affine path uses original Cont, affine path finishes with original Mul/Add.",
+    "Existing HYLE Cast/Copy plus dense alias can adapt noncontiguous/high-rank/half inputs through F32; scale/bias convert separately and final half cast follows affine.",
+    "At most five original ggml tensor/node objects per LayerNorm (input reshape, GroupNorm, output reshape or Cont, optional Mul/Add) plus existing region overhead."
+  ],
+  "decision": "Borrow original GroupNorm and native region; implement bounded dtype/layout, metadata, hardware-domain and output-owner adapters. No vendor algorithm change.",
+  "limits": [
+    "No GPU execution or numerical qualification in this audit.",
+    "No P1/default performance winner/retirement/matrix/C1 completion.",
+    "No changes to CPU qualification blocker or public validation instruments."
+  ]
+}

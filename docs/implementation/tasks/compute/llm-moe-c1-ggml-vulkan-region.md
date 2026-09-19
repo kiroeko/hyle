@@ -1,6 +1,10 @@
 # C1-Y：ggml Vulkan managed region 接入
 
-当前有限增量Y30（2026-09-19，baseline `a302c004`，owner `/root`）：本Provider与Vulkan
+当前有限增量Y33：三个 Vulkan owner 对
+[LayerNorm 成熟接入](llm-moe-c1-vulkan-layernorm.md) 重新定界并 AUDITED；先完成已登记的
+Provider 接入余项，再冻结完整 C1 性能候选。Y32工程门已完成，CPU Q2 BLOCKED保持。
+
+此前有限增量Y30（2026-09-19，baseline `a302c004`，owner `/root`）：本Provider与Vulkan
 route已对[原版Argsort整数padding修复](llm-moe-c1-tensor-state.md#c1-y30原版-argsort-的整数-padding-修复scoped--audited)
 完成SCOPED/AUDITED并冻结Y30-A–C。只修已复现的大宽度遗漏及其冷资源准入；不更换排序实现、
 pin、公共构建机制或CPU blocker。产品改动前的复现、预算及适用验收以该节为准。

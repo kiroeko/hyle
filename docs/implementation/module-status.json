@@ -504,18 +504,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y32 AUDITED：55fe0b8a产品不变；Y31 Windows/Air真实BF16状态六交付通过，c733aa93的112项Windows工程门及45条默认三交付通过，原始夹具失败保留并纠正。本组停止重复；完整成本优选/淘汰与C1整包未签收，CPU Q2资格BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y33 AUDITED：5f61546c重定界原版GroupNorm承载LayerNorm及dtype/layout/设备/输出owner适配，Y33-A–D有限FIX已固定，尚未实施/运行；Y32的112项工程门已完成。整包P1/优选/淘汰未启动，CPU Q2 BLOCKED保持。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y32 AUDITED：55fe0b8a产品不变；Y31 Windows/Air真实BF16状态六交付通过，c733aa93的112项Windows工程门及45条默认三交付通过，原始夹具失败保留并纠正。本组停止重复；完整成本优选/淘汰与C1整包未签收，CPU Q2资格BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y33 AUDITED：5f61546c重定界原版GroupNorm承载LayerNorm及dtype/layout/设备/输出owner适配，Y33-A–D有限FIX已固定，尚未实施/运行；Y32的112项工程门已完成。整包P1/优选/淘汰未启动，CPU Q2 BLOCKED保持。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y32 AUDITED：55fe0b8a产品不变；Y31 Windows/Air真实BF16状态六交付通过，c733aa93的112项Windows工程门及45条默认三交付通过，原始夹具失败保留并纠正。本组停止重复；完整成本优选/淘汰与C1整包未签收，CPU Q2资格BLOCKED保持。",
+      "summary": "LLM/MoE C1-Y33 AUDITED：5f61546c重定界原版GroupNorm承载LayerNorm及dtype/layout/设备/输出owner适配，Y33-A–D有限FIX已固定，尚未实施/运行；Y32的112项工程门已完成。整包P1/优选/淘汰未启动，CPU Q2 BLOCKED保持。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

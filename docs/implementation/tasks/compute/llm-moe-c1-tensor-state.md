@@ -1468,3 +1468,12 @@ component-contract首次离线夹具在cache初始化前放置archive，被产�
 
 Y32工程门停止重复；四路线完整成本资格、固定优选与自有实现取舍仍待完成，CPU Q2的
 BLOCKED没有解除。矩阵与C1整包尚未签收；完成全部C1适用验收后再通知用户，在C2前等待提问。
+
+### C1-Y33：先补 LayerNorm 成熟接入，再冻结整包性能候选
+
+baseline `5f61546c`，owner `/root`。当前源码核对确认 LayerNorm/归约/Softmax 仍由自实现
+承载，原 Provider 复核已将成熟接入列为余项。因此不提前启动整包 P1；本批三个 Vulkan owner
+仅对 [Y33-A–D](llm-moe-c1-vulkan-layernorm.md) 重新定界并 AUDITED：原版 GroupNorm 承载
+稳定 LayerNorm，沿既有转换/alias/region 适配 dtype/layout、设备限制与输出 owner，完成实际
+普通入口和适用验收。无新归一化算法、公共 API 或 vendor patch；其他接入余项与 CPU BLOCKED
+保持。本批审计不计新增已验收能力，旧路径的性能取舍仍随完整 C1 bundle 裁决。
