@@ -996,3 +996,33 @@ Windows/Air的具名producer与展开源码在归档核验后合计清理1,876,6
 consumer/cache。此组已通过的验证停止重复运行；全局selector适用门在C1固定候选收口，旧候选
 证据不改签。三个owner继续AUDITED；Scatter/Scan、完整C1片段、优选/淘汰和矩阵仍未签收，
 没有运行P1，CPU oneDNN资格BLOCKED不变。
+
+## Y27：F32 Scan 原版前缀和接入（SCOPED / AUDITED）
+
+2026-09-19，baseline `6900c5db`，owner `/root`；产品owner仅
+`compute_provider_ggml_vulkan`和`compute_route_vulkan`，Graph为真实直接消费者。
+这是C1/F02.4中浮点前缀消费及公开Scan完整性的有限子集；I32受检前缀、Scatter另行裁决。
+先固定本节并提交，随后改产品代码；不借此重开CPU oneDNN资格或改公共治理。
+
+源码审计限定锁定ggml `456172ec`的`ggml_vk_cumsum`、三份`cumsum*.comp`、
+`ggml_vk_op_f32`与supports_op，以及当前HYLE Scan语义/region适配。调查到此停止。
+原版支持F32 inclusive、subgroup arithmetic与full-subgroup能力，保留按行数/宽度选择的
+单遍或两遍原生程序。HYLE共同合同允许F32重结合；不能把该实现当作I32溢出检查。
+
+具名静态反例：单遍shader把XYZ展开为row，host对513行分配512×2组，shader没有总行数检查。
+不能把513行直接交给原版；同时两遍路径的输入要求设备descriptor对齐。固定适配是将行数
+展平为2D，超过512且非512整数倍时在原版DAG中分为完整512行前缀和小于512行的尾段，
+分别cumsum后原版concat；尾段先原版cont以保有独立对齐。最多两个Scan，不拆每行/每kernel，
+不改vendor shader、pin或运行时。其余行数保持一个原版cumsum。
+
+| FIX | 有限实现 | 成本与必需验证 |
+|---|---|---|
+| Y27-A | 私有region准入F32、最后轴inclusive Scan；lower到原版cumsum及上述最多两段DAG | 原有allocator/资源/完成不变；原版单遍O(N)，两遍的块前缀重读成本如实计入，不能预称最优；ragged行额外cont尾段/concat输出，冷tensor节点上界固定 |
+| Y27-B | 路线将任意合法轴/rank≤8/stride/origin变成dense二维原生输入，Scan后恢复轴；exclusive以零列与inclusive前缀的View/Concat组合 | 复用已接View/Copy/Fill/Concat；空输入无payload，宽1 exclusive直接Fill；必要dense物化/对齐/结果重排分别计费。冷检查I32元素/设备buffer与原厂两类workgroup上限，无热期路由/计时、新状态或payload kernel |
+| Y27-C | 普通Direct/Graph独立FP64 prefix与生命周期/文档 | 0/1/17/127/128/129/255/256/257/1023/1024/1025/4096/4097/8193宽，1/17/128/513/1025行；中/负轴、rank8、奇数/零stride、byte origin、非二进制/NaN/±Inf；exclusive不以inclusive减当前值。两槽/5次变化输入/旧结果、Graph上下游组合、metadata拒绝、既有OOM/错误排空回归 |
+
+适用验证：selector的provider、Direct/Graph factors，W1 static/shared、Air/Mini；W1/Air
+source/static/shared普通片段沿C1固定bundle。首次W1先验证具名边界，再运行该候选适用回归；
+测试不得下载模型或把诊断输入写成真实权重。API/算法固定后的等责P1仍按C1原预算，本节不采样。
+原厂设备能力不具备时在冷建槽沿既有NativeGraph准入返回Unimplemented，不运行替代算法。
+产品纠正最多两轮；具体新反例按协议裁决，不无限改换实现。未运行平台/交付/整包门保持未证明。

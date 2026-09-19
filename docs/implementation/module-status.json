@@ -506,7 +506,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y26-F2 AUDITED：原版GetRows宽行纠正后，d54ddc5a四构建406例及Windows/Air真实BF16片段六条三交付通过。此组停止重复验证；全局selector门、Scatter/Scan、完整C1优选淘汰未完成，CPU资格BLOCKED不变。"
+      "summary": "LLM/MoE C1-Y27 AUDITED：Y26四构建406例及六条真实BF16交付通过；仅新增F32 Scan原版cumsum与布局/exclusive边界适配的有限FIX。I32 Scan、Scatter、全局selector与C1优选淘汰未完成，CPU资格BLOCKED不变。"
     },
     {
       "module": "graph_route_vulkan",
@@ -517,7 +517,7 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y26-F2 AUDITED：原版GetRows宽行纠正后，d54ddc5a四构建406例及Windows/Air真实BF16片段六条三交付通过。此组停止重复验证；全局selector门、Scatter/Scan、完整C1优选淘汰未完成，CPU资格BLOCKED不变。",
+      "summary": "LLM/MoE C1-Y27 AUDITED：Y26四构建406例及六条真实BF16交付通过；仅新增F32 Scan原版cumsum与布局/exclusive边界适配的有限FIX。I32 Scan、Scatter、全局selector与C1优选淘汰未完成，CPU资格BLOCKED不变。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

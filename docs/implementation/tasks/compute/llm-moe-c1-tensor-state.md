@@ -1221,6 +1221,11 @@ Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留
 
 ### C1-Y 成熟逐元素族绑定（AUDITED）
 
+当前有限增量Y27（baseline `6900c5db`）已完成F32 Scan的SCOPED/AUDITED：provider接原版
+cumsum，route补轴/stride/exclusive及原厂ragged-row边界适配，Graph作直接消费验证。
+固定FIX和预算见[C1-Y的Y27](llm-moe-c1-ggml-vulkan-region.md)。I32受检Scan与Scatter未由本节授权，
+不增加payload shader，不把F32接入计为整个F02.4或C1完成。
+
 当前增量：2026-09-19，baseline `04643d18`，三个 Vulkan owner 对
 [C1-Y 的 Y26](llm-moe-c1-ggml-vulkan-region.md) 完成受检 Gather 的有限审计：原版 GetRows、
 GPU 索引检查、逐位布局适配及真实完成后错误回报。仅授权 Y26-A–D；Scatter/Scan 另行定界，
