@@ -1430,3 +1430,24 @@ Air首次launcher的Python路径不存在，尚未构建即失败；原始记录
 Y31停止重复验收；完成的是本组Vulkan真实消费与新增Scan/Scatter三交付，未代签C1整包。
 下一项继续原卡的全局selector余门与四路线完整成本资格/优选淘汰；CPU oneDNN资格BLOCKED
 不变，64行/256格未签收。C1全部适用验收完成后再通知用户，并在C2之前等待提问。
+
+### C1-Y32：已选全局门的固定候选验收
+
+2026-09-19，owner `/root`，当前baseline `25bd596f`。这是Y30/Y31已登记的global余门验收，
+不新增产品FIX或重开其他模块。Vulkan最后产品为`55fe0b8a`，Y31真实消费/六交付已完成；
+其后只有文档、证据及CPU模块benchmark记录修复，Vulkan产品没有变化。
+
+以原Y30 selector产品baseline `4b3ca598e7dacb752923658b3ff17bdaa4281b1c`对本节提交后的
+不可变HEAD重新投影：第三方产品patch触发组件/交付闭包，原计划共112项。保存实际当前plan，
+逐项执行或保留未运行事实；不手动删选中项，也不把旧候选的receipt改签新tree。
+
+按原已登记门分三批串行：Windows 96项maintenance/configure/原生correctness/headers，
+1项component-contract，15项默认产品三交付。复用固定`active-vk/static`的构建缓存；嵌套
+delivery使用短的任务专属目录，低并行2。执行既有selected命令，原有依赖cache/工具链与
+离线source overrides明确记录，不重写selector或公共构建工具，不新建一套gate规则。
+Windows CRT/vendor/HYLE DLL在启动前邻置，禁弹窗、不请求UAC。任何失败保留原始日志并停止
+该批，不用反复换配置寻找PASS；若发现具体产品问题，先回相应owner定界FIX。
+
+Y31的真实BF16状态片段、Air/Mini同产品局部回归按现有身份保留，不再重复。本节不启动P1，
+不推翻CPU Q2的BLOCKED，也不能代签四路线完整成本优选/淘汰或64行/256格。每批核验日志后
+清理自己的重复producer，保留所需SDK、当前构建缓存和原始证据，避免临时目录累计。
