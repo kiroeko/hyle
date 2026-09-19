@@ -7,18 +7,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 static int fail_context, fail_backing, live_contexts, context_calls;
+static void *context_allocation;
 static void *fault_malloc(size_t size) {
   ++context_calls;
   if (fail_context)
     return NULL;
   void *p = malloc(size);
-  if (p)
+  if (p) {
+    context_allocation = p;
     ++live_contexts;
+  }
   return p;
 }
 static void fault_free(void *p) {
-  if (p)
+  // POSIX aligned_free also calls free, while Windows/Apple use a distinct
+  // primitive. Count only pointers obtained through the context malloc hook.
+  if (p && p == context_allocation) {
+    context_allocation = NULL;
     --live_contexts;
+  }
   free(p);
 }
 #if defined(_WIN32)
