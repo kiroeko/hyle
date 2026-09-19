@@ -1319,3 +1319,10 @@ Graph产品、公共构建/selector/性能仪器。源码与已登记两条原�
 新功能三交付和真实C1片段与Scan一起进入本包固定bundle，不能用旧Gather交付代签，也不能
 留到C7首次接线。产品纠正最多两轮；先具体失败源码归因，不放宽数值/顺序/失败责任。当前不跑
 P1，完整C1沿原等责预算；CPU oneDNN资格BLOCKED和其他未签收项保持。
+
+首候选之前的P0接线核对补充：原版Argsort用`ceil(log2f(float(ncols)))`计算padding，超过
+2^21的相邻整数存在log2f舍入到整数的风险。Y29输入先按整数bit_ceil补齐到精确2次幂，padding
+keys用NaN放在全部有效key之后，只导出前count个order；不改原厂排序。冷检查该padding的8字节
+原厂scratch与各阶段workgroup/grid；4·padding的keys也计费。现有普通TopK的相同大宽风险是
+具名后续核对项，未由Y29悄悄改动或写成已修复。本次是首次候选的冷规划完整化，没有消耗产品
+运行失败的纠正预算。
