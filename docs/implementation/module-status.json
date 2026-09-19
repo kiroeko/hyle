@@ -506,13 +506,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y29 AUDITED：固定受检有序Scatter的有限FIX，复用ggml稳定排序/GetRows及现有原生资源；补语义映射和顺序加法，尚未实施验收。Y28四构建391例保留；Scan/Scatter三交付、完整C1优选/global门未完成，CPU资格BLOCKED不变。"
+      "summary": "LLM/MoE C1-Y29 AUDITED：有序受检Scatter已接普通Direct/Graph，复用原版Argsort/GetRows；07e30f13产品及4c7d51c8测试头修正的四构建共427例通过，无产品纠正或P1。Scan/Scatter真实三交付、完整C1优选/global门及普通TopK已知padding修复待完成；CPU资格BLOCKED不变。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y28 AUDITED：counts→I32 Scan→原版Gather→norm及失败/新槽/旧结果通过，f0115f96四构建Direct/Graph共391例；F32回归通过。Scatter、Scan三交付实际消费与完整C1优选/global门未完成，CPU资格BLOCKED不变。"
+      "summary": "LLM/MoE C1-Y29 AUDITED：有序受检Scatter已接普通Direct/Graph，复用原版Argsort/GetRows；07e30f13产品及4c7d51c8测试头修正的四构建共427例通过，无产品纠正或P1。Scan/Scatter真实三交付、完整C1优选/global门及普通TopK已知padding修复待完成；CPU资格BLOCKED不变。"
     },
     {
       "module": "compute_provider_ggml_vulkan",

@@ -1326,3 +1326,17 @@ keys用NaN放在全部有效key之后，只导出前count个order；不改原厂
 原厂scratch与各阶段workgroup/grid；4·padding的keys也计费。现有普通TopK的相同大宽风险是
 具名后续核对项，未由Y29悄悄改动或写成已修复。本次是首次候选的冷规划完整化，没有消耗产品
 运行失败的纠正预算。
+
+#### Y29 实现与四构建局部结果
+
+`07e30f13` 完成有序 Scatter：assign 复用原版 stable Argsort/GetRows，add 使用同一顺序，
+保留逐项 half 舍入、受检失败输出不变及既有资源/完成机制。[局部验收](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-scatter/README.md)
+共427项：W1 static/shared为107/106，Air/Mini各107；先行9项不重复累加，W1的source/MASM/
+公开头另行通过。Air首次测试编译遗漏`<algorithm>`，`4c7d51c8`只补该include，产品源码未变；
+失败日志保留，未消耗产品纠正预算，无P1。普通Graph的Scan→两种Scatter→Gather→norm、
+六storage/三浮点、轴/stride/origin、顺序/位级语义、失败/新槽/旧结果/quota/关闭回归通过。
+
+统一实现LOC为48,255行/195文件，不含测试/bench/第三方。此组局部运行停止重复；Scan/Scatter
+真实三交付、完整C1片段/固定优选/淘汰/global门仍未签收，CPU资格BLOCKED不变。普通TopK的
+浮点padding风险已由Windows实际CRT计算复现（2^21+1被补到2^21），后续按具名有限FIX修复；
+这不是Y29的运行失败或新的泛库审计。C1完成通知尚不触发。

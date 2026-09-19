@@ -60,8 +60,8 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y29 AUDITED：固定受检有序Scatter的有限FIX，复用ggml稳定排序/GetRows及现有原生资源；补语义映射和顺序加法，尚未实施验收。Y28四构建391例保留；Scan/Scatter三交付、完整C1优选/global门未完成，CPU资格BLOCKED不变。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y28 AUDITED：counts→I32 Scan→原版Gather→norm及失败/新槽/旧结果通过，f0115f96四构建Direct/Graph共391例；F32回归通过。Scatter、Scan三交付实际消费与完整C1优选/global门未完成，CPU资格BLOCKED不变。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y29 AUDITED：有序受检Scatter已接普通Direct/Graph，复用原版Argsort/GetRows；07e30f13产品及4c7d51c8测试头修正的四构建共427例通过，无产品纠正或P1。Scan/Scatter真实三交付、完整C1优选/global门及普通TopK已知padding修复待完成；CPU资格BLOCKED不变。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y29 AUDITED：有序受检Scatter已接普通Direct/Graph，复用原版Argsort/GetRows；07e30f13产品及4c7d51c8测试头修正的四构建共427例通过，无产品纠正或P1。Scan/Scatter真实三交付、完整C1优选/global门及普通TopK已知padding修复待完成；CPU资格BLOCKED不变。 |
 | compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y27 AUDITED：F32原版cumsum已接通，198cccba四构建430例通过；Y28路线I32补缺未改本Provider，组合及F32回归通过。Y26实际BF16三交付保留原身份；Scatter、完整C1片段/三交付/优选/global门未完成，CPU资格BLOCKED不变。 |
 
 <!-- END GENERATED MODULE STATUS -->

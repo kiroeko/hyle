@@ -1,0 +1,83 @@
+{
+  "candidate": "07e30f13c3677d6edf56f3f9d1c9c7157504a911",
+  "mac_test_candidate": "4c7d51c81e61060fffd4495af811f00f76cd4b2d",
+  "status": "PASS",
+  "scope": "Y29 ordered Scatter and selected Direct/Graph regression including F32 and I32 Scan",
+  "windows": {
+    "static": {
+      "status": "PASS",
+      "candidate": "07e30f13c3677d6edf56f3f9d1c9c7157504a911",
+      "suites": [
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 83,
+          "executable_sha256": "94764db537b6276b27222038905f5cc19dd09b96f9cc46b0bd31b387281ba420",
+          "report_sha256": "9448967ae36643eceaa034ce495a843a0937c27020b146ea48c20421189da128",
+          "log_sha256": "c8362f369248e8315ef87b6b1f2bf364c2c8f87a8e8c7576a2c41b6c153e32ed"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 24,
+          "executable_sha256": "b63ee71aef68da912522ee0e0a298a4827b2435cb8c7deb7a1005488f3dd4702",
+          "report_sha256": "1b34f4c2e506c7b325366736f5903beffc6f9c4c64c41d472441e5964b1d5c0e",
+          "log_sha256": "f55dbbf2fd9f0af6e0d3e22f237e7253c025c5b5d7bd1764ae0ac517dd4d6282"
+        }
+      ],
+      "tests": 107,
+      "source_and_masm_checks": 2,
+      "public_header_checks": 1,
+      "dlls_adjacent": true,
+      "path_unset": true,
+      "error_mode": "0x8003"
+    },
+    "shared": {
+      "status": "PASS",
+      "candidate": "07e30f13c3677d6edf56f3f9d1c9c7157504a911",
+      "suites": [
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 83,
+          "executable_sha256": "8a182b28c742b60a889df295fdfe8ecc201f8785fd3178da20cef9a89fdf1a0b",
+          "report_sha256": "33ca56e388677b7ced00c703b3b28cb85ca44d57f2f1ee73adeb1f5ce9da90da",
+          "log_sha256": "65f40dd014c9387d9cf7b5b075fc53837decfc86ff91b5449e7a68a765cb2a77"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 23,
+          "executable_sha256": "7f5515711dad0b46667854f9d28e74b58d55777b3f5a27fffce5501275bb47c3",
+          "report_sha256": "ce3250f8a9be5e7b9eb78eea331103a5a14779ea47297ef504c556f6c966122d",
+          "log_sha256": "19c7f0cacf6825f29c08cc8a001c5ae9803219a917b92b8177f9038612bc5c5f"
+        }
+      ],
+      "tests": 106,
+      "source_and_masm_checks": 2,
+      "public_header_checks": 1,
+      "dlls_adjacent": true,
+      "path_unset": true,
+      "error_mode": "0x8003"
+    }
+  },
+  "macos": {
+    "air": {
+      "receipt": "y29p-air-focused.json",
+      "tests": 107
+    },
+    "mini": {
+      "receipt": "y29p-mini-focused.json",
+      "tests": 107
+    }
+  },
+  "cases": 427,
+  "first_focused_tests_not_added_again": 9,
+  "product_corrections": 0,
+  "test_portability_corrections": 1,
+  "test_portability_note": "Windows static/shared passed on 07e30f13. Air first compile failed because the Direct test omitted <algorithm>. 4c7d51c8 adds that header only; identical product sources then passed on Air/Mini. Original failure retained in w1-raw.zip.",
+  "windows_archive": "w1-raw.zip",
+  "windows_archive_sha256": "caf0172f0a9a6834e59f266d85c48c4a5e1ca5e4a34f5a7521baf2aeaf8bfffe",
+  "not_claimed": [
+    "Scan/Scatter three-delivery journey",
+    "complete C1",
+    "global package gates",
+    "P1"
+  ]
+}

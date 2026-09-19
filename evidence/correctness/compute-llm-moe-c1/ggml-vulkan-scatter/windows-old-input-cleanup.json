@@ -1,0 +1,27 @@
+{
+  "candidate": "07e30f13c3677d6edf56f3f9d1c9c7157504a911",
+  "status": "PASS",
+  "retained": "Canonical Git source, current Y29p input, active builds, SDKs and proof archives",
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scan\\integer-audit\\y28-source.tar.gz",
+      "sha256": "aa6b9bbcfe36878d061cc738666503bf847de234f71aaec3c69d1f51d9558fc0",
+      "logical_bytes": 36363525
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scan\\integer-audit\\y28.bundle",
+      "sha256": "154dd9ebd280cfe6f6ffd6f10e8ec86b6420f6ef923ed8410bc389726f70cadb",
+      "logical_bytes": 153250
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scatter\\y29-source.tar.gz",
+      "sha256": "c30143626c758212968e4dc88faaa4149e36dfad61a6068943fbfea1f18ef9c7",
+      "logical_bytes": 36500160
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scatter\\y29.bundle",
+      "sha256": "abda341bdd7523d1a0691148e989611a15f005274ee5381b8cee4b99ea1c8391",
+      "logical_bytes": 147804
+    }
+  ]
+}
