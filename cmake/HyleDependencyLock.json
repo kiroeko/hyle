@@ -439,7 +439,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
-            "sha256": "b0c49ff577ea8cf124c460710155ad65ccad430b867a22f6b2849b5e6f4b363e"
+            "sha256": "1afe14e398d8a758d53e7518b85430b2a761ca331202efa64f4dbe21d0fcda51"
           }
         ]
       }
