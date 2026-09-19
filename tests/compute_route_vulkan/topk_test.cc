@@ -6,6 +6,32 @@
 namespace {
 using namespace vulkan_topk_test;
 
+TEST(VulkanTopK, IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries) {
+  auto context = vulkan_test::context().value();
+  for (const std::int64_t width : {2097153, 2097151, 2097152}) {
+    const auto desc = dense(c::DataType::kFloat32, {width});
+    for (const bool largest : {true, false}) {
+      SCOPED_TRACE(::testing::Message() << width << '/' << largest);
+      std::vector<float> host(static_cast<std::size_t>(width), 0.0f);
+      host.back() = largest ? 4.0f : -4.0f;
+      auto input = context.upload(desc, std::as_bytes(std::span(host)));
+      ASSERT_TRUE(input) << input.error().message();
+      auto program =
+          v::prepare(context, c::TopK{.count = 2, .largest = largest}, desc);
+      ASSERT_TRUE(program) << program.error().message();
+      auto output = execute_all(*program, *input);
+      ASSERT_TRUE(output) << output.error().message();
+      // A unique final winner followed by the first of the equal zero scores.
+      const std::vector<std::uint64_t> values{
+          encode(host.back(), c::DataType::kFloat32), 0};
+      const std::vector<std::uint64_t> indices{
+          static_cast<std::uint64_t>(width - 1), 0};
+      ASSERT_EQ(bits(context, (*output)[0]), values);
+      ASSERT_EQ(bits(context, (*output)[1]), indices);
+    }
+  }
+}
+
 TEST(VulkanTopK, FrozenExpertWidthsTailsAndStableRawOutputs) {
   auto context = vulkan_test::context().value();
   for (const std::int64_t width :
