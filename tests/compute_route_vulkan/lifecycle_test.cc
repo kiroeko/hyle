@@ -580,7 +580,13 @@ TEST(VulkanLifecycle, CheckedGatherFlushInvalidateCancelAndAbandon) {
   {
     auto work = abandoned.submit().value();
   }
-  const auto drained = d::collect(d::Access::runtime(context), true);
+  const auto deadline =
+      std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  auto drained = context.collect();
+  while (drained.ok() && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    drained = context.collect();
+  }
   EXPECT_TRUE(drained.IsOutOfRange()) << drained.message();
   EXPECT_TRUE(abandoned.bind(good).IsOutOfRange());
   auto fresh = program.create_invocation().value();
