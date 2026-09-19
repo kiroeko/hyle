@@ -331,3 +331,11 @@ F1 正确性及三交付 PASS 保留；本次样本不能签修复后的默认�
 [AA-Q1 资格恢复卡](llm-moe-c1-normalization-aa-qualification.md)。公共性能核心没有修改；
 原定第二轮性能纠正预算尚未使用，不以资格异常增加无界优化或采样额度。
 CPU 路线 owner、其它 Provider 的状态不变；本记录不把全局 C1–C7 goal 标成已完成或全局阻塞。
+
+### AA-Q2：具名恢复条件重新定界（SCOPED）
+
+2026-09-19，baseline `8461925b`，owner `/root`。按[Q2有限范围](llm-moe-c1-normalization-aa-qualification.md#q2恢复所需的具名验证记录修复scoped)
+处理preflight记录覆盖及实例冷观测缺失：两个oneDNN owner从BLOCKED进入SCOPED，产品仍为
+`ae270af9`，原资格FAIL、工程性能INCONCLUSIVE和第二轮产品纠正预算均保留。
+只有该受审模块验证改动及其冷验收完成，才固定唯一新实验；没有授权原样重测、改门限、默认
+规则或删除Native。其余C1能力继续原卡，Vulkan Y31通过不能解除CPU性能资格。

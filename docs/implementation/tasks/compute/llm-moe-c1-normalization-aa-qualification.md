@@ -85,3 +85,37 @@ Q1 **BLOCKED**，没有可由具体反例授权的产品或仪器 FIX，不修�
 只留下最终检查日志；证明它不改变数学、完成、拓扑、热路径或统计门后，再冻结唯一新实验。
 仅增加日志本身不能写作资格恢复。公共核心、产品常态 metadata 或放松阈值均不在这张卡授权内。
 独立的 C1-Y ggml Vulkan 能力绑定继续推进，不以该单项阻塞扩大为整包停工。
+
+## Q2：恢复所需的具名验证记录修复（SCOPED）
+
+2026-09-19，baseline `8461925b`，owner `/root`。Q1的历史BLOCKED及21%异常保留；本轮只处理
+其已写明的恢复条件，不重启已结束的根因调查。oneDNN两个owner按主卡重新进入SCOPED，F1产品
+`ae270af9`不变。没有修改默认规则或授权额外产品优化轮。
+
+具体缺口已由源码定位：模块preflight只把各child的合并文本打印到stdout；统一runner在前后两次
+调用时均写`validators/normalization-workload-aa.log`。因此新实验需要模块自行保留每次完整
+记录，不能只依赖最后一次公共validator日志。错误退出、timeout和解析失败也必须先留原字节。
+现有benchmark只打印顺序标签，没有两个实际实例的地址记录；Q1退出后无法补回历史实例事实。
+
+本轮有限范围：`bench/graph_provider_onednn/normalization_preflight.py`、同目录normalization
+benchmark的冷诊断、对应合同的记录目录/受控环境及模块专属测试。公共runner/统计核心、产品
+API/metadata、SIMD/Sched/oneDNN源算法与构建依赖不变；原16个workload、8个分层、P核策略、
+配对方法、5%中位数带和10%单实例gross guard均保留。
+
+拟定FIX仅三项：
+
+1. 每次preflight独立目录，逐child原始stdout/stderr、退出/timeout、nonce/命令/受控环境、
+   artifact/contract/source hash和最终裁决；先落盘再解析，第二次调用不能覆盖第一次。
+   vendor原生JIT dump放在该child目录并散列；临时文件在证据核验归档后清理。
+2. 只在A/A模式、两实例构造及正确性检查后、计时前，记录共享输入与各实例/output/workspace
+   handle、实际Provider资格、进程/线程/CPU以及当前private executable地址范围；计时后记录
+   同线程粗粒度wall/CPU事实。地址范围不冒称已经绑定每个JIT函数或证明具体干扰原因。
+   复用原`run()`及`Bench::compare`，测量回调内不加查询、计数、输出或分配。
+3. 原门保持的独立测试：既有gross反例与固定因素偏差必须拒绝；独立原始记录不会覆盖，
+   异常/timeout/坏telemetry不能写PASS；验证实例完整性和代码/制品身份。两个真实verify-only
+   进程覆盖primary oneDNN/oneDNN与placement Native/Native，不产生性能样本。
+
+先完成AUDITED再改代码。实现/测试最多两次具名纠正；不调查新算法或添加公共仪器。上述改动
+通过源码/测试与冷实际检查后，再依法固定CANDIDATE：唯一一次新实验沿原统一仪器、原16项/
+全部分层与原n=15/31停止规则，没有原样重试额度。若资格再次失败，保留新记录并BLOCKED，
+不循环等待好结果。日志增加本身不等于性能资格恢复，也不签默认规则或C1完成。
