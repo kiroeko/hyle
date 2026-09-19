@@ -56,3 +56,14 @@ C1全部适用验收完成后通知用户，并在C2前等待提问。
 更新此patch目录内容与NOTICE身份。未改公共API、pin或治理/性能工具。
 新增真实managed反例与cold grid测试，既有图的资源账单按新增适配更新。selector因依赖锁
 扩为112个selected、8个未选；此处仅登记适用集合，首次编译/GPU资格尚未运行，不签PASS。
+
+### W1 资格与 Air 首次编译修正
+
+候选`05581df8`的W1 static/shared分别136/135项全部通过，source contract另5项通过；
+无数值、生命周期或Vulkan validation失败。这仅签三个受影响factor，不代签112项工程门、
+真实2B三交付或整包性能。启动脚本首次误用Windows PowerShell5.1，在configure前因缺少
+`Path.IsPathFullyQualified`退出；改用既定PowerShell7后运行，原始首败日志保留。
+
+Air首次build在新增测试的按值range-for触发Clang `-Wrange-loop-construct` / WERROR。
+具名修正仅把`Operation`循环变量改为const引用，输入、断言及产品字节不变；保留首次失败，
+从Windows提交测试修正后增量验证。产品/算法纠正仍为0，未运行Air/Mini不写PASS。

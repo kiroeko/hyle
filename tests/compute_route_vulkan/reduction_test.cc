@@ -114,7 +114,7 @@ TEST(VulkanReduction, MatureReductionRespectsColdGridLimits) {
   auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
   const auto original = limits;
   const auto description = dense(c::DataType::kFloat32, {3, 32769});
-  for (const auto operation :
+  for (const auto &operation :
        {c::Operation(c::Reduce{.axes = c::Axes::from(std::array{-1}).value(),
                                .keep_dimensions = true}),
         c::Operation(c::Softmax{})}) {
