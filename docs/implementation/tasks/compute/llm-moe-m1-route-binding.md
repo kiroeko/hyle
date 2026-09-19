@@ -201,3 +201,21 @@ Compute诊断断言和Graph workload断言。修正不删除断言、不放宽�
 产品源码与`7016443b`一致；七个owner更新完整候选身份，保留Windows原28门和Air/Mini各自原
 commit的PASS及明确差异。四环境原生验证已完成，Windows/WSL sanitizer和GPU/远程三交付
 仍在执行，尚不能关闭。本卡最终实现计数为49,804行、205文件（701产品树；夹具修正不改变产品）。
+
+### 候选纠正 R5b：Apple 多消费目标共目录的资源暂存
+
+Windows GPU source/static/shared已通过。Air源码消费通过；其shared SDK安装和搬移成功，但
+两个真实消费程序并行运行`hyle_stage_apple_runtime`时，同向复制`mlx.metallib`的一项失败。
+源文件和最终文件均存在且SHA-256一致。现有helper为每个目标建立独立writer，却没有为相同
+输出目录协调同名资源；这是可以从构建图确认的并发缺口。16组小型双copy诊断未复现失败，
+因此不把它冒称为确定复现；原实际构建FAIL保留，修复按明确的共享writer风险裁决。
+
+有限FIX R5b仅改`cmake/HyleAppleRuntime.cmake`：沿已有helper生成逐目标构建脚本，在目标
+目录内用CMake进程锁串行暂存同名资源。不同目录互不阻塞；锁只在构建期，不进入产品执行。
+不增加第三方依赖、公开C++ API、运行成本或通用治理工具。owner `compute_route_apple`退回
+AUDITED，其余六项保留候选。源码/设计上限15分钟，最多两次纠正。
+
+验证只补该helper的并行同目录资源检查、已声明的Air/Mini三交付及Apple-OFF隔离；此前原生、
+Windows交付和插桩保持各自身份，不重跑算子。Apple原生执行二进制不因构建脚本变化重测。
+任务父工程的macOS部署版本、系统Python清理DYLD路径以及WSL TSan进程地址布局纠正均为
+验证环境修正，保留初始FAIL；没有修改系统设置、提升权限或解除旧Provider阻塞。
