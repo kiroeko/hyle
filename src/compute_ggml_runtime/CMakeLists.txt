@@ -1,8 +1,12 @@
 # Shared source ownership does not imply a shared backend executor. Only the
 # selected CPU/Vulkan closures enable their native implementation targets.
 set(_cpu OFF)
+set(_explicit_factors "${HYLE_DEV_FACTORS}")
+string(REPLACE "," ";" _explicit_factors "${_explicit_factors}")
+list(TRANSFORM _explicit_factors STRIP)
+list(TRANSFORM _explicit_factors TOLOWER)
 if(HYLE_BUILD_COMPUTE_BACKEND_CPU OR HYLE_BUILD_COMPUTE_PROVIDER_GGML OR
-   "compute_ggml_runtime" IN_LIST HYLE_DEV_FACTORS)
+   "compute_ggml_runtime" IN_LIST _explicit_factors)
   set(_cpu ON)
 endif()
 if(DEFINED HYLE_COMPUTE_CPU AND NOT HYLE_COMPUTE_CPU)
