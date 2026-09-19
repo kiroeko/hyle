@@ -1,0 +1,59 @@
+{
+  "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e",
+  "platform": "Air Mac16,12",
+  "status": "PASS",
+  "scope": "Y26 checked Gather actual BF16 embedding subset; no model/performance acceptance",
+  "source_archive_sha256": "2499a6a3b9df755987c2d7b1f027a330175b9b5d66480eb2b87d9bbca235a8b5",
+  "fixture_receipt_sha256": "de633565dc25f75d586d035da3599d5feb0926d5df85bae5afc6df6c0eff3364",
+  "consumer_files": {
+    "main.cc": "3870fd31a6881fbedff093d6047bae34cec4b1a79c8f6372708364d1f59e338a",
+    "CMakeLists.txt": "ee2a510d04dcd49d8cef9f754f466eab23e5c3d9d361ae58b5f5559dfb1e2903"
+  },
+  "executables": {
+    "bs/hyle_c1_real_weight_gather": "6e48af8368256e5481605092d97f41d3bc2cd7d073e1d661da5a8b383078d462",
+    "consumer-static/hyle_c1_real_weight_gather": "76d3247dd95b4d62c99f1503d00ca2d9dc80b220bdb720d0f8f97308ce6d01f2",
+    "consumer-shared/hyle_c1_real_weight_gather": "adfd44f4690c3ce80f9ed1a9f81ae88265911595771ebca12f6c55d5733e7d07"
+  },
+  "tests": {
+    "bs": {
+      "sha256": "ff4d7a4f00b3fe8f15fa3f7cc728f9ed599338e991e8dee55b8c41237cb4aebb",
+      "cases": 6,
+      "replays_per_case": 5,
+      "checked_failures": 6
+    },
+    "consumer-static": {
+      "sha256": "18858cf56db15609b4d607762b9c07d08b52eb5993369f1be8f7764ce79b7e29",
+      "cases": 6,
+      "replays_per_case": 5,
+      "checked_failures": 6
+    },
+    "consumer-shared": {
+      "sha256": "6852d578d5da48d354fb7b917f518163e1d37e23487110ca3e6d1929ecc24476",
+      "cases": 6,
+      "replays_per_case": 5,
+      "checked_failures": 6
+    }
+  },
+  "slot_schedule": {
+    "Direct": {
+      "gather": 3,
+      "norm": 2,
+      "retained_snapshot_slots": 1
+    },
+    "Graph": {
+      "whole_fragment": 2,
+      "retained_snapshot_slots": 1
+    }
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "archive": "y26-wide-air-delivery.zip",
+  "archive_sha256": "29a1c8d8797d60431d01fd283f60f5a62ca732576c6b0f9c9f514c1cc812cfc3",
+  "archive_bytes": 87316,
+  "payloads_in_archive": false,
+  "not_claimed": [
+    "complete C1",
+    "model inference",
+    "performance",
+    "all selected global package gates"
+  ]
+}

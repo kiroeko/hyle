@@ -1,0 +1,107 @@
+{
+  "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e",
+  "scope": "Y26-F2 same-candidate Vulkan Gather regression and actual BF16 three-delivery subset",
+  "status": "PASS",
+  "native_cases": 406,
+  "windows": {
+    "static": {
+      "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e",
+      "status": "PASS",
+      "suites": [
+        {
+          "factor": "compute_provider_ggml_vulkan",
+          "tests": 19,
+          "executable_sha256": "bf5b4ec38de31578c4a498a360fe67946c29f752600b98cc21e204e69d33b7a2",
+          "gtest_sha256": "efcbd683d5fc7add50c9f8409bd9016c8846262e1c57c2ba0ebf760698bd33b8",
+          "log_sha256": "aa7a432d2af308a0cc09d73efddbe5647cbe284b3f85d5a1b887fa787734b1fa"
+        },
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 62,
+          "executable_sha256": "49410cbda25470aa95382d241eb2d6efed239bd4fdf0635ca0f3b160817f3c07",
+          "gtest_sha256": "cad4c645f7ed9afcabce61981f3ad1139ead5abeb5bb9b77f7be9044e121bd14",
+          "log_sha256": "4d7b8af786a3abdb0cf3c31c88a65407dcdd2f1a1c8d335a516bb7b8f66eb7ba"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 21,
+          "executable_sha256": "d3d4ba98945de8ce4ea5e55eba45c2cd3622bb323c539983921a692124306f6c",
+          "gtest_sha256": "8887f8b276bbd185ec2156457be18de78a8233d69c543b166e4e20e9d16cdaa9",
+          "log_sha256": "1f946e8658123abe1f2964f5ee8ea0661e59ca04a103e0298f43537a88827b9c"
+        }
+      ],
+      "cases": 102,
+      "source_masm_contract_checks": 2,
+      "path_unset_for_native_exe": true,
+      "dlls_next_to_exe": true,
+      "error_mode": "0x8003",
+      "cache_sha256": "59204dfc242bbe84e79ff1af530fa4f6872bb62138fe6ff582320dd7cb73d915"
+    },
+    "shared": {
+      "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e",
+      "status": "PASS",
+      "suites": [
+        {
+          "factor": "compute_provider_ggml_vulkan",
+          "tests": 19,
+          "executable_sha256": "0b3a57ab2d1472a732f9031dbe7dfd1d0f7608e1a83454b7b4cc8cf8383793f7",
+          "gtest_sha256": "5561024682fd387e7ae04dd2bc2fbd7e64e07628d0266dfbb4ef90280c31c94a",
+          "log_sha256": "6205ed4659be8d13bec7ebd36c13067de86d5582bda9180d5e364dab5d03499d"
+        },
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 62,
+          "executable_sha256": "e63daea8030354a82b1f4d0aadee1447d60a60863450664470c5630651eb381b",
+          "gtest_sha256": "14c0d8c7246f18489e8406244a7fa51406c673b496ae143b4724c1b26f6fae5d",
+          "log_sha256": "1af527a7149ff10dc1f08edd28492d5d4ac7e690d639105fb212dee64154b02c"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 20,
+          "executable_sha256": "e6b21a31cd77635759edda8946f9094df7f2af3f069d36f6e2a1008a4f3204cb",
+          "gtest_sha256": "d3329480c4afb6feee46564832abd4f466e1dfa8ef7c0f4c621bef0a48c71ba9",
+          "log_sha256": "dd0aaeb60247890d10fd5ce79236b87ce9563482669cc445abaacb2774709e7d"
+        }
+      ],
+      "cases": 101,
+      "source_masm_contract_checks": 2,
+      "path_unset_for_native_exe": true,
+      "dlls_next_to_exe": true,
+      "error_mode": "0x8003",
+      "cache_sha256": "5cfd733d3e879f269e43493a8a0ab5d7a0e4ace5158b310c4de91bfdfd1043a6"
+    }
+  },
+  "macos": {
+    "air": {
+      "receipt": "y26-wide-air-focused.json",
+      "archive_sha256": "7535dd4c10982a49d7f0035c4046ced8f223b234b8fe90ff2f5fbd04fe90befc",
+      "cases": 102
+    },
+    "mini": {
+      "receipt": "y26-wide-mini-focused.json",
+      "archive_sha256": "fe37ff1dca541f63b5bc99460a21c401394c705dfa1ea4dcf75f22ee2a05c8dd",
+      "cases": 101
+    }
+  },
+  "actual_bf16_deliveries": {
+    "Windows": {
+      "receipt": "windows-delivery.json",
+      "archive_sha256": "4d1bb9236399140332b52e29afcc48596f78eb5749e4432b3dd3c6de46273ad9",
+      "deliveries": 3
+    },
+    "Air Mac16,12": {
+      "receipt": "y26-wide-air-delivery.json",
+      "archive_sha256": "29a1c8d8797d60431d01fd283f60f5a62ca732576c6b0f9c9f514c1cc812cfc3",
+      "deliveries": 3
+    }
+  },
+  "provenance_archive": "w1-and-provenance.zip",
+  "provenance_archive_sha256": "82fd4b5a3a853293d2d15a5e6f266d688a9f15bd648862fdd066fd9931f8fcc6",
+  "not_claimed": [
+    "all global selector gates",
+    "complete C1",
+    "performance",
+    "model inference",
+    "256 matrix cells"
+  ]
+}

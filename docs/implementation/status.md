@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y26-F2 AUDITED：Gather与F1四环境局部回归已通过；真实BF16宽行发现ggml I32 GetRows分母漏写，单值纠正后的W1边界回归通过。F2完整平台/真实片段三交付、C1 Scatter/Scan及优选淘汰仍待验证，CPU资格BLOCKED不变。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y26-F2 AUDITED：Gather与F1四环境局部回归已通过；真实BF16宽行发现ggml I32 GetRows分母漏写，单值纠正后的W1边界回归通过。F2完整平台/真实片段三交付、C1 Scatter/Scan及优选淘汰仍待验证，CPU资格BLOCKED不变。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y26-F2 AUDITED：Gather与F1四环境局部回归已通过；真实BF16宽行发现ggml I32 GetRows分母漏写，单值纠正后的W1边界回归通过。F2完整平台/真实片段三交付、C1 Scatter/Scan及优选淘汰仍待验证，CPU资格BLOCKED不变。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y26-F2 AUDITED：原版GetRows宽行纠正后，d54ddc5a四构建406例及Windows/Air真实BF16片段六条三交付通过。此组停止重复验证；全局selector门、Scatter/Scan、完整C1优选淘汰未完成，CPU资格BLOCKED不变。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y26-F2 AUDITED：原版GetRows宽行纠正后，d54ddc5a四构建406例及Windows/Air真实BF16片段六条三交付通过。此组停止重复验证；全局selector门、Scatter/Scan、完整C1优选淘汰未完成，CPU资格BLOCKED不变。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y26-F2 AUDITED：原版GetRows宽行纠正后，d54ddc5a四构建406例及Windows/Air真实BF16片段六条三交付通过。此组停止重复验证；全局selector门、Scatter/Scan、完整C1优选淘汰未完成，CPU资格BLOCKED不变。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

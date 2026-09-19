@@ -1,0 +1,51 @@
+{
+  "state": "PASS",
+  "producers": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\j\\bs-hidden",
+      "logical_bytes": 480175933.0,
+      "links": [
+        {
+          "path": "C:\\hyle-scratch\\active-vk\\j\\bs-hidden\\hyle\\src\\compute_provider_ggml_vulkan\\source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2\\.pi\\SYSTEM.md",
+          "target": "C:\\hyle-scratch\\active-vk\\j\\bs-hidden\\hyle\\src\\compute_provider_ggml_vulkan\\source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2\\.pi\\gg\\SYSTEM.md",
+          "action": "unlink file only"
+        },
+        {
+          "path": "C:\\hyle-scratch\\active-vk\\j\\bs-hidden\\hyle\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b\\.pi\\SYSTEM.md",
+          "target": "C:\\hyle-scratch\\active-vk\\j\\bs-hidden\\hyle\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b\\.pi\\gg\\SYSTEM.md",
+          "action": "unlink file only"
+        }
+      ],
+      "files": 6776
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\j\\bd-hidden",
+      "logical_bytes": 432546458.0,
+      "links": [
+        {
+          "path": "C:\\hyle-scratch\\active-vk\\j\\bd-hidden\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b\\.pi\\SYSTEM.md",
+          "target": "C:\\hyle-scratch\\active-vk\\j\\bd-hidden\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b\\.pi\\gg\\SYSTEM.md",
+          "action": "unlink file only"
+        }
+      ],
+      "files": 4479
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\j\\complete-source-hidden",
+      "logical_bytes": 86746910.0,
+      "links": [],
+      "files": 5559
+    }
+  ],
+  "retained": [
+    "relocated-sdk-static",
+    "relocated-sdk-shared",
+    "consumer-static",
+    "consumer-shared",
+    "fixtures",
+    "logs",
+    "independent-consumer"
+  ],
+  "archive_sha256": "4d1bb9236399140332b52e29afcc48596f78eb5749e4432b3dd3c6de46273ad9",
+  "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e"
+}

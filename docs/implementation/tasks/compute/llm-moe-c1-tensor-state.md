@@ -1226,7 +1226,9 @@ Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留
 GPU 索引检查、逐位布局适配及真实完成后错误回报。仅授权 Y26-A–D；Scatter/Scan 另行定界，
 Y26-A–C现已实现；F1的W1 static/shared、Air/Mini局部回归均通过。真实宽2048的BF16片段
 随后暴露锁定ggml的I32 GetRows工作组分母错误；Y26-F2已受审并作单值纠正，W1宽行位级回归
-从FAIL转为PASS。F2完整平台、真实片段/三交付及整包优选仍待验证，CPU性能blocker不变。
+从FAIL转为PASS。固定候选d54ddc5a的W1 static/shared、Air/Mini共406项回归及Windows/Air真实
+BF16片段的六条source/static/shared消费均通过；证据见Y26-F2结果节。此组停止重复验证，
+全局selector门、Scatter/Scan、完整C1片段与优选淘汰仍未签收，CPU性能blocker不变。
 
 2026-09-19，baseline `dff6a509`，owner `/root`：`compute_route_vulkan` 按
 [C1-Y 的 Y17–Y19](llm-moe-c1-ggml-vulkan-region.md) 重新定界普通入口的冷 managed span

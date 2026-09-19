@@ -1,0 +1,59 @@
+{
+  "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e",
+  "platform": "Windows",
+  "status": "PASS",
+  "scope": "Y26 checked Gather actual BF16 embedding subset; no model/performance acceptance",
+  "source_archive_sha256": "2499a6a3b9df755987c2d7b1f027a330175b9b5d66480eb2b87d9bbca235a8b5",
+  "fixture_receipt_sha256": "de633565dc25f75d586d035da3599d5feb0926d5df85bae5afc6df6c0eff3364",
+  "consumer_files": {
+    "CMakeLists.txt": "ee2a510d04dcd49d8cef9f754f466eab23e5c3d9d361ae58b5f5559dfb1e2903",
+    "main.cc": "3870fd31a6881fbedff093d6047bae34cec4b1a79c8f6372708364d1f59e338a"
+  },
+  "executables": {
+    "bs/hyle_c1_real_weight_gather": "21233d8db69bfa7164f19b781d2baea8c075865605a66a5e0d60a9cf500b92c2",
+    "consumer-static/hyle_c1_real_weight_gather": "848f3bc91ddfc2f9a85d2382749c592190c374f195767093ba56d8e68a6f8b68",
+    "consumer-shared/hyle_c1_real_weight_gather": "fef5333f96531b2498fa06dee5b7913ca3fb87b827cb9f1bc826dee06d46b0c4"
+  },
+  "tests": {
+    "bs": {
+      "sha256": "f55eb5071a90c9feac9c33793c40d10874dc3b185bdc73823b1afe68c5b07a89",
+      "cases": 6,
+      "replays_per_case": 5,
+      "checked_failures": 6
+    },
+    "consumer-static": {
+      "sha256": "c3f7bd8ef60768eec97b20e1ebc8c343c7a96056b763b7e7b77528cf45fa6f6d",
+      "cases": 6,
+      "replays_per_case": 5,
+      "checked_failures": 6
+    },
+    "consumer-shared": {
+      "sha256": "74295b279e9b6e1d308def805b28919a7e58d01cd6129cb789e89a311612fdbc",
+      "cases": 6,
+      "replays_per_case": 5,
+      "checked_failures": 6
+    }
+  },
+  "slot_schedule": {
+    "Direct": {
+      "gather": 3,
+      "norm": 2,
+      "retained_snapshot_slots": 1
+    },
+    "Graph": {
+      "whole_fragment": 2,
+      "retained_snapshot_slots": 1
+    }
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "archive": "windows-delivery.zip",
+  "archive_sha256": "4d1bb9236399140332b52e29afcc48596f78eb5749e4432b3dd3c6de46273ad9",
+  "archive_bytes": 132767,
+  "payloads_in_archive": false,
+  "not_claimed": [
+    "complete C1",
+    "model inference",
+    "performance",
+    "all selected global package gates"
+  ]
+}

@@ -978,3 +978,21 @@ F2单值补丁现已实施。W1新增宽行回归先在原实现复现FAIL，纠
 [W1定向纠正记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-gather/wide-row-counterexample/w1-correction.json)。
 完整selector的其余适用门尚待执行，未签全量PASS；本轮未运行P1。统一实现LOC仍为
 47,564行/193文件（不含测试、bench、第三方）；F2只改vendor配置及测试，HYLE实现集合未变。
+
+### Y26-F2 平台回归与实际三交付结果
+
+固定候选`d54ddc5a`的[平台/交付证据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-gather/platform-delivery/README.md)
+已归档：Windows static/shared分别102/101例，Air/Mini static分别102/101例，共406项通过；
+Windows两种构建的source及MASM组合检查各2项通过。Mini的validation专属用例因该层缺失明确
+不运行、不计PASS，其他三组validation无VUID或同步错误。
+
+Windows/Air以同一source archive完成source、relocated static/shared共六条实际消费。真实本地
+BF16 embedding子表34×2048，1/17/128行的Direct与Graph各5次变化输入重放，独立位级Gather/
+FP64 norm oracle、旧结果、受检失败/新槽恢复及owner/quota均通过。Direct用冷建3个Gather/2个Norm
+槽保留快照并交替释放下游持有的工作输入；Graph用两个完整片段槽。最初consumer覆盖仍被Norm
+持有的Gather结果，被产品正确拒绝；仅纠正冷槽安排，原失败保留，没有弱化寿命检查。
+
+Windows/Air的具名producer与展开源码在归档核验后合计清理1,876,666,772逻辑字节，保留SDK/
+consumer/cache。此组已通过的验证停止重复运行；全局selector适用门在C1固定候选收口，旧候选
+证据不改签。三个owner继续AUDITED；Scatter/Scan、完整C1片段、优选/淘汰和矩阵仍未签收，
+没有运行P1，CPU oneDNN资格BLOCKED不变。

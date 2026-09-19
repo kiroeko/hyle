@@ -1,0 +1,31 @@
+{
+  "state": "PASS",
+  "candidate": "d54ddc5afb8f9df3a3b5b6444e0b8e2bf03cb18e",
+  "archive_sha256": "29a1c8d8797d60431d01fd283f60f5a62ca732576c6b0f9c9f514c1cc812cfc3",
+  "producers": [
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/gd26/bs-hidden",
+      "files": 4451,
+      "logical_bytes": 395781178
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/gd26/bd-hidden",
+      "files": 4457,
+      "logical_bytes": 394669383
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/gd26/complete-source-hidden",
+      "files": 5559,
+      "logical_bytes": 86746910
+    }
+  ],
+  "retained": [
+    "relocated-sdk-static",
+    "relocated-sdk-shared",
+    "consumer-static",
+    "consumer-shared",
+    "fixtures",
+    "logs",
+    "independent-consumer"
+  ]
+}
