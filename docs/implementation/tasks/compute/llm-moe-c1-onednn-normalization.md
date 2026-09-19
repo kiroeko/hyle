@@ -343,3 +343,19 @@ CPU 路线 owner、其它 Provider 的状态不变；本记录不把全局 C1–
 Q2在`882ecd0e`之后完成[有限AUDITED ledger](llm-moe-c1-normalization-aa-qualification.md#q2-audited固定实现与验收)，
 两个owner进入AUDITED，只允许模块验证记录/冷观测与相关验收。F1产品、历史FAIL及原性能门
 保持；本轮冷检查通过前不启动计时，记录修复不能冒签性能资格或默认赢家。
+
+### Q2 CANDIDATE：唯一恢复实验
+
+候选固定为`07a69e607d54f9258d655f146e925f1d84ff8b58`；两个oneDNN owner由AUDITED进入
+CANDIDATE。11项模块验证测试及两个真实verify-only进程已通过，产品F1、问题数据、oracle、
+两个热`run()`、配对调用及原统计门未变；[冷验收](../../../../evidence/performance/onednn-normalization-aa-q2/README.md)
+明确不含性能样本。候选后的registry说明不改benchmark制品合同，统一仪器仍记录实际干净HEAD。
+
+现仅允许这一次`onednn-normalization-p1-v1`的W1-WIN原合同完整实验：原16项、8分层、公共控制、
+前后A/A、n=15/31停止策略；保留每次preflight的独立原始记录，采样普通路径不启用冷诊断或JIT
+dump。沿已有固定`active-cpu/p1`作fresh build，冷EXE已按hash另行备份；新output独立命名q2，
+旧失败/证据不覆盖。parallel2、重型验证串行、DLL邻置、禁弹窗，不改电源或请求UAC。
+
+资格再次失败立即按既定条件BLOCKED，不附加原样重测或限定诊断进程；若合格才按其实际结果
+裁决原剩余AA04。需要默认规则或删除实现时，先回到AUDITED并受原第二轮产品纠正预算约束。
+本节尚无Q2性能PASS，不代签Vulkan/其他C1验收或整包完成。
