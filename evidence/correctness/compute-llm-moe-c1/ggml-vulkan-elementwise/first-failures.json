@@ -1,0 +1,58 @@
+{
+  "status": "FAIL",
+  "scope": "Y35 first build and first W1 static module run",
+  "product_candidate": "bec24f76e3f584770156509428e2d1d3677478b3",
+  "test_candidate": "1e33a79f2d7b77994b7c046747d41312b5bc31a0",
+  "build_correction": "Explicit <algorithm> include in Direct tests only",
+  "provider_tests_passed": 19,
+  "direct_tests": 95,
+  "direct_passed": 94,
+  "direct_failed": 1,
+  "graph_run": false,
+  "device": {
+    "name": "NVIDIA GeForce RTX 4070",
+    "uuid": "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+    "driver": "610.62"
+  },
+  "failed_cases": [
+    {
+      "suite": "VulkanManaged",
+      "case": "StableTransformsPreserveSmallValuesAndHighRankHalfStorage",
+      "failures": [
+        {
+          "failure": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc:302\nThe difference between observed[i] and reference is 6.3632683122705203e-08, which exceeds relative * std::abs(reference) + quantum, where\nobserved[i] evaluates to 3.695349448662455e-07,\nreference evaluates to 3.0590226174354029e-07, and\nrelative * std::abs(reference) + quantum evaluates to 1.835413570461242e-12.\n3\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc(273): 6/12\n",
+          "type": ""
+        },
+        {
+          "failure": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc:302\nThe difference between observed[i] and reference is 6.3329935073852539e-08, which exceeds relative * std::abs(reference) + quantum, where\nobserved[i] evaluates to 3.6880373954772949e-07,\nreference evaluates to 3.0547380447387695e-07, and\nrelative * std::abs(reference) + quantum evaluates to 2.4437904357910157e-09.\n3\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc(273): 5/12\n",
+          "type": ""
+        }
+      ]
+    }
+  ],
+  "archive": "first-failures-raw.zip",
+  "archive_sha256": "2137b855594f83dcd058a0ff91bf5d0bec7a86ca53bd1ae6c56b8df8989066be",
+  "archive_bytes": 94140,
+  "members": {
+    "first-w1/build.log": "67b171f46f42eaba44adc30f181444abfc70cc5af8bb65cd68c336bc3fabd596",
+    "first-w1/configure.log": "3af18dc4870fb40a439f71872cf48ae20f650b73016be90281517fccdafffadb",
+    "first-w1/result.json": "da238f7ba4e9ee86f994c0fb3443efee6a080252c3923c148301f4b3ca2b671e",
+    "corrected-w1/build.log": "ac7aae318db6b6bb68c0a311ba8f8511eb78127f2478519aaf550ec1f99ef809",
+    "corrected-w1/compute_provider_ggml_vulkan.json": "0bdd62e501c431435994148eed0bb577e206c7e2dc327cad5ae61328bcd89aad",
+    "corrected-w1/compute_provider_ggml_vulkan.log": "f876f29417c691fa373ba5040bc8589fcb6710036d76c1700207728e48af11b9",
+    "corrected-w1/compute_route_vulkan.json": "dd9e42a907d733533b3a8f2b942e63400894c4a395e5505e14cc3fcbbe202ccc",
+    "corrected-w1/compute_route_vulkan.log": "a7275d3b2e3ef19ac97c0b8a2089fd042d9b0e5fd0111df387a2f825385af142",
+    "corrected-w1/result.json": "0d012b0e0a362300ba256b14b8f32f2f5861abb48708f2cb9eb9ff81a406d53b",
+    "inputs/first-w1.py": "b68deede6dee0d07ad2a00192ea3db7153c0490a7638bb0980729ecffe130981",
+    "inputs/first-w1.ps1": "de583c77655eedf015c92da0741c20cfa9ad9f328a252c3f0b23dabae81e940f",
+    "inputs/corrected-w1.py": "7c357dfecbd202e675e3e1d34126d91e1e5cec2ae7e7aeafa0e3754fa76ba30e",
+    "inputs/corrected-w1.ps1": "9f70a284468c79b35afc0fee205ba107d2f4483c259fec0d77cc9fd8d3eed9d8",
+    "inputs/first-environment.log": "e3c380bccb9b94b34773a7d2c268610319b4c5332b4f4bbe791dd1bd9b35c92f",
+    "inputs/corrected-environment.log": "b63f70e10f4e0a73d2ce6dc690a221e401c368df0425067026c095d686b92557",
+    "inputs/product-plan.json": "77889b40215238330ea5b6bf3449c149dd85a402a913419fe5e928c36614e2d9",
+    "inputs/patch-identities.txt": "618195347c1a19602329a8eb8779e268b27fb8e33146a0001c4f9d22085fae7f",
+    "inputs/implementation-loc.json": "6a1a5c4c32a37a18f5312033ab25d5157528ff42e6e14a6e34422aa40eb55bc8"
+  },
+  "performance_runs": 0,
+  "next_authority": "docs/implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md#f1小量-softplus-数值纠正scoped--audited"
+}

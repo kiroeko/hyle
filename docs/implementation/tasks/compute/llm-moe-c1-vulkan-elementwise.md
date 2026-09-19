@@ -67,3 +67,20 @@ patch-tree 为 `3ee02da8a740cc831d6cef427cf8dd9302c9fd3cd931a5586782094bf43f2852
 首次 W1 构建在新增 Direct 测试缺少 `<algorithm>` 时停止（MSVC C2039/C3861，
 `std::ranges::count_if/all_of`）；尚未执行 GPU 测试。补显式头依赖后按同一缓存增量构建，
 保留首败日志。产品/算法纠正0，测试编译纠正1；不改变数值门、运行语义或统计工具。
+
+## F1：小量 Softplus 数值纠正（SCOPED / AUDITED）
+
+baseline `1e33a79f`，owner `/root`。W1 的 Provider19项通过，Direct95项中94项通过、
+1项失败：严格尾值回归的 Softplus(-15) 在 F32 得到 `3.695349448662455e-7`，独立参考为
+`3.059022617435403e-7`；BF16 同样偏大。Graph 尚未运行。
+[首败收据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/first-failures.json)
+保留编译首败、GPU原始日志与数值，不删除点或放宽门限。
+
+源码定位：补偿 `log(1+e)` 仍依赖设备 log 在1附近的精度；原生 Softplus 也使用这个形式。
+既有 `tensor.comp::log_one_plus` 的 LogSoftmax 路径已避开该域：`e<1/64` 用五阶展开，
+其余用补偿式；省略项有 `e^6/6` 上界。这是具名已有能力复用，不重审其他数值算法。
+
+有限 F1：ggml Softplus patch 复用该小量表达式；原生 Softplus 复用同一个已有 helper，
+将 helper 移出 reduction 条件块，不改变其数学或其他调用者。新增原生 fallback 的同输入
+尾值回归，并覆盖阈值两侧；既有 managed 严格门与完整本批适用验收保持。产品纠正消耗1/2，
+测试编译纠正1；不启动性能、不改公共仪器、不改变其他 owner 状态。实施前先提交本节审计。
