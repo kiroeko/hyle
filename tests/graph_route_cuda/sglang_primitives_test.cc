@@ -84,11 +84,12 @@ TEST(CudaDefaultGraph,
     std::array queues{owner.create_queue().value(),
                       owner.create_queue().value()};
     Tensor direct(desc, resource.ref());
-    auto direct_program = compute::prepare(owner, compute::RmsNorm{},
-                                           std::array{inputs[0].view.as_const(),
-                                                      weight.view.as_const()},
-                                           std::array{direct.view})
-                              .value();
+    auto direct_program =
+        compute::prepare(
+            owner, compute::Operation(compute::RmsNorm{}),
+            std::array{inputs[0].view.as_const(), weight.view.as_const()},
+            std::array{direct.view})
+            .value();
     EXPECT_EQ(direct_program.provider().id,
               compute::cuda_native::kSglangProviderId);
     auto direct_slot = direct_program.create_invocation().value();

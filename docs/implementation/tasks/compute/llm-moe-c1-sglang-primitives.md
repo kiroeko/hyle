@@ -59,3 +59,12 @@ Unary O(N)，原版16字节向量、一次 launch、零 workspace；数学变化
 
 审计已固定，产品尚未实施、验证尚未运行；不计入完整 C1/矩阵完成。
 C1 全部适用验收完成后明确通知用户，在 C2 前等待提问。
+
+## 首次实施及编译纠正
+
+产品`9ac3c91e`已实现AB-A–C并加入AB-D测试。配置首败为私有清单脚本按Windows路径大小写
+排序，与现有CMake的字典序不同；修正排序后官方依赖审计通过，最终vendor tree为
+`ab8f1749bbf7afca067ffc5b128c572129ae0d5fd944410edf3a51015138830a`，没有改公共治理工具。
+首编的CUDA device及adapter通过，新测试错误地向typed descriptor重载传入TensorView数组；
+只在测试显式构造已有`Operation`，不改公开API或产品。首败日志保留，测试/consumer编译
+纠正1/2、产品算法纠正0/2；尚无运行、三交付或性能PASS。

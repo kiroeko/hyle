@@ -60,8 +60,9 @@ template <class T> void rms_shapes() {
             output(desc, resource.ref());
         const auto target = inplace ? input.view : output.view;
         const std::array inputs{input.view.as_const(), weight.view.as_const()};
-        auto prepared = compute::prepare(owner, compute::RmsNorm{}, inputs,
-                                         std::array{target});
+        auto prepared =
+            compute::prepare(owner, compute::Operation(compute::RmsNorm{}),
+                             inputs, std::array{target});
         ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
         EXPECT_EQ(prepared->provider().id,
                   compute::cuda_native::kSglangProviderId);
@@ -156,9 +157,9 @@ template <class T> void unary_cases() {
                    << static_cast<int>(kind) << '/' << inplace);
       input.write(values);
       const auto target = inplace ? input.view : output.view;
-      auto prepared = compute::prepare(owner, compute::Unary{kind},
-                                       std::array{input.view.as_const()},
-                                       std::array{target})
+      auto prepared = compute::prepare(
+                          owner, compute::Operation(compute::Unary{kind}),
+                          std::array{input.view.as_const()}, std::array{target})
                           .value();
       EXPECT_EQ(prepared.provider().id,
                 compute::cuda_native::kSglangProviderId);
@@ -228,7 +229,7 @@ TEST(SglangPrimitives, RejectsUnmatchedNormAndUnaryDomains) {
     Tensor input(desc, resource.ref()), weight(w, resource.ref()),
         output(desc, resource.ref());
     EXPECT_FALSE(compute::prepare(
-                     owner, compute::RmsNorm{},
+                     owner, compute::Operation(compute::RmsNorm{}),
                      std::array{input.view.as_const(), weight.view.as_const()},
                      std::array{output.view})
                      .has_value());
@@ -242,22 +243,23 @@ TEST(SglangPrimitives, RejectsUnmatchedNormAndUnaryDomains) {
   Tensor input(desc, resource.ref()), weight(f32, resource.ref()),
       output(desc, resource.ref());
   EXPECT_FALSE(compute::prepare(
-                   owner, compute::RmsNorm{},
+                   owner, compute::Operation(compute::RmsNorm{}),
                    std::array{input.view.as_const(), weight.view.as_const()},
                    std::array{output.view})
                    .has_value());
-  EXPECT_FALSE(compute::prepare(owner, compute::RmsNorm{},
+  EXPECT_FALSE(compute::prepare(owner, compute::Operation(compute::RmsNorm{}),
                                 std::array{input.view.as_const()},
                                 std::array{output.view})
                    .has_value());
   EXPECT_FALSE(
-      compute::prepare(owner, compute::LayerNorm{},
+      compute::prepare(owner, compute::Operation(compute::LayerNorm{}),
                        std::array{input.view.as_const(), input.view.as_const()},
                        std::array{output.view})
           .has_value());
-  EXPECT_FALSE(compute::prepare(owner, compute::Unary{compute::UnaryKind::kAbs},
-                                std::array{input.view.as_const()},
-                                std::array{output.view})
+  EXPECT_FALSE(compute::prepare(
+                   owner,
+                   compute::Operation(compute::Unary{compute::UnaryKind::kAbs}),
+                   std::array{input.view.as_const()}, std::array{output.view})
                    .has_value());
 }
 } // namespace
