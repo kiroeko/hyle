@@ -49,7 +49,7 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
     const std::array shapes{std::pair{256LL, 6U}, std::pair{288LL, 8U},
                             std::pair{384LL, 6U}, std::pair{512LL, 10U},
                             std::pair{896LL, 16U}};
-    for (const auto [experts, configured] : shapes) {
+    for (const auto &[experts, configured] : shapes) {
       for (const std::int64_t rows : {1, 17, 23}) {
         for (const std::size_t count :
              {std::size_t{1}, static_cast<std::size_t>(configured)}) {

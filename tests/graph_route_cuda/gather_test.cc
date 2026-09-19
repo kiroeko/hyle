@@ -334,8 +334,9 @@ void failure_case(bool abandon) {
     if (abandon)
       pending = {};
     gate.release();
-    if (!abandon)
+    if (!abandon) {
       EXPECT_TRUE(pending.wait().IsOutOfRange());
+    }
     ASSERT_TRUE(owner.drain().ok());
     EXPECT_EQ(output.read<int>(), (std::vector{14, 12}));
   }

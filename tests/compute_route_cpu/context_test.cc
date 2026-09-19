@@ -145,8 +145,9 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
         ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
         EXPECT_EQ(prepared->workload(), workload);
         workload = {};
-        if (rows >= 16)
+        if (rows >= 16) {
           EXPECT_TRUE(prepared->workload().model.matches(workload_test::kModel));
+        }
         ProviderId expected = native::kProviderId;
 #if defined(HYLE_COMPUTE_ONEDNN)
         if (rows >= 16 && !transposed)
