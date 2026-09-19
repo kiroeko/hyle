@@ -62,8 +62,8 @@
 | graph_route_apple | SCOPED | — | [record](tasks/compute/llm-moe-m0-provider-scope.md) | 新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。 |
 | compute_route_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m0-provider-scope.md) | 新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。 |
 | graph_route_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m0-provider-scope.md) | 新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。 |
-| compute_provider_ggml_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G SCOPED：只审ggml共同源码/资源运行时、CPU fallible pool/持久workspace与Vulkan资源依赖提取；G1–G5待冻结，全部数学算法仍冻结。 |
-| compute_ggml_runtime | SCOPED | — | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G SCOPED：只审ggml共同源码/资源运行时、CPU fallible pool/持久workspace与Vulkan资源依赖提取；G1–G5待冻结，全部数学算法仍冻结。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G AUDITED：G1–G5资源/共同vendor接入有限集已冻结；只改fallible context/pool、持久plan/workspace、one-time初始化及Vulkan资源依赖提取。数学算法冻结，产品验证待执行。 |
+| compute_ggml_runtime | AUDITED | — | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G AUDITED：G1–G5资源/共同vendor接入有限集已冻结；只改fallible context/pool、持久plan/workspace、one-time初始化及Vulkan资源依赖提取。数学算法冻结，产品验证待执行。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

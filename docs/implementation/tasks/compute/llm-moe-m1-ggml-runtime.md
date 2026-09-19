@@ -55,7 +55,7 @@
 | source/build/package identity | 交付机制 / BORROW | 当前Vulkan独占ggml目标、CPU旧lock | 一个vendor源码owner；backend按选中路线启用，保持原生执行器独立 |
 | model/Direct/Graph lowering | 上层复合 | M0只有映射，未接完 | 留在M1-R/M2具名卡，本卡不签覆盖 |
 
-### 拟定有限 FIX
+### 已冻结有限 FIX
 
 | ID | 允许改动 | 适用验收 |
 |---|---|---|
@@ -65,7 +65,7 @@
 | G4 | CPU one-time time初始化替代每次临时context；不改查表或算子实现 | 原版计算差分；源码/测试分配账单证明steady不建context/pool/workspace |
 | G5 | 迁移现有Vulkan metadata依赖与source-contract测试；三交付/导出/源码包闭包 | 现有Vulkan资源回归；CPU及CPU+Vulkan source/static/shared、relocation与route-OFF |
 
-以上仍是SCOPED拟定集；审计冻结并进入AUDITED后才允许产品改动。
+G1–G5已完成以下资源/交付审计并冻结；本卡两个owner进入AUDITED后实施。任何数学文件修改均不在授权内。
 
 ### API / ownership / 成本冻结方向
 
@@ -96,3 +96,33 @@
 
 原`compute_provider_ggml`保持BLOCKED。独立factor完成维护/升级、OOM、并发与三交付合同审计后，
 才可依原恢复条件另建CPU Provider卡回到SCOPED；本卡不代替该状态迁移或其适用产品验证。
+
+## AUDITED 决定与七问
+
+1. **来源/升级**：共用`456172ec`，CPU旧`ggml`lock迁移到此内容；保留Vulkan后端补丁身份，
+   context条目移至新的共同runtime manifest。private helper仍验证before/after完整SHA和唯一
+   replacement，升级必须逐hunk重新核对；数学/查表/调度循环不是补丁范围。原版源码与MIT许可
+   通过现有lock/package分发，不改共享cache。补丁维护面限`ggml.c`资源初始化、`ggml-cpu.c`
+   pool资源/CPU初始化以及必要私有声明；Vulkan已冻结数学改动的字节不变。
+2. **消费与语义**：只签资源seam，主纵切和两个独立slot覆盖真实graph_compute。私有arena
+   预算使用ggml公开overhead，先检查size_t/ptrdiff与容量；算子内部容量assert仍是不变量。
+   后续lowering须声明节点/metadata上限，不能把原始ggml任意指针作为普通入口。
+3. **复用**：直接使用ggml原生pool/barrier/graph_plan；不把Sched伪装成其线程池。
+   MetadataArena从现有Vulkan实现提取；payload/workspace仍使用现有Mem，错误使用Status/native
+   translators。core/error/mem不重开。线程优先级normal、空affinity、poll0，不动系统策略。
+4. **成本**：每slot冷建一个pool和workspace；context创建、CPU time initialization、线程创建
+   均不在steady执行。原版融合识别/数学执行留在Provider内部，不参加HYLE Provider搜索或竞速。
+   最多一个明确native-error输出参数用于pool创建，产品不增加测试分支/全局注入状态。
+5. **接口**：`MetadataArena`和`CpuExecution`是不安装的Provider内部C++ RAII类型；必要的
+   `ggml_hyle_threadpool_new(params, native_error)`只在固定vendor与adapter间使用，不是公开C产品。
+   native_error为0的NULL表示分配失败；POSIX/Win32线程与同步初始化错误保留实际码。
+6. **三交付/构建**：一个runtime owner创建ggml-base和按选中路线启用的backend targets，
+   现有Vulkan owner只保留原生适配器。CPU backend在CPU闭包或显式runtime开发验证中启用；
+   CPU-OFF与Vulkan-OFF均受门控，不通过本factor引入CUDA/Metal。target与license注册沿原机制，
+   不把私有头安装给普通SDK用户。共同seam的实际三交付仍待G5验证，不以本审计代签。
+7. **易用/验证**：普通用户入口不变；后续M1-R/M2接自然工厂。故障fixture链接精确patched C
+   translation unit，用测试局部malloc/aligned-allocation/thread-create替换真实失败点；仍创建
+   真实线程并join已成功部分，正常算术fixture运行原版计算。生产二进制不含这些注入入口。
+
+原CPU Provider恢复条件的“独立patch factor审计”已有具名承接；本轮仍保留其BLOCKED状态，
+先完成资源实现与验证，避免把审计文档误算为已接入。公共component/package所选门仍待候选统一运行。

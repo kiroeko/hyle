@@ -514,14 +514,14 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
-      "summary": "M1-G SCOPED：只审ggml共同源码/资源运行时、CPU fallible pool/持久workspace与Vulkan资源依赖提取；G1–G5待冻结，全部数学算法仍冻结。",
+      "state": "AUDITED",
+      "summary": "M1-G AUDITED：G1–G5资源/共同vendor接入有限集已冻结；只改fallible context/pool、持久plan/workspace、one-time初始化及Vulkan资源依赖提取。数学算法冻结，产品验证待执行。",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-ggml-runtime.md"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
-      "summary": "M1-G SCOPED：只审ggml共同源码/资源运行时、CPU fallible pool/持久workspace与Vulkan资源依赖提取；G1–G5待冻结，全部数学算法仍冻结。",
+      "state": "AUDITED",
+      "summary": "M1-G AUDITED：G1–G5资源/共同vendor接入有限集已冻结；只改fallible context/pool、持久plan/workspace、one-time初始化及Vulkan资源依赖提取。数学算法冻结，产品验证待执行。",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-ggml-runtime.md"
     }
   ]
