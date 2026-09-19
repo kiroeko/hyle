@@ -1488,6 +1488,14 @@ Mini131项通过、专用验证层用例1项明确跳过；验证层风险由W1/
 统一Compute/Graph实现48,424行/196文件，不含测试；本批归档后清理4,207,211,641逻辑字节。
 C1全部适用验收完成后才通知用户，并在C2之前等待提问。
 
+### C1-AB：CUDA 成熟归一化与激活接入（SCOPED / AUDITED）
+
+baseline `7444ab43`，owner `/root`，`compute_provider_cuda` 仅按
+[AB-A–D](llm-moe-c1-sglang-primitives.md)重新定界：同 pin SGLang 半精度 RMSNorm 全部已列
+宽度及三种 Unary 激活，复用普通 Direct/Graph 工厂与 CUDA 资源；先来源/数值审计，再成组
+实现和适用资格。混合F32参数等不匹配域不窄化，原生路径继续保留为比较/补缺候选。
+本批不跑P1；CPU Q2 BLOCKED、其他owner状态与C1通知条件不变。
+
 ### C1-Y34：成熟 Sum/Mean/Softmax 接入（SCOPED / AUDITED）
 
 baseline `3cd981b3`，owner `/root`。三个Vulkan owner现对

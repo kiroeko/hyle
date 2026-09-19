@@ -464,7 +464,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-E/G/H/I/J/K/M/N/O AUDITED：门控、tensor/norm/reduce/top-k/concat及checked Gather/有序Scatter/Scan已实现；O的W1 provider/默认Direct/Graph共60 case PASS。完整C1真实权重/公开头增量/三交付/其它环境/P1待完成，矩阵仍未证明。"
+      "summary": "LLM/MoE C1-AB AUDITED：按当前卡有限接入同pin SGLang半精度RMSNorm与三种Unary，复用既有普通Direct/Graph、stream/capture；旧E–O能力保留。AB尚未实施或验证；完整C1真实权重/三交付/其它环境/性能与取舍待完成，矩阵仍未证明。"
     },
     {
       "module": "compute_route_cuda",
