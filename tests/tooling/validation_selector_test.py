@@ -415,6 +415,44 @@ class ImpactTest(unittest.TestCase):
         self.assertIn("headers:container_queue", self.selected(plan))
         self.assertIn("delivery:container", self.selected(plan))
 
+    @patch.object(selector.platform, "system", return_value="Darwin")
+    def test_apple_runtime_cmake_uses_real_owner_and_consumer_closure(self, _system):
+        self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_apple_runtime target)\nendfunction()\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["selected_factors"], ["compute_route_apple", "graph_route_apple"])
+        selected = self.selected(plan)
+        self.assertIn("factor:compute_route_apple", selected)
+        self.assertIn("factor:graph_route_apple", selected)
+        self.assertEqual({g for g in selected if g.startswith("delivery:")}, {"delivery:compute", "delivery:graph"})
+        self.assertNotIn("component-contract", selected)
+        self.assertEqual(plan["product_authorization"]["owners"], ["compute_route_apple"])
+        self.assertEqual(self.row(plan, "p1")["status"], "SKIPPED")
+
+    @patch.object(selector.platform, "system", return_value="Windows")
+    def test_apple_runtime_cmake_keeps_off_platform_and_audit_checks(self, _system):
+        self.write("tests/compute_route_apple/CMakeLists.txt",
+                   "hyle_add_header_self_contained_test(compute_route_apple)\n")
+        self.set_state("compute_route_apple", "CLOSED")
+        self.base = self.commit()
+        self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_apple_runtime target)\nendfunction()\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertTrue(plan["product_authorization"]["issues"])
+        self.assertNotIn("factor:compute_route_apple", self.selected(plan))
+        self.assertIn("headers:compute_route_apple", self.selected(plan))
+
+    def test_factor_cmake_mapping_rejects_missing_owner(self):
+        self.write("cmake/HyleAppleRuntime.cmake", "# resource staging\n")
+        self.commit()
+        policy = selector.read_json(ROOT / "scripts/validation-policy.json")
+        policy["factor_cmake_owners"]["cmake/HyleAppleRuntime.cmake"] = "unregistered"
+        before, after = selector.Snapshot(self.root, self.base), selector.Snapshot(self.root, "HEAD")
+        graphs = [selector.project_graph(before), selector.project_graph(after)]
+        with self.assertRaisesRegex(selector.SelectionError, "no implemented owner"):
+            selector.classify(before, after, graphs, policy)
+
     def test_factor_benchmark_cmake_preserves_explicit_performance_boundary(self):
         for path in ("bench/container_queue/CMakeLists.txt",
                      "bench/container_queue/nested/helper.cmake"):

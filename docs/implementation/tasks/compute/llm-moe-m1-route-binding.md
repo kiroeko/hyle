@@ -219,3 +219,7 @@ AUDITED，其余六项保留候选。源码/设计上限15分钟，最多两次�
 Windows交付和插桩保持各自身份，不重跑算子。Apple原生执行二进制不因构建脚本变化重测。
 任务父工程的macOS部署版本、系统Python清理DYLD路径以及WSL TSan进程地址布局纠正均为
 验证环境修正，保留初始FAIL；没有修改系统设置、提升权限或解除旧Provider阻塞。
+
+selector把这一Apple专属helper误作为全库共享接缝，已另立
+[有限工具卡](../build/apple-runtime-selector-owner-v1.md)补充具名owner映射；不在本模块重写治理工具，
+也不以工具维护结果代签本卡交付。

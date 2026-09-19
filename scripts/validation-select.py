@@ -273,6 +273,12 @@ def classify(before, after, graphs, policy):
                 else:
                     kind, reason = "package", "reviewed vendored product or instrument input changed"
                     factors = sorted(reviewed)
+            elif path in policy.get("factor_cmake_owners", {}):
+                factor = policy["factor_cmake_owners"][path]
+                if factor not in graphs[1]["factors"] or graphs[1]["factors"][factor]["queued"]:
+                    raise SelectionError(f"factor CMake input has no implemented owner: {path} -> {factor}")
+                factors = [factor]
+                kind, reason = "factor_seam", "reviewed factor-owned CMake input; retain consumer/package and authorization checks"
             elif path in policy["package_tools"] or path in {"CMakeLists.txt", "CMakePresets.json", "tests/CMakeLists.txt", "src/CMakeLists.txt", "bench/CMakeLists.txt", "include/hyle/obs/trace.h"} or path.startswith("cmake/"):
                 kind, reason = "package", "shared build/package or external product input changed"
             elif factors:

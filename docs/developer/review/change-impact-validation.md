@@ -61,6 +61,10 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 | 已映射维护工具/CI 调度 | `validation-policy.json` 中的工具测试 | 产品 build/P1 |
 | 未登记路径/ownership、metadata 边界漂移 | 明确 `BLOCKED` 与原因 | 静默跳过、猜测全量通过 |
 
+仅由一个已实现factor拥有的外置CMake脚本，可在policy的`factor_cmake_owners`中逐文件登记。
+它仍按factor产品seam验证owner、反向消费者、公开头和交付，且保留AUDITED授权检查；未登记
+的`cmake/`输入继续按共享接缝处理，无效owner拒绝。此映射不复制中央依赖边或改变性能门。
+
 `product_authorization` 会列出本次产品 owner、最终状态和逐 commit 违规。合并提交只对与所有 parent
 都不同的冲突解决结果增加一次检查；普通分支产品 commit 仍按其真实 parent 的 registry 状态判断。
 

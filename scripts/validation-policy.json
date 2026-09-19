@@ -1,5 +1,8 @@
 {
   "schema_version": 2,
+  "factor_cmake_owners": {
+    "cmake/HyleAppleRuntime.cmake": "compute_route_apple"
+  },
   "factor_configure_cache": {
     "compute_backend_cuda": {
       "HYLE_COMPUTE_CUDA": "ON"
