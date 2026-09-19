@@ -13,6 +13,6 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     "${HYLE_SOURCE_DIR}/src/compute_route_vulkan"
     "${HYLE_SOURCE_DIR}/src/compute")
   target_link_libraries(hyle_compute_route_vulkan_test PRIVATE
-    hyle_compute_provider_ggml_vulkan ggml)
+    hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
   hyle_stage_runtime_dependencies(hyle_compute_route_vulkan_test)
 endif()
