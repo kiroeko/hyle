@@ -64,6 +64,9 @@
 | graph_route_vulkan | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-route-binding/README.md) | [record](tasks/compute/llm-moe-m1-route-binding.md) | M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。 |
 | compute_provider_ggml_vulkan | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md) | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G CLOSED：共同ggml资源seam、CPU可恢复pool/持久plan/workspace、Vulkan资源迁移完成；四环境CPU、Windows/Air Vulkan、适用三交付与P0通过。仅资源范围，不代签模型覆盖；原CPU Provider和oneDNN阻塞保持。 |
 | compute_ggml_runtime | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md) | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G CLOSED：共同ggml资源seam、CPU可恢复pool/持久plan/workspace、Vulkan资源迁移完成；四环境CPU、Windows/Air Vulkan、适用三交付与P0通过。仅资源范围，不代签模型覆盖；原CPU Provider和oneDNN阻塞保持。 |
+| compute_provider_ggml_cuda | QUEUED | — | — | M1-C 准入身份已登记；先按模型需求审计原版 CUDA 资源/ABI 与接入资格，无 target、依赖、产品实现或覆盖声明。全部自研算子仍冻结。 |
+| graph_provider_ggml_cuda | QUEUED | — | — | M1-C 准入身份已登记；先按模型需求审计原版 CUDA 资源/ABI 与接入资格，无 target、依赖、产品实现或覆盖声明。全部自研算子仍冻结。 |
+| compute_provider_flashinfer | QUEUED | — | — | M1-C 准入身份已登记；先按模型需求审计原版 CUDA 资源/ABI 与接入资格，无 target、依赖、产品实现或覆盖声明。全部自研算子仍冻结。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

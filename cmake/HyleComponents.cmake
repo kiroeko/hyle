@@ -476,6 +476,12 @@ _hyle_declare_component(compute_provider_ggml_vulkan
 _hyle_declare_component(compute_ggml_runtime
   PRIVATE_DEPS core error mem)
 
+# M1-C admission identities only. Native resource/ABI audit precedes targets,
+# dependencies and normal CUDA factory composition.
+_hyle_declare_component(compute_provider_ggml_cuda QUEUED)
+_hyle_declare_component(graph_provider_ggml_cuda QUEUED)
+_hyle_declare_component(compute_provider_flashinfer QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

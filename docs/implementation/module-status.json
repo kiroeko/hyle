@@ -568,6 +568,21 @@
         "tier": "P0",
         "evidence": "evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md"
       }
+    },
+    {
+      "module": "compute_provider_ggml_cuda",
+      "state": "QUEUED",
+      "summary": "M1-C 准入身份已登记；先按模型需求审计原版 CUDA 资源/ABI 与接入资格，无 target、依赖、产品实现或覆盖声明。全部自研算子仍冻结。"
+    },
+    {
+      "module": "graph_provider_ggml_cuda",
+      "state": "QUEUED",
+      "summary": "M1-C 准入身份已登记；先按模型需求审计原版 CUDA 资源/ABI 与接入资格，无 target、依赖、产品实现或覆盖声明。全部自研算子仍冻结。"
+    },
+    {
+      "module": "compute_provider_flashinfer",
+      "state": "QUEUED",
+      "summary": "M1-C 准入身份已登记；先按模型需求审计原版 CUDA 资源/ABI 与接入资格，无 target、依赖、产品实现或覆盖声明。全部自研算子仍冻结。"
     }
   ]
 }
