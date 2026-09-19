@@ -1289,3 +1289,33 @@ correctness/portability；已有F32 Scan、OOM/部分接纳/drain在所选两fac
 旧Mini源码与Windows输入共123,819,830逻辑字节。本组回归停止重复运行；所有owner保持AUDITED。
 Scatter、Scan三交付实际消费、完整C1真实片段/固定优选/淘汰和global门尚未完成，CPU oneDNN
 资格BLOCKED不变，64行/256格矩阵未签收。C1整包完成通知尚不触发。
+
+### C1-Y29：Vulkan 受检有序 Scatter（SCOPED / AUDITED）
+
+2026-09-19，baseline `6cefad33`，owner `/root`；产品owner仅`compute_route_vulkan`，
+Graph为直接消费者。F02.3及状态张量更新需要已公开Scatter的assign/add、重复索引顺序与
+checked失败不写输出；普通Vulkan入口目前拒绝该操作。Y28验收不授权本节之前的Scatter实现。
+
+有界来源核对仅限已锁定ggml `456172ec`的SetRows、GetRowsBack与现有Argsort/GetRows接线：
+`copy_to_quant.comp`的SetRows并发写每个update，没有duplicate winner或checked边界；
+supports_op只准入F32/F16更新，不能直接作为全部storage逐位assign。`get_rows_back.comp`
+从零开始求匹配项和，再加base会改变顺序；每输出遍历全部索引，也不能承载逐次half舍入。
+因此不直接注册两者为合格Scatter，不因此另写排序或通用payload搬运算法。来源调查到此停止。
+
+| FIX | 固定实现 | 成本与必需证明 |
+|---|---|---|
+| Y29-A | 沿已有index check生成安全I32索引，再编码为严格单调、无NaN/零/subnormal的F32 raw keys；以现有TopK私有recipe仅导出完整stable Argsort的order | 对k<2^30取bits=0xff7fffff−k，其余取0x00800000+k−2^30；覆盖全部非负I32，禁止数值cast丢失大索引精度。Provider保留原版排序/allocator/runtime，未消费的values分支不展开；index数组/keys/order与原厂sort scratch全部计费 |
+| Y29-B | Assign把base/updates冷规整为[outer,extent/count,inner]，既有Concat组成表；每个target二分stable order找最后更新，无更新取base，有更新取extent+update；用已有ggml GetRows布局适配完成全部payload选择 | 支持现有六storage、I32/I64 indices、任意轴/rank8/stride/origin。O(sort(count)+extent·log(count)+base+updates)，计入整表拼接、可能的轴物化/row padding/原版Gather/最终发布；不得把SetRows和GetRows组合称为零拷贝或性能胜出 |
+| Y29-C | Add复用同一排序；keys/order用既有Concat合入8·count字节metadata，单个私有tensor shader按输出word独占，二分目标的匹配范围后依次累加 | 仅F32/F16/BF16；base先参与，half每项在F32相加后立即RNE回storage，precise限制重结合。必要updates物化、checked临时输出和最后条件Copy分别计费；O(base·log(count)+updates)，不对每个输出遍历全部indices、不用unordered float atomic |
+| Y29-D | checked共用status/完成/失败槽；空indices直接Copy，空payload仍检查非空indices；更新指南、独立参考与普通Graph | count/合并buffer/padding/原版grid受设备范围冷检查；Recorder保持现有alias拒绝。六storage位级assign、三浮点有序add，重复/不排序索引、scalar/多维indices、任意/负轴/rank8/奇数与零stride、0/1/127/128/129/1025/4097索引、±0/NaN/Inf/half逐次舍入；高位I64及负越界全输出不变、failed/fresh、双槽/5次变化/旧结果、quota/OOM/close/drain |
+
+只增加route私有lowering、tensor shader specialization与对应编译清单，复用既有4-buffer/
+12-byte原生dispatch、GGML region和storage liveness；不改Provider源码/pin、公共API、执行器、
+Graph产品、公共构建/selector/性能仪器。源码与已登记两条原版payload路径核对后停止泛库调查。
+两个原生入口的准入与实际成本在同一冷计划固定，执行不搜索/计时。Recorder不承诺整段事务回滚。
+
+验证限selector的Direct/Graph因素与shader能力检查，W1 static/shared、Air/Mini，既有生命周期/
+失败排空同候选回归；普通Graph执行Scan→Scatter→Gather→norm并实际使用两个Scatter模式。
+新功能三交付和真实C1片段与Scan一起进入本包固定bundle，不能用旧Gather交付代签，也不能
+留到C7首次接线。产品纠正最多两轮；先具体失败源码归因，不放宽数值/顺序/失败责任。当前不跑
+P1，完整C1沿原等责预算；CPU oneDNN资格BLOCKED和其他未签收项保持。

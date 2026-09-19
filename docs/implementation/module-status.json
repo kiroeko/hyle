@@ -506,7 +506,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y28 AUDITED：f0115f96的I32宽前缀/全域检查/条件发布已接通，四构建Direct/Graph共391例通过，含F32回归，无产品纠正或P1。Scatter、Scan三交付实际消费及完整C1片段/优选/global门未完成，CPU资格BLOCKED不变。"
+      "summary": "LLM/MoE C1-Y29 AUDITED：固定受检有序Scatter的有限FIX，复用ggml稳定排序/GetRows及现有原生资源；补语义映射和顺序加法，尚未实施验收。Y28四构建391例保留；Scan/Scatter三交付、完整C1优选/global门未完成，CPU资格BLOCKED不变。"
     },
     {
       "module": "graph_route_vulkan",
