@@ -161,3 +161,19 @@ CPU Compute/Graph源码、静态、动态和搬移后的SDK消费。94项跳过�
 Windows GPU补充三交付、WSL/Air/Mini原生与三交付，以及ASan/UBSan/TSan尚待执行，不能写PASS。
 统一实现统计为49,803行、205个代码文件（不含测试/第三方），相对M1-G新增390行冷元数据与接缝，
 没有新增自研数学。64行四路线覆盖仍UNPROVEN，本卡不签模型计算优化或原C1里程碑。
+
+### 候选纠正 R5a：Apple shared 的公开依赖接线
+
+Air完整原生候选在链接`libhyle_compute_route_apple`时失败：旧`with_device_status`直接构造
+`mlx::core::Depends`，但locked MLX只导出公开`mlx::core::depends`，不导出该内部类vtable。
+这是本次shared交付揭示的已有状态依赖接缝缺陷；原失败保留，未运行测试不签PASS。
+
+已核对locked源码`mlx/ops.cpp`：公开depends构造同一个原版Depends并保留输入/状态依赖；
+其stream取第一个输入的primitive。现有三个checked lowering的非空输出均有本路线primitive
+（空axis的zeros也经原版Full构造），故只需在冷接线检查这一前提，再调用公开depends。
+不增加copy/kernel、改变状态计算、隐藏错误或使用默认stream，不修改冻结的算术实现。
+
+有限FIX新增R5a：仅`compute_route_apple/apple_context.cc`的依赖构造和冷stream检查；调查上限
+15分钟，纠正最多两次。owner `compute_route_apple`从CANDIDATE退回AUDITED，其他六项保持候选。
+修复后只续跑Air失败构建/原生测试以及尚未运行的声明门，已通过Windows门保留原身份。
+本轮不改公共API、布局、Provider pin、CMake或性能预算；完成后重新固定不可变候选。

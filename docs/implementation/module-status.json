@@ -493,10 +493,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
-      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
+      "summary": "M1-R R5a AUDITED：Air shared暴露旧MLX内部Depends未导出的链接失败；有限修复为公开depends调用和冷stream前提检查，不改算术/接口/布局，其余六owner保持候选。"
     },
     {
       "module": "graph_route_apple",
