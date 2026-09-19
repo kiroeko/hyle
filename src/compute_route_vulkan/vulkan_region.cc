@@ -373,8 +373,9 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
 Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
   try {
     const auto input = program.values[step.inputs[0]].description;
-    if (input.data_type() != DataType::kFloat32)
-      return Status::Unimplemented("Vulkan native Scan requires F32");
+    const bool integer = input.data_type() == DataType::kInt32;
+    if (!integer && input.data_type() != DataType::kFloat32)
+      return Status::Unimplemented("Vulkan Scan requires I32 or F32");
     if (*input.element_count() == 0)
       return Status::Ok();
     const auto scan = *step.operation.get_if<Scan>();
@@ -386,24 +387,29 @@ Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
     const auto rows = static_cast<std::int64_t>(*input.element_count()) / width;
     HYLE_ASSIGN_OR_RETURN(
         auto matrix,
-        TensorDesc::dense(DataType::kFloat32,
+        TensorDesc::dense(input.data_type(),
                           std::array<std::int64_t, 2>{rows, width}));
-    if (!scan_limits(program, matrix))
+    if (!integer && !scan_limits(program, matrix))
       return Status::Unimplemented(
           "Vulkan Scan exceeds native buffer or grid limits");
     if (scan.exclusive && width == 1) {
       HYLE_ASSIGN_OR_RETURN(auto shape,
                             TensorShape::create(input.dimensions()));
-      return lower_tensor(program,
-                          {Operation(Fill{.output_shape = shape,
-                                          .output_type = DataType::kFloat32,
-                                          .value = ScalarValue(0.0F)}),
-                           {},
-                           step.outputs,
-                           {},
-                           {1, 1, 1},
-                           {}});
+      return lower_tensor(
+          program, {Operation(Fill{
+                        .output_shape = shape,
+                        .output_type = input.data_type(),
+                        .value = ScalarValue::from_bits(input.data_type(), 0)}),
+                    {},
+                    step.outputs,
+                    {},
+                    {1, 1, 1},
+                    {}});
     }
+    if (integer && width == 1)
+      return lower_tensor(
+          program,
+          {Operation(Copy{}), step.inputs, step.outputs, {}, {1, 1, 1}, {}});
     while (program.aliases.size() < program.values.size()) {
       const auto id = static_cast<std::uint32_t>(program.aliases.size());
       program.aliases.push_back({id, 0});
@@ -438,7 +444,7 @@ Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
     if (!permuted.is_dense()) {
       HYLE_ASSIGN_OR_RETURN(
           auto dense,
-          TensorDesc::dense(DataType::kFloat32, permuted.dimensions()));
+          TensorDesc::dense(input.data_type(), permuted.dimensions()));
       const auto packed = append(dense);
       HYLE_RETURN_IF_ERROR(lower_tensor(
           program, {Operation(Copy{}), {source}, {packed}, {}, {1, 1, 1}, {}}));
@@ -446,16 +452,21 @@ Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
     }
     source = alias(matrix, source);
     const bool final_layout = axis + 1 == rank;
-    auto result = !scan.exclusive && final_layout
+    auto result = !integer && !scan.exclusive && final_layout
                       ? alias(matrix, step.outputs[0])
                       : append(matrix);
-    Plan local;
-    local.outputs = {result};
-    local.steps.push_back(
-        {Operation(Scan{}), {source}, {result}, {}, {1, 1, 1}, {}});
-    std::vector<std::size_t> last_uses(program.values.size(), 0);
-    HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
-    if (scan.exclusive) {
+    if (integer) {
+      HYLE_RETURN_IF_ERROR(
+          lower_integer_scan(program, source, result, scan.exclusive));
+    } else {
+      Plan local;
+      local.outputs = {result};
+      local.steps.push_back(
+          {Operation(Scan{}), {source}, {result}, {}, {1, 1, 1}, {}});
+      std::vector<std::size_t> last_uses(program.values.size(), 0);
+      HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+    }
+    if (!integer && scan.exclusive) {
       HYLE_ASSIGN_OR_RETURN(auto prefix,
                             TensorDesc::strided_bytes(
                                 DataType::kFloat32,
@@ -489,16 +500,27 @@ Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
     if (!final_layout) {
       HYLE_ASSIGN_OR_RETURN(
           auto expanded,
-          TensorDesc::dense(DataType::kFloat32, permuted.dimensions()));
+          TensorDesc::dense(input.data_type(), permuted.dimensions()));
       HYLE_ASSIGN_OR_RETURN(auto restore,
                             View::permute(std::span(inverse).first(rank)));
       HYLE_ASSIGN_OR_RETURN(
           auto reordered,
           infer_single_output(Operation(restore), std::span(&expanded, 1)));
-      const auto view = alias(reordered, result);
-      HYLE_RETURN_IF_ERROR(lower_tensor(
-          program,
-          {Operation(Copy{}), {view}, step.outputs, {}, {1, 1, 1}, {}}));
+      result = alias(reordered, result);
+      if (!integer)
+        HYLE_RETURN_IF_ERROR(lower_tensor(
+            program,
+            {Operation(Copy{}), {result}, step.outputs, {}, {1, 1, 1}, {}}));
+    }
+    if (integer) {
+      if (final_layout) {
+        HYLE_ASSIGN_OR_RETURN(
+            auto expanded,
+            TensorDesc::dense(input.data_type(), input.dimensions()));
+        result = alias(expanded, result);
+      }
+      // Restore and publish only after every global prefix has been checked.
+      return lower_checked_copy(program, result, step.outputs[0]);
     }
     return Status::Ok();
   } catch (const std::bad_alloc &) {

@@ -12,4 +12,6 @@ Status lower_index_check(ProgramState &program, std::uint32_t input,
                          bool checked);
 Status lower_checked_copy(ProgramState &program, std::uint32_t input,
                           std::uint32_t output);
+Status lower_integer_scan(ProgramState &program, std::uint32_t input,
+                          std::uint32_t output, bool exclusive);
 } // namespace hyle::compute::vulkan::detail

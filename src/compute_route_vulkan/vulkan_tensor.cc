@@ -308,6 +308,82 @@ Status lower_checked_copy(ProgramState &program, std::uint32_t input,
       static_cast<std::uint32_t>(((bytes + 3) / 4 + 127) / 128));
 }
 
+Status lower_integer_scan(ProgramState &program, std::uint32_t input,
+                          std::uint32_t output, bool exclusive) {
+  const auto description = program.values[input].description;
+  const auto count = *description.element_count();
+  const auto &limits = program.runtime->device->properties.limits;
+  if (count > INT32_MAX || count > limits.maxStorageBufferRange / 8 ||
+      limits.maxComputeWorkGroupInvocations < 256 ||
+      limits.maxComputeWorkGroupSize[0] < 256 ||
+      limits.maxComputeSharedMemorySize < 256 * 8)
+    return Status::Unimplemented(
+        "Vulkan checked Scan exceeds native scratch or workgroup limits");
+  const auto rows = static_cast<std::uint32_t>(description.dimensions()[0]);
+  auto width = static_cast<std::uint32_t>(description.dimensions()[1]);
+  const auto append = [&](const TensorDesc &desc) {
+    const auto id = static_cast<std::uint32_t>(program.values.size());
+    program.values.push_back({desc, {}});
+    program.aliases.push_back({id, 0});
+    return id;
+  };
+  if (!program.status_value) {
+    HYLE_ASSIGN_OR_RETURN(auto status, TensorDesc::dense(DataType::kInt32, {}));
+    program.status_value = append(status);
+  }
+  const auto dispatch = [&](std::uint32_t mode, std::uint32_t columns,
+                            std::array<std::uint32_t, 4> values,
+                            std::uint32_t groups) {
+    std::array<SpecializationConstant, 4> constants{
+        SpecializationConstant{0, mode},
+        {1, columns},
+        {2, rows},
+        {3, exclusive ? 1u : 0u}};
+    Dispatch stage;
+    stage.values.assign(values.begin(), values.end());
+    stage.checked_status = mode == 3;
+    return append_tensor_dispatch(program, std::move(stage),
+                                  shaders::integer_scan(), constants, groups);
+  };
+  struct Level final {
+    std::uint32_t prefix;
+    std::uint32_t width;
+  };
+  std::array<Level, 4> levels{};
+  std::size_t depth = 0;
+  auto source = input;
+  do {
+    const auto blocks = (width + 255) / 256;
+    HYLE_ASSIGN_OR_RETURN(
+        auto prefix_desc,
+        TensorDesc::dense(DataType::kInt64,
+                          std::array<std::int64_t, 2>{rows, width}));
+    HYLE_ASSIGN_OR_RETURN(
+        auto totals_desc,
+        TensorDesc::dense(DataType::kInt64,
+                          std::array<std::int64_t, 2>{rows, blocks}));
+    const auto prefix = append(prefix_desc);
+    const auto totals = append(totals_desc);
+    HYLE_RETURN_IF_ERROR(dispatch(depth == 0 ? 0u : 1u, width,
+                                  {source, source, totals, prefix},
+                                  rows * blocks));
+    levels[depth++] = {prefix, width};
+    source = totals;
+    width = blocks;
+  } while (width > 1);
+  for (auto level = depth - 1; level > 0; --level) {
+    const auto child = levels[level - 1];
+    HYLE_RETURN_IF_ERROR(dispatch(2, child.width,
+                                  {child.prefix, levels[level].prefix,
+                                   *program.status_value, child.prefix},
+                                  (rows * child.width + 255) / 256));
+  }
+  return dispatch(
+      3, levels[0].width,
+      {levels[0].prefix, levels[0].prefix, *program.status_value, output},
+      static_cast<std::uint32_t>((count + 255) / 256));
+}
+
 Status lower_tensor(ProgramState &program, const PlanStep &step) {
   if (step.operation.kind() == OperationKind::kReduce ||
       step.operation.kind() == OperationKind::kSoftmax)

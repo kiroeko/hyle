@@ -204,17 +204,29 @@ Graph 使用同一个 `c::Gather`，例如 `builder.add(c::Gather{.axis = 0}, ta
 Recorder 的受检 Gather 越界时保留该操作的原输出，但不承诺整个 Recorder 事务回滚。
 发生该错误的槽退役；可以从同一 Program 创建新槽。显式 `kUnchecked` 要求调用方保证全部索引合法。
 
-### F32 前缀求和
+### 前缀求和
 
-`Scan{.axis = -1, .exclusive = false}`支持F32、正负轴、rank≤8、普通byte stride和dense输出。
+`Scan{.axis = -1, .exclusive = false}`支持F32/I32、正负轴、rank≤8、普通byte stride和dense输出。
 默认inclusive包含当前位置；exclusive从零开始，输出此前元素的和。浮点允许算术重结合。
 例如`vk::prepare(context, c::Scan{.exclusive = true}, input_description)`；Graph使用同一个Scan节点。
-空输入不访问payload。当前Vulkan的I32受检Scan仍返回Unimplemented。
+空输入不访问payload。
 
-前缀计算使用原版ggml cumsum；设备需支持其subgroup arithmetic/full-subgroup能力。
+F32前缀计算使用原版ggml cumsum；设备需支持其subgroup arithmetic/full-subgroup能力。
 必要轴物化、descriptor对齐、exclusive零列拼接及输出重排计入成本。原版单遍程序的行数需精确
 覆盖；有余数的行在同一原生DAG内按512/262144行边界分段后拼接，最多三个Scan。
 程序和布局适配在准备阶段固定；执行时不搜索实现或下载输入做前缀计算。
+
+I32使用精确宽前缀并检查所有inclusive前缀，exclusive也检查最后总和。任何前缀超出I32时，
+完成返回OutOfRange，该Scan的整个输出保持不变；失败槽退役，同一Program可以创建新槽。
+局部block的和超出I32但所有全局前缀合法时仍成功。Recorder沿原合同拒绝输入/输出重叠，
+不承诺整个Recorder事务回滚。
+
+整数程序使用两个U32字表达I64，无shaderInt64/subgroup依赖；设备需支持256线程和2048字节
+workgroup共享内存。分层scan、carry传播、最终检查和条件发布最多9次dispatch，另计必要布局
+Copy；主要临时量为每元素8字节宽前缀与4字节结果，加各层递减的总和/前缀和一个4字节status。
+全部资源在Invocation准备期规划并计入quota；执行不分配payload scratch，不下载payload检查。
+元素总数超过INT32_MAX、宽scratch超过设备buffer范围或grid不足时冷拒绝。宽1使用Copy/Fill。
+当前接线和局部正确性不代表完整C1三交付或性能验收已完成。
 
 ## Graph 与原生片段
 

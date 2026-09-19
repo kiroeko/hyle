@@ -1,0 +1,115 @@
+#version 450
+
+// Exact signed-wide prefix arithmetic needs only baseline integer operations.
+// The cold plan bounds a row to INT32_MAX inputs, so no sum reaches signed I64
+// overflow. Two U32 words retain carries without shaderInt64 or subgroup rules.
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout(constant_id = 0) const uint MODE = 0; // local I32/I64, propagate, finish
+layout(constant_id = 1) const uint WIDTH = 1;
+layout(constant_id = 2) const uint ROWS = 1;
+layout(constant_id = 3) const uint EXCLUSIVE = 0;
+layout(binding = 0) readonly buffer Input { uint data_a[]; };
+layout(binding = 1) readonly buffer Parent { uint data_b[]; };
+layout(binding = 2) buffer TotalsOrStatus { uint data_c[]; };
+layout(binding = 3) buffer Output { uint data_d[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; } origin;
+
+shared uvec2 prefix[256];
+
+uvec2 add_wide(uvec2 left, uvec2 right) {
+    uint low = left.x + right.x;
+    return uvec2(low, left.y + right.y + uint(low < left.x));
+}
+
+uint word_a(uint offset) {
+    uint byte_index = origin.a + offset;
+    uint shift = (byte_index & 3u) * 8u;
+    uint low = data_a[byte_index >> 2u];
+    if (shift == 0u) return low;
+    return (low >> shift) | (data_a[(byte_index >> 2u) + 1u] << (32u - shift));
+}
+
+uvec2 wide_a(uint index) {
+    return uvec2(word_a(index * 8u), word_a(index * 8u + 4u));
+}
+
+uvec2 wide_b(uint index) {
+    // Parent prefixes are private aligned I64 buffers, never caller Views.
+    uint word = (origin.b >> 2u) + index * 2u;
+    return uvec2(data_b[word], data_b[word + 1u]);
+}
+
+void write_wide(uint index, uvec2 value) {
+    data_d[index * 2u] = value.x;
+    data_d[index * 2u + 1u] = value.y;
+}
+
+void main() {
+    uint group = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+    uint lane = gl_LocalInvocationID.x;
+    uint blocks = (WIDTH + 255u) / 256u;
+    if (MODE <= 1u) {
+        // This rejection is uniform across the workgroup, before any barrier.
+        if (group >= ROWS * blocks) return;
+        uint row = group / blocks;
+        uint block = group % blocks;
+        uint position = block * 256u + lane;
+        uint index = row * WIDTH + position;
+        uvec2 value = uvec2(0u);
+        if (position < WIDTH) {
+            if (MODE == 0u) {
+                uint low = word_a(index * 4u);
+                value = uvec2(low, 0u - (low >> 31u));
+            } else {
+                value = wide_a(index);
+            }
+        }
+        prefix[lane] = value;
+        barrier();
+        // Work-efficient binary-tree exclusive scan, then include this value.
+        for (uint stride = 1u; stride < 256u; stride *= 2u) {
+            uint target = (lane + 1u) * stride * 2u - 1u;
+            if (target < 256u)
+                prefix[target] = add_wide(prefix[target - stride], prefix[target]);
+            barrier();
+        }
+        if (lane == 0u) {
+            uint word = (origin.c >> 2u) + group * 2u;
+            data_c[word] = prefix[255].x;
+            data_c[word + 1u] = prefix[255].y;
+            prefix[255] = uvec2(0u);
+        }
+        barrier();
+        for (uint stride = 128u; stride > 0u; stride /= 2u) {
+            uint target = (lane + 1u) * stride * 2u - 1u;
+            if (target < 256u) {
+                uvec2 left = prefix[target - stride];
+                prefix[target - stride] = prefix[target];
+                prefix[target] = add_wide(prefix[target], left);
+            }
+            barrier();
+        }
+        if (position < WIDTH) write_wide(index, add_wide(prefix[lane], value));
+        return;
+    }
+
+    uint index = group * 256u + lane;
+    if (index >= ROWS * WIDTH) return;
+    uint position = index % WIDTH;
+    uvec2 value = wide_a(index);
+    if (MODE == 2u) {
+        uint block = position / 256u;
+        if (block != 0u)
+            value = add_wide(value, wide_b((index / WIDTH) * blocks + block - 1u));
+        // Each invocation owns its element; no other lane reads that element.
+        write_wide(index, value);
+        return;
+    }
+
+    // Check the actual global inclusive prefix, even when exclusive omits the
+    // final total. A block-local sum alone cannot decide this condition.
+    if (value.y != 0u - (value.x >> 31u)) atomicOr(data_c[origin.c >> 2u], 2u);
+    if (EXCLUSIVE != 0u)
+        value = position == 0u ? uvec2(0u) : wide_a(index - 1u);
+    data_d[index] = value.x; // Private scratch; the later checked Copy publishes.
+}

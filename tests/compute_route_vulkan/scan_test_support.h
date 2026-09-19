@@ -16,6 +16,68 @@ inline std::vector<double> pattern(std::size_t count, int phase = 0) {
   return result;
 }
 
+inline std::vector<std::int32_t> integer_pattern(std::size_t count,
+                                                 int phase = 0) {
+  std::vector<std::int32_t> result(count);
+  for (std::size_t i = 0; i < count; ++i)
+    result[i] = static_cast<std::int32_t>(i % 31) - 15 + phase;
+  return result;
+}
+
+inline std::vector<std::byte>
+integer_payload(const c::TensorDesc &desc,
+                std::span<const std::int32_t> input) {
+  std::vector<std::byte> result(*desc.required_bytes(), std::byte{0xcd});
+  for (std::size_t i = 0; i < input.size(); ++i)
+    std::memcpy(result.data() + offset(desc, i), &input[i], sizeof(input[i]));
+  return result;
+}
+
+inline v::Tensor make_integer(const v::Context &context,
+                              const c::TensorDesc &desc,
+                              std::span<const std::int32_t> input) {
+  return context.upload(desc, integer_payload(desc, input)).value();
+}
+
+inline std::vector<std::int32_t> integer_values(const v::Context &context,
+                                                const v::Tensor &tensor) {
+  std::vector<std::int32_t> result;
+  for (const auto word : bits(context, tensor))
+    result.push_back(
+        std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(word)));
+  return result;
+}
+
+inline void expect_integer_prefix(const v::Context &context,
+                                  const v::Tensor &actual,
+                                  const c::TensorDesc &description,
+                                  std::span<const std::int32_t> input,
+                                  c::Scan scan) {
+  const auto observed = integer_values(context, actual);
+  ASSERT_EQ(observed.size(), input.size());
+  if (observed.empty())
+    return;
+  const auto axis = static_cast<std::size_t>(
+      scan.axis < 0 ? scan.axis + static_cast<std::int32_t>(description.rank())
+                    : scan.axis);
+  const auto width = static_cast<std::size_t>(description.dimensions()[axis]);
+  std::size_t inner = 1;
+  for (std::size_t i = axis + 1; i < description.rank(); ++i)
+    inner *= static_cast<std::size_t>(description.dimensions()[i]);
+  for (std::size_t row = 0; row < input.size() / width / inner; ++row)
+    for (std::size_t column = 0; column < inner; ++column) {
+      std::int64_t sum = 0;
+      for (std::size_t position = 0; position < width; ++position) {
+        const auto index = (row * width + position) * inner + column;
+        const auto expected = scan.exclusive ? sum : sum + input[index];
+        sum += input[index];
+        ASSERT_GE(sum, INT32_MIN) << index;
+        ASSERT_LE(sum, INT32_MAX) << index;
+        ASSERT_EQ(observed[index], expected) << index;
+      }
+    }
+}
+
 inline void expect_prefix(const v::Context &context, const v::Tensor &actual,
                           const c::TensorDesc &description,
                           std::span<const double> input, c::Scan scan) {

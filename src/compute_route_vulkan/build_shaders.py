@@ -36,6 +36,8 @@ def main():
         ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
         ('checked_tensor', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_CHECKED='1'), {1}),
+        ('integer_scan', str((args.tensor_source / 'integer_scan.comp').resolve()),
+         {}, {1}),
         ('normalization', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_NORMALIZATION='1'), {1}),
         ('concat', str((args.tensor_source / 'tensor.comp').resolve()),

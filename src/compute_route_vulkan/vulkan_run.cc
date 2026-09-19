@@ -129,6 +129,8 @@ Status checked_status(Run &run, bool reset) noexcept {
     }
     if (!reset) {
       std::memcpy(&value, buffer->mapped, sizeof(value));
+      if ((value & 2u) != 0)
+        return Status::OutOfRange("Vulkan Scan prefix exceeds I32");
       if (value != 0)
         return Status::OutOfRange("Vulkan index is outside the selected axis");
     }
