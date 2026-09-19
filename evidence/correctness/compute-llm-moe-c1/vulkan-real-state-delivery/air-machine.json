@@ -1,0 +1,9 @@
+{
+  "host": "172.22.10.198",
+  "model": "Mac16,12",
+  "os": "macOS",
+  "version": "27.0",
+  "build": "26A428",
+  "observed_by": "ssh: sysctl -n hw.model; sw_vers",
+  "role": "correctness and three-delivery validation; no P1"
+}

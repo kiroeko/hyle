@@ -1,0 +1,10 @@
+{
+  "scope": "Y31 Air launcher before producer configuration",
+  "command": "/opt/homebrew/bin/python3 /Users/kiro/hyle-verify/llm-moe-c1-20260918/y31-inputs/air-delivery.py",
+  "exit_code": 1,
+  "diagnostic": "zsh:1: no such file or directory: /opt/homebrew/bin/python3",
+  "observed_available_python": "/usr/bin/python3, Python 3.9.6",
+  "correction": "Invoke /usr/bin/python3; launcher subprocesses reuse sys.executable.",
+  "product_consumer_oracle_changes": 0,
+  "hyle_execution": "NOT_RUN"
+}

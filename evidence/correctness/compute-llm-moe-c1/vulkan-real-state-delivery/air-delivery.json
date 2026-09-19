@@ -1,0 +1,69 @@
+{
+  "candidate": "a03f6786bfd9ecdcf0e158d5ea90f1a627f31236",
+  "platform": "Air Mac16,12",
+  "status": "PASS",
+  "scope": "Y31 real BF16 Direct/Graph state fragment; no full C1/model/performance acceptance",
+  "source_archive_sha256": "636888c791c1d7b522cb723ab7d7240a9d7d5db5e87f8a84e38c5a4edebb21bd",
+  "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+  "consumer_files": {
+    "main.cc": "a43a4b9c8a1c2e31501debe903b863621bb093f1e9035dbecab202b9068b90b3",
+    "CMakeLists.txt": "7f81be298b9d2c419ff89dbe921dc75d3cd0639366d313b882930d951b86caf7"
+  },
+  "executables": {
+    "bs/hyle_c1_real_state": "f122f14e2a7a5d4c9638caeadcb9883bbd958c3625d9047ce15e92e7e00c3df3",
+    "consumer-static/hyle_c1_real_state": "55e448b33d304c3a08f5e9499be028a838d7f6a8d2bfa563b20a5bb534ba4619",
+    "consumer-shared/hyle_c1_real_state": "3a19300ea27ee6c9ce3924f97902c2062c0b8b8606047104ab62f803f240a208"
+  },
+  "tests": {
+    "bs": {
+      "sha256": "5c7dda697a26f7051217eba31685f8dbf0e9f87ce9a8719888844caca7402b79",
+      "cases": 14,
+      "streams_per_case": 2,
+      "steps_per_stream": 5,
+      "checked_failures": 14,
+      "fresh_after_failure": 14
+    },
+    "consumer-static": {
+      "sha256": "2a125197b07f32b5c90ba235cf3edf45858151dc139abfeca5a60aa54af8c577",
+      "cases": 14,
+      "streams_per_case": 2,
+      "steps_per_stream": 5,
+      "checked_failures": 14,
+      "fresh_after_failure": 14
+    },
+    "consumer-shared": {
+      "sha256": "c4beef888160d62ab2d91aace2b2807bad706664972bcd44bb7e4909b41358dd",
+      "cases": 14,
+      "streams_per_case": 2,
+      "steps_per_stream": 5,
+      "checked_failures": 14,
+      "fresh_after_failure": 14
+    }
+  },
+  "slot_schedule": {
+    "Direct": {
+      "stages": 13,
+      "streams": 2,
+      "slots_per_stage_stream": 3
+    },
+    "Graph": {
+      "streams": 2,
+      "whole_fragment_slots_per_stream": 3
+    },
+    "each_stream": {
+      "snapshot_slots": 1,
+      "working_slots": 2
+    }
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "archive": "air-delivery.zip",
+  "archive_sha256": "115648f4927fa3465f282824c5efff131f58b9464c0f3db86178ba1866c05b50",
+  "archive_bytes": 91706,
+  "payloads_in_archive": false,
+  "not_claimed": [
+    "complete C1",
+    "model inference",
+    "performance",
+    "all selected global package gates"
+  ]
+}

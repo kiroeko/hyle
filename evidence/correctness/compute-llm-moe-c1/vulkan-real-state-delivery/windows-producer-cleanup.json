@@ -1,0 +1,46 @@
+{
+  "archive_sha256": "139519de0dcc368a8235a1499232f525f2c8be4de2624b69c7789cb98a1938b7",
+  "producers": [
+    {
+      "links": [
+        {
+          "path": "C:\\hyle-scratch\\active-vk\\j31\\bs-hidden\\hyle\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+          "target": "C:\\hyle-scratch\\active-vk\\j31\\bs-hidden\\hyle\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md",
+          "action": "unlink file only"
+        }
+      ],
+      "path": "C:\\hyle-scratch\\active-vk\\j31\\bs-hidden",
+      "files": 4476,
+      "logical_bytes": 453533906.0
+    },
+    {
+      "links": [
+        {
+          "path": "C:\\hyle-scratch\\active-vk\\j31\\bd-hidden\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+          "target": "C:\\hyle-scratch\\active-vk\\j31\\bd-hidden\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md",
+          "action": "unlink file only"
+        }
+      ],
+      "path": "C:\\hyle-scratch\\active-vk\\j31\\bd-hidden",
+      "files": 4482,
+      "logical_bytes": 433201756.0
+    },
+    {
+      "links": [],
+      "path": "C:\\hyle-scratch\\active-vk\\j31\\complete-source-hidden",
+      "files": 5628,
+      "logical_bytes": 87956503.0
+    }
+  ],
+  "candidate": "a03f6786bfd9ecdcf0e158d5ea90f1a627f31236",
+  "retained": [
+    "relocated-sdk-static",
+    "relocated-sdk-shared",
+    "consumer-static",
+    "consumer-shared",
+    "fixtures",
+    "logs",
+    "independent-consumer"
+  ],
+  "state": "PASS"
+}

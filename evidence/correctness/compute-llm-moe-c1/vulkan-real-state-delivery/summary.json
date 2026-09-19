@@ -1,0 +1,92 @@
+{
+  "scope": "C1-Y31 Vulkan real BF16 state fragment, Direct/Graph, six deliveries",
+  "candidate": "a03f6786bfd9ecdcf0e158d5ea90f1a627f31236",
+  "local_verdict": "PASS",
+  "product_corrections": 0,
+  "consumer_corrections": 0,
+  "air_launcher_corrections": 1,
+  "cases": 84,
+  "stateful_steps": 840,
+  "checked_failures": 84,
+  "fresh_after_failure": 84,
+  "results": [
+    {
+      "platform": "Windows",
+      "deliveries": [
+        {
+          "delivery": "bs",
+          "cases": 14,
+          "stateful_steps": 140,
+          "checked_failures": 14,
+          "fresh_after_failure": 14,
+          "max_charged_bytes_including_failure_slots": 179374752
+        },
+        {
+          "delivery": "consumer-static",
+          "cases": 14,
+          "stateful_steps": 140,
+          "checked_failures": 14,
+          "fresh_after_failure": 14,
+          "max_charged_bytes_including_failure_slots": 179374752
+        },
+        {
+          "delivery": "consumer-shared",
+          "cases": 14,
+          "stateful_steps": 140,
+          "checked_failures": 14,
+          "fresh_after_failure": 14,
+          "max_charged_bytes_including_failure_slots": 179374752
+        }
+      ],
+      "receipt_sha256": "51acf165591313c6bae54eb06e1db8ec3cfc69400067a365d0da4e4d79febcb1",
+      "archive_sha256": "139519de0dcc368a8235a1499232f525f2c8be4de2624b69c7789cb98a1938b7"
+    },
+    {
+      "platform": "Air Mac16,12",
+      "deliveries": [
+        {
+          "delivery": "bs",
+          "cases": 14,
+          "stateful_steps": 140,
+          "checked_failures": 14,
+          "fresh_after_failure": 14,
+          "max_charged_bytes_including_failure_slots": 179373720
+        },
+        {
+          "delivery": "consumer-static",
+          "cases": 14,
+          "stateful_steps": 140,
+          "checked_failures": 14,
+          "fresh_after_failure": 14,
+          "max_charged_bytes_including_failure_slots": 179373720
+        },
+        {
+          "delivery": "consumer-shared",
+          "cases": 14,
+          "stateful_steps": 140,
+          "checked_failures": 14,
+          "fresh_after_failure": 14,
+          "max_charged_bytes_including_failure_slots": 179373720
+        }
+      ],
+      "receipt_sha256": "7e25aaaba0f2cd2b0ada6d807c66cb5eaecbc17254f5a739b65dd6f48b28d747",
+      "archive_sha256": "115648f4927fa3465f282824c5efff131f58b9464c0f3db86178ba1866c05b50"
+    }
+  ],
+  "commands_sha256": "7f7bb872a3e967ce13971855b89bc8e7951f566c3b6a61adf682e044ee07bf92",
+  "C1_aggregate": "NOT_ACCEPTED",
+  "P1": "NOT_RUN",
+  "remaining": [
+    "global selected gates",
+    "C1 all-route fixed performance qualification and rule/elimination decisions",
+    "CPU oneDNN preflight qualification BLOCKED",
+    "other C1 acceptance not covered by this fragment"
+  ],
+  "matrix_rows_accepted": 0,
+  "matrix_cells_accepted": 0,
+  "report_format": {
+    "change": "JSON presentation uses LF; raw original reports are archived without alteration",
+    "archive": "original-reports.zip",
+    "archive_sha256": "db6b35e043fbc95de40e68744646b482921555341c207436e8d0660f1bc470da"
+  }
+}

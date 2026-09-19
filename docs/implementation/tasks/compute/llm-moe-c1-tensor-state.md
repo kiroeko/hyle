@@ -1414,3 +1414,19 @@ bundle完成，未记PASS。下一动作是原已授权的真实C1片段与Scan/
 首次失败日志保留；consumer接线纠正最多两轮，数值标准不变；产品失败另行审计。本节结束就
 裁决该组，不追加无反例调查。全局selector余门、四路线完整成本优选/淘汰和CPU oneDNN资格
 BLOCKED仍单独处理；本组通过不能触发C1完成通知，也不签64行/256格或整模型完成。
+
+#### Y31 六交付局部裁决
+
+固定候选`a03f6786`的产品与`55fe0b8a`相同。[真实状态片段](../../../../evidence/correctness/compute-llm-moe-c1/vulkan-real-state-delivery/README.md)
+在Windows/Air的source/static/shared六条交付全部通过：84组Direct/Graph、840次双流状态更新，
+各84个负索引失败/新槽恢复；独立数值/区间/顺序、batch2、旧结果关闭后可读、原表不变、预热
+quota不增长及最终归零均通过，无validation错误。两平台各只构建两次producer，安装重定位并
+隐藏原源码/producer后消费；Windows DLL邻置且PATH隔离。无产品或consumer纠正、无P1。
+
+Air首次launcher的Python路径不存在，尚未构建即失败；原始记录保留，改用已有系统Python，
+产品/consumer/oracle/verifier均未变。证据核验后删除两平台临时producer/源码共1,853,985,523
+逻辑字节，最新SDK/consumer/证据保留。统一实现LOC仍为48,294行/195文件，自检PASS。
+
+Y31停止重复验收；完成的是本组Vulkan真实消费与新增Scan/Scatter三交付，未代签C1整包。
+下一项继续原卡的全局selector余门与四路线完整成本资格/优选淘汰；CPU oneDNN资格BLOCKED
+不变，64行/256格未签收。C1全部适用验收完成后再通知用户，并在C2之前等待提问。
