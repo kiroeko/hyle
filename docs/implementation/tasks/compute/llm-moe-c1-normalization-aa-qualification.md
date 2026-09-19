@@ -119,3 +119,22 @@ API/metadata、SIMD/Sched/oneDNN源算法与构建依赖不变；原16个workloa
 通过源码/测试与冷实际检查后，再依法固定CANDIDATE：唯一一次新实验沿原统一仪器、原16项/
 全部分层与原n=15/31停止规则，没有原样重试额度。若资格再次失败，保留新记录并BLOCKED，
 不循环等待好结果。日志增加本身不等于性能资格恢复，也不签默认规则或C1完成。
+
+### Q2 AUDITED：固定实现与验收
+
+SCOPED提交`882ecd0e`后，owner `/root`完成三项有限FIX审计。观察对象限定为benchmark自己的
+实例与当前进程：handle保持opaque，只记值不解引用；Win32只查询private executable地址/
+长度/保护属性，不读取页面、不挂钩JIT、不注入进程。JIT字节沿vendor已有dump采集，不能从
+相同字节或地址范围直接推断哪个role的每个函数地址。Graph私有backing继续明确未观测。
+
+| FIX | 固定改动 | 验收与边界 |
+|---|---|---|
+| Q2-A | preflight增加必填`--records`，每次原子创建独立nonce目录；每child独立cwd和二进制stdout/stderr文件，timeout/退出/解析失败的身份及原文先落盘；run及最终JSON使用LF、每文件hash | 第二次调用不得覆盖旧记录；失败时status保持FAIL。合同只把该目录绑定到统一output，并清除/限定诊断与vendor dump环境变量；公共validator最终日志仍按原机制工作 |
+| Q2-B | 两个Route加冷`observe`，构造和oracle后记录实例/output/workspace handles、共享输入及已检查的Provider；只在显式A/A诊断开关下查询线程CPU/时间和private executable范围，计时后记录粗粒度wall/CPU差 | 现有两个`run()`、lambda、compare调用、问题数据和oracle保持逐字不变；打印发生在两实例均构造后，不插入两个构造之间。仅A/A打开vendor JIT dump，普通产品采样不打开；冷热成本不混记 |
+| Q2-C | 抽出原A/A裁决原样复用，新增模块专属测试与两次verify-only实际观察 | 历史1.21435及固定因素偏差拒绝、对称输入通过、missing/duplicate marker和错误Provider/共用输出拒绝、非零退出/timeout原文留存、原记录身份不可覆盖。只验证validator判据，不伪造Provider或计时PASS |
+
+不因诊断修改产品；`64e1e169..8461925b`的CPU Compute/Graph/Native/oneDNN产品子树没有变化。
+新增诊断的编译/layout属于新的benchmark身份，必须重新资格化；不能复用旧EXE性能证书。
+只增量编译两个bench并执行上述两个冷进程；适用Python测试、selector、docs/closure门必跑。
+通过后才提交不可变候选和CANDIDATE登记，再以fresh build启动唯一原合同P1。Cold验收失败先
+保留具体反例，最多两次纠正；资格再次失败按既定停止条件BLOCKED，不附加诊断重跑。

@@ -339,3 +339,7 @@ CPU 路线 owner、其它 Provider 的状态不变；本记录不把全局 C1–
 `ae270af9`，原资格FAIL、工程性能INCONCLUSIVE和第二轮产品纠正预算均保留。
 只有该受审模块验证改动及其冷验收完成，才固定唯一新实验；没有授权原样重测、改门限、默认
 规则或删除Native。其余C1能力继续原卡，Vulkan Y31通过不能解除CPU性能资格。
+
+Q2在`882ecd0e`之后完成[有限AUDITED ledger](llm-moe-c1-normalization-aa-qualification.md#q2-audited固定实现与验收)，
+两个owner进入AUDITED，只允许模块验证记录/冷观测与相关验收。F1产品、历史FAIL及原性能门
+保持；本轮冷检查通过前不启动计时，记录修复不能冒签性能资格或默认赢家。

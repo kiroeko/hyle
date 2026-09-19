@@ -353,9 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA-Q2 SCOPED：按既定恢复条件修复模块preflight原始记录保留与实例冷观测；F1产品不变，历史资格FAIL及默认规则未签署保持。先AUDITED固定有限验证FIX，再冷验收和冻结唯一新实验；不放宽门或原样重跑。"
+      "summary": "C1-AA-Q2 AUDITED：有限FIX仅为模块preflight独立原始记录、实例冷观测及验收；产品与历史性能门不变。冷检查后冻结唯一新实验，尚无性能资格PASS或默认规则，原第二轮产品纠正预算保持。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA-Q2 SCOPED：按既定恢复条件修复模块preflight原始记录保留与实例冷观测；F1产品不变，历史资格FAIL及默认规则未签署保持。先AUDITED固定有限验证FIX，再冷验收和冻结唯一新实验；不放宽门或原样重跑。"
+      "summary": "C1-AA-Q2 AUDITED：有限FIX仅为模块preflight独立原始记录、实例冷观测及验收；产品与历史性能门不变。冷检查后冻结唯一新实验，尚无性能资格PASS或默认规则，原第二轮产品纠正预算保持。"
     },
     {
       "module": "compute_ops",
