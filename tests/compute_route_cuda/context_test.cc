@@ -35,7 +35,8 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
                                             : compute::WorkloadPhase::kPrefill);
     auto a = compute::prepare(owner, first.operation(),
                               std::span(a_inputs).first(first.arity()),
-                              std::array{lanes[0].gate_up.view}, workload);
+                              std::array{lanes[0].gate_up.view}, resource.ref(),
+                              workload);
     ASSERT_TRUE(a.has_value()) << a.error().message();
     auto b =
         compute::prepare(owner, compute::GatedActivation{},
@@ -44,7 +45,8 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
     ASSERT_TRUE(b.has_value()) << b.error().message();
     auto c = compute::prepare(owner, second.operation(),
                               std::span(b_inputs).first(second.arity()),
-                              std::array{lanes[0].output.view}, workload);
+                              std::array{lanes[0].output.view}, resource.ref(),
+                              workload);
     ASSERT_TRUE(c.has_value()) << c.error().message();
     std::array programs{std::move(*a), std::move(*b), std::move(*c)};
     for (const auto &program : programs)

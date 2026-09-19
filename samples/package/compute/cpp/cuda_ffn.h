@@ -72,7 +72,8 @@ inline hyle::Status run() {
       auto first,
       compute::prepare(context,
                        compute::Operation(cuda::QuantizedWeights::operation()),
-                       first_inputs, std::array{projected.view}, workload));
+                       first_inputs, std::array{projected.view}, resource.ref(),
+                       workload));
   HYLE_ASSIGN_OR_RETURN(auto middle,
                         compute::prepare(context, compute::GatedActivation{},
                                          projected.view.description(),

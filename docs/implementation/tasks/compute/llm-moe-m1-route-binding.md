@@ -140,3 +140,8 @@ Windows共同路径7项CTest通过。真实成熟实现的四路线测试与三�
 不能作为合法C++输入的运行期证明，已删除该用例。OOM测试保留；累计长度的每次加法在拷贝前
 以PTRDIFF_MAX减去当前大小作上界检查，溢出保护改由P0源码审计签署，不称为已跑溢出测试。
 此前局部日志仍保留，完整candidate只采纳修正后的测试。此纠正不改变ModelIdentity产品实现。
+
+固定产品快照`f56c2f67`的Windows selector前15门通过，CUDA Direct路线测试编译发现测试/SDK
+样例在view形式prepare中漏传workload前面的workspace resource。已只修正这两个consumer的
+参数，无产品API/算法/布局变化。原FAIL与先前PASS保留其原commit/tree；后续仅重跑受影响
+CUDA路线及未运行门，不把旧receipt改签为新tree，也不重新启动性能验证。
