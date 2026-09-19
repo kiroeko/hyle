@@ -1,0 +1,36 @@
+{
+  "baseline": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "candidate": "WORKTREE documentation/evidence only",
+  "status": "PASS",
+  "records": [
+    {
+      "gate": "docs",
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "scripts/check-docs.py"
+      ],
+      "exit_code": 0,
+      "output": "documentation contract passed: 461 Markdown files, 2108 relative links checked\r\n",
+      "log_sha256": "2e5b2ea7ebdafb336a03b9ee4d1e43e131c89ce0b8fb50a548a3a71b5fce8a37"
+    },
+    {
+      "gate": "closure",
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "scripts/check-module-closure.py",
+        "--previous-ref",
+        "4d255a51"
+      ],
+      "exit_code": 0,
+      "output": "module closure contract passed: 51 components, schema 4\r\n",
+      "log_sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2"
+    }
+  ],
+  "plan_sha256": "3f090dd146c53c48c42f2cef3ee1687916cf2d4b28f2b0ee16ae74dc0c636803",
+  "builds_or_p1": false,
+  "archive": "final-docs-raw.zip",
+  "archive_sha256": "530877d9ee60295af238e9a6c75ae4db015d351e45ac7bad6873f68e3132c6b2",
+  "archive_bytes": 15435,
+  "plan_in_archive": "final-docs-plan.json",
+  "format_note": "Original CRLF selector bytes and logs retained in ZIP; compact LF manifest replaces standalone plan presentation. Product and verdict unchanged."
+}

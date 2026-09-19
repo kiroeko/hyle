@@ -1,0 +1,173 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "scope": "C1-Y33 qualified mature Vulkan LayerNorm integration, finite Y33-A through Y33-D only",
+  "status": "PASS",
+  "module_cpp_tests": {
+    "W1-static": {
+      "passed": 132,
+      "skipped": 0
+    },
+    "W1-shared": {
+      "passed": 131,
+      "skipped": 0
+    },
+    "Air-static": {
+      "passed": 132,
+      "skipped": 0
+    },
+    "Mini-static": {
+      "passed": 131,
+      "skipped": 1,
+      "skip": "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance: layer not installed; validation covered by W1 and Air"
+    }
+  },
+  "selected_gates": {
+    "passed": 9,
+    "skipped_with_reasons": 111
+  },
+  "actual_layernorm_delivery": {
+    "journeys": 6,
+    "platforms": [
+      "Windows RTX 4070",
+      "Air Mac16,12"
+    ],
+    "linkages": [
+      "source",
+      "static",
+      "shared"
+    ],
+    "case_executions_across_journeys": 360,
+    "runs": 1080,
+    "retained_after_close": 360,
+    "quota_zero": 360,
+    "consumer": {
+      "main.cc": "69b33b132e6206bc1addb973b49de092fa19e77765b7fe7791450066d4420779",
+      "CMakeLists.txt": "7d368efa8cc7600a86a36da7285fc3ec46c7726f73b6bd149993a0d01e04947a"
+    },
+    "source_archive_sha256": "e860a8bff001437724bc0fbaa49714dbb0679edb09f56ab26312450dd519ae5d",
+    "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+    "scope": "Orthogonal foundation consumer on local Qwen3.5-2B inputs, not original model forward"
+  },
+  "corrections": {
+    "product_and_tests": 2,
+    "algorithm": 0,
+    "external_consumer_compile": 1
+  },
+  "implementation_loc": {
+    "code": 48424,
+    "files": 196,
+    "self_check": "pass",
+    "excludes": [
+      "tests",
+      "bench",
+      "third_party"
+    ]
+  },
+  "cleanup_logical_bytes": {
+    "aborted-delivery-cleanup.json": 659078694,
+    "windows-producer-cleanup.json": 2664135870,
+    "air-producer-cleanup.json": 883997077
+  },
+  "total_cleanup_logical_bytes": 4207211641,
+  "performance": {
+    "executed": false,
+    "verdict": "NOT_RUN",
+    "reason": "Complete C1 provider-binding candidate not yet fixed; no winner or deletion decision"
+  },
+  "remaining": [
+    "Mature Reduce/Softmax and other registered C1 integrations",
+    "CUDA/Apple coverage review",
+    "Full-cost performance qualification and routing/retirement",
+    "CPU Q2 independent measurement qualification BLOCKED",
+    "Full C1 and 64-row/256-cell matrix acceptance"
+  ],
+  "milestone": "C1 completion notification not triggered; do not enter C2",
+  "supersedes_pending_fields_only": "Windows receipt remaining and frozen input states are historical; later receipts qualify Air/Mini and actual delivery without rerunning W1",
+  "evidence": [
+    {
+      "file": "aborted-delivery-cleanup.json",
+      "bytes": 380,
+      "sha256": "82dee3f98f46440403ee023b2188a24e10d2483cf025dd80ab2304da06c2f42c"
+    },
+    {
+      "file": "air-delivery.json",
+      "bytes": 2059,
+      "sha256": "af4fc34b9c64b8f1960902c47632aefb304b6829b3e3d7301d4a923d1c92e288"
+    },
+    {
+      "file": "air-delivery.zip",
+      "bytes": 85723,
+      "sha256": "455840a20962147011869cd4935893adc6a91cb1ac7df47680a1ce5717e6dcd9"
+    },
+    {
+      "file": "air-producer-cleanup.json",
+      "bytes": 871,
+      "sha256": "5c1f5509a199ac44c566c43110e1b038476fd0783d4238f846dfc9d1ab797fad"
+    },
+    {
+      "file": "all-implementation-loc.json",
+      "bytes": 3497,
+      "sha256": "cd228164038250b89f0006105dc3f0cc3dcccf978618da1f85c61847205ffc33"
+    },
+    {
+      "file": "consumer-contract.json",
+      "bytes": 1733,
+      "sha256": "8cc63c35dc1fc11bfd7b78c09e2f4b86a887b58a8656c46902de227d95dec836"
+    },
+    {
+      "file": "final-commands.zip",
+      "bytes": 11515,
+      "sha256": "18496a0fafd7f595c96c650c3f15e2cb3149265d15607965c07974d9a51a6cb9"
+    },
+    {
+      "file": "inputs.json",
+      "bytes": 832,
+      "sha256": "66854bea019d8e204c5aff0198774728730f50c1a2979925f95e0d3aa7c3a829"
+    },
+    {
+      "file": "source-audit.json",
+      "bytes": 2997,
+      "sha256": "a12cfe5236dbcbeca246f05a2100d8c738de309c90b27e124e9feacf457cf8b9"
+    },
+    {
+      "file": "windows-producer-cleanup-initial.json",
+      "bytes": 4263,
+      "sha256": "28f678903a4abf0ea0956354c9094c62701bb5dc0f66b70328cb4d56f79eb4da"
+    },
+    {
+      "file": "windows-producer-cleanup.json",
+      "bytes": 4596,
+      "sha256": "05527c0aee3c9a30e6e5363bef4e81018f7df06daa29cced87e23874db07434a"
+    },
+    {
+      "file": "windows-raw.zip",
+      "bytes": 652475,
+      "sha256": "6d24ba016f33ea0c52fc5c1ba42d5b0b197f276534c0dc372f7cc14c5a947825"
+    },
+    {
+      "file": "windows-validation.json",
+      "bytes": 13636,
+      "sha256": "6fb0f2200afb67fd44565f991ebaa603de849b4c41f84b404577cb5e9a444e35"
+    },
+    {
+      "file": "y33-air-focused.json",
+      "bytes": 7525,
+      "sha256": "f13a63f8c9b204df56057af04a83b28bfea4c3894d073ed8cb3bc008907ce5a3"
+    },
+    {
+      "file": "y33-air-focused.zip",
+      "bytes": 25801,
+      "sha256": "721d7bce3aff17971d270de2074b6bb03401522cacbb921dd24807285f46d8b8"
+    },
+    {
+      "file": "y33-mini-focused.json",
+      "bytes": 10652,
+      "sha256": "0ca932879444152b44830bd29026d2c420ed85e3976f6e8670c342e2b1c489da"
+    },
+    {
+      "file": "y33-mini-focused.zip",
+      "bytes": 39227,
+      "sha256": "d1a42df801ee3bce08d20e7d951e01d1cabd188552ab77d39389b119ed1b6385"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "status": "PASS",
+  "scope": "Six duplicate Vulkan delivery producers; qualified SDKs, installed consumers and active module caches retained",
+  "qualification_archive_sha256": "6d24ba016f33ea0c52fc5c1ba42d5b0b197f276534c0dc372f7cc14c5a947825",
+  "targets": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\source-build",
+      "files": 4553,
+      "logical_bytes": 498863954.0
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\shared-sdk-build",
+      "files": 4466,
+      "logical_bytes": 428554806.0
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\static-sdk-build",
+      "files": 4446,
+      "logical_bytes": 394700297.0
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\source-build",
+      "files": 4575,
+      "logical_bytes": 504671351.0
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\shared-sdk-build",
+      "files": 4482,
+      "logical_bytes": 432967362.0
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\static-sdk-build",
+      "files": 4458,
+      "logical_bytes": 404378100.0
+    }
+  ],
+  "local_vendor_links_removed": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\source-build\\hyle\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+      "target": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\source-build\\hyle\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\shared-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+      "target": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\shared-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\static-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+      "target": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-compute\\selected-compute\\static-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+      "target": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\source-build\\hyle\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\shared-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+      "target": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\shared-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md"
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\static-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md",
+      "target": "C:\\hyle-scratch\\active-vk\\g33v\\delivery-graph\\selected-graph\\static-sdk-build\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\gg\\SYSTEM.md"
+    }
+  ],
+  "logical_bytes_removed": null
+}

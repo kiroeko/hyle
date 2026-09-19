@@ -1477,3 +1477,13 @@ baseline `5f61546c`，owner `/root`。当前源码核对确认 LayerNorm/归约/
 稳定 LayerNorm，沿既有转换/alias/region 适配 dtype/layout、设备限制与输出 owner，完成实际
 普通入口和适用验收。无新归一化算法、公共 API 或 vendor patch；其他接入余项与 CPU BLOCKED
 保持。本批审计不计新增已验收能力，旧路径的性能取舍仍随完整 C1 bundle 裁决。
+
+Y33候选`4d255a51`现已完成本卡适用验收：W1 static/shared分别132/131项，Air132项，
+Mini131项通过、专用验证层用例1项明确跳过；验证层风险由W1/Air覆盖。selected 9门通过、
+111项未选理由保留。W1/Air本实际LayerNorm的source/static/shared六条消费共360例、
+1080次执行通过，使用本地2B输入、独立参考和原门限，保活/quota通过。
+完整首败、环境/consumer纠正与界限见[Y33终局](llm-moe-c1-vulkan-layernorm.md)。
+停止重复本批验证，无P1或默认性能赢家裁决；归约/Softmax等成熟接入、CUDA/Apple覆盖核对、
+四路线完整成本优选/淘汰及CPU Q2资格BLOCKED仍待处理，C1整包与矩阵未签收。
+统一Compute/Graph实现48,424行/196文件，不含测试；本批归档后清理4,207,211,641逻辑字节。
+C1全部适用验收完成后才通知用户，并在C2之前等待提问。

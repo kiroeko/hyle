@@ -21,7 +21,7 @@ shader，并对照 HYLE `region.cc`、`vulkan_program.cc` 和原需求矩阵，�
 |---|---|---|
 | F03 算术与稳定变换 | Vulkan 有 Sub/Div、Abs/Neg/Exp/Log/Sqrt/Tanh/Sigmoid/Softplus；当前 typed region 仅接 SiLU/Add/Mul 等首组，并要求 norm/gate anchor | **待绑定/资格化**，不是缺算子；广播顺序和非有限值按共同合同核对 |
 | F04 归约/Softmax | 有 SumRows/Mean/Softmax；接口以行维度和限定 mask 为主，共同接口还包含任意轴、Boolean mask、LogSoftmax、空集合等域 | **待绑定及适配**；区分可直接交付的完整片段与具体额外域，不笼统自写全部归约 |
-| F04 LayerNorm | 有 Norm；当前 `norm.comp` 用 E[x²]−E[x]²，`group_norm.comp` 有两遍中心化算法 | **数值/布局资格待核对**；大均值小方差须通过原门，再决定组合/适配，不能仅凭名字接入或预判不可复用 |
+| F04 LayerNorm | `norm.comp` 用 E[x²]−E[x]²；Y33已以原版 `group_norm.comp` 的两遍中心化算法接入，适配dtype/layout/设备与输出owner | **[Y33数值与交付已资格化](llm-moe-c1-vulkan-layernorm.md)**（2026-09-19）；大均值小方差通过原门，W1/Air实际三交付通过，完整成本性能取舍仍待C1固定bundle |
 | F04 TopK | 有 TopK/Argsort，原版 TopK 返回 I32 索引；HYLE 要值+索引和已约定的 stable/NaN 策略，当前 Vulkan Plan 仅支持单输出 | **两输出/排序语义接入缺口**；保留成熟选择算法，定界胶合与必要修正 |
 | F02 Gather/Scatter | 有 GetRows/SetRows/GetRowsBack；类型/轴和输入要求不同，普通 HYLE 默认 checked，失败不得越界或破坏输出 | **索引/状态/失败适配**；上游有算子不能替普通入口免除检查，也不能把这些接口差异等同缺整个算子 |
 | F02 Scan | 有 F32 inclusive Cumsum 及设备 subgroup 条件；本包 counts/offsets 还要求 I32 exclusive、checked overflow | **具名数值档位缺口**；未核对另一成熟候选或受审上游适配前不裁决自写完整 Scan |

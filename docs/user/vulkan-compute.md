@@ -105,9 +105,18 @@ prepare 参数按操作的自然输入顺序排列：TensorDesc 表示每次绑�
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
-HYLE 原生归一化对非空输入使用一次 dispatch 和固定 shared memory，不分配额外 device scratch。
-RMSNorm 两遍读取输入，LayerNorm 三遍并使用中心化方差；半精度奇数宽度时一个 workgroup
-处理相邻两行，避免两个组写同一 word。合法 stride/View、空域、rank≤8 均沿张量合同。
+LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
+且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
+方差实现。F32/F16/BF16、合法 stride/View 和 rank≤8 沿相同公开入口；必要时先转换为连续
+F32、用不复制数据的 shape 别名展开行，scale/bias独立转换，affine后仅一次舍入回原类型。
+输入起点不能证明满足 descriptor 对齐时预先规划复制；无affine的结果也有独立存储owner。
+这些转换、复制、F32暂存与原厂内部执行成本均计入完整调用链；bind/submit不重新选择实现。
+
+设备/容量不适用上述成熟路径时，LayerNorm沿已支持域使用原生实现；原生归一化为一次
+dispatch和固定shared memory，无额外device scratch。RMSNorm两遍读取输入，LayerNorm三遍
+并使用中心化方差；半精度奇数宽度时一个workgroup处理相邻两行，避免跨组写同一word。
+空输出不发起GPU计算。LayerNorm已通过Windows/Air实际source/static/shared消费及两台Mac
+的适用正确性；完整成本性能优选仍待C1验收。
 例如 `vk::prepare(context, c::RmsNorm{}, input_description, scale_tensor)` 捕获 scale，随后只绑定输入。
 
 正尺寸 dense F32、rank1–4 的 RMSNorm（F32 累加，可选同类型 scale）和分离式 SiLU gate

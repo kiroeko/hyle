@@ -1,0 +1,16 @@
+{
+  "kind": "archived-selector-plan",
+  "status": "READY",
+  "baseline": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "candidate": "WORKTREE documentation/evidence only",
+  "selected": [
+    "docs",
+    "closure"
+  ],
+  "skipped_with_reasons_in_archive": 118,
+  "archive": "final-docs-raw.zip",
+  "archive_sha256": "530877d9ee60295af238e9a6c75ae4db015d351e45ac7bad6873f68e3132c6b2",
+  "original_plan_member": "final-docs-plan.json",
+  "original_plan_sha256": "3f090dd146c53c48c42f2cef3ee1687916cf2d4b28f2b0ee16ae74dc0c636803",
+  "format_only": true
+}

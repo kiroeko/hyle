@@ -1,0 +1,58 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "platform": "Air Mac16,12",
+  "status": "PASS",
+  "scope": "Y33 actual-weight LayerNorm Direct/Graph; no full C1/model/performance acceptance",
+  "source_archive_sha256": "e860a8bff001437724bc0fbaa49714dbb0679edb09f56ab26312450dd519ae5d",
+  "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+  "consumer_files": {
+    "main.cc": "69b33b132e6206bc1addb973b49de092fa19e77765b7fe7791450066d4420779",
+    "CMakeLists.txt": "7d368efa8cc7600a86a36da7285fc3ec46c7726f73b6bd149993a0d01e04947a"
+  },
+  "executables": {
+    "bs/hyle_c1_layernorm": "d48b5a4455c29effb5d84b253fa0131b4c683f69bbc3f3c9c2062e92257480f3",
+    "consumer-static/hyle_c1_layernorm": "4ddaa9c66b603c0f54fb119f9654f305f233b3712aef920db6c3abc2f1dd882f",
+    "consumer-shared/hyle_c1_layernorm": "520a4b3f386dae0210bb305839b243b76d65b0c4eeb6f15dd5f22459a2bd662b"
+  },
+  "tests": {
+    "bs": {
+      "sha256": "6c87fefc648ee5f049a28dd85d38a0a758368c1acffc5b7bb37cac00d7e64ed8",
+      "cases": 60,
+      "runs": 180,
+      "retained_after_close": 60,
+      "quota_zero": 60
+    },
+    "consumer-static": {
+      "sha256": "b3bb839acbba5ac4d27da1c8aa5529b0ecc1e84fa0668495a5bbd6d1aaa9a081",
+      "cases": 60,
+      "runs": 180,
+      "retained_after_close": 60,
+      "quota_zero": 60
+    },
+    "consumer-shared": {
+      "sha256": "bc2849a4ecfeb1f3ed2e62ff8582017ea7228edc47baae758e8730c4e20f7262",
+      "cases": 60,
+      "runs": 180,
+      "retained_after_close": 60,
+      "quota_zero": 60
+    }
+  },
+  "slot_schedule": {
+    "Direct_and_Graph": {
+      "snapshot_slots": 1,
+      "working_slots": 1,
+      "runs": 3
+    }
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "archive": "air-delivery.zip",
+  "archive_sha256": "455840a20962147011869cd4935893adc6a91cb1ac7df47680a1ce5717e6dcd9",
+  "archive_bytes": 85723,
+  "payloads_in_archive": false,
+  "not_claimed": [
+    "complete C1",
+    "model inference",
+    "performance",
+    "all selected global package gates"
+  ]
+}

@@ -1,0 +1,397 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "scope": "C1-Y33 Windows LayerNorm integration qualification; no full C1 or P1",
+  "status": "PASS",
+  "selected_gates": {
+    "passed": 9,
+    "skipped": 111,
+    "native": [
+      {
+        "id": "docs",
+        "commands": [
+          {
+            "argv": [
+              "C:\\Program Files\\Python312\\python.exe",
+              "scripts/check-docs.py"
+            ],
+            "started": "2026-09-19T07:52:28.044581+00:00",
+            "exit_code": 0,
+            "log": "docs-0.log",
+            "sha256": "5abcdddddc7f4273d985cfb01e5fe9bbbbf00aef2897825933ca2c0e3735e724"
+          }
+        ],
+        "status": "PASS"
+      },
+      {
+        "id": "closure",
+        "commands": [
+          {
+            "argv": [
+              "C:\\Program Files\\Python312\\python.exe",
+              "scripts/check-module-closure.py",
+              "--previous-ref",
+              "5f61546cd0f09ff735b2c01f3f28e33fa3044a2c"
+            ],
+            "started": "2026-09-19T07:52:29.738368+00:00",
+            "exit_code": 0,
+            "log": "closure-0.log",
+            "sha256": "cb4163f31e5437ea47276264af631ac32c74892a4902f5e04b2a8825f2abf4db"
+          }
+        ],
+        "status": "PASS"
+      },
+      {
+        "id": "configure",
+        "commands": [
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "-S",
+              ".",
+              "-B",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "-G",
+              "Ninja",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DHYLE_DEV_FACTORS=compute_provider_ggml_vulkan,compute_route_vulkan,graph_route_vulkan",
+              "-DHYLE_BUILD_TESTS=ON",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF",
+              "-DHYLE_WERROR=ON",
+              "-DHYLE_COMPUTE_VULKAN=ON",
+              "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+              "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc",
+              "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG",
+              "-DHYLE_COMPUTE_CPU=ON",
+              "-DHYLE_STATIC=ON",
+              "-DCMAKE_TOOLCHAIN_FILE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-layernorm\\remaining-toolchain.cmake",
+              "-DFETCHCONTENT_SOURCE_DIR_ONEDNN=C:/public/project-hyle/hyle/.scratch/onednn-lock-v3.13.2/extract/oneDNN-71094df451909e95ceeefc8f64c275cdcbbcdff5",
+              "-DFETCHCONTENT_SOURCE_DIR_GGML_VULKAN_RUNTIME=C:/public/project-hyle/ggml",
+              "-DVulkan_GLSLC_EXECUTABLE=C:/public/tools/hyle-vulkan/1.4.357.0/Bin/glslc.exe",
+              "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+            ],
+            "started": "2026-09-19T07:52:31.324716+00:00",
+            "exit_code": 0,
+            "log": "configure-0.log",
+            "sha256": "c0a583769f6e7234a3a79afacbe74533f5782333a29f3c06aebc11c9c56113cc"
+          }
+        ],
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_ggml_vulkan",
+        "commands": [
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "--build",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "--config",
+              "Release",
+              "--target",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "--parallel",
+              "2"
+            ],
+            "started": "2026-09-19T07:52:37.260789+00:00",
+            "exit_code": 0,
+            "log": "factor-compute_provider_ggml_vulkan-0.log",
+            "sha256": "f81760b863def4ea43f65ce2b9488f54331532f9f4ce1df48f9bf218fd6c4691"
+          },
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/ctest.exe",
+              "--test-dir",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^compute_provider_ggml_vulkan$",
+              "-LE",
+              "headers"
+            ],
+            "started": "2026-09-19T07:52:37.984344+00:00",
+            "exit_code": 0,
+            "log": "factor-compute_provider_ggml_vulkan-1.log",
+            "sha256": "31459b73ca5ff29633730496d6bc2c2a6638312123557f491f9bcc5fb6f1224f",
+            "ctest_detail": {
+              "log": "factor-compute_provider_ggml_vulkan-1-CTest.log",
+              "sha256": "54219bcb50a34acf6a9db958b964b9c4c3a0119b0eb605c1c3e9905fa49a449f"
+            }
+          }
+        ],
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_route_vulkan",
+        "commands": [
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "--build",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "--config",
+              "Release",
+              "--target",
+              "hyle_compute_route_vulkan_tests",
+              "--parallel",
+              "2"
+            ],
+            "started": "2026-09-19T07:52:43.152622+00:00",
+            "exit_code": 0,
+            "log": "factor-compute_route_vulkan-0.log",
+            "sha256": "1e34f04b9445da985bf6a1907c9273cc4afaa98bf446f806382238ee9e1fc260"
+          },
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/ctest.exe",
+              "--test-dir",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^compute_route_vulkan$",
+              "-LE",
+              "headers"
+            ],
+            "started": "2026-09-19T07:52:43.595155+00:00",
+            "exit_code": 0,
+            "log": "factor-compute_route_vulkan-1.log",
+            "sha256": "4c6490837b9ff17afc319b546916d8ebdf9269e98a1cb4f85b6e66e8d775d620",
+            "ctest_detail": {
+              "log": "factor-compute_route_vulkan-1-CTest.log",
+              "sha256": "538ff115cdbc70c6e318336323a788d3cefd654d9d224f8276e63bf5c4b5cce6"
+            }
+          }
+        ],
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_route_vulkan",
+        "commands": [
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/ctest.exe",
+              "--test-dir",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^compute_route_vulkan$",
+              "-R",
+              "_header_self_contained_test$"
+            ],
+            "started": "2026-09-19T07:53:15.509630+00:00",
+            "exit_code": 0,
+            "log": "headers-compute_route_vulkan-0.log",
+            "sha256": "7da1e67d71b955cfc0209feb1a72acbc66a5426d768950260be69bc4d0b42cdd",
+            "ctest_detail": {
+              "log": "headers-compute_route_vulkan-0-CTest.log",
+              "sha256": "ac3a592505d97d775c2e066e8d850952061edf5cbe564994ccdad68d50c937de"
+            }
+          }
+        ],
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph_route_vulkan",
+        "commands": [
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "--build",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "--config",
+              "Release",
+              "--target",
+              "hyle_graph_route_vulkan_tests",
+              "--parallel",
+              "2"
+            ],
+            "started": "2026-09-19T07:53:15.934369+00:00",
+            "exit_code": 0,
+            "log": "factor-graph_route_vulkan-0.log",
+            "sha256": "5c7a9217264e0f2090399f062d26e773ddb6678aa8cd9561547ecc82bea5c9f7"
+          },
+          {
+            "argv": [
+              "C:/Program Files/CMake/bin/ctest.exe",
+              "--test-dir",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^graph_route_vulkan$",
+              "-LE",
+              "headers"
+            ],
+            "started": "2026-09-19T07:53:16.356822+00:00",
+            "exit_code": 0,
+            "log": "factor-graph_route_vulkan-1.log",
+            "sha256": "5a8999870ca5ce4852099eabfc1f8a235ff3c204b8ecead6552601100a0a6fb6",
+            "ctest_detail": {
+              "log": "factor-graph_route_vulkan-1-CTest.log",
+              "sha256": "af85f74a8e9eef5194edda50ad783e9fe97a9d66d7cf70ab20e0bcaa40537eb0"
+            }
+          }
+        ],
+        "status": "PASS"
+      }
+    ],
+    "deliveries": "Vulkan-only Compute and Graph source/static/shared; source and shared SDK checkpoints resumed without rebuilding",
+    "default_CPU_delivery_attempt": "ABORTED_SCOPE; no PASS; existing CPU evidence not relabeled"
+  },
+  "module_cpp_tests": {
+    "static": {
+      "compute_provider_ggml_vulkan": 19,
+      "compute_route_vulkan": 87,
+      "graph_route_vulkan": 26
+    },
+    "shared": {
+      "compute_provider_ggml_vulkan": 19,
+      "compute_route_vulkan": 87,
+      "graph_route_vulkan": 25
+    }
+  },
+  "extra_source_contract_and_headers": "PASS; exact CTest logs in archive",
+  "actual_layernorm_deliveries": [
+    {
+      "linkage": "source",
+      "tests": 60,
+      "runs": 180,
+      "retained_after_close": 60,
+      "quota_zero": 60,
+      "executable_sha256": "792696ab003b067826475063a9ef8430e2c42bcd4e9e55f99bf0f0c40e7d53b6",
+      "cache_sha256": "946f804060e87620a3d959382ac3d72d2babdef6414aecca639cad37322a0eae"
+    },
+    {
+      "linkage": "static",
+      "tests": 60,
+      "runs": 180,
+      "retained_after_close": 60,
+      "quota_zero": 60,
+      "executable_sha256": "7fad391b2150b2cb47b0cd75ba72c11094db8445afe44d2d6743ca73e1f382fb",
+      "cache_sha256": "6a5abe7a1f89995c6ae894406b452a4cb06fb07517ce0a2d88bb1e8cca5f2ced"
+    },
+    {
+      "linkage": "shared",
+      "tests": 60,
+      "runs": 180,
+      "retained_after_close": 60,
+      "quota_zero": 60,
+      "executable_sha256": "6611261e207da313aa85678babad94e219934b4986929f33636d54d92ceb9df1",
+      "cache_sha256": "60342c58414a670b127e868e44393a17363e324ad7fd3f62d71f9888ca8483f5"
+    }
+  ],
+  "consumer_scope": {
+    "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+    "state": "FROZEN_NOT_RUN",
+    "scope": "C1-Y33 orthogonal LayerNorm on local Qwen3.5-2B embeddings; not model forward",
+    "consumer": {
+      "CMakeLists.txt": "7d368efa8cc7600a86a36da7285fc3ec46c7726f73b6bd149993a0d01e04947a",
+      "main.cc": "69b33b132e6206bc1addb973b49de092fa19e77765b7fe7791450066d4420779"
+    },
+    "storage": [
+      "F32",
+      "BF16"
+    ],
+    "shapes": [
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        17,
+        129
+      ],
+      [
+        2,
+        23,
+        257
+      ],
+      [
+        1,
+        128,
+        2048
+      ],
+      [
+        2,
+        129,
+        2048
+      ]
+    ],
+    "affine_parameters": [
+      0,
+      1,
+      2
+    ],
+    "parameters_storage": "F32 scale and bias; same fixtures for Direct and Graph",
+    "epsilon": 1e-05,
+    "reference": "independent two-pass centered FP64, explicit final F32/BF16 RNE",
+    "tolerance": {
+      "F32": {
+        "relative": 6e-06,
+        "absolute": 2e-06
+      },
+      "BF16": {
+        "relative": 0.008,
+        "absolute": 2e-07
+      }
+    },
+    "per_journey": {
+      "cases": 60,
+      "runs": 180,
+      "retained_result_checks": 60,
+      "quota_zero_checks": 60
+    },
+    "slot_schedule": "one snapshot slot, one reusable working slot, three different actual input row selections",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+    "consumer_compile_correction_budget": 2,
+    "performance": false,
+    "consumer_compile_corrections": 1,
+    "correction": "Explicit float conversion in consumer upload; MSVC C4244 on vector<double> to vector<float> iterator construction. No GPU execution or oracle/product change."
+  },
+  "prior_failures": [
+    "MSVC shadow warning in LayerNorm branch",
+    "test missing algorithm include and explicit Operation",
+    "missing task validation-layer startup environment",
+    "unrelated default CPU/oneDNN build aborted",
+    "task Vulkan SDK lookup missing",
+    "task CMAKE_PREFIX_PATH hid installed Hyle",
+    "consumer narrowing warning corrected explicitly"
+  ],
+  "product_corrections": 2,
+  "algorithm_corrections": 0,
+  "consumer_compile_corrections": 1,
+  "remaining": [
+    "Air and Mini relevant regression",
+    "Air actual LayerNorm three-delivery",
+    "C1 mature Reduce/Softmax and other bindings",
+    "C1 full-cost performance and fixed selection; CPU Q2 BLOCKED"
+  ],
+  "archive": "windows-raw.zip",
+  "archive_bytes": 652475,
+  "archive_sha256": "6d24ba016f33ea0c52fc5c1ba42d5b0b197f276534c0dc372f7cc14c5a947825",
+  "archive_members": 155,
+  "cleanup": {
+    "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+    "status": "PASS",
+    "scope": "Removed only this task aborted CPU/oneDNN default delivery build",
+    "absolute_target": "C:\\hyle-scratch\\active-vk\\g33",
+    "files_removed": 569,
+    "logical_bytes_removed": 659078694.0,
+    "archived_evidence_sha256": "8e900ee3ef3970660c3ffe025cf5c0c420c9d19f1b7b242513b21cfd9a74361f"
+  }
+}

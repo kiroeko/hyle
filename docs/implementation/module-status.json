@@ -504,18 +504,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y33 AUDITED：5f94bed4审计后的GroupNorm承载LayerNorm、dtype/layout/设备/输出owner适配及定向回归已实施，首次构建/GPU资格待运行；Y32工程门已完成。其余成熟接入、整包P1/优选/淘汰未签收，CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y33 AUDITED：4d255a51的成熟LayerNorm接入完成W1 static/shared 132/131、Air132、Mini131通过/验证层1跳过，W1/Air实际三交付360例/1080次执行通过；selected9门通过。归约/Softmax等接入、整包P1/优选/淘汰未签收，CPU Q2 BLOCKED保持。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y33 AUDITED：5f94bed4审计后的GroupNorm承载LayerNorm、dtype/layout/设备/输出owner适配及定向回归已实施，首次构建/GPU资格待运行；Y32工程门已完成。其余成熟接入、整包P1/优选/淘汰未签收，CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y33 AUDITED：4d255a51的成熟LayerNorm接入完成W1 static/shared 132/131、Air132、Mini131通过/验证层1跳过，W1/Air实际三交付360例/1080次执行通过；selected9门通过。归约/Softmax等接入、整包P1/优选/淘汰未签收，CPU Q2 BLOCKED保持。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y33 AUDITED：5f94bed4审计后的GroupNorm承载LayerNorm、dtype/layout/设备/输出owner适配及定向回归已实施，首次构建/GPU资格待运行；Y32工程门已完成。其余成熟接入、整包P1/优选/淘汰未签收，CPU Q2 BLOCKED保持。",
+      "summary": "LLM/MoE C1-Y33 AUDITED：4d255a51的成熟LayerNorm接入完成W1 static/shared 132/131、Air132、Mini131通过/验证层1跳过，W1/Air实际三交付360例/1080次执行通过；selected9门通过。归约/Softmax等接入、整包P1/优选/淘汰未签收，CPU Q2 BLOCKED保持。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

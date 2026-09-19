@@ -73,3 +73,42 @@ half/stride/rank8适配、冷设备/暂存限制与descriptor对齐；新增真�
 `<algorithm>`，以及动态Argument列表调用需显式构造`Operation`。仅修正测试调用与include；
 两次失败均未启动GPU，累计纠正2/2、算法纠正0。完成此固定修正后运行一次定向资格；若出现
 新的实质反例，先依法重新定界，不继续盲目修补或重测。
+
+## 固定候选验收与局部裁决（2026-09-19）
+
+不可变候选 `4d255a5174825dc669de1684affd7729d3b430d7` 已完成本卡全部适用正确性、
+资源与交付验证。[证据汇总](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-layernorm/README.md)
+保留命令、首败、原始日志、候选/工具链/输入身份及各平台收据。
+
+| 适用项 | 实际结果 |
+|---|---|
+| W1 static / shared | 分别132 / 131项 C++ 回归通过；shared 无既有 static-only 私有用例。Provider source contract、MSVC 组合夹具及适用头检查通过。 |
+| Air `Mac16,12` | 132项 C++ 回归和 source contract 通过，Vulkan validation 开启且无错误。 |
+| Mini `Mac16,10` | 131项 C++ 回归和 source contract 通过；未安装验证层，专用 `ExplicitValidationUsesItsOwnInstance` 明确 SKIPPED，由 W1/Air 覆盖该风险。Mini 仅签正确性/可移植性。 |
+| selected 工程门 | 9/9通过；111个未选项及理由保留。Compute/Graph 的默认 source/static/shared 六条消费按本次实际 Vulkan 路线隔离执行。 |
+| 本实际 LayerNorm 三交付 | W1/Air 各 source/static/shared，六条公开 Direct/Graph 消费共360例、1080次执行；旧结果在关闭后可读、quota 最终归零。 |
+
+实际消费使用已验证本地2B BF16 embedding 与参数夹具，F32/BF16、0/1/2个 affine 参数、
+batch1/2、宽1/129/257/2048和17/23/128/129行；每例一个快照槽、一个复用工作槽，三次变输入。
+独立两遍 FP64 参考及最终 F32/BF16 RNE，沿原门限，没有以 ggml 输出自证正确。
+该 LayerNorm 是正交基础能力消费，不声称为 Qwen 原始 forward 或整模型推理。
+
+两次产品/测试编译纠正后无新产品改动。第三次构建已通过，但首轮运行因任务夹具缺少
+validation-layer 环境在 Context 创建前失败；补齐既定运行环境，同一 EXE 通过。
+默认交付脚本首次拉入无关 CPU/oneDNN 构建，在测试前停止并保存为 ABORTED_SCOPE；用现有
+开关固定 CPU/oneDNN OFF、Vulkan ON。其后任务 toolchain 的 Vulkan SDK 查找和强制
+`CMAKE_PREFIX_PATH` 分别阻止 configure/已安装消费；改为具体 Vulkan/SPIRV 查找变量，
+只续跑未完成阶段，没有改公共交付工具或重复已通过的 producer。
+外部 consumer 首次编译触发 double→float 的 WERROR，改为显式转换（预算1/2），GPU未启动，
+oracle与产品不变。Mini 夹具最初误要求验证层专用用例，续跑仅补未运行的 Direct/Graph；
+恢复脚本一次 gtest JSON 字段假设错误也保留，未由此重复执行已通过用例。
+
+Y33-A–D 的适用验收完成，停止本批重复验证；无 P1、性能赢家或旧实现删除裁决。
+三个 owner 继续 C1 AUDITED，Reduce/Softmax 等成熟接入、四路线完整成本优选/淘汰、
+CPU Q2 的独立测量资格阻塞和 C1 整包验收仍未完成；不触发 C1 完成通知，不进入 C2。
+
+统一脚本按该不可变候选统计全部 Compute/Graph 实现 **48,424行 / 196文件**，
+不含测试、bench及第三方，自检通过。证据归档核验后清理 W1 重复 producer/误启用构建与
+Air 两个 producer/展开源码，共 **4,207,211,641逻辑字节**；保留 SDK、已安装消费者、
+当前模块构建缓存和原始证据。Windows 清理收据的汇总字段曾为空，按未变的逐目录账单纠正，
+保留原收据且未重复删除。

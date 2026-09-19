@@ -1,0 +1,71 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "state": "FROZEN_NOT_RUN",
+  "scope": "C1-Y33 orthogonal LayerNorm on local Qwen3.5-2B embeddings; not model forward",
+  "consumer": {
+    "CMakeLists.txt": "7d368efa8cc7600a86a36da7285fc3ec46c7726f73b6bd149993a0d01e04947a",
+    "main.cc": "69b33b132e6206bc1addb973b49de092fa19e77765b7fe7791450066d4420779"
+  },
+  "storage": [
+    "F32",
+    "BF16"
+  ],
+  "shapes": [
+    [
+      1,
+      1,
+      1
+    ],
+    [
+      1,
+      17,
+      129
+    ],
+    [
+      2,
+      23,
+      257
+    ],
+    [
+      1,
+      128,
+      2048
+    ],
+    [
+      2,
+      129,
+      2048
+    ]
+  ],
+  "affine_parameters": [
+    0,
+    1,
+    2
+  ],
+  "parameters_storage": "F32 scale and bias; same fixtures for Direct and Graph",
+  "epsilon": 1e-05,
+  "reference": "independent two-pass centered FP64, explicit final F32/BF16 RNE",
+  "tolerance": {
+    "F32": {
+      "relative": 6e-06,
+      "absolute": 2e-06
+    },
+    "BF16": {
+      "relative": 0.008,
+      "absolute": 2e-07
+    }
+  },
+  "per_journey": {
+    "cases": 60,
+    "runs": 180,
+    "retained_result_checks": 60,
+    "quota_zero_checks": 60
+  },
+  "slot_schedule": "one snapshot slot, one reusable working slot, three different actual input row selections",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+  "consumer_compile_correction_budget": 2,
+  "performance": false,
+  "consumer_compile_corrections": 1,
+  "correction": "Explicit float conversion in consumer upload; MSVC C4244 on vector<double> to vector<float> iterator construction. No GPU execution or oracle/product change."
+}

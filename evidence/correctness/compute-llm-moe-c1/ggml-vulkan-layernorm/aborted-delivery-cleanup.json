@@ -1,0 +1,9 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "status": "PASS",
+  "scope": "Removed only this task aborted CPU/oneDNN default delivery build",
+  "absolute_target": "C:\\hyle-scratch\\active-vk\\g33",
+  "files_removed": 569,
+  "logical_bytes_removed": 659078694.0,
+  "archived_evidence_sha256": "8e900ee3ef3970660c3ffe025cf5c0c420c9d19f1b7b242513b21cfd9a74361f"
+}

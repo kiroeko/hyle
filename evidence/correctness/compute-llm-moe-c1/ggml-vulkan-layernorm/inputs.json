@@ -1,0 +1,14 @@
+{
+  "candidate": "4d255a5174825dc669de1684affd7729d3b430d7",
+  "source_archive_sha256": "e860a8bff001437724bc0fbaa49714dbb0679edb09f56ab26312450dd519ae5d",
+  "assets_sha256": "4feeb2055792e7acf5600b73f0a83d21e0e5d6a886f023d0eb39d45ea6b62a83",
+  "consumer_files": {
+    "CMakeLists.txt": "7d368efa8cc7600a86a36da7285fc3ec46c7726f73b6bd149993a0d01e04947a",
+    "main.cc": "69b33b132e6206bc1addb973b49de092fa19e77765b7fe7791450066d4420779"
+  },
+  "fixture_receipt_sha256": "a6915141563531e29bdebaf6fb2fb98da4818723b51d969d34f3b4221b98e85e",
+  "verifier_sha256": "9550c2084ae17c5236543180e58629ce9a1e35ba4b60686897fdb345d1c92949",
+  "consumer_contract_sha256": "8cc63c35dc1fc11bfd7b78c09e2f4b86a887b58a8656c46902de227d95dec836",
+  "state": "FROZEN_AIR_NOT_RUN",
+  "windows_equivalent_consumer": "w1-actual-delivery-fixed/result.json"
+}
