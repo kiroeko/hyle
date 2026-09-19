@@ -1,0 +1,106 @@
+{
+  "candidate": "f58d26096dac635fe4ff23a141a0194d94faeebb",
+  "product_candidate": "aa6690c6e5ce5fa7a58706e778052d91504e0c3a",
+  "status": "PASS",
+  "scope": "six local-weight elementwise/gate C++ deliveries; not C1 or model acceptance",
+  "journeys": 6,
+  "cases": 216,
+  "runs": 648,
+  "consumer_corrections": 0,
+  "contract": {
+    "candidate": "f58d26096dac635fe4ff23a141a0194d94faeebb",
+    "product_candidate": "aa6690c6e5ce5fa7a58706e778052d91504e0c3a",
+    "state": "FROZEN_NOT_RUN",
+    "scope": "C1-Y35 local2B weight-derived stable/gate fragments, not model forward",
+    "consumer": {
+      "CMakeLists.txt": "3820eb3a0e38a6b5227b0265dbc81dfb889a1110b988c0103d1825ee8a36785c",
+      "main.cc": "c5cf1097262ceb724bdcba0e442fd0357cc09c712270a4117718b8affd5d4812"
+    },
+    "storage": [
+      "F32",
+      "BF16"
+    ],
+    "batch_time": [
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        17
+      ],
+      [
+        2,
+        23
+      ]
+    ],
+    "widths": {
+      "stable": 16,
+      "gate": 6144
+    },
+    "modes": [
+      "stable transforms/decay/sigmoid branches",
+      "packed SwiGLU",
+      "separate SwiGLU"
+    ],
+    "reference": "independent scalar FP64 formulas with operation-level F32 boundaries and final BF16 RNE",
+    "tolerance": {
+      "F32": {
+        "relative": 6e-06,
+        "absolute": 2e-06
+      },
+      "BF16": {
+        "relative": 0.008,
+        "absolute": 2e-07
+      }
+    },
+    "per_journey": {
+      "cases": 36,
+      "runs": 108,
+      "retained_close": 36,
+      "quota_zero": 36
+    },
+    "slot_schedule": "one retained first slot, one changing working slot executed twice; Direct Recorder, Graph Invocation",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "fixture_receipt_sha256": "f2310865bb105b1c2662e0ffd23e89a5038fa835fa089771c1939e47fcb8cafe",
+    "consumer_compile_correction_budget": 2,
+    "consumer_compile_corrections": 0,
+    "product_corrections_used": 2,
+    "product_correction_budget": 2,
+    "performance": false,
+    "drivers": {
+      "verify-delivery.py": "693221278518969679abeff91e7aeefb1fce2a89485ed65510f546e35329166f",
+      "pack-delivery.py": "34f5be035c5c3ddf1b016313df719c1805cf949480b9c48e61e7a4707d9422bc",
+      "air-delivery.py": "5fdc68cbf121e2c1cb7ff6d8e34bb005d2da48634a789a3671c1a71fd5b03832",
+      "w1-delivery.py": "4ae30182fc30909ade847684e438023522a75a9269945de4fdb30fbe0fe24816",
+      "w1-delivery.ps1": "d9d3efed0337cd6f6fd605db8887ac6356737d6dcadeb07171de800825caeb22",
+      "relocate.ps1": "c0202e5c75f897a52705ac9291550f9cfecbb69c026b7e925cf1972c6fb4cc6d"
+    }
+  },
+  "archive": {
+    "file": "delivery-inputs-raw.zip",
+    "bytes": 24545,
+    "sha256": "dc65ea782ca826f54efcefad2c854340989f413364190eb68fcb8b10059cfd75",
+    "members": {
+      "commands/consumer-contract.json": "57818e08403c279b4defad891adeb3d7617d567002121b118a2416407096f2b4",
+      "commands/inputs.json": "c6c5b0b046a52c727909fba6b99e7df836be490313a60dd6160d1d1426eda6ff",
+      "commands/make-fixtures.py": "1fb9278ad9389745a6391eb34df1a29f841de8debbfef79aeb7548f5351025e9",
+      "commands/freeze-delivery.py": "b484d9dd426efecc6d658dc1b2b5397c702c1c36ec8f92bea28029a46d4e63f4",
+      "commands/verify-delivery.py": "693221278518969679abeff91e7aeefb1fce2a89485ed65510f546e35329166f",
+      "commands/pack-delivery.py": "34f5be035c5c3ddf1b016313df719c1805cf949480b9c48e61e7a4707d9422bc",
+      "commands/w1-delivery.py": "4ae30182fc30909ade847684e438023522a75a9269945de4fdb30fbe0fe24816",
+      "commands/w1-delivery.ps1": "d9d3efed0337cd6f6fd605db8887ac6356737d6dcadeb07171de800825caeb22",
+      "commands/air-delivery.py": "5fdc68cbf121e2c1cb7ff6d8e34bb005d2da48634a789a3671c1a71fd5b03832",
+      "commands/relocate.ps1": "c0202e5c75f897a52705ac9291550f9cfecbb69c026b7e925cf1972c6fb4cc6d",
+      "consumer/CMakeLists.txt": "3820eb3a0e38a6b5227b0265dbc81dfb889a1110b988c0103d1825ee8a36785c",
+      "consumer/main.cc": "c5cf1097262ceb724bdcba0e442fd0357cc09c712270a4117718b8affd5d4812",
+      "input/fixture-receipt.json": "f2310865bb105b1c2662e0ffd23e89a5038fa835fa089771c1939e47fcb8cafe",
+      "commands/source-package.log": "13aa4b28ff5cd5e11d19efe40c958fae65b6bfd76356697ea1f4ca6006cd357a",
+      "commands/delivery-environment.log": "064d360aaea30865cce8e92289f42371169520a15710def9ad712d22633a1cdb"
+    }
+  },
+  "results": [
+    "windows-delivery.json",
+    "air-delivery.json"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "candidate": "f58d26096dac635fe4ff23a141a0194d94faeebb",
+  "platform": "Air Mac16,12",
+  "status": "PASS",
+  "scope": "Y35 actual-weight Elementwise Direct/Graph; no full C1/model/performance acceptance",
+  "source_archive_sha256": "1093f56b5206bc617690f030980b7ac92aec5dff89c254d80ba765682e528480",
+  "fixture_receipt_sha256": "f2310865bb105b1c2662e0ffd23e89a5038fa835fa089771c1939e47fcb8cafe",
+  "consumer_files": {
+    "main.cc": "c5cf1097262ceb724bdcba0e442fd0357cc09c712270a4117718b8affd5d4812",
+    "CMakeLists.txt": "3820eb3a0e38a6b5227b0265dbc81dfb889a1110b988c0103d1825ee8a36785c"
+  },
+  "executables": {
+    "bs/hyle_c1_elementwise": "0e24c117a4603e00b871c7b4ee91d79cbf3c61fb655f3f862b6309ae078d3e70",
+    "consumer-static/hyle_c1_elementwise": "6140d8684f1dc6add46e4154b1ba4b4b82f38a38f107ac0d79503a1dfc173891",
+    "consumer-shared/hyle_c1_elementwise": "d4f9f1962a973cd4d904fc1a012f689121c438bb55a6bdb2e43ec4b18283e14b"
+  },
+  "tests": {
+    "bs": {
+      "sha256": "e5a7aa2296add82abad8ce80c61ed29d841ad70f80d8513009bf67b11f9053d3",
+      "cases": 36,
+      "runs": 108,
+      "retained_after_close": 36,
+      "quota_zero": 36
+    },
+    "consumer-static": {
+      "sha256": "45a75d391772610dfed17b09427297e2c79acdcefb9a96a6eac881454c9d7d9b",
+      "cases": 36,
+      "runs": 108,
+      "retained_after_close": 36,
+      "quota_zero": 36
+    },
+    "consumer-shared": {
+      "sha256": "5727c3c019deadfd643c376c4313770ca980a07dde4aff443a37982e980dde0b",
+      "cases": 36,
+      "runs": 108,
+      "retained_after_close": 36,
+      "quota_zero": 36
+    }
+  },
+  "slot_schedule": {
+    "Direct_and_Graph": {
+      "snapshot_slots": 1,
+      "working_slots": 1,
+      "runs": 3
+    }
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "archive": "air-delivery.zip",
+  "archive_sha256": "053596210028196653eccd58ef5e55a01860bda94a1612065135557820b773c7",
+  "archive_bytes": 87811,
+  "payloads_in_archive": false,
+  "not_claimed": [
+    "complete C1",
+    "model inference",
+    "performance",
+    "all selected global package gates"
+  ]
+}

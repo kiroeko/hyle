@@ -164,3 +164,25 @@ input norm、in_proj_a/b、MLP gate/up权重的逐张量hash。独立单线程FP
 驱动，仅换具名输入和consumer；每平台source构建兼作static producer，再建shared，重定位
 并隐藏producer后执行SDK消费者。Windows DLL邻exe、PATH隔离、禁弹窗，重型串行parallel2。
 独立consumer纠正预算仍最多2轮；本批产品纠正2/2已用尽，不以测试修正名义继续改产品。
+
+### 本批正确性、实际交付与工程资格：已完成
+
+不可变候选`f58d2609`（产品仍`aa6690c6`）的[六条实际三交付](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/delivery-inputs.json)
+全部通过：W1/Air各source/static/shared，合计216例、648次实际执行，独立参考、两槽变输入、
+首槽结果保留、close后读取和quota归零全部通过。consumer纠正0；source兼作static producer，
+SDK重定位且producer隐藏后消费，Windows DLL邻exe/PATH隔离，无验证层错误。
+
+[112项所选工程门](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/engineering.json)
+完成资格确认：docs、closure、configure、Provider源码/MASM组合、component-contract共5项
+实际执行；其余107项复用有效证据，8项未选理由保留。Provider的C++19项另按本批原生结果
+复用。没有重建45个默认交付producer：它们未启用Vulkan，共同源码/公开头/脚本和所选依赖
+均未改变，已核验前批归档、76个未变测试产物、30份SDK完整文件清单与45条消费记录。
+
+编译身份的具体界限：compile_commands的163项仅覆盖原厂ggml，不声称覆盖HYLE全部C++。
+另逐键核对前批与当前完整CMake缓存685项，唯一差异是已知ggml补丁副本路径；共同构建脚本
+及未受影响源码未变，相关产物hash匹配。完整执行/复用依据与原始日志分别保留，不伪造新运行。
+
+本批验收停止重复，没有运行P1或裁决性能赢家。C1其余成熟Provider覆盖、完整成本比较、
+条件默认规则及重复自实现取舍仍待完成，CPU Q2 BLOCKED保持；不回填共同矩阵或签C1完成。
+统一实现48,943行/198文件，不含测试/第三方，自检通过。已按hash核验并清理四个失效输入
+压缩包，共95,384,616字节；此前递归源码副本清理未执行，不混入本次释放量。

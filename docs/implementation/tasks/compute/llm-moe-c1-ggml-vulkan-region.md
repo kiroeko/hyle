@@ -1104,3 +1104,8 @@ Mac GPU及本批三交付尚未验收。Provider接入事实不代签C1完整成
 后续F2产品`aa6690c6`已完成本批W1 static/shared141/140项、Air141项，以及Mini140项
 通过和1项预声明layer测试显式跳过。只签[Y35原生资格](llm-moe-c1-vulkan-elementwise.md)，
 本批实际三交付、所选工程余门、完整C1性能/路由/淘汰仍未签收。
+
+后续`f58d2609`的[Y35实际三交付和工程资格](llm-moe-c1-vulkan-elementwise.md)已完成：W1/Air
+共六条交付、216例/648次执行通过；112项工程门中5项执行、107项按身份复用，8项未选理由
+保留，未重建45个未变默认producer。Y35到此停止重复；C1其余接入、性能/路由/淘汰及CPU Q2
+BLOCKED保持，共同矩阵与C1完成通知尚未触发。

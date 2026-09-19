@@ -137,7 +137,7 @@ scalar 使用单元素原厂存储。Log/Sqrt、稳定激活的数值边界按�
 起点可能改变的动态输入。已知对齐常量和计算结果直接导入，适配内存与复制属于真实成本。
 空域、设备限制之外及 Min/Max 等未绑定域继续使用已有原生实现。bind/submit 不选择 Provider；
 [Y35 新接线](../implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md)已完成当前
-Windows/Air/Mini 的适用原生模块资格；本批实际三交付和完整成本优选仍待验收。
+Windows/Air/Mini 的适用原生模块资格及 Windows/Air 的实际三交付；完整成本优选仍待验收。
 
 Concat 接受任意正数量的同类型输入、正负 axis、rank1..8 和合法 stride/View，按输入顺序拼接，
 保留原始存储位并生成独立 dense 结果。例如 `vk::prepare(context, c::Concat{-1}, left_desc,

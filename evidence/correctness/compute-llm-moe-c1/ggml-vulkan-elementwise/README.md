@@ -15,4 +15,25 @@ W1 static的Provider19/Direct95按未变产品和EXE身份复用，Graph27在测
 shared实际为Provider19/Direct95/Graph26。私有runner预期数量纠正及原始停止记录均保留。
 F2只改route冷期设备限制的一处整数常量类型。Windows受影响Direct/Graph已重编执行，
 Provider与source contract依未变输入/产物身份复用；Air/Mini在该候选首次通过本批原生资格。
-这不是本批真实2B三交付、全部工程门或性能资格；不签收C1或共同矩阵。
+上述原生记录本身不签实际三交付或工程余门；后续资格如下。
+
+## 实际权重片段三交付与工程资格
+
+`f58d2609`（产品仍`aa6690c6`）的[固定输入与汇总](delivery-inputs.json)、[输入/命令归档](delivery-inputs-raw.zip)
+保留实际本地2B权重来源、独立FP64参考、36例/108次每交付的冻结合同。没有consumer纠正。
+
+| 环境 | 结果 | 证据 |
+|---|---|---|
+| Windows | source/static/shared三条全部通过 | [收据](windows-delivery.json)、[日志](windows-delivery.zip) |
+| Air Mac16,12 | source/static/shared三条全部通过 | [收据](air-delivery.json)、[日志](air-delivery.zip) |
+| 所选工程门 | 112项资格确认：5项执行、107项按身份复用，8项未选理由保留 | [收据](engineering.json)、[日志及复用证明](engineering-raw.zip) |
+
+六交付合计216例、648次实际执行，含published输出、两槽变输入、旧结果、close后读取及quota
+归零。模型权重只用于生成固定片段输入，没有完整attention/state或整模型forward声明。
+工程复用核验前批归档、76个未变测试产物、30份SDK清单和45条未启用Vulkan的默认消费。
+163条编译命令仅覆盖原厂；另核对完整685项CMake缓存，唯一差异为已知原厂patch副本路径。
+未重建45个未变默认producer，没有把复用写成新运行。
+
+[统一实现统计](current-loc.json)：48,943行/198文件，不含测试/第三方；[清理](input-cleanup.json)
+四个失效输入压缩包共95,384,616字节。适用原生、实际交付和工程资格完成后停止重复；C1完整
+成本优选/默认规则/自实现淘汰、CPU Q2 BLOCKED及共同矩阵保持未签收。

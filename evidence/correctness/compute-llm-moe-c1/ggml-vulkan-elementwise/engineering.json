@@ -1,0 +1,998 @@
+{
+  "candidate": "f58d26096dac635fe4ff23a141a0194d94faeebb",
+  "status": "PASS_WITH_DOCUMENTED_REUSE",
+  "counts": {
+    "selected": 112,
+    "executed": 5,
+    "reused": 107,
+    "skipped": 8
+  },
+  "configuration_identity": {
+    "status": "IDENTITY_VERIFIED",
+    "previous_cache_entries": 685,
+    "current_cache_entries": 685,
+    "changed_entries": {
+      "ggml_SOURCE_DIR": [
+        "C:/hyle-scratch/active-vk/static/src/compute_provider_ggml_vulkan/source-5b19b4886eaac1040c8f69820c9d2320f00c6caf57690d6328996f35e238b5a3",
+        "C:/hyle-scratch/active-vk/static/src/compute_provider_ggml_vulkan/source-fb15744d5705ded9d73b045faa0b916e02a22c0e59c69c451811e8e4062a47e5"
+      ]
+    },
+    "previous_archive_sha256": "28dfcdcfa96eba2be19ea51f55e44474607cc51024905b34b15381b88c829277",
+    "current_cache_sha256": "721ee37786815b2ebc82512598d843b4e694237b48c5c8c8f95e47a7b348cd50",
+    "compile_database_scope": "The 163 entries are ggml vendor commands only; no HYLE compile-command coverage is claimed.",
+    "unaffected_recipe_proof": "Entire global CMake cache matches except the changed Vulkan vendor copy path; common CMake scripts, public headers and all non-Vulkan source inputs match the previous candidate, and unaffected test/SDK artifact hashes match. See default-reuse-proof.json."
+  },
+  "archive": {
+    "file": "engineering-raw.zip",
+    "bytes": 97677,
+    "sha256": "71c5e3c8fc4f997b2cf94eae6caa2f01032449a2cfdc0b3cfd69461c424df3e9",
+    "members": {
+      "execution/closure.log": "d26b2287d85d5b97c81a5177174801c946e5757ab9137738b40544f921aac325",
+      "execution/CMakeCache-after.txt": "721ee37786815b2ebc82512598d843b4e694237b48c5c8c8f95e47a7b348cd50",
+      "execution/CMakeCache-before.txt": "7a684ca7db4a2fb3e9c171955b0158b85d9824c7dbab2adb4faa2a5309cf4f47",
+      "execution/compile-commands-after.json": "28bcff24be105ddc6763327dabdbd51b4de18ea0c5ba438ac68c3ab9c524e66b",
+      "execution/compile-commands-before.json": "28bcff24be105ddc6763327dabdbd51b4de18ea0c5ba438ac68c3ab9c524e66b",
+      "execution/component-contract-initialize.log": "1346df7cc2441c66a4353f6abc2de1d38041ba1c8e24b48ba05b7b8c7e39d665",
+      "execution/component-contract.log": "4a5c562dd893cf828bd51e5ddc7e84022728164c40f584da0419b02bdd8240bc",
+      "execution/configure.log": "1f3be7268f0303278ed1acb2771bad986926a40346cfbcbaf3b192d41a958ed7",
+      "execution/docs.log": "5782249557328c5d1bca1230cc7892e656c84c0e33e7e993c593e348747c8c62",
+      "execution/factor-compute_provider_ggml_vulkan.log": "21975efea38db63f608ae9539a85f525b5dc59f34ed9ca1b8d79f551a23007ea",
+      "execution/initialize-contract-cache.cmake": "6a2c89ac8fb38009301d4c575ff891f66f892a0b2bce5ec036c7f8a445a7e228",
+      "execution/provider-CTest.log": "73becf1670870b9efd08ff26f2e14dd43183f9d4df4099efe3b44b131fee7085",
+      "execution/result.json": "0c6f6927b74b878259785bce65a3051e31df26b3554ffff667fed48a6d0fa50b",
+      "commands/plan.json": "5a618cb985dda46282c5208fb67ee29c17fb7d5e1b85fb5de641e225462aa10a",
+      "commands/default-reuse-proof.json": "1657981528b027a5ab304c6b0ca4aeaf25665dc8be92f2c4bb952d40936cc990",
+      "commands/prove-default-reuse.py": "1a543795ba0ac485cc0843c73c8ec47f7bb7aff2de9a049da4addc09b1511447",
+      "commands/remaining-gates.py": "d546558fdca53c552d33fe2acb9ac177ae5daa3463d804aa1dbc0b641c418057",
+      "commands/remaining-gates.ps1": "cb9a9c46bcc744a0bdd3a4a5f91d01a943ee33a2ce697be3b8fc3125571ba3fe",
+      "commands/environment.log": "064d360aaea30865cce8e92289f42371169520a15710def9ad712d22633a1cdb",
+      "commands/configuration-identity.json": "344ad8cc72d3ecff07c56a7d0979746fa732cac98794af3e37cacf63fac0f54a"
+    }
+  },
+  "gates": [
+    {
+      "id": "docs",
+      "status": "PASS",
+      "commands": [
+        {
+          "argv": [
+            "C:\\Program Files\\Python312\\python.exe",
+            "scripts/check-docs.py"
+          ],
+          "exit_code": 0,
+          "log": "docs.log",
+          "sha256": "5782249557328c5d1bca1230cc7892e656c84c0e33e7e993c593e348747c8c62",
+          "seconds": 1.7350000003352761
+        }
+      ]
+    },
+    {
+      "id": "closure",
+      "status": "PASS",
+      "commands": [
+        {
+          "argv": [
+            "C:\\Program Files\\Python312\\python.exe",
+            "scripts/check-module-closure.py",
+            "--previous-ref",
+            "1e43875a22efdabed4e445e7ee15bf9823f31031"
+          ],
+          "exit_code": 0,
+          "log": "closure.log",
+          "sha256": "d26b2287d85d5b97c81a5177174801c946e5757ab9137738b40544f921aac325",
+          "seconds": 1.5619999999180436
+        }
+      ]
+    },
+    {
+      "id": "configure",
+      "status": "PASS",
+      "commands": [
+        {
+          "argv": [
+            "C:/Program Files/CMake/bin/cmake.exe",
+            "-S",
+            ".",
+            "-B",
+            "C:\\hyle-scratch\\active-vk\\static",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_ggml_vulkan,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,container,container_concurrent,container_intrusive,container_queue,container_text,core,error,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan,io_core,io_http,io_http2,io_tls,io_transfer,io_watch,io_websocket,math,mem,mem_reclaim,mem_vm,obs,platform,platform_fs,platform_thread,process,sched,simd,time,timer_queue,util_core,util_runtime",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_CUDA=ON",
+            "-DHYLE_COMPUTE_ONEDNN=ON",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+            "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc",
+            "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG",
+            "-DHYLE_COMPUTE_CPU=ON",
+            "-DHYLE_STATIC=ON",
+            "-DCMAKE_TOOLCHAIN_FILE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "-DFETCHCONTENT_SOURCE_DIR_ONEDNN=C:\\public\\project-hyle\\hyle\\.scratch\\onednn-lock-v3.13.2\\extract\\oneDNN-71094df451909e95ceeefc8f64c275cdcbbcdff5",
+            "-DFETCHCONTENT_SOURCE_DIR_GGML_VULKAN_RUNTIME=C:/public/project-hyle/ggml",
+            "-DVulkan_GLSLC_EXECUTABLE=C:/public/tools/hyle-vulkan/1.4.357.0/Bin/glslc.exe",
+            "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+          ],
+          "exit_code": 0,
+          "log": "configure.log",
+          "sha256": "1f3be7268f0303278ed1acb2771bad986926a40346cfbcbaf3b192d41a958ed7",
+          "seconds": 44.79699999978766
+        }
+      ]
+    },
+    {
+      "id": "factor:compute_provider_ggml_vulkan",
+      "status": "PASS",
+      "commands": [
+        {
+          "argv": [
+            "C:/Program Files/CMake/bin/ctest.exe",
+            "--test-dir",
+            "C:\\hyle-scratch\\active-vk\\static",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_provider_ggml_vulkan$",
+            "-LE",
+            "headers",
+            "-R",
+            "^(hyle_ggml_vulkan_source_contract_test|hyle_ggml_vulkan_masm_composition_test)$"
+          ],
+          "exit_code": 0,
+          "log": "factor-compute_provider_ggml_vulkan.log",
+          "sha256": "21975efea38db63f608ae9539a85f525b5dc59f34ed9ca1b8d79f551a23007ea",
+          "seconds": 4.561999999918044
+        }
+      ],
+      "reused_cpp": {
+        "label": "compute_provider_ggml_vulkan",
+        "argv": [
+          "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+          "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f1-w1\\compute_provider_ggml_vulkan.json"
+        ],
+        "exit_code": 0,
+        "log": "compute_provider_ggml_vulkan.log",
+        "sha256": "54445dac9dd55bbd47c7455a83c7666d24ef7e562d32d689505942d86ae6e0c8",
+        "tests": 19,
+        "failures": 0,
+        "executable_sha256": "343c6669d3e9075b7aed4ea52a7a0092169ea28928b9ff20c8d73af0697a58c2",
+        "gtest_sha256": "7b327db0eeafb0c18a024e88beffdc69628b740b24bc7cac612db245e528dc4e"
+      },
+      "ctest_detail": {
+        "file": "provider-CTest.log",
+        "sha256": "73becf1670870b9efd08ff26f2e14dd43183f9d4df4099efe3b44b131fee7085"
+      }
+    },
+    {
+      "id": "component-contract",
+      "status": "PASS",
+      "commands": [
+        {
+          "argv": [
+            "C:/Program Files/CMake/bin/cmake.exe",
+            "-P",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\global\\remaining\\initialize-contract-cache.cmake"
+          ],
+          "exit_code": 0,
+          "log": "component-contract-initialize.log",
+          "sha256": "1346df7cc2441c66a4353f6abc2de1d38041ba1c8e24b48ba05b7b8c7e39d665",
+          "seconds": 0.06300000008195639
+        },
+        {
+          "argv": [
+            "C:/Program Files/CMake/bin/cmake.exe",
+            "-DHYLE_SMOKE_GENERATOR=Ninja",
+            "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+            "-DHYLE_SMOKE_ROOT=C:\\hyle-scratch\\active-vk\\g35/component",
+            "-P",
+            "cmake/HyleCiComponentContract.cmake"
+          ],
+          "exit_code": 0,
+          "log": "component-contract.log",
+          "sha256": "4a5c562dd893cf828bd51e5ddc7e84022728164c40f584da0419b02bdd8240bc",
+          "seconds": 150.68800000008196
+        }
+      ],
+      "locked_archive_reused": {
+        "name": "highway-18e449b64259-b2ddaa056705.tar.gz",
+        "sha256": "718bf1a26f7c074f04e499033166c9e3f415f9b165a390a8b021adac6e0016c0"
+      }
+    },
+    {
+      "id": "factor:compute",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_ops",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_ops",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_provider_cublas",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_provider_cublas",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_provider_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_provider_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_provider_marlin",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_provider_marlin",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_route_apple",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_route_cpu",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_route_cpu",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_route_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:compute_route_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:compute_route_vulkan",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-elementwise\\f2-windows-native.json",
+      "cpp": {
+        "label": "compute_route_vulkan",
+        "argv": [
+          "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+          "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f2-w1-static\\compute_route_vulkan.json"
+        ],
+        "exit_code": 0,
+        "log": "compute_route_vulkan.log",
+        "sha256": "71f6d015dc2ae4ea6e19d1abbda01b355be06ad6c2fbca1845db7f25faff98ff",
+        "seconds": 36.96900000004098,
+        "tests": 95,
+        "failures": 0,
+        "executable_sha256": "108535ddd784dbfc3e16d0de53d8e572be5a4ceb70b6caeb401347af8a2c88de",
+        "gtest_sha256": "f91d4466fe78544871270e43bf05188bc1a3e63b86375464cfac248f1bea82cf"
+      }
+    },
+    {
+      "id": "headers:compute_route_vulkan",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:container",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:container",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:container_concurrent",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:container_concurrent",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:container_intrusive",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:container_intrusive",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:container_queue",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:container_queue",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:container_text",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:container_text",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:core",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:core",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:error",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:error",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:graph",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:graph",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:graph_route_apple",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:graph_route_cpu",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:graph_route_cpu",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:graph_route_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:graph_route_cuda",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:graph_route_vulkan",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-elementwise\\f2-windows-native.json",
+      "cpp": {
+        "label": "graph_route_vulkan",
+        "argv": [
+          "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_vulkan_test.exe",
+          "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f2-w1-static\\graph_route_vulkan.json"
+        ],
+        "exit_code": 0,
+        "log": "graph_route_vulkan.log",
+        "sha256": "7f3f27542c2b3d977901ce66c5cf3933c01f2fbf9c0aa556d570d1cc0a6c46e1",
+        "seconds": 5.484000000171363,
+        "tests": 27,
+        "failures": 0,
+        "executable_sha256": "658138d1ad7a357bf2901b2a8ad81439e998f7d3f5074c76a90580872424b17c",
+        "gtest_sha256": "9c62ec015c7b626d94bf1cbee7057027d53fd89ad9cfab1f5565101d8322270d"
+      }
+    },
+    {
+      "id": "headers:graph_route_vulkan",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_core",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_http",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:io_http",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_http2",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:io_http2",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_tls",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:io_tls",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_transfer",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:io_transfer",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_watch",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:io_watch",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:io_websocket",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:io_websocket",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:math",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:math",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:mem",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:mem",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:mem_vm",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:mem_vm",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:obs",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:obs",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:platform",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:platform",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:platform_fs",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:platform_fs",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:platform_thread",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:platform_thread",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:process",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:process",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:sched",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:sched",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:simd",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:time",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:time",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:timer_queue",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:timer_queue",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:util_core",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:util_core",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "factor:util_runtime",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "headers:util_runtime",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:compute",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:container",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:core",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:error",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:graph",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:io",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:math",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:mem",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:obs",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:platform",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:process",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:sched",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:simd",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:time",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    },
+    {
+      "id": "delivery:util",
+      "status": "REUSED",
+      "commands": [],
+      "evidence": "evidence\\correctness\\compute-llm-moe-c1\\ggml-vulkan-reduction\\engineering\\selected-gates-result.json",
+      "identity_proof": "default-reuse-proof.json plus configure_identity"
+    }
+  ],
+  "skipped_gate_ids": [
+    "factor:compute_provider_ggml",
+    "headers:compute_provider_ggml",
+    "headers:compute_provider_ggml_vulkan",
+    "factor:compute_route_apple",
+    "factor:graph_route_apple",
+    "headers:io_core",
+    "headers:simd",
+    "p1"
+  ],
+  "scope": "Current selected engineering gates, with explicit per-gate execution/reuse; not P1, CPU Q2 resume, C1 or matrix acceptance"
+}

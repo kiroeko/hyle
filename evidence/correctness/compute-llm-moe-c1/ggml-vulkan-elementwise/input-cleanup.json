@@ -1,0 +1,31 @@
+{
+  "scope": "Four superseded ordinary input archives only; no recursive directory removal",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\y35-source.tar.gz",
+      "bytes": 44073117,
+      "sha256": "1541aa421b6541cb72d9d6f8d86831059d9176960d26f7f24fe7f731a695b96a",
+      "candidate": "117b1c1393f0089e427436788779eef592a8fc75"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\y35.bundle",
+      "bytes": 3617932,
+      "sha256": "adf3ccbfb383b35628e171a28ae1d9bb6985ee97a24e590a6fc9b250c01b70bf",
+      "candidate": "117b1c1393f0089e427436788779eef592a8fc75"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\y35-native-source.tar.gz",
+      "bytes": 44074343,
+      "sha256": "0bda66d68b4ef0a7480a6264bcb347c5577cf1fbf261808c1332bb5f95b838dd",
+      "candidate": "6af6bfe486dc69a147ea3508db376920455def90"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\y35-native.bundle",
+      "bytes": 3619224,
+      "sha256": "5ec0341235de29318d335c0a25096b73ed1d4b81ac54b966d852a933d3e8c6d1",
+      "candidate": "6af6bfe486dc69a147ea3508db376920455def90"
+    }
+  ],
+  "bytes": 95384616.0,
+  "removed": true
+}
