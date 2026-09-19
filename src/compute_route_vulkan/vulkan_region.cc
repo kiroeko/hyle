@@ -7,6 +7,31 @@
 
 namespace hyle::compute::vulkan::detail {
 namespace provider = ggml_vulkan::detail;
+namespace {
+bool scan_limits(const ProgramState &program,
+                 const TensorDesc &matrix) noexcept {
+  const auto &limits = program.runtime->device->properties.limits;
+  const std::uint64_t elements = *matrix.element_count();
+  const auto width = static_cast<std::uint64_t>(matrix.dimensions().back());
+  const auto rows = elements / width;
+  const auto lanes = width <= 512 ? 128U : 256U;
+  if (elements > INT32_MAX || elements > limits.maxStorageBufferRange / 4 ||
+      lanes > limits.maxComputeWorkGroupInvocations ||
+      lanes > limits.maxComputeWorkGroupSize[0] ||
+      (std::min)(rows, std::uint64_t{512}) >
+          limits.maxComputeWorkGroupCount[0] ||
+      (std::min)((rows + 511) / 512, std::uint64_t{512}) >
+          limits.maxComputeWorkGroupCount[1] ||
+      (rows + 262143) / 262144 > limits.maxComputeWorkGroupCount[2])
+    return false;
+  // The original device rule may select two passes for wide, short matrices.
+  // Admit only shapes legal for either native choice; never dispatch then
+  // discover that the selected pipeline exceeds the physical grid limits.
+  return width <= 4096 ||
+         ((width + 127) / 128 <= limits.maxComputeWorkGroupCount[0] &&
+          rows <= limits.maxComputeWorkGroupCount[1]);
+}
+} // namespace
 
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
@@ -40,6 +65,8 @@ bool managed_operation(const ProgramState &program,
             std::uint64_t{limits.maxComputeWorkGroupCount[0]} * 512)
       return false;
   }
+  if (step.operation.get_if<Scan>() && !scan_limits(program, inputs[0]))
+    return false;
   return true;
 }
 
@@ -74,9 +101,9 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       provider::RegionNode node{step.operation, {}, {}};
       for (const auto input : step.inputs)
         node.inputs.push_back(local(input));
-      // Original Argsort has no shader-side descriptor offset. Other admitted
-      // operations retain their four-byte, offset-aware input contract.
-      if (step.operation.get_if<TopK>())
+      // Argsort and the multi-pass Scan require descriptor-aligned inputs.
+      // Other admitted operations retain their offset-aware input contract.
+      if (step.operation.get_if<TopK>() || step.operation.get_if<Scan>())
         uses[local(step.inputs[0])].descriptor_aligned = true;
       for (const auto output : step.outputs) {
         node.outputs.push_back(local(output));
@@ -340,6 +367,142 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
         {Operation(Copy{}), {result}, {step.outputs[0]}, {}, {1, 1, 1}, {}});
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan Gather adapter metadata");
+  }
+}
+
+Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
+  try {
+    const auto input = program.values[step.inputs[0]].description;
+    if (input.data_type() != DataType::kFloat32)
+      return Status::Unimplemented("Vulkan native Scan requires F32");
+    if (*input.element_count() == 0)
+      return Status::Ok();
+    const auto scan = *step.operation.get_if<Scan>();
+    const auto rank = input.rank();
+    const auto axis = static_cast<std::size_t>(
+        scan.axis < 0 ? scan.axis + static_cast<std::int32_t>(rank)
+                      : scan.axis);
+    const auto width = input.dimensions()[axis];
+    const auto rows = static_cast<std::int64_t>(*input.element_count()) / width;
+    HYLE_ASSIGN_OR_RETURN(
+        auto matrix,
+        TensorDesc::dense(DataType::kFloat32,
+                          std::array<std::int64_t, 2>{rows, width}));
+    if (!scan_limits(program, matrix))
+      return Status::Unimplemented(
+          "Vulkan Scan exceeds native buffer or grid limits");
+    if (scan.exclusive && width == 1) {
+      HYLE_ASSIGN_OR_RETURN(auto shape,
+                            TensorShape::create(input.dimensions()));
+      return lower_tensor(program,
+                          {Operation(Fill{.output_shape = shape,
+                                          .output_type = DataType::kFloat32,
+                                          .value = ScalarValue(0.0F)}),
+                           {},
+                           step.outputs,
+                           {},
+                           {1, 1, 1},
+                           {}});
+    }
+    while (program.aliases.size() < program.values.size()) {
+      const auto id = static_cast<std::uint32_t>(program.aliases.size());
+      program.aliases.push_back({id, 0});
+    }
+    const auto append = [&](const TensorDesc &description) {
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    const auto alias = [&](const TensorDesc &description,
+                           std::uint32_t source) {
+      const auto owner = program.aliases[source];
+      const auto id = append(description);
+      program.aliases[id] = owner;
+      return id;
+    };
+    std::array<std::int32_t, kMaxTensorRank> axes{}, inverse{};
+    std::size_t next = 0;
+    for (std::size_t i = 0; i < rank; ++i)
+      if (i != axis)
+        axes[next++] = static_cast<std::int32_t>(i);
+    axes[next] = static_cast<std::int32_t>(axis);
+    for (std::size_t i = 0; i < rank; ++i)
+      inverse[axes[i]] = static_cast<std::int32_t>(i);
+    HYLE_ASSIGN_OR_RETURN(auto permute,
+                          View::permute(std::span(axes).first(rank)));
+    HYLE_ASSIGN_OR_RETURN(
+        auto permuted,
+        infer_single_output(Operation(permute), std::span(&input, 1)));
+    auto source = alias(permuted, step.inputs[0]);
+    if (!permuted.is_dense()) {
+      HYLE_ASSIGN_OR_RETURN(
+          auto dense,
+          TensorDesc::dense(DataType::kFloat32, permuted.dimensions()));
+      const auto packed = append(dense);
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program, {Operation(Copy{}), {source}, {packed}, {}, {1, 1, 1}, {}}));
+      source = packed;
+    }
+    source = alias(matrix, source);
+    const bool final_layout = axis + 1 == rank;
+    auto result = !scan.exclusive && final_layout
+                      ? alias(matrix, step.outputs[0])
+                      : append(matrix);
+    Plan local;
+    local.outputs = {result};
+    local.steps.push_back(
+        {Operation(Scan{}), {source}, {result}, {}, {1, 1, 1}, {}});
+    std::vector<std::size_t> last_uses(program.values.size(), 0);
+    HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+    if (scan.exclusive) {
+      HYLE_ASSIGN_OR_RETURN(auto prefix,
+                            TensorDesc::strided_bytes(
+                                DataType::kFloat32,
+                                std::array<std::int64_t, 2>{rows, width - 1},
+                                std::array<std::int64_t, 2>{width * 4, 4}));
+      const auto prefix_value = alias(prefix, result);
+      HYLE_ASSIGN_OR_RETURN(
+          auto zero_desc,
+          TensorDesc::dense(DataType::kFloat32,
+                            std::array<std::int64_t, 2>{rows, 1}));
+      const auto zero = append(zero_desc);
+      HYLE_ASSIGN_OR_RETURN(auto shape,
+                            TensorShape::create(zero_desc.dimensions()));
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program, {Operation(Fill{.output_shape = shape,
+                                   .output_type = DataType::kFloat32,
+                                   .value = ScalarValue(0.0F)}),
+                    {},
+                    {zero},
+                    {},
+                    {1, 1, 1},
+                    {}}));
+      result = final_layout ? alias(matrix, step.outputs[0]) : append(matrix);
+      HYLE_RETURN_IF_ERROR(lower_tensor(program, {Operation(Concat{-1}),
+                                                  {zero, prefix_value},
+                                                  {result},
+                                                  {},
+                                                  {1, 1, 1},
+                                                  {}}));
+    }
+    if (!final_layout) {
+      HYLE_ASSIGN_OR_RETURN(
+          auto expanded,
+          TensorDesc::dense(DataType::kFloat32, permuted.dimensions()));
+      HYLE_ASSIGN_OR_RETURN(auto restore,
+                            View::permute(std::span(inverse).first(rank)));
+      HYLE_ASSIGN_OR_RETURN(
+          auto reordered,
+          infer_single_output(Operation(restore), std::span(&expanded, 1)));
+      const auto view = alias(reordered, result);
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program,
+          {Operation(Copy{}), {view}, step.outputs, {}, {1, 1, 1}, {}}));
+    }
+    return Status::Ok();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan Scan layout metadata");
   }
 }
 

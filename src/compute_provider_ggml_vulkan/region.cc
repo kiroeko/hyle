@@ -80,6 +80,10 @@ bool region_supports(const Operation &operation,
   const auto &output = outputs[0];
   if (const auto *norm = operation.get_if<RmsNorm>())
     return norm->accumulation_type == DataType::kFloat32;
+  if (const auto *scan = operation.get_if<Scan>())
+    return inputs.size() == 1 && inputs[0].rank() > 0 && !scan->exclusive &&
+           (scan->axis == -1 ||
+            scan->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
   if (const auto *unary = operation.get_if<Unary>())
     return unary_operation(unary->kind) != GGML_UNARY_OP_COUNT;
   if (const auto *binary = operation.get_if<Binary>())
@@ -157,11 +161,14 @@ Result<Region> Region::create(NativeDevice device,
             Status::InvalidArgument("ggml Vulkan region output"));
       published[output] = true;
     }
-    // TopK: ten tensor nodes including reshape/view/cont adapters. Other
-    // admitted operations need at most three (broadcast plus binary, or norm).
+    // TopK/Scan: at most 10/16 nodes including reshape/view/cont adapters.
+    // Other admitted operations need at most three (broadcast plus binary, or
+    // norm).
     auto capacity = recipe.inputs.size() + 16;
     for (const auto &node : recipe.nodes)
-      capacity += node.operation.get_if<TopK>() ? 10 : 3;
+      capacity += node.operation.get_if<Scan>()   ? 16
+                  : node.operation.get_if<TopK>() ? 10
+                                                  : 3;
     const auto graph_bytes = ggml_graph_overhead_custom(capacity, false);
     if (capacity > (SIZE_MAX - graph_bytes) / ggml_tensor_overhead())
       return std::unexpected(
@@ -228,6 +235,36 @@ Result<Region> Region::create(NativeDevice device,
         tensors[node.outputs[1]] = indices;
       } else if (node.operation.get_if<Gather>()) {
         output = ggml_get_rows(context, left, tensors[node.inputs[1]]);
+      } else if (node.operation.get_if<Scan>()) {
+        const auto width = left->ne[0];
+        const auto rows = ggml_nelements(left) / width;
+        const auto tile = rows > 262144 ? 262144 : 512;
+        if (rows > 512 && rows % tile != 0) {
+          // Original single-pass CUMSUM rounds the XYZ row dispatch and has
+          // no row guard. At most three native pieces cover it exactly.
+          auto *matrix = ggml_reshape_2d(context, left, width, rows);
+          std::int64_t offset = 0;
+          while (offset < rows) {
+            const auto remaining = rows - offset;
+            const auto block = remaining > 262144 ? 262144
+                               : remaining > 512  ? 512
+                                                  : 1;
+            const auto count = remaining / block * block;
+            auto *part = ggml_view_2d(context, matrix, width, count,
+                                      matrix->nb[1], offset * matrix->nb[1]);
+            // The multi-pass variant requires descriptor-aligned storage.
+            if (offset != 0)
+              part = ggml_cont(context, part);
+            part = ggml_cumsum(context, part);
+            output = output ? ggml_concat(context, output, part, 1) : part;
+            offset += count;
+          }
+          if (left->ne[2] != 1 || left->ne[3] != 1)
+            output = ggml_cont_4d(context, output, left->ne[0], left->ne[1],
+                                  left->ne[2], left->ne[3]);
+        } else {
+          output = ggml_cumsum(context, left);
+        }
       } else if (const auto *norm = node.operation.get_if<RmsNorm>()) {
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)

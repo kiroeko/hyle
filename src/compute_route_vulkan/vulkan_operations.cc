@@ -408,6 +408,8 @@ Status lower_operation(
       return lower_topk(program, step);
     if (step.operation.kind() == OperationKind::kGather)
       return lower_gather(program, step);
+    if (step.operation.kind() == OperationKind::kScan)
+      return lower_scan(program, step);
     if (step.outputs.size() != 1)
       return Status::Unimplemented("Vulkan native operation output arity");
     if (step.operation.kind() == OperationKind::kCustom) {

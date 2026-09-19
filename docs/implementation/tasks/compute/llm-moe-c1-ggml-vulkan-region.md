@@ -1013,7 +1013,7 @@ consumer/cache。此组已通过的验证停止重复运行；全局selector适�
 不能把513行直接交给原版；同时两遍路径的输入要求设备descriptor对齐。固定适配是将行数
 展平为2D，按原厂512行/262144行的两级XYZ tile边界分为完整前缀与余数，分别cumsum后原版
 concat；有偏移的段先原版cont以保有独立对齐。最多三个Scan，不拆每行/每kernel，不改vendor
-shader、pin或运行时。精确覆盖的行数保持一个原版cumsum。编码前复核完整dispatch分支确认
+shader、pin或运行时。精确覆盖的行数保持一个原版cumsum。首次候选前复核完整dispatch分支确认
 大于262144行还需处理第二级余数，已在首次产品候选之前固定；不是运行失败后追加算法。
 
 | FIX | 有限实现 | 成本与必需验证 |

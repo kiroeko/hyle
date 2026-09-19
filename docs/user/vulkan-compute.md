@@ -204,6 +204,18 @@ Graph 使用同一个 `c::Gather`，例如 `builder.add(c::Gather{.axis = 0}, ta
 Recorder 的受检 Gather 越界时保留该操作的原输出，但不承诺整个 Recorder 事务回滚。
 发生该错误的槽退役；可以从同一 Program 创建新槽。显式 `kUnchecked` 要求调用方保证全部索引合法。
 
+### F32 前缀求和
+
+`Scan{.axis = -1, .exclusive = false}`支持F32、正负轴、rank≤8、普通byte stride和dense输出。
+默认inclusive包含当前位置；exclusive从零开始，输出此前元素的和。浮点允许算术重结合。
+例如`vk::prepare(context, c::Scan{.exclusive = true}, input_description)`；Graph使用同一个Scan节点。
+空输入不访问payload。当前Vulkan的I32受检Scan仍返回Unimplemented。
+
+前缀计算使用原版ggml cumsum；设备需支持其subgroup arithmetic/full-subgroup能力。
+必要轴物化、descriptor对齐、exclusive零列拼接及输出重排计入成本。原版单遍程序的行数需精确
+覆盖；有余数的行在同一原生DAG内按512/262144行边界分段后拼接，最多三个Scan。
+程序和布局适配在准备阶段固定；执行时不搜索实现或下载输入做前缀计算。
+
 ## Graph 与原生片段
 
 用 GraphBuilder 构造 typed DAG，再调用：
