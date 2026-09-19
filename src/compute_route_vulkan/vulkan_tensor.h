@@ -14,4 +14,8 @@ Status lower_checked_copy(ProgramState &program, std::uint32_t input,
                           std::uint32_t output);
 Status lower_integer_scan(ProgramState &program, std::uint32_t input,
                           std::uint32_t output, bool exclusive);
+Status lower_scatter_dispatch(ProgramState &program, std::uint32_t mode,
+                              std::span<const std::uint32_t> inputs,
+                              std::uint32_t output, std::uint32_t count,
+                              std::uint32_t extent, std::uint32_t inner);
 } // namespace hyle::compute::vulkan::detail

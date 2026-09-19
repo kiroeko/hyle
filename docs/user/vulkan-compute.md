@@ -228,6 +228,20 @@ Copy；主要临时量为每元素8字节宽前缀与4字节结果，加各层�
 元素总数超过INT32_MAX、宽scratch超过设备buffer范围或grid不足时冷拒绝。宽1使用Copy/Fill。
 当前接线和局部正确性不代表完整C1三交付或性能验收已完成。
 
+### 有序 Scatter
+
+`Scatter{.axis = 0}`支持F32/F16/BF16/I32/I64/Bool逐位assign；`kind = ScatterKind::kAdd`
+支持F32/F16/BF16。I32/I64索引可为scalar或多维，base/updates支持普通stride和byte origin。
+重复目标按updates逻辑行主序处理：assign取最后一项，add从base开始逐次相加，half每次舍入。
+默认checked检查全部索引；越界完成返回OutOfRange并保留整个Scatter输出，失败槽退役后可建新槽。
+空indices复制base；空payload仍检查非空indices。Recorder保持已有输入/输出重叠拒绝。
+
+准备时把索引编码成不丢精度的浮点位模式，复用ggml稳定Argsort，只导出order；其输入补到整数
+计算的2次幂，padding排在全部有效key之后。Assign通过base/updates拼接和原版GetRows选择，
+Add由有序语义适配读取排序后的匹配段；没有无序浮点原子，也不下载索引到CPU处理。
+必要物化、拼接、排序及其padding/scratch、索引映射、条件发布都计入真实成本；合并表、排序
+scratch或原生grid超过设备限制时冷拒绝。全部程序在准备期固定，尚未签本轮性能最优或完整三交付。
+
 ## Graph 与原生片段
 
 用 GraphBuilder 构造 typed DAG，再调用：

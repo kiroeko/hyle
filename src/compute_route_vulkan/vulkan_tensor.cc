@@ -384,6 +384,24 @@ Status lower_integer_scan(ProgramState &program, std::uint32_t input,
       static_cast<std::uint32_t>((count + 255) / 256));
 }
 
+Status lower_scatter_dispatch(ProgramState &program, std::uint32_t mode,
+                              std::span<const std::uint32_t> inputs,
+                              std::uint32_t output, std::uint32_t count,
+                              std::uint32_t extent, std::uint32_t inner) {
+  std::array<SpecializationConstant, 45> constants{};
+  Dispatch stage;
+  HYLE_RETURN_IF_ERROR(
+      tensor_layout(program, inputs, output, constants, stage));
+  constants[5].value = mode;
+  constants[42].value = count;
+  constants[43].value = extent;
+  constants[44].value = inner;
+  const auto bytes = *program.values[output].description.required_bytes();
+  return append_tensor_dispatch(
+      program, std::move(stage), shaders::scatter(), constants,
+      static_cast<std::uint32_t>(((bytes + 3) / 4 + 127) / 128));
+}
+
 Status lower_tensor(ProgramState &program, const PlanStep &step) {
   if (step.operation.kind() == OperationKind::kReduce ||
       step.operation.kind() == OperationKind::kSoftmax)

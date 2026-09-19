@@ -58,6 +58,11 @@ layout(constant_id = 38) const uint sc4 = 0;
 layout(constant_id = 39) const uint sc5 = 0;
 layout(constant_id = 40) const uint sc6 = 0;
 layout(constant_id = 41) const uint sc7 = 0;
+#ifdef HYLE_TENSOR_SCATTER
+layout(constant_id = 42) const uint scatter_count = 1;
+layout(constant_id = 43) const uint scatter_extent = 1;
+layout(constant_id = 44) const uint scatter_inner = 1;
+#endif
 #ifdef HYLE_TENSOR_CONCAT
 layout(constant_id = 42) const uint concat_inner = 1;
 layout(constant_id = 43) const uint concat_row = 1;
@@ -479,6 +484,69 @@ void main() {
     if (row != 0 && word_index * 4u < ((row - 1u) * concat_row + concat_end_c * concat_inner) * size)
         return;
     d[word_index] = concat_word(word_index);
+}
+#elif defined(HYLE_TENSOR_SCATTER)
+uint scatter_order(uint cursor) {
+    return mode == 1 ? load_bytes(1, origin.b + cursor * 4u, 4u)
+                     : load_bytes(2, origin.c + (scatter_count + cursor) * 4u, 4u);
+}
+uint scatter_key(uint cursor) {
+    uint index = scatter_order(cursor);
+    return mode == 1 ? load_bytes(0, origin.a + index * 4u, 4u)
+                     : load_bytes(2, origin.c + index * 4u, 4u);
+}
+uint scatter_bound(uint target, bool upper) {
+    uint low = 0u, high = scatter_count;
+    while (low < high) {
+        uint mid = low + (high - low) / 2u, key = scatter_key(mid);
+        if (key < target || (upper && key == target)) low = mid + 1u;
+        else high = mid;
+    }
+    return low;
+}
+uint scatter_add(uint index) {
+    uint target = (index / scatter_inner) % scatter_extent;
+    uint outer = index / (scatter_extent * scatter_inner);
+    uint inner = index % scatter_inner, size = width(type_d);
+    uint value = load_bytes(0, tensor_address(index).x, size);
+    for (uint cursor = scatter_bound(target, false); cursor < scatter_count; ++cursor) {
+        if (scatter_key(cursor) != target) break;
+        uint update = (outer * scatter_count + scatter_order(cursor)) * scatter_inner + inner;
+        precise float sum = decode(value, type_d) +
+            decode(load_bytes(1, origin.b + update * size, size), type_d);
+        // Round after each update, including half storage. The original base
+        // participates before any update; a separately reduced sum is different.
+        value = encode(sum, type_d);
+    }
+    return value;
+}
+void main() {
+    uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
+    if (mode == 0) {
+        if (index >= count) return;
+        if (index >= scatter_count) { d[index] = 0x7fc00000u; return; }
+        uint key = load_bytes(0, origin.a + index * 4u, 4u);
+        // Exact monotone embedding of nonnegative I32 into finite normal F32
+        // bit patterns. A numeric float cast would merge large adjacent keys.
+        d[index] = key < 0x40000000u ? 0xff7fffffu - key
+                                   : 0x00800000u + key - 0x40000000u;
+        return;
+    }
+    if (mode == 1) {
+        if (index >= count) return;
+        uint end = scatter_bound(index, true);
+        d[index] = end != 0u && scatter_key(end - 1u) == index
+            ? scatter_extent + scatter_order(end - 1u) : index;
+        return;
+    }
+    uint size = width(type_d), lanes = 4u / size;
+    if (index >= (count + lanes - 1u) / lanes) return;
+    uint value = 0u;
+    for (uint lane = 0; lane < lanes; ++lane) {
+        uint element = index * lanes + lane;
+        if (element < count) value |= scatter_add(element) << (lane * size * 8u);
+    }
+    d[index] = value;
 }
 #elif !defined(HYLE_TENSOR_NORMALIZATION)
 void main() {
