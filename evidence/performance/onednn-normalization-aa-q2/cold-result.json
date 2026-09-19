@@ -1,0 +1,48 @@
+{
+  "scope": "AA-Q2 module validation repair and two cold observations, no P1 verdict",
+  "baseline": "d4b13426",
+  "product": "ae270af9ceb948b09601b26f32454eb28d32dff3",
+  "cold_status": "PASS",
+  "python_tests": 11,
+  "cold_processes": 2,
+  "verified_workloads": 32,
+  "instance_observations": 64,
+  "vendor_jit_files": 32,
+  "timing_samples": 0,
+  "P1": "NOT_RUN",
+  "executable_backups": {
+    "primary": {
+      "name": "hyle_onednn_normalization_bench.exe",
+      "sha256": "fb2ba0b818cf28bd3ceb07244e0eedc4d47e54cb7ed7d295a860d88736aad637",
+      "text_bytes": 15455111
+    },
+    "placement": {
+      "name": "hyle_onednn_normalization_bench_placement.exe",
+      "sha256": "da20ec2fb9149c6787f9333f10ef12feaaf76529364809ceb0df20b70bf66573",
+      "text_bytes": 15455143
+    }
+  },
+  "local_backup": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa\\q2\\cold-artifacts.zip",
+  "local_backup_sha256": "4b8fcf3a9b341a5e4e3ff62d8a4638839e77a7730b2d944c96f4be836ff6b5f6",
+  "archive": "cold-raw-bundle.zip",
+  "archive_sha256": "f5e74c46d013c21f324148ef0557274a5be33d9d4e7f60a0886d1aa0d6299b8a",
+  "archive_bytes": 144193,
+  "contract_hash": "99c9aee9f5a87422e7af52d912f0da1f2ecf75dee48fb261f3ea943921ad1c49",
+  "source_review": {
+    "baseline": "d4b13426",
+    "run_methods_unchanged": true,
+    "problem_and_oracle_unchanged": true,
+    "contract_changed_only_record_path_and_cold_flag": true,
+    "source_sha256": "e07321f7edc455996b919059e3d8e44620d4d0f277bb517d0e79a842f132d6a3"
+  },
+  "cold_reuse": {
+    "cold_helpers_unchanged": true,
+    "changed_functions": [
+      "main"
+    ],
+    "change": "main failure path re-discovers freshly created status receipts before resetting FAIL",
+    "no_cold_replay": "run_child, validate_instances, policy and C++ executable unchanged",
+    "python_tests": 11
+  },
+  "limitation": "Opaque handles and process executable ranges do not map every JIT function to a role or establish historical interference; prior qualification FAIL retained."
+}

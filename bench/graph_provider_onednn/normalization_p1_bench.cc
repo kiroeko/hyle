@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <span>
 #include <string>
@@ -208,6 +209,21 @@ public:
     problem.verify(output_.read(problem.rows * problem.width), false);
   }
 
+  void observe(const char *workload, const char *role, bool,
+               const Problem &problem) const {
+    std::fprintf(
+        stderr,
+        "# HYLE_NORMALIZATION_INSTANCE workload=%s role=%s "
+        "provider=%s object=%p input_handle=%p output_handle=%p "
+        "workspace_handle=%p workspace_bytes=%zu\n",
+        workload, role,
+        prepared_.provider().id == compute::onednn::kProviderId ? "onednn"
+                                                                : "native",
+        static_cast<const void *>(this), problem.input.buffer.native_handle(),
+        output_.buffer.native_handle(), workspace_.native_handle(),
+        workspace_.size());
+  }
+
 private:
   Tensor output_;
   compute::Context context_;
@@ -294,12 +310,86 @@ public:
     problem.verify(output_.read(problem.rows * problem.width), true);
   }
 
+  void observe(const char *workload, const char *role, bool vendor,
+               const Problem &problem) const {
+    // The constructor checked the actual provider/region/step topology.
+    // Private Graph backing is deliberately not exposed for instrumentation.
+    std::fprintf(stderr,
+                 "# HYLE_NORMALIZATION_INSTANCE workload=%s role=%s "
+                 "provider=%s object=%p input_handle=%p output_handle=%p "
+                 "workspace_handle=opaque workspace_bytes=opaque\n",
+                 workload, role, vendor ? "onednn-prefix" : "native",
+                 static_cast<const void *>(this),
+                 problem.input.buffer.native_handle(),
+                 output_.buffer.native_handle());
+  }
+
 private:
   Tensor output_;
   compute::Context context_;
   compute::Queue queue_;
   graph::Invocation invocation_;
 };
+
+struct ColdTimes {
+  std::chrono::steady_clock::time_point wall;
+  std::uint64_t thread_cpu_100ns = 0;
+  unsigned long cpu = 0;
+};
+
+ColdTimes cold_times() {
+#if defined(_WIN32)
+  FILETIME created{}, exited{}, kernel{}, user{};
+  if (!::GetThreadTimes(::GetCurrentThread(), &created, &exited, &kernel,
+                        &user))
+    fail("observe thread times");
+  const auto ticks = [](FILETIME value) {
+    return (std::uint64_t{value.dwHighDateTime} << 32) | value.dwLowDateTime;
+  };
+  return {std::chrono::steady_clock::now(), ticks(kernel) + ticks(user),
+          ::GetCurrentProcessorNumber()};
+#else
+  fail("instance observations require W1-WIN");
+#endif
+}
+
+void observe_code(const char *workload) {
+#if defined(_WIN32)
+  std::uintptr_t address = 0;
+  std::size_t ranges = 0;
+  MEMORY_BASIC_INFORMATION region{};
+  while (::VirtualQuery(reinterpret_cast<const void *>(address), &region,
+                        sizeof(region)) == sizeof(region)) {
+    if (region.State == MEM_COMMIT && region.Type == MEM_PRIVATE &&
+        (region.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ |
+                           PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) &&
+        !(region.Protect & PAGE_GUARD)) {
+      if (++ranges > 256)
+        fail("private executable observation budget");
+      std::fprintf(stderr,
+                   "# HYLE_NORMALIZATION_CODE workload=%s base=%p "
+                   "allocation=%p bytes=%zu protection=%lu\n",
+                   workload, region.BaseAddress, region.AllocationBase,
+                   region.RegionSize, region.Protect);
+    }
+    const auto base = reinterpret_cast<std::uintptr_t>(region.BaseAddress);
+    if (region.RegionSize >
+            (std::numeric_limits<std::uintptr_t>::max)() - base ||
+        base + region.RegionSize <= address)
+      break;
+    address = base + region.RegionSize;
+  }
+  std::fprintf(stderr,
+               "# HYLE_NORMALIZATION_PROCESS workload=%s pid=%lu tid=%lu "
+               "cpu=%lu executable_base=%p private_executable_ranges=%zu\n",
+               workload, ::GetCurrentProcessId(), ::GetCurrentThreadId(),
+               ::GetCurrentProcessorNumber(),
+               static_cast<void *>(::GetModuleHandleW(nullptr)), ranges);
+#else
+  (void)workload;
+  fail("code observations require W1-WIN");
+#endif
+}
 
 template <class Route>
 void measure(Problem &problem, std::string_view journey, std::string_view aa,
@@ -316,6 +406,19 @@ void measure(Problem &problem, std::string_view journey, std::string_view aa,
   peer->run();
   candidate->verify(problem);
   peer->verify(problem);
+  const bool observe = !environment("HYLE_BENCH_OBSERVE_INSTANCES").empty();
+  if (observe && aa.empty())
+    fail("instance observations are A/A-only");
+  std::string observed_workload;
+  if (observe) {
+    observed_workload =
+        std::string(journey) + "-" + (problem.rms ? "rms-" : "layer-") +
+        std::to_string(problem.rows) + "x" + std::to_string(problem.width);
+    candidate->observe(observed_workload.c_str(), "candidate", aa != "peer",
+                       problem);
+    peer->observe(observed_workload.c_str(), "peer", aa == "selected", problem);
+    observe_code(observed_workload.c_str());
+  }
   if (!environment("HYLE_BENCH_VERIFY_ONLY").empty())
     return;
   const std::string shape = std::string(journey) + " " +
@@ -328,6 +431,7 @@ void measure(Problem &problem, std::string_view journey, std::string_view aa,
   bench.title("normalization " + shape)
       .relative(true)
       .minEpochTime(std::chrono::milliseconds(8));
+  const auto before = observe ? cold_times() : ColdTimes{};
   if (peer_first)
     (void)bench.compare(
         peer_name, [&] { peer->run(); }, candidate_name,
@@ -336,6 +440,19 @@ void measure(Problem &problem, std::string_view journey, std::string_view aa,
     (void)bench.compare(
         candidate_name, [&] { candidate->run(); }, peer_name,
         [&] { peer->run(); });
+  if (observe) {
+    const auto after = cold_times();
+    const auto wall = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          after.wall - before.wall)
+                          .count();
+    std::fprintf(stderr,
+                 "# HYLE_NORMALIZATION_INTERVAL workload=%s wall_ns=%lld "
+                 "thread_cpu_100ns=%llu cpu_before=%lu cpu_after=%lu\n",
+                 observed_workload.c_str(), static_cast<long long>(wall),
+                 static_cast<unsigned long long>(after.thread_cpu_100ns -
+                                                 before.thread_cpu_100ns),
+                 before.cpu, after.cpu);
+  }
 }
 } // namespace
 
@@ -350,6 +467,10 @@ int main(int argc, char **argv) {
   const auto aa = environment("HYLE_BENCH_AA_ROUTE");
   if (!aa.empty() && aa != "selected" && aa != "peer")
     fail("invalid A/A route", aa);
+  if (environment("HYLE_BENCH_OBSERVE_INSTANCES").empty() &&
+      (!environment("ONEDNN_JIT_DUMP").empty() ||
+       !environment("DNNL_JIT_DUMP").empty()))
+    fail("vendor JIT dump is confined to A/A observations");
   if (aa.empty() && !environment("HYLE_PERF_RUN_NONCE").empty()) {
     if (argc < 1)
       fail("locate workload A/A receipt");

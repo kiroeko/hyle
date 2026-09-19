@@ -1583,7 +1583,8 @@
         "HYLE_BENCH_APPLE_QOS",
         "HYLE_PERF_APPLE_QOS",
         "HYLE_BENCH_AA_ROUTE",
-        "HYLE_BENCH_VERIFY_ONLY"
+        "HYLE_BENCH_VERIFY_ONLY",
+        "HYLE_BENCH_OBSERVE_INSTANCES"
       ],
       "validators": [
         {
@@ -1601,7 +1602,9 @@
             "{python}",
             "bench/graph_provider_onednn/normalization_preflight.py",
             "--build",
-            "{build}"
+            "{build}",
+            "--records",
+            "{output}/normalization-aa-runs"
           ]
         }
       ]

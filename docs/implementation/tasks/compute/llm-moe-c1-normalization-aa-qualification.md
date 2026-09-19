@@ -138,3 +138,15 @@ SCOPED提交`882ecd0e`后，owner `/root`完成三项有限FIX审计。观察对
 只增量编译两个bench并执行上述两个冷进程；适用Python测试、selector、docs/closure门必跑。
 通过后才提交不可变候选和CANDIDATE登记，再以fresh build启动唯一原合同P1。Cold验收失败先
 保留具体反例，最多两次纠正；资格再次失败按既定停止条件BLOCKED，不附加诊断重跑。
+
+### Q2 实现与冷验收
+
+模块已落实独立nonce目录、逐child原始字节/错误/身份、冷实例与地址范围、vendor JIT身份；
+原门从原函数抽出原样复用，11项针对性测试通过。[两个真实冷进程](../../../../evidence/performance/onednn-normalization-aa-q2/README.md)
+完成32个workload、64个实例、32份oneDNN JIT记录，没有`Bench::compare`或性能样本。
+两个EXE的.text差仍在原4096字节内；只增量编译bench，CPU产品子树与已合格正确性/交付不变。
+
+现有公共contract不接受任意vendor环境变量，因此只登记HYLE冷诊断开关；模块child自己限制
+dump，普通采样拒绝dump。测试放在owner的bench目录，不修改公共selector/统计工具。冷验收
+后仅纠正首次调用新建status的失败清理，新增第11项测试；所用helper和C++制品均未改变，
+保留源码AST复用证明，不重复冷进程。数值、完成、热回调与统计门不变；这不是性能资格PASS。
