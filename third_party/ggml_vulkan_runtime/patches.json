@@ -300,9 +300,13 @@
         {
           "before": "    ggml_vk_create_pipeline(device, device->pipeline_get_rows[GGML_TYPE_I32],     \"get_rows_i32\",     get_rows_i32_len,     get_rows_i32_data,     \"main\", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);",
           "after": "    ggml_vk_create_pipeline(device, device->pipeline_get_rows[GGML_TYPE_I32],     \"get_rows_i32\",     get_rows_i32_len,     get_rows_i32_data,     \"main\", 3, sizeof(vk_op_binary_push_constants), { 512, 1, 1}, {}, 1);"
+        },
+        {
+          "before": "    uint32_t ncols_pad_log2 = (uint32_t)ceilf(log2f(float(ncols)));\n    uint32_t ncolsp2 = 1 << ncols_pad_log2;",
+          "after": "    // HYLE: F32 log2 rounds 2^21+1 down and drops the final input.\n    uint32_t ncols_pad_log2 = 0;\n    for (uint32_t remaining = ncols > 0 ? ncols - 1 : 0; remaining != 0; remaining >>= 1) {\n        ++ncols_pad_log2;\n    }\n    uint32_t ncolsp2 = uint32_t{1} << ncols_pad_log2;"
         }
       ],
-      "after_sha256": "827eacdd221628f065d2374668898c81b0c260ceb2d141afbbb917e614ff6412"
+      "after_sha256": "2d12fca6ffdf7aee254847ef4ca2ea082f5809d67af0463abe3d1382fce0a45d"
     },
     {
       "path": "src/ggml.cpp",

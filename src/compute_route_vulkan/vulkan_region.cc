@@ -3,11 +3,47 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <new>
 
 namespace hyle::compute::vulkan::detail {
 namespace provider = ggml_vulkan::detail;
 namespace {
+bool topk_limits(const ProgramState &program, const TensorDesc &input,
+                 const TopK &selection) noexcept {
+  const auto axis = static_cast<std::size_t>(
+      selection.axis < 0
+          ? selection.axis + static_cast<std::int32_t>(input.rank())
+          : selection.axis);
+  const auto width = static_cast<std::uint32_t>(input.dimensions()[axis]);
+  const auto rows = *input.element_count() / width;
+  const auto padded = std::bit_ceil(width);
+  const auto &limits = program.runtime->device->properties.limits;
+  const auto max_group = std::bit_floor(limits.maxComputeWorkGroupInvocations);
+  if (max_group == 0 || limits.maxComputeWorkGroupCount[1] == 0)
+    return false;
+  const auto exponent = std::bit_width(padded) - 1u;
+  const auto pipeline = (std::min)(exponent, 10u);
+  const auto block = (std::min)(1u << pipeline, max_group);
+  const bool small =
+      padded <= max_group &&
+      std::uint64_t{block} * 8 <= limits.maxComputeSharedMemorySize;
+  if (small)
+    return padded == block && block <= limits.maxComputeWorkGroupSize[0] &&
+           limits.maxComputeWorkGroupCount[0] != 0;
+  // The large kernel stores ivec2 for each padded element and unrolls two
+  // elements per lane. Later cross-workgroup passes use pipeline index - 2.
+  const auto smallest_block =
+      padded <= max_group
+          ? block
+          : (std::min)(1u << (pipeline > 2 ? pipeline - 2 : 0), max_group);
+  const auto lanes = block > 1 ? block / 2 : 1;
+  return std::uint64_t{padded} * rows <= limits.maxStorageBufferRange / 8 &&
+         lanes <= limits.maxComputeWorkGroupSize[0] &&
+         (padded + smallest_block - 1) / smallest_block <=
+             limits.maxComputeWorkGroupCount[0];
+}
+
 bool scan_limits(const ProgramState &program,
                  const TensorDesc &matrix) noexcept {
   const auto &limits = program.runtime->device->properties.limits;
@@ -66,6 +102,9 @@ bool managed_operation(const ProgramState &program,
       return false;
   }
   if (step.operation.get_if<Scan>() && !scan_limits(program, inputs[0]))
+    return false;
+  if (const auto *selection = step.operation.get_if<TopK>();
+      selection && !topk_limits(program, inputs[0], *selection))
     return false;
   return true;
 }
@@ -540,6 +579,9 @@ Status lower_topk(ProgramState &program, const PlanStep &step) noexcept {
       return Status::Unimplemented(
           "Vulkan TopK dense adapter exceeds device limits");
     auto selection = *step.operation.get_if<TopK>();
+    if (!topk_limits(program, input, selection))
+      return Status::Unimplemented(
+          "Vulkan TopK padded sort exceeds native limits");
     const auto rank = input.rank();
     const auto axis = static_cast<std::size_t>(
         selection.axis < 0 ? selection.axis + static_cast<std::int32_t>(rank)

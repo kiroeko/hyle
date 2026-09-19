@@ -32,6 +32,43 @@ TEST(VulkanTopK, IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries) {
   }
 }
 
+TEST(VulkanTopK, PaddedScratchAndDispatchLimitsAreCheckedBeforeRecording) {
+  auto context = vulkan_test::context().value();
+  auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
+  const auto saved = limits;
+  for (int mode = 0; mode < 5; ++mode) {
+    limits = saved;
+    if (mode == 0)
+      limits.maxStorageBufferRange = 16384;
+    else if (mode == 1)
+      limits.maxComputeWorkGroupSize[0] = 1;
+    else if (mode == 2)
+      limits.maxComputeWorkGroupCount[0] = 0;
+    else if (mode == 3)
+      limits.maxComputeWorkGroupCount[1] = 0;
+    else
+      limits.maxComputeWorkGroupInvocations = 0;
+    for (const bool inner_axis : {false, true}) {
+      const auto desc =
+          dense(c::DataType::kFloat32,
+                inner_axis ? std::initializer_list<std::int64_t>{3, 1025}
+                           : std::initializer_list<std::int64_t>{1025, 3});
+      auto result = v::prepare(
+          context, c::TopK{.count = 2, .axis = inner_axis ? 1 : 0}, desc);
+      EXPECT_FALSE(result) << mode << '/' << inner_axis;
+      if (!result)
+        EXPECT_TRUE(result.error().IsUnimplemented());
+    }
+  }
+  limits = saved;
+  // The small kernel uses shared memory, not an 8 * padded * rows buffer.
+  limits.maxStorageBufferRange = 2048;
+  auto small = v::prepare(context, c::TopK{.count = 2},
+                          dense(c::DataType::kFloat32, {3, 129}));
+  EXPECT_TRUE(small) << small.error().message();
+  limits = saved;
+}
+
 TEST(VulkanTopK, FrozenExpertWidthsTailsAndStableRawOutputs) {
   auto context = vulkan_test::context().value();
   for (const std::int64_t width :

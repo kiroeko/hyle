@@ -26,6 +26,11 @@ either order, and valid elements before tail padding. Descending order is
 encoded in that comparison; output reversal is removed to preserve tie order.
 This is an explicit semantic adaptation, not an unmodified upstream algorithm.
 
+Argsort's host padding exponent uses integer bit width and an unsigned shift.
+The original F32 log2 calculation rounds widths such as 2097153 down to the
+previous power of two and silently omits the last input. The integer correction
+preserves the original sorting kernels, passes and scratch ownership.
+
 The I32 GetRows pipeline's X dispatch divisor is corrected from 1024 to 512
 to match the upstream shader's fixed 512-lane workgroup. The original uint
 loads/stores and shader are unchanged. This prevents incomplete rows when a

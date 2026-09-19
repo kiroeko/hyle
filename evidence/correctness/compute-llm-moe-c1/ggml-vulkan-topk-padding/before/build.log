@@ -1,0 +1,10 @@
+[0/2] Re-checking globbed directories...
+[1/8] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hyle-scratch\active-vk\static\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hyle-scratch/active-vk/static/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"
+[2/8] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[3/8] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/hyle-scratch/active-vk/static/Release/vulkan-shaders-gen.exe
+[4/8] Completed 'vulkan-shaders-gen'
+[5/8] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\topk_test.cc.obj
+[6/8] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\scatter_test.cc.obj
+[7/8] Linking CXX executable bin\hyle_compute_route_vulkan_test.exe

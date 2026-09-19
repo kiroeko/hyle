@@ -9,6 +9,36 @@ using namespace vulkan_topk_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
 
+TEST(VulkanGraph, TopKLargePaddingKeepsFinalWinnerInsideManagedRegion) {
+  auto context = vulkan_test::context().value();
+  constexpr std::int64_t width = 2097153;
+  const auto desc = dense(c::DataType::kFloat32, {width});
+  std::vector<float> host(static_cast<std::size_t>(width), 0.0f);
+  host.back() = -4.0f;
+  auto input = context.upload(desc, std::as_bytes(std::span(host))).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto x = builder.input(desc).value();
+  const auto magnitude = builder.add(c::Unary{c::UnaryKind::kAbs}, x).value();
+  const auto selected =
+      builder.add_node(c::Operation(c::TopK{.count = 2}), std::array{magnitude})
+          .value();
+  ASSERT_TRUE(builder.publish(builder.result(selected, 0).value()).ok());
+  ASSERT_TRUE(builder.publish(builder.result(selected, 1).value()).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  auto program = gv::compile(context, graph, {}, {.report = &report});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(report.managed_region_count, 1U);
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(input).ok());
+  auto work = slot.submit().value();
+  auto output = work.wait();
+  ASSERT_TRUE(output) << output.error().message();
+  expect_pair(context, output->get()->tensors(),
+              {{encode(4.0f, c::DataType::kFloat32), 0},
+               {static_cast<std::uint64_t>(width - 1), 0}});
+}
+
 TEST(VulkanGraph, TopKBothPortsHaveIndependentLivenessAndOldResultOwners) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
                                   64 * 1024 * 1024);

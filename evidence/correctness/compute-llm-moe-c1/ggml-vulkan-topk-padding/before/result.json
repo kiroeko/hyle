@@ -1,0 +1,19 @@
+{
+  "candidate": "1c5f1df61da0df6ebfecfa50b062ff135333acd2",
+  "scope": "Y30 before-fix ordinary Vulkan TopK counterexample, no P1",
+  "status": "FAIL",
+  "exit_code": 1,
+  "command": [
+    "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+    "--gtest_filter=VulkanTopK.IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries",
+    "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-topk-padding\\before\\direct.json"
+  ],
+  "executable_sha256": "5616f080e0d73a36dc316926f4bf2b2e751af4fdcbaca4adc58ce887cf8ebf58",
+  "log_sha256": "98beb518f6c12f327bf9e70e69ef91a1be6b81fb29cf73a3b793c7295c9dbaba",
+  "gtest_sha256": "d797a56b310d394074b090d7a1a3ff62a0f6ba66faa1aac2ab54690ff81e866a",
+  "tests": 1,
+  "failures": 1,
+  "validation_error": false,
+  "raw_archive": "raw.zip",
+  "raw_archive_sha256": "aba8f7acfa951e8da9355563add298052f0546cf9ecd53998f62fe557285052c"
+}
