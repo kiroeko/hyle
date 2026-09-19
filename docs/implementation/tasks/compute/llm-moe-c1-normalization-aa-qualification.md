@@ -150,3 +150,26 @@ SCOPED提交`882ecd0e`后，owner `/root`完成三项有限FIX审计。观察对
 dump，普通采样拒绝dump。测试放在owner的bench目录，不修改公共selector/统计工具。冷验收
 后仅纠正首次调用新建status的失败清理，新增第11项测试；所用helper和C++制品均未改变，
 保留源码AST复用证明，不重复冷进程。数值、完成、热回调与统计门不变；这不是性能资格PASS。
+
+### Q2 唯一实验停止与目录接线纠正（AUDITED）
+
+运行HEAD `0e107a06dd12a549c8cf5354b0cff1dd6b9e97c6`，实现候选`07a69e60`。
+[完整失败记录](../../../../evidence/performance/onednn-normalization-aa-q2/README.md#唯一恢复实验失败)
+保留首轮16个A/A进程、256个比值、512个实例及原字节/JIT/身份。产品采样进程为0。
+公共runner因validator新建源树未跟踪文件而停止；模块自身的原10% gross门也已FAIL：
+oneDNN/oneDNN Direct LayerNorm 17×257，primary、peer先执行/candidate先分配，比值0.906388，
+倒数1.103281。两项失败分别保留，目录修正不能撤销A/A失败或恢复性能资格。
+
+接线缺陷已从现有公共`_expand_validator_command`确认：它只替换完整token，合同中的
+`{output}/normalization-aa-runs`未展开，落到仓库字面目录。原记录已核验ZIP逐字节及SHA-256，
+再以Windows原生命令将该唯一自建目录移到本任务scratch；原cwd/argv不篡改。
+
+两个owner从CANDIDATE退回AUDITED，仅增加一个有限FIX **Q2-D**：合同传独立`{output}`参数，
+模块`main`在此根下追加`normalization-aa-runs`；用实际公共expander与模块main的无性能回归
+验证带空格输出路径、目录落点及失败记录。公共expander、C++、算法、观测、统计门均不改。
+这是接线纠正，不是新实验预算；最多一次实现纠正，适用Python/selector/docs/closure门后
+按已触发的停止条件BLOCKED。**不启动新native进程、冷检查、build或P1。**
+
+当前记录能确认相同Provider、共享输入、独立输出/workspace及CPU2；粗粒度线程时间和代码
+区域不能归因到两条arm，也不能证明某个JIT地址导致越线。不扩大根因调查、不裁决赢家或删
+Native。独立C1剩余项继续，整包完成通知尚未触发。

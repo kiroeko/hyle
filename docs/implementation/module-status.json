@@ -353,10 +353,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA-Q2 CANDIDATE：模块原始记录/冷实例观测及11项测试、两个真实冷进程通过；F1产品和原门不变。只允许冻结的一次完整资格实验，未签性能PASS/默认规则，历史FAIL与第二轮产品纠正预算保留。",
-      "candidate": "07a69e607d54f9258d655f146e925f1d84ff8b58"
+      "summary": "C1-AA-Q2-D AUDITED：唯一恢复实验在产品采样前触发目录接线及oneDNN自身A/A gross失败，完整原始记录已归档。只修模块output参数并作无计时回归，随后按停止条件BLOCKED；不重跑、不改产品/门限、不签默认规则。"
     },
     {
       "module": "compute_provider_ggml",
@@ -370,10 +369,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA-Q2 CANDIDATE：模块原始记录/冷实例观测及11项测试、两个真实冷进程通过；F1产品和原门不变。只允许冻结的一次完整资格实验，未签性能PASS/默认规则，历史FAIL与第二轮产品纠正预算保留。",
-      "candidate": "07a69e607d54f9258d655f146e925f1d84ff8b58"
+      "summary": "C1-AA-Q2-D AUDITED：唯一恢复实验在产品采样前触发目录接线及oneDNN自身A/A gross失败，完整原始记录已归档。只修模块output参数并作无计时回归，随后按停止条件BLOCKED；不重跑、不改产品/门限、不签默认规则。"
     },
     {
       "module": "compute_ops",

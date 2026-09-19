@@ -359,3 +359,13 @@ dump。沿已有固定`active-cpu/p1`作fresh build，冷EXE已按hash另行备�
 资格再次失败立即按既定条件BLOCKED，不附加原样重测或限定诊断进程；若合格才按其实际结果
 裁决原剩余AA04。需要默认规则或删除实现时，先回到AUDITED并受原第二轮产品纠正预算约束。
 本节尚无Q2性能PASS，不代签Vulkan/其他C1验收或整包完成。
+
+### Q2 失败与有限接线收口
+
+`0e107a06`的唯一恢复实验已在产品采样前停止：记录目录占位符未展开触发源树身份门，且
+16个A/A进程中oneDNN对自身的一项也越过原10% gross门。原始失败与512个实例完整保留于
+[Q2证据](../../../../evidence/performance/onednn-normalization-aa-q2/README.md#唯一恢复实验失败)。
+两个owner只为[Q2-D目录接线FIX](llm-moe-c1-normalization-aa-qualification.md#q2-唯一实验停止与目录接线纠正audited)
+退回AUDITED；修正合同参数与模块落点，加无计时回归后按原停止条件BLOCKED。
+产品F1/正确性/三交付不变，未产生产品性能样本；默认规则、淘汰和第二轮产品纠正预算未签署。
+不因为这是接线错误而忽略另一项A/A失败或追加同样实验，C1其他独立验收继续。

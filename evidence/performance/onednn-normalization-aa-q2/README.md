@@ -27,3 +27,27 @@ baseline `d4b13426`，F1 产品 `ae270af9` 不变；
 模块测试位于自身bench目录，沿既有selector映射；公共runner只接受受审HYLE诊断变量，vendor
 dump环境由模块自己的child环境清除/设置，普通采样EXE拒绝未授权dump。公共selector/runner/
 统计核心没有改变。P1须在候选及状态冻结后另行启动唯一实验，未运行项不写PASS。
+
+## 唯一恢复实验失败
+
+实际干净运行HEAD为`0e107a06dd12a549c8cf5354b0cff1dd6b9e97c6`，实现候选`07a69e60`。
+[失败结果](failed-experiment.json)锁定[完整原始ZIP](failed-experiment-raw.zip)；ZIP经过CRC及
+每项原字节核验，包含16个A/A child的stdout/stderr、退出、JIT、实例/代码范围/粗间隔、机器/
+制品/源码身份、合同、公共validator日志、launcher和可用构建记录。未生成公共完整run manifest；
+不能冒充完成一轮产品采样或deep verify。
+
+- **记录接线FAIL**：公共validator只展开完整token，`{output}/normalization-aa-runs`保持
+  字面值并在源树创建未跟踪目录。公共runner正确拒绝被validator改变的候选输入。
+- **A/A资格FAIL**：16个进程均正常返回，256个比值/512个实例保留；其中oneDNN对自身的
+  `direct-layer-17x257`，primary、peer先执行/candidate先分配，吞吐比0.906387684990405，
+  倒数1.1032806563458395，超过原10%单实例门。修正记录路径不能消除这个失败。
+- **产品性能INCONCLUSIVE**：产品采样进程0；不得判Native或oneDNN胜负、签默认路由/淘汰。
+  唯一实验预算已结束，不追加原样重试、冷执行或诊断计时。原F1正确性/三交付证据保持。
+
+失败实例实际均为oneDNN、共享输入、独立输出/workspace，观测CPU2。粗wall/线程CPU统计
+覆盖整个比较，无法归因到某个arm；线程计时粒度还允许量化误差。JIT字节和private executable
+范围不等于逐函数/role地址映射。本证据没有证明调度、SIMD、JIT地址或其他单一根因。
+
+原始字面目录在核验归档后安全移到`.scratch/validation/onednn-aa/q2/failed-record-root`，
+保留原argv/cwd；仓库根无此垃圾目录。Q2-D只修模块参数与目录命名并做不计时回归；公共
+仪器、门限和产品C++不变。当前失败与原Q1异常均保留，不能用日志修复标记性能PASS。
