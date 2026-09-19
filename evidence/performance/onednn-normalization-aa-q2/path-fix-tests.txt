@@ -1,0 +1,19 @@
+test_balanced_controls_pass_original_bands (__main__.NormalizationPreflightTest.test_balanced_controls_pass_original_bands) ... ok
+test_cold_only_observations_do_not_claim_a_timing_interval (__main__.NormalizationPreflightTest.test_cold_only_observations_do_not_claim_a_timing_interval) ... ok
+test_complete_same_provider_independent_instances_pass (__main__.NormalizationPreflightTest.test_complete_same_provider_independent_instances_pass) ... ok
+{"raw_records": "C:\\Users\\kiro\\AppData\\Local\\Temp\\hyle-norm-aa-test-uw8towqq\\output with spaces\\normalization-aa-runs\\f7343dc77219451eb19575ac4e75ecbf"}
+test_contract_expands_output_root_before_module_adds_namespace (__main__.NormalizationPreflightTest.test_contract_expands_output_root_before_module_adds_namespace) ... ok
+test_fixed_factor_bias_fails_below_gross_limit (__main__.NormalizationPreflightTest.test_fixed_factor_bias_fails_below_gross_limit) ... ok
+test_historical_gross_failure_cannot_be_hidden_by_medians (__main__.NormalizationPreflightTest.test_historical_gross_failure_cannot_be_hidden_by_medians) ... ok
+{"raw_records": "C:\\Users\\kiro\\AppData\\Local\\Temp\\hyle-norm-aa-test-5hrcq1s9\\records\\normalization-aa-runs\\d7153e580c98478c9a57c7630db82820"}
+test_late_record_failure_invalidates_newly_created_status (__main__.NormalizationPreflightTest.test_late_record_failure_invalidates_newly_created_status) ... ok
+test_launch_failure_has_an_immutable_record (__main__.NormalizationPreflightTest.test_launch_failure_has_an_immutable_record) ... ok
+test_missing_duplicate_and_invalid_instance_facts_fail (__main__.NormalizationPreflightTest.test_missing_duplicate_and_invalid_instance_facts_fail) ... ok
+test_new_invocation_and_records_cannot_overwrite_old_failure (__main__.NormalizationPreflightTest.test_new_invocation_and_records_cannot_overwrite_old_failure) ... ok
+test_nonzero_exit_retains_exact_raw_bytes_before_parsing (__main__.NormalizationPreflightTest.test_nonzero_exit_retains_exact_raw_bytes_before_parsing) ... ok
+test_timeout_retains_output_and_is_not_a_success (__main__.NormalizationPreflightTest.test_timeout_retains_output_and_is_not_a_success) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 2.077s
+
+OK

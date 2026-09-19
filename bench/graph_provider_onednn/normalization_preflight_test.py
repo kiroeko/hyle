@@ -15,6 +15,7 @@ spec = importlib.util.spec_from_file_location(
     "normalization_preflight", ROOT / "bench/graph_provider_onednn/normalization_preflight.py")
 preflight = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(preflight)
+from hyle_perf.runner import _expand_validator_command
 
 
 def balanced_runs():
@@ -108,9 +109,31 @@ class NormalizationPreflightTest(unittest.TestCase):
                 with self.assertRaisesRegex(OSError, "record write failed"):
                     preflight.main()
             self.assertEqual(status.read_text(encoding="ascii"), "FAIL\n")
-            records = list((Path(root) / "records").glob("*/failure.json"))
+            records = list((Path(root) / "records/normalization-aa-runs").glob("*/failure.json"))
             self.assertEqual(len(records), 1)
             self.assertEqual(json.loads(records[0].read_text())["gate"], "FAIL")
+
+    def test_contract_expands_output_root_before_module_adds_namespace(self):
+        contract = json.loads((ROOT / "bench/contracts/onednn-normalization-p1-v1.json").read_text(
+            encoding="utf-8"))
+        command = next(row["command"] for row in contract["extensions"]["runner"]["validators"]
+                       if row["id"] == "normalization-workload-aa")
+        with tempfile.TemporaryDirectory(prefix="hyle-norm-aa-test-") as root:
+            build = Path(root) / "build with spaces"
+            build.mkdir()
+            output = Path(root) / "output with spaces"
+            expanded = _expand_validator_command(command, source=ROOT, build=build, output=output)
+            self.assertEqual(expanded[expanded.index("--records") + 1], str(output))
+            self.assertFalse(any("{output}" in token for token in expanded))
+            with mock.patch.object(sys, "argv", expanded[1:]), mock.patch.object(
+                    preflight, "qualify", side_effect=RuntimeError("stop before native execution")) as qualify:
+                with self.assertRaisesRegex(RuntimeError, "stop before native execution"):
+                    preflight.main()
+            directory = qualify.call_args.args[1]
+            self.assertEqual(qualify.call_args.args[0], build.resolve())
+            self.assertEqual(directory.parent, output.resolve() / "normalization-aa-runs")
+            self.assertEqual(json.loads((directory / "failure.json").read_text())["gate"], "FAIL")
+            self.assertEqual(list(output.iterdir()), [directory.parent])
 
     def validate(self, text):
         return preflight.validate_instances(text, ["direct-layer-1x2048"], "selected", pid=42, affinity_mask=4)

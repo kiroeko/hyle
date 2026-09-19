@@ -324,9 +324,9 @@ def qualify(build: Path, record_directory: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build", type=Path, required=True)
-    parser.add_argument("--records", type=Path, required=True)
+    parser.add_argument("--records", type=Path, required=True, help="Runner output root")
     args = parser.parse_args()
-    directory = create_record_directory(args.records.resolve())
+    directory = create_record_directory(args.records.resolve() / "normalization-aa-runs")
     write_record(directory / "invocation.json", {"argv": sys.argv, "build": str(args.build.resolve()),
                                                  "nonce": directory.name, "started_unix_ns": time.time_ns()})
     print(json.dumps({"raw_records": str(directory)}), flush=True)

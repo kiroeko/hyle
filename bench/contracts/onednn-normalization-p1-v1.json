@@ -1604,7 +1604,7 @@
             "--build",
             "{build}",
             "--records",
-            "{output}/normalization-aa-runs"
+            "{output}"
           ]
         }
       ]

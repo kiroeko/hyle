@@ -1,0 +1,32 @@
+{
+  "baseline": "bceea856",
+  "scope": "Q2-D output token/namespace only",
+  "python_tests": 12,
+  "test_gate": "PASS",
+  "native_benchmark_processes": 0,
+  "builds": 0,
+  "p1_retries": 0,
+  "source_proof": {
+    "preflight_function_changes": [
+      "main"
+    ],
+    "contract_changes": [
+      "validator command standalone output token"
+    ],
+    "cpp_changes": 0,
+    "public_instrument_changes": 0
+  },
+  "sources": {
+    "bench/contracts/onednn-normalization-p1-v1.json": "e4c97d42e0a9db7cd08ce095db0967d2d133e2a9a1ccfa8185abfd4abfab6133",
+    "bench/graph_provider_onednn/normalization_preflight.py": "ed3a9d2b87facee5a2ae7c1761cae604732bbd5600e1164a5cfa6e9883d1a8f4",
+    "bench/graph_provider_onednn/normalization_preflight_test.py": "46061875ead85c8cb2e3b44662ddf22f138436268ba650486c0ab6207fdf1e9d"
+  },
+  "test_log_sha256": "29b1df33b2798c6e663fc1988e7566f53a43d8a79814a917f253e176b31699e6",
+  "move": {
+    "source": "C:\\public\\project-hyle\\hyle\\{output}",
+    "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa\\q2\\failed-record-root",
+    "files": 323,
+    "logical_bytes": 7316329.0,
+    "archive_sha256": "ae947a9ee0cce43a68c4d52723a4402ae6dde67638a68678a7d37672404d9933"
+  }
+}
