@@ -70,7 +70,7 @@ TEST(VulkanGather, OddStridesBroadcastIndicesScalarAndRankEight) {
           c::TensorDesc::strided_bytes(type, shape, strides).value();
       const auto host = payload(desc, raw_pattern(desc));
       const auto source = context.upload(desc, host).value();
-      for (const auto index_desc :
+      for (const auto &index_desc :
            {dense(c::DataType::kInt64, {}),
             c::TensorDesc::strided_bytes(c::DataType::kInt32,
                                          std::array<std::int64_t, 2>{3, 2},
@@ -90,7 +90,7 @@ TEST(VulkanGather, OddStridesBroadcastIndicesScalarAndRankEight) {
   const auto desc = dense(c::DataType::kBFloat16, {2, 1, 1, 1, 1, 1, 1, 129});
   const auto host = payload(desc, raw_pattern(desc));
   const auto source = context.upload(desc, host).value();
-  for (const auto index_desc :
+  for (const auto &index_desc :
        {dense(c::DataType::kInt32, {}), dense(c::DataType::kInt64, {129})}) {
     std::vector<std::uint64_t> positions(*index_desc.element_count(), 1);
     const auto indices =
@@ -236,7 +236,7 @@ TEST(VulkanGather, ByteOriginsWorkForCapturedAndDynamicTablesAndIndices) {
 
 TEST(VulkanGather, EmptyIndicesAndEmptyResultStillRespectCheckedDomain) {
   auto context = vulkan_test::context().value();
-  for (const auto desc : {dense(c::DataType::kFloat32, {0, 7}),
+  for (const auto &desc : {dense(c::DataType::kFloat32, {0, 7}),
                           dense(c::DataType::kFloat32, {3, 0})}) {
     const auto source = context.allocate(desc).value();
     const auto index_desc = dense(c::DataType::kInt64, {1});
