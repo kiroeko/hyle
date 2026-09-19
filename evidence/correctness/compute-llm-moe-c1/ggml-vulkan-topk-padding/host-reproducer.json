@@ -1,0 +1,121 @@
+{
+  "scope": "host arithmetic of locked ggml argsort; not a GPU execution result",
+  "vendor_commit": "456172ec733a135778adcd32d00e576a58232e45",
+  "file_sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+  "formula": "1 << ceilf(log2f(float(ncols)))",
+  "runtime": "Windows ucrtbase.dll log2f",
+  "rows": [
+    {
+      "width": 524288,
+      "log2f": 19.0,
+      "provider_padding": 524288,
+      "integer_padding": 524288,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 524289,
+      "log2f": 19.000001907348633,
+      "provider_padding": 1048576,
+      "integer_padding": 1048576,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 1048576,
+      "log2f": 20.0,
+      "provider_padding": 1048576,
+      "integer_padding": 1048576,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 1048577,
+      "log2f": 20.000001907348633,
+      "provider_padding": 2097152,
+      "integer_padding": 2097152,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 2097152,
+      "log2f": 21.0,
+      "provider_padding": 2097152,
+      "integer_padding": 2097152,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 2097153,
+      "log2f": 21.0,
+      "provider_padding": 2097152,
+      "integer_padding": 4194304,
+      "covers_all_inputs": false
+    },
+    {
+      "width": 4194304,
+      "log2f": 22.0,
+      "provider_padding": 4194304,
+      "integer_padding": 4194304,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 4194305,
+      "log2f": 22.0,
+      "provider_padding": 4194304,
+      "integer_padding": 8388608,
+      "covers_all_inputs": false
+    },
+    {
+      "width": 8388608,
+      "log2f": 23.0,
+      "provider_padding": 8388608,
+      "integer_padding": 8388608,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 8388609,
+      "log2f": 23.0,
+      "provider_padding": 8388608,
+      "integer_padding": 16777216,
+      "covers_all_inputs": false
+    },
+    {
+      "width": 16777216,
+      "log2f": 24.0,
+      "provider_padding": 16777216,
+      "integer_padding": 16777216,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 16777217,
+      "log2f": 24.0,
+      "provider_padding": 16777216,
+      "integer_padding": 33554432,
+      "covers_all_inputs": false
+    },
+    {
+      "width": 33554432,
+      "log2f": 25.0,
+      "provider_padding": 33554432,
+      "integer_padding": 33554432,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 33554433,
+      "log2f": 25.0,
+      "provider_padding": 33554432,
+      "integer_padding": 67108864,
+      "covers_all_inputs": false
+    },
+    {
+      "width": 67108864,
+      "log2f": 26.0,
+      "provider_padding": 67108864,
+      "integer_padding": 67108864,
+      "covers_all_inputs": true
+    },
+    {
+      "width": 67108865,
+      "log2f": 26.0,
+      "provider_padding": 67108864,
+      "integer_padding": 134217728,
+      "covers_all_inputs": false
+    }
+  ]
+}

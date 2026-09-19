@@ -1340,3 +1340,27 @@ keys用NaN放在全部有效key之后，只导出前count个order；不改原厂
 真实三交付、完整C1片段/固定优选/淘汰/global门仍未签收，CPU资格BLOCKED不变。普通TopK的
 浮点padding风险已由Windows实际CRT计算复现（2^21+1被补到2^21），后续按具名有限FIX修复；
 这不是Y29的运行失败或新的泛库审计。C1完成通知尚不触发。
+
+### C1-Y30：原版 Argsort 的整数 padding 修复（SCOPED / AUDITED）
+
+2026-09-19，baseline `a302c004`，owner `/root`；产品owner为`compute_provider_ggml_vulkan`
+与`compute_route_vulkan`，Graph为直接消费者。Y29的具名后续核对现有确切反例：Windows CRT的
+`log2f(float(2097153))`为21，锁定ggml据此只排序2097152项；不是计时或测试门限问题。
+[独立host复现](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-padding/host-reproducer.json)
+记录19–26位边界；尚未把host结果写成GPU运行结果。普通TopK公开域没有排除该合法宽度。
+
+有限FIX：Y30-A只在既有精确patch中把Argsort的padding指数改为无浮点的整数位宽计算，并用
+无符号移位；原版排序shader、比较、dispatch、scratch生命周期与upstream pin不变。该语句在
+原版每次录制计算，最多31次host移位，无新增分配或GPU工作。更新准确结果hash、依赖树锁和NOTICE，
+不修改原始cache或公共构建机制。Y29已有整数padding适配本轮保留，不借修错作无关清理。
+
+Y30-B只补普通TopK的冷padded scratch与原版workgroup/grid准入，同时覆盖managed region和
+axis/stride适配入口，超设备范围在native录制前明确拒绝。复用现有错误类型，不增加公开API、
+运行对象、热查询或替代排序。原版small路径没有全局8字节scratch，不能套用large路径错误限缩。
+
+Y30-C先在修复前运行单个普通Direct反例：2^21+1宽，唯一胜者位于最后一项，独立期望top2；
+随后覆盖2^21−1/2^21/2^21+1、升降序和stable tie，并在普通Graph串接已有逐元素再发布两个
+TopK输出。加受控设备limit反例验证冷拒绝；小宽、NaN/位级、轴/stride、Scatter复用回归沿既有
+测试。W1 static/shared、Air/Mini只跑selector适用provider/route/Graph及source contract；
+记录首次失败，最多两次产品纠正。新候选的完整C1真实三交付及global门仍在本包完成，不由旧
+Gather交付代签；没有P1授权，也不解除CPU资格BLOCKED。不继续调查其他未具名算子或全库边界。
