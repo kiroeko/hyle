@@ -173,10 +173,11 @@ void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
 
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
-                bool staging) noexcept {
+                bool staging, bool shader_access) noexcept {
   HYLE_ASSIGN_OR_RETURN(bytes, buffer_capacity(bytes));
   if (bytes > (std::numeric_limits<std::size_t>::max)() ||
-      (!staging && bytes > device->properties.limits.maxStorageBufferRange))
+      ((!staging || shader_access) &&
+       bytes > device->properties.limits.maxStorageBufferRange))
     return std::unexpected(
         Status::InvalidArgument("Vulkan buffer size exceeds domain"));
   try {
@@ -188,7 +189,7 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
     info.size = bytes;
     info.usage =
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    if (!staging)
+    if (!staging || shader_access)
       info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     auto status =

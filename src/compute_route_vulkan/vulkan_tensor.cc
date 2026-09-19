@@ -270,6 +270,44 @@ Status lower_concat(ProgramState &program, const PlanStep &step) {
 }
 } // namespace
 
+Status lower_index_check(ProgramState &program, std::uint32_t input,
+                         std::uint32_t output, std::uint64_t extent,
+                         bool checked) {
+  std::array<SpecializationConstant, 42> specialization{};
+  Dispatch dispatch;
+  HYLE_RETURN_IF_ERROR(tensor_layout(program, std::array{input}, output,
+                                     specialization, dispatch));
+  specialization[0].value = 14;
+  specialization[5].value = checked ? 1u : 0u;
+  specialization[7].value = static_cast<std::uint32_t>(extent);
+  specialization[8].value = static_cast<std::uint32_t>(extent >> 32);
+  if (checked) {
+    dispatch.values[2] = *program.status_value;
+    dispatch.checked_status = true;
+  }
+  const auto count = *program.values[output].description.element_count();
+  return append_tensor_dispatch(
+      program, std::move(dispatch), shaders::checked_tensor(), specialization,
+      static_cast<std::uint32_t>((count + 127) / 128));
+}
+
+Status lower_checked_copy(ProgramState &program, std::uint32_t input,
+                          std::uint32_t output) {
+  const auto bytes = *program.values[output].description.required_bytes();
+  if (bytes == 0)
+    return Status::Ok();
+  std::array<SpecializationConstant, 42> specialization{};
+  Dispatch dispatch;
+  HYLE_RETURN_IF_ERROR(tensor_layout(program, std::array{input}, output,
+                                     specialization, dispatch));
+  specialization[5].value = 1;
+  dispatch.values[2] = *program.status_value;
+  dispatch.checked_status = true;
+  return append_tensor_dispatch(
+      program, std::move(dispatch), shaders::checked_tensor(), specialization,
+      static_cast<std::uint32_t>(((bytes + 3) / 4 + 127) / 128));
+}
+
 Status lower_tensor(ProgramState &program, const PlanStep &step) {
   if (step.operation.kind() == OperationKind::kReduce ||
       step.operation.kind() == OperationKind::kSoftmax)

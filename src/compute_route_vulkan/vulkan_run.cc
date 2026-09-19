@@ -2,6 +2,7 @@
 
 #include "hyle/obs/trace.h"
 
+#include <cstring>
 #include <limits>
 #include <new>
 #include <utility>
@@ -101,6 +102,38 @@ VkResult drain_result(const Status &status) noexcept {
   return status.ok()           ? VK_SUCCESS
          : device_lost(status) ? VK_ERROR_DEVICE_LOST
                                : VK_NOT_READY;
+}
+
+// Only the owner of an idle slot resets its words. Readback is reached after
+// all accepted native and managed work has retired, including abandonment.
+Status checked_status(Run &run, bool reset) noexcept {
+  if (!run.checked)
+    return Status::Ok();
+  const auto &device = *run.runtime->device;
+  for (const auto &buffer : run.checked->buffers) {
+    std::uint32_t value = 0;
+    if (reset)
+      std::memcpy(buffer->mapped, &value, sizeof(value));
+    if ((buffer->memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+      VkMappedMemoryRange range{};
+      range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+      range.memory = buffer->memory;
+      range.size = VK_WHOLE_SIZE;
+      HYLE_RETURN_IF_ERROR(native_status(
+          reset ? device.fn.FlushMappedMemoryRanges(device.native.device, 1,
+                                                    &range)
+                : device.fn.InvalidateMappedMemoryRanges(device.native.device,
+                                                         1, &range),
+          reset ? "vkFlushMappedMemoryRanges(checked status)"
+                : "vkInvalidateMappedMemoryRanges(checked status)"));
+    }
+    if (!reset) {
+      std::memcpy(&value, buffer->mapped, sizeof(value));
+      if (value != 0)
+        return Status::OutOfRange("Vulkan index is outside the selected axis");
+    }
+  }
+  return Status::Ok();
 }
 
 // Called under Runtime::mutex after the parent native completion proof, or
@@ -218,9 +251,19 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
         run->terminal = run->observation_error;
       } else if (device_lost(runtime.failure)) {
         run->terminal = runtime.failure;
-      } else if (run->cancelled) {
-        run->terminal = Status::Cancelled(
-            "Vulkan result cancelled after native retirement");
+      } else {
+        const auto checked = checked_status(*run, false);
+        if (!checked.ok()) {
+          run->terminal = checked;
+          run->submission_failure = checked;
+          if (device_lost(checked)) {
+            runtime.failure = checked;
+            device.provider.note_device_lost();
+          }
+        } else if (run->cancelled) {
+          run->terminal = Status::Cancelled(
+              "Vulkan result cancelled after native retirement");
+        }
       }
       if (!run->stages.empty() && !run->observation_error.ok() &&
           run->submission_failure.ok())
@@ -336,6 +379,14 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
     return std::unexpected(
         Status::FailedPrecondition("Vulkan slot is still retained"));
   Status status;
+  status = checked_status(*run, true);
+  if (!status.ok()) {
+    if (device_lost(status)) {
+      runtime.failure = status;
+      device.provider.note_device_lost();
+    }
+    return std::unexpected(status);
+  }
   if (run->completion_fence == run->fence) {
     status = native_status(
         device.fn.ResetFences(device.native.device, 1, &run->fence),

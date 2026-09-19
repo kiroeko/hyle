@@ -22,6 +22,8 @@ Status plan_storage(ProgramState &program) noexcept {
     std::vector<bool> external(count, false);
     for (const auto input : program.inputs)
       external[input] = true;
+    if (program.status_value)
+      external[*program.status_value] = true;
     for (std::size_t value = 0; value < count; ++value)
       external[value] =
           external[value] || program.values[value].constant.valid();
@@ -97,7 +99,11 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
     }
     run.retained_buffers.resize(program.values.size());
     for (std::size_t value = 0; value < program.values.size(); ++value) {
-      if (program.values[value].constant)
+      if (program.status_value == value) {
+        HYLE_ASSIGN_OR_RETURN(
+            run.retained_buffers[value],
+            allocate_buffer(program.runtime->device, 4, true, true));
+      } else if (program.values[value].constant)
         run.retained_buffers[value] =
             Access::buffer(program.values[value].constant);
       else if (program.storage_blocks[value] !=
@@ -298,6 +304,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         snapshot.invocation_storage_block_bytes.push_back(
             static_cast<std::size_t>(bytes));
       }
+      if (program->status_value)
+        snapshot.invocation_storage_block_bytes.push_back(4);
       std::vector<const Buffer *> constants;
       for (const auto &value : program->values)
         if (value.constant) {

@@ -244,6 +244,10 @@ Status encode_commands(Run &run,
   memory_barrier(device, run.command, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                  VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                  VK_ACCESS_MEMORY_READ_BIT);
+  if (run.checked)
+    memory_barrier(device, run.command, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                   VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT,
+                   VK_ACCESS_HOST_READ_BIT);
   HYLE_RETURN_IF_ERROR(native_status(device.fn.EndCommandBuffer(run.command),
                                      "vkEndCommandBuffer"));
   run.encoding_valid = true;
@@ -259,6 +263,24 @@ Status record(const std::shared_ptr<Run> &run,
       run->retained_buffers.size() != values.size() ||
       run->descriptor_pool != VK_NULL_HANDLE)
     return Status::InvalidArgument("invalid Vulkan recording recipe");
+  try {
+    for (const auto &dispatch : dispatches) {
+      if (!dispatch.checked_status)
+        continue;
+      if (dispatch.values.size() < 3 || dispatch.values[2] >= values.size())
+        return Status::Internal("Vulkan checked status binding");
+      const auto &buffer = run->retained_buffers[dispatch.values[2]];
+      if (!buffer || !buffer->mapped || buffer->bytes != 4 || buffer->offset)
+        return Status::Internal("Vulkan checked status storage");
+      if (!run->checked)
+        run->checked = std::make_unique<CheckedStatus>();
+      if (std::ranges::find(run->checked->buffers, buffer) ==
+          run->checked->buffers.end())
+        run->checked->buffers.push_back(buffer);
+    }
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan checked status metadata");
+  }
   if (std::ranges::any_of(dispatches, [](const auto &dispatch) {
         return dispatch.region != nullptr;
       }))

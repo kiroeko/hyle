@@ -34,6 +34,8 @@ def main():
          dict(A_TYPE='float', D_TYPE='float'), {1}),
         ('copy_f32', 'copy.comp', dict(A_TYPE='float', D_TYPE='float', DATA_A_F32='1'), {1}),
         ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
+        ('checked_tensor', str((args.tensor_source / 'tensor.comp').resolve()),
+         dict(HYLE_TENSOR_CHECKED='1'), {1}),
         ('normalization', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_NORMALIZATION='1'), {1}),
         ('concat', str((args.tensor_source / 'tensor.comp').resolve()),

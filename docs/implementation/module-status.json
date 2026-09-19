@@ -506,18 +506,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y26 AUDITED：固定原版 GetRows、GPU checked 索引与原始位布局、完成错误和资源寿命的有限 FIX；尚未实施验收。Y25 已通过的局部测试/实际三交付保留，15项通用交付在固定副本运行；Scatter/Scan、完整C1权重/性能优选/淘汰仍未完成。"
+      "summary": "LLM/MoE C1-Y26 AUDITED：原版GetRows与GPU受检索引/原始位布局/失败寿命已实现；W1 static三factor100例及头/source/MASM检查通过。Y25独立15通用交付/45路径已通过并清理重复build。Y26 shared、Air/Mini、真实权重/三交付及C1 Scatter/Scan/优选淘汰仍未完成。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y26 AUDITED：固定原版 GetRows、GPU checked 索引与原始位布局、完成错误和资源寿命的有限 FIX；尚未实施验收。Y25 已通过的局部测试/实际三交付保留，15项通用交付在固定副本运行；Scatter/Scan、完整C1权重/性能优选/淘汰仍未完成。"
+      "summary": "LLM/MoE C1-Y26 AUDITED：原版GetRows与GPU受检索引/原始位布局/失败寿命已实现；W1 static三factor100例及头/source/MASM检查通过。Y25独立15通用交付/45路径已通过并清理重复build。Y26 shared、Air/Mini、真实权重/三交付及C1 Scatter/Scan/优选淘汰仍未完成。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y26 AUDITED：固定原版 GetRows、GPU checked 索引与原始位布局、完成错误和资源寿命的有限 FIX；尚未实施验收。Y25 已通过的局部测试/实际三交付保留，15项通用交付在固定副本运行；Scatter/Scan、完整C1权重/性能优选/淘汰仍未完成。",
+      "summary": "LLM/MoE C1-Y26 AUDITED：原版GetRows与GPU受检索引/原始位布局/失败寿命已实现；W1 static三factor100例及头/source/MASM检查通过。Y25独立15通用交付/45路径已通过并清理重复build。Y26 shared、Air/Mini、真实权重/三交付及C1 Scatter/Scan/优选淘汰仍未完成。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

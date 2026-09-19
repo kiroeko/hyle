@@ -65,6 +65,13 @@ bool region_supports(const Operation &operation,
            outputs[1].data_type() == DataType::kInt32 &&
            (topk->axis == -1 ||
             topk->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
+  if (const auto *gather = operation.get_if<Gather>())
+    return inputs.size() == 2 && outputs.size() == 1 &&
+           gather->bounds == IndexBoundsPolicy::kUnchecked &&
+           (gather->axis == 0 || gather->axis == -2) &&
+           inputs[0].data_type() == DataType::kInt32 && inputs[0].rank() == 2 &&
+           inputs[1].data_type() == DataType::kInt32 && inputs[1].rank() == 1 &&
+           outputs[0].data_type() == DataType::kInt32;
   if (outputs.size() != 1 || outputs[0].data_type() != DataType::kFloat32 ||
       !std::ranges::all_of(inputs, [](const auto &input) {
         return input.data_type() == DataType::kFloat32;
@@ -219,6 +226,8 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_cont_4d(context, floats, shape[0], shape[1], shape[2],
                               shape[3]);
         tensors[node.outputs[1]] = indices;
+      } else if (node.operation.get_if<Gather>()) {
+        output = ggml_get_rows(context, left, tensors[node.inputs[1]]);
       } else if (const auto *norm = node.operation.get_if<RmsNorm>()) {
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)

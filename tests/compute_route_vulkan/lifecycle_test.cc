@@ -36,6 +36,7 @@ struct NativeBoundary final {
   bool fail_submit = false, fail_poll = false, fail_wait = false,
        fail_idle = false;
   bool fail_bind_memory = false, fail_descriptors = false;
+  bool fail_flush = false, fail_invalidate = false;
   static inline NativeBoundary *active = nullptr;
 
   explicit NativeBoundary(const v::Context &context)
@@ -121,11 +122,15 @@ struct NativeBoundary final {
   static VKAPI_ATTR VkResult VKAPI_CALL flush_ranges(
       VkDevice device, std::uint32_t count, const VkMappedMemoryRange *ranges) {
     ++active->flushes;
+    if (std::exchange(active->fail_flush, false))
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
     return active->original.FlushMappedMemoryRanges(device, count, ranges);
   }
   static VKAPI_ATTR VkResult VKAPI_CALL invalidate_ranges(
       VkDevice device, std::uint32_t count, const VkMappedMemoryRange *ranges) {
     ++active->invalidations;
+    if (std::exchange(active->fail_invalidate, false))
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
     return active->original.InvalidateMappedMemoryRanges(device, count, ranges);
   }
 };
@@ -516,6 +521,139 @@ TEST(VulkanLifetime,
     ASSERT_TRUE(replay) << replay.error().message();
     ASSERT_TRUE(replay->wait());
   }
+  EXPECT_TRUE(context.close().ok());
+}
+
+TEST(VulkanLifecycle, CheckedGatherFlushInvalidateCancelAndAbandon) {
+  auto context = t::context().value();
+  const auto source_desc = t::dense({5, 7});
+  const auto source = t::upload(context, source_desc, t::data(35, 4)).value();
+  const auto index_desc =
+      c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{2})
+          .value();
+  const std::array<std::int32_t, 2> good_positions{4, 0}, bad_positions{4, -1};
+  const auto good =
+      context.upload(index_desc, std::as_bytes(std::span(good_positions)))
+          .value();
+  const auto bad =
+      context.upload(index_desc, std::as_bytes(std::span(bad_positions)))
+          .value();
+  auto program = v::prepare(context, c::Gather{0}, source, index_desc).value();
+  NativeBoundary boundary(context);
+  // Exercise non-coherent control flow on real device memory. Clearing the
+  // cached property does not claim that this physical device lacks coherence.
+  for (std::uint32_t i = 0;
+       i < boundary.device.memory_properties.memoryTypeCount; ++i)
+    boundary.device.memory_properties.memoryTypes[i].propertyFlags &=
+        ~VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+  auto first = program.create_invocation().value();
+  auto second = program.create_invocation().value();
+  ASSERT_TRUE(first.bind(good).ok());
+  ASSERT_TRUE(second.bind(bad).ok());
+  {
+    auto work = first.submit().value();
+    ASSERT_TRUE(work.wait());
+    EXPECT_GT(boundary.flushes, 0);
+    EXPECT_GT(boundary.invalidations, 0);
+  }
+  {
+    auto work = second.submit().value();
+    ASSERT_TRUE(work.request_cancel().ok());
+    const auto result = work.wait();
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsOutOfRange());
+  }
+  EXPECT_TRUE(second.bind(good).IsOutOfRange());
+  {
+    auto work = first.submit().value();
+    ASSERT_TRUE(work.request_cancel().ok());
+    const auto result = work.wait();
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsCancelled());
+  }
+  {
+    auto work = first.submit().value();
+    ASSERT_TRUE(work.wait());
+  }
+  auto abandoned = program.create_invocation().value();
+  ASSERT_TRUE(abandoned.bind(bad).ok());
+  {
+    auto work = abandoned.submit().value();
+  }
+  const auto drained = d::collect(d::Access::runtime(context), true);
+  EXPECT_TRUE(drained.IsOutOfRange()) << drained.message();
+  EXPECT_TRUE(abandoned.bind(good).IsOutOfRange());
+  auto fresh = program.create_invocation().value();
+  ASSERT_TRUE(fresh.bind(good).ok());
+  auto result = fresh.submit().value();
+  ASSERT_TRUE(result.wait());
+  EXPECT_TRUE(context.close().ok());
+}
+
+TEST(VulkanLifecycle,
+     CheckedGatherPartialAcceptanceDrainsAndPreservesNativeFailure) {
+  auto context = t::context().value();
+  const auto source_desc = t::dense({5, 7});
+  const auto source = t::upload(context, source_desc, t::data(35, 2)).value();
+  const auto index_desc =
+      c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{2})
+          .value();
+  const std::array<std::int32_t, 2> positions{4, -1};
+  const auto indices =
+      context.upload(index_desc, std::as_bytes(std::span(positions))).value();
+  auto program = v::prepare(context, c::Gather{0}, source, index_desc).value();
+  auto slot = program.create_invocation().value();
+  ASSERT_TRUE(slot.bind(indices).ok());
+  NativeBoundary boundary(context);
+  // Native check and original managed GetRows accept work; final HYLE output
+  // publication rejects admission. Keep that native error and drain the prefix.
+  boundary.fail_submit_on = 2;
+  auto work = slot.submit();
+  ASSERT_TRUE(work) << work.error().message();
+  const auto result = work->wait();
+  ASSERT_FALSE(result);
+  EXPECT_TRUE(result.error().IsResourceExhausted());
+  EXPECT_TRUE(slot.bind(indices).IsResourceExhausted());
+  EXPECT_TRUE(context.close().ok());
+}
+
+TEST(VulkanLifecycle,
+     CheckedGatherMappedFailuresKeepAdmissionAndRetirementDistinct) {
+  auto context = t::context().value();
+  const auto source_desc = t::dense({5, 7});
+  const auto source = t::upload(context, source_desc, t::data(35, 2)).value();
+  const auto index_desc =
+      c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{1})
+          .value();
+  const std::array<std::int32_t, 1> position{4};
+  const auto index =
+      context.upload(index_desc, std::as_bytes(std::span(position))).value();
+  auto program = v::prepare(context, c::Gather{0}, source, index_desc).value();
+  NativeBoundary boundary(context);
+  for (std::uint32_t i = 0;
+       i < boundary.device.memory_properties.memoryTypeCount; ++i)
+    boundary.device.memory_properties.memoryTypes[i].propertyFlags &=
+        ~VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+  auto slot = program.create_invocation().value();
+  ASSERT_TRUE(slot.bind(index).ok());
+  boundary.fail_flush = true;
+  auto rejected = slot.submit();
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  EXPECT_EQ(boundary.submissions, 0);
+  {
+    auto accepted = slot.submit();
+    ASSERT_TRUE(accepted) << accepted.error().message();
+    boundary.fail_invalidate = true;
+    auto result = accepted->wait();
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsResourceExhausted());
+  }
+  EXPECT_TRUE(slot.bind(index).IsResourceExhausted());
+  auto fresh = program.create_invocation().value();
+  ASSERT_TRUE(fresh.bind(index).ok());
+  auto work = fresh.submit().value();
+  ASSERT_TRUE(work.wait());
   EXPECT_TRUE(context.close().ok());
 }
 

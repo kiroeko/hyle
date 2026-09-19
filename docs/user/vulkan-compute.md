@@ -179,6 +179,31 @@ Copy/materialize；不会静默把 View 本身实现为 copy。固定 Recorder �
 已外部绑定输入的对应范围。普通 typed Recorder 写输出使用独立或 `borrow_ready` 的具名 padded
 buffer，不写入 View slice 的尾字，避免修改相邻数据。
 
+### 受检索引读取
+
+`Gather` 支持 F32/F16/BF16/I32/I64/Bool 表、I32/I64 索引、任意合法轴和 byte stride。
+结果保持表中元素的原始位；F16/BF16 的 NaN 载荷不会经过浮点转换。默认 `kChecked` 在 GPU 上
+检查全部索引；负索引不表示倒数位置，越界在完成时返回 `OutOfRange`。非空索引即使对应空结果
+也要检查；空索引不读取表数据。
+
+```cpp
+// table 已上传且在 Program 存活时保持不变；每次仅重绑 token indices。
+HYLE_ASSIGN_OR_RETURN(auto program,
+    vk::prepare(context, c::Gather{.axis = 0}, table, indices_description));
+HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
+HYLE_RETURN_IF_ERROR(slot.bind(indices));
+HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+```
+
+Graph 使用同一个 `c::Gather`，例如 `builder.add(c::Gather{.axis = 0}, table_value, indices_value)`，
+其输出可继续接归一化、门控或其他节点。Provider 与必要布局适配在准备期固定。
+
+取数复用原版 ggml GetRows；必要索引转换、布局和行补齐、输出 Copy 都计入实际成本。
+每个含受检读取的运行槽还拥有一个私有错误状态字；host 只在真实 GPU 终态后读取该状态。
+Recorder 的受检 Gather 越界时保留该操作的原输出，但不承诺整个 Recorder 事务回滚。
+发生该错误的槽退役；可以从同一 Program 创建新槽。显式 `kUnchecked` 要求调用方保证全部索引合法。
+
 ## Graph 与原生片段
 
 用 GraphBuilder 构造 typed DAG，再调用：
@@ -193,7 +218,7 @@ constants 按 Graph 常量顺序，bind 按输入顺序，结果按 publish 顺�
 常量句柄；Program 保有自己的原生 owner。Graph 冷期删除 dead pure nodes、规划中间 buffer
 生命周期；每个槽独立拥有可变 scratch、命令、descriptor、fence 和生成结果。HYLE 重放不遍历
 原语义 DAG；托管 region 的原厂执行器仍会访问其已准备的图。
-当前接受固定 shape 的 pure typed node（含 View 与双输出 TopK）；custom node 保持单输出合同。
+当前接受固定 shape 的 pure typed node（含 View、Gather 与双输出 TopK）；custom node 保持单输出合同。
 符号、资源效果、control edge、其它必须别名节点和直接 publish 输入/常量会明确拒绝。
 TopK 使用 `builder.add_node(c::Operation(c::TopK{.count = 8}), std::array{scores})`，随后
 `builder.result(node, 0)` / `builder.result(node, 1)` 分别取得 values / indices；可独立消费或

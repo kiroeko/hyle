@@ -98,7 +98,16 @@
     "windows-raw.zip: initial Graph fixture compile diagnostics and corrected build logs"
   ],
   "cleanup_logical_bytes": 1933074359,
-  "remaining_selected_delivery": "15 generic gates running separately on immutable Windows verification copy; no aggregate 112 PASS claim",
+  "remaining_selected_delivery": {
+    "status": "PASS",
+    "candidate": "5f4df55b287b9c895048bf05ab350ff49c96fd6c",
+    "gates": 15,
+    "journeys": 45,
+    "receipt": "remaining-deliveries-receipt.json",
+    "archive": "remaining-deliveries-raw.zip",
+    "archive_sha256": "ebe02cc3a5d816695eaf481eed3ee8c1339135bc64da7b9410bf07ebfb17122d",
+    "scope": "separate 5f4df55b identity; prior 96 native + 1 component contract retain their 5b220601 identity; no single-candidate 112 claim"
+  },
   "performance": "NOT_RUN; C1 bundle is not frozen; oneDNN BLOCKED unchanged",
   "coverage_matrix": "64 requirements/256 route cells remain UNPROVEN for complete acceptance",
   "archives": {
@@ -107,5 +116,6 @@
     "y25-air-delivery-raw.zip": "c32d5b8b7a36937d5860c56f6b0ea2beef7d0731c7eaa212a0c5aac43991eae5",
     "y25-air-focused.zip": "1ea80bf911b4c7b865ac48324026259edc6a999fd0ce5f317c80d0e0534f54b8",
     "y25-mini-focused.zip": "c089e40dadac44cf4a90bf9029c24fbc90efc02d67c77c52347dceff49a6d6f0"
-  }
+  },
+  "subsequent_generic_cleanup_logical_bytes": 9492056710
 }

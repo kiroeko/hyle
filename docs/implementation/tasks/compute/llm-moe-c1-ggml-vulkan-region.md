@@ -908,3 +908,24 @@ Scatter/Scan、完整C1真实权重片段、默认性能优选和淘汰仍待完
 调查限于已登记 ggml GetRows 与 Vulkan 同步/内存合同，累计最多60分钟；产品纠正最多两轮。
 先完成语义/资源门，API/算法固定后沿 C1 的原 P1 bundle 预算验收，不因本节开启微基准或
 重跑 CPU 性能。失败保留具体反例并按协议裁决；全部 Y26 门完成前 owner 保持 AUDITED。
+
+### Y26 实现与 Windows static 首轮证据
+
+已实现Y26-A–C：复用原版 I32 GetRows 载荷读取，HYLE 补GPU索引检查、必要原始字布局/补齐和
+条件发布；每个受检程序运行槽拥有私有4字节逻辑状态，真实GPU退休后观察错误。普通无检查
+程序不分配状态buffer/集合。失败槽按原协议退役，Context及新槽仍可用；未改vendor或公开API。
+
+[首轮固定工作树证据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-gather/w1-static/README.md)
+绑定baseline `858b035b`及完整patch/hash：W1 strict static的19 provider + 60 Direct + 21 Graph
+共100个用例全部通过；新增10个定向用例不重复计数。公开头、原版source合同及实际MASM parent
+组合均通过，Vulkan validation无VUID/同步错误。Windows实际EXE使用DLL邻置/PATH unset和
+非交互错误模式；编译类检查保留编译器环境。首轮没有产品纠正或P1。
+
+此前Y25的15个通用交付门已经在`5f4df55b`固定验证副本完成，共45条source/static/shared路径。
+证据继续保留独立身份，不将`5b220601`的96 native + 1组件合同改签到其他候选。
+归档核对后清理45个重复producer目录，共9,492,056,710逻辑字节；SDK、consumer和共享cache保留。
+
+Y26 shared、Air/Mini、真实本地BF16 embedding片段和source/static/shared消费仍未运行；
+后者的输入/独立oracle及外部consumer已准备，不能算运行PASS。三个owner保持AUDITED，完整C1
+Scatter/Scan、固定优选/淘汰和矩阵签收未完成，CPU oneDNN资格BLOCKED不变。
+当前统一实现LOC为47,554行/193文件，不含测试、bench、第三方，自检通过。

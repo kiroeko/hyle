@@ -19,5 +19,8 @@ W1/Air日志未见VUID/同步错误。最终两factor配置保留已运行Window
 已核对归档后清理Windows/Air producer与展开源码，共1,933,074,359逻辑字节；保留SDK和
 consumer。统一实现LOC为47,202行/193文件，不含测试、bench和第三方。
 
-15个通用交付门仍单独运行，未签整个112门通过。C1完整真实权重片段、索引/状态接入、
+15个通用交付门现已在固定 `5f4df55b` 验证副本通过，共45条source/static/shared路径；
+[独立交付回执](remaining-deliveries-receipt.json)与[清理回执](remaining-deliveries-cleanup.json)
+保留各自身份，未把早先96个native门及1个组件合同改签成同一候选112门。
+归档核对后删除45个重复producer目录，共9,492,056,710逻辑字节。C1完整真实权重片段、索引/状态接入、
 固定优选与实现淘汰、性能和矩阵签收仍未完成；CPU oneDNN性能资格BLOCKED不变，没有P1。

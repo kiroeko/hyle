@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "hyle/compute/detail/generated_result.h"
@@ -28,6 +29,8 @@ struct Dispatch final {
   std::vector<std::byte> push;
   std::array<std::uint32_t, 3> groups{1, 1, 1};
   bool tensor_byte_origins = false;
+  // Binding 2 is a private, mapped logical-error word for this native batch.
+  bool checked_status = false;
 };
 
 struct NativeEncoding final {
@@ -53,6 +56,7 @@ struct ProgramState final {
   // end.
   std::vector<std::uint32_t> storage_blocks;
   std::vector<VkDeviceSize> block_bytes;
+  std::optional<std::uint32_t> status_value;
 };
 
 struct ResultValues final {
@@ -112,6 +116,7 @@ Status lower_operation(
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;
 bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
 Status lower_topk(ProgramState &, const PlanStep &) noexcept;
+Status lower_gather(ProgramState &, const PlanStep &) noexcept;
 Status lower_region(ProgramState &, const Plan &, std::size_t first,
                     std::size_t end,
                     std::span<const std::size_t> last_uses) noexcept;

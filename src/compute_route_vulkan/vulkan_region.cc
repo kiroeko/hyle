@@ -133,6 +133,206 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
   }
 }
 
+Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
+  try {
+    const auto input = program.values[step.inputs[0]].description;
+    const auto indices = program.values[step.inputs[1]].description;
+    const auto output = program.values[step.outputs[0]].description;
+    const auto gather = *step.operation.get_if<Gather>();
+    const auto count = *indices.element_count();
+    if (count == 0)
+      return Status::Ok();
+    const auto &limits = program.runtime->device->properties.limits;
+    if (count > limits.maxStorageBufferRange / 4)
+      return Status::Unimplemented("Vulkan Gather indices exceed device range");
+    const auto axis = static_cast<std::size_t>(
+        gather.axis < 0 ? gather.axis + static_cast<std::int32_t>(input.rank())
+                        : gather.axis);
+    const auto extent = static_cast<std::uint64_t>(input.dimensions()[axis]);
+    const bool checked = gather.bounds == IndexBoundsPolicy::kChecked;
+    while (program.aliases.size() < program.values.size()) {
+      const auto id = static_cast<std::uint32_t>(program.aliases.size());
+      program.aliases.push_back({id, 0});
+    }
+    const auto append = [&](const TensorDesc &description) {
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    const auto alias = [&](const TensorDesc &description,
+                           std::uint32_t source) {
+      const auto owner = program.aliases[source];
+      const auto id = append(description);
+      program.aliases[id] = owner;
+      return id;
+    };
+    if (checked && !program.status_value) {
+      HYLE_ASSIGN_OR_RETURN(auto status,
+                            TensorDesc::dense(DataType::kInt32, {}));
+      program.status_value = append(status);
+    }
+    HYLE_ASSIGN_OR_RETURN(
+        auto safe_desc,
+        TensorDesc::dense(DataType::kInt32, indices.dimensions()));
+    const auto safe = append(safe_desc);
+    HYLE_RETURN_IF_ERROR(
+        lower_index_check(program, step.inputs[1], safe, extent, checked));
+    // Nonempty indices still require validation when another dimension is
+    // empty. Never hand an empty source axis to the unchecked vendor kernel.
+    if (*input.element_count() == 0 || *output.element_count() == 0)
+      return Status::Ok();
+    if (limits.maxComputeWorkGroupInvocations < 512 ||
+        limits.maxComputeWorkGroupSize[0] < 512)
+      return Status::Unimplemented("ggml Vulkan GetRows requires 512 lanes");
+    const auto size = data_type_size(input.data_type());
+    const auto row_elements = *input.element_count() / extent;
+    const auto row_bytes = row_elements * size;
+    const auto padded_bytes = (row_bytes + 3) / 4 * 4;
+    if (extent > limits.maxStorageBufferRange / padded_bytes ||
+        count > limits.maxStorageBufferRange / padded_bytes ||
+        extent * (padded_bytes / size) > INT32_MAX ||
+        count * (padded_bytes / size) > INT32_MAX)
+      return Status::Unimplemented(
+          "Vulkan Gather row adapter exceeds device range");
+    std::array<std::int32_t, kMaxTensorRank> axes{};
+    axes[0] = static_cast<std::int32_t>(axis);
+    std::size_t next = 1;
+    for (std::size_t dim = 0; dim < input.rank(); ++dim)
+      if (dim != axis)
+        axes[next++] = static_cast<std::int32_t>(dim);
+    HYLE_ASSIGN_OR_RETURN(auto permute,
+                          View::permute(std::span(axes).first(input.rank())));
+    HYLE_ASSIGN_OR_RETURN(auto rows, infer_single_output(Operation(permute),
+                                                         std::span(&input, 1)));
+    auto source = alias(rows, step.inputs[0]);
+    if (!rows.is_dense()) {
+      HYLE_ASSIGN_OR_RETURN(
+          auto dense, TensorDesc::dense(input.data_type(), rows.dimensions()));
+      const auto packed = append(dense);
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program, {Operation(Copy{}), {source}, {packed}, {}, {1, 1, 1}, {}}));
+      source = packed;
+    }
+    HYLE_ASSIGN_OR_RETURN(
+        auto matrix,
+        TensorDesc::dense(input.data_type(),
+                          std::array<std::int64_t, 2>{
+                              static_cast<std::int64_t>(extent),
+                              static_cast<std::int64_t>(row_elements)}));
+    source = alias(matrix, source);
+    const auto padding = (padded_bytes - row_bytes) / size;
+    if (padding != 0) {
+      HYLE_ASSIGN_OR_RETURN(
+          auto tail_desc,
+          TensorDesc::dense(
+              input.data_type(),
+              std::array<std::int64_t, 2>{static_cast<std::int64_t>(extent),
+                                          static_cast<std::int64_t>(padding)}));
+      const auto tail = append(tail_desc);
+      HYLE_ASSIGN_OR_RETURN(auto tail_shape,
+                            TensorShape::create(tail_desc.dimensions()));
+      HYLE_RETURN_IF_ERROR(lower_tensor(
+          program, {Operation(Fill{
+                        .output_shape = tail_shape,
+                        .output_type = input.data_type(),
+                        .value = ScalarValue::from_bits(input.data_type(), 0)}),
+                    {},
+                    {tail},
+                    {},
+                    {1, 1, 1},
+                    {}}));
+      HYLE_ASSIGN_OR_RETURN(
+          auto padded_desc,
+          TensorDesc::dense(
+              input.data_type(),
+              std::array<std::int64_t, 2>{
+                  static_cast<std::int64_t>(extent),
+                  static_cast<std::int64_t>(row_elements + padding)}));
+      const auto padded = append(padded_desc);
+      HYLE_RETURN_IF_ERROR(lower_tensor(program, {Operation(Concat{-1}),
+                                                  {source, tail},
+                                                  {padded},
+                                                  {},
+                                                  {1, 1, 1},
+                                                  {}}));
+      source = padded;
+    }
+    HYLE_ASSIGN_OR_RETURN(
+        auto raw_desc,
+        TensorDesc::dense(DataType::kInt32,
+                          std::array<std::int64_t, 2>{
+                              static_cast<std::int64_t>(extent),
+                              static_cast<std::int64_t>(padded_bytes / 4)}));
+    const auto raw = alias(raw_desc, source);
+    HYLE_ASSIGN_OR_RETURN(
+        auto flat_indices,
+        TensorDesc::dense(
+            DataType::kInt32,
+            std::array<std::int64_t, 1>{static_cast<std::int64_t>(count)}));
+    const auto index_rows = alias(flat_indices, safe);
+    HYLE_ASSIGN_OR_RETURN(
+        auto gathered_desc,
+        TensorDesc::dense(DataType::kInt32,
+                          std::array<std::int64_t, 2>{
+                              static_cast<std::int64_t>(count),
+                              static_cast<std::int64_t>(padded_bytes / 4)}));
+    const auto gathered = append(gathered_desc);
+    Plan local;
+    local.outputs = {gathered};
+    local.steps.push_back({Operation(Gather{0, IndexBoundsPolicy::kUnchecked}),
+                           {raw, index_rows},
+                           {gathered},
+                           {},
+                           {1, 1, 1},
+                           {}});
+    std::vector<std::size_t> last_uses(program.values.size(), 0);
+    HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+    // The provider publishes indices-first rows. Reinterpret exact scalar
+    // bits, discard only row padding, and restore prefix/indices/suffix axes.
+    std::array<std::int64_t, kMaxTensorRank> shape{}, strides{};
+    next = indices.rank();
+    std::ranges::copy(indices.dimensions(), shape.begin());
+    for (std::size_t dim = 0; dim < input.rank(); ++dim)
+      if (dim != axis)
+        shape[next++] = input.dimensions()[dim];
+    auto stride = static_cast<std::int64_t>(size);
+    for (auto dim = next; dim > indices.rank(); --dim) {
+      strides[dim - 1] = stride;
+      stride *= shape[dim - 1];
+    }
+    stride = static_cast<std::int64_t>(padded_bytes);
+    for (auto dim = indices.rank(); dim > 0; --dim) {
+      strides[dim - 1] = stride;
+      stride *= shape[dim - 1];
+    }
+    HYLE_ASSIGN_OR_RETURN(auto expanded,
+                          TensorDesc::strided_bytes(
+                              input.data_type(), std::span(shape).first(next),
+                              std::span(strides).first(next)));
+    std::size_t position = 0;
+    for (std::size_t dim = 0; dim < axis; ++dim)
+      axes[position++] = static_cast<std::int32_t>(indices.rank() + dim);
+    for (std::size_t dim = 0; dim < indices.rank(); ++dim)
+      axes[position++] = static_cast<std::int32_t>(dim);
+    for (auto dim = indices.rank() + axis; dim < next; ++dim)
+      axes[position++] = static_cast<std::int32_t>(dim);
+    HYLE_ASSIGN_OR_RETURN(auto restore,
+                          View::permute(std::span(axes).first(next)));
+    HYLE_ASSIGN_OR_RETURN(
+        auto reordered,
+        infer_single_output(Operation(restore), std::span(&expanded, 1)));
+    const auto result = alias(reordered, gathered);
+    if (checked)
+      return lower_checked_copy(program, result, step.outputs[0]);
+    return lower_tensor(
+        program,
+        {Operation(Copy{}), {result}, {step.outputs[0]}, {}, {1, 1, 1}, {}});
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan Gather adapter metadata");
+  }
+}
+
 Status lower_topk(ProgramState &program, const PlanStep &step) noexcept {
   try {
     const auto input = program.values[step.inputs[0]].description;

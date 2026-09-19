@@ -125,6 +125,10 @@ struct Runtime final {
   Status failure;
 };
 
+struct CheckedStatus final {
+  std::vector<std::shared_ptr<Buffer>> buffers;
+};
+
 // One cold-allocated native submission slot. Active ownership is embedded, so
 // hot acceptance/abandonment does not grow a container or allocate a node.
 // All mutable execution state and membership are protected by Runtime::mutex.
@@ -136,6 +140,7 @@ struct Run final {
   std::vector<VkDescriptorSet> descriptor_sets;
   std::vector<std::array<std::uint32_t, 3>> recorded_origins;
   std::shared_ptr<const void> recording_owner;
+  std::unique_ptr<CheckedStatus> checked;
   VkCommandPool command_pool = VK_NULL_HANDLE;
   VkCommandBuffer command = VK_NULL_HANDLE;
   VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
@@ -202,7 +207,7 @@ void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
                       VkDeviceSize byte_offset) noexcept;
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
-                bool staging) noexcept;
+                bool staging, bool shader_access = false) noexcept;
 Result<std::shared_ptr<Run>>
 create_run(const std::shared_ptr<Runtime> &runtime) noexcept;
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,

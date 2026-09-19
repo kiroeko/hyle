@@ -5,7 +5,11 @@
 layout(local_size_x = 128) in;
 layout(binding = 0) readonly buffer A { uint a[]; };
 layout(binding = 1) readonly buffer B { uint b[]; };
+#ifdef HYLE_TENSOR_CHECKED
+layout(binding = 2) buffer C { uint c[]; };
+#else
 layout(binding = 2) readonly buffer C { uint c[]; };
+#endif
 #ifdef HYLE_TENSOR_CONCAT
 layout(binding = 3) buffer D { uint d[]; };
 #else
@@ -479,6 +483,21 @@ void main() {
 #elif !defined(HYLE_TENSOR_NORMALIZATION)
 void main() {
     uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
+#ifdef HYLE_TENSOR_CHECKED
+    if (operation == 14) {
+        if (index >= count) return;
+        uint offset = tensor_address(index).x;
+        uint lo = load_bytes(0, offset, 4u);
+        uint hi = type_a == 4 ? load_bytes(0, offset + 4u, 4u) : 0u;
+        bool nonnegative = ((type_a == 4 ? hi : lo) & 0x80000000u) == 0;
+        bool valid = nonnegative && (hi < fill_hi || (hi == fill_hi && lo < fill_lo));
+        // The original provider only sees safe row numbers, even on failure.
+        d[index] = valid ? lo : 0u;
+        if (!valid && mode != 0) atomicOr(c[0], 1u);
+        return;
+    }
+    if (mode != 0 && c[0] != 0) return;
+#endif
     uint size = width(type_d), bytes = count * size;
     if (index >= (bytes + 3u) / 4u) return;
     uint output_word = 0;
