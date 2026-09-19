@@ -273,15 +273,15 @@
       "module": "compute",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
-      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "graph",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
-      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "container_concurrent",
@@ -404,8 +404,8 @@
       "module": "compute_backend_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
-      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "compute_provider_native",
@@ -493,30 +493,31 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R R5b AUDITED：实际shared多消费者共目录暂存失败，有限修复Apple构建期资源writer协调；不改算术/运行时。Windows三交付与四环境原生/插桩保留原身份，其余声明交付待完成。"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "graph_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
-      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
-      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
-      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
     },
     {
       "module": "compute_provider_ggml_vulkan",

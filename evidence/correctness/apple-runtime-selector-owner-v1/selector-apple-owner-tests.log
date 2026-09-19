@@ -1,0 +1,20 @@
+.F.........RUN docs: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-docs.py']
+RUN closure: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-module-closure.py', '--previous-ref', '165a5899b4d8a475d78c97564d13d7bf4e8246d9']
+.........................RUN docs: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-docs.py']
+RUN closure: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-module-closure.py']
+.....................
+======================================================================
+FAIL: test_apple_runtime_cmake_keeps_off_platform_and_audit_checks (__main__.ImpactTest.test_apple_runtime_cmake_keeps_off_platform_and_audit_checks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\unittest\mock.py", line 1396, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\public\project-hyle\hyle\tests\tooling\validation_selector_test.py", line 442, in test_apple_runtime_cmake_keeps_off_platform_and_audit_checks
+    self.assertIn("headers:compute_route_apple", self.selected(plan))
+AssertionError: 'headers:compute_route_apple' not found in {'docs', 'configure', 'delivery:compute', 'closure', 'delivery:graph'}
+
+----------------------------------------------------------------------
+Ran 57 tests in 96.630s
+
+FAILED (failures=1)

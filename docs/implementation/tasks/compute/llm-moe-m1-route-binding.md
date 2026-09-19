@@ -223,3 +223,7 @@ Windows交付和插桩保持各自身份，不重跑算子。Apple原生执行�
 selector把这一Apple专属helper误作为全库共享接缝，已另立
 [有限工具卡](../build/apple-runtime-selector-owner-v1.md)补充具名owner映射；不在本模块重写治理工具，
 也不以工具维护结果代签本卡交付。
+
+R5b固定于`c482ce1b33cefecdb949c8b0ec89f9309c3e86ac`，只改变构建期资源暂存。七owner绑定
+此完整候选，已签原生/插桩/Windows交付继续保留原身份；R5b选择的OFF/交付门与Air/Mini未完成
+交付继续串行执行，未通过前不关闭。工具owner映射已按独立卡完成，没有改变门或P1预算。

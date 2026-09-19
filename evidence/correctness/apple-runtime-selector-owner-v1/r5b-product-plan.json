@@ -1,0 +1,5792 @@
+{
+  "schema_version": 2,
+  "baseline_commit": "ec8cab7f164e1ff945e7e1951f46ec419cd6a247",
+  "baseline_tree": "42c8d237eadb9547697cb6133631212174e4a770",
+  "candidate_commit": null,
+  "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+  "changes": [
+    {
+      "path": "cmake/HyleAppleRuntime.cmake",
+      "kind": "package",
+      "factors": [],
+      "reason": "shared build/package or external product input changed",
+      "suites": []
+    }
+  ],
+  "selected_factors": [
+    "compute",
+    "compute_backend_cpu",
+    "compute_backend_cuda",
+    "compute_ggml_runtime",
+    "compute_ops",
+    "compute_provider_cublas",
+    "compute_provider_cuda",
+    "compute_provider_ggml_vulkan",
+    "compute_provider_marlin",
+    "compute_provider_native",
+    "compute_provider_onednn",
+    "compute_route_apple",
+    "compute_route_cpu",
+    "compute_route_cuda",
+    "compute_route_vulkan",
+    "container",
+    "container_concurrent",
+    "container_intrusive",
+    "container_queue",
+    "container_text",
+    "core",
+    "error",
+    "graph",
+    "graph_provider_onednn",
+    "graph_route_apple",
+    "graph_route_cpu",
+    "graph_route_cuda",
+    "graph_route_vulkan",
+    "io_core",
+    "io_http",
+    "io_http2",
+    "io_tls",
+    "io_transfer",
+    "io_watch",
+    "io_websocket",
+    "math",
+    "mem",
+    "mem_reclaim",
+    "mem_vm",
+    "obs",
+    "platform",
+    "platform_fs",
+    "platform_thread",
+    "process",
+    "sched",
+    "simd",
+    "time",
+    "timer_queue",
+    "util_core",
+    "util_runtime"
+  ],
+  "p1_scopes": {},
+  "unknown_paths": [],
+  "product_authorization": {
+    "owners": [],
+    "states": {},
+    "issues": []
+  },
+  "verdict": "READY",
+  "selected_gates": [
+    {
+      "id": "docs",
+      "kind": "maintenance",
+      "status": "SELECTED",
+      "reason": "mandatory documentation contract",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "scripts/check-docs.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "2d20d9f972158bcdd639b44d5aa101e3220c2ae91a280938ac5908340f61cbfe",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "106da579c5c785d0dcd00cb2d4294c6672aa62da60df39ec6ffda90d4bcd1ebd"
+    },
+    {
+      "id": "closure",
+      "kind": "maintenance",
+      "status": "SELECTED",
+      "reason": "mandatory registry contract",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "scripts/check-module-closure.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "935937ffed93777acc60321518e1131b84a7d2763ba5724bffa7b237eb4d6755",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1226871ab9a1fd504793aae2855d4f295ed42bf3d317a6c665a9003534083431"
+    },
+    {
+      "id": "configure",
+      "kind": "build",
+      "status": "SELECTED",
+      "reason": "configure exact factor roots; dependency artifacts are prerequisites, not additional test roots",
+      "factors": [
+        "compute",
+        "compute_backend_cpu",
+        "compute_backend_cuda",
+        "compute_ggml_runtime",
+        "compute_ops",
+        "compute_provider_cublas",
+        "compute_provider_cuda",
+        "compute_provider_ggml_vulkan",
+        "compute_provider_marlin",
+        "compute_provider_native",
+        "compute_provider_onednn",
+        "compute_route_apple",
+        "compute_route_cpu",
+        "compute_route_cuda",
+        "compute_route_vulkan",
+        "container",
+        "container_concurrent",
+        "container_intrusive",
+        "container_queue",
+        "container_text",
+        "core",
+        "error",
+        "graph",
+        "graph_provider_onednn",
+        "graph_route_apple",
+        "graph_route_cpu",
+        "graph_route_cuda",
+        "graph_route_vulkan",
+        "io_core",
+        "io_http",
+        "io_http2",
+        "io_tls",
+        "io_transfer",
+        "io_watch",
+        "io_websocket",
+        "math",
+        "mem",
+        "mem_reclaim",
+        "mem_vm",
+        "obs",
+        "platform",
+        "platform_fs",
+        "platform_thread",
+        "process",
+        "sched",
+        "simd",
+        "time",
+        "timer_queue",
+        "util_core",
+        "util_runtime"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-B",
+          "{build}",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DHYLE_DEV_FACTORS=compute,compute_backend_cpu,compute_backend_cuda,compute_ggml_runtime,compute_ops,compute_provider_cublas,compute_provider_cuda,compute_provider_ggml_vulkan,compute_provider_marlin,compute_provider_native,compute_provider_onednn,compute_route_apple,compute_route_cpu,compute_route_cuda,compute_route_vulkan,container,container_concurrent,container_intrusive,container_queue,container_text,core,error,graph,graph_provider_onednn,graph_route_apple,graph_route_cpu,graph_route_cuda,graph_route_vulkan,io_core,io_http,io_http2,io_tls,io_transfer,io_watch,io_websocket,math,mem,mem_reclaim,mem_vm,obs,platform,platform_fs,platform_thread,process,sched,simd,time,timer_queue,util_core,util_runtime",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_TEST_INSTRUMENTATION=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_CUDA=ON",
+          "-DHYLE_COMPUTE_ONEDNN=ON",
+          "-DHYLE_COMPUTE_VULKAN=ON"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "11aed540cc0eb7ee25d9d9421a3fd7339a18c78db2bdb5396a1974665e946192",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1c554c2a0d94348d4e49f0b4843eeffcda0c8c26e25b6429899549a28785152b"
+    },
+    {
+      "id": "factor:compute",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a47a7a75ac42c8d5cdbb91079936811b2861b21129cd52da7c77ea75da668fa3",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "b5f137754c6605ee81f55aaadf15e6324e3a98eee9e985acb46c23c5595f68c2"
+    },
+    {
+      "id": "headers:compute",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "307681a0d0404efe8c4b388c1f0409726ce89de3a3e747dca873e4d51167e4fc",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "d7913c46738a147b6e4c126e9fa9d7203718de94b90ea87d9eb6d29ec6bb97c2"
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_backend_cpu"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_backend_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cpu$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "c9429ac540ed4a2ec47c7cef04c00212612a5495be7d45b067941007399fafa5",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "6cb25a6b17b9ab1b17e8c188c7baa9c1cf9c4da68d8d8cef19b9941139c10dc4"
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_backend_cpu"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cpu$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "3ff860f7e18d039011fb6a7b8a0288a444bccd5d829c2ad1b016b40cbd1f9c04",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "628411abf2e6d60f5504f3d6cc87a39f7742dcf40de14e88307c852f024ff045"
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_backend_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_backend_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "d76d76bda9011f32823b39c66faa10c808c9120c53923f76db21a35719dc060f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "b8f7887a7c487ac7a32a7c35305f2a4d1dcd4265ecc660df7fb8ffe5fc2e2e55"
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_backend_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_backend_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "185b5986983c81e933d5aeb042476ec8225b84c6d6eb681a8cd59f05c8e5e883",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "2d4e959d4fef53fb10ae23ab7bce366fbf8271813dbc045fedd4efadc47df1ed"
+    },
+    {
+      "id": "factor:compute_ggml_runtime",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_ggml_runtime"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_ggml_runtime_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ggml_runtime$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "b57b80bb6242f6af8680e57b814c025ee12b413d7815fbb0a3080e03a1ae633e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c9365ca9e59432e7173ff8c10c88015e2a3f3b1544df4691e6bd179a5a55ae07"
+    },
+    {
+      "id": "factor:compute_ops",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_ops"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_ops_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ops$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "58fbd33346d8e696703011cc6f4a990961510e0c96b8c19946095321c181ed42",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "15d924d5622241a9d501de7f80dfca922e106e13f055c27ee37262966836df1c"
+    },
+    {
+      "id": "headers:compute_ops",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_ops"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ops$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "1f33fe58bcb4faabf6159ea1ccbf9482534cd1b3a5cbea10606d92e706a6f46d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "527d2ded1fb957fef5d0176640b9288f93c572a0b231f8a28008da2fc2d9d117"
+    },
+    {
+      "id": "factor:compute_provider_cublas",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_provider_cublas"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_cublas_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cublas$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "24f82af2eac123efb7b3f545106a9f2b1ac2e52516eb376bfba6227b4ef84636",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ac329e56f7c8b8b46ba5478549ca3a5e8d03f1572d936b41fdab9bdcbf7892cd"
+    },
+    {
+      "id": "headers:compute_provider_cublas",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_provider_cublas"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cublas$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "8a93fdc67a3491927085227b96986f0d71260425db9d92180418619f3cb65743",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "8650552f94f062744d9a6e1d1802be018e9492eaa4e987d4496c3bd4196ea00e"
+    },
+    {
+      "id": "factor:compute_provider_cuda",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_provider_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "60cc16dec1d5c96916fb95adbc2c18fa00e8d12228804e7e23ad3ee72a273c09",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "db2b1106a2ee95625946fd6e01defe791cf87ebaed6ae4c4589d3eb720ccb772"
+    },
+    {
+      "id": "headers:compute_provider_cuda",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_provider_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "9bdc90531ed83a0ba62489a6255b09c1ce1581cce635199b6cf0d59f50e16839",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "766fa28d0534204008ea681e2c1e2f05e84ac2c87ff82d9d099df313f205b017"
+    },
+    {
+      "id": "factor:compute_provider_ggml_vulkan",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_provider_ggml_vulkan"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_vulkan_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml_vulkan$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "18c07ee247c369f4562d402bedf6d818b42f835e139ccbc4724b70f5b2f47ed1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "e8925af023cfffe76418939129d035dc9f1a0ece6a587ac288325083b9f95428"
+    },
+    {
+      "id": "factor:compute_provider_marlin",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_provider_marlin"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_marlin_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_marlin$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "e256306304301e24d972b480eb0b71e54cee5cf966d99bd4d78c7a47a5d89aed",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "aff5e5138034668c6ce9567361c86151171db751910554504b4f6b7b6aa4e777"
+    },
+    {
+      "id": "headers:compute_provider_marlin",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_provider_marlin"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_marlin$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "2b431edbca605db4e29f629726ff4603cd193eceef8dcfaabfc8405022a79fda",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "6599f9137184cbf01c170e976b858b38c3de782c783afae2255daba28004f77c"
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_provider_native"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_native_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_native$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "c70e2d2a2255cb91db7074162600109e37a9acc1918c5406bc9314c737821f77",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "340aef5e767eb26a4f7c2e07fdfb3ddc688d33e07a02a1f24a4ad82007d6bbdd"
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_provider_native"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_native$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "ffb7ea8f5bb755cd3acf74975fd8a7a427fdfaea48e38346d34c799248958e32",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "601d0403219c8e5de8106594d204822d4951ad356f8beddb5e4068d2e31ea6e4"
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_provider_onednn"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_onednn_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_onednn$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "8b2f04657632f902dfc37f0a1be5544f1ddec151a4b42cb908da505caa4f0b29",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "88db37540e50701686e522242a497d298e9dfe2c39e4497a86a87bed05d80a94"
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_provider_onednn"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_onednn$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "3bd49f4defa085a18fc00b99acd48fc750aae00a3913d601a34c73c321f27363",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ccbb4f7c3a1b2bfd1ae332968edeafe4b94d53bc11c2b8e2d8e1eb66912ffa07"
+    },
+    {
+      "id": "headers:compute_route_apple",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_route_apple"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_apple$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "02dae6aba0f029768f8fb58d71a98c79659c02a1cd37b542231024ddafc839ad",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "a5a96ee4ec2c9f60ed3dc164d184fa18b7c47023936225ed58728b7bab37bc8e"
+    },
+    {
+      "id": "factor:compute_route_cpu",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_route_cpu"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cpu$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "33d452f8985232cb59d1ba9ed116dcfc1dd072d9132865e7ad59122299f6d9a7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "0414560153366586da4e33ce37e208766d831490ac2f4d7058e21fbc721437b6"
+    },
+    {
+      "id": "headers:compute_route_cpu",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_route_cpu"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cpu$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "b3da56f0140c39032755a3a154de992d3539ad20fdabced0db149b8cc9eae1c3",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "43470844d41e70b9549a7ebfafefc6985d4e2a87c7327720f4a8d04a2c474b3d"
+    },
+    {
+      "id": "factor:compute_route_cuda",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_route_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "94e1b0f7d946b95f016120add81c30784e199ec9720afc4f5938c1eecc63290d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "3604ed614e38b292826513ae4a6a4fb805858cd3e2af8383d4abf26dda4d6fc9"
+    },
+    {
+      "id": "headers:compute_route_cuda",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_route_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "c4ca8f706bdfdf7c2f860d2b10e60bbc86113dee8730e56eac49a46b8817b87a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f93b6fc0296163865abe91102a204d7e87dc79815f264fd2934669112ff3e805"
+    },
+    {
+      "id": "factor:compute_route_vulkan",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "compute_route_vulkan"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_vulkan_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_vulkan$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "91092375c31af246c1db55395a049f96cc5e6b081db7a2fdd35478d7ffcccca7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "76c90f672e83ad76bbeff404bf2b9810eb4f32ed82dad8a8979c7da2252c1e6e"
+    },
+    {
+      "id": "headers:compute_route_vulkan",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "compute_route_vulkan"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_vulkan$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "337da3aa766fe0dfcebf544840406a54ba8bc6a1211d5e1369f4617282d21c60",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1b65b2baeffadcfedb9b37616eaf66757bfaf8250b3434e78e66aab12f398c74"
+    },
+    {
+      "id": "factor:container",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "container"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "c05236d04edbed10884d7feafba6f9cbe22ab379c280413333b75e849ca43364",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "0c3f7e47aee86193ee95e68bca58ad82c4986f168cab24435c413e6731512b1c"
+    },
+    {
+      "id": "headers:container",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "container"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "e8e34dc48ad5d25582b38a1020947d159c9fb65a64e054c10c2c311c36600bb7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "3818c6471e0a0c3334730fe095f3b24875e144e9757a70fbffc54b4573337bb4"
+    },
+    {
+      "id": "factor:container_concurrent",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "container_concurrent"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_concurrent_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_concurrent$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a50191368376e1b545da1e806ba5275b038ad75fbf5d242b17860e826ca9a2c1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f86cdf240c721236abe38a0e919bade90400d2c6df837fcbcaa29a9b77119673"
+    },
+    {
+      "id": "headers:container_concurrent",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "container_concurrent"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_concurrent$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "74f4a216b5cdb721806c1fc6c2091200f7d2c39ea1da71b316c765b568b32898",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "8ddd06d5eefddeb0d2dad633dde01e6094f1d684b7dcf2b35327779730ed5712"
+    },
+    {
+      "id": "factor:container_intrusive",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "container_intrusive"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_intrusive_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_intrusive$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "2aa00d154824862a16fb52b559fd57d7cfdf35a8688d4d3ac6956197238b3636",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7917df1942cb97bb75bbcd2430c9e27427dc22800b0b47562528973e185276fd"
+    },
+    {
+      "id": "headers:container_intrusive",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "container_intrusive"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_intrusive$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "ac50dc3fd28386941470fa57592448c4ca76c6c0791d0fdefec9fb911b427cee",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "588776ecc6d3aa594ea4f64584f78c504abdeaa9759484680a7ed2b24a0ee2ca"
+    },
+    {
+      "id": "factor:container_queue",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "container_queue"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_queue_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_queue$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "57dd4e8cc7779ef34cbbd7664c3cbf347459092ffac5bc20830bc2fdc6f6d7da",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f88ccf62bdea229dd30cbdab530bcd1ed3356ce68b3831ca418f2a409b2b42a4"
+    },
+    {
+      "id": "headers:container_queue",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "container_queue"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_queue$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "b62f02f215fb15296b0dbb9830785b309772a1eb11c3f17e8c07626f37e7a76f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "15ac95888476864db31e6f42a0c37c2d6aa2e3faf321852aa6625585f881b3ab"
+    },
+    {
+      "id": "factor:container_text",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "container_text"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_container_text_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_text$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a842109cf48b784ad369c0111a5f429b8441fc7b025c3c33ac7b318d4eb76252",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "bc45d91c08a95933cf0132eaa0a2ed0689d8970ebaf031ac758f04bbef5cfa2a"
+    },
+    {
+      "id": "headers:container_text",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "container_text"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^container_text$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "99fbf49f56afd0ae108cb371650ad1c894b949276fb0c7e38ac6d79bfe0208ee",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "a99a5d83b8bd1508d32daf3cfb5d24db204fd36388f4850bbeb00d0f9260a6ed"
+    },
+    {
+      "id": "factor:core",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "core"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_core_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^core$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "6cf1c0a5458daab01daf1fa67d0e381a41bcde343bae9707bc0e501ea0a367d9",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "d168dd7fc92e3297e25b1ce06e5109fb8daafed3d0bcf9a2db2645a749a6613a"
+    },
+    {
+      "id": "headers:core",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "adccc6081fc6cd9f18b360a913dca74bb0f6069c6f6e247462d8d67ff6284aa7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "026e89200d356ed789a2d88608fbb2e0a938b2168ad9aa0525f070dc45f80764"
+    },
+    {
+      "id": "factor:error",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "error"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_error_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^error$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "86d790ece814b8b174a6dbea2915e9988d8a5b84cbb1eabee5ed2ec6a0d041e5",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "91c2064efb6b51a8bc61fcc7250de479b876834e8d40a1d7bcddec768b79604a"
+    },
+    {
+      "id": "headers:error",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "error"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^error$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "2c1a0423cb67f920a7cf4b44efddcaca9dd4263a5c9c20d96fa16843201ee33c",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "29c32ed5cdaafac301324e1c141f7b847cea0ec6b45c79b2293e33ad78675694"
+    },
+    {
+      "id": "factor:graph",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "graph"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "5bcfa76eab30bfa7b15817280aadb74f862a8dbc64015b6d52834fecdfb77c0a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ea012cd94fc81cc34c2e159d4f3216ffb231a362ac8f03c7148fb7c1536ea4f9"
+    },
+    {
+      "id": "headers:graph",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "graph"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "661fd528b4181a70b93a4ff0a0ff42ee3b010300db0dea3347d42b720e6a5452",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "56902b5aee232f53d367daea3285b3e7063cd37e9daa90acd9d3927f7bbf4b00"
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "graph_provider_onednn"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_provider_onednn_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_provider_onednn$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "c281852c228214db817b59e48aefd2a7a786ceed4516133b994289b56c1f84ba",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ea7bb973c80c1cd1b7d3ddf7e9c03e49f075bd756c57e2f257899ca2bf6a8e75"
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "graph_provider_onednn"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_provider_onednn$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "9671bc599cba532003a0f6a4f928fd1cc845364a29703438d5dd9d81e730c44e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7df88b7033dc6302f15657417685b9e7a7501ab66495f473d4a1ffe3c39d5432"
+    },
+    {
+      "id": "headers:graph_route_apple",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "graph_route_apple"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_apple$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a80ad878fd34bd7883ef89df330711260547b6f72f842943c62155c098d9541a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "48b4e92f9d55415b2fe2827d45afae981eda2776e74b5d6a03152e78a392897d"
+    },
+    {
+      "id": "factor:graph_route_cpu",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "graph_route_cpu"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cpu$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "637bdd03afdb94254418a79b0d4898722c3613b19a4504c9a625e7bd9f58c010",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ea496689d7aa4dfc69acd2de13528d16594e2c191866431866ddf825bdb676e5"
+    },
+    {
+      "id": "headers:graph_route_cpu",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "graph_route_cpu"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cpu$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "e4b67d21b44487d67ec274d811b2d1948e60cefb83b6abbe7b09d56ff8d2f41b",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "fb02bc8e20a2322bd0629bc8d873a1c70606a816fb3ee95f823b86b04a149288"
+    },
+    {
+      "id": "factor:graph_route_cuda",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "graph_route_cuda"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_cuda_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cuda$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "9c7b8d4954e751911b7bc16e5dd5ba8c7e59460cda61825c17a7c4908d30b2b3",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "aaf9bcbba108ee0c3cc03435c1b6472361ebf397c3ee025df7cdd9f1d59fa333"
+    },
+    {
+      "id": "headers:graph_route_cuda",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "graph_route_cuda"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_cuda$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "ba7a0eb3fe911417e336085cfb0bb09afa8ff7a4c89cfd1a5b3b51e12d0191da",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "86eac0b61c85966d9a0b189f7d1b5e3115458b0401aa6a35d8c1604b4c0fb970"
+    },
+    {
+      "id": "factor:graph_route_vulkan",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "graph_route_vulkan"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_vulkan_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_vulkan$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "eff726e36acbad1db9287876be5cfaee0911a9631f5f67bd4b7640e23c8389b5",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c88a1bc5463d68003216297e67487d723033d782847b95cb28550abd8e546ba8"
+    },
+    {
+      "id": "headers:graph_route_vulkan",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "graph_route_vulkan"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_vulkan$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "b27cb0f92f45b61a9ee08040c5f2e339140e31f560bf7def6ec72c938fb06684",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "9d46436e58c9c2adb6c2251e79dca12d80ab7361e9396f55f1ed8bc2f518f41b"
+    },
+    {
+      "id": "factor:io_core",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_core_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "7f6e437869053c0cfb911e0ce09ba3e32ccd8d46aca5fb93ea0aba0f5e5318f9",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "b553a4aa53f1c37481c0ed9c60bd6eafefff318bba913c43c0530cea0997f4c9"
+    },
+    {
+      "id": "factor:io_http",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_http"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_http_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "df6176017ba351749776b0ab087b477658266e9a27b96db39e3e186469a66b45",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "788faecbc57d9ab19329eac5dc8f29ce40ca49ca39c0968a3b86332f89eb7bac"
+    },
+    {
+      "id": "headers:io_http",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "io_http"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "6d9168c24e00885022d1ee6beb7acf015f99d37b35cef63a02c3c63c57dffdba",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1644d2019ad83fc652c20f6675abd7a5b2b5deeabfd9d3a5e64674150fd3bf0a"
+    },
+    {
+      "id": "factor:io_http2",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_http2"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_http2_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http2$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "3f2a681bca8a0195da9ad85a255d807a7883b85580e88007720e42ffaf89deba",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "bcb50426dc62c49b7bd22e67aaaaab70971fc6f8e7324ffac6eb6708b52d5f8f"
+    },
+    {
+      "id": "headers:io_http2",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "io_http2"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_http2$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "56b8a77ce7b0ba025d9185ad03c941136034a46e6ebe2a80b074fb80bafd28dc",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "733deac393381630c9eaa8674bdb3ea3c5ad4a3485e11b09cbd16aa7c1621bcb"
+    },
+    {
+      "id": "factor:io_tls",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_tls"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_tls_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_tls$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "71bbdd26e6b1cce6b73316b70f1ac7e325ce688d5572c085fbfac52a2af1391a",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "691b59d9b0bb0a11d46cbf12a9509c7da439342f1e96502dc23321fa3d6b17a7"
+    },
+    {
+      "id": "headers:io_tls",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "io_tls"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_tls$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "63a3b2d7a9c75125f1f3f72e3405ed0456d36833d8e8945a8f5349e001f39bb5",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1bf6bf9566d8362ef68f9a05f0269356d9dfd2a391e679f323a263f1b88f49d4"
+    },
+    {
+      "id": "factor:io_transfer",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_transfer"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_transfer_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_transfer$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "d4f6d35a9741247bded5ef6be516e383284a4379e0c881554f94cc57d7b4864f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "5293fcbfebca620bdbebb56bbaddb8954fb8a3a965ffa9b61b5e5bc23b165271"
+    },
+    {
+      "id": "headers:io_transfer",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "io_transfer"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_transfer$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "bca00bb4787545c2479f506e10d2ad44d537020f3c8eede56ef1944b239147bf",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "10cfdc8fb1e5d60b58b2f857739f11273b917c070dfe8d4dcb5d59cb4b253a84"
+    },
+    {
+      "id": "factor:io_watch",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_watch"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_watch_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_watch$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "3652dcdd8adf7ad9342210878d0738844d196cbf2c7f2fee9deb7b0aad507ecb",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "2a12ab6516731caf64aa7597641d1100b53fc1eb3acd6b50e5fc32ddaf9dab03"
+    },
+    {
+      "id": "headers:io_watch",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "io_watch"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_watch$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "6083db1caddf7f086bb572e38248b6434ef3e0152779ed84efbdd05d78820f29",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c8a9d32176b6f54de8622ac623870b9fdd7da642dd994c52076dbfaf5a6cdd79"
+    },
+    {
+      "id": "factor:io_websocket",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "io_websocket"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_io_websocket_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_websocket$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "8e42d4f0ecf7d394cace6b145251a8e1d246b8011e9497d74a0f162b95631b82",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7664dfc2a0aed9ed884c9fa424b4670bd860e358ba82cca454d5784c76d359a4"
+    },
+    {
+      "id": "headers:io_websocket",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "io_websocket"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_websocket$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "4ef997cb75defc1ce6de508c3d23f248e6442aaaa8c7089e7388690e6ffb17e2",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "af49c3f5e7ba0296702f0f2f282eeed2d80c9667def0e01ff4f14a9772e3b089"
+    },
+    {
+      "id": "factor:math",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "math"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_math_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^math$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "f1fd6db04895de59c8864a584b783ccd2e9d3d512cdd6de2954ad95137884309",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c580efb39d5e660b9c75b768fe4b4747eee36c50af0497443796b12b9213fed0"
+    },
+    {
+      "id": "headers:math",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "math"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^math$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "d4d488eb5c8840d739e0825825c88376fc95ca1df78e1756938ee59bd5429b5d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1151533ceae41660618917e05092e8ff10e2819ae5f4ffe0a6be059359deb607"
+    },
+    {
+      "id": "factor:mem",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "mem"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_mem_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "2a27ffe6da68b9946e06353651391a94e07d1de93f551678a74aa2f4fde70da0",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "a3d507a6853f58fa8987547c9f19d1246f1500de043ed896e1c05e8821ace117"
+    },
+    {
+      "id": "headers:mem",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "mem"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "569d71662c444f1dce0e8410f17b41d5af2e567874078b01c651cb38f18829ac",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "b7a4dcbec616dfaf32daf02ca5fdc06a865bed8d224714817879a25e69e6bbb3"
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "mem_reclaim"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_mem_reclaim_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_reclaim$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "87a73b7d82dbdaa6f4015a063b6af14343f6cae685695615982dd64bad7093b8",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "3c5b5ca124db34c22d9e3c6ed38beb8c147dcb2cdfc42d4a09fe35c0ba70ef53"
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "mem_reclaim"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_reclaim$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "7e3bb92988bb314e10b7e1929a9ae53ce257d70e3e6b37ba137a704098ace1f8",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "29dfd17c8c7ce418d131c161ff70e05969f3474f14a5e43b9f4f281921e939cc"
+    },
+    {
+      "id": "factor:mem_vm",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "mem_vm"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_mem_vm_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_vm$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "593d3c6570ec6aa0144c72b9d314ac7c16b5ccc0a70302d1aa4ba76675ca7808",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "6fa8fd78f64efc9a55506e1013a81e7da44248fc1a7b503c71e9fb5329cd75d7"
+    },
+    {
+      "id": "headers:mem_vm",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "mem_vm"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^mem_vm$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "27509871c54a3bad4dc66d1dd76b1508fba53ea3111365846e1d3f25a732d4fd",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c507b62993f3f3cfc81679da9c0cc0bb7ff9d27e002427582fe799ac986f2e8b"
+    },
+    {
+      "id": "factor:obs",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "obs"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_obs_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^obs$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "fc42d1e584ff8e4b000885497cac2f8f4da941a4ba0284ac276b4e1d0fd46e3f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "02ad7e1a942b7c0e74e5d08e19afea83d08923894d7783f6f6b1f58982a68d7d"
+    },
+    {
+      "id": "headers:obs",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "obs"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^obs$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "88a5f3b503821a0db6803e3ba7f82666c6bdcb60c351a58fe7c1366ccf6eeea8",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "8545a9e0eaaa4367c69eb5876e07f45b924d9042d7e8349399a3757eff2a980b"
+    },
+    {
+      "id": "factor:platform",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "platform"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_platform_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "40cb3ca915673cf5af10c927b4e2d8b25fb3f1cdc6bd5a58c39b3d249b21bf5f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "555fe74479c631fb011a00ea4fcdeb7435ca5cb39b08781ef63ddd492829a7a8"
+    },
+    {
+      "id": "headers:platform",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "platform"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "73b058cbb42ac21c67bbeeb76297a5cd222db10518fd4aa9dfbd9ea9be7b5fc1",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "4b12ce67ddc49f103714f0e8f77077c62e7f8ed5f998d3042a8221ffb92abe3d"
+    },
+    {
+      "id": "factor:platform_fs",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "platform_fs"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_platform_fs_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_fs$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a62e53179c936671bee6495a078774ce8296ce8d16a78a12bf76936c77017734",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f360c37ccd8df7a7606cf6834c0cfbfbee3acf8efdfaf550633260bfa149d99e"
+    },
+    {
+      "id": "headers:platform_fs",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "platform_fs"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_fs$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "793643161c2bfa872d65abf6ad2c3d7a46da3f9d1d48e6a1b93e9c0e57d19190",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "6adda46e5134e5c06b8d687a039b8e8b7d04d38ff30dcd87b2a643ee5f4dd417"
+    },
+    {
+      "id": "factor:platform_thread",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "platform_thread"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_platform_thread_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_thread$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "995daed9541aa6a21626f28eb196a2ff6b8be5397c533a54259aca2d6fb31441",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f1bff2bcc7f395ce0aa06fd87644959c5f908dc22c81fe3f5d4180a50d8a3038"
+    },
+    {
+      "id": "headers:platform_thread",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "platform_thread"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^platform_thread$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "3a155c1aa8399a5c8b85a21cedcf24c5dfe11bc771591b111aa4cb51706d30d7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7d025bb202be281612cda252e570b81f373db64367e50145274284f6a6f49106"
+    },
+    {
+      "id": "factor:process",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "process"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_process_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^process$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "5f1d92d767bf3ec6d7e1d7a6733c84a80b414fe60cde4c81ba5c94dc2c65c9c9",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "0ac67ba773ab4895dc1b74a73fa1664ebee4e2128701889645e6bb9103053733"
+    },
+    {
+      "id": "headers:process",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "process"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^process$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "62213a78c52c641c7fff4f238e5c0c59da040d3344592a4452cb19cac163cbe2",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7c74e6920f5d87c05d2c3a5f00acc6a33a7f38721d1434f310442d383aef7e01"
+    },
+    {
+      "id": "factor:sched",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "sched"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_sched_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^sched$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "11562f45c06deb9d6b8b61fc1fdd7f185c382dd3b6c3a17eff403bb1ba7b944f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1554c847ff65c952952143529f1855e5dcbb5559d2522e47495022c27c8072f1"
+    },
+    {
+      "id": "headers:sched",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "sched"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^sched$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "41b4faa3dabb7e388247e783a3e5825d518afad6064c050849291b2dc0fb470f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "62f6cbdca39886997639bfb5ad357194adc5d4369c7b3deb3409bf291aa87b03"
+    },
+    {
+      "id": "factor:simd",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_simd_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "963c8fddd6835c37a8a3227621ac7cd6a2dcd3cf8756107f07a24b8ec37f8c2f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "d5c20ab4071b595142681bbf60d6c82d83651d984c10f3fd95168e8da3a6fd7e"
+    },
+    {
+      "id": "factor:time",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "time"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_time_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^time$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "54ce7bbb5d3b9657b957775ea8d06a0dc9e9c8250326b43e332067c29d64f646",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "b998a3436b55f5897dcdd334dac67b75033671f037bcc6d6fa66c17c01e58562"
+    },
+    {
+      "id": "headers:time",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "time"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^time$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a0425f73f38cadd7b55ce9f34d0e5f06bd80e3f363709bd470d50ae4f2f9f8c4",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "e167225edec08facc743067f2f8eb7f69f7a89839e76f08e778e63f8244ee82c"
+    },
+    {
+      "id": "factor:timer_queue",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "timer_queue"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_timer_queue_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^timer_queue$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "f9982bdb3c52828b9592483a1fd4864592c58ffb2aad4be8af714a4ac86bfc4f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "d624718faf4d415410c3db0426377ca3d594c2dcfd108074634baee3df44a7f5"
+    },
+    {
+      "id": "headers:timer_queue",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "timer_queue"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^timer_queue$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "5dfc9929130fe883ef460693be7fb103385eed3c9b5a0bcdd10bb030c4401aee",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "28501cd7ea2553c0a17912899e121f56d29033f8a28c3ae673a6dcc9fa4bee1e"
+    },
+    {
+      "id": "factor:util_core",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "util_core"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_util_core_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_core$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "9339ee690dd0e40bf74f4d95f65212fa4b3b61c21ae2a01d047dbca78a7297c2",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "51cfec938da3c5e0d4fa4b97d193f4c1bf2f7bfb38ff2d426b6f3063f0605940"
+    },
+    {
+      "id": "headers:util_core",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "util_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "55c2f8ca8ce866cccb63e62851fb895e62e04ca2c17bb127f5937675494a4898",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ea40f0d3d32d4a7485c1c710656a1064be026b866de6e1cc94f4151cf19c307b"
+    },
+    {
+      "id": "factor:util_runtime",
+      "kind": "correctness",
+      "status": "SELECTED",
+      "reason": "public/API/component/package boundary requires reverse consumer closure",
+      "factors": [
+        "util_runtime"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_util_runtime_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_runtime$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a7f4690e36942ae025639e4f1e2f1e2907ec7447c066746d48a5a7809436cec7",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "0c93bb99fbed4bccb60add46ecec1aa211f524fb1f567694a137a490a4555a52"
+    },
+    {
+      "id": "headers:util_runtime",
+      "kind": "headers",
+      "status": "SELECTED",
+      "reason": "public header or delivery seam changed",
+      "factors": [
+        "util_runtime"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^util_runtime$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "795e047a575ecdeb5ecadf0d131c0a73b981f512c8d3abf94f83cc44a8491331",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "714b9b5e31dafbb0ec947bcebba17dd3be5915792ca4661fe1a3479530a85d25"
+    },
+    {
+      "id": "component-contract",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "shared component/build/package semantics changed",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/component",
+          "-P",
+          "cmake/HyleCiComponentContract.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "3a511515f9d0c48f9abb5aaf71acd297c82106c58ed779e4bef22f65adb29a87",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "137c8b14ab734dc479e9244206798c8f7841046f3c1540bac27d53bb0f4c6763"
+    },
+    {
+      "id": "delivery:compute",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-compute",
+          "-DHYLE_SMOKE_COMPONENT=compute",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "9461761095147c0819758a9cef1054f8be77eb2583bd47473c8dafdc988e7e3e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ae1f9cae1ea852ebbbd1946e981d443d843db030010bcae2c96f7885e6681b49"
+    },
+    {
+      "id": "delivery:container",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-container",
+          "-DHYLE_SMOKE_COMPONENT=container",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "45599b3e8291d3abbc655fcb540f1a57e1c71710cf6faf7532c7e3569c54ca0d",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f8ab0107e31726442327196f185ac2a137e6644fffa1b6a1cd4619b00f99743b"
+    },
+    {
+      "id": "delivery:core",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-core",
+          "-DHYLE_SMOKE_COMPONENT=core",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "5a12ab4ab2dd1ea7c8cbe6e16ea1cf6597b60c39e9d4764d118f608599be029b",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c11c0cd89410a9bda7cf0301201d0355e244402576cbf1133a82616716b58b31"
+    },
+    {
+      "id": "delivery:error",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-error",
+          "-DHYLE_SMOKE_COMPONENT=error",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "851b429c51762ee4ba3b79202ef3a1ea95c476c90874b7602952cbb2e9da587f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "acda86fdc8c064b3191e6ab1db149115b9a15eeb5f63f92bd49a6f726187b1a2"
+    },
+    {
+      "id": "delivery:graph",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-graph",
+          "-DHYLE_SMOKE_COMPONENT=graph",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "4b33b6b9364fd24b7b573e02fd427a5824613a0fc80d3b42df10271b6945ff91",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "e3d958e3a525fd3d45a821fba14f5b2e8262984ea3d077f91c35b65f4f3eda42"
+    },
+    {
+      "id": "delivery:io",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-io",
+          "-DHYLE_SMOKE_COMPONENT=io",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "0caf3a3466a544949de8a3bdfc050d3ffa0f27d9fc179eef797a8c648f809de2",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "c0d6e5026347491a007241d846602d034db94a0051bf0ace963637602c339b60"
+    },
+    {
+      "id": "delivery:math",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-math",
+          "-DHYLE_SMOKE_COMPONENT=math",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "b0edbe156500ed86101c86c92169f8d0b3a67755af3ae61d01e8e83e48cecc47",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "1361a678eeae4afa19d6ca6ae6d284e1b450f4bc6df555bd2025168028e22a14"
+    },
+    {
+      "id": "delivery:mem",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-mem",
+          "-DHYLE_SMOKE_COMPONENT=mem",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "fb5d255f75a3b3e61510ad7e468829227aa1a9a01a7d75b0beb4cd45a57cd8f6",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "cc9c4d873bf3092cf9b85b9b469ea515ffce17189aef43550695b3e9c09713ae"
+    },
+    {
+      "id": "delivery:obs",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-obs",
+          "-DHYLE_SMOKE_COMPONENT=obs",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "4a341212415f47731ae7ef2755a8dae44bfc54da2a549b3d0259b5efa027e094",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7ea0c98efa42f4f362625e2254b2bfe066efa70faab51b6e183d101d99a3dedd"
+    },
+    {
+      "id": "delivery:platform",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-platform",
+          "-DHYLE_SMOKE_COMPONENT=platform",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "59ca04b28758a060da0e46797029065f320aaebd877dd5410bc55092884a1c58",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "39cb0daf4291eef8de0f3128b57224aa322a3835a10deb1661f851f1be441584"
+    },
+    {
+      "id": "delivery:process",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-process",
+          "-DHYLE_SMOKE_COMPONENT=process",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "ab0b7cdd9b9fa59b2b99394e68ddb3ab922463834b96ba1111a6c4fb8d226db4",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f20db5e678944bd29a8ad6d6a8bc076006818682ed95bcdf9b35972d70e555a9"
+    },
+    {
+      "id": "delivery:sched",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-sched",
+          "-DHYLE_SMOKE_COMPONENT=sched",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "745fe1f563132bb41c0552d750f90384ec5d36dc9067e119363487cb5500cdbe",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "0539ab99c8a60bda0dde1b73ea7b0292044744548243e1ab51c824c01ecafa90"
+    },
+    {
+      "id": "delivery:simd",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-simd",
+          "-DHYLE_SMOKE_COMPONENT=simd",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "8a9b6363168c36660b2a5593b18b72cd2679c045c8b2732836e17e1e6a2f0fcc",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "d38e65e600c6d526ece7edb321b230d6930e6a114012d92429441ec158737f64"
+    },
+    {
+      "id": "delivery:time",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-time",
+          "-DHYLE_SMOKE_COMPONENT=time",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "acc182481c84b0b3d0ea984cbb0318f8f102301379df6a57d6fe72c131b93f5e",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "f82f6d628fb2026e9d31fa37b792b4684da5021150ca475dcd2e80216e3e67a9"
+    },
+    {
+      "id": "delivery:util",
+      "kind": "delivery",
+      "status": "SELECTED",
+      "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+      "factors": [],
+      "commands": [
+        [
+          "cmake",
+          "-DHYLE_SOURCE_DIR={root}",
+          "-DHYLE_SMOKE_ROOT={scratch}/delivery-util",
+          "-DHYLE_SMOKE_COMPONENT=util",
+          "-P",
+          "cmake/HyleCiSelectedComponentSmoke.cmake"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "4525dc2ecaf4b325d624b98d33406433483a1a68b7f07dad11b5360d08624954",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "7943e898a34822b5ad892881a4edad9f4300b3594888d195e8b3124df1ecf92a"
+    }
+  ],
+  "skipped_gates": [
+    {
+      "id": "headers:compute_ggml_runtime",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "compute_ggml_runtime"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ggml_runtime$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "e63a6ad63d381e982aeb57f36029388db9d965e4a2b69bfc7181c48376948f11",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "fc904bbd4b2544aa36625ac850a9214f69364a82b8dc62beb6f503d20a69f2ad"
+    },
+    {
+      "id": "factor:compute_provider_ggml",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "a9b44bee2eab40d2a06ef6b28b1ec60826c1ac0cc2c5a642395b0ca662f8fffa",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "e88cd3889b7168a3a304f8cf0061157a9c6eb366e56f3be4d29d232d2d9bb5a0"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "81c4a3ff6d33d64e85d9d21a87966634153b4e3cc04026a15ed7a7197aba2ec5",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "ea0975e1d9c41bd72ccdc4f212399a8ddd6176c6e3de64c6e82d224e85a7819e"
+    },
+    {
+      "id": "headers:compute_provider_ggml_vulkan",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "compute_provider_ggml_vulkan"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml_vulkan$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "9c57a488e00655ed34ccb06d695f236cfdecb57db2acc040761474a0046dc6bb",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "d2d67fb3206bc3f0a175ca84b1e5620c4cfdb61108c23ab80f52632feecc4e6a"
+    },
+    {
+      "id": "factor:compute_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected",
+      "factors": [
+        "compute_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "13e5353b7de12ac3f530b77215324e19f9cbd10dc38982b511a1f9e38c78c49f",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "38a416ba6a4f50b6cb700e257d03c7766461a328e7d81ca4049bb53bddf902da"
+    },
+    {
+      "id": "factor:graph_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected",
+      "factors": [
+        "graph_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "4a009fa97e7588163619c32daaae95ac705346153d3fd1433359d71920297b95",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "2a62f2c63fe3eab4c01e412452566e5088528c590b9bdb7abc42d401d5899689"
+    },
+    {
+      "id": "headers:io_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "b105eb3a71c540d25b2a894dd2628ea15bcc2bb5678b5d9e64857b6c427bd953",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "254a910a4fe0d30e7a278ee4f6c03ee998dbbceb1ee2662497d9856462cf8e45"
+    },
+    {
+      "id": "headers:simd",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "ade89efc18b794343442bbd6394b1d32fc25ce512b6d0962bf29887c88dee6dd",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "e3430b3b5a8b5f5c617d1f4c94a2261d05caf5f7906b3be6d63dc45c005c4abb"
+    },
+    {
+      "id": "p1",
+      "kind": "performance",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic",
+      "factors": [],
+      "commands": [],
+      "identity": {
+        "candidate_tree": "d5c2c6c2416dfa9100c5cbf629d7e59abfbb4cdb",
+        "contract_hash": "344aa1fdf83113a9aa8950fe02f0dab4c1cca11eb079919d91a84c9426aec0d0",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "965e22746032301c443a8e143391570b39e27abd2db37d5f8ca8e01610aa0ac9"
+      },
+      "cache_key": "e3eab5cf7bfbb8f5f94e385d10f3c3ca64e72cce6a74993e0c5b6f656448d878"
+    }
+  ]
+}

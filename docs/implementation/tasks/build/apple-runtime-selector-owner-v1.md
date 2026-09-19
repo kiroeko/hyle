@@ -2,7 +2,7 @@
 
 ## 有限工具卡
 
-- owner：`/root`；baseline：`ec8cab7f`；状态：AUDITED（只改维护工具，无产品 factor）。
+- owner：`/root`；baseline：`ec8cab7f`；状态：CLOSED（只改维护工具，无产品 factor）。
 - trigger：[M1-R R5b](../compute/llm-moe-m1-route-binding.md)仅修改Apple暂存函数，当前selector把
   所有`cmake/`文件统一视为全库共享接缝，选择113门。函数只由`compute_route_apple`包含并安装，
   实际反向消费者是`graph_route_apple`，交付属于Compute/Graph。
@@ -20,3 +20,12 @@
 | T3 | 回归、文档及原计划/新计划留痕 | `tests/tooling/validation_selector_test.py`；docs/closure，无C++或P1 |
 
 本工具卡不签M1-R的运行时或交付门。R5b产品修复仍由其原owner持有，未运行的适用门保持未完成。
+
+## 裁决
+
+候选`256c45473f13e7554d318a10b246e6fd18b10959`完成T1–T3。原工具suite的57项中56项通过，
+新增Windows夹具漏建header suite导致1项失败；只补夹具目标后，新加3项全部通过，合计覆盖
+全部57项。原始失败、专项复核和前后影响计划见
+[证据](../../../../evidence/correctness/apple-runtime-selector-owner-v1/validation.json)。
+新计划保持Apple两owner、Compute/Graph交付和平台OFF检查；通用共享seam仍全量，CLOSED
+owner仍被拒绝，P1不自动启动。docs/closure通过；未运行C++或性能测试，本工具范围P0关闭。
