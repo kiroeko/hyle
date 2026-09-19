@@ -142,3 +142,25 @@ BLOCKED保持。当前统一实现48,943行/198文件，不含测试，C1整包�
 本次只完成Y35原生模块资格。真实2B稳定门控/得分source/static/shared、112项所选工程门
 及C1完整成本比较/默认路由/重复实现淘汰仍未完成；CPU Q2 BLOCKED、矩阵与C1通知条件不变。
 后续工程门优先核对既有未变组件和默认交付的身份复用，不能因新shader重复构建全部未变产品。
+
+### 固定实际张量三交付输入
+
+本节只执行已声明交付，不新增产品FIX。使用本地2B已登记source ID
+`4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155`，复核原文件
+size/mtime/header与原embedding片段hash，另记录实际读取的layer0 A_log、dt_bias、
+input norm、in_proj_a/b、MLP gate/up权重的逐张量hash。独立单线程FP64投影生成固定BF16
+输入，参数A_log为实际F32、dt_bias从实际BF16精确拓宽；生成器不调用HYLE数学实现。
+这些输入是本地真实权重构成的片段，未经过完整attention/state层，不签整模型forward。
+
+独立C++consumer固定为F32/BF16两种存储、batch/time为1×1、1×17、2×23；稳定变换的末轴
+为实际16头，SwiGLU为实际6144宽。三组：①CastF32、bias、Softplus后分叉Sqrt/Log/Rsqrt、
+`-exp(A_log)*Softplus`及Sigmoid门控；②packed SwiGLU；③separate SwiGLU。普通Direct
+使用预准备Program与两套Recorder固定buffer，Graph用两套Invocation，保留首槽结果，次槽
+变输入执行两次；每组验证published输出、close后读取与quota归零。
+
+每条source/static/shared消费36例、108次实际执行；W1/Air共六条。oracle为独立标量FP64
+公式和显式逐操作F32边界，BF16最终RNE；沿现有原生合同F32 `6e-6*abs+2e-6`、BF16
+`0.008*abs+2e-7`，首次运行前冻结consumer/fixture/命令hash。使用上一批已合格的私有交付
+驱动，仅换具名输入和consumer；每平台source构建兼作static producer，再建shared，重定位
+并隐藏producer后执行SDK消费者。Windows DLL邻exe、PATH隔离、禁弹窗，重型串行parallel2。
+独立consumer纠正预算仍最多2轮；本批产品纠正2/2已用尽，不以测试修正名义继续改产品。
