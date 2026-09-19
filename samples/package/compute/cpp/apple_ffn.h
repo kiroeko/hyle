@@ -1,5 +1,7 @@
 #pragma once
 
+#include "workload.h"
+
 #include <hyle/compute/apple.h>
 #include <mlx/fast.h>
 
@@ -105,9 +107,11 @@ struct Weights final {
 
 inline hyle::Result<a::Program> prepare(const a::Context &context,
                                         const Weights &weights, int rows) {
+  HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   const std::array specs{a::InputSpec{{rows, Weights::k}, mx::float32}};
-  return context.compile(
-      [constants = weights.constants](const auto &inputs, mx::Stream stream)
+  auto program = context.compile(
+      [constants = weights.constants, workload](const auto &inputs,
+                                                mx::Stream stream)
           -> hyle::Result<std::vector<mx::array>> {
         const c::QuantizedMatMul qmm{
             .mode = c::QuantizedWeightMode::kUnsignedAffine4};
@@ -115,19 +119,23 @@ inline hyle::Result<a::Program> prepare(const a::Context &context,
                                      constants[2]};
         const std::array up_inputs{inputs[0], constants[3], constants[4],
                                    constants[5]};
-        HYLE_ASSIGN_OR_RETURN(auto gate,
-                              a::lower(c::Operation(qmm), gate_inputs, stream));
-        HYLE_ASSIGN_OR_RETURN(auto up,
-                              a::lower(c::Operation(qmm), up_inputs, stream));
+        HYLE_ASSIGN_OR_RETURN(
+            auto gate, a::lower(c::Operation(qmm), gate_inputs, stream, workload));
+        HYLE_ASSIGN_OR_RETURN(
+            auto up, a::lower(c::Operation(qmm), up_inputs, stream, workload));
         const std::array gated_inputs{gate[0], up[0]};
         HYLE_ASSIGN_OR_RETURN(
             auto gated, a::lower(c::Operation(c::GatedActivation{
                                      .inputs = c::GatedInputKind::kSeparate}),
-                                 gated_inputs, stream));
+                                 gated_inputs, stream, workload));
         const std::array down_inputs{gated[0], constants[6]};
-        return a::lower(c::Operation(c::MatMul{}), down_inputs, stream);
+        return a::lower(c::Operation(c::MatMul{}), down_inputs, stream, workload);
       },
-      specs);
+      specs, workload);
+  if (program && program->workload() != workload)
+    return std::unexpected(
+        hyle::Status::Internal("Apple workload was not retained"));
+  return program;
 }
 
 inline hyle::Status replay(const a::Program &program, const Weights &weights,

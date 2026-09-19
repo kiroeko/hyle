@@ -77,6 +77,7 @@ struct CompileOptions final {
   // Borrowed only during this call, reset before every attempt. Metadata OOM
   // rejects compilation. Null adds no report construction or retained state.
   CompileReport *report = nullptr;
+  compute::WorkloadContext workload;
 };
 
 // Fixed pure DAG in admitted Compute domains -> native pipelines and an

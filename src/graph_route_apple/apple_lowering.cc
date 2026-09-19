@@ -23,6 +23,7 @@ struct Node {
 };
 
 struct Plan {
+  compute::WorkloadContext workload;
   std::vector<Node> nodes;
   std::vector<std::size_t> inputs;
   std::vector<std::size_t> constants;
@@ -110,7 +111,8 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       arguments.push_back(*values[index]);
     auto outputs = node.operation.kind() == compute::OperationKind::kCustom
                        ? plan.custom(node.operation, arguments, stream)
-                       : ca::lower(node.operation, arguments, stream);
+                       : ca::lower(node.operation, arguments, stream,
+                                   plan.workload);
     if (!outputs)
       return std::unexpected(std::move(outputs).error());
     if (outputs->size() != node.outputs.size())
@@ -135,6 +137,8 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
                                         std::span<const mx::array> constants,
                                         CompileOptions options) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.apple.compile");
+  if (!options.workload.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Apple workload"));
   if (!context || !graph || graph.output_count() == 0)
     return std::unexpected(Status::InvalidArgument(
         "Apple Graph needs a Context and published outputs"));
@@ -169,6 +173,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       report->declared_constant_count = constants.size();
     }
     auto plan = std::make_shared<Plan>();
+    plan->workload = options.workload;
     plan->custom = std::move(options.custom);
     plan->descriptions.resize(graph.value_count());
     std::vector<ca::InputSpec> specs;
@@ -271,7 +276,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         [plan = std::move(plan)](const auto &inputs, mx::Stream stream) {
           return trace(*plan, inputs, stream);
         },
-        specs);
+        specs, options.workload);
   } catch (const std::bad_alloc &) {
     return std::unexpected(
         Status::ResourceExhausted("Apple Graph preparation allocation failed"));

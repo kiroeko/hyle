@@ -14,6 +14,11 @@ namespace hyle::compute::cuda::detail {
 HYLE_COMPUTE_BACKEND_CUDA_API CUcontext
 borrow_primary_context(void *backend_state) noexcept;
 
+// Borrowed immutable cold facts, with the same established-backend and
+// lifetime preconditions as borrow_primary_context. Null state returns null.
+HYLE_COMPUTE_BACKEND_CUDA_API const Environment *
+borrow_environment(void *backend_state) noexcept;
+
 // Inside one already-admitted QueueSequence only. The first use records a
 // reset; propagate its EnqueueResult even if a later command fails. A capture
 // gets its own stable address, never the recording sequence's completion slot.

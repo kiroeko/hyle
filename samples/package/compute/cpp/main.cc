@@ -15,6 +15,7 @@
 #include <cstdio>
 #endif
 #include <hyle/compute/prepared_operation.h>
+#include "workload.h"
 #if defined(HYLE_COMPUTE_ONEDNN)
 #include <hyle/compute/providers/onednn.h>
 #endif
@@ -54,8 +55,14 @@ int main() {
   if (!input_view || !output_view || !context)
     return 3;
   auto queue = context->create_queue();
-  auto prepared = prepare(*context, RmsNorm{}, *description);
+  auto workload = sample_workload::create();
+  if (!workload)
+    return 4;
+  auto prepared = prepare(*context, RmsNorm{}, *description,
+                          hyle::mem::system_resource(), *workload);
   if (!queue || !prepared)
+    return 4;
+  if (prepared->workload() != *workload)
     return 4;
   const auto norm_workspace_requirement = prepared->workspace_requirement();
   auto norm_workspace = hyle::mem::Buffer::create(

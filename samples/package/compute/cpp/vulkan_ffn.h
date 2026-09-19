@@ -1,5 +1,7 @@
 #pragma once
 
+#include "workload.h"
+
 #include <hyle/compute/vulkan.h>
 
 #include <array>
@@ -147,17 +149,22 @@ inline hyle::Status recorded_ffn(const v::Context &context,
   HYLE_ASSIGN_OR_RETURN(auto product, context.allocate(hidden_desc));
   HYLE_ASSIGN_OR_RETURN(auto down, context.allocate(output_desc));
   HYLE_ASSIGN_OR_RETURN(auto output, context.allocate(output_desc));
+  HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   HYLE_ASSIGN_OR_RETURN(
-      auto gate_op, v::prepare(context, c::MatMul{}, input_desc, constants[0]));
+      auto gate_op,
+      v::prepare(context, workload, c::MatMul{}, input_desc, constants[0]));
   HYLE_ASSIGN_OR_RETURN(
-      auto up_op, v::prepare(context, c::MatMul{}, input_desc, constants[1]));
+      auto up_op,
+      v::prepare(context, workload, c::MatMul{}, input_desc, constants[1]));
   HYLE_ASSIGN_OR_RETURN(
       auto silu_op,
-      v::prepare(context,
+      v::prepare(context, workload,
                  c::GatedActivation{.inputs = c::GatedInputKind::kSeparate},
                  hidden_desc, hidden_desc));
-  HYLE_ASSIGN_OR_RETURN(auto down_op, v::prepare(context, c::MatMul{},
+  HYLE_ASSIGN_OR_RETURN(auto down_op, v::prepare(context, workload, c::MatMul{},
                                                  hidden_desc, constants[2]));
+  if (gate_op.workload() != workload || down_op.workload() != workload)
+    return hyle::Status::Internal("Vulkan workload was not retained");
   HYLE_ASSIGN_OR_RETURN(auto custom, affine(context));
   HYLE_ASSIGN_OR_RETURN(auto recorder, v::Recorder::create(context));
   HYLE_RETURN_IF_ERROR(

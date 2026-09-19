@@ -52,6 +52,7 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
   HYLE_RETURN_IF_ERROR(builder.publish(output));
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
   gv::CompileReport report;
+  HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   auto program = gv::compile(
       context, graph, constants,
       {.custom = [](const v::Context &owner, const c::Operation &operation,
@@ -68,9 +69,13 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
                                    {(count + 63) / 64, 1, 1},
                                    s::count_push(count)};
        },
-       .report = &report});
+       .report = &report,
+       .workload = workload});
   if (!program)
     return program;
+  if (program->workload() != workload)
+    return std::unexpected(
+        hyle::Status::Internal("Vulkan Graph workload was not retained"));
   if (!report.status.ok() || report.nodes.size() != 5 ||
       report.native_dispatch_count != 4 || report.managed_region_count != 1 ||
       report.invocation_storage_block_bytes.empty() ||

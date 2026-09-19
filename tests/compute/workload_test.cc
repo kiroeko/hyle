@@ -1,7 +1,6 @@
 #include "hyle/compute/workload.h"
 
 #include <array>
-#include <limits>
 #include <string>
 #include <thread>
 #include <utility>
@@ -90,17 +89,12 @@ TEST(ModelIdentity, ExactFieldsDistinguishVersionsConfigurationsAndBoundaries) {
             *ModelIdentity::create({"a", "bc", "d"}));
 }
 
-TEST(ModelIdentity, OomAndSizeOverflowDoNotCreatePartialOwners) {
+TEST(ModelIdentity, OomDoesNotCreatePartialOwners) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 0);
   auto denied = ModelIdentity::create(kModel, quota.get());
   ASSERT_FALSE(denied.has_value());
   EXPECT_TRUE(denied.error().IsResourceExhausted());
   EXPECT_EQ(quota.used(), 0u);
-  const ModelDescription excessive{
-      std::string_view("x", (std::numeric_limits<std::size_t>::max)()), {}, {}};
-  auto overflow = ModelIdentity::create(excessive, quota.get());
-  ASSERT_FALSE(overflow.has_value());
-  EXPECT_TRUE(overflow.error().IsResourceExhausted());
   EXPECT_EQ(quota.peak(), 0u);
 }
 

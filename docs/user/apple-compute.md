@@ -4,6 +4,12 @@ Apple 路线在同一个 MLX Metal runtime 中保留原生 arrays、编译融合
 和 Graph 应用固定的成熟 MLX 规则；用户不排序 Provider、不提交 timing profile。R5 已完成
 [限定环境验收](../implementation/tasks/compute/apple-v1-four-route-foundation.md)，性能资格不外推其它硬件。
 
+可选[模型与阶段信息](compute.md#可选模型与阶段信息)作为最后一个参数传给
+`Context::prepare(operation, inputs, workload)` 或 `Context::compile(region, inputs, workload)`；
+Graph 使用 `graph::apple::CompileOptions::workload`。原生 `Program::workload()` 保留绑定身份，
+Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 MLX baseline；这不声明新增了模型
+专用算法。改变身份后重新编译，MLX replay 不读取模型信息或重选规则。
+
 ## 构建与三种 C++ 交付
 
 只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C++ 和 Metal 编译工具；

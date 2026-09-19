@@ -14,6 +14,7 @@
 #include <mlx/ops.h>
 
 #include "../compute_route_apple/ffn_fixture.h"
+#include "../compute/workload_fixture.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -67,9 +68,15 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
     auto graph = ffn_graph(rows);
     ASSERT_TRUE(graph) << graph.error().message();
     ga::CompileReport report;
+    auto workload = workload_test::known(rows == 1 ? c::WorkloadPhase::kDecode
+                                                  : c::WorkloadPhase::kPrefill);
     auto program =
-        ga::compile(*context, *graph, fixture.constants, {.report = &report});
+        ga::compile(*context, *graph, fixture.constants,
+                    {.report = &report, .workload = workload});
     ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(program->workload(), workload);
+    workload = {};
+    EXPECT_TRUE(program->workload().model.matches(workload_test::kModel));
     EXPECT_TRUE(report.status.ok());
     EXPECT_FALSE(report.environment.device_name.empty());
     ASSERT_EQ(report.nodes.size(), 4U); // unsupported dead node is absent

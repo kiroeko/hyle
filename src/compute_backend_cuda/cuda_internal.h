@@ -88,6 +88,7 @@ struct ContextState final : util::RefCounted<ContextState> {
   cudaExecutionContext_t execution = nullptr;
   CUcontext primary = nullptr;
   mem::AllocatorRef allocator{};
+  Environment environment{};
   util::SpinLock queues_lock{};
   QueueState *queues = nullptr;
   const void *status_merge_kernel = device_status_merge_kernel();

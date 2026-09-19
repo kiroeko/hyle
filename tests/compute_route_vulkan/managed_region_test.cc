@@ -4,6 +4,7 @@
 
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
+#include "../compute/workload_fixture.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
@@ -22,8 +23,15 @@ TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
   for (int rows : {1, 17, 128}) {
     SCOPED_TRACE(rows);
     const auto desc = dense(c::DataType::kFloat32, {rows, width});
-    auto prepared = v::prepare(context, c::RmsNorm{}, desc, weight);
+    auto workload = workload_test::known(rows == 1 ? c::WorkloadPhase::kDecode
+                                                  : c::WorkloadPhase::kPrefill);
+    auto prepared = v::prepare(context, workload, c::RmsNorm{}, desc, weight);
     ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->workload(), workload);
+    workload.region.version = 0;
+    EXPECT_FALSE(v::prepare(context, workload, c::RmsNorm{}, desc, weight));
+    workload = {};
+    EXPECT_TRUE(prepared->workload().model.matches(workload_test::kModel));
     const auto &plan = d::Access::program(*prepared);
     ASSERT_EQ(plan->dispatches.size(), 2U); // Origin adapter + original region.
     ASSERT_TRUE(plan->dispatches.back().region);

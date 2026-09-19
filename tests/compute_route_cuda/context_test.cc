@@ -1,4 +1,5 @@
 #include "ffn_support.h"
+#include "../compute/workload_fixture.h"
 
 namespace {
 using namespace cuda_route_test;
@@ -29,19 +30,27 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
                      Lane(type, rows, resource.ref())};
     const auto a_inputs = first.inputs(lanes[0].input.view.as_const());
     const auto b_inputs = second.inputs(lanes[0].activated.view.as_const());
+    auto workload = workload_test::known(rows == 1
+                                            ? compute::WorkloadPhase::kDecode
+                                            : compute::WorkloadPhase::kPrefill);
     auto a = compute::prepare(owner, first.operation(),
                               std::span(a_inputs).first(first.arity()),
-                              std::array{lanes[0].gate_up.view});
+                              std::array{lanes[0].gate_up.view}, workload);
     ASSERT_TRUE(a.has_value()) << a.error().message();
     auto b =
         compute::prepare(owner, compute::GatedActivation{},
-                         lanes[0].gate_up.view.description(), resource.ref());
+                         lanes[0].gate_up.view.description(), resource.ref(),
+                         workload);
     ASSERT_TRUE(b.has_value()) << b.error().message();
     auto c = compute::prepare(owner, second.operation(),
                               std::span(b_inputs).first(second.arity()),
-                              std::array{lanes[0].output.view});
+                              std::array{lanes[0].output.view}, workload);
     ASSERT_TRUE(c.has_value()) << c.error().message();
     std::array programs{std::move(*a), std::move(*b), std::move(*c)};
+    for (const auto &program : programs)
+      EXPECT_EQ(program.workload(), workload);
+    workload = {};
+    EXPECT_TRUE(programs[0].workload().model.matches(workload_test::kModel));
     EXPECT_EQ(programs[0].provider().id, first.provider());
     EXPECT_EQ(programs[1].provider().id,
               compute::cuda_native::kSglangProviderId);

@@ -62,6 +62,7 @@ struct CompileOptions final {
   // Borrowed only until compile returns; reset before every attempt. Metadata
   // allocation failure rejects compilation. Null adds no report construction.
   CompileReport *report = nullptr;
+  compute::WorkloadContext workload;
 };
 
 // Cold typed DAG -> one compiled MLX region. Constants are ready native owners

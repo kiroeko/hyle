@@ -2,6 +2,7 @@
 
 #include "../compute_route_vulkan/gate_norm_test_support.h"
 #include "hyle/graph/vulkan.h"
+#include "../compute/workload_fixture.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
@@ -27,9 +28,17 @@ TEST(VulkanGraph,
   ASSERT_TRUE(builder.publish(residual).ok());
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
+  auto workload = workload_test::known(c::WorkloadPhase::kPrefill);
   auto program =
-      gv::compile(context, graph, std::array{input}, {.report = &report});
+      gv::compile(context, graph, std::array{input},
+                   {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  workload.region.version = 0;
+  EXPECT_FALSE(gv::compile(context, graph, std::array{input},
+                            {.workload = workload}));
+  workload = {};
+  EXPECT_TRUE(program->workload().model.matches(workload_test::kModel));
   EXPECT_EQ(report.managed_region_count, 1U);
   EXPECT_EQ(report.native_dispatch_count, 1U); // Descriptor alignment adapter.
   auto slot = program->create_invocation().value();

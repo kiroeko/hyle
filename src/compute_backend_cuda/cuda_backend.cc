@@ -113,6 +113,11 @@ CUcontext borrow_primary_context(void *backend_state) noexcept {
   return context != nullptr ? context->primary : nullptr;
 }
 
+const Environment *borrow_environment(void *backend_state) noexcept {
+  const auto *context = static_cast<const ContextState *>(backend_state);
+  return context != nullptr ? &context->environment : nullptr;
+}
+
 ScopedPrimaryContext::ScopedPrimaryContext(CUcontext primary) noexcept
     : expected_(primary) {
   if (primary == nullptr) {
@@ -653,6 +658,27 @@ Status create_context_impl(const Device &value, mem::AllocatorRef allocator,
   CUdevice driver_device = 0;
   HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(
       cuDeviceGet(&driver_device, payload.ordinal)));
+  // Complete fallible fact collection before retaining any native owner.
+  Environment environment;
+  environment.device_ordinal = payload.ordinal;
+  environment.build_toolkit_version = CUDART_VERSION;
+  cudaDeviceProp properties{};
+  HYLE_RETURN_IF_ERROR(
+      status(cudaGetDeviceProperties(&properties, payload.ordinal)));
+  static_assert(sizeof(properties.name) == sizeof(environment.device_name));
+  static_assert(sizeof(properties.uuid.bytes) ==
+                sizeof(environment.device_uuid));
+  std::memcpy(environment.device_name.data(), properties.name,
+              environment.device_name.size());
+  environment.device_name.back() = '\0';
+  std::memcpy(environment.device_uuid.data(), properties.uuid.bytes,
+              environment.device_uuid.size());
+  environment.sm_major = properties.major;
+  environment.sm_minor = properties.minor;
+  HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(
+      cuDriverGetVersion(&environment.driver_cuda_version)));
+  HYLE_RETURN_IF_ERROR(
+      status(cudaRuntimeGetVersion(&environment.runtime_version)));
   CUcontext primary = nullptr;
   HYLE_RETURN_IF_ERROR(cuda::detail::driver_status(
       cuDevicePrimaryCtxRetain(&primary, driver_device)));
@@ -715,6 +741,7 @@ Status create_context_impl(const Device &value, mem::AllocatorRef allocator,
   auto *created = ::new (storage) cuda::detail::ContextState(
       value, payload.ordinal, execution, primary, allocator);
   created->status_merge_kernel = merge_kernel;
+  created->environment = environment;
   *output = created;
   return Status::Ok();
 }
@@ -1325,6 +1352,13 @@ Status primary_context_call(void *backend_context, const void *,
   return Status::Ok();
 }
 
+Status environment_call(void *backend_context, const void *,
+                        void *call_context) noexcept {
+  *static_cast<Environment *>(call_context) =
+      static_cast<cuda::detail::ContextState *>(backend_context)->environment;
+  return Status::Ok();
+}
+
 compute::detail::EnqueueResult submit_call(void *, const void *,
                                            void *backend_queue,
                                            void *call_context) noexcept {
@@ -1426,6 +1460,14 @@ Result<CUcontext> primary_context(const Context &context) noexcept {
       *extension, &primary_context_call, &result);
   if (!call.ok())
     return std::unexpected(std::move(call));
+  return result;
+}
+
+Result<Environment> environment(const Context &context) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto extension, cuda_extension(context));
+  Environment result;
+  HYLE_RETURN_IF_ERROR(compute::detail::BackendExtensionAccess::call(
+      extension, &environment_call, &result));
   return result;
 }
 

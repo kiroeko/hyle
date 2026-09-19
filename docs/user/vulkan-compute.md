@@ -8,6 +8,13 @@ ggml 片段复用其图和存储，但仍执行原厂编码及内部资源管理
 [有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
 资格限所记录的设备/软件与 F32 shape 域，不承诺其它设备或完整推理模型的性能。
 
+可选[模型与阶段信息](compute.md#可选模型与阶段信息)可随
+`vulkan::prepare(context, workload, operation, inputs...)` 传入；span 形式则使用最后一个参数
+`prepare(context, operation, arguments, workload)`。Graph 使用
+`graph::vulkan::CompileOptions::workload`，原生 `Program::workload()` 保留绑定身份。
+它与既有原生 `Environment` 一起供冷准备匹配规则；无注解仍使用合法 baseline。
+模型名不放宽数值/资源检查，也不代表新增专用优化；变更后重新准备，submit 不查询这些字段。
+
 ## 构建与运行条件
 
 源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、

@@ -40,7 +40,10 @@ Result<TensorDesc> affine_q4_description(std::int64_t output_channels,
 
 Result<std::vector<mx::array>> lower(const Operation &operation,
                                      std::span<const mx::array> inputs,
-                                     mx::Stream stream) noexcept {
+                                     mx::Stream stream,
+                                     const WorkloadContext &workload) noexcept {
+  if (!workload.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Apple workload"));
   try {
     const auto *matmul = operation.get_if<MatMul>();
     const auto *qmm = operation.get_if<QuantizedMatMul>();
@@ -92,13 +95,14 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
 
 Result<Program>
 Context::prepare(const Operation &operation,
-                 std::span<const mx::array> examples) const noexcept {
+                 std::span<const mx::array> examples,
+                 const WorkloadContext &workload) const noexcept {
   try {
     return compile(
-        [operation](const auto &inputs, mx::Stream stream) {
-          return lower(operation, inputs, stream);
+        [operation, workload](const auto &inputs, mx::Stream stream) {
+          return lower(operation, inputs, stream, workload);
         },
-        examples);
+        examples, workload);
   } catch (...) {
     return std::unexpected(detail::native_exception());
   }
@@ -106,13 +110,14 @@ Context::prepare(const Operation &operation,
 
 Result<Program>
 Context::prepare(const Operation &operation,
-                 std::span<const InputSpec> inputs) const noexcept {
+                 std::span<const InputSpec> inputs,
+                 const WorkloadContext &workload) const noexcept {
   try {
     return compile(
-        [operation](const auto &values, mx::Stream stream) {
-          return lower(operation, values, stream);
+        [operation, workload](const auto &values, mx::Stream stream) {
+          return lower(operation, values, stream, workload);
         },
-        inputs);
+        inputs, workload);
   } catch (...) {
     return std::unexpected(detail::native_exception());
   }

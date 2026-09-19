@@ -29,6 +29,7 @@ struct PlanStep final {
   std::vector<std::byte> push_constants;
 };
 struct Plan final {
+  WorkloadContext workload;
   std::vector<PlanValue> values;
   std::vector<std::uint32_t> inputs;
   std::vector<std::uint32_t> outputs;

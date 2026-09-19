@@ -27,6 +27,11 @@ unknown 约束见下文，不把 driver 未公开的字节数算作零。完整�
 各路线已交付的默认规则与设备/版本/数值范围见对应指南；CUDA 和 Apple 的正式压缩量化
 FFN 已分别验收。历史 Q4 转 F32 样例不承担这些资格，未接入的 Provider 仍不可用。
 
+`CompileOptions::workload` 可选携带[模型、阶段与片段身份](compute.md#可选模型与阶段信息)。
+operation 的提案/准备和 region 的资源资格/编译收到同一份信息；`Executable::workload()` 保留
+已绑定的身份。shape 实例和 family-local 常量缓存沿用该合同，不存在跨模型的全局 plan 缓存。
+改变身份或影响资格的配置后重新 compile。无注解的工程图继续使用合法默认路径。
+
 当程序要把一段模型无关计算冷编译一次，再用固定 shape specialization 和不同 storage 反复执行时使用
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
 task graph，也不拥有模型循环、KV cache、batching、sampling 或 serving policy。

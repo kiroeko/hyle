@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <concepts>
 #include <cstddef>
 #include <functional>
@@ -35,6 +36,29 @@ HYLE_COMPUTE_BACKEND_CUDA_API Result<Device>
 device(std::size_t ordinal) noexcept;
 HYLE_COMPUTE_BACKEND_CUDA_API Result<int>
 device_ordinal(Device device) noexcept;
+
+// Captured once for this Context. Driver version is the CUDA API version
+// supported by the installed driver (cuDriverGetVersion), not its vendor
+// package/build number. Versions use CUDA's native integer encoding; the
+// runtime and compiled toolkit versions are separate facts. No SDK query is
+// performed by environment() or by submission. Reprepare for changed facts.
+struct Environment final {
+  std::array<char, 256> device_name{};
+  std::array<std::byte, 16> device_uuid{};
+  int device_ordinal = -1;
+  int sm_major = 0;
+  int sm_minor = 0;
+  int driver_cuda_version = 0;
+  int runtime_version = 0;
+  int build_toolkit_version = 0;
+
+  friend bool operator==(const Environment &, const Environment &) = default;
+};
+
+// An owned cold snapshot, valid independently of Context lifetime. An invalid,
+// closed or non-CUDA Context is rejected through the native backend seam.
+HYLE_COMPUTE_BACKEND_CUDA_API Result<Environment>
+environment(const Context &context) noexcept;
 
 enum class MemoryKind : unsigned char {
   kDevice = 0,

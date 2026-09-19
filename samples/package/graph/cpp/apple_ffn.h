@@ -52,9 +52,13 @@ inline hyle::Status run() {
   for (int rows : {1, 4}) {
     HYLE_ASSIGN_OR_RETURN(auto graph, build(rows));
     g::apple::CompileReport report;
+    HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
     HYLE_ASSIGN_OR_RETURN(auto program,
                           g::apple::compile(context, graph, weights.constants,
-                                            {.report = &report}));
+                                            {.report = &report,
+                                             .workload = workload}));
+    if (program.workload() != workload)
+      return hyle::Status::Internal("Apple Graph workload was not retained");
     if (!report.status.ok() || report.nodes.size() != 4 ||
         report.logical_constant_bytes == 0 || report.private_storage_bytes)
       return hyle::Status::Internal("incomplete Apple compilation report");

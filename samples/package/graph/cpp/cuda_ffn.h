@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../compute/cpp/workload.h"
+
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -38,6 +40,7 @@ inline hyle::Result<Tensor> tensor(mem::MemoryResourceRef resource,
 
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, graph::cuda::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   HYLE_ASSIGN_OR_RETURN(auto resource, cuda::MemoryResource::create(
                                            context, cuda::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
@@ -75,7 +78,10 @@ inline hyle::Status run() {
                              graph::ConstantBinding{d, down.view.as_const()}};
   HYLE_ASSIGN_OR_RETURN(auto compiled,
                         graph::cuda::compile(logical, context, resource.ref(),
-                                             {.constants = constants}));
+                                             {.constants = constants,
+                                              .workload = workload}));
+  if (compiled.executable.workload() != workload)
+    return hyle::Status::Internal("CUDA Graph workload was not retained");
   HYLE_ASSIGN_OR_RETURN(auto slot, compiled.executable.create_invocation());
   HYLE_RETURN_IF_ERROR(slot.bind(x, input.view.as_const()));
   HYLE_RETURN_IF_ERROR(slot.bind(y, output.view));

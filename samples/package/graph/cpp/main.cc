@@ -10,6 +10,7 @@
 #include <cstdio>
 #endif
 #include <hyle/graph/executable.h>
+#include "../../compute/cpp/workload.h"
 #if defined(HYLE_COMPUTE_VULKAN)
 #include "vulkan_ffn.h"
 #include <cstdio>
@@ -89,8 +90,12 @@ int main() {
   if (!logical || !context)
     return 8;
   auto queue = context->create_queue();
-  auto compiled = compile(*logical, *context);
+  auto workload = sample_workload::create();
+  if (!workload)
+    return 9;
+  auto compiled = compile(*logical, *context, {.workload = *workload});
   if (!queue || !compiled || compiled->report.node_count() != 3 ||
+      compiled->executable.workload() != *workload ||
       !compiled->report.node(0) ||
       compiled->report.node(0)->kind !=
           hyle::compute::OperationKind::kRmsNorm ||

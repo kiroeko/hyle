@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "ffn_fixture.h"
+#include "../compute/workload_fixture.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -18,8 +19,14 @@ TEST(AppleTyped, MatMulAndSiluGatesUseOrdinaryPreparation) {
   ASSERT_TRUE(context);
   const std::vector<mx::array> inputs{mx::array({1.f, -2.f, 3.f, -4.f}, {2, 2}),
                                       mx::array({2.f, 0.f, 0.f, 3.f}, {2, 2})};
-  auto matmul = context->prepare(c::MatMul{}, inputs);
+  auto workload = workload_test::known(c::WorkloadPhase::kDecode);
+  auto matmul = context->prepare(c::MatMul{}, inputs, workload);
   ASSERT_TRUE(matmul) << matmul.error().message();
+  EXPECT_EQ(matmul->workload(), workload);
+  workload.region.version = 0;
+  EXPECT_FALSE(context->prepare(c::MatMul{}, inputs, workload));
+  workload = {};
+  EXPECT_TRUE(matmul->workload().model.matches(workload_test::kModel));
   auto slot = matmul->create_invocation();
   ASSERT_TRUE(slot);
   ASSERT_TRUE(slot->bind(inputs).ok());

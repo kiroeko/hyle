@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <span>
 #include <thread>
@@ -37,6 +38,42 @@ namespace cuda = hyle::compute::cuda;
 namespace mem = hyle::mem;
 
 using hyle::StatusCode;
+
+TEST(CudaBackend, ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot) {
+  EXPECT_FALSE(cuda::environment(Context{}));
+  cuda::Environment retained;
+  {
+    auto context = Context::create(cuda::device(0).value()).value();
+    auto facts = cuda::environment(context);
+    ASSERT_TRUE(facts) << facts.error().message();
+    cudaDeviceProp native{};
+    ASSERT_EQ(cudaGetDeviceProperties(&native, 0), cudaSuccess);
+    int driver = 0, runtime = 0;
+    ASSERT_EQ(cuDriverGetVersion(&driver), CUDA_SUCCESS);
+    ASSERT_EQ(cudaRuntimeGetVersion(&runtime), cudaSuccess);
+    EXPECT_STREQ(facts->device_name.data(), native.name);
+    EXPECT_EQ(std::memcmp(facts->device_uuid.data(), native.uuid.bytes, 16), 0);
+    EXPECT_EQ(facts->device_ordinal, 0);
+    EXPECT_EQ(facts->sm_major, native.major);
+    EXPECT_EQ(facts->sm_minor, native.minor);
+    EXPECT_EQ(facts->driver_cuda_version, driver);
+    EXPECT_EQ(facts->runtime_version, runtime);
+    EXPECT_EQ(facts->build_toolkit_version, CUDART_VERSION);
+    retained = *facts;
+    auto moved = std::move(context);
+    EXPECT_FALSE(cuda::environment(context));
+    EXPECT_EQ(cuda::environment(moved).value(), retained);
+    ASSERT_TRUE(moved.close().ok());
+    EXPECT_FALSE(cuda::environment(moved));
+  }
+  EXPECT_GT(retained.sm_major, 0);
+  auto other = retained;
+  ++other.driver_cuda_version;
+  EXPECT_NE(other, retained);
+  other = retained;
+  ++other.sm_minor;
+  EXPECT_NE(other, retained);
+}
 
 struct HostStreamGate final {
   std::atomic<bool> entered{false};

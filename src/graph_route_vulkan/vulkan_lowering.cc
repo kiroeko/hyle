@@ -18,6 +18,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
                                         std::span<const cv::Tensor> constants,
                                         CompileOptions options) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.vulkan.compile");
+  if (!options.workload.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Vulkan workload"));
   if (!context || !graph || graph.output_count() == 0 ||
       graph.value_count() > (std::numeric_limits<std::uint32_t>::max)() / 2)
     return std::unexpected(Status::InvalidArgument(
@@ -53,6 +55,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
           "retained results keep their slot until released";
     }
     cv::detail::Plan plan;
+    plan.workload = options.workload;
     plan.values.resize(graph.value_count());
     auto describe = [&](ValueId id) -> Status {
       HYLE_ASSIGN_OR_RETURN(const auto &spec, graph.value_spec(id));

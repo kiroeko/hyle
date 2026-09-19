@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute/workload_fixture.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/graph/providers/onednn.h"
 #include "hyle/mem/stats.h"
@@ -67,8 +68,15 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
       }
       ASSERT_TRUE(builder.publish(residual).ok());
       auto logical = std::move(builder).finish().value();
-      auto compiled = graph::compile(logical, context);
+      auto workload = workload_test::known(rows == 1
+                                              ? compute::WorkloadPhase::kDecode
+                                              : compute::WorkloadPhase::kPrefill);
+      auto compiled = graph::compile(logical, context, {.workload = workload});
       ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->executable.workload(), workload);
+      workload = {};
+      EXPECT_TRUE(
+          compiled->executable.workload().model.matches(workload_test::kModel));
       EXPECT_EQ(compiled->report.region_count(), published ? 0U : 1U);
       if (!published) {
         ASSERT_EQ(compiled->report.step_count(), rows == 1 ? 1U : 2U);

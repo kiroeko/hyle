@@ -131,6 +131,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
   HYLE_TRACE_ZONE_NAMED("hyle.vulkan.prepare");
   if (facts != nullptr)
     *facts = {};
+  if (!plan.workload.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Vulkan workload"));
   const auto &runtime = Access::runtime(context);
   if (!runtime || plan.values.empty() || plan.steps.empty() ||
       plan.outputs.empty() ||
@@ -221,6 +223,7 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     }
     auto program = std::make_shared<ProgramState>();
     program->runtime = runtime;
+    program->workload = plan.workload;
     program->values = plan.values;
     program->inputs = plan.inputs;
     program->outputs = plan.outputs;
@@ -350,7 +353,10 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
 namespace hyle::compute::vulkan {
 
 Result<Program> prepare(const Context &context, const Operation &operation,
-                        std::span<const Argument> arguments) noexcept {
+                        std::span<const Argument> arguments,
+                        const WorkloadContext &workload) noexcept {
+  if (!workload.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Vulkan workload"));
   const auto output_count = operation_traits(operation).outputs;
   if (arguments.size() >
       (std::numeric_limits<std::uint32_t>::max)() - output_count)
@@ -358,6 +364,7 @@ Result<Program> prepare(const Context &context, const Operation &operation,
         Status::InvalidArgument("too many Vulkan arguments"));
   try {
     detail::Plan plan;
+    plan.workload = workload;
     detail::PlanStep step;
     step.operation = operation;
     std::vector<TensorDesc> descriptions;
@@ -389,6 +396,9 @@ Result<Program> prepare(const Context &context, const Operation &operation,
 std::span<const Tensor> Results::tensors() const noexcept {
   return values_ ? std::span<const Tensor>(values_->tensors)
                  : std::span<const Tensor>{};
+}
+WorkloadContext Program::workload() const noexcept {
+  return state_ ? state_->workload : WorkloadContext{};
 }
 std::span<const TensorDesc> Program::input_descriptions() const noexcept {
   return state_ ? std::span<const TensorDesc>(state_->input_descriptions)

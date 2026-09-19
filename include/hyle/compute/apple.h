@@ -25,6 +25,7 @@
 
 #include "hyle/compute/operation.h"
 #include "hyle/compute/result.h"
+#include "hyle/compute/workload.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 
@@ -82,7 +83,7 @@ affine_q4_description(std::int64_t output_channels,
 // this is not a Mem buffer adapter. Unsupported domains return an error.
 HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
 lower(const Operation &operation, std::span<const mlx::core::array> inputs,
-      mlx::core::Stream stream) noexcept;
+      mlx::core::Stream stream, const WorkloadContext &workload = {}) noexcept;
 
 class Program;
 class Invocation;
@@ -131,30 +132,36 @@ public:
   // managed replay contract, not allocation-free recorded commands.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   compile(RegionFunction region,
-          std::span<const mlx::core::array> input_examples) const noexcept;
+          std::span<const mlx::core::array> input_examples,
+          const WorkloadContext &workload = {}) const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   compile(RegionFunction region,
-          std::span<const InputSpec> inputs) const noexcept;
+          std::span<const InputSpec> inputs,
+          const WorkloadContext &workload = {}) const noexcept;
 
   // Natural single-operation preparation; returns the same native Program
   // as a whole-region compile. Examples must already be successfully ready.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   prepare(const Operation &operation,
-          std::span<const mlx::core::array> input_examples) const noexcept;
+          std::span<const mlx::core::array> input_examples,
+          const WorkloadContext &workload = {}) const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   prepare(const Operation &operation,
-          std::span<const InputSpec> inputs) const noexcept;
+          std::span<const InputSpec> inputs,
+          const WorkloadContext &workload = {}) const noexcept;
   template <class Descriptor>
     requires(!std::same_as<Descriptor, Operation>) &&
             std::constructible_from<Operation, Descriptor>
   Result<Program>
   prepare(Descriptor operation,
-          std::span<const mlx::core::array> inputs) const noexcept;
+          std::span<const mlx::core::array> inputs,
+          const WorkloadContext &workload = {}) const noexcept;
   template <class Descriptor>
     requires(!std::same_as<Descriptor, Operation>) &&
             std::constructible_from<Operation, Descriptor>
   Result<Program> prepare(Descriptor operation,
-                          std::span<const InputSpec> inputs) const noexcept;
+                          std::span<const InputSpec> inputs,
+                          const WorkloadContext &workload = {}) const noexcept;
 
   // Stops admission, drains every accepted prefix, joins the native owner.
   // Idempotent. Destruction performs this same explicit lifetime duty. Result
@@ -172,6 +179,8 @@ public:
   Program() noexcept = default;
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
+  // Cold diagnostic snapshot; recompile to change the bound facts.
+  HYLE_COMPUTE_ROUTE_APPLE_API WorkloadContext workload() const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Invocation>
   create_invocation(mem::AllocatorRef result_allocator =
                         mem::system_allocator()) const noexcept;
@@ -214,16 +223,18 @@ template <class Descriptor>
           std::constructible_from<Operation, Descriptor>
 Result<Program>
 Context::prepare(Descriptor operation,
-                 std::span<const mlx::core::array> inputs) const noexcept {
-  return prepare(Operation(std::move(operation)), inputs);
+                 std::span<const mlx::core::array> inputs,
+                 const WorkloadContext &workload) const noexcept {
+  return prepare(Operation(std::move(operation)), inputs, workload);
 }
 template <class Descriptor>
   requires(!std::same_as<Descriptor, Operation>) &&
           std::constructible_from<Operation, Descriptor>
 Result<Program>
 Context::prepare(Descriptor operation,
-                 std::span<const InputSpec> inputs) const noexcept {
-  return prepare(Operation(std::move(operation)), inputs);
+                 std::span<const InputSpec> inputs,
+                 const WorkloadContext &workload) const noexcept {
+  return prepare(Operation(std::move(operation)), inputs, workload);
 }
 } // namespace hyle::compute::apple
 #endif

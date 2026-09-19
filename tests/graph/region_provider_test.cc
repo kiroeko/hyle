@@ -25,6 +25,7 @@
 #include "hyle/mem/buffer.h"
 #include "provider_internal.h"
 #include "test_environment.h"
+#include "../compute/workload_fixture.h"
 
 namespace {
 
@@ -101,6 +102,9 @@ struct RegionProbe final {
   // creation.
   std::uint64_t device_identity = 0;
   ProposalMode mode = ProposalMode::kPairs;
+  const hyle::compute::WorkloadContext *required_workload = nullptr;
+  hyle::compute::WorkloadContext resource_workload;
+  hyle::compute::WorkloadContext compiled_workload;
   std::size_t singleton_node = 0;
   std::optional<std::uint32_t> proposal_dispatch_count = 1;
   std::size_t propose_count = 0;
@@ -1061,6 +1065,12 @@ Status propose_region_resources(
     requirement = {};
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.region_resource_count;
+  probe.resource_workload = request.workload;
+  if (probe.required_workload != nullptr &&
+      (!request.workload.model.matches(
+           probe.required_workload->model.description()) ||
+       request.workload != *probe.required_workload))
+    return Status::Unimplemented("model-specific region is not qualified");
   EXPECT_FALSE(request.constant_artifacts.available());
   if (probe.resource_scratch_bytes != 0) {
     void *scratch = allocator.allocate(probe.resource_scratch_bytes,
@@ -1200,6 +1210,9 @@ ProviderPrepareOutcome compile_region(void *context,
                                       AllocatorRef allocator,
                                       ProviderRegionPrepared *output) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
+  probe.compiled_workload = request.workload;
+  if (probe.required_workload != nullptr)
+    EXPECT_EQ(request.workload, *probe.required_workload);
   if (probe.observe_cleanup != nullptr)
     probe.observed_cleanup_at_compile =
         probe.observe_cleanup->destroy_prepared_count;
@@ -1919,6 +1932,52 @@ void expect_negation_replay(const hyle::graph::Executable &executable,
   ASSERT_TRUE(completion->wait().ok());
   EXPECT_EQ(read(output, 8),
             (std::vector<float>{-1.F, 2.F, -3.F, 4.F, -5.F, 6.F, -7.F, 8.F}));
+}
+
+TEST(GraphRules, ModelQualificationIsColdExactAndKeepsTheGenericFallback) {
+  using namespace hyle::compute;
+  const auto required = workload_test::known(WorkloadPhase::kDecode);
+  std::array<WorkloadContext, 8> requests;
+  requests.fill(required);
+  requests[1] = {};
+  requests[2].model = ModelIdentity::create({"unknown", "r", "c"}).value();
+  requests[3].model = ModelIdentity::create({workload_test::kModel.family,
+                                            {}, {}}).value();
+  requests[4].model = ModelIdentity::create({workload_test::kModel.family,
+                                            "other-revision",
+                                            workload_test::kModel.configuration}).value();
+  requests[5].model = ModelIdentity::create({workload_test::kModel.family,
+                                            workload_test::kModel.revision,
+                                            "other-config"}).value();
+  requests[6].phase = WorkloadPhase::kPrefill;
+  ++requests[7].region.version;
+  const auto logical = make_negations(1);
+  for (std::size_t index = 0; index < requests.size(); ++index) {
+    SCOPED_TRACE(index);
+    RegionProbe specialized{.mode = ProposalMode::kSingleton},
+        generic{.mode = ProposalMode::kSingleton};
+    specialized.required_workload = &required;
+    auto context = make_context(specialized, generic);
+    auto compiled = hyle::graph::compile(
+        logical.graph, context,
+        {.operation_fallback = OperationFallbackPolicy::kReject,
+         .workload = requests[index]});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    EXPECT_EQ(compiled->executable.workload(), requests[index]);
+    EXPECT_EQ(specialized.resource_workload, requests[index]);
+    auto &selected = index == 0 ? specialized : generic;
+    EXPECT_EQ(selected.compiled_workload, requests[index]);
+    EXPECT_EQ(specialized.compile_count, index == 0 ? 1U : 0U);
+    EXPECT_EQ(generic.compile_count, index == 0 ? 0U : 1U);
+    const auto discoveries = specialized.propose_count + generic.propose_count;
+    const auto qualifications = specialized.region_resource_count +
+                                generic.region_resource_count;
+    for (int repeat = 0; repeat < 3; ++repeat)
+      expect_negation_replay(compiled->executable, logical, context);
+    EXPECT_EQ(specialized.propose_count + generic.propose_count, discoveries);
+    EXPECT_EQ(specialized.region_resource_count + generic.region_resource_count,
+              qualifications);
+  }
 }
 
 TEST(GraphRules, FirstCompletePlanBindsWithoutPreparingAlternatives) {

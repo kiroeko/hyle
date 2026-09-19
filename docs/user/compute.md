@@ -41,6 +41,39 @@ oneDNN 仍 exact-only，可进入 Graph 的预编译 exact 变体；Graph 也已
 [有限精确变体与通用回退](graph.md#有限精确变体与通用回退)。完整动态属性尚未交付。不要直接调用私有
 factor seam，也不要把单个 family 的域支持当成整个算子目录都支持动态尺寸。
 
+## 可选模型与阶段信息
+
+已知模型身份的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。
+HYLE 不加载模型文件；`family`、`revision` 和 `configuration` 是调用方声明的独立身份，
+配置字段应覆盖可能影响计算规则的选项，例如消费方生成的完整配置摘要。
+
+```cpp
+auto identity = hyle::compute::ModelIdentity::create(
+    {"my_model_family", "local-artifact-revision", "configuration-digest"});
+if (!identity) return identity.error();
+hyle::compute::WorkloadContext workload{
+    .model = *identity,
+    .phase = hyle::compute::WorkloadPhase::kDecode,
+};
+auto program = hyle::compute::prepare(
+    context, hyle::compute::MatMul{}, left_desc, right_desc, resource, workload);
+```
+
+身份创建时一次拷贝拥有字符串，源字符串随后可销毁；多个程序共享同一个不可变身份。
+自定义 allocator 的 backing 必须活到最后一个身份/程序释放。`program.workload()` 返回
+保有所有权的冷诊断副本。阶段或版本变化需要重新准备，不能给运行中的程序换标签。
+可选的 `region` 是带版本的片段语义标识，不替代实际 operation/DAG、精度、资源和状态检查。
+
+固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
+或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
+运行期不读取模型字符串、查询设备版本或重选实现。
+
+CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名、UUID、SM major/minor、
+驱动支持的 CUDA API 版本、runtime 版本与编译 Toolkit 版本。`driver_cuda_version` 对应
+`cuDriverGetVersion`，**不是 NVIDIA 驱动安装包版本号**。固定规则只能匹配实际具备的事实；
+不能把该字段当作驱动补丁版本。Apple/Vulkan 使用各自原生 `Environment`，Provider 版本来自
+对应实现/锁定依赖；它们不共用一个万能设备结构。
+
 ## 普通 CUDA 入口
 
 ### 执行前检查具体请求

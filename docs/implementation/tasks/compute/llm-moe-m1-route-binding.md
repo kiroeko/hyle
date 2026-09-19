@@ -123,3 +123,20 @@ R2的共同路径现已接通：普通/typed Direct和delegated prepare把同一
 共7项CTest通过；新增契约用例验证冷请求、源owner释放后保活以及重复运行不重入propose/prepare。
 这些fixture不作为成熟Provider/模型覆盖证明。Apple/Vulkan原生接线、CUDA环境及最终跨平台交付
 仍待后续FIX，M1-R保持AUDITED；初次编译发现的inferred便利入口漏传参数已修复，失败日志保留。
+
+## 实施检查点：原生接缝与资格（2026-09-20）
+
+Apple/Vulkan的Direct与Graph现已传递并保留workload；CUDA Context在取得native owner前完成
+设备/UUID/SM、driver CUDA API/runtime/build Toolkit版本的fallible采集，之后只复制缓存。
+driver CUDA API版本不是NVIDIA安装包/补丁版本，未知driver package条件不能据此命中。
+私有Provider bridge借用同寿命不可变Environment，不查询热路径、不添加新第三方依赖。
+
+共同Graph的新增固定条件测试已通过：完整身份命中，缺失/未知/版本/配置/阶段/region版本不符
+拒绝该region，合法generic候选继续准备；三次重复执行不增加propose/resource/compile调用。
+Windows共同路径7项CTest通过。真实成熟实现的四路线测试与三交付consumer已加入workload检查，
+但尚未执行对应完整候选，不能写PASS。API/资源/算法实现未扩张任何冻结的自研算子。
+
+复核纠正R1测试证据：原“size overflow”用例构造了超出实际字符存储范围的string_view，
+不能作为合法C++输入的运行期证明，已删除该用例。OOM测试保留；累计长度的每次加法在拷贝前
+以PTRDIFF_MAX减去当前大小作上界检查，溢出保护改由P0源码审计签署，不称为已跑溢出测试。
+此前局部日志仍保留，完整candidate只采纳修正后的测试。此纠正不改变ModelIdentity产品实现。

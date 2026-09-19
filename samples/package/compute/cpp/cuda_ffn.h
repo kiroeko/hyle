@@ -12,6 +12,7 @@
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
+#include "workload.h"
 
 namespace sample_cuda_direct {
 namespace compute = hyle::compute;
@@ -40,6 +41,10 @@ inline hyle::Result<Tensor> tensor(mem::MemoryResourceRef resource,
 // selected by the route; the consumer supplies no Provider list or profile.
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, cuda::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto environment, cuda::environment(context));
+  if (environment.sm_major <= 0 || environment.build_toolkit_version <= 0)
+    return hyle::Status::Internal("missing CUDA environment facts");
+  HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   HYLE_ASSIGN_OR_RETURN(auto resource, cuda::MemoryResource::create(
                                            context, cuda::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
@@ -67,19 +72,21 @@ inline hyle::Status run() {
       auto first,
       compute::prepare(context,
                        compute::Operation(cuda::QuantizedWeights::operation()),
-                       first_inputs, std::array{projected.view}));
+                       first_inputs, std::array{projected.view}, workload));
   HYLE_ASSIGN_OR_RETURN(auto middle,
                         compute::prepare(context, compute::GatedActivation{},
                                          projected.view.description(),
-                                         resource.ref()));
+                                         resource.ref(), workload));
   HYLE_ASSIGN_OR_RETURN(
       auto last,
       compute::prepare(context, compute::MatMul{}, activated.view.description(),
-                       down.view.description(), resource.ref()));
+                       down.view.description(), resource.ref(), workload));
   std::array prepared{std::move(first), std::move(middle), std::move(last)};
   std::array<mem::Buffer, 3> workspace;
   std::array<compute::OperationInvocation, 3> slots;
   for (std::size_t i = 0; i < slots.size(); ++i) {
+    if (prepared[i].workload() != workload)
+      return hyle::Status::Internal("CUDA workload was not retained");
     const auto needed = prepared[i].workspace_requirement();
     HYLE_ASSIGN_OR_RETURN(
         workspace[i],

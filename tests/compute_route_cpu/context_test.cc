@@ -8,6 +8,8 @@
 #include <string_view>
 #include <vector>
 
+#include "../compute/workload_fixture.h"
+
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
@@ -136,8 +138,15 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
         const auto right_desc =
             transposed ? matrix(columns, inner).transposed().value()
                        : matrix(inner, columns);
-        auto prepared = prepare(context, MatMul{}, left_desc, right_desc);
+        auto workload = rows < 16 ? WorkloadContext{}
+                                 : workload_test::known(WorkloadPhase::kPrefill);
+        auto prepared = prepare(context, MatMul{}, left_desc, right_desc,
+                                hyle::mem::system_resource(), workload);
         ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+        EXPECT_EQ(prepared->workload(), workload);
+        workload = {};
+        if (rows >= 16)
+          EXPECT_TRUE(prepared->workload().model.matches(workload_test::kModel));
         ProviderId expected = native::kProviderId;
 #if defined(HYLE_COMPUTE_ONEDNN)
         if (rows >= 16 && !transposed)

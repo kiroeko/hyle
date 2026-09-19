@@ -270,6 +270,7 @@ Status run_cold(Runtime &runtime,
 
 struct ProgramState {
   std::shared_ptr<Runtime> runtime;
+  WorkloadContext workload;
   std::vector<InputSpec> inputs;
   // Shared with the retained MLX tracing callable, never a ProgramState cycle.
   struct CheckContract {
@@ -473,7 +474,8 @@ Result<const Environment &> Context::environment() const noexcept {
 
 Result<Program>
 Context::compile(RegionFunction region,
-                 std::span<const mx::array> examples) const noexcept {
+                 std::span<const mx::array> examples,
+                 const WorkloadContext &workload) const noexcept {
   try {
     std::vector<InputSpec> specs;
     specs.reserve(examples.size());
@@ -483,7 +485,7 @@ Context::compile(RegionFunction region,
             Status::FailedPrecondition("Apple examples must be ready arrays"));
       specs.push_back({array.shape(), array.dtype()});
     }
-    return compile(std::move(region), specs);
+    return compile(std::move(region), specs, workload);
   } catch (...) {
     return std::unexpected(native_exception());
   }
@@ -491,14 +493,18 @@ Context::compile(RegionFunction region,
 
 Result<Program>
 Context::compile(RegionFunction region,
-                 std::span<const InputSpec> inputs) const noexcept {
+                 std::span<const InputSpec> inputs,
+                 const WorkloadContext &workload) const noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.prepare");
   if (!state_ || !region)
     return std::unexpected(
         Status::InvalidArgument("invalid Apple Context or region"));
+  if (!workload.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Apple workload"));
   try {
     auto program = std::make_shared<detail::ProgramState>();
     program->runtime = state_;
+    program->workload = workload;
     program->inputs.assign(inputs.begin(), inputs.end());
     auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
       const auto stream = *state_->stream;
@@ -545,6 +551,10 @@ Context::compile(RegionFunction region,
   } catch (...) {
     return std::unexpected(native_exception());
   }
+}
+
+WorkloadContext Program::workload() const noexcept {
+  return state_ ? state_->workload : WorkloadContext{};
 }
 
 Result<Invocation>

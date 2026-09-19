@@ -27,6 +27,7 @@
 
 #include "hyle/compute/operation.h"
 #include "hyle/compute/result.h"
+#include "hyle/compute/workload.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/quota_allocator.h"
@@ -259,6 +260,8 @@ public:
   Program() noexcept = default;
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
+  // Cold diagnostic snapshot; prepare again to change the bound facts.
+  HYLE_COMPUTE_ROUTE_VULKAN_API WorkloadContext workload() const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API std::span<const TensorDesc>
   input_descriptions() const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API std::span<const TensorDesc>
@@ -306,7 +309,8 @@ private:
 
 HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program>
 prepare(const Context &context, const Operation &operation,
-        std::span<const Argument> arguments) noexcept;
+        std::span<const Argument> arguments,
+        const WorkloadContext &workload = {}) noexcept;
 
 template <class Descriptor, class... Arguments>
   requires std::constructible_from<Operation, Descriptor> &&
@@ -317,6 +321,17 @@ Result<Program> prepare(const Context &context, Descriptor operation,
       Argument(std::forward<Arguments>(arguments))...};
   return prepare(context, Operation(operation),
                  std::span<const Argument>(values));
+}
+
+template <class Descriptor, class... Arguments>
+  requires std::constructible_from<Operation, Descriptor> &&
+           (std::constructible_from<Argument, Arguments> && ...)
+Result<Program> prepare(const Context &context, const WorkloadContext &workload,
+                        Descriptor operation, Arguments &&...arguments) noexcept {
+  const std::array<Argument, sizeof...(Arguments)> values{
+      Argument(std::forward<Arguments>(arguments))...};
+  return prepare(context, Operation(operation),
+                 std::span<const Argument>(values), workload);
 }
 
 // Expert native pipeline with fixed caller destinations. Completion protects

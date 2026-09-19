@@ -44,6 +44,7 @@ struct ValueAlias final {
 
 struct ProgramState final {
   std::shared_ptr<Runtime> runtime;
+  WorkloadContext workload;
   std::vector<PlanValue> values;
   std::vector<std::uint32_t> inputs;
   std::vector<std::uint32_t> outputs;
