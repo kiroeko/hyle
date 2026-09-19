@@ -140,3 +140,24 @@ G1–G5已完成以下资源/交付审计并冻结；本卡两个owner进入AUDI
   工具回归、docs/closure与diff检查通过。共同component/package seam选择的较宽产品门尚待运行。
 - G5仍在进行：Vulkan回归、CPU与组合三交付、route-OFF、WSL sanitizers和两台Mac的适用门
   尚未完成，不能写PASS；本卡和两个owner保持AUDITED。没有新增64域或整模型验收通过。
+
+## 不可变候选与验证进展（2026-09-20）
+
+- 产品/API已固定；candidate为`04368a397859f2d03e71ab005a5d66227a5f9a0f`，
+  tree为`c757f58ff11984fd9c87321eb550c5986be827f3`。两个owner进入CANDIDATE；
+  本节替代上面的早期检查点，不表示G5已关闭。后续文档/状态提交不产生新产品candidate。
+- Windows所选correctness、逐头、组件合同与15个产品的源码/静态/动态交付均已完成。
+  `c76c041c`的既有通过收据保留原候选身份；Vulkan桥接测试因metadata迁移漏链新runtime，
+  在`04368a39`仅修正测试链接，复跑受影响门并完成原先未运行门。未把旧收据改写成新tree。
+- Windows另通过本factor静态资源测试、正式完整源码包中的真实资源/计算执行、双路线OFF
+  无ggml目标检查，以及CPU+Vulkan组合的源码/静态/动态、relocation与真实GPU消费。
+  安装包含共同runtime/补丁许可；没有泄露ggml公开C头。DLL邻置，无UAC/电源策略变更。
+- WSL通过ASan（含泄漏检测）、UBSan、TSan及CPU静态资源与三交付；Air通过CPU资源与
+  三交付。POSIX最初故障来自fixture把backing free计为context free；`2c1011cb`修正
+  该测试计数后sanitizers通过，保留原失败记录，不把它写成产品缺陷或原始PASS。
+- Mac mini的CPU资源与三交付也已通过；Air的Vulkan资源/组合交付尚待完成；适用项未签PASS。
+  本卡仍未CLOSED，原CPU Provider和oneDNN的BLOCKED不自动解除。
+- 统一脚本在候选上统计Compute+Graph为49,413行实现、203个文件，self-check通过，
+  不含测试/第三方。P1在本资源卡不适用；没有研究、扩张或比较冻结自研算子。
+- 已完成的Windows交付/build目录、两台Mac旧archive副本按具名脚本清理，保留日志、
+  hash、候选身份与当前验证副本。最终七门和可复现证据在剩余适用验证后裁决。
