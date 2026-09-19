@@ -74,6 +74,13 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
 // FP32 intermediates and one final output conversion; no fast-math, PDL,
 // filtering, or input reuse. The ordinary CUDA route selects it in this domain
 // during preparation.
+// Also supplies dense same-type FP16/BF16 RMSNorm with a weight: widths
+// 64/128/256, multiples of 256 through 8192, and multiples of 512 through
+// 16384; FP32 accumulation and one final rounding, exact input0 alias allowed.
+// Unary SiLU/GELU/GELU-tanh accepts dense FP32/FP16/BF16 complete 16-byte
+// vectors and exact input0 aliases, with stable tails and -Inf -> +0.
+// These added domains require 16-byte bindings, count <= INT32_MAX, no caller
+// workspace or slot state. Other norms/layouts remain separate candidates.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 #endif
 

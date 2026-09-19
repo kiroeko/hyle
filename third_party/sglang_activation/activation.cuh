@@ -1,5 +1,5 @@
 // SGLang Apache-2.0 device fragment at 06992c92ad4494fe9f9636e75be3e35040512447.
-// Arithmetic/indexing retained; namespace and support macro isolated.
+// Packed arithmetic/indexing retained; Unary uses the declared stable math adaptation.
 // See LICENSE, NOTICE and provenance.json.
 #pragma once
 
@@ -89,6 +89,47 @@ __global__ void act_and_mul_kernel(const __grid_constant__ ActivationParams para
   } else {
     device::store_as<vec_t>(params.out, out, output_offset);
   }
+  PDLTriggerSecondary<kUsePDL>();
+}
+
+
+// HYLE ordinary Unary has stable tails and a limiting value at -infinity.
+// The packed gate below retains its separately documented IEEE formula.
+template <ActivationKind kAct>
+HYLE_SGL_DEVICE float apply_unary_activation_f32(float x) {
+  if (isinf(x) && x < 0) return 0.0F;
+  if constexpr (kAct == ActivationKind::kGELU) {
+    return 0.5F * x * erfcf(-x * 0.7071067811865475F);
+  } else {
+    const float z = kAct == ActivationKind::kGELUTanh
+        ? 1.5957691216057308F * x * fmaf(0.044715F, x * x, 1.0F) : x;
+    const float e = expf(-fabsf(z));
+    const float sigmoid = z >= 0 ? 1.0F / (1.0F + e) : e / (1.0F + e);
+    return x * sigmoid;
+  }
+}
+
+struct UnaryActivationParams {
+  const void* input;
+  void* out;
+  uint32_t num_vecs;
+};
+
+template <typename T, ActivationKind kAct, bool kUsePDL>
+__global__ void act_kernel(const __grid_constant__ UnaryActivationParams params) {
+  using namespace device;
+  constexpr auto kVecSize = kMaxVecBytes / sizeof(T);
+  using vec_t = AlignedVector<T, kMaxVecBytes / sizeof(T)>;
+  const auto vec_id = blockIdx.x * blockDim.x + threadIdx.x;
+  if (vec_id >= params.num_vecs) return;
+  PDLWaitPrimary<kUsePDL>();
+  const auto in = device::load_as<vec_t>(params.input, vec_id);
+  vec_t out;
+#pragma unroll
+  for (int i = 0; i < kVecSize; ++i) {
+    out[i] = device::cast<T>(apply_unary_activation_f32<kAct>(device::cast<fp32_t>(in[i])));
+  }
+  device::store_as<vec_t>(params.out, out, vec_id);
   PDLTriggerSecondary<kUsePDL>();
 }
 

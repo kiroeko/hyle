@@ -44,9 +44,34 @@ Status create_context(const Provider &, Device device, void *backend_state,
 
 void destroy_context(void *, mem::AllocatorRef) noexcept {}
 
+Status select_unary(Operation operation, std::span<const TensorDesc> inputs,
+                    std::span<const TensorDesc> outputs) noexcept {
+  const auto *unary = operation.get_if<Unary>();
+  if (unary == nullptr ||
+      (unary->kind != UnaryKind::kSilu && unary->kind != UnaryKind::kGelu &&
+       unary->kind != UnaryKind::kGeluTanh) ||
+      inputs.size() != 1 || outputs.size() != 1 || inputs[0] != outputs[0] ||
+      !inputs[0].is_plain() || !inputs[0].is_dense() ||
+      (inputs[0].data_type() != DataType::kFloat32 &&
+       inputs[0].data_type() != DataType::kFloat16 &&
+       inputs[0].data_type() != DataType::kBFloat16))
+    return Status::Unimplemented(
+        "SGLang Unary requires dense matching floating SiLU/GELU/GELU-tanh");
+  HYLE_ASSIGN_OR_RETURN(const auto count, outputs[0].element_count());
+  const auto width = 16 / data_type_size(outputs[0].data_type());
+  if (count > INT32_MAX || count % width != 0)
+    return Status::Unimplemented(
+        "SGLang Unary requires complete 16-byte vectors within INT32_MAX");
+  return Status::Ok();
+}
+
 template <bool Sglang>
 Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs) noexcept {
+  if constexpr (Sglang) {
+    if (operation.kind() == OperationKind::kUnary)
+      return select_unary(operation, inputs, outputs);
+  }
   const auto *gated = operation.get_if<GatedActivation>();
   if (gated == nullptr ||
       (gated->activation != GatedActivationKind::kSilu &&
@@ -113,6 +138,10 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
   if (proposal == nullptr)
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
+  if constexpr (Sglang) {
+    if (request.operation.kind() == OperationKind::kRmsNorm)
+      return normalization::sglang_propose(request, inputs, outputs, proposal);
+  }
   if constexpr (!Sglang) {
     if (request.operation.kind() == OperationKind::kScan)
       return scanning::propose(request, inputs, outputs, proposal);
@@ -149,8 +178,11 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
   };
   std::fill(inputs.begin(), inputs.end(), tensor);
   outputs[0] = tensor;
+  const auto route =
+      Sglang ? (request.operation.kind() == OperationKind::kUnary ? 3U : 2U)
+             : 1U;
   *proposal = detail::ProviderOperationProposal{
-      .route = Sglang ? 2U : 1U,
+      .route = route,
       .runtime = kRuntime,
       .cost = {.workspace = WorkspaceRequirement{},
                .persistent_bytes = sizeof(Prepared),
@@ -160,7 +192,7 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
                .dispatch_count = *request.outputs[0].element_count() == 0
                                      ? std::optional<std::uint32_t>{}
                                      : std::optional<std::uint32_t>{1}},
-      .profile_key = ProviderRouteKey{Sglang ? 2U : 1U},
+      .profile_key = ProviderRouteKey{route},
   };
   return Status::Ok();
 }
@@ -183,11 +215,13 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
 }
 
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
-AliasSupport alias_support(void *, std::size_t, std::size_t) noexcept {
-  return {};
+template <bool Unary>
+AliasSupport alias_support(void *, std::size_t output,
+                           std::size_t input) noexcept {
+  return {Unary && output == 0 && input == 0, 0};
 }
 
-template <bool Sglang>
+template <bool Sglang, bool Unary = false>
 detail::EnqueueResult submit(void *state, void *, Queue &queue,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
@@ -218,7 +252,11 @@ detail::EnqueueResult submit(void *state, void *, Queue &queue,
     return detail::EnqueueResult::rejected(scope.status());
   // Runtime errors may include a prior asynchronous failure. Preserve the
   // accepted Queue prefix and real backend terminal conservatively.
-  if constexpr (Sglang)
+  if constexpr (Unary)
+    return detail::EnqueueResult::accepted_command(
+        cuda::status(native::sglang_unary_launch(prepared.program, *first,
+                                                 second, *output, *stream)));
+  else if constexpr (Sglang)
     return detail::EnqueueResult::accepted_command(
         cuda::status(native::sglang_launch(prepared.program, *first, second,
                                            *output, *stream)));
@@ -227,13 +265,13 @@ detail::EnqueueResult submit(void *state, void *, Queue &queue,
         native::launch(prepared.program, *first, second, *output, *stream)));
 }
 
-template <bool Sglang>
+template <bool Sglang, bool Unary = false>
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_prepared,
-    .alias_support = &alias_support,
+    .alias_support = &alias_support<Unary>,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .shared_submit = &submit<Sglang>,
+    .shared_submit = &submit<Sglang, Unary>,
 };
 
 template <bool Sglang>
@@ -245,6 +283,10 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
+  if constexpr (Sglang) {
+    if (request.route == normalization::kRoute && request.shape.exact())
+      return normalization::sglang_prepare(state, request, allocator, output);
+  }
   if constexpr (!Sglang) {
     if (request.route == scanning::kRoute && request.shape.exact())
       return scanning::prepare(state, request, allocator, output);
@@ -263,7 +305,10 @@ ProviderPrepareOutcome prepare(void *state,
     if (request.route == tensor::kRoute && request.shape.exact())
       return tensor::prepare(state, request, allocator, output);
   }
-  if (request.route != (Sglang ? 2U : 1U) || !request.shape.exact())
+  const bool unary =
+      Sglang && request.operation.kind() == OperationKind::kUnary;
+  if (request.route != (Sglang ? (unary ? 3U : 2U) : 1U) ||
+      !request.shape.exact())
     return ProviderPrepareOutcome::error(Status::InvalidArgument(
         "CUDA kernel exact prepare request is invalid"));
   Status status =
@@ -284,7 +329,16 @@ ProviderPrepareOutcome prepare(void *state,
                         ? native::ElementType::kFloat16
                         : native::ElementType::kBFloat16;
   native::Activation activation;
-  switch (request.operation.get_if<GatedActivation>()->activation) {
+  const auto kind =
+      unary ? (request.operation.get_if<hyle::compute::Unary>()->kind ==
+                       UnaryKind::kSilu
+                   ? GatedActivationKind::kSilu
+               : request.operation.get_if<hyle::compute::Unary>()->kind ==
+                       UnaryKind::kGelu
+                   ? GatedActivationKind::kGelu
+                   : GatedActivationKind::kGeluTanh)
+            : request.operation.get_if<GatedActivation>()->activation;
+  switch (kind) {
   case GatedActivationKind::kSilu:
     activation = native::Activation::kSilu;
     break;
@@ -299,12 +353,16 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA gated activation kind is invalid"));
   }
   constexpr auto configure = Sglang ? native::sglang_prepare : native::prepare;
-  const auto configured = configure(
-      type, activation,
-      request.operation.get_if<GatedActivation>()->inputs ==
-          GatedInputKind::kPackedHalves,
-      static_cast<unsigned>(*description.element_count()),
-      static_cast<unsigned>(description.dimensions().back()), &program);
+  const auto configured =
+      unary ? native::sglang_unary_prepare(
+                  type, activation,
+                  static_cast<unsigned>(*description.element_count()), &program)
+            : configure(type, activation,
+                        request.operation.get_if<GatedActivation>()->inputs ==
+                            GatedInputKind::kPackedHalves,
+                        static_cast<unsigned>(*description.element_count()),
+                        static_cast<unsigned>(description.dimensions().back()),
+                        &program);
   if (configured != cudaSuccess)
     return ProviderPrepareOutcome::error(cuda::status(configured));
   void *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
@@ -314,7 +372,7 @@ ProviderPrepareOutcome prepare(void *state,
   auto *prepared = ::new (storage) Prepared{
       primary, program, Sglang ? 16 : data_type_size(description.data_type())};
   *output = detail::ProviderPrepared{
-      .vtable = &kPreparedVTable<Sglang>,
+      .vtable = unary ? &kPreparedVTable<true, true> : &kPreparedVTable<Sglang>,
       .state = prepared,
       .runtime = kRuntime,
       .persistent_bytes = sizeof(Prepared),
@@ -328,7 +386,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-precise-gated" : "v10-scan"},
+                 .version = Sglang ? "06992c92-norm-unary" : "v10-scan"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

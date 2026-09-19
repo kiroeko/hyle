@@ -28,5 +28,10 @@ cudaError_t sglang_prepare(ElementType type, Activation activation, bool packed,
 cudaError_t sglang_launch(const Program &program, const void *first,
                           const void *second, void *output,
                           cudaStream_t stream) noexcept;
+cudaError_t sglang_unary_prepare(ElementType type, Activation activation,
+                                 unsigned elements, Program *output) noexcept;
+cudaError_t sglang_unary_launch(const Program &program, const void *first,
+                                const void *second, void *output,
+                                cudaStream_t stream) noexcept;
 
 } // namespace hyle::compute::cuda_native::native

@@ -3,16 +3,19 @@
 #include <array>
 #include <climits>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "native_context.h"
 #include "norm_kernel.h"
+#include "sglang_norm_kernel.h"
 
 namespace hyle::compute::cuda_native::normalization {
 namespace {
-struct Prepared final {
+template <bool Sglang> struct Prepared final {
   CUcontext primary = nullptr;
-  native::NormProgram program{};
+  std::conditional_t<Sglang, native::SglangNormProgram, native::NormProgram>
+      program{};
   std::array<std::size_t, 3> alignment{};
 };
 struct Shape final {
@@ -31,6 +34,7 @@ constexpr ProviderRuntimeProperties kRuntime{
     .capture_compatible = true,
 };
 
+template <bool Sglang>
 Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
                      std::span<const TensorDesc> outputs) noexcept {
   const auto *rms = operation.get_if<RmsNorm>();
@@ -61,18 +65,29 @@ Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
     return std::unexpected(Status::Unimplemented(
         "CUDA normalization requires at most INT32_MAX elements"));
   const auto hidden = inputs[0].dimensions().back();
+  if constexpr (Sglang) {
+    if (rms == nullptr || inputs.size() != 2 ||
+        inputs[0].data_type() == DataType::kFloat32 ||
+        inputs[1].data_type() != inputs[0].data_type() || hidden > 16384 ||
+        !native::sglang_norm_width(static_cast<unsigned>(hidden)))
+      return std::unexpected(Status::Unimplemented(
+          "SGLang RMSNorm requires matching FP16/BF16 weight and a supported "
+          "warp/CTA width"));
+  }
   // An empty tensor has no native rows, even if another dimension is huge.
   return Shape{count == 0 ? 0U : static_cast<unsigned>(count / hidden),
-               count == 0 ? 0U : static_cast<unsigned>(hidden),
+               count == 0 && !Sglang ? 0U : static_cast<unsigned>(hidden),
                rms != nullptr ? rms->epsilon : layer->epsilon,
                layer != nullptr};
 }
+template <bool Sglang>
 void destroy(void *state, mem::AllocatorRef allocator) noexcept {
-  auto *prepared = static_cast<Prepared *>(state);
+  auto *prepared = static_cast<Prepared<Sglang> *>(state);
   if (prepared == nullptr)
     return;
   prepared->~Prepared();
-  allocator.deallocate(prepared, sizeof(Prepared), alignof(Prepared));
+  allocator.deallocate(prepared, sizeof(Prepared<Sglang>),
+                       alignof(Prepared<Sglang>));
 }
 AliasSupport alias(void *, std::size_t output, std::size_t input) noexcept {
   return {output == 0 && input == 0, 0};
@@ -86,10 +101,11 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
 }
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
 
+template <bool Sglang>
 detail::EnqueueResult submit(void *state, void *, Queue &queue,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
-  const auto &prepared = *static_cast<const Prepared *>(state);
+  const auto &prepared = *static_cast<const Prepared<Sglang> *>(state);
   if (prepared.program.rows == 0)
     return detail::EnqueueResult::no_op();
   auto stream = cuda::stream(queue);
@@ -110,37 +126,45 @@ detail::EnqueueResult submit(void *state, void *, Queue &queue,
   cuda::detail::ScopedPrimaryContext scope(prepared.primary);
   if (!scope)
     return detail::EnqueueResult::rejected(scope.status());
-  return detail::EnqueueResult::accepted_command(cuda::status(
-      native::norm_launch(prepared.program, pointers[0], pointers[1],
-                          pointers[2], *output, *stream)));
+  if constexpr (Sglang)
+    return detail::EnqueueResult::accepted_command(
+        cuda::status(native::sglang_norm_launch(
+            prepared.program, pointers[0], pointers[1], *output, *stream)));
+  else
+    return detail::EnqueueResult::accepted_command(cuda::status(
+        native::norm_launch(prepared.program, pointers[0], pointers[1],
+                            pointers[2], *output, *stream)));
 }
+template <bool Sglang>
 const detail::ProviderPreparedVTable kPreparedVTable{
-    .destroy_prepared = &destroy,
+    .destroy_prepared = &destroy<Sglang>,
     .alias_support = &alias,
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
-    .shared_submit = &submit,
+    .shared_submit = &submit<Sglang>,
 };
 } // namespace
 
-Status propose(const detail::ProviderOperationRequest &request,
-               std::span<detail::ResourceBindingRequirement> inputs,
-               std::span<detail::ResourceBindingRequirement> outputs,
-               detail::ProviderOperationProposal *proposal) noexcept {
+template <bool Sglang>
+Status propose_impl(const detail::ProviderOperationRequest &request,
+                    std::span<detail::ResourceBindingRequirement> inputs,
+                    std::span<detail::ResourceBindingRequirement> outputs,
+                    detail::ProviderOperationProposal *proposal) noexcept {
   if (!request.shape.exact())
     return Status::Unimplemented("CUDA norm requires an exact shape");
   HYLE_ASSIGN_OR_RETURN(
       const auto shape,
-      select(request.operation, request.inputs, request.outputs));
+      select<Sglang>(request.operation, request.inputs, request.outputs));
   for (std::size_t index = 0; index < inputs.size(); ++index)
     inputs[index] = {
         .required_properties = mem::MemoryProperty::kDeviceAccessible,
-        .minimum_alignment = data_type_size(request.inputs[index].data_type())};
+        .minimum_alignment =
+            Sglang ? 16 : data_type_size(request.inputs[index].data_type())};
   outputs[0] = inputs[0];
   *proposal = {.route = kRoute,
                .runtime = kRuntime,
                .cost = {.workspace = WorkspaceRequirement{},
-                        .persistent_bytes = sizeof(Prepared),
+                        .persistent_bytes = sizeof(Prepared<Sglang>),
                         .copy_bytes = 0,
                         .repack_bytes = 0,
                         .synchronization_count = 0,
@@ -151,12 +175,14 @@ Status propose(const detail::ProviderOperationRequest &request,
   return Status::Ok();
 }
 
-ProviderPrepareOutcome prepare(void *state,
-                               const detail::ProviderPrepareRequest &request,
-                               mem::AllocatorRef allocator,
-                               detail::ProviderPrepared *output) noexcept {
+template <bool Sglang>
+ProviderPrepareOutcome
+prepare_impl(void *state, const detail::ProviderPrepareRequest &request,
+             mem::AllocatorRef allocator,
+             detail::ProviderPrepared *output) noexcept {
   *output = {};
-  auto shape = select(request.operation, request.inputs, request.outputs);
+  auto shape =
+      select<Sglang>(request.operation, request.inputs, request.outputs);
   if (!shape)
     return shape.error().IsUnimplemented()
                ? ProviderPrepareOutcome::unsupported(std::move(shape).error())
@@ -170,30 +196,64 @@ ProviderPrepareOutcome prepare(void *state,
                     : request.inputs[0].data_type() == DataType::kBFloat16
                         ? native::ElementType::kBFloat16
                         : native::ElementType::kFloat32;
-  native::NormProgram program;
-  const auto configured = native::norm_prepare(
-      type, shape->layer,
-      request.inputs.size() > 1 &&
-          request.inputs[1].data_type() == DataType::kFloat32,
-      request.inputs.size() > 2 &&
-          request.inputs[2].data_type() == DataType::kFloat32,
-      shape->rows, shape->hidden, shape->epsilon, &program);
+  decltype(Prepared<Sglang>::program) program;
+  const auto configured = [&] {
+    if constexpr (Sglang)
+      return native::sglang_norm_prepare(type, shape->rows, shape->hidden,
+                                         shape->epsilon, &program);
+    else
+      return native::norm_prepare(
+          type, shape->layer,
+          request.inputs.size() > 1 &&
+              request.inputs[1].data_type() == DataType::kFloat32,
+          request.inputs.size() > 2 &&
+              request.inputs[2].data_type() == DataType::kFloat32,
+          shape->rows, shape->hidden, shape->epsilon, &program);
+  }();
+  if (configured == cudaErrorNotSupported)
+    return ProviderPrepareOutcome::unsupported(cuda::status(configured));
   if (configured != cudaSuccess)
     return ProviderPrepareOutcome::error(cuda::status(configured));
-  void *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
+  void *storage =
+      allocator.allocate(sizeof(Prepared<Sglang>), alignof(Prepared<Sglang>));
   if (storage == nullptr)
     return ProviderPrepareOutcome::resource_declined(
         Status::ResourceExhausted("CUDA norm program allocation failed"));
   auto *prepared =
-      ::new (storage) Prepared{.primary = primary, .program = program};
+      ::new (storage) Prepared<Sglang>{.primary = primary, .program = program};
   for (std::size_t index = 0; index < request.inputs.size(); ++index)
     prepared->alignment[index] =
-        data_type_size(request.inputs[index].data_type());
-  *output = {.vtable = &kPreparedVTable,
+        Sglang ? 16 : data_type_size(request.inputs[index].data_type());
+  *output = {.vtable = &kPreparedVTable<Sglang>,
              .state = prepared,
              .runtime = kRuntime,
-             .persistent_bytes = sizeof(Prepared),
+             .persistent_bytes = sizeof(Prepared<Sglang>),
              .invocation_private_bytes = 0};
   return ProviderPrepareOutcome::prepared();
+}
+
+Status propose(const detail::ProviderOperationRequest &request,
+               std::span<detail::ResourceBindingRequirement> inputs,
+               std::span<detail::ResourceBindingRequirement> outputs,
+               detail::ProviderOperationProposal *proposal) noexcept {
+  return propose_impl<false>(request, inputs, outputs, proposal);
+}
+Status sglang_propose(const detail::ProviderOperationRequest &request,
+                      std::span<detail::ResourceBindingRequirement> inputs,
+                      std::span<detail::ResourceBindingRequirement> outputs,
+                      detail::ProviderOperationProposal *proposal) noexcept {
+  return propose_impl<true>(request, inputs, outputs, proposal);
+}
+ProviderPrepareOutcome prepare(void *state,
+                               const detail::ProviderPrepareRequest &request,
+                               mem::AllocatorRef allocator,
+                               detail::ProviderPrepared *output) noexcept {
+  return prepare_impl<false>(state, request, allocator, output);
+}
+ProviderPrepareOutcome
+sglang_prepare(void *state, const detail::ProviderPrepareRequest &request,
+               mem::AllocatorRef allocator,
+               detail::ProviderPrepared *output) noexcept {
+  return prepare_impl<true>(state, request, allocator, output);
 }
 } // namespace hyle::compute::cuda_native::normalization

@@ -5,14 +5,25 @@
     "python/sglang/kernels/jit/csrc/elementwise/activation.cuh": "f1b56af7476695688d11bb004dc6cee144cd8922a56683a12c504c53aec26c47",
     "python/sglang/kernels/ops/activation/activation.py": "c8ea8e9480ccc488b5b4721fe991e4e901e63fb88e6fe89286767f30e23d9ab6",
     "python/sglang/kernels/jit/utils/arch.py": "e9e6359469bfd46e1bfa16b197b9d88cc89d500ebb8f9ccf05b2ab1374063eb7",
-    "LICENSE": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747"
+    "LICENSE": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747",
+    "python/sglang/kernels/jit/csrc/elementwise/rmsnorm.cuh": "52f4acbc6c5f82dabb90ac1ef80d8e030e69be68c1790583f462a9d641eb8410",
+    "python/sglang/kernels/jit/include/sgl_kernel/impl/norm.cuh": "d8dbe98b5a69faf48aa39f13c73306c0882dd92cfaea2fbdb42541692283c0cd",
+    "python/sglang/kernels/jit/include/sgl_kernel/tile.cuh": "3ecd35d51d4198d568906d7a8db30b8b4b5fed07e6c6f722710a9ce2d9619d5f",
+    "python/sglang/kernels/jit/include/sgl_kernel/type.cuh": "4c72b0892e8d003490bdab2633056172a674bc6a9689be552861564c7aaf8edc",
+    "python/sglang/kernels/jit/include/sgl_kernel/warp.cuh": "6c911f6e53045e54f1119e6219cc455e0ba2cf9205cf8cdadec81dcfc030c633",
+    "python/sglang/kernels/jit/include/sgl_kernel/utils.cuh": "d358c786170561de62ed94bf01e7837ca6748dc37fdad089f99464b600d8d8f6",
+    "python/sglang/kernels/jit/include/sgl_kernel/vec.cuh": "ffe4cddb50e84c0adf654bfd28aacdc872dadab3e56e7264a944d7e42c92c44f",
+    "python/sglang/kernels/jit/include/sgl_kernel/math.cuh": "8af32239990f89cab586ce2a84c50026fdab195120ae7f128647d37de897b9d2",
+    "python/sglang/kernels/ops/layernorm/norm.py": "ad31f150da1a2c6619d7f3da5597f25ac338e5ffaf12ce9a46c241743bf853a6"
   },
   "hash_semantics": "SHA-256 of the original upstream Git blob",
   "adaptations": [
-    "Extract ActivationKind, FP32 activation and packed act_and_mul device body; omit TVM/Python host and unary wrapper.",
-    "Replace global sglang namespace with hyle::compute::cuda_native::sglang_vendor to isolate the independent benchmark reference.",
-    "Rename SGL_DEVICE to HYLE_SGL_DEVICE; undefine the private support macro after the fragment.",
-    "HYLE standalone vector/cast/disabled-PDL support lives in src/compute_provider_cuda/sglang_device_compat.cuh; arithmetic and indexing are unchanged."
+    "Extract existing packed activation, Unary shell, RMSNorm warp/CTA/double-load device kernels and norm/tile helpers; omit TVM/Python host wrappers and Blackwell-only 32-byte variant.",
+    "Isolate namespace as hyle::compute::cuda_native::sglang_vendor and SGL_DEVICE as HYLE_SGL_DEVICE.",
+    "Packed gate arithmetic is unchanged. Unary uses HYLE ordinary stable-tail/-Inf contract: erfc GELU, stable sigmoid SiLU/GELU-tanh; math adaptation is explicit.",
+    "RMSNorm arithmetic, indexing, vector grouping and reduction order retained. HYLE private shim supplies CUDA scalar/packed types, RNE casts, pointer offsets, float warp shuffle sum and disabled PDL.",
+    "RMSNorm host binding preserves upstream shape selection and pre-Blackwell launch policy; occupancy/SM count are bound once during preparation; no runtime search.",
+    "Remove restrict from Unary input/output fields so exact in-place alias is legal; no change to packed gate alias contract."
   ],
   "configuration": {
     "fast_math": false,
@@ -20,7 +31,12 @@
     "filter_expert": false,
     "round_activation": false,
     "reuse_input": false,
-    "vector_bytes": 16
+    "vector_bytes": 16,
+    "rmsnorm_shapes": "64/128/256; multiples of 256 through 8192; multiples of 512 from 8192 through 16384",
+    "rmsnorm_types": [
+      "float16",
+      "bfloat16"
+    ]
   },
-  "qualification": "R4 W1 SM89 full FFN v2 evidence; final default integration acceptance remains in the owning task."
+  "qualification": "C1-AB implementation candidate; correctness/delivery/full-cost performance qualification tracked by owning card. Existing packed gate evidence remains separate."
 }

@@ -4,3 +4,11 @@ Revision: 06992c92ad4494fe9f9636e75be3e35040512447
 Licensed under Apache-2.0; see LICENSE. HYLE adaptations isolate the
 namespace and support macro and omit unrelated host glue. The original
 activation arithmetic and packed indexing are retained.
+
+C1-AB additionally extracts the pinned RMSNorm warp/CTA/double-load bodies
+and norm/tile helpers, retaining their algorithm and reduction order. Host
+binding and primitive CUDA shims replace TVM/Python glue; the Blackwell-only
+32-byte path is not included. The Unary kernel shell uses an explicitly
+adapted stable-tail formula and -infinity limiting value for HYLE's ordinary
+Unary contract. Unary input/output restrict qualifiers are removed to permit
+the documented exact in-place alias. See provenance.json for source hashes.

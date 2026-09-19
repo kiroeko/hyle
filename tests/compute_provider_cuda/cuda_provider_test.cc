@@ -388,7 +388,7 @@ TEST(CudaKernels, RejectsUnsupportedShapesResourcesAndAliasing) {
   auto lane = alias->create_invocation().value();
   auto queue = owner.create_queue().value();
   auto rejected = lane.submit(queue, first.view.as_const(),
-                               second.view.as_const(), first.view);
+                              second.view.as_const(), first.view);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
   EXPECT_FALSE(lane.in_flight());
@@ -428,12 +428,17 @@ void pending_completion_retains_program(
     compute::Provider selected,
     compute::Operation operation =
         compute::Operation(compute::GatedActivation{})) {
+  const bool sglang_norm =
+      selected.id() == compute::cuda_native::kSglangProviderId &&
+      operation.kind() == compute::OperationKind::kRmsNorm;
   auto owner = context(selected);
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   auto queue = owner.create_queue().value();
   Tensor input(
-      matrix(compute::DataType::kFloat32, 1,
+      matrix(sglang_norm ? compute::DataType::kFloat16
+                         : compute::DataType::kFloat32,
+             1,
              operation.kind() == compute::OperationKind::kGatedActivation
                  ? 512
                  : 256),
@@ -443,6 +448,19 @@ void pending_completion_retains_program(
       operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
   std::vector input_desc(arity, input.view.description());
   std::vector inputs(arity, input.view.as_const());
+  std::optional<Tensor> norm_weight;
+  if (sglang_norm) {
+    norm_weight.emplace(
+        compute::TensorDesc::dense(compute::DataType::kFloat16,
+                                   std::array<std::int64_t, 1>{256})
+            .value(),
+        resource.ref());
+    const std::vector<__half> ones(256, __float2half(1));
+    ASSERT_TRUE(
+        norm_weight->storage.view().write(std::as_bytes(std::span(ones))).ok());
+    input_desc.push_back(norm_weight->view.description());
+    inputs.push_back(norm_weight->view.as_const());
+  }
   std::optional<Tensor> gather_indices, scatter_updates;
   append_index_operands(operation, resource.ref(), input_desc, inputs,
                         gather_indices, scatter_updates);
@@ -462,8 +480,14 @@ void pending_completion_retains_program(
   std::vector<float> values(
       operation.kind() == compute::OperationKind::kGatedActivation ? 512 : 256,
       1.0F);
-  ASSERT_TRUE(
-      input.storage.view().write(std::as_bytes(std::span(values))).ok());
+  if (sglang_norm) {
+    const std::vector<__half> ones(256, __float2half(1));
+    ASSERT_TRUE(
+        input.storage.view().write(std::as_bytes(std::span(ones))).ok());
+  } else {
+    ASSERT_TRUE(
+        input.storage.view().write(std::as_bytes(std::span(values))).ok());
+  }
   auto prepared = compute::prepare(owner, operation, inputs, outputs).value();
   mem::Buffer scratch;
   if (const auto need = prepared.workspace_requirement(); need.size != 0)
@@ -501,10 +525,20 @@ void pending_completion_retains_program(
   gate.release();
   ASSERT_TRUE(done->wait().ok());
   const auto &output = output_storage[0];
-  std::vector<float> actual(output.storage.size() / sizeof(float));
-  ASSERT_TRUE(output.storage.view()
-                  .read(std::as_writable_bytes(std::span(actual)))
-                  .ok());
+  std::vector<float> actual;
+  if (sglang_norm) {
+    std::vector<__half> half_values(256);
+    ASSERT_TRUE(output.storage.view()
+                    .read(std::as_writable_bytes(std::span(half_values)))
+                    .ok());
+    for (const auto value : half_values)
+      actual.push_back(__half2float(value));
+  } else {
+    actual.resize(output.storage.size() / sizeof(float));
+    ASSERT_TRUE(output.storage.view()
+                    .read(std::as_writable_bytes(std::span(actual)))
+                    .ok());
+  }
   const double expected =
       operation.kind() == compute::OperationKind::kTopK ||
               operation.kind() == compute::OperationKind::kGather ||
@@ -515,7 +549,7 @@ void pending_completion_retains_program(
       : operation.kind() == compute::OperationKind::kSoftmax   ? 1.0 / 256
       : operation.kind() == compute::OperationKind::kLayerNorm ? 0
       : operation.kind() == compute::OperationKind::kRmsNorm
-          ? 1 / std::sqrt(1.0 + 1e-5)
+          ? (sglang_norm ? 1.0 : 1 / std::sqrt(1.0 + 1e-5))
           : 1.0 / (1.0 + std::exp(-1.0));
   for (std::size_t index = 0; index < actual.size(); ++index)
     EXPECT_NEAR(actual[index],
@@ -576,6 +610,9 @@ void metadata_failures_rollback(
     compute::Provider selected,
     compute::Operation operation =
         compute::Operation(compute::GatedActivation{})) {
+  const bool sglang_norm =
+      selected.id() == compute::cuda_native::kSglangProviderId &&
+      operation.kind() == compute::OperationKind::kRmsNorm;
   MetadataAllocator allocator;
   {
     const std::array providers{selected};
@@ -587,7 +624,9 @@ void metadata_failures_rollback(
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
     Tensor input(
-        matrix(compute::DataType::kFloat32, 1,
+        matrix(sglang_norm ? compute::DataType::kFloat16
+                           : compute::DataType::kFloat32,
+               1,
                operation.kind() == compute::OperationKind::kGatedActivation
                    ? 512
                    : 256),
@@ -597,6 +636,20 @@ void metadata_failures_rollback(
         operation.kind() == compute::OperationKind::kConcat ? 9U : 1U;
     std::vector input_desc(arity, input.view.description());
     std::vector inputs(arity, input.view.as_const());
+    std::optional<Tensor> norm_weight;
+    if (sglang_norm) {
+      norm_weight.emplace(
+          compute::TensorDesc::dense(compute::DataType::kFloat16,
+                                     std::array<std::int64_t, 1>{256})
+              .value(),
+          resource.ref());
+      const std::vector<__half> ones(256, __float2half(1));
+      ASSERT_TRUE(norm_weight->storage.view()
+                      .write(std::as_bytes(std::span(ones)))
+                      .ok());
+      input_desc.push_back(norm_weight->view.description());
+      inputs.push_back(norm_weight->view.as_const());
+    }
     std::optional<Tensor> gather_indices, scatter_updates;
     append_index_operands(operation, resource.ref(), input_desc, inputs,
                           gather_indices, scatter_updates);
@@ -660,8 +713,14 @@ void metadata_failures_rollback(
         operation.kind() == compute::OperationKind::kGatedActivation ? 512
                                                                      : 256,
         1.0F);
-    ASSERT_TRUE(
-        input.storage.view().write(std::as_bytes(std::span(values))).ok());
+    if (sglang_norm) {
+      const std::vector<__half> ones(256, __float2half(1));
+      ASSERT_TRUE(
+          input.storage.view().write(std::as_bytes(std::span(ones))).ok());
+    } else {
+      ASSERT_TRUE(
+          input.storage.view().write(std::as_bytes(std::span(values))).ok());
+    }
     const auto replay_begin = allocator.attempts;
     for (int iteration = 0; iteration < 3; ++iteration) {
       auto done = lane.submit(queue, inputs, outputs);
@@ -682,6 +741,11 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
                                      compute::Operation(compute::Gather{}));
   pending_completion_retains_program(compute::cuda_native::provider());
   pending_completion_retains_program(compute::cuda_native::sglang_provider());
+  pending_completion_retains_program(compute::cuda_native::sglang_provider(),
+                                     compute::Operation(compute::RmsNorm{}));
+  pending_completion_retains_program(
+      compute::cuda_native::sglang_provider(),
+      compute::Operation(compute::Unary{compute::UnaryKind::kSilu}));
   pending_completion_retains_program(
       compute::cuda_native::provider(),
       compute::Operation(compute::Unary{compute::UnaryKind::kSilu}));
@@ -709,6 +773,11 @@ TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
                              compute::Operation(compute::Gather{}));
   metadata_failures_rollback(compute::cuda_native::provider());
   metadata_failures_rollback(compute::cuda_native::sglang_provider());
+  metadata_failures_rollback(compute::cuda_native::sglang_provider(),
+                             compute::Operation(compute::RmsNorm{}));
+  metadata_failures_rollback(
+      compute::cuda_native::sglang_provider(),
+      compute::Operation(compute::Unary{compute::UnaryKind::kSilu}));
   metadata_failures_rollback(
       compute::cuda_native::provider(),
       compute::Operation(compute::Unary{compute::UnaryKind::kSilu}));

@@ -85,6 +85,8 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
+| SGLang RMSNorm | dense 同类型 F16/BF16 输入和必需 scale，F32 累加、输出最终 RNE；宽度64/128/256、256倍数至8192、512倍数至16384；16字节对齐、允许精确 input0 原位；混合F32参数不先窄化，继续由下一合法候选承载 |
+| SGLang Unary | dense F32/F16/BF16 SiLU/GELU/GELU-tanh，完整16字节向量、对齐16字节、允许精确原位；普通 Unary 的稳定尾值和 -Inf 极限合同由明确数学适配保留；输出元素数<=INT32_MAX |
 | HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
 | HYLE 基本 tensor | plain View、Copy、Fill、Select；F32/F16/BF16 Cast、全部既有 Unary/Binary 模式；rank≤8，rank0/broadcast/非负及奇数 byte stride，非 View 输出 dense、元素数≤INT32_MAX |
 | HYLE CUDA norms | dense F32/F16/BF16 RMSNorm、LayerNorm，最后一轴、FP32 accumulation；scale/bias 各自为输入类型或 half 输入的 F32 参数，元素数≤INT32_MAX；LayerNorm 使用先均值再 centered variance |
@@ -94,7 +96,9 @@ device storage。View 按共同 byte offset 必须别名原 storage；其余逐�
 完全相同时允许精确原位，Copy/Cast 始终不重叠。Select 原样保留被选择值的位模式；浮点算术使用
 FP32 中间值并在末尾舍入一次，Cast 窄化为 RNE。Norm 参数在计算前保持 F32，不先窄化；允许精确
 input0 原位，其他参数和部分重叠拒绝。非连续 norm 输入先用普通 Copy materialize，并计入实际成本。
-Norm 使用 CUDA SDK Cooperative Groups 的行归约，一次 native launch、零 workspace/槽私有状态。
+上述 SGLang norm 使用锁定原版 warp/CTA/double-load 算法，其他 norm 候选使用 CUDA SDK
+Cooperative Groups；均一次 native launch、零 workspace/槽私有状态。新 SGLang norm/Unary
+域的完整性能比较仍待 C1 资格，不能从普通入口接通推断为硬件上的性能赢家。
 Reduce 和 Softmax/LogSoftmax 支持 F32/F16/BF16、任意轴/普通 byte stride、dense output 和 F32
 累加；半精度 Reduce 必须显式声明 F32。Reduce 不允许原位，空集合仍写约定 identity，Min/Max
 传播 NaN；Softmax 可用广播 Bool/同类型 additive mask、scale 和精确 input0 原位，无有效值的行

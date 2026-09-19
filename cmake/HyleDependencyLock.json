@@ -249,7 +249,7 @@
       },
       "vendored": {
         "path": "third_party/sglang_activation",
-        "tree_sha256": "9e60796cdbdce35e3e8eefca7bc29eed3533afc249992aa27fdfcd74f44f02a0"
+        "tree_sha256": "ab8f1749bbf7afca067ffc5b128c572129ae0d5fd944410edf3a51015138830a"
       },
       "license": {
         "expression": "Apache-2.0",
@@ -262,7 +262,7 @@
           {
             "root": "hyle",
             "path": "third_party/sglang_activation/NOTICE",
-            "sha256": "7cfaa4f6be2e8ed2b80ac324f1fedf2ccb0af53bb74efd75968276dd03906314"
+            "sha256": "6f03ef9c3a132dabd5fbab06b4f7c7ee711ebe20396d0550828d031fbcb16943"
           }
         ]
       }
