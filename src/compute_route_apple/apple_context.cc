@@ -57,9 +57,12 @@ Result<mx::array> with_device_status(mx::array output, mx::array status,
   if (active_checks == nullptr)
     return std::unexpected(Status::FailedPrecondition(
         "Apple checked lowering requires managed Context tracing"));
-  auto result = mx::array(output.shape(), output.dtype(),
-                          std::make_shared<mx::Depends>(stream),
-                          std::vector{output, status});
+  // Public depends inherits the output primitive's stream. Do not fall back
+  // to MLX's default stream, or instantiate its non-exported Depends class.
+  if (!output.has_primitive() || output.primitive().stream() != stream)
+    return std::unexpected(Status::InvalidArgument(
+        "Apple checked output requires the managed stream"));
+  auto result = mx::depends({output}, {status}).front();
   active_checks->push_back({result.id(), std::move(status)});
   return result;
 }
