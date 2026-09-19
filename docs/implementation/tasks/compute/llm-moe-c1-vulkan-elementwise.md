@@ -84,3 +84,8 @@ baseline `1e33a79f`，owner `/root`。W1 的 Provider19项通过，Direct95项�
 将 helper 移出 reduction 条件块，不改变其数学或其他调用者。新增原生 fallback 的同输入
 尾值回归，并覆盖阈值两侧；既有 managed 严格门与完整本批适用验收保持。产品纠正消耗1/2，
 测试编译纠正1；不启动性能、不改公共仪器、不改变其他 owner 状态。实施前先提交本节审计。
+
+审计 `e7e972cf` 后实施 F1：原生 helper 只移动定义，LogSoftmax 数学保持逐字不变；
+Softplus 的两条路径共享其小量处理，严格回归覆盖三浮点及 `exp(-abs(x))=1/64` 两侧。
+更新 patch-tree 为 `fb15744d5705ded9d73b045faa0b916e02a22c0e59c69c451811e8e4062a47e5`。
+新候选的设备与交付资格尚未运行，不把旧 Provider19项直接代签为新 patch 通过。

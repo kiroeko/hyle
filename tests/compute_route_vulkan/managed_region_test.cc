@@ -249,17 +249,18 @@ TEST(VulkanManaged, SubtractDividePreserveBothBroadcastOrdersAndScalar) {
 }
 TEST(VulkanManaged, StableTransformsPreserveSmallValuesAndHighRankHalfStorage) {
   auto context = vulkan_test::context().value();
-  const std::array<double, 27> edges{
-      -80,  -40,       -20,      -15, -1, -1e-4, -1e-8, -0.0, 0.0,
-      1e-8, 1e-4,      0.5,      1,   2,  15,    20,    40,   80,
-      NAN,  -INFINITY, INFINITY, -2,  3,  0.25,  -0.25, 8,    16};
+  const std::array<double, 33> edges{
+      -80,     -40,       -20,      -15,   -1, -1e-4, -1e-8, -0.0, 0.0,
+      1e-8,    1e-4,      0.5,      1,     2,  15,    20,    40,   80,
+      NAN,     -INFINITY, INFINITY, -2,    3,  0.25,  -0.25, 8,    16,
+      -4.1588, -4.159,    4.1588,   4.159, -5, 5};
   for (auto type :
        {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
     const auto size = static_cast<std::int64_t>(c::data_type_size(type));
     const auto desc =
         c::TensorDesc::strided_bytes(
-            type, std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 3, 9},
-            std::array<std::int64_t, 8>{0, 0, 0, 0, 0, 0, 9 * (size + 1) + 3,
+            type, std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 3, 11},
+            std::array<std::int64_t, 8>{0, 0, 0, 0, 0, 0, 11 * (size + 1) + 3,
                                         size + 1})
             .value();
     const auto input = make(context, desc, edges);
@@ -271,39 +272,51 @@ TEST(VulkanManaged, StableTransformsPreserveSmallValuesAndHighRankHalfStorage) {
           c::UnaryKind::kSilu}) {
       SCOPED_TRACE(::testing::Message()
                    << static_cast<int>(type) << '/' << static_cast<int>(kind));
-      auto program = v::prepare(context, c::Unary{kind}, desc).value();
-      const auto &dispatches = d::Access::program(program)->dispatches;
-      ASSERT_EQ(std::ranges::count_if(dispatches,
-                                      [](const auto &dispatch) {
-                                        return dispatch.region != nullptr;
-                                      }),
-                1);
-      auto slot = program.create_invocation().value();
-      ASSERT_TRUE(slot.bind(input).ok());
-      auto work = slot.submit().value();
-      auto result = work.wait();
-      ASSERT_TRUE(result) << result.error().message();
-      const auto observed = values(context, result->get()->tensors()[0]);
-      for (std::size_t i = 0; i < logical.size(); ++i) {
-        const auto reference = rounded(unary(kind, logical[i]), type);
-        if (std::isnan(reference)) {
-          EXPECT_TRUE(std::isnan(observed[i])) << i;
-        } else if (reference == 0 || std::isinf(reference)) {
-          EXPECT_EQ(observed[i], reference) << i;
-          EXPECT_EQ(std::signbit(observed[i]), std::signbit(reference)) << i;
-        } else {
-          const auto relative = type == c::DataType::kFloat32   ? 6e-6
-                                : type == c::DataType::kFloat16 ? 0.001
-                                                                : 0.008;
-          const auto quantum = type == c::DataType::kFloat16    ? 0x1p-24
-                               : type == c::DataType::kBFloat16 ? 0x1p-133
-                                                                : 1e-43;
-          EXPECT_NEAR(observed[i], reference,
-                      relative * std::abs(reference) + quantum)
-              << i;
+      for (bool mature : {true, false}) {
+        if (!mature && kind != c::UnaryKind::kSoftplus)
+          continue;
+        SCOPED_TRACE(mature);
+        auto &limits = d::Access::runtime(context)->device->properties.limits;
+        const auto original_limits = limits;
+        if (!mature)
+          limits.maxComputeWorkGroupInvocations = 256;
+        auto prepared = v::prepare(context, c::Unary{kind}, desc);
+        limits = original_limits;
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        auto program = std::move(*prepared);
+        const auto &dispatches = d::Access::program(program)->dispatches;
+        ASSERT_EQ(std::ranges::count_if(dispatches,
+                                        [](const auto &dispatch) {
+                                          return dispatch.region != nullptr;
+                                        }),
+                  mature ? 1 : 0);
+        auto slot = program.create_invocation().value();
+        ASSERT_TRUE(slot.bind(input).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        const auto observed = values(context, result->get()->tensors()[0]);
+        for (std::size_t i = 0; i < logical.size(); ++i) {
+          const auto reference = rounded(unary(kind, logical[i]), type);
+          if (std::isnan(reference)) {
+            EXPECT_TRUE(std::isnan(observed[i])) << i;
+          } else if (reference == 0 || std::isinf(reference)) {
+            EXPECT_EQ(observed[i], reference) << i;
+            EXPECT_EQ(std::signbit(observed[i]), std::signbit(reference)) << i;
+          } else {
+            const auto relative = type == c::DataType::kFloat32   ? 6e-6
+                                  : type == c::DataType::kFloat16 ? 0.001
+                                                                  : 0.008;
+            const auto quantum = type == c::DataType::kFloat16    ? 0x1p-24
+                                 : type == c::DataType::kBFloat16 ? 0x1p-133
+                                                                  : 1e-43;
+            EXPECT_NEAR(observed[i], reference,
+                        relative * std::abs(reference) + quantum)
+                << i;
+          }
         }
+        EXPECT_EQ(bytes(context, input), original);
       }
-      EXPECT_EQ(bytes(context, input), original);
     }
   }
 }

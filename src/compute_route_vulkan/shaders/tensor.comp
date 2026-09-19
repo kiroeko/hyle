@@ -149,6 +149,19 @@ float gelu_erf(float x) {
                     - 0.284496736) * t + 0.254829592) * t * exp(-z * z);
     return 0.5 * x * (x < 0 ? tail : 2.0 - tail);
 }
+float log_one_plus(float tail) {
+    // Avoid native log near one. The omitted term is at most tail^6 / 6;
+    // precise also preserves the cancellation in the compensated branch.
+    if (tail < 0.015625) {
+        precise float result = tail * (1.0 + tail * (-0.5 + tail *
+            (1.0 / 3.0 + tail * (-0.25 + tail * 0.2))));
+        return result;
+    }
+    precise float sum = 1.0 + tail;
+    precise float delta = sum - 1.0;
+    precise float result = log(sum) * (tail / delta);
+    return result;
+}
 float unary(float x) {
     if (isnan(x)) return x;
     if (mode == 0) return abs(x);
@@ -162,10 +175,8 @@ float unary(float x) {
     if (mode == 7) return sigmoid(x);
     if (mode == 8) return x > 0 ? x : 0.0;
     if (mode == 12) {
-        float e = exp(-abs(x)), sum = 1.0 + e;
-        // Compensated log1p avoids cancellation for large negative inputs.
-        float small = sum == 1.0 ? e : log(sum) * (e / (sum - 1.0));
-        return max(x, 0.0) + small;
+        // Share the qualified small-tail log1p used by LogSoftmax.
+        return max(x, 0.0) + log_one_plus(exp(-abs(x)));
     }
     if (isinf(x)) return x > 0 ? x : 0.0;
     if (mode == 9) return gelu_erf(x);
@@ -312,19 +323,6 @@ float soft_value(uint row, uint column) {
 vec2 soft_rows(uint row, uint column) {
     return vec2(soft_value(row, column), rows_per_group == 2 && row + 1 < reduction_rows
         ? soft_value(row + 1, column) : negative_infinity());
-}
-float log_one_plus(float tail) {
-    // Avoid native log near one. The omitted term is at most tail^6 / 6;
-    // precise also preserves the cancellation in the compensated branch.
-    if (tail < 0.015625) {
-        precise float result = tail * (1.0 + tail * (-0.5 + tail *
-            (1.0 / 3.0 + tail * (-0.25 + tail * 0.2))));
-        return result;
-    }
-    precise float sum = 1.0 + tail;
-    precise float delta = sum - 1.0;
-    precise float result = log(sum) * (tail / delta);
-    return result;
 }
 float normalized_value(float value, float maximum, float normalizer, bool exponential) {
     if (isnan(maximum) || isinf(maximum)) return quiet_nan();

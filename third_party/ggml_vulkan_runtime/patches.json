@@ -461,7 +461,7 @@
     {
       "path": "src/ggml-vulkan/vulkan-shaders/unary.comp",
       "before_sha256": "224257d872b7658a3d9dba118818897511596093a4c5fc9b4ff866cfc7079709",
-      "after_sha256": "eb1c17f38d2d61f7313327d74915912f49c2c34818fd6094ec2d5f8ea9c327f7",
+      "after_sha256": "0644a5049aefb8c2cfc01ef7e67a74786a56ed25467e902e701dfc1f6fdb103e",
       "edits": [
         {
           "before": "float op_silu(float x) {\n    return x / (1.0f + exp(-x));\n}",
@@ -481,7 +481,7 @@
         },
         {
           "before": "float op_softplus(float x) {\n    return (x > 20.0f) ? x : log(1.0f + exp(x));\n}",
-          "after": "float op_softplus(float x) {\n    // HYLE's stable beta=1 contract; GLSL has no log1p intrinsic.\n    if (isnan(x)) return x;\n    if (isinf(x)) return x > 0.0f ? x : 0.0f;\n    const float e = exp(-abs(x));\n    precise float sum = 1.0f + e;\n    precise float delta = sum - 1.0f;\n    const float tail = sum == 1.0f ? e : log(sum) * (e / delta);\n    return max(x, 0.0f) + tail;\n}"
+          "after": "float op_softplus(float x) {\n    // HYLE's stable beta=1 contract; GLSL has no log1p intrinsic.\n    if (isnan(x)) return x;\n    if (isinf(x)) return x > 0.0f ? x : 0.0f;\n    const float e = exp(-abs(x));\n    precise float tail;\n    // Reuse HYLE's LogSoftmax small-tail formula; omitted term <= e^6 / 6.\n    if (e < 0.015625f) {\n        tail = e * (1.0f + e * (-0.5f + e *\n            (1.0f / 3.0f + e * (-0.25f + e * 0.2f))));\n    } else {\n        precise float sum = 1.0f + e;\n        precise float delta = sum - 1.0f;\n        tail = log(sum) * (e / delta);\n    }\n    return max(x, 0.0f) + tail;\n}"
         }
       ]
     },

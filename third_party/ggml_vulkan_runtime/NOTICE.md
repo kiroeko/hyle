@@ -19,7 +19,8 @@ The gate still multiplies that activation by its other input, preserving
 zero-times-infinity/NaN behavior. Their negative finite branch uses exp(x) to
 avoid intermediate overflow, as does Sigmoid. Tanh uses the GLSL intrinsic
 instead of a subtractive formula that cancels tiny inputs. Softplus uses a
-compensated log1p expression with explicit NaN/Inf handling; Log and Sqrt also
+small-tail expansion shared with HYLE LogSoftmax, then a compensated log1p
+expression outside that domain, with explicit NaN/Inf handling; Log and Sqrt also
 handle the common negative-domain and signed-zero boundaries explicitly.
 These are declared numerical adaptations, including changes to finite math.
 The original dispatch, fusion and resource planning remain in place.
