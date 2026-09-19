@@ -124,3 +124,21 @@ F2验证仅增量重编当前W1 static/shared受影响route/Graph并执行其既
 按固定源码/编译命令/产物身份复用19项，不重跑。Air/Mini执行尚未通过的当前候选原生资格；
 真实2B三交付与112项selected工程余门仍需完成，身份匹配者复用。本批不运行P1，CPU Q2
 BLOCKED保持。当前统一实现48,943行/198文件，不含测试，C1整包和共同矩阵尚未签收。
+
+### F2 同候选原生模块结果
+
+审计`08958603`后，产品`aa6690c6`仅改上述一个常量类型，已完成这次原生资格：
+
+| 环境 | 实际结果 | 证据 |
+|---|---|---|
+| W1 static/shared | 141/140项PASS；各自Provider19项按未变源码、编译命令、EXE及依赖DLL身份复用，受影响Direct/Graph实际重编并通过 | [收据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/f2-windows-native.json) |
+| MacBook Air Mac16,12 | Provider19、Direct95、Graph27全部通过，source contract5项通过；validation layer无诊断 | [收据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/y35-f2-air-focused.json) |
+| Mac mini Mac16,10 | 140项通过，1项预声明的独立validation-instance测试因该验证副本无对应layer而显式跳过；source contract5项通过 | [收据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/y35-f2-mini-focused.json) |
+
+原始失败、后续结果及命令/产物身份全部保留并核验hash/CRC；Mini跳过项不记PASS，Air/W1
+负责相应layer资格。F2纠正到此停止，产品预算2/2；没有放宽数值门、运行P1或再改算法。
+统一脚本在不可变`aa6690c6`统计实现48,943行/198文件，自检通过。
+
+本次只完成Y35原生模块资格。真实2B稳定门控/得分source/static/shared、112项所选工程门
+及C1完整成本比较/默认路由/重复实现淘汰仍未完成；CPU Q2 BLOCKED、矩阵与C1通知条件不变。
+后续工程门优先核对既有未变组件和默认交付的身份复用，不能因新shader重复构建全部未变产品。

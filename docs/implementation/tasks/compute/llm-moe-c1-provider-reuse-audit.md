@@ -6,21 +6,21 @@ owner `/root`，当前核对 baseline `6695fba0`。用户指出“Provider 接�
 要求修正偏向逐项自写的任务卡；同时明确已有缺陷、为性能省略必要检查的问题也必须处理。
 [C1 活动卡](llm-moe-c1-tensor-state.md)已据此重排施工顺序，下文较早来源调查仍是证据，
 其中“下一项”等历史安排不覆盖该当前裁决。
-2026-09-19按`ec240ac9`和当前施工卡更新下面CPU/Vulkan的接入事实；性能未资格化的域仍不写赢家。
+2026-09-19按`aa6690c6`和当前施工卡更新下面CPU/Vulkan的接入事实；性能未资格化的域仍不写赢家。
 
 | 路线 | 当前普通接入的具体事实 | 下一步的接入责任 |
 |---|---|---|
 | CPU | 已有BRGEMM及[C1-AA](llm-moe-c1-onednn-normalization.md)的RMSNorm/LayerNorm与原生Add/Mul post-ops接入；其Q2测量资格BLOCKED，其他C1域仍有Native承载；ggml-CPU仍BLOCKED | 按具名恢复条件处理资格阻塞，再完成其余成熟覆盖与等责取舍；不能把注册或局部norm接入等同完整算子集 |
 | CUDA | `cuda_context.cc` 注册 cuBLAS、Marlin、SGLang 与 HYLE CUDA；当前 SGLang 是 activation 源子集，C1 多项为自有 kernel/CUB 构件 | 按片段核对已登记 CUDA 成熟库的实际覆盖、硬件/版本与 C++ 交付后成组接入；库名不代签完整 norm/index/region |
 | Apple | MLX typed lowerings/region 已承载较多 C1 操作，checked 状态与有序 Scatter 含 HYLE Metal 适配 | 复用当前 MLX 接线，核对未覆盖域与必要检查；比较完整调用链，不为与其他路线对称而重写 |
-| Vulkan | ggml已承载归一化、具名F32算术/激活、TopK、Gather、F32 Scan和Sum/Mean/Softmax；checked/顺序语义由受审适配组合。[Y34](llm-moe-c1-vulkan-reduction.md)新归约/概率/L2已通过W1/Air真实三交付，原生回归覆盖W1/Air/Mini | 本批工程门已通过；核对余域，完成完整成本比较、条件规则及自有重复路径取舍；已有接入不等于性能优选或C1完成 |
+| Vulkan | ggml已承载归一化、具名算术/稳定变换/门控、TopK、Gather、F32 Scan和Sum/Mean/Softmax；checked/顺序语义由受审适配组合。[Y34](llm-moe-c1-vulkan-reduction.md)归约/概率/L2三交付与工程门已完成；[Y35](llm-moe-c1-vulkan-elementwise.md)逐元素/门控新绑定已实现，W1/Air/Mini适用原生模块资格通过（Mini另有1项layer测试显式跳过） | 完成Y35其余适用验证，再处理完整成本比较、条件规则及自有重复路径取舍；已有接入不等于性能优选或C1完成 |
 
 本次有界读取固定 ggml `456172ec` 的 `ggml.c`、`ggml-vulkan.cpp::supports_op`/执行分派与对应
 shader，并对照 HYLE `region.cc`、`vulkan_program.cc` 和原需求矩阵，得到下列具体区分：
 
 | C1 需求 | 上游现成实现与当前差异 | 分类 |
 |---|---|---|
-| F03 算术与稳定变换 | 已接Abs/Neg/Exp/Tanh/Sigmoid/SiLU及Add/Sub/Mul/Div的具名F32域，不再要求norm/gate anchor；Log/Sqrt/Softplus等余域仍按共同数值/布局合同核对 | **部分已绑定，余域继续复核**；没有性能优选结论，不能由六个Unary外推全部稳定变换 |
+| F03 算术与稳定变换 | Y35已接Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/SiLU/Softplus、Add/Sub/Mul/Div及packed/separate SwiGLU；冷期适配三浮点、rank≤8和合法stride/广播。Rsqrt用原厂Fill/Sqrt/Div，动态Min/Max及其他未绑定激活保留原生路径 | **[Y35已实现、部分资格通过](llm-moe-c1-vulkan-elementwise.md)**；完整三交付与性能未签收，half转换、高rank广播物化和Rsqrt三个dispatch必须计费 |
 | F04 归约/Softmax | Y34已接SumRows/Mean/Softmax并适配任意轴、half、stride、Boolean/additive mask、尾行与长行；Min/Max、LogSoftmax、空域及设备不适用域保留既有路径 | **[Y34数值/实际三交付已资格化](llm-moe-c1-vulkan-reduction.md)**；selected112工程门已通过；完整成本和存量取舍未签收，不能从成熟域外推全部域均由ggml承载 |
 | F04 LayerNorm | `norm.comp` 用 E[x²]−E[x]²；Y33已以原版 `group_norm.comp` 的两遍中心化算法接入，适配dtype/layout/设备与输出owner | **[Y33数值与交付已资格化](llm-moe-c1-vulkan-layernorm.md)**（2026-09-19）；大均值小方差通过原门，W1/Air实际三交付通过，完整成本性能取舍仍待C1固定bundle |
 | F04 TopK | 已用原版Argsort/GetRows承载值+索引，补共同stable/NaN与对齐语义；冷Plan/Graph已支持该多输出域 | **数值与三交付已资格化**，详见C1-Y；原版全排序成本保留，完整性能取舍待裁决 |

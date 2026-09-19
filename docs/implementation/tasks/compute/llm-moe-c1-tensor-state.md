@@ -1534,3 +1534,7 @@ Y35已实现；`6af6bfe4`的W1 static/shared模块资格141/140项及source cont
 实现48,943行/198文件。Air首编失败于同宽`size_t/uint64_t`的`std::min`类型推导，尚无GPU
 结果；仅按[Y35-F2有限审计](llm-moe-c1-vulkan-elementwise.md)修复这一处类型。Mac原生、
 本地2B三交付、所选工程余门及C1完整成本/条件路由/淘汰仍未签收，C1完成通知尚不触发。
+
+F2产品`aa6690c6`已修复该编译差异；同候选W1 static/shared141/140项、Air141项通过，
+Mini140项通过及1项预声明layer测试显式跳过。详见[Y35原生资格](llm-moe-c1-vulkan-elementwise.md)。
+三交付、所选工程余门及C1性能/路由/淘汰保持待完成，当前只签本批模块资格。

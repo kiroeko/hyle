@@ -1100,3 +1100,7 @@ baseline `1e43875a`，owner `/root`。当前 AUDITED 仅新增
 Y35已实现；`6af6bfe4`的W1 static/shared模块资格141/140项及source contract5项通过。
 Air首编的`std::min`类型推导失败按[Y35-F2](llm-moe-c1-vulkan-elementwise.md)有限修复，
 Mac GPU及本批三交付尚未验收。Provider接入事实不代签C1完整成本优选/淘汰或共同矩阵。
+
+后续F2产品`aa6690c6`已完成本批W1 static/shared141/140项、Air141项，以及Mini140项
+通过和1项预声明layer测试显式跳过。只签[Y35原生资格](llm-moe-c1-vulkan-elementwise.md)，
+本批实际三交付、所选工程余门、完整C1性能/路由/淘汰仍未签收。

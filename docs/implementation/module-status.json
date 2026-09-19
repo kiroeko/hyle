@@ -504,18 +504,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y35 AUDITED：成熟逐元素/门控已实现；6af6bfe4 的W1 static/shared原生141/140项及source contract5项通过。Air首编类型推导失败，按Y35-F2有限修复；Mac、真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收。CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y35 AUDITED：aa6690c6 完成逐元素/门控和Apple编译类型修复；W1 static/shared141/140项、Air141项通过，Mini140项通过及1项预声明layer测试显式跳过。真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收；CPU Q2 BLOCKED保持。实现48943行/198文件。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y35 AUDITED：成熟逐元素/门控已实现；6af6bfe4 的W1 static/shared原生141/140项及source contract5项通过。Air首编类型推导失败，按Y35-F2有限修复；Mac、真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收。CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y35 AUDITED：aa6690c6 完成逐元素/门控和Apple编译类型修复；W1 static/shared141/140项、Air141项通过，Mini140项通过及1项预声明layer测试显式跳过。真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收；CPU Q2 BLOCKED保持。实现48943行/198文件。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y35 AUDITED：成熟逐元素/门控已实现；6af6bfe4 的W1 static/shared原生141/140项及source contract5项通过。Air首编类型推导失败，按Y35-F2有限修复；Mac、真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收。CPU Q2 BLOCKED保持。",
+      "summary": "LLM/MoE C1-Y35 AUDITED：aa6690c6 完成逐元素/门控和Apple编译类型修复；W1 static/shared141/140项、Air141项通过，Mini140项通过及1项预声明layer测试显式跳过。真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收；CPU Q2 BLOCKED保持。实现48943行/198文件。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]
