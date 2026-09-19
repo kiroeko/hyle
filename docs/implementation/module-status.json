@@ -504,18 +504,18 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y35 AUDITED：baseline 1e43875a，按有限 Y35-A–D 接入成熟 Log/Sqrt/Softplus/Rsqrt/packed SwiGLU、稳定数值及类型布局适配；先审计后实施，尚未产品或设备资格。Y34 完成的工程门停止重复，C1完整成本/默认规则/淘汰未签收；CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y35 AUDITED：成熟逐元素/门控已实现；6af6bfe4 的W1 static/shared原生141/140项及source contract5项通过。Air首编类型推导失败，按Y35-F2有限修复；Mac、真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收。CPU Q2 BLOCKED保持。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y35 AUDITED：baseline 1e43875a，按有限 Y35-A–D 接入成熟 Log/Sqrt/Softplus/Rsqrt/packed SwiGLU、稳定数值及类型布局适配；先审计后实施，尚未产品或设备资格。Y34 完成的工程门停止重复，C1完整成本/默认规则/淘汰未签收；CPU Q2 BLOCKED保持。"
+      "summary": "LLM/MoE C1-Y35 AUDITED：成熟逐元素/门控已实现；6af6bfe4 的W1 static/shared原生141/140项及source contract5项通过。Air首编类型推导失败，按Y35-F2有限修复；Mac、真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收。CPU Q2 BLOCKED保持。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y35 AUDITED：baseline 1e43875a，按有限 Y35-A–D 接入成熟 Log/Sqrt/Softplus/Rsqrt/packed SwiGLU、稳定数值及类型布局适配；先审计后实施，尚未产品或设备资格。Y34 完成的工程门停止重复，C1完整成本/默认规则/淘汰未签收；CPU Q2 BLOCKED保持。",
+      "summary": "LLM/MoE C1-Y35 AUDITED：成熟逐元素/门控已实现；6af6bfe4 的W1 static/shared原生141/140项及source contract5项通过。Air首编类型推导失败，按Y35-F2有限修复；Mac、真实2B三交付、工程余门及C1完整成本/默认规则/淘汰未签收。CPU Q2 BLOCKED保持。",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
     }
   ]

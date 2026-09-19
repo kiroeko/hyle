@@ -1,0 +1,106 @@
+{
+  "status": "FAIL",
+  "candidate": "6af6bfe486dc69a147ea3508db376920455def90",
+  "scope": "Y35 Air first native build; no GPU test or delivery qualification",
+  "failure": "std::min type deduction: element_count size_t is unsigned long; uint64_t is unsigned long long on this Apple target",
+  "result": {
+    "candidate": "6af6bfe486dc69a147ea3508db376920455def90",
+    "tree": "69d611a4141e6d70b58b24f2304660960c8b6a83",
+    "product_candidate": "117b1c1393f0089e427436788779eef592a8fc75",
+    "scope": "C1-Y35 stable elementwise and gated operations same-candidate static direct/graph correctness; not delivery or performance acceptance",
+    "source": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source",
+    "build": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+    "bundle_sha256": "5ec0341235de29318d335c0a25096b73ed1d4b81ac54b966d852a933d3e8c6d1",
+    "vendor_archive_sha256": "e13c176ea92e4a54ef3efccdfdb192e7433c76f91181de86b445560a47b07ac7",
+    "vendor_commit": "456172ec733a135778adcd32d00e576a58232e45",
+    "machine": {
+      "model": "Mac16,12",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+      "glslc": "shaderc v2026.4 unknown hash, 2026-09-11\nspirv-tools v2026.4 v2022.4-1347-gef96ed76\nglslang 11.1.0-1566-ge1b562a8\n\nTarget: SPIR-V 1.0\n",
+      "glslc_sha256": "219d44f4ebddc8ca8e9497804dfa965d30ec0c50abd5c1cd949efe0a12754f6b"
+    },
+    "environment": {
+      "PATH": "/opt/homebrew/bin:/Users/kiro/.cargo/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+      "DYLD_LIBRARY_PATH": "/opt/homebrew/opt/vulkan-loader/lib",
+      "VK_LAYER_PATH": "/Users/kiro/hyle-verify/r6-vulkan-20260917/tools/vulkan-validationlayers/1.4.357.0/share/vulkan/explicit_layer.d",
+      "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation",
+      "VK_LOADER_LAYERS_DISABLE": "~implicit~",
+      "HYLE_TEST_VULKAN_VALIDATE": "1",
+      "HYLE_VULKAN_VALIDATION": "1"
+    },
+    "commands": [
+      {
+        "label": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source",
+          "-B",
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DHYLE_DEV_FACTORS=compute_provider_ggml_vulkan;compute_route_vulkan;graph_route_vulkan",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_TEST_INSTRUMENTATION=OFF",
+          "-DHYLE_TRACE=OFF",
+          "-DHYLE_SANITIZER=off",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_GGML_VULKAN_RUNTIME=/Users/kiro/hyle-verify/llm-moe-c1-20260918/ggml",
+          "-DCMAKE_PREFIX_PATH=/opt/homebrew",
+          "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator"
+        ],
+        "exit_code": 0,
+        "seconds": 3.157870292,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y35-6af6bfe4/configure.log",
+        "sha256": "d5196b802a6dee64e49ab711df4e2bc0ce3ae99d35e9e80957c57dc68159f187"
+      },
+      {
+        "label": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+          "--parallel",
+          "2",
+          "--target",
+          "hyle_compute_provider_ggml_vulkan_tests",
+          "hyle_compute_route_vulkan_tests",
+          "hyle_graph_route_vulkan_tests",
+          "--",
+          "-k",
+          "0"
+        ],
+        "exit_code": 1,
+        "seconds": 78.945482083,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y35-6af6bfe4/build.log",
+        "sha256": "3bcfe6e8872ca92691e3e835c2d591deffd9ea861fe71717d3b8de2220d1379b"
+      }
+    ],
+    "verdict": "FAIL"
+  },
+  "archive": "first-air-failure-raw.zip",
+  "archive_sha256": "5017a7de4f3c457f139e651d455706a2e92b8d739da94d1b097453ab3148ecb2",
+  "archive_bytes": 15709,
+  "members": {
+    "build.log": "3bcfe6e8872ca92691e3e835c2d591deffd9ea861fe71717d3b8de2220d1379b",
+    "configure.log": "d5196b802a6dee64e49ab711df4e2bc0ce3ae99d35e9e80957c57dc68159f187",
+    "result.json": "aeb061f1bdee799e42f9173093beb6d475ff124a5fb8e497e5f9f21a26f97d5e",
+    "commands/run-y35-native-air.py": "0e927ed431c4289133a91a75caab0184641b9fa448707a575233c669b0ffabff",
+    "identity/y35-native-candidate.json": "3e98a99c2a8674dab29cd2febf4ea191bb7d5776b27a23b4e88565661525493c"
+  }
+}

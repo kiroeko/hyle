@@ -1,0 +1,399 @@
+{
+  "status": "PASS",
+  "scope": "Y35 W1 static/shared native module qualification only",
+  "candidate": "6af6bfe486dc69a147ea3508db376920455def90",
+  "product_candidate": "117b1c1393f0089e427436788779eef592a8fc75",
+  "qualified": {
+    "static": {
+      "status": "PASS",
+      "cases": 141,
+      "suites": [
+        {
+          "label": "compute_provider_ggml_vulkan",
+          "argv": [
+            "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+            "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f1-w1\\compute_provider_ggml_vulkan.json"
+          ],
+          "exit_code": 0,
+          "log": "compute_provider_ggml_vulkan.log",
+          "sha256": "54445dac9dd55bbd47c7455a83c7666d24ef7e562d32d689505942d86ae6e0c8",
+          "tests": 19,
+          "failures": 0,
+          "executable_sha256": "343c6669d3e9075b7aed4ea52a7a0092169ea28928b9ff20c8d73af0697a58c2",
+          "gtest_sha256": "7b327db0eeafb0c18a024e88beffdc69628b740b24bc7cac612db245e528dc4e"
+        },
+        {
+          "label": "compute_route_vulkan",
+          "argv": [
+            "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+            "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f1-w1\\compute_route_vulkan.json"
+          ],
+          "exit_code": 0,
+          "log": "compute_route_vulkan.log",
+          "sha256": "1f842772e409e68fe59ca285b9257554d5a827fb026549e847237e42b506e89c",
+          "tests": 95,
+          "failures": 0,
+          "executable_sha256": "6a29abcfd6268848a09fafee10ebaf0563acd90e1f5462bb8d533298a637a63f",
+          "gtest_sha256": "71c0562e4c8affe343e55ddb44e21f9244751be9a7de96258999fd3433be4174"
+        },
+        {
+          "label": "graph_route_vulkan",
+          "argv": [
+            "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_vulkan_test.exe",
+            "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\graph-migration-w1\\graph_route_vulkan.json"
+          ],
+          "exit_code": 0,
+          "log": "graph_route_vulkan.log",
+          "sha256": "5a54baf3286facbf7dcf6a81b618010549970c1b2ec41bdc9b1abe4850f210ca",
+          "tests": 27,
+          "failures": 0,
+          "executable_sha256": "bb21130acecded950a319d46d67f4b9f2ac1f614cb8c1937b0aeda8eda61fc7e",
+          "gtest_sha256": "5ecf8c4cb12e232fce544b66f950ae5446cb66a79583734ee69d2a5161df9029"
+        }
+      ],
+      "receipt": {
+        "candidate": "6af6bfe486dc69a147ea3508db376920455def90",
+        "scope": "C1-Y35 W1 static relevant factors; not all selected gates, delivery or performance",
+        "status": "PASS",
+        "commands": [
+          {
+            "label": "build",
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "--build",
+              "C:\\hyle-scratch\\active-vk\\static",
+              "--config",
+              "Release",
+              "--target",
+              "hyle_graph_route_vulkan_tests",
+              "--parallel",
+              "2"
+            ],
+            "exit_code": 0,
+            "log": "build.log",
+            "sha256": "5838e64ab6b1c0353230c907590cae4a6cee908d5eca0d87ec38cdab1ea9e8ab"
+          },
+          {
+            "label": "graph_route_vulkan",
+            "argv": [
+              "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_vulkan_test.exe",
+              "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\graph-migration-w1\\graph_route_vulkan.json"
+            ],
+            "exit_code": 0,
+            "log": "graph_route_vulkan.log",
+            "sha256": "5a54baf3286facbf7dcf6a81b618010549970c1b2ec41bdc9b1abe4850f210ca",
+            "tests": 27,
+            "failures": 0,
+            "executable_sha256": "bb21130acecded950a319d46d67f4b9f2ac1f614cb8c1937b0aeda8eda61fc7e",
+            "gtest_sha256": "5ecf8c4cb12e232fce544b66f950ae5446cb66a79583734ee69d2a5161df9029"
+          }
+        ],
+        "build_parallelism": 2,
+        "heavy_steps": "serial",
+        "runtime_PATH_unset": true,
+        "runtime_environment": {
+          "HYLE_VULKAN_VALIDATION": "1",
+          "HYLE_TEST_VULKAN_VALIDATE": "1",
+          "VK_LAYER_PATH": "C:/public/tools/hyle-vulkan/1.4.357.0/Bin",
+          "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation",
+          "VK_LOADER_LAYERS_DISABLE": "~implicit~"
+        },
+        "reused_passes": [
+          {
+            "label": "compute_provider_ggml_vulkan",
+            "argv": [
+              "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+              "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f1-w1\\compute_provider_ggml_vulkan.json"
+            ],
+            "exit_code": 0,
+            "log": "compute_provider_ggml_vulkan.log",
+            "sha256": "54445dac9dd55bbd47c7455a83c7666d24ef7e562d32d689505942d86ae6e0c8",
+            "tests": 19,
+            "failures": 0,
+            "executable_sha256": "343c6669d3e9075b7aed4ea52a7a0092169ea28928b9ff20c8d73af0697a58c2",
+            "gtest_sha256": "7b327db0eeafb0c18a024e88beffdc69628b740b24bc7cac612db245e528dc4e"
+          },
+          {
+            "label": "compute_route_vulkan",
+            "argv": [
+              "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+              "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\f1-w1\\compute_route_vulkan.json"
+            ],
+            "exit_code": 0,
+            "log": "compute_route_vulkan.log",
+            "sha256": "1f842772e409e68fe59ca285b9257554d5a827fb026549e847237e42b506e89c",
+            "tests": 95,
+            "failures": 0,
+            "executable_sha256": "6a29abcfd6268848a09fafee10ebaf0563acd90e1f5462bb8d533298a637a63f",
+            "gtest_sha256": "71c0562e4c8affe343e55ddb44e21f9244751be9a7de96258999fd3433be4174"
+          }
+        ],
+        "reuse_reason": "Only five Graph test cost assertions and their record changed; product and tested provider/Direct executable hashes remain identical.",
+        "prior_receipt_sha256": "bfb8626a73e119e635dac6776f3478e9bc5626937bbc954fdcff62a14383dd08",
+        "dlls": {
+          "concrt140.dll": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e",
+          "msvcp140.dll": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb",
+          "msvcp140_1.dll": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380",
+          "msvcp140_2.dll": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c",
+          "msvcp140_atomic_wait.dll": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241",
+          "msvcp140_codecvt_ids.dll": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3",
+          "vccorlib140.dll": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f",
+          "vcruntime140.dll": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2",
+          "vcruntime140_1.dll": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605",
+          "vcruntime140_threads.dll": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b",
+          "vulkan-1.dll": "32787e00ac6844481812428c496556b9ddbed5e6dbbc93aeff66350a441f04bb"
+        }
+      }
+    },
+    "shared": {
+      "status": "PASS",
+      "cases": 140,
+      "suites": [
+        {
+          "label": "compute_provider_ggml_vulkan",
+          "argv": [
+            "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+            "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\shared-w1\\compute_provider_ggml_vulkan.json"
+          ],
+          "exit_code": 0,
+          "log": "compute_provider_ggml_vulkan.log",
+          "sha256": "41f6ddfb37ad8b77e29238e479f5e79f32c500ae91bab2661185fafde0c73c06",
+          "tests": 19,
+          "failures": 0,
+          "executable_sha256": "ec2bb7cba08a63e0c64e2f37c36ee218fb157c0d81be1a8e41b6623efac76c00",
+          "gtest_sha256": "326efc31c8e57ddff2baea2fb4ba72cd16e0a02ea231ed1484ba0d2a014c31cb"
+        },
+        {
+          "label": "compute_route_vulkan",
+          "argv": [
+            "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_route_vulkan_test.exe",
+            "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\resumed-shared-w1\\compute_route_vulkan.json"
+          ],
+          "exit_code": 0,
+          "log": "compute_route_vulkan.log",
+          "sha256": "0d244ecc95504b20fff4cc8ae43ab4567554be659c8332ebf35fa8de31b9b5f7",
+          "tests": 95,
+          "failures": 0,
+          "executable_sha256": "f6708284118b4d5f53ddecb54469823df9c0559216e09231ae17023b04ffda2d",
+          "gtest_sha256": "8bc2d29e7d9aa6ec26e532a710a70f59e46d0f2c9534aec0fa2ac15286d6006e"
+        },
+        {
+          "label": "graph_route_vulkan",
+          "argv": [
+            "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_graph_route_vulkan_test.exe",
+            "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\resumed-shared-w1\\graph_route_vulkan.json"
+          ],
+          "exit_code": 0,
+          "log": "graph_route_vulkan.log",
+          "sha256": "2241ce1c8f6d850c192503c41ea06d6d7fc1292ef564e068595cfe5cbbcfa27b",
+          "tests": 26,
+          "failures": 0,
+          "executable_sha256": "f75518ecdb3500afc5dff906395d6da10a27b1cca076c2cf2d81b48be55a1b0c",
+          "gtest_sha256": "f44785b44ee52f5130cdedefdba112ddc3a8057f7c6812a56a3385cdd654f523"
+        }
+      ],
+      "receipt": {
+        "candidate": "6af6bfe486dc69a147ea3508db376920455def90",
+        "scope": "C1-Y35 W1 shared relevant factors; not all selected gates, delivery or performance",
+        "status": "PASS",
+        "commands": [
+          {
+            "label": "compute_route_vulkan",
+            "argv": [
+              "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_route_vulkan_test.exe",
+              "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\resumed-shared-w1\\compute_route_vulkan.json"
+            ],
+            "exit_code": 0,
+            "log": "compute_route_vulkan.log",
+            "sha256": "0d244ecc95504b20fff4cc8ae43ab4567554be659c8332ebf35fa8de31b9b5f7",
+            "tests": 95,
+            "failures": 0,
+            "executable_sha256": "f6708284118b4d5f53ddecb54469823df9c0559216e09231ae17023b04ffda2d",
+            "gtest_sha256": "8bc2d29e7d9aa6ec26e532a710a70f59e46d0f2c9534aec0fa2ac15286d6006e"
+          },
+          {
+            "label": "graph_route_vulkan",
+            "argv": [
+              "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_graph_route_vulkan_test.exe",
+              "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\resumed-shared-w1\\graph_route_vulkan.json"
+            ],
+            "exit_code": 0,
+            "log": "graph_route_vulkan.log",
+            "sha256": "2241ce1c8f6d850c192503c41ea06d6d7fc1292ef564e068595cfe5cbbcfa27b",
+            "tests": 26,
+            "failures": 0,
+            "executable_sha256": "f75518ecdb3500afc5dff906395d6da10a27b1cca076c2cf2d81b48be55a1b0c",
+            "gtest_sha256": "f44785b44ee52f5130cdedefdba112ddc3a8057f7c6812a56a3385cdd654f523"
+          }
+        ],
+        "build_parallelism": 2,
+        "heavy_steps": "serial",
+        "runtime_PATH_unset": true,
+        "runtime_environment": {
+          "HYLE_VULKAN_VALIDATION": "1",
+          "HYLE_TEST_VULKAN_VALIDATE": "1",
+          "VK_LAYER_PATH": "C:/public/tools/hyle-vulkan/1.4.357.0/Bin",
+          "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation",
+          "VK_LOADER_LAYERS_DISABLE": "~implicit~"
+        },
+        "reused_passes": [
+          {
+            "label": "compute_provider_ggml_vulkan",
+            "argv": [
+              "C:\\hyle-scratch\\active-vk\\shared\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+              "--gtest_output=json:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-elementwise\\shared-w1\\compute_provider_ggml_vulkan.json"
+            ],
+            "exit_code": 0,
+            "log": "compute_provider_ggml_vulkan.log",
+            "sha256": "41f6ddfb37ad8b77e29238e479f5e79f32c500ae91bab2661185fafde0c73c06",
+            "tests": 19,
+            "failures": 0,
+            "executable_sha256": "ec2bb7cba08a63e0c64e2f37c36ee218fb157c0d81be1a8e41b6623efac76c00",
+            "gtest_sha256": "326efc31c8e57ddff2baea2fb4ba72cd16e0a02ea231ed1484ba0d2a014c31cb"
+          }
+        ],
+        "configuration_and_build_reuse": [
+          {
+            "label": "configure",
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "-S",
+              "C:\\public\\project-hyle\\hyle",
+              "-B",
+              "C:\\hyle-scratch\\active-vk\\shared",
+              "-G",
+              "Ninja",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DHYLE_DEV_FACTORS=compute_provider_ggml_vulkan,compute_route_vulkan,graph_route_vulkan",
+              "-DHYLE_BUILD_TESTS=ON",
+              "-DHYLE_BUILD_BENCH=OFF",
+              "-DHYLE_INSTALL=OFF",
+              "-DHYLE_TEST_INSTRUMENTATION=OFF",
+              "-DHYLE_WERROR=ON",
+              "-DHYLE_COMPUTE_VULKAN=ON",
+              "-DHYLE_STATIC=OFF",
+              "-DCMAKE_TOOLCHAIN_FILE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake"
+            ],
+            "exit_code": 0,
+            "log": "configure.log",
+            "sha256": "97020b31f9a8223beeb8ee7efc7e22bbe34b68c892fdb8009fa6aef0486b2557"
+          },
+          {
+            "label": "build",
+            "argv": [
+              "C:/Program Files/CMake/bin/cmake.exe",
+              "--build",
+              "C:\\hyle-scratch\\active-vk\\shared",
+              "--config",
+              "Release",
+              "--target",
+              "hyle_compute_provider_ggml_vulkan_tests",
+              "hyle_compute_route_vulkan_tests",
+              "hyle_graph_route_vulkan_tests",
+              "--parallel",
+              "2"
+            ],
+            "exit_code": 0,
+            "log": "build.log",
+            "sha256": "bbbe15531acf2146aef7450327d1c2f981666b59d8000659da25ab524afde778"
+          }
+        ],
+        "prior_receipt_sha256": "e888d7f92a09060b2b7e91ca8c5d1694e7c3508b3c2d24be98c3c6334cef897a",
+        "harness_correction": "The private script mistakenly assigned the shared-only excluded case to Provider. Actual source/previous receipt: Provider19, Direct95, Graph26. Provider19 passed; retain that run and continue the two unrun suites.",
+        "dlls": {
+          "concrt140.dll": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e",
+          "hyle_compute.dll": "1fdcf84d3a0038bbe5ce31c9d44f824dea89ddb34cd1cefc0841611e143602ed",
+          "hyle_compute_ops.dll": "53777e0dea6b9267b5c26dbee4d0d5fdc9145f40e3b629a3a3cbe7b817138c12",
+          "hyle_compute_provider_ggml_vulkan.dll": "af6b344ad3ad652f141e5a86fc60fe3037143172d4f83bb5afea6ff9419825a8",
+          "hyle_compute_route_vulkan.dll": "ff144156406b7d10c6fd9229af6f521a9d5b2552b44ce8a4c2214eba96bc16f6",
+          "hyle_container.dll": "f88949413c6e521a576cea6eb06315f5e243854e52e08db811d2bf3a4419b5f0",
+          "hyle_error.dll": "0e518dac6063e08b7e082ad6b25d8a1c9dfe0755d368d67483b5574c0238e260",
+          "hyle_graph.dll": "00dc8563d19c487ac36e67459521c1b427015385f0bcbe2fe33151dd611c54e8",
+          "hyle_graph_route_vulkan.dll": "696126773fab30d74546abc41cb50bac8f61c996b7fe6d1a5ead872fe2cd37f4",
+          "hyle_mem.dll": "db1447a51e5d4a3bd9ccda0b12ad119d887787565234e42b0acf9ee8a26d901f",
+          "hyle_platform.dll": "7c910825cf77835bb7ebd4c137c3fd2cb7c4b75f1f374be6d3aef1f21002025a",
+          "hyle_time.dll": "94b976e92ac654cef36d1611ef70b0c172a982751c3495ca31f8f6b21abeb2cb",
+          "msvcp140.dll": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb",
+          "msvcp140_1.dll": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380",
+          "msvcp140_2.dll": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c",
+          "msvcp140_atomic_wait.dll": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241",
+          "msvcp140_codecvt_ids.dll": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3",
+          "vccorlib140.dll": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f",
+          "vcruntime140.dll": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2",
+          "vcruntime140_1.dll": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605",
+          "vcruntime140_threads.dll": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b",
+          "vulkan-1.dll": "32787e00ac6844481812428c496556b9ddbed5e6dbbc93aeff66350a441f04bb"
+        }
+      }
+    }
+  },
+  "cases": 281,
+  "source_contract_tests": 5,
+  "archive": "windows-native-raw.zip",
+  "archive_sha256": "76fa05f8f2856dbdac842cf3cadaf45e51fc69559c15a41026b0be5e9b254976",
+  "archive_bytes": 160311,
+  "members": {
+    "f1-w1/build.log": "01dd224dfc0bd6ab177e44386dd369e25df1740639661f4bdf1dba5fbf27f69e",
+    "f1-w1/compute_provider_ggml_vulkan.json": "7b327db0eeafb0c18a024e88beffdc69628b740b24bc7cac612db245e528dc4e",
+    "f1-w1/compute_provider_ggml_vulkan.log": "54445dac9dd55bbd47c7455a83c7666d24ef7e562d32d689505942d86ae6e0c8",
+    "f1-w1/compute_route_vulkan.json": "71c0562e4c8affe343e55ddb44e21f9244751be9a7de96258999fd3433be4174",
+    "f1-w1/compute_route_vulkan.log": "1f842772e409e68fe59ca285b9257554d5a827fb026549e847237e42b506e89c",
+    "f1-w1/configure.log": "99aadbf48badda9bd62f22353ea917f508970cb29c9ecb7e257543d909578dcd",
+    "f1-w1/graph_route_vulkan.json": "92d9f0ba15f157230351ccc78e4a0ff6b409b69fedcf645be5be63b600281c29",
+    "f1-w1/graph_route_vulkan.log": "358065f49becebda224cd30c6c4c0795f37b31e95783795db518766d131a1a42",
+    "f1-w1/result.json": "bfb8626a73e119e635dac6776f3478e9bc5626937bbc954fdcff62a14383dd08",
+    "graph-migration-w1/build.log": "5838e64ab6b1c0353230c907590cae4a6cee908d5eca0d87ec38cdab1ea9e8ab",
+    "graph-migration-w1/graph_route_vulkan.json": "5ecf8c4cb12e232fce544b66f950ae5446cb66a79583734ee69d2a5161df9029",
+    "graph-migration-w1/graph_route_vulkan.log": "5a54baf3286facbf7dcf6a81b618010549970c1b2ec41bdc9b1abe4850f210ca",
+    "graph-migration-w1/result.json": "b6787f2c192ad2b3f5d851ea09a73c23f9050ab4de82e0fe871508008d1ba0c0",
+    "shared-w1/build.log": "bbbe15531acf2146aef7450327d1c2f981666b59d8000659da25ab524afde778",
+    "shared-w1/compute_provider_ggml_vulkan.json": "326efc31c8e57ddff2baea2fb4ba72cd16e0a02ea231ed1484ba0d2a014c31cb",
+    "shared-w1/compute_provider_ggml_vulkan.log": "41f6ddfb37ad8b77e29238e479f5e79f32c500ae91bab2661185fafde0c73c06",
+    "shared-w1/configure.log": "97020b31f9a8223beeb8ee7efc7e22bbe34b68c892fdb8009fa6aef0486b2557",
+    "shared-w1/result.json": "e888d7f92a09060b2b7e91ca8c5d1694e7c3508b3c2d24be98c3c6334cef897a",
+    "resumed-shared-w1/compute_route_vulkan.json": "8bc2d29e7d9aa6ec26e532a710a70f59e46d0f2c9534aec0fa2ac15286d6006e",
+    "resumed-shared-w1/compute_route_vulkan.log": "0d244ecc95504b20fff4cc8ae43ab4567554be659c8332ebf35fa8de31b9b5f7",
+    "resumed-shared-w1/graph_route_vulkan.json": "f44785b44ee52f5130cdedefdba112ddc3a8057f7c6812a56a3385cdd654f523",
+    "resumed-shared-w1/graph_route_vulkan.log": "2241ce1c8f6d850c192503c41ea06d6d7fc1292ef564e068595cfe5cbbcfa27b",
+    "resumed-shared-w1/result.json": "e9e21041d264d9d4b0835a1f340b1e575100133940e2aec92744bf71bc5bae7d",
+    "inputs/f1-w1.py": "e26fe045ea1aea2a78a6a2fe4632f2450dc7ccb15a40b46d48e69a0713aae9b2",
+    "inputs/f1-w1.ps1": "c0a4f036fad651ef6dbaea054abd40d6cd00b5d6447bd3362b6bd53b7e1b6488",
+    "inputs/f1-environment.log": "9025c2a4868f9732acd24b55ec314ffa497e776fa9a4e20cfd0a00f1003e48d9",
+    "inputs/graph-migration-w1.py": "4a2a5fb3b1812c65a437dd0a7127cf8d66794e909f9f02d2fe3fbf4f60775a73",
+    "inputs/graph-migration-w1.ps1": "6e4fecb0d38c2baf816239ddcc836f4fd84396362ad813f187f189e83f602235",
+    "inputs/graph-migration-environment.log": "064d360aaea30865cce8e92289f42371169520a15710def9ad712d22633a1cdb",
+    "inputs/shared-w1.py": "b6a8cba76a5fd8155aa49069f5d8d7f8620a68d9debd24ed19efe8616fbc9d9e",
+    "inputs/shared-w1.ps1": "ef86565db5051d2b495893aadde33e4bb1948a8a87d98919880dca8bb38854e4",
+    "inputs/shared-environment.log": "ec8792f5f2be6e84070d4ba5c402f06da63cfb6993a1d9e4c09d76aca774cbea",
+    "inputs/resume-shared-w1.py": "37958e35d880df71f706240dbed287a4b662e1d2ca3f67d73ea96444de1a39f0",
+    "inputs/resume-shared-w1.ps1": "8d2fc89ced0e134d8c34c41262c2adab670123d18610c43a37c0b268ec6d08f8",
+    "inputs/final-implementation-loc.json": "02e76cfbe635d6c12c99b59d7e9b8be34ba4692b3396ddfc73e90eb786c7b740",
+    "inputs/y35-native-candidate.json": "3e98a99c2a8674dab29cd2febf4ea191bb7d5776b27a23b4e88565661525493c",
+    "inputs/patch-identities.txt": "2e6541c12f7ee6a6e2d59119686c7c78d1d85243b3325d04639f074c0c0de470",
+    "source-contract.log": "6f2b6d11287d8425d2640f4fde50d07aeeab61278a983b7f4986d95985c15f95"
+  },
+  "corrections": {
+    "product_math": 1,
+    "test_missing_header": 1,
+    "graph_cost_assertion_migration": "Five old structural assertions updated for F32 adapters; all original numeric/lifetime gates retained. Extra memory and dispatches are explicitly charged.",
+    "private_shared_count": "Initial script expected Provider18/Graph27 instead of Provider19/Graph26. Preserve the passed19 report and continue the unrun suites; no provider rerun."
+  },
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 4070",
+    "uuid": "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+    "driver": "610.62"
+  },
+  "not_claimed": [
+    "Air/Mini qualification",
+    "actual tensor three delivery",
+    "all112 selected gates",
+    "performance winner or full cost comparison",
+    "C1 completion"
+  ],
+  "implementation": {
+    "code": 48943,
+    "files": 198,
+    "self_check": "pass"
+  },
+  "performance_runs": 0
+}

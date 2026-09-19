@@ -1529,3 +1529,8 @@ baseline `1e43875a`，owner `/root`。Vulkan 三个当前 owner 仅按
 [Y35-A–D](llm-moe-c1-vulkan-elementwise.md)重新定界：Log/Sqrt/Softplus/Rsqrt/packed SwiGLU
 接入、必要稳定数学修正及三浮点/布局适配，沿普通 Direct/Graph 和原厂 region。源码事实与
 有限验证先固定后实施；旧 Y34 验收停止重复。本批不跑 P1，CPU Q2 BLOCKED 和 C1 通知条件不变。
+
+Y35已实现；`6af6bfe4`的W1 static/shared模块资格141/140项及source contract5项通过，
+实现48,943行/198文件。Air首编失败于同宽`size_t/uint64_t`的`std::min`类型推导，尚无GPU
+结果；仅按[Y35-F2有限审计](llm-moe-c1-vulkan-elementwise.md)修复这一处类型。Mac原生、
+本地2B三交付、所选工程余门及C1完整成本/条件路由/淘汰仍未签收，C1完成通知尚不触发。

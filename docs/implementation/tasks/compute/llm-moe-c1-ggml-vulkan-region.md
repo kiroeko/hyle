@@ -1096,3 +1096,7 @@ baseline `1e43875a`，owner `/root`。当前 AUDITED 仅新增
 [Y35-A–D](llm-moe-c1-vulkan-elementwise.md) 的原厂操作/region 绑定、稳定数值 patch、route
 类型布局适配与具名资格门。不新增公共 runtime，不重开 CPU ggml 或 CPU Q2 的 BLOCKED。
 产品实施与实际设备/三交付/完整成本裁决尚未完成，不以本次审计回填共同矩阵 PASS。
+
+Y35已实现；`6af6bfe4`的W1 static/shared模块资格141/140项及source contract5项通过。
+Air首编的`std::min`类型推导失败按[Y35-F2](llm-moe-c1-vulkan-elementwise.md)有限修复，
+Mac GPU及本批三交付尚未验收。Provider接入事实不代签C1完整成本优选/淘汰或共同矩阵。

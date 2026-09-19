@@ -101,3 +101,26 @@ Softplus 的两条路径共享其小量处理，严格回归覆盖三浮点及 `
 dispatch，四个复用块总容量从约10N字节变成20N字节；half unary各保留两次转换。F32 L2
 的Rsqrt并入原有region，native/managed分别减为6/2。这些是真实适配开销，不是性能胜出
 证据，C1完整成本取舍必须包含。产品纠正仍1/2，测试编译纠正1；其余平台/交付未签收。
+
+### W1 原生模块资格与 F2：Apple 整数类型可移植性（SCOPED / AUDITED）
+
+`6af6bfe4`（产品 `117b1c13`）的 [W1 原生资格](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/windows-native.json)
+为 static141项、shared140项 PASS，source contract5项 PASS。static Provider19/Direct95
+按未变产品与可执行文件身份复用，Graph27完成结构断言迁移；shared为19/95/26。shared
+私有runner初始误把缺少的一项归给Provider，已核验并复用实际通过的Provider19，再执行此前
+未运行的Direct/Graph；未重复该suite、未改产品/数学门。原始日志、命令hash和DLL身份已核验。
+
+Air同候选首次构建失败，尚未运行GPU测试。[首败收据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-elementwise/first-air-failure.json)
+定位 `vulkan_elementwise.cc:57`：`element_count()` 为 `size_t`，本机底层是 `unsigned long`，
+而显式 `uint64_t{512}` 是 `unsigned long long`，`std::min`不能推导同一个类型。两者都为64位，
+Windows同底层类型因此未暴露此编译错误；后续all_of诊断来自同一不合法lambda。
+
+F2 baseline `6af6bfe4`，owner `/root`，三个Vulkan owner保持AUDITED。有限FIX仅将此处
+常量声明为`std::size_t{512}`，与element_count算术类型一致，数值/范围/设备限制/dispatch
+保持。不改shader、API或测试门。先提交本节再实施；产品纠正消耗2/2，之后再有产品失败按
+原停止协议裁决，不能继续无预算试改。
+
+F2验证仅增量重编当前W1 static/shared受影响route/Graph并执行其既有95+27/26项；Provider
+按固定源码/编译命令/产物身份复用19项，不重跑。Air/Mini执行尚未通过的当前候选原生资格；
+真实2B三交付与112项selected工程余门仍需完成，身份匹配者复用。本批不运行P1，CPU Q2
+BLOCKED保持。当前统一实现48,943行/198文件，不含测试，C1整包和共同矩阵尚未签收。
