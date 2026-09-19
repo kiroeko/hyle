@@ -32,10 +32,21 @@ function(hyle_stage_apple_runtime target)
     message(FATAL_ERROR "hyle_stage_apple_runtime requires the enabled Apple route")
   endif()
   set(_stage "hyle_apple_runtime_${target}")
+  set(_script "${CMAKE_CURRENT_BINARY_DIR}/hyle-apple-runtime/${target}-$<CONFIG>.cmake")
+  # Several executables may share one output directory. Coordinate their
+  # resource writers, including separate native build processes, before copying.
+  # This lock belongs only to the build; execution does not acquire it.
+  set(_content [=[
+set(_asset [==[@_asset@]==])
+set(_directory [==[$<TARGET_FILE_DIR:@target@>]==])
+file(MAKE_DIRECTORY "${_directory}")
+file(LOCK "${_directory}/.hyle-apple-runtime.lock" GUARD PROCESS TIMEOUT 60)
+file(COPY_FILE "${_asset}" "${_directory}/mlx.metallib" ONLY_IF_DIFFERENT)
+]=])
+  string(CONFIGURE "${_content}" _content @ONLY)
+  file(GENERATE OUTPUT "${_script}" CONTENT "${_content}")
   add_custom_target(${_stage}
-    COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:${target}>"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-      "${_asset}" "$<TARGET_FILE_DIR:${target}>/mlx.metallib"
+    COMMAND "${CMAKE_COMMAND}" -P "${_script}"
     DEPENDS "${_asset}"
     VERBATIM)
   if(_producer)
