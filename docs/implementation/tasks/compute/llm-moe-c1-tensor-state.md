@@ -1271,3 +1271,21 @@ GPUPrefixSums具名实现只有U32模加，不能完整承载受检I32。此域`
 shared、Air/Mini；shader能力检查、既有OOM/错误/生命周期同候选回归。W1/Air source/static/
 shared实际C1片段与全局package门在本包固定候选完成；不由旧Gather交付代签。不在本子集跑P1，
 完整C1沿原等责性能预算；CPU oneDNN资格BLOCKED、Scatter和其他C1尾项不被本节解除或授权。
+
+#### Y28 实现与四构建局部结果
+
+固定候选`f0115f96`完成I32宽前缀/全域溢出检查及条件发布，普通Direct/Graph已接通。
+[局部验收](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-integer-scan/README.md)：
+W1 static/shared分别98/97项，Air/Mini分别98项，合计391项；先行9项不重复计入。
+本批无产品纠正或P1，shader只需baseline Shader能力。W1/Air无validation错误，Mini只签
+correctness/portability；已有F32 Scan、OOM/部分接纳/drain在所选两factor中同候选回归通过。
+
+独立I64参考与临时越界/抵消、exclusive最终total、局部block越界但全局合法、后行失败全输出
+保持、轴/stride/origin、两槽/旧结果、quota失败回滚均通过；counts→Scan→原版Gather→norm
+在普通Graph真实消费。status复用既有字的bit2诊断I32前缀越界，不增加运行对象或热分配。
+这是成熟实现未覆盖的checked域补齐，不是新增Provider；浮点Scan继续采用原版ggml。
+
+统一Compute+Graph实现为47,955行/194文件，不含测试/bench/第三方，自检PASS。证据核验后清理
+旧Mini源码与Windows输入共123,819,830逻辑字节。本组回归停止重复运行；所有owner保持AUDITED。
+Scatter、Scan三交付实际消费、完整C1真实片段/固定优选/淘汰和global门尚未完成，CPU oneDNN
+资格BLOCKED不变，64行/256格矩阵未签收。C1整包完成通知尚不触发。

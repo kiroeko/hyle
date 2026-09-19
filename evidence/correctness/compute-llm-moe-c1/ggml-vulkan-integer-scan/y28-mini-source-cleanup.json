@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "candidate": "f0115f967f0e4ad302778ecd909b7f918d7c7845",
+  "verified_archive_sha256": "c81c2c7fb8caa82988fc5f45823d466c79a40a93c8f59514458e40b92b085326",
+  "removed": [
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-prior-y28-f0115f96",
+      "files": 5576,
+      "logical_bytes": 87197356
+    }
+  ],
+  "retained": [
+    "source",
+    "build-vulkan-static",
+    "vendor and tool caches",
+    "all validation logs and archives"
+  ]
+}

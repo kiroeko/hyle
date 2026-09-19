@@ -1,0 +1,17 @@
+{
+  "removed": [
+    {
+      "sha256": "b679d3d66a408230842d330a760f01b12bfefe8fb16f43063221156afa2a11da",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scan\\y27-source.tar.gz",
+      "logical_bytes": 36222464
+    },
+    {
+      "sha256": "c3ed2ba5a1d9edf17b8fda45d9332abdea2cf2532a180b40ac6a0bfdd605f9a0",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scan\\y27.bundle",
+      "logical_bytes": 400010
+    }
+  ],
+  "status": "PASS",
+  "candidate": "198cccba6d785132aace3e9744e9f1603dc342b0",
+  "retained": "Canonical Git source, current Y28 input, active builds, SDKs and all proof archives"
+}

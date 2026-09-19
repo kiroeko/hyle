@@ -1056,3 +1056,7 @@ W1 static/shared分别108/107例，Air/Mini static分别108/107例，共430项�
 （含exclusive最终total）与全局条件发布。局部block前缀越界不等于最终带carry的前缀越界；
 不能用总和检查或U32模加代替。当前仅固定缺口与来源，调查到此停止；I32的产品FIX、临时量/
 dispatch账单与具体实现须先独立定界，Y27不授权自写整数或Scatter核。
+
+后续[I32独立Y28](llm-moe-c1-tensor-state.md)现已定界、实现并完成候选`f0115f96`的391项
+Direct/Graph四构建回归；该域由route的宽整数shader补缺，不属于ggml Provider能力。
+ggml产品未因Y28改变，F32原版路径同候选回归通过。完整C1三交付/优选和Scatter仍未签收。

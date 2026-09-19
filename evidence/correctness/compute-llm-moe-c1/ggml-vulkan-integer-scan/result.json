@@ -1,0 +1,79 @@
+{
+  "candidate": "f0115f967f0e4ad302778ecd909b7f918d7c7845",
+  "status": "PASS",
+  "scope": "Y28 checked I32 Scan and selected Direct/Graph regression including F32 Scan",
+  "windows": {
+    "static": {
+      "status": "PASS",
+      "candidate": "f0115f967f0e4ad302778ecd909b7f918d7c7845",
+      "suites": [
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 75,
+          "executable_sha256": "6ac14b95c08ad690565e67054304ef4e36fd4e9add37501682b02a6c0d527707",
+          "report_sha256": "7f6c52ae5fb490b0c2a9bce21082d8d3e1794f718e16bffe4961a7636623a738",
+          "log_sha256": "a3b7748877b7c5d06a777a8a8fad76703e2c80e9d2a8f41373d963dc202d86c5"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 23,
+          "executable_sha256": "afbf001a65939b22f5ef8d8a2a8444661f214835abd22583ac35df5a6d73c864",
+          "report_sha256": "27795db50444c538e4d5eff7594ecdb51e463db08c844cfaff5524802fb5c3ad",
+          "log_sha256": "462b10157f2e6bff12f05e4c33c56dfe303e8bfae2ef6f674af19aa74281e71a"
+        }
+      ],
+      "tests": 98,
+      "source_and_masm_checks": 2,
+      "dlls_adjacent": true,
+      "path_unset": true,
+      "error_mode": "0x8003"
+    },
+    "shared": {
+      "status": "PASS",
+      "candidate": "f0115f967f0e4ad302778ecd909b7f918d7c7845",
+      "suites": [
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 75,
+          "executable_sha256": "419adbba83114a7552f168cef38fa0ebe3e0aaab72fb2f42632d166806bdf114",
+          "report_sha256": "9a443a18f830d7f5f3547e1c404d7c9efe86422ebf9ff3beb17d5072f22c5c06",
+          "log_sha256": "83046c10fdfcdd36fce44a334a87aca1b77a0d606c866a98776d77caa621c2c4"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 22,
+          "executable_sha256": "d8284c0b8c58f3f1005705aa953ecebc035c083b92ae4743e7f4903e931b72e5",
+          "report_sha256": "c822c1e612ab13f17315e8335fde4d8cf84e66e85c4aa21ecac5a1b521ef225d",
+          "log_sha256": "7917d98c293cfdc9c4070668edcb567e8ee23e1a50dbac0f6a9f905674559048"
+        }
+      ],
+      "tests": 97,
+      "source_and_masm_checks": 2,
+      "dlls_adjacent": true,
+      "path_unset": true,
+      "error_mode": "0x8003"
+    }
+  },
+  "macos": {
+    "air": {
+      "receipt": "y28-air-focused.json",
+      "tests": 98
+    },
+    "mini": {
+      "receipt": "y28-mini-focused.json",
+      "tests": 98
+    }
+  },
+  "cases": 391,
+  "first_focused_tests_not_added_again": 9,
+  "product_corrections": 0,
+  "windows_archive": "w1-raw.zip",
+  "windows_archive_sha256": "34036738c08fd754ea58557d55dde3fd49c119636522b2897d9408acbe3575f4",
+  "not_claimed": [
+    "Scatter",
+    "Scan three-delivery journey",
+    "complete C1",
+    "global package gates",
+    "P1"
+  ]
+}
