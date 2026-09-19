@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "container_concurrent",
@@ -400,9 +402,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "compute_provider_native",
@@ -490,27 +493,31 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R AUDITED：固定R1–R5，先可选不可变模型身份，再冷请求/原生环境绑定与普通入口验证。模型条件不绕过IR/资源检查；执行期无新搜索/探测。全部自研冻结，旧CPU Provider/oneDNN阻塞保持。"
+      "summary": "M1-R CANDIDATE：模型/配置/阶段冷绑定、原生Apple/Vulkan传递和CUDA环境快照已固定；Windows选中28门及CPU三交付通过。跨平台原生、GPU三交付与sanitizer待验，不签模型覆盖；全部自研冻结。",
+      "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67"
     },
     {
       "module": "compute_provider_ggml_vulkan",

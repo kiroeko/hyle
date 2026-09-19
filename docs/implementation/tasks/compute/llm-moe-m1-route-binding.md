@@ -145,3 +145,19 @@ Windows共同路径7项CTest通过。真实成熟实现的四路线测试与三�
 样例在view形式prepare中漏传workload前面的workspace resource。已只修正这两个consumer的
 参数，无产品API/算法/布局变化。原FAIL与先前PASS保留其原commit/tree；后续仅重跑受影响
 CUDA路线及未运行门，不把旧receipt改签为新tree，也不重新启动性能验证。
+
+## CANDIDATE（2026-09-20）
+
+候选固定为`0d85a9ad5ff98a1501363dba6a61ef2448d33c67`。产品实现与`f56c2f67`完全相同，
+后者之后仅有上述测试/样例参数纠正和说明。R1–R5实现与普通consumer迁移已经固定；七个
+owner进入CANDIDATE，后续说明/状态提交不产生新产品候选，不重跑已通过的无关验证。
+
+Windows原selector的15个PASS保留原身份；续跑15门（含docs/closure复核）通过，合并覆盖原先
+选中的全部28门：原生CPU/CUDA/Vulkan与共同Graph、真实Provider直接消费者、公开头，以及
+CPU Compute/Graph源码、静态、动态和搬移后的SDK消费。94项跳过原因保留在selector计划。
+原编译FAIL没有删除或改签。未启用Apple的头检查不是原生Apple通过。
+
+候选后单独源码复核未发现新的所有权、资格绕过或热路径成本问题；长度溢出仍只签P0源码保护。
+Windows GPU补充三交付、WSL/Air/Mini原生与三交付，以及ASan/UBSan/TSan尚待执行，不能写PASS。
+统一实现统计为49,803行、205个代码文件（不含测试/第三方），相对M1-G新增390行冷元数据与接缝，
+没有新增自研数学。64行四路线覆盖仍UNPROVEN，本卡不签模型计算优化或原C1里程碑。
