@@ -273,12 +273,12 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)
           output = ggml_mul(context, output, tensors[node.inputs[1]]);
-      } else if (const auto *norm = node.operation.get_if<LayerNorm>()) {
+      } else if (const auto *layer = node.operation.get_if<LayerNorm>()) {
         // Original GroupNorm computes centered variance. One group per batch
         // makes each last-axis row a group without changing the shader.
         const auto rows = ggml_nelements(left) / left->ne[0];
         auto *grouped = ggml_reshape_4d(context, left, left->ne[0], 1, 1, rows);
-        output = ggml_group_norm(context, grouped, 1, norm->epsilon);
+        output = ggml_group_norm(context, grouped, 1, layer->epsilon);
         if (node.inputs.size() == 1) {
           // A published port must own storage, not alias an internal result.
           output = ggml_cont_4d(context, output, left->ne[0], left->ne[1],

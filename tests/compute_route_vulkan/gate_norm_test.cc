@@ -63,21 +63,24 @@ TEST(VulkanGateNorm, LayerNormUsesMatureRegionsThroughHighRankStorageAdapters) {
   }
 }
 
-TEST(VulkanGateNorm, MatureLayerNormRejectsAnOversizedGroupGridBeforeDispatch) {
+TEST(VulkanGateNorm, MatureLayerNormUsesNativeFallbackOutsideColdDeviceLimits) {
   auto context = vulkan_test::context().value();
-  v::detail::ProgramState state;
-  state.runtime = v::detail::Access::runtime(context);
-  const auto &limits = state.runtime->device->properties.limits;
-  EXPECT_TRUE(v::detail::layer_norm_limits(
-      state, dense(c::DataType::kFloat32, {3, 129})));
-  const auto too_many =
-      static_cast<std::int64_t>(limits.maxComputeWorkGroupCount[0]) + 1;
-  EXPECT_FALSE(v::detail::layer_norm_limits(
-      state, dense(c::DataType::kFloat32, {too_many, 1})));
-  const auto too_wide =
-      static_cast<std::int64_t>(limits.maxStorageBufferRange) / 4 + 1;
-  EXPECT_FALSE(v::detail::layer_norm_limits(
-      state, dense(c::DataType::kFloat32, {1, too_wide})));
+  auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
+  const auto original = limits;
+  for (bool grid : {false, true}) {
+    if (grid)
+      limits.maxComputeWorkGroupCount[0] = 2;
+    else
+      limits.maxComputeWorkGroupInvocations = 256;
+    auto program = v::prepare(context, c::LayerNorm{},
+                              dense(c::DataType::kFloat32, {3, 129}));
+    limits = original;
+    ASSERT_TRUE(program) << program.error().message();
+    const auto &dispatches = v::detail::Access::program(*program)->dispatches;
+    EXPECT_TRUE(std::ranges::all_of(dispatches, [](const auto &dispatch) {
+      return dispatch.region == nullptr;
+    }));
+  }
 }
 
 TEST(VulkanGateNorm, ThreeGatesSupportBothLayoutsAndOddByteOrigins) {
