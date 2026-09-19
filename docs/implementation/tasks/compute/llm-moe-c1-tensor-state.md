@@ -1218,6 +1218,11 @@ Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留
 
 ### C1-Y 成熟逐元素族绑定（AUDITED）
 
+当前增量：2026-09-19，baseline `04643d18`，三个 Vulkan owner 对
+[C1-Y 的 Y26](llm-moe-c1-ggml-vulkan-region.md) 完成受检 Gather 的有限审计：原版 GetRows、
+GPU 索引检查、逐位布局适配及真实完成后错误回报。仅授权 Y26-A–D；Scatter/Scan 另行定界，
+未运行验证不签 PASS，CPU 性能 blocker 不变。
+
 2026-09-19，baseline `dff6a509`，owner `/root`：`compute_route_vulkan` 按
 [C1-Y 的 Y17–Y19](llm-moe-c1-ggml-vulkan-region.md) 重新定界普通入口的冷 managed span
 选择；Provider 同批映射原版五个 unary 与 Sub/Div/Repeat。公开 API/执行资源不变；Graph 作为

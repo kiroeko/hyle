@@ -863,3 +863,48 @@ producer和展开源码，释放1,933,074,359逻辑字节；SDK、consumer及共
 三个owner保持C1 AUDITED；本组修复和上述适用验证停止重复运行。通用交付、checked索引/
 Scatter/Scan、完整C1真实权重片段、默认性能优选和淘汰仍待完成；CPU oneDNN资格BLOCKED
 不变，64行/256格共同矩阵尚未签收。
+
+## Y26：受检 Gather 的原版 GetRows 接入（重新定界并 AUDITED）
+
+2026-09-19，owner `/root`，baseline `04643d187d6255822bd7c46fdbf8afffb1ad498d`。
+当前三个 Vulkan owner 仅增加本节有限 FIX；旧 CPU BLOCKED、Y25 已完成的验证与正在运行的
+固定快照通用交付保持各自身份。本节满足 C1/F02.1 的 embedding/索引读取，Scatter、Scan
+另行审计，不以本节代签它们或整个 C1。
+
+### 需求、承载与冻结边界
+
+- 主消费：本地 2B BF16 embedding 表按 I32/I64 token 索引读取，再接已有 norm/逐元素 region；
+  正交消费是有 stride、非末轴、标量/多维索引与原始位载荷的表查询。共同 Gather 合同要求
+  checked 在写该算子 output 前检查全部索引，越界返回 OutOfRange，不能留下部分输出。
+- 锁定 ggml `456172ec` 的 `get_rows.comp` 支持 I32 的原始字读取；F16/BF16 原厂路径经过浮点
+  转换，不能证明任意 NaN payload 原位保持。该 shader 直接用索引寻址，没有范围检查。
+  `region.cc` 的 TopK 已证明 I32 GetRows 与真实 reshape DAG 的资源组合。
+- 裁决：BORROW 原版 GetRows，保留其 allocator/runtime；HYLE 仅补索引检查、原始字布局与
+  有条件输出 Copy、完成/失败适配。输入不下载到 CPU，不另写 Gather payload kernel，不改 vendor。
+- 普通入口不变：`prepare(context, Operation(Gather{...}), arguments)`、Graph 普通 Gather 节点、
+  Recorder 显式输出。准备时固定布局/Provider；提交时不探测候选、改规则或分配检查容器。
+- 域为已准入 plain F32/F16/BF16/I32/I64/Bool、I32/I64 indices、任意合法轴/rank≤8/正或零
+  byte stride 与 byte origin；空索引无 payload，非空索引即使结果为空仍遵守检查合同。
+  非空物化与原厂域仍受设备 buffer/workgroup 和 I32 元素数量限制，超界冷拒绝，不截断。
+
+### 有限 FIX 与成本
+
+| ID | 允许改动 | 必需证明 |
+|---|---|---|
+| Y26-A | 私有 Program 标记检查状态；每个需要检查的运行槽冷建4字节 host-visible storage buffer，Recorder 合并时保留各状态 owner。只有带检查的 Run 建可选状态集合；提交前归零/适用 flush，GPU 检查只在失败时置位，完成后适用 invalidate/读取 | 不与 scratch 复用；host 读写只在无 pending/真实 GPU 终态；非 coherent 规则、quota/OOM、独立槽、取消/丢弃/close/部分提交；算法失败退休该槽，不毒化 Context |
+| Y26-B | GPU 检查/转换原始 I32/I64 indices 为连续安全 I32；原版 GetRows 只接已检查安全索引。复用 View/Copy/Fill/Concat 将任意轴布局变成原始 I32 字行；窄字奇数行补齐，结果以原有 Copy 的受检变体恢复原描述 | 全部原始位保留；负数/边界/I64高位、非对齐起点、广播/标量/空/尾块/rank8；任何坏索引使本 Gather 输出保持原样，原厂不得越界 |
+| Y26-C | provider 私有 region 只增加明确的 unchecked I32 二维行读取域；普通 checked 入口由路线适配后调用。Graph 复用原有纯 SSA lowering，Recorder 按原有重映射传递检查标记 | Direct/Graph/Recorder 实际走 GetRows；两个槽与旧结果保留，失败后新槽可用；不增加公开 API、通用执行器或其他 owner 改动 |
+| Y26-D | 位级独立 oracle、故障/生命周期/真实 BF16 表片段与普通交付消费者、用户说明 | W1 static/shared、Air/Mini 对应 factors；W1/Air source/static/shared；selector 适用门，未运行不签 PASS |
+
+静态账单：检查 O(indices)，取数 O(output)，必要 layout/行补齐及最终条件 Copy 分别计费；
+原厂 managed 编码成本保留。合法连续整字行复用 View，准备不能从 dense 推导未知绑定起点。
+检查状态常驻4个逻辑字节及实际 Vulkan allocation/quota，host 只观察状态，不观察 tensor payload；
+非检查程序无状态 buffer/集合，Run 仅增加一个私有可选 owner。每个受检原生 batch 带 shader→host
+可见性屏障，最终父完成点覆盖全序列；采用
+[Vulkan host/device 可见性合同](https://docs.vulkan.org/spec/latest/chapters/synchronization.html)
+和[非 coherent mapped memory 合同](https://docs.vulkan.org/spec/latest/chapters/memory.html)。
+不宣称性能优选，最终同合同比较必须包含这些必要成本。
+
+调查限于已登记 ggml GetRows 与 Vulkan 同步/内存合同，累计最多60分钟；产品纠正最多两轮。
+先完成语义/资源门，API/算法固定后沿 C1 的原 P1 bundle 预算验收，不因本节开启微基准或
+重跑 CPU 性能。失败保留具体反例并按协议裁决；全部 Y26 门完成前 owner 保持 AUDITED。
