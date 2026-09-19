@@ -1,0 +1,60 @@
+{
+  "status": "AUDITED_INPUT_ONLY",
+  "baseline": "3cd981b318f16e82f975848b976e085d7954c344",
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "source_clean": true,
+  "files": [
+    {
+      "path": "src/ggml.c",
+      "sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67"
+    },
+    {
+      "path": "src/ggml-vulkan/ggml-vulkan.cpp",
+      "sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/sum_rows.comp",
+      "sha256": "80911f108ce1d370c80b5f4d6c9afa2dc34716ad7ab3db84270c728ecd580a46"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/sum_rows.glsl",
+      "sha256": "18ac3886216289a4861196375b759ef7bd777eaa8009d62596e19537dbabbf1f"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max.comp",
+      "sha256": "55eee4d0d55e203cc53f54367d61bb1b89850d40d8107b60c2d883eb929ba39e"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large_common.glsl",
+      "sha256": "2af4157dd53e42c32f41f4d1b3986be816573d59ac231b96c335889dd7e94158"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large1.comp",
+      "sha256": "ef3097d3c5bfdd94c090414a71cc0dd4d0153b4ef36551974e141603191c803d"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large2.comp",
+      "sha256": "70a6f6c5ec1b767064bfab29559079b4d9c1f2d2a399654f2f3483ddd4249908"
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large3.comp",
+      "sha256": "38538fe375794ecdbc5b968675c4c554a0db950eb1b12540bdb39a99d3d24cdb"
+    }
+  ],
+  "large_softmax_source_counterexample": {
+    "lanes": 128,
+    "peak_lane": 64,
+    "peak": 1000,
+    "upstream_shared_max": 0.0,
+    "cumulative_shared_max": 1000.0,
+    "gpu_executed": false,
+    "ordinary_trigger": "width32769, last-column peak corresponds to block64"
+  },
+  "sum_rows_constraint": "XYZ rounded rows without guard; split into at most3 exact native row pieces",
+  "not_claimed": [
+    "GPU correctness",
+    "performance",
+    "delivery",
+    "C1 acceptance"
+  ]
+}

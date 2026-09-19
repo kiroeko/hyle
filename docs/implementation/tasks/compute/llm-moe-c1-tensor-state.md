@@ -1487,3 +1487,11 @@ Mini131项通过、专用验证层用例1项明确跳过；验证层风险由W1/
 四路线完整成本优选/淘汰及CPU Q2资格BLOCKED仍待处理，C1整包与矩阵未签收。
 统一Compute/Graph实现48,424行/196文件，不含测试；本批归档后清理4,207,211,641逻辑字节。
 C1全部适用验收完成后才通知用户，并在C2之前等待提问。
+
+### C1-Y34：成熟 Sum/Mean/Softmax 接入（SCOPED / AUDITED）
+
+baseline `3cd981b3`，owner `/root`。三个Vulkan owner现对
+[Y34-A–D](llm-moe-c1-vulkan-reduction.md)重新定界：普通region及任意轴/三浮点/mask适配、
+SumRows尾行分片、两处具名长行Softmax累计max修正和真实消费资格。依赖pin及公共合同不变；
+Min/Max/LogSoftmax原有合法能力保留，未按本卡比较不得删除。先完成成熟接入，不提前启动P1；
+CPU Q2 BLOCKED、C1全部适用验收与C1完成通知条件保持。审计时产品尚未实施，验证未运行。
