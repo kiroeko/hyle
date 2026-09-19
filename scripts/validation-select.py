@@ -384,7 +384,7 @@ def authorization_report(root, before, after, policy, expected_owners):
             start = git(root, "merge-base", start, after.commit).decode().strip()
         commits = git(root, "rev-list", "--reverse", "--topo-order",
                       f"{start}..{after.commit}", "--", "include", "src", "third_party",
-                      MANIFEST).decode().splitlines()
+                      MANIFEST, *policy.get("factor_cmake_owners", {})).decode().splitlines()
         steps = []
         for commit in commits:
             family = git(root, "rev-list", "--parents", "-n", "1", commit).decode().split()

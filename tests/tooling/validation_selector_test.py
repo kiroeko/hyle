@@ -420,6 +420,7 @@ class ImpactTest(unittest.TestCase):
         self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_apple_runtime target)\nendfunction()\n")
         self.commit()
         plan = self.plan()
+        self.assertEqual(plan["verdict"], "READY")
         self.assertEqual(plan["selected_factors"], ["compute_route_apple", "graph_route_apple"])
         selected = self.selected(plan)
         self.assertIn("factor:compute_route_apple", selected)
@@ -440,6 +441,7 @@ class ImpactTest(unittest.TestCase):
         plan = self.plan()
         self.assertEqual(plan["verdict"], "BLOCKED")
         self.assertTrue(plan["product_authorization"]["issues"])
+        self.assertTrue(any("CLOSED" in issue for issue in plan["product_authorization"]["issues"]))
         self.assertNotIn("factor:compute_route_apple", self.selected(plan))
         self.assertIn("headers:compute_route_apple", self.selected(plan))
 

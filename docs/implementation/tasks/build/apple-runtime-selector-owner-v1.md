@@ -2,7 +2,7 @@
 
 ## 有限工具卡
 
-- owner：`/root`；baseline：`ec8cab7f`；状态：CLOSED（只改维护工具，无产品 factor）。
+- owner：`/root`；baseline：`ec8cab7f`；状态：AUDITED（只改维护工具，无产品 factor）。
 - trigger：[M1-R R5b](../compute/llm-moe-m1-route-binding.md)仅修改Apple暂存函数，当前selector把
   所有`cmake/`文件统一视为全库共享接缝，选择113门。函数只由`compute_route_apple`包含并安装，
   实际反向消费者是`graph_route_apple`，交付属于Compute/Graph。
@@ -29,3 +29,7 @@
 [证据](../../../../evidence/correctness/apple-runtime-selector-owner-v1/validation.json)。
 新计划保持Apple两owner、Compute/Graph交付和平台OFF检查；通用共享seam仍全量，CLOSED
 owner仍被拒绝，P1不自动启动。docs/closure通过；未运行C++或性能测试，本工具范围P0关闭。
+
+实际不可变候选随后发现T2的历史扫描仍只列旧路径前缀，遗漏新映射的外置CMake文件，故无法
+把改动归因至产品提交。撤回上述终审；在原15分钟预算内仅将具名映射路径纳入原rev-list，
+强化正常候选READY与真实CLOSED前态拒绝断言。不改变状态门、不跳过原授权。
