@@ -44,18 +44,19 @@ TEST(VulkanGraph,
       auto program =
           gv::compile(context, graph, constants, {.report = &report});
       ASSERT_TRUE(program) << program.error().message();
-      EXPECT_EQ(report.native_dispatch_count, 5U);
-      EXPECT_EQ(report.managed_region_count, 1U);
-      EXPECT_EQ(report.invocation_storage_block_bytes.size(), 3U);
+      // Gate, residual Add and LayerNorm each use a managed region. Native
+      // RMSNorm and the seven storage conversions keep each half boundary.
+      EXPECT_EQ(report.native_dispatch_count, 8U);
+      EXPECT_EQ(report.managed_region_count, 3U);
+      EXPECT_EQ(report.invocation_storage_block_bytes.size(), 4U);
       std::size_t planned_bytes = 0;
       for (const auto bytes : report.invocation_storage_block_bytes)
         planned_bytes += bytes;
       const auto elements = static_cast<std::size_t>(rows * width);
-      // Two F32 adapter blocks and one half block; final half output reuses a
-      // completed adapter block. Vendor-private storage is accounted
-      // separately.
-      EXPECT_EQ(planned_bytes,
-                2 * elements * sizeof(float) + (elements * 2 + 3) / 4 * 4);
+      // Packed gate and residual adapters require four reused storage blocks,
+      // totaling five F32 tensor capacities. Charge this larger footprint;
+      // vendor-private storage is accounted separately.
+      EXPECT_EQ(planned_bytes, 5 * elements * sizeof(float));
       EXPECT_EQ(report.retained_constant_owner_count, 2U);
       graph = {};
       constants = {};

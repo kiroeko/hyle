@@ -40,8 +40,10 @@ TEST(VulkanGraph,
       auto program =
           gv::compile(context, graph, std::array{bias}, {.report = &report});
       ASSERT_TRUE(program) << program.error().message();
-      EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 5U);
-      EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 1U);
+      // Add/Softplus share a region; half residual Add has its own F32
+      // adapters. Casts and Select retain their explicit storage boundaries.
+      EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 6U);
+      EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 2U);
       ASSERT_EQ(report.outputs.size(), 2U);
       graph = {};
       // Equivalent ordinary Direct composition keeps fixed native buffers and

@@ -89,3 +89,15 @@ baseline `1e33a79f`，owner `/root`。W1 的 Provider19项通过，Direct95项�
 Softplus 的两条路径共享其小量处理，严格回归覆盖三浮点及 `exp(-abs(x))=1/64` 两侧。
 更新 patch-tree 为 `fb15744d5705ded9d73b045faa0b916e02a22c0e59c69c451811e8e4062a47e5`。
 新候选的设备与交付资格尚未运行，不把旧 Provider19项直接代签为新 patch 通过。
+
+### F1 W1 结果与旧结构断言迁移
+
+`117b1c13` 的 Provider19、Direct95项全部通过，包括 managed 与 native Softplus 尾值及
+阈值两侧。Graph27项中5项仅旧 native/managed dispatch 数和规划存储断言失败；数值、
+输出保活与关闭检查通过，不能把该 suite 记 PASS。按 Y35-D 迁移这五项结构断言，保留原
+数值门、生命周期检查和明确的成本断言，不修改产品迎合旧实现形状。
+
+具体账单：half gate→RMSNorm→residual→LayerNorm 改为3个managed region、8个native
+dispatch，四个复用块总容量从约10N字节变成20N字节；half unary各保留两次转换。F32 L2
+的Rsqrt并入原有region，native/managed分别减为6/2。这些是真实适配开销，不是性能胜出
+证据，C1完整成本取舍必须包含。产品纠正仍1/2，测试编译纠正1；其余平台/交付未签收。

@@ -26,7 +26,9 @@ TEST(VulkanGraph,
     gv::CompileReport report;
     auto program = gv::compile(context, graph, {}, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    EXPECT_EQ(report.native_dispatch_count, 3U);
+    // Three half unary nodes retain six casts around three managed regions.
+    EXPECT_EQ(report.native_dispatch_count, 6U);
+    EXPECT_EQ(report.managed_region_count, 3U);
     EXPECT_EQ(report.invocation_storage_block_bytes.size(), 3U);
     graph = {};
     std::vector<double> data(17 * 129);
@@ -101,7 +103,9 @@ TEST(VulkanGraph, InputAliasChainsRebindOddOriginsAndKeepOldInputStorage) {
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
   auto program = gv::compile(context, graph, {}, {.report = &report}).value();
-  EXPECT_EQ(report.native_dispatch_count, 2U);
+  // Copy plus the Neg input/output casts; the views remain aliases.
+  EXPECT_EQ(report.native_dispatch_count, 3U);
+  EXPECT_EQ(report.managed_region_count, 1U);
   EXPECT_EQ(report.invocation_storage_block_bytes.size(), 2U);
   auto first = program.create_invocation().value(),
        second = program.create_invocation().value();
