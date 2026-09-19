@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y30 AUDITED：原版Argsort浮点padding在2^21+1漏项已由host复现，固定整数padding、冷设备范围准入及普通Direct/Graph反例的有限FIX；尚未产品修复。Y29四构建427例保留；完整C1三交付/优选/global门及CPU资格BLOCKED不变。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y29 AUDITED：有序受检Scatter已接普通Direct/Graph，复用原版Argsort/GetRows；07e30f13产品及4c7d51c8测试头修正的四构建共427例通过，无产品纠正或P1。Scan/Scatter真实三交付、完整C1优选/global门及普通TopK已知padding修复待完成；CPU资格BLOCKED不变。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y30 AUDITED：原版Argsort浮点padding在2^21+1漏项已由host复现，固定整数padding、冷设备范围准入及普通Direct/Graph反例的有限FIX；尚未产品修复。Y29四构建427例保留；完整C1三交付/优选/global门及CPU资格BLOCKED不变。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y30 AUDITED：55fe0b8a修复原版Argsort大宽漏项及冷设备范围；W1 static/shared、Air/Mini共514例通过，真实Direct FAIL转PASS，构建来源摘要纠正1/2、算法纠正0。Y29有序Scatter回归通过；真实C1三交付/优选/global余门及CPU资格BLOCKED保持，不签整包。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y30 AUDITED：55fe0b8a修复原版Argsort大宽漏项及冷设备范围；W1 static/shared、Air/Mini共514例通过，真实Direct FAIL转PASS，构建来源摘要纠正1/2、算法纠正0。Y29有序Scatter回归通过；真实C1三交付/优选/global余门及CPU资格BLOCKED保持，不签整包。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y30 AUDITED：55fe0b8a修复原版Argsort大宽漏项及冷设备范围；W1 static/shared、Air/Mini共514例通过，真实Direct FAIL转PASS，构建来源摘要纠正1/2、算法纠正0。Y29有序Scatter回归通过；真实C1三交付/优选/global余门及CPU资格BLOCKED保持，不签整包。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

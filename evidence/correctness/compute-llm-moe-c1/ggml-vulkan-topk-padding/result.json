@@ -1,0 +1,96 @@
+{
+  "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+  "status": "PASS",
+  "scope": "Y30 integer Argsort padding and selected provider/Direct/Graph regression",
+  "windows": {
+    "static": {
+      "status": "PASS",
+      "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+      "suites": [
+        {
+          "factor": "compute_provider_ggml_vulkan",
+          "tests": 19,
+          "executable_sha256": "e7e11812d38489a7a667fff36a424485bd32468ddb56822d9dbbb537c5bcc625",
+          "report_sha256": "44b6ca2b7346233dbe77e24fde9fb45edf9c8c486a54ca89d96fe5874d965ee1",
+          "log_sha256": "3a7278de25680e358813c8a52123c0ce9793445e33af7c3e4a6033c8061ee4bc"
+        },
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 85,
+          "executable_sha256": "75f8c88caecbebc3355a4027f7274e2bb0e50ab8a8f4949c3107b4c9c1e26fb9",
+          "report_sha256": "2c469c62e823bbfc14e5f2d6468e85094619eec8ffc6fa98e6886da5e458b76f",
+          "log_sha256": "6edc5fceda2763bd1cdfc6c3d947ea06f32d78a3613e8604628e3882afe87a5b"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 25,
+          "executable_sha256": "d4c1869218855680c9f9b7bf0f8ceee8153912d293a690dca4e07dbe1ab207a4",
+          "report_sha256": "fbacba456f1d59107cfc0b4ad8e576c84767aa6d1365d9898b31c7262da95909",
+          "log_sha256": "733aa5d676d6beaa26598499c7e0244082d06ba3d73fa1823b50a7b3b585c98e"
+        }
+      ],
+      "tests": 129,
+      "source_and_masm_checks": 2,
+      "public_header_checks": 2,
+      "dlls_adjacent": true,
+      "path_unset": true,
+      "error_mode": "0x8003"
+    },
+    "shared": {
+      "status": "PASS",
+      "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+      "suites": [
+        {
+          "factor": "compute_provider_ggml_vulkan",
+          "tests": 19,
+          "executable_sha256": "5c002ec170ae5cd8a0e1be9ef662a0ace528155a17582839fa7922188321e704",
+          "report_sha256": "8d1b6fd90ea6247b78697f59a2d9d1f37fe70475b274b7e10517b390072d4589",
+          "log_sha256": "75c8f8486bb79a39919c42fb2e4e7d94374ab2288d433167062a21778ea89445"
+        },
+        {
+          "factor": "compute_route_vulkan",
+          "tests": 85,
+          "executable_sha256": "7e2885e25f1194b760a942da30590998cf16d5961f4c0fe747141770d18ac862",
+          "report_sha256": "e9e48cca820d5ffd329810de028f15a9f9ab29b288f0b4125d015da80ebbb4fd",
+          "log_sha256": "5ca1a3bf8498a9361345aeebf699fe1d4c159085bf05117eba3738f986aed0f3"
+        },
+        {
+          "factor": "graph_route_vulkan",
+          "tests": 24,
+          "executable_sha256": "fc4fbbc05c8c6f879e2dc3b9b4f3541c1de18a4986995fbb7ae0813ce6e83502",
+          "report_sha256": "9f8ecac55c82ddd98db4ebe92c46834762c71266109cf94d64075e8f8b950226",
+          "log_sha256": "85e38498d8e2f3a577a8fd291f40da7bee00d087ed3a44d72a945808534477e0"
+        }
+      ],
+      "tests": 128,
+      "source_and_masm_checks": 2,
+      "public_header_checks": 2,
+      "dlls_adjacent": true,
+      "path_unset": true,
+      "error_mode": "0x8003"
+    }
+  },
+  "macos": {
+    "air": {
+      "receipt": "y30-air-focused.json",
+      "tests": 129
+    },
+    "mini": {
+      "receipt": "y30-mini-focused.json",
+      "tests": 128
+    }
+  },
+  "cases": 514,
+  "first_focused_tests_not_added_again": 3,
+  "product_corrections": 1,
+  "provenance_corrections": 1,
+  "algorithm_corrections": 0,
+  "windows_archive": "w1-raw.zip",
+  "windows_archive_sha256": "dd047e564a87dc098add9bc4c35f473ed6d07aa3b65c1e3b0f229cb9a13b82d9",
+  "not_claimed": [
+    "Scan/Scatter three-delivery journey",
+    "complete C1",
+    "remaining global selector gates",
+    "P1"
+  ]
+}

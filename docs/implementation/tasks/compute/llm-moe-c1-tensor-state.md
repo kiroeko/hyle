@@ -1364,3 +1364,19 @@ TopK输出。加受控设备limit反例验证冷拒绝；小宽、NaN/位级、�
 测试。W1 static/shared、Air/Mini只跑selector适用provider/route/Graph及source contract；
 记录首次失败，最多两次产品纠正。新候选的完整C1真实三交付及global门仍在本包完成，不由旧
 Gather交付代签；没有P1授权，也不解除CPU资格BLOCKED。不继续调查其他未具名算子或全库边界。
+
+#### Y30 实现与定向裁决
+
+修复前`1c5f1df6`的普通Direct真实复现漏项：2097153宽的末尾唯一最大值4被遗漏，返回0。
+`55fe0b8a`将原版host padding改为整数计算，并补managed/axis入口的冷设备准入；排序shader、
+pin与执行机制不变。[四构建回归](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-topk-padding/README.md)
+共514项，W1 static/shared分别129/128、Air/Mini分别129/128；先行3项不重复计入。
+大小边界两侧、stable tie、升降序及普通Graph Abs→TopK通过；已有Scan/Scatter/生命周期回归通过。
+
+首次候选37fc82dd漏更新NOTICE的独立license摘要，配置被正确拒绝；该构建纠正记1/2，
+算法纠正0，原始失败保留。未运行P1。统一LOC为48,294行/195文件；核验归档后删除旧输入和
+dead patched-source副本共517,759,160逻辑字节。此定向修复停止追加调查/重复局部运行。
+
+依赖锁使selector扩展为112个selected门；目前只完成具名局部门，global余项继续随固定C1
+bundle完成，未记PASS。下一动作是原已授权的真实C1片段与Scan/Scatter source/static/shared
+消费、完整成本优选/淘汰和余项验收；CPU oneDNN资格BLOCKED保持，矩阵及C1完成通知未触发。

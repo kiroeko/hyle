@@ -1,0 +1,100 @@
+{
+  "retained": "Canonical source, upstream cache, current patched sources and builds, current Y30 inputs, SDKs and proof archives",
+  "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+  "removed": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-08d67c738dcf3dd9baad29be272b6d152fa01e9dc2919e269416db8d1a51fd23",
+      "kind": "directory",
+      "logical_bytes": 24594700.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-08d67c738dcf3dd9baad29be272b6d152fa01e9dc2919e269416db8d1a51fd23\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326",
+      "kind": "directory",
+      "logical_bytes": 24594369.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-4d425b5efe991c61baba411a47c8d4ce3e3fdcb57c1ed3170a341cf968ca1122",
+      "kind": "directory",
+      "logical_bytes": 24594138.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-4d425b5efe991c61baba411a47c8d4ce3e3fdcb57c1ed3170a341cf968ca1122\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2",
+      "kind": "directory",
+      "logical_bytes": 24595985.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b",
+      "kind": "directory",
+      "logical_bytes": 24595985.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-08d67c738dcf3dd9baad29be272b6d152fa01e9dc2919e269416db8d1a51fd23",
+      "kind": "directory",
+      "logical_bytes": 24594700.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-08d67c738dcf3dd9baad29be272b6d152fa01e9dc2919e269416db8d1a51fd23\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326",
+      "kind": "directory",
+      "logical_bytes": 24594369.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2",
+      "kind": "directory",
+      "logical_bytes": 24595985.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b",
+      "kind": "directory",
+      "logical_bytes": 24595985.0,
+      "file_links": [
+        "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b\\.pi\\SYSTEM.md"
+      ],
+      "files": 2263
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scatter\\y29p-source.tar.gz",
+      "sha256": "b0d0f8401c60722d006a2b6cad335f8cb51362ab68da277c91ad84db74cd429f",
+      "kind": "file",
+      "logical_bytes": 36500210
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-scatter\\y29p.bundle",
+      "sha256": "a9864b2bc942bdfe14f964aa4f0cf961dbf127235867ee3c51fa66d762358e3f",
+      "kind": "file",
+      "logical_bytes": 148172
+    }
+  ],
+  "status": "PASS"
+}

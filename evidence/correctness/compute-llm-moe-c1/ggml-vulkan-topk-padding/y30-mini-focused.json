@@ -1,0 +1,202 @@
+{
+  "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+  "product_candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+  "platform": "mini",
+  "status": "PASS",
+  "result": {
+    "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+    "tree": "8d248549acf901cfb513adeefa68c8abb53a2b48",
+    "archive_sha256": "4847de369f508316f3309864a8c4403588f0e3b544e3c45b8a841ca7928a963f",
+    "product_candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+    "scope": "C1-Y30 integer Argsort padding static provider/direct/graph correctness and portability; not delivery or performance acceptance",
+    "source": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source",
+    "source_kind": "complete canonical Git archive",
+    "build": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+    "vendor_commit": "456172ec733a135778adcd32d00e576a58232e45",
+    "vendor_archive_sha256": "e13c176ea92e4a54ef3efccdfdb192e7433c76f91181de86b445560a47b07ac7",
+    "role": "Mac mini correctness and portability only",
+    "validation_layer": "not installed; W1 and Air provide validation-layer evidence",
+    "excluded_cases": [
+      {
+        "name": "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance",
+        "reason": "Mini has no validation layer; this specific check is mandatory and executed on W1 and Air"
+      }
+    ],
+    "tools": {
+      "archives": [
+        {
+          "name": "shaderc-2026.3.arm64_tahoe.tar.gz",
+          "sha256": "7040868fd148b36391a8be834c7d4ab8b9d3920256fd4a56c5cc78ef5276f3ee"
+        },
+        {
+          "name": "spirv-headers-sdk.tar.gz",
+          "sha256": "949a1ea808eaf15048b99f548080f86b468bd1e8b2b8e7ae6daa1eb9c4ca38db"
+        }
+      ],
+      "glslc_sha256": "1e4d0f4284b524574c489541b44d26c5a0f719f96198963b99658420180c620d",
+      "commands": [
+        {
+          "command": [
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/shaderc/2026.3/bin/glslc",
+            "--version"
+          ],
+          "returncode": 0,
+          "output": "shaderc v2026.3 unknown hash, 2026-07-16\nspirv-tools v2026.3 v2022.4-1283-gb707790a\nglslang 11.1.0-1493-g168d452a\n\nTarget: SPIR-V 1.0\n"
+        },
+        {
+          "command": [
+            "/usr/bin/otool",
+            "-L",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/shaderc/2026.3/bin/glslc"
+          ],
+          "returncode": 0,
+          "output": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/shaderc/2026.3/bin/glslc:\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n"
+        },
+        {
+          "command": [
+            "/usr/bin/vtool",
+            "-show-build",
+            "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/shaderc/2026.3/bin/glslc"
+          ],
+          "returncode": 0,
+          "output": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/shaderc/2026.3/bin/glslc:\nLoad command 11\n      cmd LC_BUILD_VERSION\n  cmdsize 32\n platform MACOS\n    minos 26.0\n      sdk 26.4\n   ntools 1\n     tool LD\n  version 1266.8\n"
+        }
+      ]
+    },
+    "machine": {
+      "model": "Mac16,10",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+    },
+    "environment": {
+      "PATH": "/Users/kiro/hyle-verify-tools/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+      "DYLD_LIBRARY_PATH": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/lib",
+      "VK_ICD_FILENAMES": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/MoltenVK_icd.json",
+      "VK_LOADER_LAYERS_DISABLE": "~implicit~"
+    },
+    "commands": [
+      {
+        "label": "configure",
+        "command": [
+          "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source",
+          "-B",
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+          "-DHYLE_DEV_FACTORS=compute_provider_ggml_vulkan;compute_route_vulkan;graph_route_vulkan",
+          "-DHYLE_COMPUTE_APPLE=OFF",
+          "-DHYLE_COMPUTE_CPU=OFF",
+          "-DHYLE_COMPUTE_CUDA=OFF",
+          "-DHYLE_COMPUTE_VULKAN=ON",
+          "-DHYLE_COMPUTE_ONEDNN=OFF",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DHYLE_TEST_INSTRUMENTATION=OFF",
+          "-DHYLE_TRACE=OFF",
+          "-DHYLE_SANITIZER=off",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DFETCHCONTENT_SOURCE_DIR_GGML_VULKAN_RUNTIME=/Users/kiro/hyle-verify/llm-moe-c1-20260918/ggml",
+          "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/vulkan-headers",
+          "-DHYLE_VULKAN_GLSLANG=/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/glslang-local",
+          "-DVulkan_INCLUDE_DIR=/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/vulkan-headers/include",
+          "-DVulkan_LIBRARY=/Users/kiro/hyle-verify/llm-moe-c1-20260918/t-mini-vulkan-tools/lib/libvulkan.1.dylib",
+          "-DVulkan_GLSLC_EXECUTABLE=/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/shaderc/2026.3/bin/glslc",
+          "-DSPIRV-Headers_DIR=/Users/kiro/hyle-verify/llm-moe-c1-20260918/y-vulkan-tools/spirv-headers/share/cmake/SPIRV-Headers"
+        ],
+        "exit_code": 0,
+        "seconds": 2.9601791250000007,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/configure.log",
+        "sha256": "51c92b0cc87457438c7da294a686625c1346d199a6a3b9ff58febda9ebbc4b29"
+      },
+      {
+        "label": "build",
+        "command": [
+          "/Users/kiro/hyle-verify-tools/lib/python3.9/site-packages/cmake/data/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static",
+          "--parallel",
+          "2",
+          "--target",
+          "hyle_compute_provider_ggml_vulkan_tests",
+          "hyle_compute_route_vulkan_tests",
+          "hyle_graph_route_vulkan_tests",
+          "--",
+          "-k",
+          "0"
+        ],
+        "exit_code": 0,
+        "seconds": 84.58441024999999,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/build.log",
+        "sha256": "14d6bb7d981bbad066eb1a924dc07a1ec4aa605a38439e35fd6cea133f97629d"
+      },
+      {
+        "label": "compute_provider_ggml_vulkan",
+        "command": [
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_provider_ggml_vulkan_test",
+          "--gtest_output=json:/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/compute_provider_ggml_vulkan.json",
+          "--gtest_filter=-GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance"
+        ],
+        "exit_code": 0,
+        "seconds": 0.8590567090000008,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/compute_provider_ggml_vulkan.log",
+        "sha256": "9b59759611e1dea004c58c057cbb24b584010178b24a1865dfae915c266eb3a9"
+      },
+      {
+        "label": "compute_route_vulkan",
+        "command": [
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_route_vulkan_test",
+          "--gtest_output=json:/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/compute_route_vulkan.json"
+        ],
+        "exit_code": 0,
+        "seconds": 10.951105416999994,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/compute_route_vulkan.log",
+        "sha256": "a9fe198d50476137ba5d335c01649382febfb4d69378650a0b0954915af54ac0"
+      },
+      {
+        "label": "graph_route_vulkan",
+        "command": [
+          "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_graph_route_vulkan_test",
+          "--gtest_output=json:/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/graph_route_vulkan.json"
+        ],
+        "exit_code": 0,
+        "seconds": 1.9457489589999994,
+        "timed_out": false,
+        "log": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/y30-55fe0b8a/graph_route_vulkan.log",
+        "sha256": "4f3014343d904e513a69784aaa6c11a0d441d785e18048e928948960b5c5b9ab"
+      }
+    ],
+    "verdict": "PASS",
+    "artifacts": [
+      {
+        "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_provider_ggml_vulkan_test",
+        "sha256": "77a3ac5f3bfaa6e3cae2e47d287608eebe990cab43c9035b3f540c337126b9a9",
+        "tests": 18
+      },
+      {
+        "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_compute_route_vulkan_test",
+        "sha256": "f43b2ec1f614305aae4e761d67cab510372d7cc8e8d1882a3c46ec900f589f9e",
+        "tests": 85
+      },
+      {
+        "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/bin/hyle_graph_route_vulkan_test",
+        "sha256": "768cd2de27e776b3e1dcebc7fbe7039e6bb1f44280322468c5beceb2ca606ae2",
+        "tests": 25
+      }
+    ]
+  },
+  "archive": "y30-mini-focused.zip",
+  "archive_sha256": "581f842453af3aa8606390c9b94c925c4318e9e01783044b51d98afa4734ab06",
+  "archive_bytes": 27002
+}

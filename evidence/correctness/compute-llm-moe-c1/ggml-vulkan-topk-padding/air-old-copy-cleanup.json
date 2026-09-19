@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "candidate": "55fe0b8a505c0f725473f53e1a3eb875006b85fb",
+  "removed": [
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/src/compute_provider_ggml_vulkan/source-a77febb1f2a5db33499bbd570839f5f4a5ddb3affbe88666e75d5fff919487f2",
+      "files": 2263,
+      "logical_bytes": 24595997
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/src/compute_provider_ggml_vulkan/source-08d67c738dcf3dd9baad29be272b6d152fa01e9dc2919e269416db8d1a51fd23",
+      "files": 2263,
+      "logical_bytes": 24594712
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/src/compute_provider_ggml_vulkan/source-2bae612856ab5b149c2b959b61fc3c761a82f873f649f7faf62423b8710a2326",
+      "files": 2263,
+      "logical_bytes": 24594381
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/src/compute_provider_ggml_vulkan/source-f48f85fc1a3217abb0d1ceee9c7c5cf98b58dc49f5bba71174b9fd9586d9db8b",
+      "files": 2263,
+      "logical_bytes": 24595997
+    }
+  ],
+  "retained": [
+    "current source and patched source",
+    "active build",
+    "vendor/tool caches",
+    "all proof archives"
+  ]
+}
