@@ -1,0 +1,1092 @@
+{
+  "schema_version": 1,
+  "kind": "conservative_algorithm_freeze_identity_not_an_algorithm_count",
+  "baseline": "ebe5af5109afb01b029c1ba85484d03be61d6fe6",
+  "contract": "llm-moe-self-operator-freeze.md",
+  "scope": "All existing HYLE-owned operator algorithms in Compute/Graph, including embedded kernels and modified vendor mathematics; new algorithm files also prohibited before the global admission gate.",
+  "excluded": "SIMD foundation library and non-inference consumers; original vendor algorithms are not HYLE self-written operators.",
+  "allowed_later": "Only named M1/M2 adapter/resource FIX may alter non-algorithm glue; M4 requires proven residual gaps; M5 has zero algorithm optimization budget.",
+  "files": [
+    {
+      "path": "include/hyle/compute/apple.h",
+      "git_blob": "dbfe7c877ada9a88a480eda89902367ee3f971d9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/backends/cpu.h",
+      "git_blob": "1ec17872be943e53b0ccbe704d6f796fc04b4a72",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/backends/cuda.h",
+      "git_blob": "7e7314ccb8e3b00565d161606cb33d4d342a0f18",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/completion.h",
+      "git_blob": "a46f2f3e73c93c8b218874a11ab128d2685e0eaf",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "git_blob": "11e9de989ca2bda506a32daf74fd5e485d0e4eec",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/cuda.h",
+      "git_blob": "69ede5704255c47b91ef28568bfb16ef745c13d9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/custom_kernel.h",
+      "git_blob": "2d2071cf4c4975d753c6e34ba26940017fee5940",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/delegated_operation.h",
+      "git_blob": "55f795f2a75bad0e0d2c972e67ea1563e7035fae",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/backend_extension.h",
+      "git_blob": "2e235ba488d9f23e485858695627cd187708c849",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/command_capture.h",
+      "git_blob": "c27c53314d01d905204f9961473b9e41fa8e8649",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/completion_access.h",
+      "git_blob": "1f9f63290f7a88df73b614eb433db90b94e26177",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/context_ref.h",
+      "git_blob": "701112bcac077a4af5b0704c4459a7626f8e1693",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/generated_result.h",
+      "git_blob": "40b52f06b073bbd5f7c5c510f5ab66ff37f377a6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/prepared_callbacks.h",
+      "git_blob": "49b9f2c2f55dd0ebddc4073734600edc78a38a6d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/provider_extension.h",
+      "git_blob": "f8b37b3bd483fb43d3fe5b674df4d0a07b242f52",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_sequence.h",
+      "git_blob": "eac92157254a1ad46927d1a0c867e00786d4e932",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_binding.h",
+      "git_blob": "e667fa0ae3d305ca5b564c34aa09cf6ad6ee9305",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_plan.h",
+      "git_blob": "eae5b76d8bf7dab082b99dd94d107aea4327f12f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/device.h",
+      "git_blob": "ec49d59e341281cde1ec48996d4699f7a846dc5e",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "git_blob": "2dc579c6374cb14c14c3b622c3e2fe036a720c3b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/ops_visibility.h",
+      "git_blob": "aa4b390e6ea8792b5f3b125c41f5a313b49088d3",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/prepared_operation.h",
+      "git_blob": "8556630109dc3fca5ba43a9376de95fb31b71684",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "git_blob": "a373bfd01d6e0cc9d559d1fb0528757a276fb7b4",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/providers/cublas.h",
+      "git_blob": "20870a610590a19347a5ad482872c9b05f235c79",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/providers/cuda.h",
+      "git_blob": "0fa634af39de8277daf7e865f431bfafbcdad0a0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/providers/marlin.h",
+      "git_blob": "19227c6ae353a94d05903da6edc8f4aaf18290d0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/providers/native.h",
+      "git_blob": "226b3afd7ad9b210d975a7b68238eafc84f8c00d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/providers/onednn.h",
+      "git_blob": "d6c2bbbfcc651894c8a6d6c753be9e6b1aed0ed1",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/resource_requirement.h",
+      "git_blob": "2be46f31e20ac1f36a4fe79bbb2feae339a5436a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/result.h",
+      "git_blob": "a3d7d7f7b61f7eb38ee7cef87c6418dd96e4b52f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/tensor.h",
+      "git_blob": "e1cbcb5a997a96a13a4cea8b719858e76566ca37",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/tensor_desc.h",
+      "git_blob": "08814a787cb8255be0ac73713c531a331deab7ce",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/transfer.h",
+      "git_blob": "aa2a7b102b706636a6b015ac607bbe1a24a14f33",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/visibility.h",
+      "git_blob": "7e10ee2d0ba7f8e81e61a063ee3b759c9a110850",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/compute/vulkan.h",
+      "git_blob": "373328460e64c73e640fd59d7d6041f5baac9e5b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/apple.h",
+      "git_blob": "32ef90b8f2adf0d1f4a8b589b0b6dd1432fc899f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "git_blob": "9eb9fd9758d81a6742bebe856f6d147f15b1c577",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "git_blob": "f4af008c7ca678a7f3aa167c1cecf4ed75cd9419",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/cuda.h",
+      "git_blob": "84af7e0d90d81be3f866ef0343459d7305eb6783",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "git_blob": "36631ebbf0c2717189b49f12989d41fcd890c7a4",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "git_blob": "4e37a4a69bff78d059c99c5ad578bbd7da690010",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/providers/onednn.h",
+      "git_blob": "12bd30ed0637c660b55a5e8a33af35b711b36da0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/region_provider.h",
+      "git_blob": "29f3d2a21edf441be13ad6d1bbb6b9ca2d742ab5",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "git_blob": "5c29339336bd24389699acbefbb9f096a372536d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "include/hyle/graph/vulkan.h",
+      "git_blob": "9c3f5365f9d217581b9b81ca03b2ea3f12bfcffa",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/backend_internal.h",
+      "git_blob": "047abbcbad879ac2f8e33fdd1a0918fc84918fc5",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/command_capture.cc",
+      "git_blob": "622dbfa8cc4cc98470d1f7d926e939487ee1f7b9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/completion.cc",
+      "git_blob": "31c780c04c8ffab09878f39caea84d2cce53a1fd",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/completion_internal.h",
+      "git_blob": "9b6e7f2aca10dd4bc47ee2f8fdf2bc5f5ed9fb8c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/context_state.h",
+      "git_blob": "cae505f753e6f9f7a0c11b5e53167a868dddeac5",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/custom_kernel.cc",
+      "git_blob": "f8171775b069569c5e72e187d9f83680e52a7ed9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/device.cc",
+      "git_blob": "e255abd20e994dc7570b3c98b0d78a61f828ca19",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/matmul_kernel_impl.h",
+      "git_blob": "20c4b5713774d440993ab9766427fd9a6aca646a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/matmul_kernels.h",
+      "git_blob": "2c4f12b56c2bf62976d98b02419ce8700142289e",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/native_route.h",
+      "git_blob": "852af0ca781bab87a838e9f58b8656060ea6b9e3",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/operation.cc",
+      "git_blob": "86a6d6162695eaba62cb49c94cf0ec10337f9799",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/prepared_state.h",
+      "git_blob": "cc8458522341503beece694876ecbca5b295ad94",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/provider.cc",
+      "git_blob": "17786e418fd212147e420691401fb3e2f723d188",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/provider_internal.h",
+      "git_blob": "f40f2bf29c46e5767598d802db2d4bf8f318aab4",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/result.cc",
+      "git_blob": "dac9623c22a2513edef6d5a7b06dd2b363978a33",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/rope_kernel_impl.h",
+      "git_blob": "0ed572f0daf161707a5abd2a923086748bdae17f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/rope_kernels.h",
+      "git_blob": "149e6a9ec106e019e1e74b6b1661e97ea5247a70",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/shape_domain.cc",
+      "git_blob": "ee9ad96a64461cbaf450895f9b8a5206f1e0c84b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/shape_domain.h",
+      "git_blob": "5acdfac17099172a9f1a6b876e6fe8b4428b94b5",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/shape_program.cc",
+      "git_blob": "23c5177b23ac9136d7877016f911aa3cf0d79641",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/shape_program.h",
+      "git_blob": "6a54771c0e83c042edc345eddf7748ad4cb8a4f0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/tensor_view.cc",
+      "git_blob": "d87b631460d839048c6c8382c0c8795ef2a49ea8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute/transfer.cc",
+      "git_blob": "8c0243875ab7e02ff383d3504c3388f063c0936f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cpu/cpu_backend.cc",
+      "git_blob": "0c7b0bbe28d50c5d7ede2af76b0dbd03f06565ad",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "git_blob": "3a0f0875742d73781102a2dfbe7ed8e509458959",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_device_status.cc",
+      "git_blob": "04b4a617afeb8c32a8d4273bd5357d30b2a74ccb",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_internal.h",
+      "git_blob": "8db1bce4bc1b856d7c6fc6aad675ae74a7755dd8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_memory.cc",
+      "git_blob": "99332c161dd04ddae428d9b0077b9d2e934c4778",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/device_status_kernel.cu",
+      "git_blob": "7872d26a64e155796abc915a1518ebb147db0485",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/device_status_kernel.h",
+      "git_blob": "b4c806b76e331ea42092a363c51d187f8a46bbb7",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_backend_cuda/native_context.h",
+      "git_blob": "0da838be55dc947cf11db4620929f0a8d7d16801",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_ops/operation.cc",
+      "git_blob": "b5c733273bc49a5fc236f69369ee32d7ecdf5c5b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_ops/tensor_desc.cc",
+      "git_blob": "17cabd44a6052731d4c2757ed0a02366ee9adb6a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_ops/view_alias.h",
+      "git_blob": "9952e48aab6ba2d5bec9332e1537e4cb9019c853",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cublas/cublas_provider.cc",
+      "git_blob": "c858528dd8e220ab727f929cec0c21cfdb1c1412",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/concat_kernel.cu",
+      "git_blob": "7c7acdcd1af8aeeacea79251483c441965d00cd7",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/concat_kernel.h",
+      "git_blob": "28b2502db34d804a95ff169d4233611bd0437dda",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/concat_provider.cc",
+      "git_blob": "cf74089f7161641b201a9482ed546154faf0e56c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/concat_provider.h",
+      "git_blob": "1926352275e2fac3dfc0cdbc615b38f9d18cc54a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "git_blob": "ad890b60030b35fba0ae2ad1d28e67bf77099180",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/gather_kernel.cu",
+      "git_blob": "22678593d16263ed48128fe78a1440c115e62b92",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/gather_kernel.h",
+      "git_blob": "e41a4b4ddf40c8dc4a4bf639d8e35989e5ddf65b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/gather_provider.cc",
+      "git_blob": "86ea86ee3d69839137609788ae2bacd9404136d5",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/gather_provider.h",
+      "git_blob": "5b2bba5d1bcc88d4f797456f305c637bea3dcccf",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/native_kernel.cu",
+      "git_blob": "441e08b04f506da8cac1b6574dac5b197bd8145b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/native_kernel.h",
+      "git_blob": "1dd4661e711963362f55100a9b6525fbe99f4e49",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/norm_kernel.cu",
+      "git_blob": "6bb004b30326589226f41c37867d709468baf731",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/norm_kernel.h",
+      "git_blob": "927f0827060c6e9531b5078efa010f3aff106722",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/norm_provider.cc",
+      "git_blob": "39a7672a4616472df92ca0fe45a1ed63281214a2",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/norm_provider.h",
+      "git_blob": "96d4c64441655503b9baf1b36fec0fc067816a12",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/reduction_kernel.cu",
+      "git_blob": "8b4bae443090ff65b7eec321547c8a569447b425",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/reduction_kernel.h",
+      "git_blob": "3e5a38ed99f6041b602216e6e1596922ebe880bb",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/reduction_provider.cc",
+      "git_blob": "5081eb6e2343168b94876e7704d31fe9fb3b2fec",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/reduction_provider.h",
+      "git_blob": "ba7d7ef7c1d2647123775293ad5cbd4f78ba941d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scan_kernel.cu",
+      "git_blob": "c66b2ed584ab328de1a40a3295223d5f8d4ba76d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scan_kernel.h",
+      "git_blob": "d71b777377dd24e43eccab54f1117d86811d5d30",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scan_provider.cc",
+      "git_blob": "c6194b068dbfa4895ac310cab16c47821f6ea342",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scan_provider.h",
+      "git_blob": "e506682366ac2cd55c58a9bf4e284641dd66b281",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scatter_kernel.cu",
+      "git_blob": "ecd87514a997fc3da0a7c2fe5298095a63765323",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scatter_kernel.h",
+      "git_blob": "380aada41965cc4de0a5adbffa122eae5848ae8b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scatter_provider.cc",
+      "git_blob": "f12a6b002b68a4954a572bb58510afd022fa34d4",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/scatter_provider.h",
+      "git_blob": "425a060c799c0b05a3bef365c9a6ea4294ae64f9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/sglang_device_compat.cuh",
+      "git_blob": "5fb4b354ae064c9df18afa95a75cc3b7456972b6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/sglang_kernel.cu",
+      "git_blob": "1a74fc5cde035fddaeba7d8ab886a5778ca7775d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/sglang_norm_kernel.cu",
+      "git_blob": "f32563e933ec89e73eccaac337d2b0833758f29c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/sglang_norm_kernel.h",
+      "git_blob": "5ce86d9a0e782e094f3ab6e6c60095bf66084e51",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_kernel.cu",
+      "git_blob": "162078e1ed48d0a070058067aa18ffbf3019b09c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_kernel.h",
+      "git_blob": "d7efcbfb935d91c39ccbeb843e5eba3514522af0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_provider.cc",
+      "git_blob": "5e19adce6c0f12b794983f301141cf43a65e05ce",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_provider.h",
+      "git_blob": "3f6d2b6802742c9839adb0723e34b17102df1a02",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/topk_kernel.cu",
+      "git_blob": "c3df3c051656482429b9f0797bbcf8fe10da39e0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/topk_kernel.h",
+      "git_blob": "a1b1c09dac4de1bf9e1814eab840252e55fd28b0",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/topk_provider.cc",
+      "git_blob": "ebfceb5bbeff0ebacb754e26426f0b41d75573ad",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_cuda/topk_provider.h",
+      "git_blob": "9504227af0f20884f8f49b7f1c0df833a1083e4f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/metadata_arena.cc",
+      "git_blob": "2d3ec58b919bf1bad768d9c3fc966c75a440143f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/metadata_arena.h",
+      "git_blob": "eeb943d0c70bce058931a0512da4f3d804a79b5f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_bridge.h",
+      "git_blob": "145ab4d822239f2b3d09519d819e017634cbd157",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_device.cc",
+      "git_blob": "518ce4192c2c45a985b707d29a61b7ff558949d9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_device.h",
+      "git_blob": "72d08bc645044558008a5566a174754d0a58d66e",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_graph.cc",
+      "git_blob": "368975d0335b4a663b936319b5021d29cf3922b6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_graph.h",
+      "git_blob": "18625cf0cad8faec19a6cb7b14afa948bf2fe9a9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_runtime_impl.h",
+      "git_blob": "3e63bff3fc2fc4aea73b7c301b568604bccd4a89",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_storage_impl.h",
+      "git_blob": "06713e2955296b22c9a2d8ca30ae3ec4835c66d1",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_work_impl.h",
+      "git_blob": "bc4e31041f11b46367051ef3475b2cfe7bf64d08",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "git_blob": "9ae222863f7dc4898ab60a08893ef508a426c930",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "git_blob": "f9cc94a8451111639f9152487e22b3fb7cc0f9f5",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_marlin/marlin_internal.h",
+      "git_blob": "17db8f14e804c4a0cb1a25c66823e4c74493f9bd",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_marlin/marlin_provider.cc",
+      "git_blob": "75b5f6dca53eef5176a26bbfd86831587133bb37",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_marlin/native_kernel.cu",
+      "git_blob": "87831fd4b6391150e2eaff90e200cd106f1b8ff1",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_marlin/native_kernel.h",
+      "git_blob": "0dd7ab3a1262409e6d82db7e38231f5f8ce5a5b8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_marlin/quantized_weights.cc",
+      "git_blob": "bf82aefb6e659d4141d62857808cd70a03bbfc89",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/attention.cc",
+      "git_blob": "cb2b156e686b736c60533e33498867e4f5674a33",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/cast.cc",
+      "git_blob": "8d2ea795446ef69b5a99ff0cb3d071b5acd736ca",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/elementwise.cc",
+      "git_blob": "d2593540122b35a6a93c37fefb83f258011886c8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/indexing.cc",
+      "git_blob": "24da39114cada0902d2ae6d2fb9dd24dd0ff3129",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/native_plan.h",
+      "git_blob": "a62155444ec3867f36f4921ce39c31eeeecaa37c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "git_blob": "83b68d1828e5b2a6b8a851269f3479040e94aa2e",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/normalization.cc",
+      "git_blob": "bfda670291f932b2f1e8ff6e0283317e7565bd32",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/numeric.h",
+      "git_blob": "eebd3138c90f219dab816ae750d29e4d3284a10a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/reduction.cc",
+      "git_blob": "037c6b98d08d14e10036313db1db0c9b1e7034ad",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/transform.cc",
+      "git_blob": "92fcd53d30a8a182d76db4fc6b21d648490d004f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_native/transformer.cc",
+      "git_blob": "16ada850772cda727a04f96a7bd484b8b326e5f4",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_onednn/brgemm_internal.cc",
+      "git_blob": "1a6d387ad6ec691b4060abc334c25e4d21e3aaf3",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_onednn/brgemm_internal.h",
+      "git_blob": "9c5811a15a767af08a0ab678c985f44ff82f0978",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_onednn/normalization_internal.cc",
+      "git_blob": "464e9c06245bd922f93834fdcab7e731166680e3",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_onednn/normalization_internal.h",
+      "git_blob": "de1baf2e2c97e52414f932d9e012685dea9ebf51",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_provider_onednn/onednn_provider.cc",
+      "git_blob": "0e4e66ddad30fb3b929b678da1b1c63cb8ec52ac",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_checks.h",
+      "git_blob": "d8b8d571312c8868e29a24f7239674a5df98083d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "git_blob": "6a7ea81fb44f23a649387d70858c309ce2030bbb",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_environment.mm",
+      "git_blob": "4481b3cfa61d8a1aa970acec4f437fca17a5fd3c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_indexing.cc",
+      "git_blob": "72680564f3b272b055e6c8ba5aa45cb53faabea1",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_indexing.h",
+      "git_blob": "94be295f0418aa3fa0a3858fdac0c0012e5ca5c9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_internal.h",
+      "git_blob": "c8ab59151676659039585e139f3454928dc3b2a8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_operations.cc",
+      "git_blob": "244f282416be5a32bd4da565fdbd35bb8f6f121a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_reduction.cc",
+      "git_blob": "76b2f9864450498a28aa018e55a200cdee19f15d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_reduction.h",
+      "git_blob": "0a11112e8004d4a19122e0aa5eef2687dfcad530",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_scatter.cc",
+      "git_blob": "ba89b1d5e70daa5a7c690f292f2167b2ad0f7f00",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "git_blob": "034773347ee38bfd63c54452c49f996fffb3a1ee",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.h",
+      "git_blob": "c5ec5f4038b5da7f9298425b7a9b6ba4b58ba39a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_cpu/cpu_context.cc",
+      "git_blob": "ac9eef01b6c0e535277e5c2427ad28135b04283f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_cuda/cuda_context.cc",
+      "git_blob": "627b719c50fbd2c122771d03ffc08028d29df82f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/integer_scan.comp",
+      "git_blob": "291164280af597cba719aaf0fec5c4365e9450e6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/swiglu.comp",
+      "git_blob": "cce0fc013be8a5d00b1b2f92dc2cef9bba743ba8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/tensor.comp",
+      "git_blob": "f230b93bb795354c0f16aeefdfb37a36436588fb",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_device.cc",
+      "git_blob": "eda099429c9f33cd38859090adcbe5ab40b17664",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_elementwise.cc",
+      "git_blob": "28207a168cb40b687c4ef92a4df731f1d7cc8fe2",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_internal.h",
+      "git_blob": "bb70261cdcac019a2fd1a4a90d053c8dafbd5f66",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_normalization.cc",
+      "git_blob": "c0f737ccc555bf838f8ea5f06999ba49b61d5cb6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_operations.cc",
+      "git_blob": "cfc28c92a47b0f29f7423c6d191e0f1014864f8f",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_pipeline.cc",
+      "git_blob": "f9629e9a77b539a0ac16b5bf8928a3b77aebefcf",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "git_blob": "e830590facc39d114bb6cf9990cf73dcd820bc5a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program_internal.h",
+      "git_blob": "e9af33c6395770a4283c1e689ebbab3f89e6874b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_recorder.cc",
+      "git_blob": "689842ef3bdf4c420de8a5eb64fbc1a94051ba0a",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_reduction.cc",
+      "git_blob": "341d37da3fa71ae3bc05ce554b0717acf9bf177c",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_region.cc",
+      "git_blob": "7c08a874f7bf613ef0f7a308979b36098d288ee6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "git_blob": "a5a8e2ce6412b192efa6d08bb651b71375c17c29",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_scatter.cc",
+      "git_blob": "4a632d8f47a752510fc748fb20d2fbbb542659c9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_tensor.cc",
+      "git_blob": "15fac568a6db6e92bfb477544ab53f6343a7e6c1",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_tensor.h",
+      "git_blob": "b754af092260d3cbb240c503807360dd30d1c34d",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_transfer.cc",
+      "git_blob": "b90f5976b1e9a75691e125fd538a0e5e7b5d8848",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/constant_artifact.cc",
+      "git_blob": "7281720b20d2ae9ef8a781b34331999407ba94d8",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/constant_artifact.h",
+      "git_blob": "542d0b7ea32ffa751f52542ebd3f7b2d8f34ce01",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/effect_order.cc",
+      "git_blob": "d19801d8bfbca2b3b770b5d473b65f02155be6c7",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "git_blob": "f3537de0e7d75bcc4e90bb1314e7c522e93b2f56",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/graph.cc",
+      "git_blob": "88a1476f7c417d876726e2d1b51df36b6aac044b",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/graph_state.h",
+      "git_blob": "434717348cbb763278fa6503384a1775df5bc164",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "git_blob": "384d00d360e73b60d4fea05d869a367b9eb82143",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/storage_budget.h",
+      "git_blob": "3897aadb272b070e94d029b1ff52fc1c186a12ad",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/view_domain.cc",
+      "git_blob": "41e8e58e3eb0ac46488fcafc4cfbf9760cc71392",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph/view_domain.h",
+      "git_blob": "ad81ac5292a7424377a073d6cc91998e4e572aba",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph_provider_onednn/onednn_region_provider.cc",
+      "git_blob": "6bb9769ceeeb67294f472da4f44596a7bcefe9ab",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph_route_apple/apple_lowering.cc",
+      "git_blob": "a6956318abbac59634b69aa37e9f3fe51bca32c6",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph_route_cpu/cpu_context.cc",
+      "git_blob": "b6c20146b400eb2b6f80ae6ec983d5b65a9f2ac9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph_route_cuda/cuda_context.cc",
+      "git_blob": "e00742c21f7fdbe64099a55cc94223b1c8c83ed9",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "src/graph_route_vulkan/vulkan_lowering.cc",
+      "git_blob": "7bfc64e7902744f24c7cce05ee9455bf06354833",
+      "classification": "product_boundary_may_mix_algorithm_and_glue"
+    },
+    {
+      "path": "third_party/ggml_vulkan_shaders/shaders/copy.comp",
+      "git_blob": "d55e13253a8b3001966790b0172ae30bf6fb8274",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/ggml_vulkan_shaders/shaders/mul_mat_vec.comp",
+      "git_blob": "5a9d0e778fdf3866ac77d576cd218d307507afae",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/ggml_vulkan_shaders/shaders/mul_mm.comp",
+      "git_blob": "90e4e11cdec77f2bd4b620ecddccbf2dee67d89a",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/ggml_vulkan_shaders/shaders/swiglu.comp",
+      "git_blob": "4fee433a126605daeab44e0d512667d5932e511c",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/core/scalar_type.hpp",
+      "git_blob": "ced968ca079499c857bca2796e8391beeb7a9241",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/dequant.h",
+      "git_blob": "edd97dbfcd8e58b4d6dee3f695792816331510e5",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/kernel.h",
+      "git_blob": "838ab9790359b32c767be9c40cdad9e7dd075db6",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/marlin.cuh",
+      "git_blob": "7662eeb61f6e21c14e355a663cbf323ebbd7066d",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/marlin_dtypes.cuh",
+      "git_blob": "7b729ebd0363c3344d8668b330dfbb8ce07b2d89",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/marlin_mma.h",
+      "git_blob": "6ec2aaafc4392c3bd70827b37188efced0763eec",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/marlin_template.h",
+      "git_blob": "962f15c99484536d5633f304d063ef0739849118",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/marlin/repack_kernel.cuh",
+      "git_blob": "1bd524820b55da96c01ae19461a2ece0cf526de7",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/sglang_activation/activation.cuh",
+      "git_blob": "d989b73ad8022e42356acb64a8edafd7dc8976c3",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/sglang_activation/norm_device.cuh",
+      "git_blob": "2dbab36e156fce7ec89424c8b3613223141c8657",
+      "classification": "upstream_and_local_adaptations"
+    },
+    {
+      "path": "third_party/sglang_activation/rmsnorm.cuh",
+      "git_blob": "642309d1708356d4edddd1181c6830129764d3ca",
+      "classification": "upstream_and_local_adaptations"
+    }
+  ],
+  "simd_exception": {
+    "keep": "SIMD foundation, common interfaces and capabilities; no deletion due to operator performance",
+    "final_review_only": "A change introduced by the previous goal, dedicated to operator implementation, with no corresponding Highway/xsimd implementation may be included in M5 after proving all three facts and consumer impact; directory name alone gives no exemption.",
+    "origin_evidence": "../../../../evidence/correctness/compute-llm-moe-restart/simd-origin.json",
+    "new_simd_paths_in_previous_goal": []
+  }
+}

@@ -1,0 +1,18 @@
+["C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_cuda_test.exe", "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\sglang-primitives\\compile-fixed-static\\compute_route_cuda.xml"]
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from CudaDefaultCompute
+[ RUN      ] CudaDefaultCompute.DenseAndCompressedFfnUseFixedRulesAndIndependentSlots
+[       OK ] CudaDefaultCompute.DenseAndCompressedFfnUseFixedRulesAndIndependentSlots (258 ms)
+[ RUN      ] CudaDefaultCompute.RejectsInvalidDeviceAndUnsupportedOperations
+[       OK ] CudaDefaultCompute.RejectsInvalidDeviceAndUnsupportedOperations (0 ms)
+[ RUN      ] CudaDefaultCompute.DescriptorPreparationChecksDeviceResourcesBeforePayload
+[       OK ] CudaDefaultCompute.DescriptorPreparationChecksDeviceResourcesBeforePayload (0 ms)
+[ RUN      ] CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability
+[       OK ] CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability (1 ms)
+[----------] 4 tests from CudaDefaultCompute (260 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (260 ms total)
+[  PASSED  ] 4 tests.

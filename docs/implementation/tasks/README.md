@@ -48,9 +48,10 @@
 
 Compute/Graph 研究与追溯：
 
-- [LLM/MoE 能力补齐计划](compute/llm-moe-coverage-completion-plan.md)：七个具名大模型的计算需求、
-  用户本地 Qwen3.5-2B 的同步与 B16/Q4/Q8/FP8 完整旅程、四路线共同覆盖门；下一轮新 goal 的唯一
-  执行计划；新 goal 已启动，[C0 输入与共同合同](compute/llm-moe-c0-local-contracts.md)正在执行。
+- [LLM/MoE 成熟 Provider 完成计划](compute/llm-moe-coverage-completion-plan.md)：以七个大模型与
+  本地 Qwen3.5-2B 确定需求、Provider 和接入方式，按 M0–M6 成批接四路线；
+  [M0 当前卡](compute/llm-moe-m0-provider-scope.md)；旧 C1 队列撤回，
+  [所有自实现冻结至最后速裁](compute/llm-moe-self-operator-freeze.md)。
 - [四路线基础重构执行计划](compute/four-route-foundation-refactor.md)：七包已完成；
   [验收索引](compute/four-route-foundation-acceptance.md)列明实际证据与资格限制，产品状态仍以 registry 为准。
 - [六项架构复核](compute/six-point-architecture-review.md)：本轮路线隔离、Apple/多 Provider 接入、

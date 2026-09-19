@@ -271,15 +271,23 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-D/F AUDITED：Scan typed prepare 与 descriptor 能力/具体拒绝诊断已实施，W1 受影响 21 测试程序通过；其他环境与共享公开面交付待固定 C1 候选；不新增查询运行时。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1 SCOPED：本地 2B 与七个模型证明 F16/BF16 tensor/index/norm 及状态能力缺口；按 C1 卡审计共同语义和四路线普通入口，AUDITED 与有限 FIX 冻结前不写产品。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "SCOPED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "container_concurrent",
@@ -383,9 +391,13 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B/D AUDITED：Softplus、mixed norm、I32/F32 Scan schema 已实施；W1 35 case 通过。A/B 的完整 Windows selected gates 已通过，Scan 新公开面其余门待固定 C1 候选。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "compute_backend_cpu",
@@ -400,15 +412,23 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-cuda-device-status.md",
-      "summary": "LLM/MoE C1-L AUDITED：CUDA prefix 设备错误、跨 Queue 保活/传播和独立 capture 状态已实现；W1 机制及直接消费者79 case通过。实际checked算子、三交付/公开头增量、其它环境与P1仍待C1整包。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-A/B/C/D/Z AUDITED：半精度 tensor/norm/reduce/gate/index/softmax/top-k、checked Scan 及 MatMul 精度准入修复已实施；W1 static/shared 与 WSL Native 各108例及默认CPU Graph通过。其余平台、真实权重片段和C1完整性能/交付仍待验收。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "compute_sched",
@@ -462,9 +482,13 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-AB AUDITED：按当前卡有限接入同pin SGLang半精度RMSNorm与三种Unary，复用既有普通Direct/Graph、stream/capture；旧E–O能力保留。AB尚未实施或验证；完整C1真实权重/三交付/其它环境/性能与取舍待完成，矩阵仍未证明。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "compute_route_cuda",
@@ -490,33 +514,53 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y35 AUDITED：aa6690c6原生资格、f58d2609的W1/Air实际六交付216例/648次及112项工程资格完成（5执行、107身份复用）；本批停止重复。C1其余成熟覆盖、完整成本/条件规则/淘汰与CPU Q2 BLOCKED仍待处理，矩阵未签收。实现48943行/198文件；清理过期输入95384616字节。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y35 AUDITED：aa6690c6原生资格、f58d2609的W1/Air实际六交付216例/648次及112项工程资格完成（5执行、107身份复用）；本批停止重复。C1其余成熟覆盖、完整成本/条件规则/淘汰与CPU Q2 BLOCKED仍待处理，矩阵未签收。实现48943行/198文件；清理过期输入95384616字节。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
-      "summary": "LLM/MoE C1-Y35 AUDITED：aa6690c6原生资格、f58d2609的W1/Air实际六交付216例/648次及112项工程资格完成（5执行、107身份复用）；本批停止重复。C1其余成熟覆盖、完整成本/条件规则/淘汰与CPU Q2 BLOCKED仍待处理，矩阵未签收。实现48943行/198文件；清理过期输入95384616字节。",
-      "record": "docs/implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md"
+      "state": "BLOCKED",
+      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
+      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
+      "blocked_from": "AUDITED",
+      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
+      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
+      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
     }
   ]
 }

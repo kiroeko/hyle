@@ -1,0 +1,44 @@
+["C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_cuda_test.exe", "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\sglang-primitives\\compile-fixed-static\\graph_route_cuda.xml"]
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 17 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 17 tests from CudaDefaultGraph
+[ RUN      ] CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots
+[       OK ] CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots (91 ms)
+[ RUN      ] CudaDefaultGraph.CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots
+[       OK ] CudaDefaultGraph.CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots (464 ms)
+[ RUN      ] CudaDefaultGraph.CheckedGatherErrorsRecoverAndRetainClosedOrAbandonedOwners
+[       OK ] CudaDefaultGraph.CheckedGatherErrorsRecoverAndRetainClosedOrAbandonedOwners (27 ms)
+[ RUN      ] CudaDefaultGraph.BfloatGatesUseNormalDirectAndCapturedGraphEntries
+[       OK ] CudaDefaultGraph.BfloatGatesUseNormalDirectAndCapturedGraphEntries (8 ms)
+[ RUN      ] CudaDefaultGraph.DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs
+[       OK ] CudaDefaultGraph.DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs (171 ms)
+[ RUN      ] CudaDefaultGraph.ExplicitCommandsUseTheSameNumericalChain
+[       OK ] CudaDefaultGraph.ExplicitCommandsUseTheSameNumericalChain (4 ms)
+[ RUN      ] CudaDefaultGraph.DefaultRulesCaptureSeparateAndPackedTailCapability
+[       OK ] CudaDefaultGraph.DefaultRulesCaptureSeparateAndPackedTailCapability (0 ms)
+[ RUN      ] CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations
+[       OK ] CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations (0 ms)
+[ RUN      ] CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState
+[       OK ] CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState (73 ms)
+[ RUN      ] CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs
+[       OK ] CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs (10 ms)
+[ RUN      ] CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots
+[       OK ] CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots (166 ms)
+[ RUN      ] CudaDefaultGraph.IntegerScanOverflowPreservesOutputRecoversAndRetainsPendingOwners
+[       OK ] CudaDefaultGraph.IntegerScanOverflowPreservesOutputRecoversAndRetainsPendingOwners (22 ms)
+[ RUN      ] CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual
+[       OK ] CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual (556 ms)
+[ RUN      ] CudaDefaultGraph.CheckedScatterOwnsSortGraphThroughFailureCloseAndAbandon
+[       OK ] CudaDefaultGraph.CheckedScatterOwnsSortGraphThroughFailureCloseAndAbandon (44 ms)
+[ RUN      ] CudaDefaultGraph.SglangNormUnaryDirectAndCaptureKeepTwoIndependentStates
+[       OK ] CudaDefaultGraph.SglangNormUnaryDirectAndCaptureKeepTwoIndependentStates (98 ms)
+[ RUN      ] CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults
+[       OK ] CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults (26 ms)
+[ RUN      ] CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs
+[       OK ] CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs (57 ms)
+[----------] 17 tests from CudaDefaultGraph (1825 ms total)
+
+[----------] Global test environment tear-down
+[==========] 17 tests from 1 test suite ran. (1825 ms total)
+[  PASSED  ] 17 tests.

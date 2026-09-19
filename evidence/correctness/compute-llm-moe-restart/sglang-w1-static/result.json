@@ -1,0 +1,101 @@
+{
+  "base": "7444ab4346e3b05e66c1839d6c170f3d76751c6f",
+  "index_tree": "f64987ceb8943067df7f7b694c73113f231ed7ab",
+  "candidate": "ebe5af5109afb01b029c1ba85484d03be61d6fe6",
+  "scope": "C1-AB W1 static native correctness",
+  "status": "PASS",
+  "parallelism": 2,
+  "commands": [
+    {
+      "label": "build",
+      "argv": [
+        "C:/Program Files/CMake/bin/cmake.exe",
+        "--build",
+        "C:\\hyle-scratch\\active-vk\\static",
+        "--target",
+        "hyle_compute_provider_cuda_tests",
+        "hyle_compute_route_cuda_tests",
+        "hyle_graph_route_cuda_tests",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 2.625,
+      "log": "build.log",
+      "sha256": "610cb63e7f373a957312884b0cc86514d44990ceddca9807fd129fc3cda91464"
+    },
+    {
+      "label": "compute_provider_cuda",
+      "argv": [
+        "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_provider_cuda_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\sglang-primitives\\compile-fixed-static\\compute_provider_cuda.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 17.907000000122935,
+      "log": "compute_provider_cuda.log",
+      "sha256": "30ed60e47d2274a29d2cef1e2a620f42e536e42eeb61b46f273214cf0d2a1f9d",
+      "executable_sha256": "9f6260540f9b2b0816f9bc1cd194dbf75bc13fc4d0200d6e65236b4ca0982254"
+    },
+    {
+      "label": "compute_route_cuda",
+      "argv": [
+        "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_cuda_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\sglang-primitives\\compile-fixed-static\\compute_route_cuda.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 0.5,
+      "log": "compute_route_cuda.log",
+      "sha256": "8c59aae6e19a48bf2e29d3b82d0ba1aeb7a6ba547657ea2534e4633e61c1aff9",
+      "executable_sha256": "bcd71d26bd80f67e14deb03a00ec555d07c824093c81962ba7ba456654ed5f6f"
+    },
+    {
+      "label": "graph_route_cuda",
+      "argv": [
+        "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_cuda_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\sglang-primitives\\compile-fixed-static\\graph_route_cuda.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0,
+      "log": "graph_route_cuda.log",
+      "sha256": "88f562ad9437688e71beed1f0bf59d58191beedcee744e7b5e71eda8d0fb350b",
+      "executable_sha256": "0e4fae5ae59c7bf7879dc8a1bb3170af37778f612ea7c8c566ead1cf2e18def8"
+    },
+    {
+      "label": "headers-and-contract",
+      "argv": [
+        "C:/Program Files/CMake/bin/ctest.exe",
+        "--test-dir",
+        "C:\\hyle-scratch\\active-vk\\static",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+        "-E",
+        "^hyle_(compute_provider_cuda|compute_route_cuda|graph_route_cuda)_test$"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0780000002123415,
+      "log": "headers-and-contract.log",
+      "sha256": "ae0b485618c3325ea308955e96f5cc9cad73181d4a7d322ba7584cc1bae56e59"
+    }
+  ],
+  "runtime_PATH_unset": true,
+  "dlls": {
+    "concrt140.dll": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e",
+    "cublas64_13.dll": "8c6bac24474af29627ec96500025a5d410a1b7e8ffa00e1fe13b1781fc6b3ddc",
+    "cublasLt64_13.dll": "e323abd89e0f03c1db91a09d7aeb1928de08e1f86192cc713b335fefe3e368a9",
+    "cudart64_13.dll": "b00ca6f53699120da815bf3e06e2e4285fae2f201235b883dcbb50eec51e2a2a",
+    "msvcp140.dll": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb",
+    "msvcp140_1.dll": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380",
+    "msvcp140_2.dll": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c",
+    "msvcp140_atomic_wait.dll": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241",
+    "msvcp140_codecvt_ids.dll": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3",
+    "vccorlib140.dll": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f",
+    "vcruntime140.dll": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2",
+    "vcruntime140_1.dll": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605",
+    "vcruntime140_threads.dll": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b",
+    "vulkan-1.dll": "32787e00ac6844481812428c496556b9ddbed5e6dbbc93aeff66350a441f04bb"
+  }
+}

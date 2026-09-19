@@ -1,5 +1,11 @@
 # C1-Y33：Vulkan LayerNorm 成熟实现接入
 
+> **2026-09-19 授权移交：本页仅保留历史实施/验证事实。** 当前施工改由
+> [新总计划 M0–M6](llm-moe-coverage-completion-plan.md)与[M0 卡](llm-moe-m0-provider-scope.md)管理；
+> 下文旧 FIX、下一步与 AUDITED 叙述不再授权继续实施或性能重测。
+> [所有自实现冻结](llm-moe-self-operator-freeze.md)，最后一次有限比较落败即删除。
+> 若 registry 仍指向本页的 BLOCKED，原 blocker/resume_condition 继续有效，新 goal 不自动解除。
+
 ## 当前合同与审计
 
 - owner：`/root`；baseline `5f61546cd0f09ff735b2c01f3f28e33fa3044a2c`。

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="4" failures="0" disabled="0" errors="0" time="0.26" timestamp="2026-09-19T22:17:40.396" name="AllTests">
+  <testsuite name="CudaDefaultCompute" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0.26" timestamp="2026-09-19T22:17:40.397">
+    <testcase name="DenseAndCompressedFfnUseFixedRulesAndIndependentSlots" file="C:\public\project-hyle\hyle\tests\compute_route_cuda\context_test.cc" line="106" status="run" result="completed" time="0.258" timestamp="2026-09-19T22:17:40.397" classname="CudaDefaultCompute" />
+    <testcase name="RejectsInvalidDeviceAndUnsupportedOperations" file="C:\public\project-hyle\hyle\tests\compute_route_cuda\context_test.cc" line="116" status="run" result="completed" time="0." timestamp="2026-09-19T22:17:40.655" classname="CudaDefaultCompute" />
+    <testcase name="DescriptorPreparationChecksDeviceResourcesBeforePayload" file="C:\public\project-hyle\hyle\tests\compute_route_cuda\context_test.cc" line="131" status="run" result="completed" time="0." timestamp="2026-09-19T22:17:40.655" classname="CudaDefaultCompute" />
+    <testcase name="DefaultRulesRetainSeparateAndPackedTailCapability" file="C:\public\project-hyle\hyle\tests\compute_route_cuda\context_test.cc" line="152" status="run" result="completed" time="0.001" timestamp="2026-09-19T22:17:40.655" classname="CudaDefaultCompute" />
+  </testsuite>
+</testsuites>

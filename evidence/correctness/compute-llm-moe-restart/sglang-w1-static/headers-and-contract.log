@@ -1,0 +1,18 @@
+["C:/Program Files/CMake/bin/ctest.exe", "--test-dir", "C:\\hyle-scratch\\active-vk\\static", "-C", "Release", "--output-on-failure", "--no-tests=error", "-L", "^(compute_provider_cuda|compute_route_cuda|graph_route_cuda)$", "-E", "^hyle_(compute_provider_cuda|compute_route_cuda|graph_route_cuda)_test$"]
+Test project C:/hyle-scratch/active-vk/static
+    Start 133: hyle_compute_provider_cuda_header_self_contained_test
+1/3 Test #133: hyle_compute_provider_cuda_header_self_contained_test ...   Passed    0.29 sec
+    Start 134: hyle_compute_route_cuda_header_self_contained_test
+2/3 Test #134: hyle_compute_route_cuda_header_self_contained_test ......   Passed    0.67 sec
+    Start 135: hyle_graph_route_cuda_header_self_contained_test
+3/3 Test #135: hyle_graph_route_cuda_header_self_contained_test ........   Passed    0.80 sec
+
+100% tests passed out of 3
+
+Label Time Summary:
+compute_provider_cuda    =   0.29 sec*proc (1 test)
+compute_route_cuda       =   0.67 sec*proc (1 test)
+graph_route_cuda         =   0.80 sec*proc (1 test)
+headers                  =   1.76 sec*proc (3 tests)
+
+Total Test time (real) =   2.03 sec

@@ -1,5 +1,11 @@
 # C1-AB：SGLang CUDA 归一化与激活成组接入
 
+> **2026-09-19 授权移交：本页仅保留历史实施/验证事实。** 当前施工改由
+> [新总计划 M0–M6](llm-moe-coverage-completion-plan.md)与[M0 卡](llm-moe-m0-provider-scope.md)管理；
+> 下文旧 FIX、下一步与 AUDITED 叙述不再授权继续实施或性能重测。
+> [所有自实现冻结](llm-moe-self-operator-freeze.md)，最后一次有限比较落败即删除。
+> 若 registry 仍指向本页的 BLOCKED，原 blocker/resume_condition 继续有效，新 goal 不自动解除。
+
 ## SCOPED / AUDITED
 
 - owner `/root`；baseline `7444ab4346e3b05e66c1839d6c170f3d76751c6f`。
@@ -68,3 +74,11 @@ C1 全部适用验收完成后明确通知用户，在 C2 前等待提问。
 首编的CUDA device及adapter通过，新测试错误地向typed descriptor重载传入TensorView数组；
 只在测试显式构造已有`Operation`，不改公开API或产品。首败日志保留，测试/consumer编译
 纠正1/2、产品算法纠正0/2；尚无运行、三交付或性能PASS。
+
+
+## 移交时最后已发生的验证
+
+`ebe5af5109afb01b029c1ba85484d03be61d6fe6` 的 W1 static provider、普通 Direct/Graph、
+公开头及源码合同实际通过，[原始记录](../../../../evidence/correctness/compute-llm-moe-restart/sglang-w1-static/result.json)
+保留执行日志、XML 和 artifact hash。此前“尚无运行”只描述首次编译失败时的事实。
+shared、WSL、真实2B三交付与性能未完成；旧卡不再授权后续实施/重测，转入新计划的成熟接入批次。

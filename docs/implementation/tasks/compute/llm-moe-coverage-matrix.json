@@ -1911,7 +1911,7 @@
         "graph_route_cpu",
         "graph_provider_onednn"
       ],
-      "implementation": "prefer qualified oneDNN/BLAS or mature third-party kernels/regions; retain evidenced HYLE SIMD advantages; new HYLE algorithms only for verified gaps or complete-cost benefits; existing ggml CPU runtime blocker requires its declared dependency repair",
+      "implementation": "ggml CPU backend/region is the broad-coverage first choice, subject to the unchanged fallible context/threadpool blocker; compose qualified oneDNN primitives/partitions where admitted; existing Native/SIMD operators frozen until M5",
       "rule": "existing fixed CPU eligibility extended only by declared precision/shape and immutable-candidate evidence"
     },
     "cuda": {
@@ -1925,7 +1925,7 @@
         "graph",
         "graph_route_cuda"
       ],
-      "implementation": "prefer cuBLASLt, Marlin and mature CUDA kernels/regions with native streams/capture; adapt boundaries before writing algorithms; HYLE kernels only for verified missing domains or complete-cost benefits",
+      "implementation": "map model regions to ggml CUDA and admitted mature CUDA providers (existing cuBLASLt/Marlin/SGLang); freeze HYLE kernels; resolve stream/storage/completion integration before declaring any algorithm gap",
       "rule": "SM/device/toolkit/driver and format/shape conditions fixed during development; match/bind at prepare"
     },
     "apple_mlx_metal": {
@@ -1935,7 +1935,7 @@
       "graph_owner": [
         "graph_route_apple"
       ],
-      "implementation": "prefer MLX typed lowerings/compiled regions or qualified mature Metal regions; keep native array owners; HYLE extensions only for verified missing domains or complete-cost benefits",
+      "implementation": "map model regions to existing MLX and required ggml Metal coverage with native array/backend owners; freeze custom Metal computation until M5; no speculative new kernels",
       "rule": "MLX/macOS/hardware-qualified region rules; functional state inputs/outputs and native runtime reuse"
     },
     "vulkan": {
@@ -1945,7 +1945,7 @@
       "graph_owner": [
         "graph_route_vulkan"
       ],
-      "implementation": "prefer qualified ggml Vulkan regions or pinned upstream kernels/fused shader programs; resolve native resource/failure boundaries before writing algorithms; HYLE kernels only for verified missing domains or complete-cost benefits; no CPU payload fallback",
+      "implementation": "bulk-map required model regions to the existing ggml Vulkan backend and audited upstream capabilities; HYLE shaders frozen until M5; no CPU payload fallback",
       "rule": "device limits/features/vendor-driver qualified shaders and workgroup rules; no CPU payload fallback"
     }
   },
@@ -1970,7 +1970,7 @@
       "failure owner retained through drain",
       "charged workspace and private unknowns"
     ],
-    "performance": "card freezes same-contract P0/preflight and one immutable candidate P1 bundle; per-route same-workload AA, AB/BA and bounded samples; aggregate C7 does not first qualify rows",
+    "performance": "M2/M3 qualify mature default routes with immutable-candidate evidence; M5 alone compares frozen self-written operators with zero optimization rounds; M6 only aggregates existing verdicts",
     "progress": "count only rows with actual applicable four-route results, never documents or schema; route cells retain missing evidence"
   },
   "requirements": [
@@ -4929,5 +4929,20 @@
         }
       }
     }
-  ]
+  ],
+  "execution_plan": {
+    "stages": [
+      "M0",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M5",
+      "M6"
+    ],
+    "legacy_first_package": "C1..C6 label M3 acceptance groups only; not work order or implementation authorization",
+    "new_self_algorithm_budget": "expected zero; only M4 with all required provider integrations complete and a proven residual requirement",
+    "existing_self_algorithms": "frozen at ebe5af5109afb01b029c1ba85484d03be61d6fe6 until bounded M5 comparison; valid loss deletes, zero optimization rounds",
+    "provider_mapping": "llm-moe-c1-provider-reuse-audit.md"
+  }
 }
