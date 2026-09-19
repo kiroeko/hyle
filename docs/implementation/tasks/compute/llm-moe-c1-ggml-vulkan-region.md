@@ -1077,3 +1077,15 @@ dispatch账单与具体实现须先独立定界，Y27不授权自写整数或Sca
 后续[I32独立Y28](llm-moe-c1-tensor-state.md)现已定界、实现并完成候选`f0115f96`的391项
 Direct/Graph四构建回归；该域由route的宽整数shader补缺，不属于ggml Provider能力。
 ggml产品未因Y28改变，F32原版路径同候选回归通过。完整C1三交付/优选和Scatter仍未签收。
+
+### Y34 所选工程门：已完成
+
+候选`ec240ac9`的[112项所选工程门](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-reduction/engineering/README.md)
+全部资格化：96项普通工程检查、1项component-contract、15项默认三交付（45条消费）。
+既有Y34三个C++ suite及两个公开头按源码、产物、163条未变编译命令与机器身份复用；
+Provider的源码/MASM组合另行执行，未把旧版本门直接代签为本候选。8项未选理由保留。
+本次没有产品、测试、公共工具改动或P1；W1/Air此前432例/1296次实际GPU三交付不重复。
+
+归档核验后清理45个重复producer，共9,492,226,425逻辑字节。实现仍48,737行/197文件。
+本批验收到此停止重复；C1其余Provider覆盖、完整成本比较/条件规则/存量淘汰与CPU Q2
+BLOCKED仍待处理，C1及共同矩阵没有签收。C1全部适用验收完成后通知用户，在C2前等待提问。

@@ -1,0 +1,2878 @@
+{
+  "schema": "hyle.c1-selected-validation/v1",
+  "candidate": "ec240ac9392cb8144d326d8407d9af4b8456026a",
+  "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+  "baseline": "3cd981b318f16e82f975848b976e085d7954c344",
+  "status": "PASS",
+  "selected_gate_count": 112,
+  "gates": [
+    {
+      "id": "docs",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "closure",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "configure",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_provider_ggml_vulkan",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": {
+        "candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+        "tests": 19,
+        "scope": "C++ suite only; source and MASM composition are executed separately",
+        "executable": "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+        "executable_sha256": "87d95044bbad16839db0773e56c2dd2d62029ee38f9b2ccc07a110aa7e1efeb3",
+        "receipt": "windows-native.json",
+        "runtime_DLL_hashes_match": true
+      }
+    },
+    {
+      "id": "factor:compute",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_backend_cpu",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_backend_cpu",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_backend_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_backend_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_ops",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_ops",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_provider_cublas",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_provider_cublas",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_provider_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_provider_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_provider_marlin",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_provider_marlin",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_provider_native",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_provider_native",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_provider_onednn",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_provider_onednn",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_route_apple",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_route_cpu",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_route_cpu",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_route_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:compute_route_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:compute_route_vulkan",
+      "status": "PASS",
+      "group": "native",
+      "execution": "REUSED",
+      "reused_evidence": {
+        "candidate": "11804be7e8661cafb535d2b372544e474bc9b1a6",
+        "tests": 91,
+        "scope": "C++ suite only; source and MASM composition are executed separately",
+        "executable": "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_compute_route_vulkan_test.exe",
+        "executable_sha256": "d95d6c8bdb73dc80433d1caa1d226f2177f27b4daaf6590eba35ae5622cf36a7",
+        "receipt": "windows-test-correction.json",
+        "runtime_DLL_hashes_match": true
+      }
+    },
+    {
+      "id": "headers:compute_route_vulkan",
+      "status": "PASS",
+      "group": "native",
+      "execution": "REUSED",
+      "reused_evidence": {
+        "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+        "receipt": "delivery-inputs-and-headers.json",
+        "original_log_sha256": "c288d160b1f9ce44c87c7b81e08f75b4de5a4a5ab6bf67069089aa2656655e84"
+      }
+    },
+    {
+      "id": "factor:container",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:container",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:container_concurrent",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:container_concurrent",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:container_intrusive",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:container_intrusive",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:container_queue",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:container_queue",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:container_text",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:container_text",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:core",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:core",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:error",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:error",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:graph",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:graph",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:graph_provider_onednn",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:graph_provider_onednn",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:graph_route_apple",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:graph_route_cpu",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:graph_route_cpu",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:graph_route_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:graph_route_cuda",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:graph_route_vulkan",
+      "status": "PASS",
+      "group": "native",
+      "execution": "REUSED",
+      "reused_evidence": {
+        "candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+        "tests": 26,
+        "scope": "C++ suite only; source and MASM composition are executed separately",
+        "executable": "C:\\hyle-scratch\\active-vk\\static\\bin\\hyle_graph_route_vulkan_test.exe",
+        "executable_sha256": "cd2859b5084ab39db6f31c82cb40e4589539084217db80778c526e4043cae309",
+        "receipt": "windows-native.json",
+        "runtime_DLL_hashes_match": true
+      }
+    },
+    {
+      "id": "headers:graph_route_vulkan",
+      "status": "PASS",
+      "group": "native",
+      "execution": "REUSED",
+      "reused_evidence": {
+        "candidate": "923895c58a07bcdb29649ddd89e1b6a14f983065",
+        "receipt": "delivery-inputs-and-headers.json",
+        "original_log_sha256": "39907a18325ce53391550b91bcbd58f924fb977fb4c1e7fc8e2d84badba33d9c"
+      }
+    },
+    {
+      "id": "factor:io_core",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:io_http",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:io_http",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:io_http2",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:io_http2",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:io_tls",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:io_tls",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:io_transfer",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:io_transfer",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:io_watch",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:io_watch",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:io_websocket",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:io_websocket",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:math",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:math",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:mem",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:mem",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:mem_reclaim",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:mem_reclaim",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:mem_vm",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:mem_vm",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:obs",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:obs",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:platform",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:platform",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:platform_fs",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:platform_fs",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:platform_thread",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:platform_thread",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:process",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:process",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:sched",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:sched",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:simd",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:time",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:time",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:timer_queue",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:timer_queue",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:util_core",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:util_core",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "factor:util_runtime",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "headers:util_runtime",
+      "status": "PASS",
+      "group": "native",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "component-contract",
+      "status": "PASS",
+      "group": "contract",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:compute",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:container",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:core",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:error",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:graph",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:io",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:math",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:mem",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:obs",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:platform",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:process",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:sched",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:simd",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:time",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    },
+    {
+      "id": "delivery:util",
+      "status": "PASS",
+      "group": "delivery",
+      "execution": "PASS",
+      "reused_evidence": null
+    }
+  ],
+  "skipped_gates": [
+    {
+      "id": "factor:compute_provider_ggml",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "23a285cd0f739d780334811796fbb853180ee10edff81c50c4d522b38ccc4d2c",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "61409cf4b0bb6b1fe6fc82289d6947b1497509fab3ff5c460df6ca724cb7469b"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "e5f3c82d26a7ca972c876e55995309901f386792a9e187422a386eade68be6af",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "a3aec51c4f4d35ca027e05426e3ca97c89af361cc2932e6f52cc5561f6c3491b"
+    },
+    {
+      "id": "headers:compute_provider_ggml_vulkan",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "compute_provider_ggml_vulkan"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml_vulkan$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "c17eaa71f52475f84724356d2a0362b1db2fbe9c9a80874043a0a7660c6ae991",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "87dfdf04a8a7f9b1dd01270d8df2ea77d61f2856dcce1868d6116da60d3566d8"
+    },
+    {
+      "id": "factor:compute_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected",
+      "factors": [
+        "compute_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "102c638b6ff21c306e0907994d7f52e6cca257c8b58b1bb586454d06d4fd6b93",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "3328acd4a0e5e48ebbd1f5d48e4da27635bf15b48b8a47b5920aeffd5a4f32fb"
+    },
+    {
+      "id": "factor:graph_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; OFF headers remain independently selected",
+      "factors": [
+        "graph_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "31a8a36d763190bc2f9585b521089cce243473442cf700416f9471cef394f747",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "147293c01c438309d95cfe81f35173e01fa7978e5877e654ade0263eaa145f26"
+    },
+    {
+      "id": "headers:io_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "be7faf779bb74a53f0b1c8e3aa959ff2890a41dc8036140fb62e4a34270963c9",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "0740fb4d4bceab529818df8ec86837515ce6955b504df6e2d2e585f1417c8742"
+    },
+    {
+      "id": "headers:simd",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "66102bb998035483fa3917843ad19469bb277b824109db3766c039961908ba2e",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "5c3f010b99d082fe0f6a14bcc052b8d944d49043398dd4ea8691d0c848c49535"
+    },
+    {
+      "id": "p1",
+      "kind": "performance",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic",
+      "factors": [],
+      "commands": [],
+      "identity": {
+        "candidate_tree": "7f2e016c7948c3b101503eb778f127a76bb63ecb",
+        "contract_hash": "2e57e175bdda6e790d2b07649eab91b8afbc611c0f2ac887de356d4ce92f7be4",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-reduction\\global\\remaining-toolchain.cmake",
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0C5eZ93;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.154.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "cache_key": "9b8c3f2ea8aa1c7caf1c432eb12d07b5107671c813f126952284c93e51991c11"
+    }
+  ],
+  "native_artifacts": {
+    "hyle_compute_backend_cpu_test.exe": {
+      "bytes": 995840,
+      "sha256": "43f66c33e581c7acf40fed330a7091f3c973a16e036ed4372a9d49d71648a042"
+    },
+    "hyle_compute_backend_cuda_late_failure_test.exe": {
+      "bytes": 570880,
+      "sha256": "7e4690455c1bf406c6fde1aeb70c5852975d5838579f47c1d591832b452a4411"
+    },
+    "hyle_compute_backend_cuda_test.exe": {
+      "bytes": 917504,
+      "sha256": "294385117cc151460417bc9852f350aa0fe0ec43cc2ff3f100033dd4034918c9"
+    },
+    "hyle_compute_ops_test.exe": {
+      "bytes": 515584,
+      "sha256": "de35e5cd6e1eb804f4cc55163572f1d81d8f836f4b5cfd578af8f31430d2a7ed"
+    },
+    "hyle_compute_provider_cublas_test.exe": {
+      "bytes": 735232,
+      "sha256": "1a0c51184a5a0ca06924afca7de2f83c50fda4d154294388d6d2dde364a03127"
+    },
+    "hyle_compute_provider_cuda_test.exe": {
+      "bytes": 21548544,
+      "sha256": "699a4b039783faeca90a3f1b9363115bccdaafa08fe79673f00ab9236c878deb"
+    },
+    "hyle_compute_provider_ggml_vulkan_test.exe": {
+      "bytes": 44168704,
+      "sha256": "87d95044bbad16839db0773e56c2dd2d62029ee38f9b2ccc07a110aa7e1efeb3"
+    },
+    "hyle_compute_provider_marlin_test.exe": {
+      "bytes": 3456512,
+      "sha256": "1cc9b30dcd0ae1d10cc59dd1ba62e6000b52548182946b9def79c924916d3bcd"
+    },
+    "hyle_compute_provider_native_test.exe": {
+      "bytes": 3275776,
+      "sha256": "401d33a2f55cd4b9e34af1ed276abe5f9d88698ab48c63e5c6692d237a65d6b4"
+    },
+    "hyle_compute_provider_onednn_allocation_test.exe": {
+      "bytes": 14649856,
+      "sha256": "6a3d369648ae3787c1b24fa17394e306eacb6e2de808fe0c0adb1afae6a95add"
+    },
+    "hyle_compute_provider_onednn_composition_test.exe": {
+      "bytes": 16101376,
+      "sha256": "ba3a372873bd8b6cbd5b39a32939c25f9ab84f4bb705befc8af75806ed6446ff"
+    },
+    "hyle_compute_provider_onednn_graph_test.exe": {
+      "bytes": 15085056,
+      "sha256": "20e9cf4d6f294727f029e39fdd0e2f91cf3120a0821db1bdd848646730f7fa63"
+    },
+    "hyle_compute_provider_onednn_test.exe": {
+      "bytes": 14853632,
+      "sha256": "88ffee8a343d9267f7a5cbf208d1a52cac8def444b088fc617067e73dfc4359c"
+    },
+    "hyle_compute_route_cpu_test.exe": {
+      "bytes": 16171008,
+      "sha256": "e2982f7851c3f3ac915d24ba1929ec944d977aadf093a4316cf0618d612db76c"
+    },
+    "hyle_compute_route_cuda_test.exe": {
+      "bytes": 23363584,
+      "sha256": "8d80f35319eecf4240697ae64f746c05e7a8b85bc8b119e7da2c58291af3278f"
+    },
+    "hyle_compute_route_vulkan_test.exe": {
+      "bytes": 45666304,
+      "sha256": "d95d6c8bdb73dc80433d1caa1d226f2177f27b4daaf6590eba35ae5622cf36a7"
+    },
+    "hyle_compute_test.exe": {
+      "bytes": 763904,
+      "sha256": "f01cb0a899c98b3d9888c5b5db226c5485d33505328ed31e6bd23096d459c02f"
+    },
+    "hyle_container_concurrent_test.exe": {
+      "bytes": 754688,
+      "sha256": "78823b93a679081587b79eefdaa8a86e1e5b74f790527f20828e3c0b6ac56769"
+    },
+    "hyle_container_intrusive_no_exceptions_test.exe": {
+      "bytes": 12288,
+      "sha256": "2b9871361a4140cfb453b2add4e8a80682cbce1936d856e774d6c4f1eb5c94e8"
+    },
+    "hyle_container_intrusive_test.exe": {
+      "bytes": 545792,
+      "sha256": "27c039e05a0ba5a98728a3f21f076892ea82e84f964f9ff0534338bf6e874499"
+    },
+    "hyle_container_isa_variants_test.exe": {
+      "bytes": 316416,
+      "sha256": "89a497f7aead573a336c3b40552c81358bebbe92bb7942c73f64930fdfdba8f2"
+    },
+    "hyle_container_queue_test.exe": {
+      "bytes": 736256,
+      "sha256": "e77029c9247317291bd7349fa0f217945cf9bb9d075ae523e332bdc92bdaa583"
+    },
+    "hyle_container_test.exe": {
+      "bytes": 1766400,
+      "sha256": "811aa6ef78faa296b00b7d1a923367cac6c65681074db8721d1b1cbbc670c60f"
+    },
+    "hyle_container_text_isa_variants_test.exe": {
+      "bytes": 310784,
+      "sha256": "5b60a64235fc1ec7d2c101254abc03782d87f4be2a00b1122b720b21b1c21b91"
+    },
+    "hyle_container_text_test.exe": {
+      "bytes": 1341952,
+      "sha256": "847e7ce743a486a408f9af3c396c605d50af3867f74d3097fa678bb371b18f9c"
+    },
+    "hyle_core_release_assert_test.exe": {
+      "bytes": 282112,
+      "sha256": "26f9aeede9c288b7c3facbff0002d464b737533d62f5aed698078bacbc4a4787"
+    },
+    "hyle_core_test.exe": {
+      "bytes": 350720,
+      "sha256": "1801878d5b96148ca781c0d86abad4f9719440767767edc9a973a122bc9563a1"
+    },
+    "hyle_error_test.exe": {
+      "bytes": 841216,
+      "sha256": "dcc79f8077d93d180164c49200af71eda4d0f0a06b43c9d6a24601dc47f8fbe2"
+    },
+    "hyle_graph_executable_test.exe": {
+      "bytes": 5254656,
+      "sha256": "f217439d83176fb4103a1a065061f8f484f4fadd29dd2a288ce50440da288635"
+    },
+    "hyle_graph_provider_onednn_test.exe": {
+      "bytes": 16827904,
+      "sha256": "b4420fd0950a8c8a59d2272140927fb1cf43f05f48f0922ee76c75d761d081f9"
+    },
+    "hyle_graph_route_cpu_cpu_executor_test.exe": {
+      "bytes": 16456704,
+      "sha256": "c0a5368afe435e101a8f06605f8bb30464b2f208fa29b848223fb3714cd538ba"
+    },
+    "hyle_graph_route_cpu_test.exe": {
+      "bytes": 16807424,
+      "sha256": "76efbbefe9cefb855d8d825888499f501c37b4259ea0a856de35a33ce7acfcc6"
+    },
+    "hyle_graph_route_cuda_test.exe": {
+      "bytes": 24216064,
+      "sha256": "284c520f71157867eddb247f291debef1e3e5cce6affcbacfe379d881c728b7f"
+    },
+    "hyle_graph_route_vulkan_test.exe": {
+      "bytes": 45171712,
+      "sha256": "cd2859b5084ab39db6f31c82cb40e4589539084217db80778c526e4043cae309"
+    },
+    "hyle_graph_test.exe": {
+      "bytes": 756736,
+      "sha256": "b893119c3f7e05d6b6d2f629a95b41821918d9328b8c0ac6c196629b05684f54"
+    },
+    "hyle_io_core_buffer_test.exe": {
+      "bytes": 307712,
+      "sha256": "c67f983b93aed9d49ca9e697a8f271f14e4e5d49e84f1dff95b46447e0088440"
+    },
+    "hyle_io_core_dns_test.exe": {
+      "bytes": 562176,
+      "sha256": "8b64e3241de20ab208bc32a0c988b46d4df589dfa00350d1a2c3ecc6bf5c6fb4"
+    },
+    "hyle_io_core_endpoint_test.exe": {
+      "bytes": 333824,
+      "sha256": "90fa9ac9cff0d6c386122fa74babbe9c47b38d53932b8940577d3847de219337"
+    },
+    "hyle_io_core_file_region_test.exe": {
+      "bytes": 623104,
+      "sha256": "9df81b31fac830304aa32244759c964ccf21ba12595ed00d45de99fbe5efba79"
+    },
+    "hyle_io_core_file_test.exe": {
+      "bytes": 615936,
+      "sha256": "79e757a5293ac51231758b6046c04d5f5fb618cd7aefcf5f6684e47953a02ba9"
+    },
+    "hyle_io_core_io_context_test.exe": {
+      "bytes": 526336,
+      "sha256": "e93bae879c9901371e19a8742534a0b6bd6ca0b8324ce36bacefaf56d85ea6ee"
+    },
+    "hyle_io_core_local_test.exe": {
+      "bytes": 596480,
+      "sha256": "a91f06e7617ff8b9c3ecfa5792c9c3e9430c6a4254843f13669d12bc50efb994"
+    },
+    "hyle_io_core_net_cancel_test.exe": {
+      "bytes": 549888,
+      "sha256": "5de3bc5de6be169ccb193e897aa213be0df462d098ede003cd72cff7e10822b0"
+    },
+    "hyle_io_core_net_test.exe": {
+      "bytes": 533504,
+      "sha256": "9f8c5b0407e0c756d6125e06fac2489ea81b165cc944b8ef08430472e2be5aff"
+    },
+    "hyle_io_core_signal_test.exe": {
+      "bytes": 493568,
+      "sha256": "b76412e9acc6024f14b796b636e9098c1f1e01b0d324b93be699835f668dd9e9"
+    },
+    "hyle_io_core_tcp_test.exe": {
+      "bytes": 696832,
+      "sha256": "09f029f1437bdae8d426e486c3d56ba1214578630b91b094a327eec19ad51633"
+    },
+    "hyle_io_core_test.exe": {
+      "bytes": 413184,
+      "sha256": "833c62bc9f9dc80e41c6d0c937e750eb84314556e33613da2eefcf88a16b8223"
+    },
+    "hyle_io_core_timeout_test.exe": {
+      "bytes": 576000,
+      "sha256": "2d995c99e2af536a25cb9d222c70129aeb1d024aafcd089d11d33251e5afb1d7"
+    },
+    "hyle_io_core_udp_test.exe": {
+      "bytes": 565760,
+      "sha256": "11c5eae495c3f106760f1fbeac2b30027f41a1a28563f2e0f768e5bcd3ae5225"
+    },
+    "hyle_io_http2_feature_test.exe": {
+      "bytes": 281600,
+      "sha256": "e2e8f7ec8af679417e642144678fce4e9f52665851e53baf331d9b2fdb91be5c"
+    },
+    "hyle_io_http_cancel_test.exe": {
+      "bytes": 708608,
+      "sha256": "5672bc4840c4fd6933c5e26d138d9da76f35a9a69c794b69f460dc2a9a3c06d9"
+    },
+    "hyle_io_http_file_body_test.exe": {
+      "bytes": 726016,
+      "sha256": "7d3f0c32397d209d3661371e710c5f88a6990737bfc6ae0df073907f4e936311"
+    },
+    "hyle_io_http_test.exe": {
+      "bytes": 842752,
+      "sha256": "4e4fbcf5d355bf32ed935f358a411534fc6531499d7b16d04f5cc772fda44b5f"
+    },
+    "hyle_io_http_upgrade_test.exe": {
+      "bytes": 647168,
+      "sha256": "e83d315f1b25548b879dd88b615acd046f63c963fc3e4239c82b0d021b13bc5e"
+    },
+    "hyle_io_tls_feature_test.exe": {
+      "bytes": 281600,
+      "sha256": "a1cd61a7504bcb21a2a11f560a6140d6fb8107ce16391b66ee52cffc0717b0d1"
+    },
+    "hyle_io_transfer_test.exe": {
+      "bytes": 1053696,
+      "sha256": "3691317a560f84ae13ba0f170c2f25f0e88bbf142f00353f91d79760864dca0d"
+    },
+    "hyle_io_watch_test.exe": {
+      "bytes": 1186304,
+      "sha256": "7d7862061b2cfbedbe09901439dd99a005c3dd56ae3b954bf3c994ddfe82b953"
+    },
+    "hyle_io_websocket_test.exe": {
+      "bytes": 1242624,
+      "sha256": "d3128cbb8a2acfe7bbbf0effa233a5cb95edd3e4a9adf2abdc2fb9e1328168ed"
+    },
+    "hyle_math_test.exe": {
+      "bytes": 385024,
+      "sha256": "57a496fd887294f2449dc38649d2dabcbce19d025dd4a34349c1f807c5005bcc"
+    },
+    "hyle_mem_reclaim_test.exe": {
+      "bytes": 361984,
+      "sha256": "285b9ddae398ff72458fcbb9a9dac112a58d4460c0c03c8b05cb5fd0427e8763"
+    },
+    "hyle_mem_test.exe": {
+      "bytes": 1756160,
+      "sha256": "9bf82fde080578416bf448658d9220bd022037994106827d93725dc606556f36"
+    },
+    "hyle_mem_vm_test.exe": {
+      "bytes": 828928,
+      "sha256": "49f6958dd63e43feb3a355f6758291b0b543a3c4806268d9c1b5ea2d87011e3a"
+    },
+    "hyle_obs_compiled_level_test.exe": {
+      "bytes": 281088,
+      "sha256": "1b23afba237724bfd1ccd861120c73cf8ab767bdc8e912bbc7a3600fb3e13f95"
+    },
+    "hyle_obs_metrics_test.exe": {
+      "bytes": 357376,
+      "sha256": "e00bebe4836d8505e10dcd6523faf7511c3cf1d3c1824705627d85d2e1bbde76"
+    },
+    "hyle_obs_test.exe": {
+      "bytes": 771072,
+      "sha256": "ac4e8153016570dfcf08ab0261620bcfdadab69019cf8cd4891e7947a64d6792"
+    },
+    "hyle_platform_fs_test.exe": {
+      "bytes": 694272,
+      "sha256": "8c682731d7bf9d8900c9c5fd236c40418dd82a6ef6f771e1311ea80b716fbe24"
+    },
+    "hyle_platform_test.exe": {
+      "bytes": 830976,
+      "sha256": "543bbcb55a4fcc9423b8eeea06022eec51db2ecdf73830abbb83a837bdac390e"
+    },
+    "hyle_platform_thread_test.exe": {
+      "bytes": 463360,
+      "sha256": "b1c07bfde8f457dcc771a8c5cf477586791bb712ecf4a82d9136c8eb0223b988"
+    },
+    "hyle_process_test.exe": {
+      "bytes": 747008,
+      "sha256": "7656ca14ade2fcbfe3e1f1f0f018ce87e0bb567413a8a3e60440a8ebdf6d0f71"
+    },
+    "hyle_sched_test.exe": {
+      "bytes": 1831936,
+      "sha256": "0d9d1ab354f4dc4313815b15031fb9dc4fe93383b58deaf0dfb866fe68a14ba5"
+    },
+    "hyle_simd_avx2_ordering_test.exe": {
+      "bytes": 519680,
+      "sha256": "332451c6174400699518fddbac54be23ffd85e7f4540a96497589bca93215e78"
+    },
+    "hyle_simd_provider_route_test.exe": {
+      "bytes": 283136,
+      "sha256": "db13b04c97202dca4bde80af4a0e48d39b444971ab005ed77771548ce8cfa5d1"
+    },
+    "hyle_simd_provider_winner_avx2_test.exe": {
+      "bytes": 335360,
+      "sha256": "108136b90974fb12e57e91ae53ae2a5edce2266406c5c07dff9df87e9ae332db"
+    },
+    "hyle_simd_test.exe": {
+      "bytes": 2900992,
+      "sha256": "51efb0b99b51d2a7d41ccb529534a4d7484b97cb61471e82b3ca5fe2bad73fc9"
+    },
+    "hyle_time_test.exe": {
+      "bytes": 713728,
+      "sha256": "ab5bf9d406f9a0dbc691a7d979d08c0e37f5a10dcd28802dc153134497c394bd"
+    },
+    "hyle_timer_queue_test.exe": {
+      "bytes": 540672,
+      "sha256": "cdbbfeadd8f069baef45901f9b19d4263a62a73ec720147fada64d0d56119972"
+    },
+    "hyle_util_core_test.exe": {
+      "bytes": 679424,
+      "sha256": "86daf5a5d409551dcb62681ff7a575a795c61766c3f2ec506797d3ec114af133"
+    },
+    "hyle_util_runtime_demangle_fault_test.exe": {
+      "bytes": 324096,
+      "sha256": "ac2dc23174c44d73d9b40f63562861ee99cd41a9ff9744efcfde82c303bce775"
+    },
+    "hyle_util_runtime_test.exe": {
+      "bytes": 754688,
+      "sha256": "8f1bf315615957480b532d1715d61b814c246317b9bffee40365dd1d8176703a"
+    }
+  },
+  "fixture_correction": null,
+  "reuse": "Y34 immutable source, matching EXE/DLL hashes, unchanged 163 compilation commands, same machine/driver; C++ suites and two headers reused; source/MASM tests executed.",
+  "limits": [
+    "Windows correctness, headers, component isolation, and default source/static/shared deliveries only.",
+    "Apple runtime gates are not applicable on Windows; OFF headers are not Apple runtime acceptance.",
+    "No P1 or route winner/retirement verdict. CPU Q2 qualification remains BLOCKED.",
+    "No C1 package, matrix, or whole-model completion claim."
+  ],
+  "archive": {
+    "path": "selected-gates-raw.zip",
+    "bytes": 2424580,
+    "sha256": "28dfcdcfa96eba2be19ea51f55e44474607cc51024905b34b15381b88c829277",
+    "files": {
+      "commands/cleanup-remaining-deliveries.ps1": {
+        "bytes": 3418,
+        "sha256": "ed746c76cf556ded885e72c4e8e747a522764eae7340a640151f0362cab0c9b6"
+      },
+      "commands/collect-selected-evidence.py": {
+        "bytes": 4714,
+        "sha256": "62d9f6c728595f0682e347776df59586a5f7921d93fe96729fc594d9e2cdbf4a"
+      },
+      "commands/collect_remaining_deliveries.py": {
+        "bytes": 5097,
+        "sha256": "014d12feef21a4c68585bdc3e728f47e207cd6a64c294814d07cc908796028bf"
+      },
+      "commands/current-loc.json": {
+        "bytes": 3642,
+        "sha256": "9fdf636106f2f8c4107b770e6ca26114e5f04c0701c031345e68471ff131457a"
+      },
+      "commands/delivery-ctest.cmd": {
+        "bytes": 185,
+        "sha256": "743fdee2754ebe89a0aabfa5b981ff5f71f4fc3ebe4750095d7951583f588cb1"
+      },
+      "commands/delivery-ctest.ps1": {
+        "bytes": 1706,
+        "sha256": "917fdd6794a70f48f920ecf2a11a12be905c65b36ea526c9e556f6163929df26"
+      },
+      "commands/initialize-contract-cache.cmake": {
+        "bytes": 343,
+        "sha256": "142813a969a4fe02a5414449f7357dfe2be8f40b70c2020c0560eaebc0e4b794"
+      },
+      "commands/publish-selected-evidence.py": {
+        "bytes": 7938,
+        "sha256": "0649acf980f4bf4a051c97e87496b877626baab1ea189d4459dec644b496f0d0"
+      },
+      "commands/remaining-context.json": {
+        "bytes": 591,
+        "sha256": "82bc9a2adc1389573e09e772d1f7c361df505451239c9ed2a639c9bcee621f4c"
+      },
+      "commands/remaining-deliveries-cleanup.json": {
+        "bytes": 6856,
+        "sha256": "8c147fdda6af3e2c59488092cb6162cade6dab0dd419ddb321a4a0568a2a6f65"
+      },
+      "commands/remaining-deliveries-raw.zip": {
+        "bytes": 577478,
+        "sha256": "d5ec2ec13c7468cccfb7521d1dd4065a151be4f256e2e7f28f4c8bde3a83e317"
+      },
+      "commands/remaining-deliveries-receipt.json": {
+        "bytes": 799730,
+        "sha256": "afe9c80b1924f36a4be10eaa8e8e98a6879026cf45f0973d7c31a1bc2df4621c"
+      },
+      "commands/remaining-environment.log": {
+        "bytes": 56166,
+        "sha256": "5d3bf7c51b23d54aa1e78c506d0a69a45a26486118d75a1b38be2a4211fd9f64"
+      },
+      "commands/remaining-gates.ps1": {
+        "bytes": 1177,
+        "sha256": "2ecc0621176fb4469ce1f032761ebc6159605263d2bbee633efb3b6c38c1de33"
+      },
+      "commands/remaining-gates.py": {
+        "bytes": 9578,
+        "sha256": "6387bfb691e0612c45d3356e1f4afff7bdf49bace2e13a3c4baf2f345b751dcd"
+      },
+      "commands/remaining-toolchain.cmake": {
+        "bytes": 865,
+        "sha256": "3c79b7329b9f456ce4142f0333320d3dff0f90740c9472d017e9f94b679c2133"
+      },
+      "commands/reuse_y34.py": {
+        "bytes": 5903,
+        "sha256": "23b2b64b4e057f5f99b90bba1286a6ad092000c0f538097a7c80861bcce8d410"
+      },
+      "contract/component-contract-0.log": {
+        "bytes": 393,
+        "sha256": "4ad5b106c436fd5b11dc14d689a7adf070b917cd028ddc2b1ba14dd9ec980f0f"
+      },
+      "contract/plan.json": {
+        "bytes": 1137354,
+        "sha256": "973cc757ffea9a834c9080f853c1a0330ac3db33194dd09349169a2f532e44c2"
+      },
+      "contract/result.json": {
+        "bytes": 1127,
+        "sha256": "72a7ae938a5b311f47c735ef6415ae738126715e5f0d381b485f03444a63f92f"
+      },
+      "delivery/delivery-compute-0.log": {
+        "bytes": 365432,
+        "sha256": "e94a0c8f6c20aeac44936dcde517b1079c8965795d16544e46aa83ec87d05e54"
+      },
+      "delivery/delivery-container-0.log": {
+        "bytes": 58085,
+        "sha256": "8dddbb62701dc6c1f99b8f9615ead86ddf9bf374ad8659db31be44103bd3cff6"
+      },
+      "delivery/delivery-core-0.log": {
+        "bytes": 14862,
+        "sha256": "2b0f74e916efa11690de58ef356f07e40ab5a132a19c0704a9bfee80987d682a"
+      },
+      "delivery/delivery-error-0.log": {
+        "bytes": 16316,
+        "sha256": "79252f206e2b9635790f8be9e9840b92150822470b7940b98d28589e4a48766b"
+      },
+      "delivery/delivery-graph-0.log": {
+        "bytes": 368091,
+        "sha256": "f7e20a1828e5a84297c0c7b927c84707712fea0e045cc525e2696317cf20a909"
+      },
+      "delivery/delivery-io-0.log": {
+        "bytes": 87315,
+        "sha256": "0f35d72f2af2187ef74daa277acdc5c8c109f62c6334c80c4908d131eb91b274"
+      },
+      "delivery/delivery-math-0.log": {
+        "bytes": 13863,
+        "sha256": "39fd48ff3595f97a9499180bdba540816116a826a4867bcab72e8c37e5b36a31"
+      },
+      "delivery/delivery-mem-0.log": {
+        "bytes": 41499,
+        "sha256": "7d9f3e80db3af4d4e3a91140e7075397201903eba9ab391ec670d95175ca7c0c"
+      },
+      "delivery/delivery-obs-0.log": {
+        "bytes": 20537,
+        "sha256": "6e2ad73544143666c196beaa268cf5b257fe06db6a2c9089ae988af0e4a0195b"
+      },
+      "delivery/delivery-platform-0.log": {
+        "bytes": 29419,
+        "sha256": "f85b1fef2722f4bc9d00d449c966ac64333008bc51be035b790c3380a59aeb11"
+      },
+      "delivery/delivery-process-0.log": {
+        "bytes": 79120,
+        "sha256": "bd308860f0463738b7d6e55061ec55791a03f082637504412d6bf046f73131b1"
+      },
+      "delivery/delivery-sched-0.log": {
+        "bytes": 57413,
+        "sha256": "83941b0f3e131917a1160866432f82c2c2a02905e7b4e68290631fa723145ef4"
+      },
+      "delivery/delivery-simd-0.log": {
+        "bytes": 117842,
+        "sha256": "4044dece83e81dbd0289ea2adcfc088b28285ff9e508fc1ee2d3f918ed24bdc6"
+      },
+      "delivery/delivery-time-0.log": {
+        "bytes": 18216,
+        "sha256": "d184656a01e81642f6c2274c20fd64b271bd759ee85714a556e3bdfe818c5aa5"
+      },
+      "delivery/delivery-util-0.log": {
+        "bytes": 53830,
+        "sha256": "0c4b88acf9f923d2d2b4879b93265da5f741bcfd0cf2d12d8deba63e3f2d8dd2"
+      },
+      "delivery/plan.json": {
+        "bytes": 1137354,
+        "sha256": "973cc757ffea9a834c9080f853c1a0330ac3db33194dd09349169a2f532e44c2"
+      },
+      "delivery/result.json": {
+        "bytes": 13111,
+        "sha256": "6d35ec549c4a437774ac420bd36bc2de45e40611fd888a9eafc69272692b1098"
+      },
+      "native-build/CMakeCache.txt": {
+        "bytes": 77899,
+        "sha256": "8a42b3db2f33859433555186256d4b5dd9c3a07286782214f888ce5fd3b78a07"
+      },
+      "native-build/CMakeFiles/4.4.0/CMakeCXXCompiler.cmake": {
+        "bytes": 6790,
+        "sha256": "a77cb365ed187165573135bfafa1988828b17d71fd0b6206c55895a405fdb38f"
+      },
+      "native/CMakeCache-after.txt": {
+        "bytes": 77899,
+        "sha256": "8a42b3db2f33859433555186256d4b5dd9c3a07286782214f888ce5fd3b78a07"
+      },
+      "native/CMakeCache-before.txt": {
+        "bytes": 77270,
+        "sha256": "f0d7337775b0886436f1fdef9c24cf15e045cdabef6604da09fab37970af4814"
+      },
+      "native/closure-0.log": {
+        "bytes": 199,
+        "sha256": "5792de2716bb90fef7bb8d93155181f1a86b6ec1b8f61a72974ac13e12141cf0"
+      },
+      "native/compile-commands-after.json": {
+        "bytes": 311648,
+        "sha256": "e8c1e142ec22e8e7969fc2ed42a89e7afdea6241c43099d80a234d0cd48bf55b"
+      },
+      "native/compile-commands-before.json": {
+        "bytes": 311648,
+        "sha256": "e8c1e142ec22e8e7969fc2ed42a89e7afdea6241c43099d80a234d0cd48bf55b"
+      },
+      "native/configure-0.log": {
+        "bytes": 7065,
+        "sha256": "ce1d620cc7ec854c761fa810d9fe7e7f6fcf13455a8c566b74a4d9616a5f178e"
+      },
+      "native/docs-0.log": {
+        "bytes": 150,
+        "sha256": "825b5eb864a1c025a07aa67bbdcf4e248275e6c965c55d5060ba9927815b50b1"
+      },
+      "native/factor-compute-0.log": {
+        "bytes": 232,
+        "sha256": "bd01edc49191faf2f65a067420dc3f6e6df2de0d525ae642fb17c29dc809c324"
+      },
+      "native/factor-compute-1-CTest.log": {
+        "bytes": 9825,
+        "sha256": "dd965675e92dafe5d388ea142b29c14697177320af304e1422c7d0ab9721d93a"
+      },
+      "native/factor-compute-1.log": {
+        "bytes": 463,
+        "sha256": "4642dac421cf5691d1fae8d7c9d03ed1ba6a3432a230fc9881e5468713b9ba92"
+      },
+      "native/factor-compute_backend_cpu-0.log": {
+        "bytes": 121530,
+        "sha256": "98070e0ec02c02f46043a0b09f44627192af5527ad1e53ddd1cae24c400a3500"
+      },
+      "native/factor-compute_backend_cpu-1-CTest.log": {
+        "bytes": 10394,
+        "sha256": "e7e7ca2ff9b1f2090a5653287971e17603746ac39ecfac1d756a25ef570c61c6"
+      },
+      "native/factor-compute_backend_cpu-1.log": {
+        "bytes": 501,
+        "sha256": "dbbea032aac9a9637a55bb0a10a0ebb225a349d4dd8ebfca801966b2949db38e"
+      },
+      "native/factor-compute_backend_cuda-0.log": {
+        "bytes": 221551,
+        "sha256": "2588cfc3c7a0f01fc938bd2e72d88949a8e9056520e660793101911ca390da40"
+      },
+      "native/factor-compute_backend_cuda-1-CTest.log": {
+        "bytes": 7060,
+        "sha256": "0b604d610d885cb0eb7df071b982f0710174c169a142c5e2e57dd5d337a3d4d6"
+      },
+      "native/factor-compute_backend_cuda-1.log": {
+        "bytes": 661,
+        "sha256": "30c46d99eb63d3c1b32a4df1282eb52a8fb9094a0a6ac84c48a2a6e81e44bf12"
+      },
+      "native/factor-compute_ops-0.log": {
+        "bytes": 236,
+        "sha256": "6f83341b444f018f65b8abfc1ab921552a9faf74bb9faf2e92cd8c0e6ab88303"
+      },
+      "native/factor-compute_ops-1-CTest.log": {
+        "bytes": 8113,
+        "sha256": "730cae43336b466428f6b92e1f9921a5d2927b916dac6f17e5e8e11b6ead9088"
+      },
+      "native/factor-compute_ops-1.log": {
+        "bytes": 477,
+        "sha256": "9bbcd9ef3dcdeaadbd18b1f29dff0eb3fbb62f5ee3f4cfae45d5e5b5edf623f6"
+      },
+      "native/factor-compute_provider_cublas-0.log": {
+        "bytes": 49282,
+        "sha256": "ce9a1c3964e931a3bd798ad0cd92b42648e84f9566537b56e59ce4eac8ad0030"
+      },
+      "native/factor-compute_provider_cublas-1-CTest.log": {
+        "bytes": 2174,
+        "sha256": "5f0c40399b1bc71729a7775d3c7d36b296b3c1a9ee56a5c1a7fc2cc17c7ed134"
+      },
+      "native/factor-compute_provider_cublas-1.log": {
+        "bytes": 516,
+        "sha256": "ec01ac7178d1b1765ba5ff96a6b1d6368a276399adcdc36734dc7d27ade3e6af"
+      },
+      "native/factor-compute_provider_cuda-0.log": {
+        "bytes": 312238,
+        "sha256": "930dbf78fb93aaa1a0c8249907b50d0719fb392e1aab4bd590f81b0495545768"
+      },
+      "native/factor-compute_provider_cuda-1-CTest.log": {
+        "bytes": 8680,
+        "sha256": "146a6665d9cda3c78e51f71202555ffe7119238b8fa623c9f736131a78b04d07"
+      },
+      "native/factor-compute_provider_cuda-1.log": {
+        "bytes": 508,
+        "sha256": "6491cf0c8df1e6f21ce9249f47d59360a40fc692bb9d64cb982d86cc984bad90"
+      },
+      "native/factor-compute_provider_ggml_vulkan-0-CTest.log": {
+        "bytes": 6191,
+        "sha256": "c75203a6bc121fa47b01bdf0664120dd6f6d987b105a4ce2e96bcd07cb972604"
+      },
+      "native/factor-compute_provider_ggml_vulkan-0.log": {
+        "bytes": 759,
+        "sha256": "266be7287f50de2ef7e46063fae7fe1b370acd87211854185d6e679648b60c9d"
+      },
+      "native/factor-compute_provider_marlin-0.log": {
+        "bytes": 74089,
+        "sha256": "7499eeb8833194d1716ce0cc2b381dbb041bf74c372b5940bb91dc14b402a03b"
+      },
+      "native/factor-compute_provider_marlin-1-CTest.log": {
+        "bytes": 2185,
+        "sha256": "123837c0abd97d1be531ddb6cb859dac44a79b1eef2e88fe291344752d1ef0ae"
+      },
+      "native/factor-compute_provider_marlin-1.log": {
+        "bytes": 516,
+        "sha256": "3ea3f623a6932ea7d45df9ba0a3f082b1f7cf0337c88c50935a0592188b79dd7"
+      },
+      "native/factor-compute_provider_native-0.log": {
+        "bytes": 1487545,
+        "sha256": "712415666660d9a0414c48408feec63dd4642a71cd76269987dfcebc119a2177"
+      },
+      "native/factor-compute_provider_native-1-CTest.log": {
+        "bytes": 19974,
+        "sha256": "f3671a072e466e4452880e636b5c1239a3b37f365fa4c3a355115e30a2704acb"
+      },
+      "native/factor-compute_provider_native-1.log": {
+        "bytes": 516,
+        "sha256": "4f5ee5817f19371e135461c36396d65002236e7e5f19fa1a0ee930e77afe800c"
+      },
+      "native/factor-compute_provider_onednn-0.log": {
+        "bytes": 17467461,
+        "sha256": "adb1379787cfae43b980177a1c2c9e73280fd21f51641a7572259d797c766e9e"
+      },
+      "native/factor-compute_provider_onednn-1-CTest.log": {
+        "bytes": 7650,
+        "sha256": "b4f520857c9d3ff1db8b35a504559040371b3d4f08b9849cc6d89b0818fad0bd"
+      },
+      "native/factor-compute_provider_onednn-1.log": {
+        "bytes": 817,
+        "sha256": "b96e8ff17d77757c4a3f052312d23f5a1e8290a16e6965cdaa0fb16b9e5583a8"
+      },
+      "native/factor-compute_route_cpu-0.log": {
+        "bytes": 42225,
+        "sha256": "0f6adf3cbbe035e60d1c18bd62a72b1196f33fe4e87c98ee55e82413a6eb1d8c"
+      },
+      "native/factor-compute_route_cpu-1-CTest.log": {
+        "bytes": 2098,
+        "sha256": "f528e7ac6be1ec52dae8e76bc522bb80e00bdc46b9c0153e81ac55e41093aa07"
+      },
+      "native/factor-compute_route_cpu-1.log": {
+        "bytes": 495,
+        "sha256": "c00e7a788dc4a644d5895c20977dd4b8efccc89804d7a42441729816fa033a97"
+      },
+      "native/factor-compute_route_cuda-0.log": {
+        "bytes": 46764,
+        "sha256": "e94fdc58277040eff67430f6a3f707c630e347640d78096fcc2e35a85058e8ca"
+      },
+      "native/factor-compute_route_cuda-1-CTest.log": {
+        "bytes": 2037,
+        "sha256": "05bddef2102cf5dfbe724c3bfa89337fba7ed5180a21f9bc0b54415e59eaee73"
+      },
+      "native/factor-compute_route_cuda-1.log": {
+        "bytes": 498,
+        "sha256": "da9adcda1a9d696bc0e0e6eefeb1c18fd97f2476c173b41e45480db6af0c55b0"
+      },
+      "native/factor-container-0.log": {
+        "bytes": 234,
+        "sha256": "0b1d01d663de65100754c35879927ed74813fff53135a2869d07ccde7b4e562a"
+      },
+      "native/factor-container-1-CTest.log": {
+        "bytes": 29938,
+        "sha256": "4ff1f8d007dc3a3978a085d869627939918823522d33b16b2d8106acbf3296a1"
+      },
+      "native/factor-container-1.log": {
+        "bytes": 770,
+        "sha256": "6f8f43ae325943778ce17a65ec0b7e00c68bcd4882030f55e4489b7720aed649"
+      },
+      "native/factor-container_concurrent-0.log": {
+        "bytes": 118409,
+        "sha256": "9a08f1f99e67a870d8f83a5fbc7b423dd610dc6522e1ee7f7b743367c2426598"
+      },
+      "native/factor-container_concurrent-1-CTest.log": {
+        "bytes": 7127,
+        "sha256": "d15c03cb053ce04d92b5113cdcae00826ec52dddb75dc865ec06f8a471d6c616"
+      },
+      "native/factor-container_concurrent-1.log": {
+        "bytes": 502,
+        "sha256": "222f921c3f626450f5a85831727995949be82269951f3d061cb895243ca58b7c"
+      },
+      "native/factor-container_intrusive-0.log": {
+        "bytes": 244,
+        "sha256": "ad26ed9611015512967fa5350288b71bdf9a300dc120779a160e1bf823bad2e0"
+      },
+      "native/factor-container_intrusive-1-CTest.log": {
+        "bytes": 10490,
+        "sha256": "9d3e0a7a3b0631dcbcd2b917323fac77da0f58b2643a6a8d29d61234bff4b538"
+      },
+      "native/factor-container_intrusive-1.log": {
+        "bytes": 1116,
+        "sha256": "4fbd90ebcf2e613a2dc0f5d7ec3b88453e9701e317dcdf5aae9ca3fed96fe7d0"
+      },
+      "native/factor-container_queue-0.log": {
+        "bytes": 175558,
+        "sha256": "d377abd3203778b90e858fb77ee244314bb009524da9739dfce0fa639361a7ea"
+      },
+      "native/factor-container_queue-1-CTest.log": {
+        "bytes": 8181,
+        "sha256": "3f256a1d2994d7b764ca4d1d63a249af398a1a5cc357a077645d94ebc54fa91a"
+      },
+      "native/factor-container_queue-1.log": {
+        "bytes": 487,
+        "sha256": "3d6ad0a137dd38257d385ae5c99ccc0d3fde0052a949160c4408f8cb5074c5fb"
+      },
+      "native/factor-container_text-0.log": {
+        "bytes": 283307,
+        "sha256": "b8d4bb76bad7dd3e369d24ababd5a7c50ada135ec107729855b883ad1282e007"
+      },
+      "native/factor-container_text-1-CTest.log": {
+        "bytes": 13736,
+        "sha256": "1ba9b857efe6caa116d7ebcbc928e3fc279ebc55f4bdd595e4f5aa5ea4c252e0"
+      },
+      "native/factor-container_text-1.log": {
+        "bytes": 625,
+        "sha256": "8cb9cd4842a6dc72617dcd7c5b9ae449d7b0bc795e3c304cfd18c74a428409b0"
+      },
+      "native/factor-core-0.log": {
+        "bytes": 229,
+        "sha256": "e17ce44b4b77a91a206e76cd26e77c80d8bcb743a0cf9e9984be785e661ed9f3"
+      },
+      "native/factor-core-1-CTest.log": {
+        "bytes": 7476,
+        "sha256": "c43101a2cfd0dc1d51b35a08b05bcb991d9efa3b6bae43e546d5886aa202a974"
+      },
+      "native/factor-core-1.log": {
+        "bytes": 896,
+        "sha256": "4307d6193a8e4ab16d3668b22ade9ab83cdfbeb944572042f217ef895dbef21f"
+      },
+      "native/factor-error-0.log": {
+        "bytes": 230,
+        "sha256": "cb8856aedb4c476a00038e21471a0d3b1f7c54e1f7498de82e3e6984318d2266"
+      },
+      "native/factor-error-1-CTest.log": {
+        "bytes": 11757,
+        "sha256": "07a9ab710f7fe0c7f2763edfade3b1d8bdf9b4aaf6ad7be9e10bef06db4556cb"
+      },
+      "native/factor-error-1.log": {
+        "bytes": 457,
+        "sha256": "73465b81ace25021d5e1beac86f73b6aac0dda55d325813207339dd9d8884b16"
+      },
+      "native/factor-graph-0.log": {
+        "bytes": 109927,
+        "sha256": "70b97956ca557143f3243de877919954279f17a29f21d476a069b8896519f36e"
+      },
+      "native/factor-graph-1-CTest.log": {
+        "bytes": 55614,
+        "sha256": "c0f24de76e283abb63e51aef4231c043876476236aa0d8ed0a72bfd5a315e558"
+      },
+      "native/factor-graph-1.log": {
+        "bytes": 569,
+        "sha256": "1d8d85ea01d6fcff16d90c7639f0498dfd34ea00f52a2424f2f313b4c6ca264c"
+      },
+      "native/factor-graph_provider_onednn-0.log": {
+        "bytes": 45536,
+        "sha256": "172ec400c6d296e9d76b92de6b62c0d1337aa80a0d033c358e6c6594414587eb"
+      },
+      "native/factor-graph_provider_onednn-1-CTest.log": {
+        "bytes": 4748,
+        "sha256": "64fa6b9eb3c8c5c74da4f16b8f9966721594e902a6a767d536d0222d1c17cdc1"
+      },
+      "native/factor-graph_provider_onednn-1.log": {
+        "bytes": 508,
+        "sha256": "8503f2745e5dd5d36e69e7e430a52b1c9560f1475a0d5bcefea4ba8a9655d6a6"
+      },
+      "native/factor-graph_route_cpu-0.log": {
+        "bytes": 390929,
+        "sha256": "c91b70df09fba2a0769447884dfd3e97448e65b57a12bab6f2074483b58311a3"
+      },
+      "native/factor-graph_route_cpu-1-CTest.log": {
+        "bytes": 4336,
+        "sha256": "582d3a1d707939fb05448f0f3fc83d94aef2b15af84bb2d4b99fa8650eb77cd5"
+      },
+      "native/factor-graph_route_cpu-1.log": {
+        "bytes": 631,
+        "sha256": "2f96190ea75491307049399e91501f57ff19fc56d833f425fc235ebcf369ed83"
+      },
+      "native/factor-graph_route_cuda-0.log": {
+        "bytes": 277161,
+        "sha256": "8c485f35211ae66515ae5bb9335fba91a6ecc5e6e66a3305c0d9919f6d47b801"
+      },
+      "native/factor-graph_route_cuda-1-CTest.log": {
+        "bytes": 4220,
+        "sha256": "ccfcf908e0021607723c3353f5b4fda98554c24083448bb96e2b2fa35063941f"
+      },
+      "native/factor-graph_route_cuda-1.log": {
+        "bytes": 492,
+        "sha256": "8b725cfff7dfb2f3dd1e346a1d951ebb2f5fb75d02b7facd6ef59c28c5223008"
+      },
+      "native/factor-io_core-0.log": {
+        "bytes": 829509,
+        "sha256": "6bccd8e4cff1a537dbb6dde4a75f3bc961034d5a74c2b79c8e582e2e45f5ce3b"
+      },
+      "native/factor-io_core-1-CTest.log": {
+        "bytes": 25187,
+        "sha256": "7644ba4773a0e4cfecc3cabf531a56a7839c5db995cfcfeb3bb7bb4a36be05a7"
+      },
+      "native/factor-io_core-1.log": {
+        "bytes": 1940,
+        "sha256": "d845c953b4ad5f0c2b854b5591e00668e979f7806c13abc96b6f267ef20b0304"
+      },
+      "native/factor-io_http-0.log": {
+        "bytes": 182258,
+        "sha256": "1f324ef2ef3de910f8ab1a307577a597c52779a5678a968a6b45d65825dbf144"
+      },
+      "native/factor-io_http-1-CTest.log": {
+        "bytes": 7960,
+        "sha256": "09cffea405600480713f16417d8478f554f730f5fb107f1a84d09c4e5c7eb285"
+      },
+      "native/factor-io_http-1.log": {
+        "bytes": 795,
+        "sha256": "3c8b75c3a2815dabc2205354ffb03f23e7a536786183062b91ca305f88dd8452"
+      },
+      "native/factor-io_http2-0.log": {
+        "bytes": 55698,
+        "sha256": "e8ee79ac244218fa9005f7ff18b32aa0d726683c77a08aa8d4491c9ff4a71fbd"
+      },
+      "native/factor-io_http2-1-CTest.log": {
+        "bytes": 1405,
+        "sha256": "57b4c56c87b6d9d2c46b858bf6b6fba1be64cf560b6bfe2b396cc4e4a9237fb0"
+      },
+      "native/factor-io_http2-1.log": {
+        "bytes": 474,
+        "sha256": "e3354cbd3b6474928577a5eee55ecd50ce31d72b8d0be64aa3c6483509a6e40d"
+      },
+      "native/factor-io_tls-0.log": {
+        "bytes": 29451,
+        "sha256": "c6bad679fac84d5d9ff36880b310dc3579143456cce899597ef9b2dbd4f04d6b"
+      },
+      "native/factor-io_tls-1-CTest.log": {
+        "bytes": 1381,
+        "sha256": "3cfbe36de9ec21fee10b8cbc6fb4ca3eedfb42af751ec9b3501b8dd483674bd1"
+      },
+      "native/factor-io_tls-1.log": {
+        "bytes": 468,
+        "sha256": "706b8c1f33915045db090fdbd9ca1e43c74b1977b5297a909e949f028af9fe21"
+      },
+      "native/factor-io_transfer-0.log": {
+        "bytes": 55489,
+        "sha256": "4d2aa60a99077f8075495968d07bb3b1283424f704850f3f3609bbcc11087c61"
+      },
+      "native/factor-io_transfer-1-CTest.log": {
+        "bytes": 4542,
+        "sha256": "0dd8c0aadb74535d2540993595b2e72923c22a7be95a320d938d27a9f710a52b"
+      },
+      "native/factor-io_transfer-1.log": {
+        "bytes": 475,
+        "sha256": "ee43d1f4611827bb135ee24a4f8fedcf0d02849b1ba1c47a1b5e3efa6ef87d9a"
+      },
+      "native/factor-io_watch-0.log": {
+        "bytes": 156486,
+        "sha256": "f2c7ed2775cfdb8a238f1537be7ed6a9a246cf6c477854fc6c8a8a81edd2fb71"
+      },
+      "native/factor-io_watch-1-CTest.log": {
+        "bytes": 3625,
+        "sha256": "38848f051c3473ae0f2fad3c193f34df4708fb885928d68669c0d9ffb2c33c3b"
+      },
+      "native/factor-io_watch-1.log": {
+        "bytes": 468,
+        "sha256": "126626d6ee2239896f259e9c4be8b384a97c5998690b87f1c00be23b79952f64"
+      },
+      "native/factor-io_websocket-0.log": {
+        "bytes": 55949,
+        "sha256": "ae3576e3ee600f24672e07ee2f3f70112cd7fe1a9fe81859fcc78e33d04941b0"
+      },
+      "native/factor-io_websocket-1-CTest.log": {
+        "bytes": 2584,
+        "sha256": "6c43cc7dd0514e8dc5088e41a3f96339e379db86f5b6b6487e42131e5e252cc7"
+      },
+      "native/factor-io_websocket-1.log": {
+        "bytes": 480,
+        "sha256": "bd23ef9a7fd4d7eb4f3108806665f021de65bedc6b969881b5caa78e2981452d"
+      },
+      "native/factor-math-0.log": {
+        "bytes": 229,
+        "sha256": "de6d956266bc843d0c40bcb3efac68b22f98957f1ce6a3b042e758e46073473d"
+      },
+      "native/factor-math-1-CTest.log": {
+        "bytes": 4451,
+        "sha256": "9dd722fa212d12367c5f053554e66b455b774d5671f45b53f5a52f9d3f6bfdcf"
+      },
+      "native/factor-math-1.log": {
+        "bytes": 454,
+        "sha256": "c5a19f0c4f0c57cbdbce6b907e92b3712749b666588b51f18cdf91e38645b0d2"
+      },
+      "native/factor-mem-0.log": {
+        "bytes": 228,
+        "sha256": "7d597d8c39d4311b3e4f8cffa74332b4406127851066d0464606f883f9263edb"
+      },
+      "native/factor-mem-1-CTest.log": {
+        "bytes": 40814,
+        "sha256": "9bf9d4e75a973dd7494f5746cb1a58fef51f309430db99a486dd19bfa51636df"
+      },
+      "native/factor-mem-1.log": {
+        "bytes": 451,
+        "sha256": "1d440a023d60a388323f288d4baae8832af20026e7753f66c90ace23ddcc57c9"
+      },
+      "native/factor-mem_reclaim-0.log": {
+        "bytes": 24773,
+        "sha256": "77794b018bdaa5993fa0ae5fdb87de189ef032bdb5d8bfc7b981564890c61252"
+      },
+      "native/factor-mem_reclaim-1-CTest.log": {
+        "bytes": 3478,
+        "sha256": "ce7c06f4a948dcdb50aa4a37139fdcc3137238018a89582208431ef25a1f43c6"
+      },
+      "native/factor-mem_reclaim-1.log": {
+        "bytes": 475,
+        "sha256": "fd97de6aec051cddd9fc8db4b293efaf5f2a6b57e307c4b3205acde0ae3e45b6"
+      },
+      "native/factor-mem_vm-0.log": {
+        "bytes": 176871,
+        "sha256": "f5e24a143956bf0b4cfd7558e2e89aa0fbb993d36bafd161af6f7b47d389aea2"
+      },
+      "native/factor-mem_vm-1-CTest.log": {
+        "bytes": 10316,
+        "sha256": "e43ca8c183e233fab5a2c0f37022c6e0d87c606b3380bb660844f99fdd93c5dd"
+      },
+      "native/factor-mem_vm-1.log": {
+        "bytes": 460,
+        "sha256": "4815c98278d7d6fcc1b2fadcf94994e0187a1e9e926e24e8e41d6e127c917784"
+      },
+      "native/factor-obs-0.log": {
+        "bytes": 108337,
+        "sha256": "cdf9dcfa7ff0d061a046806f826170ce5e0fef4c4c09de8169df49f40e9e6e0b"
+      },
+      "native/factor-obs-1-CTest.log": {
+        "bytes": 13398,
+        "sha256": "ec1b2b3c0e875ddc04d0eb8bd8cf8ecff9e59a0fd7af10cc01df21edfc3af90f"
+      },
+      "native/factor-obs-1.log": {
+        "bytes": 671,
+        "sha256": "d00da02c3a70ee35c38cfd47ffc11d2ba17185e2a32871277136dc3f1ab24032"
+      },
+      "native/factor-platform-0.log": {
+        "bytes": 233,
+        "sha256": "d90d5311bcc300abaed01b9bf35bae289bd16e7e99545bb367e51618992a7b16"
+      },
+      "native/factor-platform-1-CTest.log": {
+        "bytes": 15169,
+        "sha256": "e722c1bbc9f5df4e434db3649513b721115bf1efd31aae66db4f440524e6ab5c"
+      },
+      "native/factor-platform-1.log": {
+        "bytes": 466,
+        "sha256": "f7f03816b5f2cfba6cebc31089fa917442cbbb3977c7464b4fb7808afb809245"
+      },
+      "native/factor-platform_fs-0.log": {
+        "bytes": 62600,
+        "sha256": "42f2aa1a18519322ae595e9fe153b3a31488a661b67695f771a03d15a10fcdb7"
+      },
+      "native/factor-platform_fs-1-CTest.log": {
+        "bytes": 9329,
+        "sha256": "5e4ec842565385a9c3974681f10f52c8858131c245bc1b714caa1c040fa6d7d3"
+      },
+      "native/factor-platform_fs-1.log": {
+        "bytes": 475,
+        "sha256": "b598eb596f45a571410b0ed3875d323f6d67a993d3ada30d9d80da52724fefd0"
+      },
+      "native/factor-platform_thread-0.log": {
+        "bytes": 62603,
+        "sha256": "cd179d45f9dbd9a941968506b488379566cdd955400d3a358df57bf4e1300a0a"
+      },
+      "native/factor-platform_thread-1-CTest.log": {
+        "bytes": 7004,
+        "sha256": "b4a9a2729c464602d3073317226373858e80ef48614f9a2843c26d9eff5a36de"
+      },
+      "native/factor-platform_thread-1.log": {
+        "bytes": 487,
+        "sha256": "61c3d3f024c3f401691ace1d3998c02b60f437e37b4e2ec274760ea8868ee9d1"
+      },
+      "native/factor-process-0.log": {
+        "bytes": 129310,
+        "sha256": "2a81712dc0e14da13208360daa4403b688847da203ceb4e228d699aa09f93ee8"
+      },
+      "native/factor-process-1-CTest.log": {
+        "bytes": 3659,
+        "sha256": "a1af25b66ad9c3c5b2395182037d5bc12e00c16947cef3e47131baed8283527d"
+      },
+      "native/factor-process-1.log": {
+        "bytes": 465,
+        "sha256": "0639c3d8edc594a33cdff7d271b3d33c5b17cb8415a5d23e7211336d06893375"
+      },
+      "native/factor-sched-0.log": {
+        "bytes": 414526,
+        "sha256": "2eafef7aac8df8db48026350d967a4b638514591a15dcaa3955f5d0ec93585ab"
+      },
+      "native/factor-sched-1-CTest.log": {
+        "bytes": 34994,
+        "sha256": "edddc81dcea5bbe8c204d575906589a2f0eae73be700c8c94dbb74eae646696a"
+      },
+      "native/factor-sched-1.log": {
+        "bytes": 457,
+        "sha256": "b119aea030861dbbdade0be67d7fbc0ecfb0ef5b1b10d87a75d19c731507833c"
+      },
+      "native/factor-simd-0.log": {
+        "bytes": 489549,
+        "sha256": "650339bb22c61620875f29c53d33099f5bebbd12c24a6db82c4eac04b089a0e5"
+      },
+      "native/factor-simd-1-CTest.log": {
+        "bytes": 29860,
+        "sha256": "caa00406af56b2873e219a71d5b59691040d9dc35423f6922020ff7128bd3e5d"
+      },
+      "native/factor-simd-1.log": {
+        "bytes": 1173,
+        "sha256": "e6fbd51b73092e9428f9871dde3bed7ab1af4f8bca65e81128e0374de461882c"
+      },
+      "native/factor-time-0.log": {
+        "bytes": 229,
+        "sha256": "fe40b1b929573f3dbe1c5bf8c7ec280a1d3cb6623fbb5187f03c8a21ac60d01d"
+      },
+      "native/factor-time-1-CTest.log": {
+        "bytes": 10267,
+        "sha256": "a5fdd42406f6e3b7a678227d46a3dfa646f15c9ec4ec60e3c9a0d730924b4333"
+      },
+      "native/factor-time-1.log": {
+        "bytes": 603,
+        "sha256": "d6797fbc29771d0819a629407ae36f5de70ce44a946158e01976ce6d95311252"
+      },
+      "native/factor-timer_queue-0.log": {
+        "bytes": 103074,
+        "sha256": "c1917fa62c93edfeea33e31e2814f100d62a8ff6a42ad37a28e0029d6506e3ec"
+      },
+      "native/factor-timer_queue-1-CTest.log": {
+        "bytes": 8646,
+        "sha256": "80213811132b8394f30dcabc88e96604a0ce6eb80d3b5b9db0c36b3c33092130"
+      },
+      "native/factor-timer_queue-1.log": {
+        "bytes": 475,
+        "sha256": "2b987baa39fd80153d78abd5b3a2b7578f55418dbab1cec24fbb885399bd85cc"
+      },
+      "native/factor-util_core-0.log": {
+        "bytes": 234,
+        "sha256": "b52178c6b3ff17b5174aa6ff8598c45e29b2bca2aee048c57ab3027b230b829b"
+      },
+      "native/factor-util_core-1-CTest.log": {
+        "bytes": 15652,
+        "sha256": "a4beb2f7223543cad9f196ffe488e02a75868f864e0e78d59ab5f30ae4607293"
+      },
+      "native/factor-util_core-1.log": {
+        "bytes": 469,
+        "sha256": "a7aaff4735e5d104cbdfb96e9f6e773368f261bad1a2c6b978e317e2840c3938"
+      },
+      "native/factor-util_runtime-0.log": {
+        "bytes": 112129,
+        "sha256": "84b7aae53c1e7d4c4f4e8a6067799297354cf57461c845349950ba22a2f02101"
+      },
+      "native/factor-util_runtime-1-CTest.log": {
+        "bytes": 9169,
+        "sha256": "89ec8efe50023fa3ab0b40b91db52d11e73207b54898ed24ed5631aa357bde6f"
+      },
+      "native/factor-util_runtime-1.log": {
+        "bytes": 615,
+        "sha256": "ef2a2d14bdd80b1d5f4c835df0f7addc6c2d4fa072fe6f5d3e3931b5e7d444af"
+      },
+      "native/headers-compute-0-CTest.log": {
+        "bytes": 1237,
+        "sha256": "2373b1e21261efd1da78e7a10b6c4ffd01777bda8a8ccabeac1a4a49f2758bdd"
+      },
+      "native/headers-compute-0.log": {
+        "bytes": 552,
+        "sha256": "571bed3e4e8df03e8ff9daa79c3f353aca35b1cfb3761e3267cd426e5acc1411"
+      },
+      "native/headers-compute_backend_cpu-0-CTest.log": {
+        "bytes": 1399,
+        "sha256": "35e648714d9f19619a1270241618207fe9701144d0de2b92b02d421114b0ee6f"
+      },
+      "native/headers-compute_backend_cpu-0.log": {
+        "bytes": 614,
+        "sha256": "7cfff9aac1b1a964bf7d1ad954f715ee4e9b04d33b58ad71b6a74519a0bd2813"
+      },
+      "native/headers-compute_backend_cuda-0-CTest.log": {
+        "bytes": 1592,
+        "sha256": "87ddcd8200586540e16cb8fca1715d8526e6328324f3b33b4f9d271a3af2e236"
+      },
+      "native/headers-compute_backend_cuda-0.log": {
+        "bytes": 619,
+        "sha256": "7880cd0e03dd6f14583cd211c4479b9493c90fc375541fd2d3434e52b5568e66"
+      },
+      "native/headers-compute_ops-0-CTest.log": {
+        "bytes": 1381,
+        "sha256": "b317d015cd0260a474076bc0c158bb6e056e8344f46120b51be136b7fd66a34e"
+      },
+      "native/headers-compute_ops-0.log": {
+        "bytes": 574,
+        "sha256": "19d7f5a0aea42b84bc176340526566f5d759d1061acd5c9051ce684d39690b80"
+      },
+      "native/headers-compute_provider_cublas-0-CTest.log": {
+        "bytes": 1439,
+        "sha256": "6d42098d51ab515f2d47f4253ff8a249563e444a13ef32a697424e151ca474df"
+      },
+      "native/headers-compute_provider_cublas-0.log": {
+        "bytes": 634,
+        "sha256": "b2a03087a23ea3e7672c53cae8fcf0d82fa20078da05125329aa8155c732f5af"
+      },
+      "native/headers-compute_provider_cuda-0-CTest.log": {
+        "bytes": 1419,
+        "sha256": "ebb80afbe1d114bc52d62ea0f2dc52c29d1910da2ad5a8fde304b9cd4b85d137"
+      },
+      "native/headers-compute_provider_cuda-0.log": {
+        "bytes": 624,
+        "sha256": "7ffcd0222cf1f41ab446d933e18a37278914248fc961584083e16d18dff345f8"
+      },
+      "native/headers-compute_provider_marlin-0-CTest.log": {
+        "bytes": 1439,
+        "sha256": "202767b7999e71c731a1dad2d2f225add37e0f2f4c3aae31f764a03ac882b379"
+      },
+      "native/headers-compute_provider_marlin-0.log": {
+        "bytes": 634,
+        "sha256": "decee17942741904bc93d5570d0753b116f8b1a1b03569d0d6984dda9bf285e5"
+      },
+      "native/headers-compute_provider_native-0-CTest.log": {
+        "bytes": 1439,
+        "sha256": "27bbcfa283cad73320f58c1f25fae13d941ca9fbe69cf38523c8c66307f0c28e"
+      },
+      "native/headers-compute_provider_native-0.log": {
+        "bytes": 634,
+        "sha256": "e87f97f69802d18dd6095afe612bc74f2079f4b5b483f3a4b846960e802a5a21"
+      },
+      "native/headers-compute_provider_onednn-0-CTest.log": {
+        "bytes": 1439,
+        "sha256": "6f9a1113ec8c7d4910abf9c7095d13146ef3b640e9dc88436d33302f70b7fee1"
+      },
+      "native/headers-compute_provider_onednn-0.log": {
+        "bytes": 634,
+        "sha256": "009ed31c36f1c98e5cd82d91878bbff14e7ef7cb0fa93ad4f6f554cdf29bd0b0"
+      },
+      "native/headers-compute_route_apple-0-CTest.log": {
+        "bytes": 1392,
+        "sha256": "c2fedbf13f56955b4c3e69c51097936453cd814afeca4139e5c3f9add1c2c9a2"
+      },
+      "native/headers-compute_route_apple-0.log": {
+        "bytes": 614,
+        "sha256": "0e624a34611c3225b75bbf324c033e6c486e476989d5c263eb6d8fac86284b10"
+      },
+      "native/headers-compute_route_cpu-0-CTest.log": {
+        "bytes": 1372,
+        "sha256": "8fb1b2aa50e4db31819595574f3ce2b1071ffac735e72d8c910b1f702a4fab69"
+      },
+      "native/headers-compute_route_cpu-0.log": {
+        "bytes": 604,
+        "sha256": "4777a8def0afb3be036a8645f39aafbd04c60c23fe1ac57e45d3c8c5ec7169a9"
+      },
+      "native/headers-compute_route_cuda-0-CTest.log": {
+        "bytes": 1382,
+        "sha256": "0db56a58672e639e1446b84df81fcc31102683afad596208b46404875680b1e5"
+      },
+      "native/headers-compute_route_cuda-0.log": {
+        "bytes": 609,
+        "sha256": "401b36f61b315b93a40f7f6f1b432e7e89146a698f6921d0d307727b6c858d56"
+      },
+      "native/headers-container-0-CTest.log": {
+        "bytes": 1255,
+        "sha256": "d6110c339703a34efd6bbc108d4d0982fd7a41ae5a68348be17735addd904c9b"
+      },
+      "native/headers-container-0.log": {
+        "bytes": 562,
+        "sha256": "084b689cce7d988f22469478d2f407eb8c77e2ea92ca65fb2d560dc6feed18ca"
+      },
+      "native/headers-container_concurrent-0-CTest.log": {
+        "bytes": 1608,
+        "sha256": "6ee0ebe4615c5901b7cdc2f84c66f6b8ae90aff9faedcf46d017d7baaf023e2b"
+      },
+      "native/headers-container_concurrent-0.log": {
+        "bytes": 617,
+        "sha256": "b861b860c08565affb86c9b0ebfb6b635092456320bfa421ef463c5d73a5f52e"
+      },
+      "native/headers-container_intrusive-0-CTest.log": {
+        "bytes": 1470,
+        "sha256": "87e97088c538d669bdd0b20baa6a5acdaa492bd153aa6051fd8aa07820cfc465"
+      },
+      "native/headers-container_intrusive-0.log": {
+        "bytes": 612,
+        "sha256": "9ff78d6d95244ef1b3c9f5f2e7b2f0da652a0ebc85e792edde4b9309fcd5c218"
+      },
+      "native/headers-container_queue-0-CTest.log": {
+        "bytes": 1546,
+        "sha256": "ccc84d32376baeadaf9b50019e924722551200c8164df67e4d80680fc0748f1d"
+      },
+      "native/headers-container_queue-0.log": {
+        "bytes": 592,
+        "sha256": "0131ff50dcfdfb45b21adfd661af50e0bf714fa21546bb541b2775d61d239275"
+      },
+      "native/headers-container_text-0-CTest.log": {
+        "bytes": 1455,
+        "sha256": "4b2dda88b570223583769e2e3975c7f1d07749d311bf9760ece83e7ca28fe45c"
+      },
+      "native/headers-container_text-0.log": {
+        "bytes": 589,
+        "sha256": "373710ec45ec160b689152fdb866905a6130b283ff679c97005b43f2bf0f431b"
+      },
+      "native/headers-core-0-CTest.log": {
+        "bytes": 1209,
+        "sha256": "1c307516d1b44786c66d9f5a6a34f2a3e2cf69717617650bc4cbd07b59caafb4"
+      },
+      "native/headers-core-0.log": {
+        "bytes": 543,
+        "sha256": "92aaceb9b3bffc17734df9e0a7ee1f0a45dfafe2737de38dc812f57156923076"
+      },
+      "native/headers-error-0-CTest.log": {
+        "bytes": 1218,
+        "sha256": "934851f480b57433773a088d6983ad43ab00fc3bebc21a08fe7b9b56ad7d3900"
+      },
+      "native/headers-error-0.log": {
+        "bytes": 546,
+        "sha256": "853431a43495b95390a3403023a642f63afced8e7e8adc8e6235f53205991c7e"
+      },
+      "native/headers-graph-0-CTest.log": {
+        "bytes": 1218,
+        "sha256": "57823c3f54abb2667f904d2f85bfc47c7d57512ce7dfdd37f9da770e3f126b57"
+      },
+      "native/headers-graph-0.log": {
+        "bytes": 546,
+        "sha256": "481363874502bec7b5dc5fbe015aa8c9b47765899666fd9d649acc8e779332e9"
+      },
+      "native/headers-graph_provider_onednn-0-CTest.log": {
+        "bytes": 1419,
+        "sha256": "d7c72d868f745ae0774c34cfba5aa0d78e0e2e2064a1333b0cc8beb82251c774"
+      },
+      "native/headers-graph_provider_onednn-0.log": {
+        "bytes": 624,
+        "sha256": "3023d489e3073c61e7cb09e1b14bb0ed4a9b88c3bcb309dce40611452fea4709"
+      },
+      "native/headers-graph_route_apple-0-CTest.log": {
+        "bytes": 1372,
+        "sha256": "675721c7b2a0470cb53a0ecd5104f6c760e89976e36174cd71d0a9b3c81afc21"
+      },
+      "native/headers-graph_route_apple-0.log": {
+        "bytes": 604,
+        "sha256": "83045b8d6fd92b2b42b7afb30988d0a8c4a9533a7d6a6df9c7edeb3636c3064b"
+      },
+      "native/headers-graph_route_cpu-0-CTest.log": {
+        "bytes": 1352,
+        "sha256": "e1920e1291f5f5fa1ea4f45ad2309cc598261d2d9974ce8bc1521444aa17ad5c"
+      },
+      "native/headers-graph_route_cpu-0.log": {
+        "bytes": 594,
+        "sha256": "c9c2e79c0748bc83b186abd19f8cb13b9b2b36e352d49b31e110fb4694a25ae7"
+      },
+      "native/headers-graph_route_cuda-0-CTest.log": {
+        "bytes": 1362,
+        "sha256": "a8972b2fbf68c9bdb251687f3af388666759156ad9f72b641b7d7502eff21cc4"
+      },
+      "native/headers-graph_route_cuda-0.log": {
+        "bytes": 599,
+        "sha256": "7fd849407e71b48f86e5d8a2d2954a467da8a6f6934ec3054b2e64e40f358161"
+      },
+      "native/headers-io_http-0-CTest.log": {
+        "bytes": 1276,
+        "sha256": "a46657cdb4311ae7ac81beafe3f2038c3ac6063629e1470ab8bc801ff32ab7d2"
+      },
+      "native/headers-io_http-0.log": {
+        "bytes": 552,
+        "sha256": "77274b36abe17f1f6d37e1461e8329402cced7ac9fb5d3a0bed1ddd16b5d9b45"
+      },
+      "native/headers-io_http2-0-CTest.log": {
+        "bytes": 1286,
+        "sha256": "2cb29eb026b3e105eea891ab04ee6366399a5548de6f6629bf7726be430e1aa8"
+      },
+      "native/headers-io_http2-0.log": {
+        "bytes": 557,
+        "sha256": "c2e2f3fd00c324ab74c5c7f07c7e296fcec70c84dbeb5e6e7cba34eda8c32b69"
+      },
+      "native/headers-io_tls-0-CTest.log": {
+        "bytes": 1266,
+        "sha256": "59079b13f5c8901eca980fec85467853df966be39c2563456f9b4959b8160322"
+      },
+      "native/headers-io_tls-0.log": {
+        "bytes": 549,
+        "sha256": "5e8b3265fda2826466684d6222bc8d87b85ef0e2fb9de7e41b986f4d6a8e8227"
+      },
+      "native/headers-io_transfer-0-CTest.log": {
+        "bytes": 1316,
+        "sha256": "0c71efb18dd59242ac7b28fdbf2c78e4b517bb81dc2af71a1c30300313dfbbbc"
+      },
+      "native/headers-io_transfer-0.log": {
+        "bytes": 572,
+        "sha256": "bfa53739453895b7300bfe425f3091f913e750c74fae4983bbd29edee1e7d358"
+      },
+      "native/headers-io_watch-0-CTest.log": {
+        "bytes": 1288,
+        "sha256": "e9978f83080f1fddffd878a8aacf78c5b41d1722682195ea96bf0a01820c4a34"
+      },
+      "native/headers-io_watch-0.log": {
+        "bytes": 559,
+        "sha256": "d222a4ae99d811e20be787d2d0f19ea4a9e5270fc31155f09ad57ab33878c0f9"
+      },
+      "native/headers-io_websocket-0-CTest.log": {
+        "bytes": 1328,
+        "sha256": "1b590772b563b5b9565fcbac7faa798beb419680168e5a84c916278dcfbed289"
+      },
+      "native/headers-io_websocket-0.log": {
+        "bytes": 579,
+        "sha256": "8d175c267af63d77c3e2bc7f9780612f27d7d940cf18e0e0e62744e3677f8311"
+      },
+      "native/headers-math-0-CTest.log": {
+        "bytes": 1209,
+        "sha256": "2083ef6787414bb4b6c9f36ec981b32a612039afd167819ef006619eb4e6a49a"
+      },
+      "native/headers-math-0.log": {
+        "bytes": 543,
+        "sha256": "91321060f51422bee2da220c3c92f45ac8574119f8dcbeba78af1457fec1311b"
+      },
+      "native/headers-mem-0-CTest.log": {
+        "bytes": 1201,
+        "sha256": "c53e0448ad4665ae6026ac95068b9b68c671f21b20e4f2928c058432faa79aa1"
+      },
+      "native/headers-mem-0.log": {
+        "bytes": 540,
+        "sha256": "e5689aab66e1665745c53c0a0da1c9218ea37f4f01a8ac0ebd29bfe724c7d7d8"
+      },
+      "native/headers-mem_reclaim-0-CTest.log": {
+        "bytes": 1320,
+        "sha256": "c5826f971b644e2b1c0482dfaaedfa28b22178c5956cc0301a6db8801a748495"
+      },
+      "native/headers-mem_reclaim-0.log": {
+        "bytes": 572,
+        "sha256": "c55b6a03922f733890c74c6f26599485161d52d43e0d02c8618a03d0680e5ac3"
+      },
+      "native/headers-mem_vm-0-CTest.log": {
+        "bytes": 1327,
+        "sha256": "7c382f102e1aeafd1062297bd231733f966f6b5ee1abc0eb1f809deee7b7bb57"
+      },
+      "native/headers-mem_vm-0.log": {
+        "bytes": 549,
+        "sha256": "d423793abf8e5ae53ecec8e549577d1117ad7946b2106f100b80dbf2e4b2a367"
+      },
+      "native/headers-obs-0-CTest.log": {
+        "bytes": 1200,
+        "sha256": "ddc53f8d56706a83ab8f0c782b9992fa8cbec1582a15a921024cb05b53a924c9"
+      },
+      "native/headers-obs-0.log": {
+        "bytes": 540,
+        "sha256": "9e343cce66efedb08fde3e44e556d6cddef97ab2f3903763592e3bb20ffc2237"
+      },
+      "native/headers-platform-0-CTest.log": {
+        "bytes": 1558,
+        "sha256": "f85746c1988fab93688f8cdec6b1d63def49553e81ada9388086c8304a361b07"
+      },
+      "native/headers-platform-0.log": {
+        "bytes": 557,
+        "sha256": "0d7558dc2080ea51d353cd42abfe9ef62592786ea9aea86f182521b0f70f0b2c"
+      },
+      "native/headers-platform_fs-0-CTest.log": {
+        "bytes": 1375,
+        "sha256": "137ce064f6a4f2007aa9fff4a0a344c54a5a680a0ed811538bf715ad806ddb0a"
+      },
+      "native/headers-platform_fs-0.log": {
+        "bytes": 572,
+        "sha256": "6de69e921a1c98fb4c25dcafdd663cd42ae1b20488a67cce83c8faff37aa89ba"
+      },
+      "native/headers-platform_thread-0-CTest.log": {
+        "bytes": 1443,
+        "sha256": "a89d315c2329977a2fdf7dc5bc872ef4991f7247a71c9708fd6f7f237d943e8d"
+      },
+      "native/headers-platform_thread-0.log": {
+        "bytes": 592,
+        "sha256": "391cd05e27bc0688652e1daf5d4071303e454062757096f90d2949dc74bf3260"
+      },
+      "native/headers-process-0-CTest.log": {
+        "bytes": 1238,
+        "sha256": "eaa26a18d60a686b91134c8b0d7ef20563c95fc2c7e8dab387c9757e94007e33"
+      },
+      "native/headers-process-0.log": {
+        "bytes": 554,
+        "sha256": "267b6238bb3823805ffc91be3bbc74db75a58e25f21f71e2a8c3d43591fd4715"
+      },
+      "native/headers-sched-0-CTest.log": {
+        "bytes": 1219,
+        "sha256": "dcad122a88bedec3bebf5b791a27450d2e08e4232030f51f2ac08daa15cfd2c2"
+      },
+      "native/headers-sched-0.log": {
+        "bytes": 546,
+        "sha256": "835b5db463d633e1ca4a377182cdd59cbe7eeaafe450e798e9060b5ab937ca9d"
+      },
+      "native/headers-time-0-CTest.log": {
+        "bytes": 1209,
+        "sha256": "982543eb7732a9cd6b72232d2e02c79bee7251b76a03b5d86d15d93201fad09f"
+      },
+      "native/headers-time-0.log": {
+        "bytes": 543,
+        "sha256": "67a45a1bd7ab8a0a0974f37fed30d3388339b9f151da707a37c0951fde2ac541"
+      },
+      "native/headers-timer_queue-0-CTest.log": {
+        "bytes": 1384,
+        "sha256": "1fd6efedca261075ea05e2a98db9642180b517a965284c5be59fcd908a557446"
+      },
+      "native/headers-timer_queue-0.log": {
+        "bytes": 572,
+        "sha256": "91b18003769066e99165f364e043aeecfa0ba259544ced7e2446723d784bff24"
+      },
+      "native/headers-util_core-0-CTest.log": {
+        "bytes": 1483,
+        "sha256": "479ea56cf9c3043ae2aec747d0854c6fc70d48975d0032cf061a12e0c4f1a928"
+      },
+      "native/headers-util_core-0.log": {
+        "bytes": 562,
+        "sha256": "fa00a5a7aae012b8c032866973b7d5a3ea88602deaa5c730878d71ae2478157f"
+      },
+      "native/headers-util_runtime-0-CTest.log": {
+        "bytes": 1351,
+        "sha256": "d9e161dc3f3df1f605616a86a71d64cc80d9e20edc94cb20a8cc5ec9184ec3dd"
+      },
+      "native/headers-util_runtime-0.log": {
+        "bytes": 577,
+        "sha256": "86d9ea64e555b05cfbb5f58635f9e912de225df797edf876b76a96e2a75e6996"
+      },
+      "native/plan.json": {
+        "bytes": 1137354,
+        "sha256": "973cc757ffea9a834c9080f853c1a0330ac3db33194dd09349169a2f532e44c2"
+      },
+      "native/result.json": {
+        "bytes": 109695,
+        "sha256": "a29e694913dadd892f175d7e90964edba7546b009ad6e55f34d8bf62f979436c"
+      },
+      "native/reuse-proof.json": {
+        "bytes": 11135,
+        "sha256": "aa4a17421c93b9a4cbf67376de0383ec68e631f18c919833883134c18801c717"
+      }
+    }
+  }
+}

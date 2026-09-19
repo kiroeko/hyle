@@ -55,10 +55,11 @@ caller buffers，单算子和Graph使用Invocation；未改产品/公式/门限�
 解包源码共1,868,242,674逻辑字节：[Windows](windows-delivery-cleanup.json)、
 [Air](air-producer-cleanup.json)，保留SDK、安装消费者与模块活动缓存。
 
-## 仍未完成
+## 工程验收与 C1 余项
 
-selected工程余门尚未完成。[选择计划归档](native-plans-and-identity.json)记录112项selected、
-8项未选理由，不能由本目录已完成的原生/真实片段三交付/公开头结果推导112项PASS。
+[当前工程验收](engineering/README.md)已完成112项selected，8项未选理由保留；
+15个默认产品的45条三交付通过，旧证据按身份复用。本批Y34验收停止重复。
+此前[阶段记录](delivery-progress.json)保留当时工程门尚未完成的事实。
 
 C1其余Provider覆盖核对、完整成本比较、条件默认规则和存量实现淘汰保持未签收；CPU Q2
 测量资格BLOCKED不变。没有C1完成、共同矩阵或性能赢家声明，也未进入C2。
