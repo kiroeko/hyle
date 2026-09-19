@@ -108,3 +108,11 @@ oneDNN仍保持原BLOCKED；如M2要恢复CPU Provider，另建SCOPED卡并引�
 先实施R1不可变身份与失败/寿命验证，再接R2/R3/R4，最后固定候选执行R5。schema/多输出/effect/
 lease已有路径逐项复用；若模型片段暴露具体能力缺口，登记在对应M2批，不以本卡扩张自研。
 本次owner进入AUDITED；R1–R5之外无产品改动授权。M1-G仍CLOSED，旧ggml CPU与oneDNN仍BLOCKED。
+
+## 实施检查点：R1（2026-09-20）
+
+可选ModelIdentity/WorkloadContext已实现。Windows MSVC shared的Compute单测与全部公开头自足
+通过；新增用例覆盖输入字符串过期、共享/移动/最终释放、缺失/未知身份拒绝、字段边界与版本差异、
+OOM/长度溢出、独立handle并发读、phase与region版本区分。默认空身份零分配，原子所有权复用Util。
+这是R1的局部实现检查，不是M1-R的候选或关闭。R2请求接线、R3原生环境事实、R4真实路径与R5适用
+三交付仍未运行/未完成，不能写PASS；本卡owner保持AUDITED。全部自研算子保持冻结。
