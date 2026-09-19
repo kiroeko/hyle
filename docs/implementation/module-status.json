@@ -506,7 +506,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-tensor-state.md",
-      "summary": "LLM/MoE C1-Y27 AUDITED：F32 Scan原版cumsum已接通，198cccba四构建430例通过，无产品纠正；Y26实际BF16三交付保留原身份。I32 Scan、Scatter、完整C1片段/三交付/优选淘汰与global门未完成，CPU资格BLOCKED不变。"
+      "summary": "LLM/MoE C1-Y28 AUDITED：F32原版Scan四构建430例通过；仅新增I32全前缀溢出检查、宽累加及条件发布的有限FIX，沿既有资源/完成。I32尚未实现验收，Scatter和完整C1片段/三交付/优选/global门未完成，CPU资格BLOCKED不变。"
     },
     {
       "module": "graph_route_vulkan",

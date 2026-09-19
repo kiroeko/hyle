@@ -60,7 +60,7 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y27 AUDITED：F32 Scan原版cumsum已接通，198cccba四构建430例通过，无产品纠正；Y26实际BF16三交付保留原身份。I32 Scan、Scatter、完整C1片段/三交付/优选淘汰与global门未完成，CPU资格BLOCKED不变。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y28 AUDITED：F32原版Scan四构建430例通过；仅新增I32全前缀溢出检查、宽累加及条件发布的有限FIX，沿既有资源/完成。I32尚未实现验收，Scatter和完整C1片段/三交付/优选/global门未完成，CPU资格BLOCKED不变。 |
 | graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y27 AUDITED：F32 Scan普通Graph组合与旧结果保活已通过，198cccba四构建430例；Y26实际BF16三交付保留原身份。I32 Scan、Scatter、完整C1片段/三交付/优选淘汰与global门未完成，CPU资格BLOCKED不变。 |
 | compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y27 AUDITED：F32 Scan原版cumsum已接通，198cccba四构建430例通过，无产品纠正；Y26实际BF16三交付保留原身份。I32 Scan、Scatter、完整C1片段/三交付/优选淘汰与global门未完成，CPU资格BLOCKED不变。 |
 

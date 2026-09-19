@@ -1242,3 +1242,32 @@ BF16片段的六条source/static/shared消费均通过；证据见Y26-F2结果�
 选择；Provider 同批映射原版五个 unary 与 Sub/Div/Repeat。公开 API/执行资源不变；Graph 作为
 直接消费者保留 published/fork、native 边界与失败生命周期验证。未审性能不预称默认赢家，
 未完成跨平台、三交付、真实权重或整包覆盖不写 PASS。旧 CPU ggml 与 oneDNN 的 BLOCKED 均保持。
+
+### C1-Y28：Vulkan I32 受检 Scan（SCOPED / AUDITED）
+
+2026-09-19，baseline `044ca8f3dc403de0958a2b83a6af5e2b04a38439`，owner `/root`。
+产品owner仅`compute_route_vulkan`；`graph_route_vulkan`为直接消费者。C1/F02.4的counts→offsets
+与已公开I32 Scan要求任意轴inclusive/exclusive、全部前缀（含exclusive最终total）溢出检查，
+失败不写output。现有普通Vulkan入口明确拒绝I32，是该具名consumer的实际缺口。
+
+复用裁决基于[Y27已停止的两来源审计](llm-moe-c1-ggml-vulkan-region.md)：ggml只有F32，
+GPUPrefixSums具名实现只有U32模加，不能完整承载受检I32。此域`OWN`标准workgroup树形宽前缀
+及checked适配，`BORROW`既有Vulkan布局、资源规划、shader嵌入、status、条件Copy与完成处理。
+不导入第二运行时或宣称新Provider接入；不复制研究库的shader源码，F32继续原版ggml。
+
+| FIX | 固定产品范围 | 证明与成本 |
+|---|---|---|
+| Y28-A | 单个私有GLSL程序的local-prefix/propagate/check三个冷specialization，256元素workgroup；两U32字表达有符号I64 | low相加及carry合入high；总元素≤INT32_MAX使任何总和绝对值<2^62，不需shaderInt64/subgroup或全局自旋。分层block总和前缀最多4层，反向合入carry；仅最终global prefix判I32，不能把局部block溢出误判为全局失败 |
+| Y28-B | 冷lowering准备I64前缀/总和与I32临时输出，复用已有status字和最后条件发布 | L层有L个local、L−1个propagate、check/convert和conditional Copy，最多9个计算dispatch，另计必要layout Copy；O(N)。主要临时量8N+4N加各层递减的8字节总和/前缀及逻辑4字节status；全部quota/Invocation冷分配，热期不分配或下载payload。失败退役槽、新槽可用，整个算子输出保持不变 |
+| Y28-C | 沿现有Scan冷轴/stride适配支持I32、rank≤8、byte origin；最后恢复布局仍用受检Copy | 复用F32实际使用的冷布局代码，不改公共API或热执行状态；空域无payload，宽1 inclusive Copy/exclusive Fill。冷拒绝I64 scratch的buffer范围、256 lanes/2048共享字节、U32地址与grid上限。Recorder沿现合同拒绝input/output overlap，不放松它以制造原位测试 |
+| Y28-D | 独立I64 oracle、普通Direct/Graph与失败/寿命回归、指南 | 空/1/127/128/129/255/256/257/8193/65535/65536/65537；中/负轴、rank8、奇数/零stride与起点；正负溢出、暂时越界后恢复、仅exclusive最终total越界、后行失败全输出不变、局部block越界但global合法。counts→Scan→Gather→norm，两槽/5次变化/旧结果、failed/fresh、metadata限制/alias/OOM/close/drain；F32原版路线回归 |
+
+256个uvec2共享槽恰为2048字节；local阶段只生成精确I64，不提前判错；最后check对所有行的所有
+真实前缀置错，GPU屏障后才conditional Copy。exclusive输出取前一个global prefix，首项写零，
+但检查仍包含最终total。输出布局恢复与checked发布合成一次现有Copy，避免错误时覆盖用户输出。
+
+调查限于以上已固定来源和现有具名接线，不再搜寻泛库清单。产品纠正最多两轮，出现具体失败
+先查成本/源码并保留反例，预算到界后裁决。验证：selector的Direct/Graph factors，W1 static/
+shared、Air/Mini；shader能力检查、既有OOM/错误/生命周期同候选回归。W1/Air source/static/
+shared实际C1片段与全局package门在本包固定候选完成；不由旧Gather交付代签。不在本子集跑P1，
+完整C1沿原等责性能预算；CPU oneDNN资格BLOCKED、Scatter和其他C1尾项不被本节解除或授权。
