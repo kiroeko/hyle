@@ -1,0 +1,6 @@
+{
+  "archive": "native-plans-and-identity.zip",
+  "archive_sha256": "54b4ec1fd334f2eb42d7630f10b69634b25d5f8450bedbfc612bc2d2e78fd896",
+  "archive_bytes": 60136,
+  "scope": "Selection and identity only; not all112-gates PASS"
+}

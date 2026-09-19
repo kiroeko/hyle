@@ -1,0 +1,10 @@
+{
+  "status": "FAIL",
+  "stage": "Air first compile, before GPU validation",
+  "candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+  "reason": "Clang Wrange-loop-construct treated as error in new regression",
+  "correction": "11804be7 const-reference loop variable; no product changes",
+  "archive": "air-first-build-failure.zip",
+  "archive_sha256": "be4e8bbaa930c21558ee20c0f49df68c7de9ccf8870283ba2b162fafaedf9a17",
+  "archive_bytes": 14656
+}

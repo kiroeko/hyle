@@ -1,0 +1,29 @@
+{
+  "scope": "Only obsolete build-local ggml source copies after Y34 static/shared proof verification",
+  "retained": [
+    "current source-5b19b488 copies",
+    "active builds and binaries",
+    "shared dependency cache",
+    "SDKs",
+    "canonical ggml checkout"
+  ],
+  "removed": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc",
+      "files": 2263,
+      "bytes": 24596152,
+      "links": [
+        "C:\\hyle-scratch\\active-vk\\static\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md"
+      ]
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc",
+      "files": 2263,
+      "bytes": 24596152,
+      "links": [
+        "C:\\hyle-scratch\\active-vk\\shared\\src\\compute_provider_ggml_vulkan\\source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc\\.pi\\SYSTEM.md"
+      ]
+    }
+  ],
+  "bytes": 49192304
+}

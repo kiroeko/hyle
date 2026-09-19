@@ -144,11 +144,22 @@ LogSoftmax 保留接近1的概率对应的小负值，并避免大共同偏置�
 .keep_dimensions = true, .accumulation_type = c::DataType::kFloat32}, description)`
 为每行产生保留末维的归约结果。
 
-Reduce 一次 dispatch，无额外 device scratch。Softmax 将不超过2048列且满足设备 shared 容量的
-行缓存为 F32，缓存最多16KiB加2KiB归约数据；更长行三遍读取。F32、轴后元素数为1或半精度
-轴后元素数为偶数时一次 dispatch；半精度轴后元素数为大于1的奇数时，以每行8B统计量和第二次
-逐word输出防止交叉写入。该临时存储计入 Graph 容量和 quota，按寿命复用；超设备范围准备失败。
-所有选择在准备期固定。新归约域的完整三交付与等责 P1 仍待 C1 整包验收。
+非空正秩的 Sum/Mean 和普通 Softmax 在设备 subgroup/workgroup/grid、F32 buffer 容量及
+原厂暂存限额满足时，准备期绑定原版 ggml 行归约/概率程序。任意轴、stride 和半精度输入
+通过必要的 permute/shape 别名、F32 Cast/Copy 适配，结果恢复原轴，half最终仅舍入一次。
+Sum/Mean 在不规则行数时分成至多三个完整行片段，并由原厂 Concat 组合，避免原厂分派补齐
+产生多余行访问；这些中间结果的容量和执行成本计入账单。
+
+Softmax 的广播 mask 按实际域适配：Boolean mask 在缩放后用 Select 屏蔽，additive mask
+要求同输入类型，先完成独立 F32 缩放再相加，保留数值合同的舍入顺序。超过16384列的成熟
+路径保留原厂三个阶段和两份分块 F32 统计数组；非末轴、half、mask 和 descriptor 对齐需要的
+转换、复制与暂存均计费。准备绑定后，执行不再选择 Provider。
+
+Min/Max、LogSoftmax、空域、scalar归约和设备条件不适用成熟路径的已支持域仍使用原生实现。
+原生 Reduce 一次 dispatch，无额外 device scratch；原生概率路径的缓存或两阶段临时存储
+仍按实际条件计入 Graph 容量和 quota。以上成熟接入已通过 W1 static/shared、Air/Mini 的
+适用模块回归；本地真实张量的三交付和完整成本优选仍待
+[C1-Y34](../implementation/tasks/compute/llm-moe-c1-vulkan-reduction.md) 验收。
 
 TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score_description)`；
 完成后 `result->tensors()[0]` 是 values，`result->tensors()[1]` 是对应轴的 I32 indices。

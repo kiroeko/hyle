@@ -1,0 +1,23 @@
+{
+  "scope": "Y34 proof-verified obsolete private source copies only",
+  "platform": "mini",
+  "removed": [
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/build-vulkan-static/src/compute_provider_ggml_vulkan/source-641c36f67482a39f4540361598722ce0c2a2dab1d841d75b9e858552c6ab46cc",
+      "files": 2262,
+      "bytes": 24596152
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-prior-y34-11804be7",
+      "files": 5662,
+      "bytes": 92669669
+    }
+  ],
+  "bytes": 117265821,
+  "retained": [
+    "current source/build",
+    "vendor source/cache",
+    "SDKs",
+    "proof archives"
+  ]
+}

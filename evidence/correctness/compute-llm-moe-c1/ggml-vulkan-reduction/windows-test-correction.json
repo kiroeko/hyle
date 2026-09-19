@@ -1,0 +1,10 @@
+{
+  "archive": "windows-test-correction-raw.zip",
+  "archive_sha256": "099d50efb21088e75eaff4ffa5d6f8cf3706da45d4531f275b7de2ea482155bf",
+  "archive_bytes": 33706,
+  "status": "PASS",
+  "candidate": "11804be7e8661cafb535d2b372544e474bc9b1a6",
+  "product_candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+  "tests": 91,
+  "scope": "Only modified Direct regression factor; original product/static/shared receipts retained"
+}

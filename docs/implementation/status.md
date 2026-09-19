@@ -60,9 +60,9 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-P/Q/R/S AUDITED：P至S已实现；S候选Air/Mini各39 case及两个头检查通过，MLX稳定排序和原生Metal有序Scatter、普通状态循环已接通。Vulkan与完整C1真实权重/三交付/P1待完成，不签整包PASS。 |
-| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y34 AUDITED：dedb80d5审计后的成熟Sum/Mean/Softmax、任意轴/三浮点/mask适配、尾行分片与两处长行累计max修正已实施；首次编译/GPU资格待运行。selected112门未代签，整包优选/淘汰未签收，CPU Q2 BLOCKED保持。 |
-| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y34 AUDITED：dedb80d5审计后的成熟Sum/Mean/Softmax、任意轴/三浮点/mask适配、尾行分片与两处长行累计max修正已实施；首次编译/GPU资格待运行。selected112门未代签，整包优选/淘汰未签收，CPU Q2 BLOCKED保持。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y34 AUDITED：dedb80d5审计后的成熟Sum/Mean/Softmax、任意轴/三浮点/mask适配、尾行分片与两处长行累计max修正已实施；首次编译/GPU资格待运行。selected112门未代签，整包优选/淘汰未签收，CPU Q2 BLOCKED保持。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared 136/135项；测试修正11804be7通过Air136、Mini135项（验证层专用1项跳过），W1 Direct增量91项通过。真实2B L2/概率三交付、selected112工程余门及整包优选/淘汰未完成；CPU Q2 BLOCKED保持。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-tensor-state.md) | LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared 136/135项；测试修正11804be7通过Air136、Mini135项（验证层专用1项跳过），W1 Direct增量91项通过。真实2B L2/概率三交付、selected112工程余门及整包优选/淘汰未完成；CPU Q2 BLOCKED保持。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-c1-ggml-vulkan-region.md) | LLM/MoE C1-Y34 AUDITED：产品05581df8的成熟Sum/Mean/Softmax已通过W1 static/shared 136/135项；测试修正11804be7通过Air136、Mini135项（验证层专用1项跳过），W1 Direct增量91项通过。真实2B L2/概率三交付、selected112工程余门及整包优选/淘汰未完成；CPU Q2 BLOCKED保持。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

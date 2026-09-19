@@ -1,7 +1,9 @@
 # C1-Y：ggml Vulkan managed region 接入
 
 当前有限增量[Y34](llm-moe-c1-vulkan-reduction.md)：三个Vulkan owner已重新SCOPED/AUDITED，
-冻结成熟Sum/Mean/Softmax接入、具体尾行/长行缺陷适配及适用验证；审计时未实施/未验收。
+成熟Sum/Mean/Softmax接入和具体尾行/长行缺陷适配已实施；产品`05581df8`通过W1 static/shared
+136/135项，测试修正`11804be7`通过Air136、Mini135项（验证层专用用例1项跳过）。
+真实2B L2/概率三交付、selected工程余门和整包优选未完成；本轮仍AUDITED，不签C1完成。
 
 当前有限增量Y33：三个 Vulkan owner 对
 [LayerNorm 成熟接入](llm-moe-c1-vulkan-layernorm.md) 的候选`4d255a51`已完成W1/Air/Mini

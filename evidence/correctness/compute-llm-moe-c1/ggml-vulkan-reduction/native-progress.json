@@ -1,0 +1,70 @@
+{
+  "status": "PARTIAL",
+  "scope": "C1-Y34 native module qualification",
+  "product_candidate": "05581df80e3b6290d4e7c5fc7a66ecf26821eb09",
+  "test_candidate": "11804be7e8661cafb535d2b372544e474bc9b1a6",
+  "test_only_changed_files": [
+    "docs/implementation/tasks/compute/llm-moe-c1-vulkan-reduction.md",
+    "tests/compute_route_vulkan/reduction_test.cc"
+  ],
+  "results": {
+    "w1_static": {
+      "passed": 136,
+      "skipped": 0
+    },
+    "w1_shared": {
+      "passed": 135,
+      "skipped": 0
+    },
+    "air_static": {
+      "passed": 136,
+      "skipped": 0
+    },
+    "mini_static": {
+      "passed": 135,
+      "skipped": 1
+    }
+  },
+  "additional_test_only_regression": {
+    "w1_direct_static": 91
+  },
+  "mini_skip": "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance; layer unavailable, covered on W1/Air",
+  "product_corrections": 0,
+  "algorithm_corrections": 0,
+  "test_compile_corrections": 1,
+  "consumer_compile_corrections": 0,
+  "p1_runs": 0,
+  "selected_gates": 112,
+  "skipped_gates": 8,
+  "uncompleted": [
+    "Y34 real local2B L2/probability source/static/shared consumption",
+    "applicable public headers and remaining selected engineering gates",
+    "C1 full-cost comparisons, default rules, replacement/deletion",
+    "CPU Q2 measurement qualification remains BLOCKED"
+  ],
+  "implementation_loc": {
+    "code": 48737,
+    "files": 197,
+    "source": "all-implementation-loc.json"
+  },
+  "cleanup_logical_bytes": 191054277,
+  "evidence": {
+    "air-first-build-failure.json": "e5deb58e4bf3a36acaf07e4978540b63efb22c91041052332a9416626612f813",
+    "air-first-build-failure.zip": "be4e8bbaa930c21558ee20c0f49df68c7de9ccf8870283ba2b162fafaedf9a17",
+    "all-implementation-loc.json": "04523e5bca833c32470392a3951e7f72536dfcfbe6d87101401509e076b9733e",
+    "native-plans-and-identity.json": "87e7e8504beb3175ba24c7c3169da4737b5e8dc2a2c23042ab331c638d0f56ce",
+    "native-plans-and-identity.zip": "54b4ec1fd334f2eb42d7630f10b69634b25d5f8450bedbfc612bc2d2e78fd896",
+    "source-audit.json": "1207239b715b6505bb20cc89a326180fa759fa2b7b220e686c1db7354d022526",
+    "windows-cleanup.json": "2be9c3a431f33cc4ab525fbb223c1ab61993493e4e04404cb91a4565c9ce00a4",
+    "windows-native-raw.zip": "b47cf270a697a57eac88b3ecd6ceeec3633d1f1318a5b34715244f47071a16a7",
+    "windows-native.json": "0dcf78bf56f36d828db72124006411f3efd8a82519f1d850cd1c2ece8b95ac27",
+    "windows-test-correction-raw.zip": "099d50efb21088e75eaff4ffa5d6f8cf3706da45d4531f275b7de2ea482155bf",
+    "windows-test-correction.json": "cf73c78cd869df3373ed88d0fe9a96e244f6eddb3348e0c83d0ac06727bb24b8",
+    "y34-air-cleanup.json": "a9eabed8c14b8ebee286195b23e5620d9e36ecec848cfae45cdc10a7d97cbb3d",
+    "y34-air-focused.json": "77ebedfb5699e7c5e313f620b327595547c4009442816eacdd24a6f68b405244",
+    "y34-air-focused.zip": "025803cad1a8849ebf6147f6880e18ea714456601ac2b8017a909036e7ff44f2",
+    "y34-mini-cleanup.json": "83c663b31bcc9198d30b44a1dd5810b3e208903a79cf4b761e8a98add0b17a14",
+    "y34-mini-focused.json": "67adc66f7e7bae99d4f998ab7096b457698fdee349b9591b7b6a7d6a4bb81ee1",
+    "y34-mini-focused.zip": "a7a0da445d10bcd225ca086f0a83d2e99d0d10aa5718a271056c6bdb33a4d5b3"
+  }
+}

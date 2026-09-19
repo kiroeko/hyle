@@ -1495,3 +1495,11 @@ baseline `3cd981b3`，owner `/root`。三个Vulkan owner现对
 SumRows尾行分片、两处具名长行Softmax累计max修正和真实消费资格。依赖pin及公共合同不变；
 Min/Max/LogSoftmax原有合法能力保留，未按本卡比较不得删除。先完成成熟接入，不提前启动P1；
 CPU Q2 BLOCKED、C1全部适用验收与C1完成通知条件保持。审计时产品尚未实施，验证未运行。
+
+Y34产品`05581df8`现已通过W1 static/shared的136/135项；测试编译修正`11804be7`通过
+Air136项、Mini135项（验证层专用用例1项明确跳过），W1受影响Direct因子91项增量通过。
+没有产品/算法纠正或数值/生命周期失败，Clang测试警告和首次PowerShell环境失败分别保留。
+详见[Y34原生资格证据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-reduction/README.md)。
+只完成本批模块正确性：真实2B L2/概率三交付、当前selected工程余门、C1完整成本优选/淘汰
+与CPU Q2资格仍未完成，不回填共同矩阵PASS、不进入C2。统一实现48,737行/197文件；
+归档后清理本批过期验证源码191,054,277逻辑字节，其中Windows49,192,304字节。

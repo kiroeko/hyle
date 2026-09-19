@@ -67,3 +67,20 @@ C1全部适用验收完成后通知用户，并在C2前等待提问。
 Air首次build在新增测试的按值range-for触发Clang `-Wrange-loop-construct` / WERROR。
 具名修正仅把`Operation`循环变量改为const引用，输入、断言及产品字节不变；保留首次失败，
 从Windows提交测试修正后增量验证。产品/算法纠正仍为0，未运行Air/Mini不写PASS。
+
+### 原生模块资格：已完成，Y34其余验收继续
+
+产品候选`05581df8`；测试编译修正候选`11804be7`仅改变上述range-for及任务说明，产品输入
+不变。W1 static/shared分别136/135项；Air136项全部通过，Mini135项通过、仅验证层专用用例
+1项明确跳过（该风险由W1/Air覆盖）。两台Mac各5项source contract通过；W1增量只重跑受
+测试修改影响的Direct因子91项并通过。无数值、生命周期、VUID或同步风险诊断。
+
+[原始日志及身份](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-reduction/README.md)
+保留首败、编译修正、每环境结果及CRC/SHA校验。产品/算法纠正0，测试编译纠正1，独立consumer
+编译纠正0；本批没有P1。当前selector仍112项selected、8项未选，以上结果不能代签全部工程门。
+
+下一有限动作是本地2B张量的L2/概率片段source/static/shared、适用公开头及工程余门；不重复
+已经通过的原生模块回归。C1其余Provider覆盖核对、完整成本/默认规则/淘汰及CPU Q2 BLOCKED
+保持，三owner继续AUDITED。Compute/Graph统一实现48,737行/197文件（不含测试/第三方）。
+本批清理过期build-local第三方源码及Mini上一验证源码副本191,054,277逻辑字节，保留活动
+构建、当前源码、SDK与共享缓存。
