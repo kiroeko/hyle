@@ -62,3 +62,10 @@ benchmark/冷检查/P1。原323份临时记录移位后再次与ZIP逐字节匹�
 资格仍FAIL、产品性能INCONCLUSIVE，两个owner按原预算进入BLOCKED；恢复要求见
 [终局](../../../docs/implementation/tasks/compute/llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)。
 [完整实现LOC](all-implementation-loc.json)为48,294行/195文件，自检PASS，不包含tests/bench/vendor。
+
+## 终局构建清理
+
+[清理收据](terminal-build-cleanup.json)记录删除已终止的`active-cpu/p1`，共708个文件、
+1,594,507,663逻辑字节。失败实验原始记录已提交；14个实际EXE/CRT/status制品按hash保留在
+收据指向的本机任务ZIP（未作为产品提交），与失败候选身份相符。没有重建或重跑任何计时；
+该清理不改变资格FAIL、产品性能INCONCLUSIVE和两个owner的BLOCKED。

@@ -1,0 +1,187 @@
+{
+  "candidate": "c733aa93a8c19e1e9d5747ee54c292db6075c5a1",
+  "removed": [
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-compute\\selected-compute\\source-build",
+      "logical_bytes": 1520597157
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-compute\\selected-compute\\shared-sdk-build",
+      "logical_bytes": 1498470919
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-compute\\selected-compute\\static-sdk-build",
+      "logical_bytes": 1516017055
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-graph\\selected-graph\\source-build",
+      "logical_bytes": 1526401389
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-graph\\selected-graph\\shared-sdk-build",
+      "logical_bytes": 1503524320
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-graph\\selected-graph\\static-sdk-build",
+      "logical_bytes": 1525568066
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-container\\selected-container\\source-build",
+      "logical_bytes": 15000083
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-container\\selected-container\\shared-sdk-build",
+      "logical_bytes": 8223158
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-container\\selected-container\\static-sdk-build",
+      "logical_bytes": 11863477
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-core\\selected-core\\source-build",
+      "logical_bytes": 4133331
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-core\\selected-core\\shared-sdk-build",
+      "logical_bytes": 468565
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-core\\selected-core\\static-sdk-build",
+      "logical_bytes": 468563
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-error\\selected-error\\source-build",
+      "logical_bytes": 5255222
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-error\\selected-error\\shared-sdk-build",
+      "logical_bytes": 656589
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-error\\selected-error\\static-sdk-build",
+      "logical_bytes": 742899
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-io\\selected-io\\source-build",
+      "logical_bytes": 24506342
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-io\\selected-io\\shared-sdk-build",
+      "logical_bytes": 17157381
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-io\\selected-io\\static-sdk-build",
+      "logical_bytes": 27746098
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-math\\selected-math\\source-build",
+      "logical_bytes": 4140750
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-math\\selected-math\\shared-sdk-build",
+      "logical_bytes": 483884
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-math\\selected-math\\static-sdk-build",
+      "logical_bytes": 483882
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-mem\\selected-mem\\source-build",
+      "logical_bytes": 12177167
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-mem\\selected-mem\\shared-sdk-build",
+      "logical_bytes": 6092947
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-mem\\selected-mem\\static-sdk-build",
+      "logical_bytes": 8295219
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-obs\\selected-obs\\source-build",
+      "logical_bytes": 6137345
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-obs\\selected-obs\\shared-sdk-build",
+      "logical_bytes": 1303528
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-obs\\selected-obs\\static-sdk-build",
+      "logical_bytes": 1559207
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-platform\\selected-platform\\source-build",
+      "logical_bytes": 6229016
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-platform\\selected-platform\\shared-sdk-build",
+      "logical_bytes": 2166919
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-platform\\selected-platform\\static-sdk-build",
+      "logical_bytes": 3210968
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-process\\selected-process\\source-build",
+      "logical_bytes": 17676276
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-process\\selected-process\\shared-sdk-build",
+      "logical_bytes": 11312893
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-process\\selected-process\\static-sdk-build",
+      "logical_bytes": 17514680
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-sched\\selected-sched\\source-build",
+      "logical_bytes": 14140688
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-sched\\selected-sched\\shared-sdk-build",
+      "logical_bytes": 7857535
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-sched\\selected-sched\\static-sdk-build",
+      "logical_bytes": 11468147
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-simd\\selected-simd\\source-build",
+      "logical_bytes": 32448174
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-simd\\selected-simd\\shared-sdk-build",
+      "logical_bytes": 27110263
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-simd\\selected-simd\\static-sdk-build",
+      "logical_bytes": 53185541
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-time\\selected-time\\source-build",
+      "logical_bytes": 4383847
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-time\\selected-time\\shared-sdk-build",
+      "logical_bytes": 652355
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-time\\selected-time\\static-sdk-build",
+      "logical_bytes": 724463
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-util\\selected-util\\source-build",
+      "logical_bytes": 14717423
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-util\\selected-util\\shared-sdk-build",
+      "logical_bytes": 8168902
+    },
+    {
+      "path": "C:\\hyle-scratch\\active-vk\\g32\\delivery-util\\selected-util\\static-sdk-build",
+      "logical_bytes": 11781393
+    }
+  ],
+  "logical_bytes": 9492224026,
+  "retained": "Verified evidence ZIP and receipts, relocated SDKs, independent consumers, all shared source caches"
+}

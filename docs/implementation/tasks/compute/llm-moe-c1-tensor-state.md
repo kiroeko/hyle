@@ -1451,3 +1451,20 @@ Windows CRT/vendor/HYLE DLL在启动前邻置，禁弹窗、不请求UAC。任�
 Y31的真实BF16状态片段、Air/Mini同产品局部回归按现有身份保留，不再重复。本节不启动P1，
 不推翻CPU Q2的BLOCKED，也不能代签四路线完整成本优选/淘汰或64行/256格。每批核验日志后
 清理自己的重复producer，保留所需SDK、当前构建缓存和原始证据，避免临时目录累计。
+
+#### Y32 固定候选裁决
+
+固定候选`c733aa93`的[Windows所选工程验收](../../../../evidence/correctness/compute-llm-moe-c1/vulkan-c1-global-validation/README.md)
+112项全部通过：96项maintenance/configure/原生correctness/headers、1项component-contract、
+15项默认产品三交付，共45条真实source/static/shared消费。原生批次不重复，Y31真实BF16
+片段和Air/Mini同产品证据保留；本节没有产品改动、P1或新Provider接入。
+
+component-contract首次离线夹具在cache初始化前放置archive，被产品正确拒绝；保留失败后
+使用现有cache初始化函数纠正夹具，仅该门重跑一次通过。没有更改公共工具或产品合同。
+全部重型步骤串行、并行度2，DLL邻置、PATH隔离、禁错误弹窗。
+
+原始证据与SDK hash核验后删除45个重复producer目录，释放9,492,224,026逻辑字节；保留SDK、
+独立消费者、当前缓存和归档。统一实现LOC仍为48,294行/195文件，不含测试/bench/第三方。
+
+Y32工程门停止重复；四路线完整成本资格、固定优选与自有实现取舍仍待完成，CPU Q2的
+BLOCKED没有解除。矩阵与C1整包尚未签收；完成全部C1适用验收后再通知用户，在C2前等待提问。
