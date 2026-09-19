@@ -1011,15 +1011,16 @@ consumer/cache。此组已通过的验证停止重复运行；全局selector适�
 
 具名静态反例：单遍shader把XYZ展开为row，host对513行分配512×2组，shader没有总行数检查。
 不能把513行直接交给原版；同时两遍路径的输入要求设备descriptor对齐。固定适配是将行数
-展平为2D，超过512且非512整数倍时在原版DAG中分为完整512行前缀和小于512行的尾段，
-分别cumsum后原版concat；尾段先原版cont以保有独立对齐。最多两个Scan，不拆每行/每kernel，
-不改vendor shader、pin或运行时。其余行数保持一个原版cumsum。
+展平为2D，按原厂512行/262144行的两级XYZ tile边界分为完整前缀与余数，分别cumsum后原版
+concat；有偏移的段先原版cont以保有独立对齐。最多三个Scan，不拆每行/每kernel，不改vendor
+shader、pin或运行时。精确覆盖的行数保持一个原版cumsum。编码前复核完整dispatch分支确认
+大于262144行还需处理第二级余数，已在首次产品候选之前固定；不是运行失败后追加算法。
 
 | FIX | 有限实现 | 成本与必需验证 |
 |---|---|---|
-| Y27-A | 私有region准入F32、最后轴inclusive Scan；lower到原版cumsum及上述最多两段DAG | 原有allocator/资源/完成不变；原版单遍O(N)，两遍的块前缀重读成本如实计入，不能预称最优；ragged行额外cont尾段/concat输出，冷tensor节点上界固定 |
+| Y27-A | 私有region准入F32、最后轴inclusive Scan；lower到原版cumsum及上述最多三段DAG | 原有allocator/资源/完成不变；原版单遍O(N)，两遍的块前缀重读成本如实计入，不能预称最优；ragged行额外cont尾段/concat输出，冷tensor节点上界16 |
 | Y27-B | 路线将任意合法轴/rank≤8/stride/origin变成dense二维原生输入，Scan后恢复轴；exclusive以零列与inclusive前缀的View/Concat组合 | 复用已接View/Copy/Fill/Concat；空输入无payload，宽1 exclusive直接Fill；必要dense物化/对齐/结果重排分别计费。冷检查I32元素/设备buffer与原厂两类workgroup上限，无热期路由/计时、新状态或payload kernel |
-| Y27-C | 普通Direct/Graph独立FP64 prefix与生命周期/文档 | 0/1/17/127/128/129/255/256/257/1023/1024/1025/4096/4097/8193宽，1/17/128/513/1025行；中/负轴、rank8、奇数/零stride、byte origin、非二进制/NaN/±Inf；exclusive不以inclusive减当前值。两槽/5次变化输入/旧结果、Graph上下游组合、metadata拒绝、既有OOM/错误排空回归 |
+| Y27-C | 普通Direct/Graph独立FP64 prefix与生命周期/文档 | 0/1/17/127/128/129/255/256/257/1023/1024/1025/4096/4097/8193宽，1/17/128/513/1025及262144边界行；中/负轴、rank8、奇数/零stride、byte origin、非二进制/NaN/±Inf；exclusive不以inclusive减当前值。两槽/5次变化输入/旧结果、Graph上下游组合、metadata拒绝、既有OOM/错误排空回归 |
 
 适用验证：selector的provider、Direct/Graph factors，W1 static/shared、Air/Mini；W1/Air
 source/static/shared普通片段沿C1固定bundle。首次W1先验证具名边界，再运行该候选适用回归；
