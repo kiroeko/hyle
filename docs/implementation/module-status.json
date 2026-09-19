@@ -273,15 +273,15 @@
       "module": "compute",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "graph",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "container_concurrent",
@@ -404,8 +404,8 @@
       "module": "compute_backend_cuda",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "compute_provider_native",
@@ -495,29 +495,29 @@
       "module": "compute_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "graph_route_apple",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "compute_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "graph_route_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线已固定，Apple shared公开依赖纠正完成；Windows28门与Air22项原生/头检查通过。其余跨平台、GPU三交付与sanitizer待验，不签模型覆盖；自研冻结。",
-      "candidate": "7016443b1bf895fc4300958e12099e89385de954"
+      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线及Apple shared公开依赖修复固定；Windows28门、Air22项、Mini18项、WSL21项原生/头检查通过。sanitizer与补充三交付待验，不签模型覆盖；自研冻结。",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2"
     },
     {
       "module": "compute_provider_ggml_vulkan",
