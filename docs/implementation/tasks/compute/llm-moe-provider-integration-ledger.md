@@ -13,8 +13,9 @@
 成熟库的已有原子组合与原版融合程序属于接入；其来源、转换和完整成本必须可追溯。
 
 本页的拟定 FIX 必须由相应 owner 的有限卡审计到 AUDITED 才能实施，当前状态以 registry 为准。
-M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 正按[路由卡](llm-moe-m1-route-binding.md)
-验证固定候选；其余未审范围不授权产品改动。
+M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路由卡](llm-moe-m1-route-binding.md)
+关闭冷模型条件/原生环境接缝；四环境原生、三交付及适用插桩通过，新增模型覆盖0。
+下一包M1-C；其余未审范围不授权产品改动。
 旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
 ## 1. Provider 准入处置

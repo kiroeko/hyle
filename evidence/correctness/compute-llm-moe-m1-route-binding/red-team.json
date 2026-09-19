@@ -1,0 +1,43 @@
+{
+  "candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67",
+  "product_candidate": "f56c2f679ee998d218fef76df6fe3bf57bab7626",
+  "reviewer": "/root, separate post-implementation source review",
+  "scope": "R1-R5 cold metadata, native environment, ordinary API and evidence claims",
+  "source_review": "PASS",
+  "checks": [
+    "Identity comparisons use three independent owned byte ranges; incomplete or unknown identities cannot match a complete fixed model condition.",
+    "Allocation-size additions precede copying and are bounded by PTRDIFF_MAX; no runtime overflow claim is made from an invalid string_view.",
+    "Copy retains before release, move handles self-assignment, final release uses the original allocator; allocator backing lifetime is documented.",
+    "Common Direct, delegated preparation, operation and region Graph requests preserve the workload. Compute overwrites proposal workload after the Provider callback.",
+    "Prepared shape instances copy the fixed workload; Graph exact variants copy parent options and share constants only within one immutable compile family.",
+    "Invalid phase/region values are rejected before Provider qualification or native plan construction. Actual typed schema, effects and resource checks remain authoritative.",
+    "Apple and Vulkan retain their native Program/resource execution. New workload reads occur during cold lowering/compilation and explicit diagnostics.",
+    "CUDA environment collection finishes before explicit primary-context retention; the public snapshot is owned and the private borrow uses existing backend-lifetime preconditions.",
+    "CUDA driver_cuda_version is documented as the supported CUDA API level, not the driver package or patch version.",
+    "No new math, shader, SIMD algorithm, runtime model search, benchmark, performance winner, or model-coverage claim is introduced.",
+    "Windows fixture correction changes no product files. Original failed and passed selector receipts retain their original identities. Unrun environments remain pending."
+  ],
+  "limitations": [
+    "Synthetic condition tests prove qualification and forwarding only; mature path samples remain small fragments, not whole-model coverage.",
+    "No cross-process or global plan cache is added, and workload equality alone is not a complete cache key.",
+    "Final correctness and delivery verdicts depend on the declared cross-platform and sanitizer runs; this source review does not sign those gates."
+  ],
+  "final_product_candidate": "7016443b1bf895fc4300958e12099e89385de954",
+  "correction_review": "R5a resolved a pre-existing native shared-export defect revealed by Air. Public MLX depends uses the same upstream primitive; cold stream precondition prevents default/foreign stream fallback. Source identity and exported-symbol evidence retained. Apple native Direct/Graph checks passed after correction; other pending gates remain unsigned.",
+  "packaging_candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+  "packaging_review": "R5b retains the existing asset/producer dependencies and installed helper identity. Each generated build script locks the destination resource directory through copy completion; separate directories remain independent. No lock is acquired by the application or native runtime. Actual delivery verdict remains pending until the declared queue completes.",
+  "packaging_source_sha256": "0383518e2d9f3e1a9c319c5e52cc367c5877c2d88b8abe4668e821aa2c23dec1",
+  "final_evidence_review": {
+    "status": "PASS",
+    "packaging_candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+    "runtime_candidate": "7016443b1bf895fc4300958e12099e89385de954",
+    "fixture_candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2",
+    "checks": [
+      "Original and continued Windows receipts jointly cover the exact 28 selected gates; their original commit identities and failure remain.",
+      "R5b selector and all nine pending checks passed; all four environment SDK receipts and command log hashes were checked, including source/shared/static ordinary Direct/Graph tests.",
+      "Public metadata sizes are checked against all twelve actual SDK footprint outputs, not inferred from source.",
+      "Original source reviews above retain their then-pending wording. The final execution verdict is recorded separately here, without changing old receipts or claiming a source review ran tests.",
+      "No new model coverage cell, timing result, provider winner, self-written operator extension or old BLOCKED-owner clearance is claimed."
+    ]
+  }
+}

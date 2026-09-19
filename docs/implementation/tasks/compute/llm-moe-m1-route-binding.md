@@ -227,3 +227,40 @@ selector把这一Apple专属helper误作为全库共享接缝，已另立
 R5b固定于`c482ce1b33cefecdb949c8b0ec89f9309c3e86ac`，只改变构建期资源暂存。七owner绑定
 此完整候选，已签原生/插桩/Windows交付继续保留原身份；R5b选择的OFF/交付门与Air/Mini未完成
 交付继续串行执行，未通过前不关闭。工具owner映射已按独立卡完成，没有改变门或P1预算。
+
+## 最终裁决（2026-09-20，CLOSED）
+
+本节替代前面的进行中检查点。R1–R5及有限纠正R5a/R5b完成，七owner关闭本轮冷准备接缝。
+完整候选为`c482ce1b33cefecdb949c8b0ec89f9309c3e86ac`，最后C++运行时变化为`7016443b`，
+GCC夹具固定于`d4a4b389`，R5b只有构建期资源协调。后续工具/证据/状态提交不改变产品候选。
+原命令、源码身份、失败修正和完整收据见
+[证据包](../../../../evidence/correctness/compute-llm-moe-m1-route-binding/README.md)。
+
+| Gate | 实际证据与边界 | Verdict |
+|---|---|---|
+| scope | 有限冷身份/请求/环境接缝及两项已审交付纠正；不引入数学、模型loader或通用执行器，256格新增覆盖0 | PASS |
+| architecture | Mem/Util不可变owner复用；Direct/Graph及原生Apple/Vulkan保留同一事实；固定规则只在准备绑定，未知/不完整身份不获专用资格 | PASS |
+| correctness | Windows原28门及续跑、Air22/Mini18/WSL21项原生/头检查；Windows ASan与WSL ASan+LSan/UBSan/TSan；OOM、保活、并发读、条件拒绝和三次复用 | PASS |
+| delivery | 四环境普通Direct/Graph source/static/shared及搬移安装消费；Windows DLL邻置；R5b所选7门通过，Apple两个消费目标同目录暂存通过；所有原PASS保留原身份 | PASS |
+| usability_docs | 调用方只传已知模型/阶段事实，无Provider排序或timing profile；无注解路径仍自然；指南明确allocator寿命、重新准备和driver API版本限制 | PASS |
+| red_team | 候选后独立源码复核、原始收据/hash核对、全部12次SDK footprint输出；无效超长string_view测试撤回，溢出只签源码证明；原失败不删不改签 | PASS |
+| engineering_performance | P0一次冷分配/拷贝，空身份零分配，warm Invocation/submit不增加模型比较/探测/搜索/锁；构建锁不进入执行；不宣称吞吐或赢家 | PASS |
+
+P1为NOT_APPLICABLE：本卡仅冷事实与资源/交付接缝；成熟Provider完整消费成本由M2固定候选验证，
+不启动冻结自研对比。公共实测大小为ModelIdentity 8字节、WorkloadContext 40字节、
+PreparedOperation与Executable各8字节，CUDA Environment 296字节；不是按类型猜测的结果。
+
+WSL TSan首次在测试体前发生地址映射冲突；同一二进制在进程级`setarch x86_64 -R`下通过，
+未改系统设置或提升权限，CPU插桩不代签GPU驱动。Air shared的内部MLX符号和并行资源暂存问题
+分别按R5a/R5b纠正；小型双copy诊断未复现，不能把源码风险证明写成确定复现。
+
+限制：allocator backing须活到最后一个身份保留者释放；改变workload或有关环境须重新准备。
+driver CUDA API版本不等于安装包/补丁版本；未建立跨模型/跨进程cache。无模型专用计算或64域
+覆盖声明，旧ggml CPU与oneDNN BLOCKED不变。本轮无未决阻塞，下一包为M1-C成熟CUDA接入。
+
+reopen triggers：真实consumer需要新的冷资格维度或缓存合同，原生设备/版本采集合同变更，
+或出现可复现资格绕过、owner/OOM/并发/交付错误；不因文档修订重跑已通过门。
+
+统一Compute+Graph实现统计：**49,804行 / 205个实现文件**（不含测试/第三方，self-check通过），
+相对M1-G增加391行冷元数据和接缝。行数与本卡CLOSED均不算模型覆盖。收据归档后清理本轮具名
+构建与验证副本，保留依赖缓存、模型和下一卡已登记的源码输入。

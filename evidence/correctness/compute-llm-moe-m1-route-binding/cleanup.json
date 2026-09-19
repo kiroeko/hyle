@@ -1,0 +1,425 @@
+{
+  "status": "PASS",
+  "scope": "Completed task-owned M1-R products only; caches, models and M1-C intake retained.",
+  "accounting": "Logical file bytes deleted, not a claim of host VHD shrinkage. Earlier cleanup checkpoints remain in raw.zip.",
+  "machines": {
+    "windows": {
+      "bytes": 19517138991.0,
+      "paths": [
+        {
+          "path": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-compute\\selected-compute",
+          "files": 11917,
+          "bytes": 7861704796.0,
+          "unlinked_only": [
+            {
+              "FullName": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-compute\\selected-compute\\shared-sdk-build\\src\\compute_ggml_runtime\\source-2496aedf5a516361\\.pi\\SYSTEM.md",
+              "LinkType": "SymbolicLink",
+              "Target": "gg\\SYSTEM.md"
+            },
+            {
+              "FullName": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-compute\\selected-compute\\source-build\\hyle\\src\\compute_ggml_runtime\\source-2496aedf5a516361\\.pi\\SYSTEM.md",
+              "LinkType": "SymbolicLink",
+              "Target": "gg\\SYSTEM.md"
+            },
+            {
+              "FullName": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-compute\\selected-compute\\static-sdk-build\\src\\compute_ggml_runtime\\source-2496aedf5a516361\\.pi\\SYSTEM.md",
+              "LinkType": "SymbolicLink",
+              "Target": "gg\\SYSTEM.md"
+            }
+          ],
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-graph\\selected-graph",
+          "files": 12248,
+          "bytes": 7890687357.0,
+          "unlinked_only": [
+            {
+              "FullName": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-graph\\selected-graph\\shared-sdk-build\\src\\compute_ggml_runtime\\source-2496aedf5a516361\\.pi\\SYSTEM.md",
+              "LinkType": "SymbolicLink",
+              "Target": "gg\\SYSTEM.md"
+            },
+            {
+              "FullName": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-graph\\selected-graph\\source-build\\hyle\\src\\compute_ggml_runtime\\source-2496aedf5a516361\\.pi\\SYSTEM.md",
+              "LinkType": "SymbolicLink",
+              "Target": "gg\\SYSTEM.md"
+            },
+            {
+              "FullName": "C:\\hyle-scratch\\m1r-r5b\\270c3875b4b53932c1e9\\delivery-graph\\selected-graph\\static-sdk-build\\src\\compute_ggml_runtime\\source-2496aedf5a516361\\.pi\\SYSTEM.md",
+              "LinkType": "SymbolicLink",
+              "Target": "gg\\SYSTEM.md"
+            }
+          ],
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-apple-off",
+          "bytes": 2339092.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-asan",
+          "bytes": 765028925.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-core",
+          "bytes": 82683616.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-g",
+          "bytes": 2118531405.0,
+          "links_unlinked_without_following": 1,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-sdk",
+          "bytes": 457959309.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-r5b",
+          "bytes": 2335493.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-0d85a9ad.tar.gz",
+          "bytes": 47979945.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-0fdfd5b1.tar.gz",
+          "bytes": 47982589.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-7016443b.tar.gz",
+          "bytes": 47980722.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-810a8425.tar.gz",
+          "bytes": 47981991.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-d4a4b389.tar.gz",
+          "bytes": 47981043.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-f56c2f67.tar.gz",
+          "bytes": 47977233.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        },
+        {
+          "path": "C:\\hyle-scratch\\m1r-c482ce1b.tar.gz",
+          "bytes": 47985475.0,
+          "links_unlinked_without_following": 0,
+          "deleted": true
+        }
+      ],
+      "source_records": {
+        "completed-r5b-compute-sdk-cleanup.json": "55a9c2711a614f31fdfe483371be71af043d7c9e3ca4039f6eb1d83712726c09",
+        "completed-r5b-graph-sdk-cleanup.json": "20548faafc7db86fc3d1dac18095a36b097a1836725b59a435c11843c14fa5dc",
+        "closed-windows-cleanup.json": "41676c492bba1c6b803659f2bbb3c7c7ee17aa3e78eccacc368b5d7e1421238c"
+      }
+    },
+    "air": {
+      "bytes": 1916034366,
+      "paths": [
+        {
+          "path": "/Users/kiro/hyle-m1r-native",
+          "bytes": 457425594,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-sdk",
+          "bytes": 394616069,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-tools",
+          "bytes": 551,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-stage-repro",
+          "bytes": 23284096,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-combined-delivery.py",
+          "bytes": 9837,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-probe-stage.py",
+          "bytes": 1171,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-f56c2f67",
+          "bytes": 100683220,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-f56c2f67.tar.gz",
+          "bytes": 47977233,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-0d85a9ad",
+          "bytes": 100696459,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-0d85a9ad.tar.gz",
+          "bytes": 47979945,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-7016443b",
+          "bytes": 100686780,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-7016443b.tar.gz",
+          "bytes": 47980722,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-810a8425",
+          "bytes": 100688017,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-810a8425.tar.gz",
+          "bytes": 47981991,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-0fdfd5b1",
+          "bytes": 100688364,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-0fdfd5b1.tar.gz",
+          "bytes": 47982589,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-d4a4b389",
+          "bytes": 100688751,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-d4a4b389.tar.gz",
+          "bytes": 47981043,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-c482ce1b",
+          "bytes": 100696459,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-c482ce1b.tar.gz",
+          "bytes": 47985475,
+          "deleted": true
+        }
+      ],
+      "source_records": {
+        "air-closed-cleanup.json": "8ce4020997840224b06e5c213a9cfa0bbbf66a015151089850ab3df9e10b98b4"
+      }
+    },
+    "mini": {
+      "bytes": 1171856491,
+      "paths": [
+        {
+          "path": "/Users/kiro/hyle-m1r-native",
+          "bytes": 55966815,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-sdk",
+          "bytes": 75182240,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-tools",
+          "bytes": 551,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-combined-delivery.py",
+          "bytes": 9837,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-f56c2f67",
+          "bytes": 100683220,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-f56c2f67.tar.gz",
+          "bytes": 47977233,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-0d85a9ad",
+          "bytes": 100696459,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-0d85a9ad.tar.gz",
+          "bytes": 47979945,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-7016443b",
+          "bytes": 100686780,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-7016443b.tar.gz",
+          "bytes": 47980722,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-810a8425",
+          "bytes": 100688017,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-810a8425.tar.gz",
+          "bytes": 47981991,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-0fdfd5b1",
+          "bytes": 100688364,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-0fdfd5b1.tar.gz",
+          "bytes": 47982589,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-d4a4b389",
+          "bytes": 100688751,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-d4a4b389.tar.gz",
+          "bytes": 47981043,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/hyle-m1r-c482ce1b",
+          "bytes": 100696459,
+          "deleted": true
+        },
+        {
+          "path": "/Users/kiro/m1r-c482ce1b.tar.gz",
+          "bytes": 47985475,
+          "deleted": true
+        }
+      ],
+      "source_records": {
+        "mini-closed-cleanup.json": "b7d5cbd89abc2df28ad2ee60677f94aa4400603875e47117481a4e88d69e21b3"
+      }
+    },
+    "wsl": {
+      "bytes": 1901389132,
+      "paths": [
+        {
+          "path": "/root/hyle-m1r-native",
+          "bytes": 420629714,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-sdk",
+          "bytes": 383611717,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-combined-delivery.py",
+          "bytes": 9837,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-f56c2f67",
+          "bytes": 100683220,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-0d85a9ad",
+          "bytes": 100696459,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-7016443b",
+          "bytes": 100686780,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-810a8425",
+          "bytes": 100688017,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-0fdfd5b1",
+          "bytes": 100688364,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-d4a4b389",
+          "bytes": 100688751,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-c482ce1b",
+          "bytes": 100696459,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-asan",
+          "bytes": 216855275,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-ubsan",
+          "bytes": 109370708,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-tsan",
+          "bytes": 65160895,
+          "deleted": true
+        },
+        {
+          "path": "/root/hyle-m1r-sanitizer-logs",
+          "bytes": 922936,
+          "deleted": true
+        }
+      ],
+      "source_records": {
+        "wsl-closed-cleanup.json": "2d9d89d2408c58e3658012b651fbbf0541e0432c4f6b39547a94d7f8aaed609e"
+      }
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "product_candidate": "f56c2f679ee998d218fef76df6fe3bf57bab7626",
+  "fixture_candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67",
+  "kind": "P0 structural source audit, not timing evidence",
+  "facts": {
+    "identity": "one cold allocation containing existing Util refcount, allocator and three separate string ranges; empty allocation count zero",
+    "length": "each addition bounded by PTRDIFF_MAX minus accumulated size before memcpy; source audit only, no invalid-view runtime overflow claim",
+    "copies": "handle-only shared immutable ownership; refcount operations during preparation, explicit cold diagnostics and final release",
+    "submission": "no workload parameter added to Invocation or submit; no model comparison, native version query, allocation or lock added to execution",
+    "native": "Apple/Vulkan retain their own Program and runtime; CUDA captures device facts before explicit native owner retention, then only copies cached facts",
+    "warm_state": "Existing Invocation types unchanged; cold artifact metadata retains WorkloadContext. Actual public sizes from all declared delivery consumers are recorded below.",
+    "version_limit": "CUDA driver_cuda_version denotes supported CUDA API level, not vendor driver package/patch",
+    "frozen_operator_sources_unchanged": [
+      "src/compute_provider_native",
+      "src/compute_provider_cuda",
+      "src/compute_provider_cublas",
+      "src/compute_provider_marlin",
+      "src/compute_provider_onednn",
+      "src/graph_provider_onednn",
+      "src/simd",
+      "src/compute_route_vulkan/shaders"
+    ]
+  },
+  "source_sha256": {
+    "src/compute/workload.cc": "552fab91f32e1a7dcbfc454edb4221a7332da5d7afed2cb1acecff94af9cf29d",
+    "src/compute/prepared_state.h": "2988df316c16b621ac9f78683efca0c58ac879f7a7796100dcd96a0801101410",
+    "src/compute/provider_internal.h": "6ce09923ae5f0a7dc319a02d21e4a0e5f7773938a2911d0a9c8f2e1f942b086a",
+    "src/graph/plan_state.h": "17ea4f9ea366e240d158798b5ee9b57e47b2265cb1bc39cdd635a7c3c524c625",
+    "src/compute_backend_cuda/cuda_backend.cc": "7084549dc88e8de255697a8cb20897d7c64efcda2825c97690392d712d10e7fc",
+    "src/compute_backend_cuda/cuda_internal.h": "b6e6612724441923068c69a20ce9f3a0e0ef2cd628004ac28dc6d098a9f054ee",
+    "src/compute_route_apple/apple_context.cc": "8e627a6a1b7dde5c5186465034b865fc4fb0dc61e0481f693fe3d68915acfe1d",
+    "src/compute_route_vulkan/vulkan_program_internal.h": "e348c54ead3eadd38974be1f3cc70cb27c4b826e459c596e211a5c6bba98ec28"
+  },
+  "measurement_status": "PASS",
+  "performance_sampling": "NOT_APPLICABLE for cold metadata seam; no self-written operator research/comparison performed",
+  "final_product_candidate": "7016443b1bf895fc4300958e12099e89385de954",
+  "post_candidate_correction": "R5a: use exported mlx::core::depends with a cold output-stream precondition. Same native Depends primitive and status dependency, no added data copy/kernel or changed arithmetic.",
+  "public_sizes": [
+    {
+      "machine": "windows",
+      "log": "source-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8",
+        "3: CUDAEnvironment=296"
+      ]
+    },
+    {
+      "machine": "windows",
+      "log": "shared-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8",
+        "3: CUDAEnvironment=296"
+      ]
+    },
+    {
+      "machine": "windows",
+      "log": "static-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8",
+        "3: CUDAEnvironment=296"
+      ]
+    },
+    {
+      "machine": "air",
+      "log": "source-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8"
+      ]
+    },
+    {
+      "machine": "air",
+      "log": "shared-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8"
+      ]
+    },
+    {
+      "machine": "air",
+      "log": "static-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8"
+      ]
+    },
+    {
+      "machine": "mini",
+      "log": "source-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8"
+      ]
+    },
+    {
+      "machine": "mini",
+      "log": "shared-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8"
+      ]
+    },
+    {
+      "machine": "mini",
+      "log": "static-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8"
+      ]
+    },
+    {
+      "machine": "wsl",
+      "log": "source-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8",
+        "3: CUDAEnvironment=296"
+      ]
+    },
+    {
+      "machine": "wsl",
+      "log": "shared-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8",
+        "3: CUDAEnvironment=296"
+      ]
+    },
+    {
+      "machine": "wsl",
+      "log": "static-relocated-test.log",
+      "measurements": [
+        "3: ModelIdentity=8 WorkloadContext=40 PreparedOperation=8 Executable=8",
+        "3: CUDAEnvironment=296"
+      ]
+    }
+  ],
+  "final_fixture_candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2",
+  "final_packaging_candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+}

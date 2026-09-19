@@ -1,0 +1,107 @@
+{
+  "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+  "status": "PASS",
+  "windows_selector_gates": 28,
+  "windows_prior_candidate": "f56c2f679ee998d218fef76df6fe3bf57bab7626",
+  "windows_fixture_candidate": "0d85a9ad5ff98a1501363dba6a61ef2448d33c67",
+  "windows_staging_correction_selector": {
+    "candidate": "67f4339e7b8b8dc06c535df00a176e773e4b4263",
+    "gates": 7,
+    "status": "PASS"
+  },
+  "native": [
+    {
+      "machine": "air",
+      "status": "PASS",
+      "candidate": "7016443b1bf895fc4300958e12099e89385de954",
+      "log": "air-native.log",
+      "sha256": "c72cd962d327f9b9dcd2e035fab8f35e709f627c8aacc01bf9a8e06303e03a39"
+    },
+    {
+      "machine": "mini",
+      "status": "PASS",
+      "candidate": "7016443b1bf895fc4300958e12099e89385de954",
+      "log": "mini-native.log",
+      "sha256": "0cad63a14000ae94f4d108c8d929378caf5e2dfdb03bc5868584e791ddb3fd68"
+    },
+    {
+      "machine": "wsl",
+      "status": "PASS",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2",
+      "log": "wsl-native.log",
+      "sha256": "6e6b8b7e8f54e4a46491c6a9d8954bb002ec00fdbd5880943b1af320c8a5eb79"
+    }
+  ],
+  "delivery": [
+    {
+      "machine": "windows",
+      "candidate": "d4a4b38955e8feae9d4c768cd232f5d23d0327c2",
+      "status": "PASS",
+      "forms": [
+        "source",
+        "shared-relocated",
+        "static-relocated"
+      ],
+      "consumers": [
+        "ordinary Direct",
+        "ordinary Graph",
+        "public footprint"
+      ]
+    },
+    {
+      "machine": "air",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "status": "PASS",
+      "forms": [
+        "source",
+        "shared-relocated",
+        "static-relocated"
+      ],
+      "consumers": [
+        "ordinary Direct",
+        "ordinary Graph",
+        "public footprint"
+      ]
+    },
+    {
+      "machine": "mini",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "status": "PASS",
+      "forms": [
+        "source",
+        "shared-relocated",
+        "static-relocated"
+      ],
+      "consumers": [
+        "ordinary Direct",
+        "ordinary Graph",
+        "public footprint"
+      ]
+    },
+    {
+      "machine": "wsl",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "status": "PASS",
+      "forms": [
+        "source",
+        "shared-relocated",
+        "static-relocated"
+      ],
+      "consumers": [
+        "ordinary Direct",
+        "ordinary Graph",
+        "public footprint"
+      ]
+    }
+  ],
+  "sanitizers": [
+    "Windows ASan",
+    "WSL ASan+LSan",
+    "WSL UBSan",
+    "WSL TSan"
+  ],
+  "sanitizer_method": "WSL TSan initially failed before test bodies on an address-layout collision. The same instrumented binaries passed with process-local setarch x86_64 -R; no rebuild, system setting, or elevated command.",
+  "p0": "PASS, cold metadata and native dependency seam only; no timing or operator winner claim",
+  "unrun": [],
+  "new_model_coverage_cells": 0
+}

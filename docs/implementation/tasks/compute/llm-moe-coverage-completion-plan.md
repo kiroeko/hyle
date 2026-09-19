@@ -210,8 +210,9 @@ C1–C6 在上述表格与 JSON 的 `first_package` / case ID 中仅保留为验
 [64行四路线映射](llm-moe-provider-map.json)、
 [Provider准入与详细施工清单](llm-moe-provider-integration-ledger.md)。以下勾选只表示计划产物，
 不表示产品覆盖。实施已进入M1，当前状态以registry及其绑定的有限卡为准；
-[M1-G资源卡](llm-moe-m1-ggml-runtime.md)已关闭，[M1-R路由卡](llm-moe-m1-route-binding.md)
-正在验证候选。尚未审计的包仍须逐owner固定有限FIX，不继承旧卡的产品授权。
+[M1-G资源卡](llm-moe-m1-ggml-runtime.md)与[M1-R路由卡](llm-moe-m1-route-binding.md)
+已关闭各自有限资源/冷条件范围，新增256格覆盖仍为0；下一包M1-C。尚未审计的包仍须逐owner
+固定有限FIX，不继承旧卡的产品授权。
 
 - [x] **M0-01 模型计算映射**：对 Kimi K3、DeepSeek V4 Pro/Flash、GLM 5.3/Flash、
   Qwen3.8 2.4T/27B、Qwen3.5-2B，按已固定配置/源码把64需求域回映到实际图节点、融合片段、

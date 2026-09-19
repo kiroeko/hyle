@@ -271,17 +271,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -402,10 +410,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "compute_provider_native",
@@ -493,31 +505,47 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CANDIDATE：冷模型/阶段/环境接线固定；四环境原生及Windows/WSL插桩、Windows三交付通过。Apple构建期暂存协调修复固定，适用OFF/交付续验；不签模型覆盖，自研冻结。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac"
+      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
+      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
