@@ -688,6 +688,7 @@ struct PlanState final : util::RefCounted<PlanState> {
 
   mem::AllocatorRef allocator{};
   std::uint64_t generation = 0;
+  compute::WorkloadContext workload{};
   // Empty on the exact path. A domain retains its immutable shape program and
   // specs once; concrete Invocations share this Plan and its concurrency gate.
   Graph domain_graph{};

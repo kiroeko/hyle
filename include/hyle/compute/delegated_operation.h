@@ -98,6 +98,7 @@ public:
                                      std::size_t input) const noexcept {
     return prepared_.alias_support(output, input);
   }
+  WorkloadContext workload() const noexcept { return prepared_.workload(); }
   std::size_t input_count() const noexcept { return prepared_.input_count(); }
   std::size_t output_count() const noexcept { return prepared_.output_count(); }
   Result<const TensorDesc &>
@@ -115,10 +116,11 @@ private:
   friend HYLE_COMPUTE_API Result<PreparedDelegatedOperation>
   prepare_delegated(const Context &, Operation, std::span<const TensorDesc>,
                     std::span<const TensorDesc>,
-                    OperationResourceBindings) noexcept;
+                    OperationResourceBindings, const WorkloadContext &) noexcept;
   friend HYLE_COMPUTE_API Result<PreparedDelegatedOperation> prepare_delegated(
       const Context &, Operation, std::span<const ConstTensorView>,
-      std::span<const TensorView>, mem::MemoryResourceRef) noexcept;
+      std::span<const TensorView>, mem::MemoryResourceRef,
+      const WorkloadContext &) noexcept;
   explicit PreparedDelegatedOperation(PreparedOperation prepared) noexcept
       : prepared_(std::move(prepared)) {}
   PreparedOperation prepared_{};
@@ -128,11 +130,13 @@ HYLE_COMPUTE_API Result<PreparedDelegatedOperation>
 prepare_delegated(const Context &context, Operation operation,
                   std::span<const TensorDesc> inputs,
                   std::span<const TensorDesc> outputs,
-                  OperationResourceBindings resources) noexcept;
+                  OperationResourceBindings resources,
+                  const WorkloadContext &workload = {}) noexcept;
 HYLE_COMPUTE_API Result<PreparedDelegatedOperation>
 prepare_delegated(const Context &context, Operation operation,
                   std::span<const ConstTensorView> inputs,
                   std::span<const TensorView> outputs,
-                  mem::MemoryResourceRef workspace_resource = {}) noexcept;
+                  mem::MemoryResourceRef workspace_resource = {},
+                  const WorkloadContext &workload = {}) noexcept;
 
 } // namespace hyle::compute

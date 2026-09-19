@@ -109,6 +109,7 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   // Cold metadata only; neither is consulted by ordinary warm submission.
   PreparedShapeDomain *shape = nullptr;
   PreparedState *domain_owner = nullptr;
+  WorkloadContext workload{};
 };
 
 inline void retain(PreparedState *state) noexcept {

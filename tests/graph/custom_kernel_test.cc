@@ -8,6 +8,7 @@
 
 #include "../compute/custom_kernel_fixture.h"
 #include "hyle/graph/executable.h"
+#include "hyle/mem/quota_allocator.h"
 
 namespace {
 using namespace custom_test;
@@ -25,6 +26,53 @@ PolicyGraph policy_graph(std::size_t count = 1) {
     output = builder.add(Operation::custom(Affine{1}), output).value();
   EXPECT_TRUE(builder.publish(output).ok());
   return {std::move(builder).finish().value(), input, output};
+}
+
+TEST(GraphCustomKernel, WorkloadReachesColdOperationsAndOutlivesCallerFacts) {
+  const auto logical = policy_graph(2);
+  Probe probe;
+  Tensors tensors;
+  ASSERT_TRUE(tensors.fill().ok());
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
+  constexpr ModelDescription model{"qwen3_5", "snapshot-b", "configuration-b"};
+  WorkloadContext expected{ModelIdentity::create(model, quota.get()).value(),
+                           WorkloadPhase::kPrefill, {1, 2, 1}};
+  auto provider_value = make_custom_provider(
+      identity, cpu::kBackendId,
+      WorkloadFactory{Factory{std::make_unique<Config>(probe)}, &expected});
+  ASSERT_TRUE(provider_value);
+  auto context = Context::create(cpu::device(), *provider_value).value();
+  auto queue = context.create_queue().value();
+  auto compiled = hyle::graph::compile(logical.graph, context,
+                                       {.workload = expected});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.workload(), expected);
+  const auto proposals = probe.proposals.load();
+  const auto prepares = probe.preparations.load();
+  expected = {};
+  EXPECT_EQ(compiled->executable.workload().model.description(), model);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(logical.input, tensors.in).ok());
+  ASSERT_TRUE(invocation.bind(logical.output, tensors.out).ok());
+  *compiled = {};
+  EXPECT_GT(quota.used(), 0u);
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done);
+    ASSERT_TRUE(done->wait().ok());
+    EXPECT_EQ(tensors.read(), (std::array<float, 4>{7, 11, 15, 19}));
+  }
+  EXPECT_EQ(probe.proposals, proposals);
+  EXPECT_EQ(probe.preparations, prepares);
+  invocation = {};
+  EXPECT_EQ(quota.used(), 0u);
+  auto invalid = expected;
+  invalid.region = {1, 2, 0};
+  auto rejected = hyle::graph::compile(logical.graph, context,
+                                        {.workload = invalid});
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  EXPECT_EQ(probe.proposals, proposals);
 }
 
 TEST(GraphCompilationStorage, TypedPrivateBoundsAreAdmittedBeforePrepare) {

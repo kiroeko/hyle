@@ -237,6 +237,28 @@ inline Result<Provider> provider(Probe &probe,
                               allocator);
 }
 
+// Test-only cold-request observer. The existing arithmetic fixture is reused;
+// this does not establish a product Provider or any model coverage.
+struct WorkloadFactory final {
+  Factory base;
+  const WorkloadContext *expected = nullptr;
+
+  Result<KernelProposal>
+  propose(const KernelRequest &request, std::span<ResourceRequirement> inputs,
+          std::span<ResourceRequirement> outputs) const noexcept {
+    if (request.workload != *expected)
+      return std::unexpected(Status::Internal("cold workload changed at propose"));
+    return base.propose(request, inputs, outputs);
+  }
+  KernelPreparation prepare(const KernelPrepareRequest &request,
+                            hyle::mem::AllocatorRef allocator) const noexcept {
+    if (request.workload != *expected)
+      return KernelPreparation::error(
+          Status::Internal("cold workload changed at prepare"));
+    return base.prepare(request, allocator);
+  }
+};
+
 inline TensorDesc description() {
   return TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{4})
       .value();

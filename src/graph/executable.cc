@@ -2179,7 +2179,8 @@ Status discover_operation_candidates(
         }
         auto proposal = compute::detail::OperationPreparationAccess::propose(
             context, provider, node.operation(), inputs, outputs,
-            input_requirements, output_requirements, shape, plan.allocator);
+            input_requirements, output_requirements, shape, plan.allocator,
+            options.workload);
         if (!proposal) {
           if (proposal.error().IsUnimplemented())
             continue;
@@ -2672,7 +2673,8 @@ discover_region_resources(const Graph &published_graph,
                                        .route = candidate.route,
                                        .effect_accesses = effects,
                                        .effect_bindings = plan.effect_bindings,
-                                       .has_unknown_effects = unknown_effects};
+                                       .has_unknown_effects = unknown_effects,
+                                       .workload = options.workload};
     RegionResourceProposal proposal;
     Status status = propose_region_resources(
         discovery.extensions[candidate.extension_index], request,
@@ -3967,7 +3969,8 @@ Status prepare_placed_steps_attempt(
               std::span<const RegionEffectAccess>(discovery.effects)
                   .subspan(skeleton.effect_begin, skeleton.effect_count),
           .effect_bindings = plan.effect_bindings,
-          .has_unknown_effects = skeleton.has_unknown_effects};
+          .has_unknown_effects = skeleton.has_unknown_effects,
+          .workload = options.workload};
       auto charge = reserve_compilation_storage(
           plan, options, skeleton.proposal.compilation_storage);
       if (!charge) {
@@ -6584,6 +6587,10 @@ Executable &Executable::operator=(Executable &&other) noexcept {
 
 Executable::~Executable() { detail::release(state_); }
 
+compute::WorkloadContext Executable::workload() const noexcept {
+  return state_ != nullptr ? state_->workload : compute::WorkloadContext{};
+}
+
 std::size_t Executable::input_count() const noexcept {
   return state_ != nullptr ? state_->input_ids.size() : 0;
 }
@@ -7967,6 +7974,8 @@ Result<CompiledGraph> compile_plan(
     bool inherited_budget = false,
     util::Ref<detail::StorageBudgetState> invocation_storage = {},
     util::Ref<detail::StorageBudgetState> compilation_storage = {}) noexcept {
+  if (!options.workload.valid())
+    return std::unexpected(Status::InvalidArgument("graph workload context"));
   if (!graph.valid()) {
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
@@ -8170,6 +8179,7 @@ Result<CompiledGraph> compile_plan(
     return std::unexpected(plan_allocation_failure());
   auto *plan =
       ::new (storage) detail::PlanState(allocator, concrete->generation);
+  plan->workload = options.workload;
   plan->compilation_storage = std::move(compilation_storage);
   if (options.invocation_storage && !invocation_storage) {
     auto created = detail::StorageBudgetState::create(

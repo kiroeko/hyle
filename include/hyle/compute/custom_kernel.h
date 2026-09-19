@@ -61,6 +61,7 @@ struct KernelRequest final {
   Operation operation{};
   std::span<const TensorDesc> inputs{};
   std::span<const TensorDesc> outputs{};
+  WorkloadContext workload{};
 };
 
 struct KernelProposal final {
@@ -80,6 +81,7 @@ struct KernelPrepareRequest final {
   std::span<const TensorDesc> outputs{};
   OperationResourceBindings resources{};
   std::uint64_t route = 0;
+  WorkloadContext workload{};
 };
 
 namespace detail {

@@ -116,3 +116,10 @@ lease已有路径逐项复用；若模型片段暴露具体能力缺口，登记
 OOM/长度溢出、独立handle并发读、phase与region版本区分。默认空身份零分配，原子所有权复用Util。
 这是R1的局部实现检查，不是M1-R的候选或关闭。R2请求接线、R3原生环境事实、R4真实路径与R5适用
 三交付仍未运行/未完成，不能写PASS；本卡owner保持AUDITED。全部自研算子保持冻结。
+
+R2的共同路径现已接通：普通/typed Direct和delegated prepare把同一workload传入Provider提案与
+准备；Graph operation与region资源/编译请求继承同一事实，artifact及shape子实例保留身份。
+模型/stage不加入submit参数或运行期查询。Windows Compute、CPU backend、Graph和对应公开头
+共7项CTest通过；新增契约用例验证冷请求、源owner释放后保活以及重复运行不重入propose/prepare。
+这些fixture不作为成熟Provider/模型覆盖证明。Apple/Vulkan原生接线、CUDA环境及最终跨平台交付
+仍待后续FIX，M1-R保持AUDITED；初次编译发现的inferred便利入口漏传参数已修复，失败日志保留。

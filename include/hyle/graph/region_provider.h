@@ -18,7 +18,7 @@ namespace hyle::graph {
 // Versioned, provider-local Graph region contract. Compute only sees this as a
 // named extension table and therefore never depends on Graph types.
 inline constexpr compute::ProviderExtensionId kRegionProviderExtensionId{
-    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 18};
+    0x48594c4547524150ULL, 0x48524547494f4e31ULL, 19};
 
 namespace detail {
 struct ConstantArtifactScope;
@@ -217,6 +217,10 @@ struct RegionCompileRequest final {
   std::span<const RegionEffectAccess> effect_accesses{};
   std::span<const EffectResourceBinding> effect_bindings{};
   bool has_unknown_effects = false;
+  // Identical during resource qualification and exact compile. A model-only
+  // route declines here if its complete conditions do not match; discovery
+  // remains a structural DAG operation. Never read these facts during replay.
+  compute::WorkloadContext workload{};
 };
 
 // Cold resource and runtime proposal for one exact candidate boundary. The

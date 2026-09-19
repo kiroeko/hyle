@@ -827,6 +827,9 @@ struct CompileOptions final {
   // Hard preparation constraint, not a requested throughput or slot count.
   // Each concurrent execution still owns a distinct Invocation and bindings.
   bool require_concurrent_invocations = false;
+  // Optional model/stage facts, consumed only during cold qualification.
+  // The resulting Executable retains the immutable identity owner.
+  compute::WorkloadContext workload{};
 };
 
 // Immutable, shareable compiled artifact. Copies share one allocator-owned
@@ -846,6 +849,7 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
+  HYLE_GRAPH_API compute::WorkloadContext workload() const noexcept;
   HYLE_GRAPH_API std::size_t input_count() const noexcept;
   HYLE_GRAPH_API std::size_t output_count() const noexcept;
   HYLE_GRAPH_API std::size_t node_count() const noexcept;

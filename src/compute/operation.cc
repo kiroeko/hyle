@@ -494,12 +494,13 @@ Status validate_bindings(const detail::PreparedState &prepared,
 Result<PreparedOperation>
 prepare_inferred_single(const Context &context, Operation operation,
                         std::span<const TensorDesc> inputs,
-                        mem::MemoryResourceRef resource) noexcept {
+                        mem::MemoryResourceRef resource,
+                        const WorkloadContext &workload) noexcept {
   auto output = infer_single_output(operation, inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, operation, inputs, outputs, resource);
+  return prepare(context, operation, inputs, outputs, resource, workload);
 }
 
 } // namespace
@@ -542,6 +543,10 @@ OperationKind PreparedOperation::kind() const noexcept {
 
 ProviderIdentity PreparedOperation::provider() const noexcept {
   return state_ != nullptr ? state_->provider : ProviderIdentity{};
+}
+
+WorkloadContext PreparedOperation::workload() const noexcept {
+  return state_ != nullptr ? state_->workload : WorkloadContext{};
 }
 
 ProviderInstanceId PreparedOperation::provider_instance_id() const noexcept {
@@ -628,7 +633,10 @@ detail::OperationPreparationAccess::propose(
     std::span<ResourceBindingRequirement> input_requirements,
     std::span<ResourceBindingRequirement> output_requirements,
     ProviderShapeDomain shape,
-    std::optional<mem::AllocatorRef> requested_allocator) noexcept {
+    std::optional<mem::AllocatorRef> requested_allocator,
+    const WorkloadContext &workload) noexcept {
+  if (!workload.valid())
+    return std::unexpected(Status::InvalidArgument("compute workload context"));
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -680,7 +688,7 @@ detail::OperationPreparationAccess::propose(
   const detail::ProviderVTable *table =
       detail::ProviderAccess::vtable(slot.provider);
   detail::ProviderOperationProposal proposal{};
-  const ProviderOperationRequest request{operation, inputs, outputs, shape};
+  const ProviderOperationRequest request{operation, inputs, outputs, shape, workload};
   Status status = table->propose(slot.state, request,
                                  input_requirements, output_requirements,
                                  &proposal);
@@ -721,6 +729,7 @@ detail::OperationPreparationAccess::propose(
     if (!status.ok())
       return std::unexpected(std::move(status));
   }
+  proposal.workload = workload;
   return proposal;
 }
 
@@ -861,6 +870,7 @@ detail::OperationPreparationAccess::prepare_candidate(
       .workspace_resource = workspace_resource,
       .route = proposal.route,
       .shape = shape,
+      .workload = proposal.workload,
   };
   const auto destroy_invalid = [&]() noexcept {
     if (provider_prepared.vtable != nullptr &&
@@ -947,6 +957,7 @@ detail::OperationPreparationAccess::prepare_candidate(
       provider_prepared);
   if (!prepared)
     return std::unexpected(std::move(prepared).error());
+  (*prepared)->workload = proposal.workload;
   if (!shape.exact()) {
     auto owned_shape = copy_shape_domain(shape, allocator);
     if (!owned_shape) {
@@ -1023,6 +1034,7 @@ Result<detail::PreparedState *> instantiate_bound_state(
                         state->workspace_resource, state->provider,
                         state->provider_instance, instance));
   detail::retain(state);
+  result->workload = state->workload;
   result->domain_owner = state;
   return result;
 }
@@ -1093,8 +1105,11 @@ Result<PreparedOperation> prepare_for_mode(const Context &context,
                                            std::span<const TensorDesc> inputs,
                                            std::span<const TensorDesc> outputs,
                                            OperationResourceBindings resources,
-                                           ProviderRuntimeMode mode) noexcept {
+                                           ProviderRuntimeMode mode,
+                       const WorkloadContext &workload) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.compute.prepare");
+  if (!workload.valid())
+    return std::unexpected(Status::InvalidArgument("compute workload context"));
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -1118,7 +1133,7 @@ Result<PreparedOperation> prepare_for_mode(const Context &context,
   for (std::size_t index = 0; index < state->provider_count; ++index) {
     auto proposal = detail::OperationPreparationAccess::propose(
         context, index, operation, inputs, outputs, input_requirements.span(),
-        output_requirements.span());
+        output_requirements.span(), {}, std::nullopt, workload);
     if (!proposal && proposal.error().IsUnimplemented()) {
       if (!prepared_decline) {
         unsupported = std::move(proposal).error();
@@ -1162,20 +1177,22 @@ Result<PreparedOperation> prepare_for_mode(const Context &context,
 Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
         std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
-        OperationResourceBindings resources) noexcept {
+        OperationResourceBindings resources,
+        const WorkloadContext &workload) noexcept {
   return prepare_for_mode(context, operation, inputs, outputs, resources,
-                          ProviderRuntimeMode::kSharedQueue);
+                          ProviderRuntimeMode::kSharedQueue, workload);
 }
 
 Result<PreparedDelegatedOperation>
 prepare_delegated(const Context &context, Operation operation,
                   std::span<const TensorDesc> inputs,
                   std::span<const TensorDesc> outputs,
-                  OperationResourceBindings resources) noexcept {
+                  OperationResourceBindings resources,
+                  const WorkloadContext &workload) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto prepared,
                         prepare_for_mode(context, operation, inputs, outputs,
                                          resources,
-                                         ProviderRuntimeMode::kDelegated));
+                                         ProviderRuntimeMode::kDelegated, workload));
   return PreparedDelegatedOperation(std::move(prepared));
 }
 
@@ -1183,7 +1200,8 @@ Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
         std::span<const TensorDesc> inputs,
         std::span<const TensorDesc> outputs,
-        mem::MemoryResourceRef resource) noexcept {
+        mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -1208,7 +1226,7 @@ prepare(const Context &context, Operation operation,
                      .inputs = input_resources.span(),
                      .outputs = output_resources.span(),
                      .workspace_resource = resource,
-                 });
+                 }, workload);
 }
 
 namespace {
@@ -1217,7 +1235,8 @@ prepare_views_for_mode(const Context &context, Operation operation,
                        std::span<const ConstTensorView> inputs,
                        std::span<const TensorView> outputs,
                        mem::MemoryResourceRef workspace_resource,
-                       ProviderRuntimeMode mode) noexcept {
+                       ProviderRuntimeMode mode,
+                       const WorkloadContext &workload) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -1257,7 +1276,7 @@ prepare_views_for_mode(const Context &context, Operation operation,
                               .outputs = output_resources.span(),
                               .workspace_resource = workspace_resource,
                           },
-                          mode);
+                          mode, workload);
 }
 } // namespace
 
@@ -1265,285 +1284,314 @@ Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
         std::span<const ConstTensorView> inputs,
         std::span<const TensorView> outputs,
-        mem::MemoryResourceRef workspace_resource) noexcept {
+        mem::MemoryResourceRef workspace_resource,
+        const WorkloadContext &workload) noexcept {
   return prepare_views_for_mode(context, operation, inputs, outputs,
                                 workspace_resource,
-                                ProviderRuntimeMode::kSharedQueue);
+                                ProviderRuntimeMode::kSharedQueue, workload);
 }
 
 Result<PreparedDelegatedOperation>
 prepare_delegated(const Context &context, Operation operation,
                   std::span<const ConstTensorView> inputs,
                   std::span<const TensorView> outputs,
-                  mem::MemoryResourceRef workspace_resource) noexcept {
+                  mem::MemoryResourceRef workspace_resource,
+        const WorkloadContext &workload) noexcept {
   HYLE_ASSIGN_OR_RETURN(
       auto prepared, prepare_views_for_mode(context, operation, inputs, outputs,
                                             workspace_resource,
-                                            ProviderRuntimeMode::kDelegated));
+                                            ProviderRuntimeMode::kDelegated, workload));
   return PreparedDelegatedOperation(std::move(prepared));
 }
 
 Result<PreparedOperation> prepare(const Context &context, View operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Copy operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context,
                                   Fill operation,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array<TensorDesc, 0> inputs{};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Cast operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Unary operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Binary operation,
                                   TensorDesc left, TensorDesc right,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{left, right};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Select operation,
                                   TensorDesc condition, TensorDesc when_true,
                                   TensorDesc when_false,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{condition, when_true, when_false};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Reduce operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, LayerNorm operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Scan operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, LayerNorm operation,
                                   TensorDesc input, TensorDesc scale,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input, scale};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, LayerNorm operation,
                                   TensorDesc input, TensorDesc scale,
                                   TensorDesc bias,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input, scale, bias};
   auto output = infer_single_output(Operation(operation), inputs);
   if (!output)
     return std::unexpected(std::move(output).error());
   const std::array outputs{*output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, RmsNorm operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, RmsNorm operation,
                                   TensorDesc input, TensorDesc weight,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input, weight};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, MatMul operation,
                                   TensorDesc left, TensorDesc right,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{left, right};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, MatMul operation,
                                   TensorDesc left, TensorDesc right,
                                   TensorDesc output,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{left, right};
   const std::array outputs{output};
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context,
                                   GatedActivation operation, TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context,
                                   GatedActivation operation, TensorDesc gate,
                                   TensorDesc value,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{gate, value};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Gather operation,
                                   TensorDesc source, TensorDesc indices,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{source, indices};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Scatter operation,
                                   TensorDesc input, TensorDesc indices,
                                   TensorDesc updates,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input, indices, updates};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Concat operation,
                                   std::span<const TensorDesc> inputs,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, RoPE operation,
                                   TensorDesc input, TensorDesc positions,
                                   TensorDesc frequencies,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input, positions, frequencies};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Softmax operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, Softmax operation,
                                   TensorDesc input, TensorDesc mask,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input, mask};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation> prepare(const Context &context, TopK operation,
                                   TensorDesc input,
-                                  mem::MemoryResourceRef resource) noexcept {
+                                  mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{input};
   std::array<TensorDesc, 2> outputs{};
   Status status =
       infer_output_descriptions(Operation(operation), inputs, outputs);
   if (!status.ok())
     return std::unexpected(std::move(status));
-  return prepare(context, Operation(operation), inputs, outputs, resource);
+  return prepare(context, Operation(operation), inputs, outputs, resource, workload);
 }
 
 Result<PreparedOperation>
 prepare(const Context &context, ScaledDotProductAttention operation,
         TensorDesc query, TensorDesc key, TensorDesc value,
-        mem::MemoryResourceRef resource) noexcept {
+        mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{query, key, value};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<PreparedOperation>
 prepare(const Context &context, ScaledDotProductAttention operation,
         TensorDesc query, TensorDesc key, TensorDesc value, TensorDesc mask,
-        mem::MemoryResourceRef resource) noexcept {
+        mem::MemoryResourceRef resource,
+        const WorkloadContext &workload) noexcept {
   const std::array inputs{query, key, value, mask};
   return prepare_inferred_single(context, Operation(operation), inputs,
-                                 resource);
+                                 resource, workload);
 }
 
 Result<OperationInvocation>

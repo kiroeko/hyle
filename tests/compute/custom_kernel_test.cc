@@ -9,9 +9,61 @@
 
 #include "custom_kernel_fixture.h"
 #include "provider_internal.h"
+#include "hyle/mem/quota_allocator.h"
 
 namespace {
 using namespace custom_test;
+
+TEST(CustomKernel, WorkloadIsBoundOnceAndRetainedThroughInvocation) {
+  Probe probe;
+  Tensors tensors;
+  ASSERT_TRUE(tensors.fill().ok());
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
+  constexpr ModelDescription model{"qwen3_5", "snapshot-a", "configuration-a"};
+  WorkloadContext expected{ModelIdentity::create(model, quota.get()).value(),
+                           WorkloadPhase::kDecode, {1, 2, 1}};
+  auto provider_value = make_custom_provider(
+      identity, cpu::kBackendId,
+      WorkloadFactory{Factory{std::make_unique<Config>(probe)}, &expected});
+  ASSERT_TRUE(provider_value);
+  auto context = Context::create(cpu::device(), *provider_value).value();
+  auto queue = context.create_queue().value();
+  auto prepared = prepare(context, Operation::custom(Affine{3}),
+                          std::array{tensors.in}, std::array{tensors.out}, {},
+                          expected);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->workload(), expected);
+  EXPECT_EQ(probe.proposals, 1);
+  EXPECT_EQ(probe.preparations, 1);
+  expected = {};
+  EXPECT_EQ(prepared->workload().model.description(), model);
+  EXPECT_EQ(prepared->workload().phase, WorkloadPhase::kDecode);
+  auto invocation = prepared->create_invocation().value();
+  *prepared = {};
+  EXPECT_GT(quota.used(), 0u);
+  for (int repeat = 0; repeat < 3; ++repeat) {
+    auto done = invocation.submit(queue, tensors.in, tensors.out);
+    ASSERT_TRUE(done);
+    ASSERT_TRUE(done->wait().ok());
+    EXPECT_EQ(tensors.read(), (std::array<float, 4>{5, 7, 9, 11}));
+  }
+  EXPECT_EQ(probe.proposals, 1);
+  EXPECT_EQ(probe.preparations, 1);
+  invocation = {};
+  EXPECT_EQ(quota.used(), 0u);
+  auto invalid = expected;
+  invalid.phase = static_cast<WorkloadPhase>(255);
+  auto rejected = prepare(context, Operation::custom(Affine{3}),
+                           std::array{tensors.in}, std::array{tensors.out}, {},
+                           invalid);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  EXPECT_EQ(probe.proposals, 1);
+  auto generic = prepare(context, Operation::custom(Affine{3}),
+                          std::array{tensors.in}, std::array{tensors.out});
+  ASSERT_TRUE(generic);
+  EXPECT_EQ(generic->workload(), WorkloadContext{});
+}
 
 struct FaultAllocator final {
   hyle::mem::AllocatorRef backing = hyle::mem::system_allocator();

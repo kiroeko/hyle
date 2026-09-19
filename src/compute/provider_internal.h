@@ -20,7 +20,7 @@ namespace hyle::compute::detail {
 
 struct ContextState;
 
-inline constexpr std::uint32_t kProviderContractVersion = 13;
+inline constexpr std::uint32_t kProviderContractVersion = 14;
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -34,6 +34,7 @@ struct ProviderOperationRequest final {
   std::span<const TensorDesc> inputs{};
   std::span<const TensorDesc> outputs{};
   ProviderShapeDomain shape{};
+  WorkloadContext workload{};
 };
 
 struct ProviderOperationProposal final {
@@ -47,6 +48,8 @@ struct ProviderOperationProposal final {
   ProviderRouteCostFacts cost{};
   ProviderShapeCoverage shape_coverage = ProviderShapeCoverage::kExactPoint;
   ProviderRouteKey profile_key{};
+  // Compute fixes this after propose; exact prepare consumes the same facts.
+  WorkloadContext workload{};
 };
 
 struct ProviderPrepareRequest final {
@@ -58,6 +61,7 @@ struct ProviderPrepareRequest final {
   mem::MemoryResourceRef workspace_resource{};
   std::uint64_t route = 0;
   ProviderShapeDomain shape{};
+  WorkloadContext workload{};
 };
 
 struct ProviderPrepared final {
@@ -152,7 +156,8 @@ struct OperationPreparationAccess final {
           std::span<ResourceBindingRequirement> input_requirements,
           std::span<ResourceBindingRequirement> output_requirements,
           ProviderShapeDomain shape = {},
-          std::optional<mem::AllocatorRef> allocator = std::nullopt) noexcept;
+          std::optional<mem::AllocatorRef> allocator = std::nullopt,
+          const WorkloadContext &workload = {}) noexcept;
 
   HYLE_COMPUTE_API static Result<ProviderPrepareAttempt> prepare_candidate(
       const Context &context, const ProviderOperationProposal &proposal,

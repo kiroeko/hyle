@@ -88,7 +88,7 @@ Status propose(void *state, const ProviderOperationRequest &request,
         "custom kernel factory requires an exact shape");
   const auto &context = *static_cast<FactoryContext *>(state);
   const KernelRequest public_request{context.device, request.operation,
-                                     request.inputs, request.outputs};
+                                     request.inputs, request.outputs, request.workload};
   auto result = context.owner->callbacks->propose(
       context.owner->object(), public_request, inputs, outputs);
   if (!result)
@@ -121,6 +121,7 @@ ProviderPrepareOutcome prepare(void *state,
       .resources = {request.input_resources, request.output_resources,
                     request.workspace_resource},
       .route = request.route,
+      .workload = request.workload,
   };
   auto result = context.owner->callbacks->prepare(context.owner->object(),
                                                   public_request, allocator);
