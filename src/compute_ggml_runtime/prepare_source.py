@@ -14,16 +14,21 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def prepare(source, output, manifest):
+def prepare(source, output, manifests):
     source, output = source.resolve(), output.resolve()
     if source == output or source in output.parents or output in source.parents:
         raise ValueError("patched source must be separate from the upstream source")
-    patches = json.loads(manifest.read_text(encoding="utf-8"))["files"]
+    if isinstance(manifests, Path):
+        manifests = [manifests]
+    patches = [patch for manifest in manifests
+               for patch in json.loads(manifest.read_text(encoding="utf-8"))["files"]]
     edited = {}
     for patch in patches:
         relative = Path(patch["path"])
         if relative.is_absolute() or ".." in relative.parts:
             raise ValueError("unsafe patch path")
+        if relative.as_posix() in edited:
+            raise ValueError("duplicate patch path across manifests")
         # Git checkouts may have CRLF; archive identities are checked by CMake.
         data = (source / relative).read_bytes().replace(b"\r\n", b"\n")
         if digest(data) != patch["before_sha256"]:
@@ -80,13 +85,13 @@ def prepare(source, output, manifest):
               if p.is_file() or p.is_symlink()}
     if actual != expected:
         raise ValueError("build-local source has unexpected files")
-    print(f"ggml Vulkan source: {len(expected)} files, {len(edited)} exact patches")
+    print(f"ggml source: {len(expected)} files, {len(edited)} exact patches")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path, action="append", required=True)
     args = parser.parse_args()
     prepare(args.source, args.output, args.manifest)

@@ -8,10 +8,9 @@ result hashes and the complete, context-matched changes applied only to a
 build-local copy of authenticated upstream source. The immutable source cache
 and upstream checkout are never modified.
 
-The changes make `ggml_init` fail without aborting on context/arena allocation,
-invalid external alignment or padding overflow; disable nested shader/compiler
-parallelism; and accept the owner's pinned build identity instead of probing a
-parent application's Git repository.
+These backend edits disable nested shader/compiler parallelism. Common context
+failure handling and the pinned build identity are maintained separately in
+`third_party/ggml_runtime`; this manifest contains only backend-specific edits.
 
 The SiLU and separate SwiGLU shaders additionally map negative infinity to the
 activation's positive-zero limit, as required by HYLE's common semantics.

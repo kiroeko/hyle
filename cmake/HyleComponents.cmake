@@ -467,14 +467,14 @@ _hyle_declare_component(graph_route_vulkan
   PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
   SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
 
-# The Vulkan implementation factor owns ggml's runtime and private adapters.
+# The Vulkan implementation factor owns its native adapters.
 # No dependency on the route or Graph: both retain their own public semantics.
 _hyle_declare_component(compute_provider_ggml_vulkan
-  PRIVATE_DEPS core compute_ops error mem platform)
+  PRIVATE_DEPS core compute_ops error mem platform compute_ggml_runtime)
 
-# Reserved M1-G source-patch/runtime owner. No target or dependency is enabled
-# until its fallible resource seam and native build contract are audited.
-_hyle_declare_component(compute_ggml_runtime QUEUED)
+# Shared locked source and fallible resource seam; private to native providers.
+_hyle_declare_component(compute_ggml_runtime
+  PRIVATE_DEPS core error mem)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

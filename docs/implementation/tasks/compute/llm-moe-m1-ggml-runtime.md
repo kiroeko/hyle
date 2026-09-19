@@ -126,3 +126,17 @@ G1–G5已完成以下资源/交付审计并冻结；本卡两个owner进入AUDI
 
 原CPU Provider恢复条件的“独立patch factor审计”已有具名承接；本轮仍保留其BLOCKED状态，
 先完成资源实现与验证，避免把审计文档误算为已接入。公共component/package所选门仍待候选统一运行。
+
+## 实施检查点（2026-09-20，未关闭）
+
+- G1–G4产品代码已落地：共同源码/分离补丁、CPU fallible pool、部分线程启动回滚、私有
+  MetadataArena/CpuExecution、持久plan/workspace与一次性初始化。Vulkan只迁移资源依赖；
+  原有数学补丁条目保持完整字节身份，未开始冻结自研的研究或对比。
+- Windows MSVC 19.50 shared开发形状通过4个CTest：6项源码合同、7项C++资源/计算用例、
+  原版CPU C TU局部故障fixture与context fixture。涵盖真实F16 MatMul组合、两slot并发、
+  cancellation后复用、workspace OOM、两处分配失败、每个thread-start失败位置与精确join。
+  成功线程是真实OS线程，产品无fault hook。该结果不代表三交付或其它环境已通过。
+- 新vendored owner仅在既有validation-policy数据表增加映射；selector算法未改。其54项
+  工具回归、docs/closure与diff检查通过。共同component/package seam选择的较宽产品门尚待运行。
+- G5仍在进行：Vulkan回归、CPU与组合三交付、route-OFF、WSL sanitizers和两台Mac的适用门
+  尚未完成，不能写PASS；本卡和两个owner保持AUDITED。没有新增64域或整模型验收通过。

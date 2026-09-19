@@ -2,21 +2,6 @@
   "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
   "files": [
     {
-      "path": "src/ggml.c",
-      "before_sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
-      "after_sha256": "54ce2da286b3320c10dfedfdad2498e27f781d55d679bcb3a96707f40a96c5e0",
-      "edits": [
-        {
-          "before": "    struct ggml_context * ctx = GGML_MALLOC(sizeof(struct ggml_context));",
-          "after": "    // HYLE's Vulkan adapter treats resource exhaustion as a recoverable value.\n    // Validate before padding; external arena ownership stays with the caller.\n    if (params.mem_size > SIZE_MAX - (GGML_MEM_ALIGN - 1) ||\n        (params.mem_buffer != NULL && (uintptr_t) params.mem_buffer % GGML_MEM_ALIGN != 0)) {\n        return NULL;\n    }\n    struct ggml_context * ctx = malloc(sizeof(struct ggml_context));\n    if (ctx == NULL) {\n        return NULL;\n    }"
-        },
-        {
-          "before": "    GGML_ASSERT(ctx->mem_buffer != NULL);",
-          "after": "    if (ctx->mem_buffer == NULL) {\n        free(ctx);\n        return NULL;\n    }"
-        }
-      ]
-    },
-    {
       "path": "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
       "before_sha256": "e2066c68067c91fa72a8c6420a0a6a4f6072ba6aec6b9ee303e2706517ed843c",
       "after_sha256": "dba91aefb190fdb35ddc31df0ea2c3a28a14a17f2a93de9d1cd1299075a19180",
@@ -47,17 +32,6 @@
         {
           "before": "    target_link_libraries(ggml-vulkan PRIVATE Vulkan::Vulkan)",
           "after": "    target_link_libraries(ggml-vulkan PRIVATE \"$<BUILD_INTERFACE:SPIRV-Headers::SPIRV-Headers>\")"
-        }
-      ]
-    },
-    {
-      "path": "CMakeLists.txt",
-      "before_sha256": "f4754450a3a00e405d2ffb6a904fe5571ec85c39ad12c666e73af1addccd5e00",
-      "after_sha256": "0239f04f8c15c3127c29867fc0c41a6811af78eb733cb3ad4dfe7d55d2219c67",
-      "edits": [
-        {
-          "before": "if(GIT_EXE)\n    # Get current git commit hash",
-          "after": "if(GIT_EXE AND NOT GGML_BUILD_COMMIT)\n    # Get current git commit hash"
         }
       ]
     },

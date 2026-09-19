@@ -1,0 +1,74 @@
+{
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "files": [
+    {
+      "path": "src/ggml.c",
+      "before_sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+      "after_sha256": "198c15f26b81fffaea97b5a4a041c1f864f32b8304b6b2c3b2d2c55e57e4f8f0",
+      "edits": [
+        {
+          "before": "    struct ggml_context * ctx = GGML_MALLOC(sizeof(struct ggml_context));",
+          "after": "    // HYLE's resource adapter treats resource exhaustion as a recoverable value.\n    // Validate before padding; external arena ownership stays with the caller.\n    if (params.mem_size > SIZE_MAX - (GGML_MEM_ALIGN - 1) ||\n        (params.mem_buffer != NULL && (uintptr_t) params.mem_buffer % GGML_MEM_ALIGN != 0)) {\n        return NULL;\n    }\n    struct ggml_context * ctx = malloc(sizeof(struct ggml_context));\n    if (ctx == NULL) {\n        return NULL;\n    }"
+        },
+        {
+          "before": "    GGML_ASSERT(ctx->mem_buffer != NULL);",
+          "after": "    if (ctx->mem_buffer == NULL) {\n        free(ctx);\n        return NULL;\n    }"
+        }
+      ]
+    },
+    {
+      "path": "CMakeLists.txt",
+      "before_sha256": "f4754450a3a00e405d2ffb6a904fe5571ec85c39ad12c666e73af1addccd5e00",
+      "after_sha256": "0239f04f8c15c3127c29867fc0c41a6811af78eb733cb3ad4dfe7d55d2219c67",
+      "edits": [
+        {
+          "before": "if(GIT_EXE)\n    # Get current git commit hash",
+          "after": "if(GIT_EXE AND NOT GGML_BUILD_COMMIT)\n    # Get current git commit hash"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-cpu/ggml-cpu.c",
+      "before_sha256": "839197aab9a2fb3c509221699e2810a4c4f3f3043416f55e653c380a46ed74cf",
+      "edits": [
+        {
+          "before": "    if (handle == NULL)\n    {\n        return EAGAIN;\n    }",
+          "after": "    if (handle == NULL)\n    {\n        return (int) GetLastError();\n    }"
+        },
+        {
+          "before": "                struct ggml_cplan * cplan) {\n\n    struct ggml_threadpool * threadpool =\n        ggml_aligned_malloc(sizeof(struct ggml_threadpool));\n    {",
+          "after": "                struct ggml_cplan * cplan,\n                             int * native_error) {\n    if (native_error != NULL) {\n        *native_error = 0;\n    }\n    if (tpp == NULL || tpp->n_threads <= 0 || tpp->n_threads > GGML_MAX_N_THREADS) {\n        if (native_error != NULL) {\n#if defined(_WIN32)\n            *native_error = ERROR_INVALID_PARAMETER;\n#else\n            *native_error = EINVAL;\n#endif\n        }\n        return NULL;\n    }\n\n    struct ggml_threadpool * threadpool =\n        ggml_aligned_malloc(sizeof(struct ggml_threadpool));\n    if (threadpool == NULL) {\n        return NULL;\n    }\n    {"
+        },
+        {
+          "before": "    struct ggml_compute_state * workers = ggml_aligned_malloc(workers_size);\n\n    memset(workers, 0, workers_size);",
+          "after": "    struct ggml_compute_state * workers = ggml_aligned_malloc(workers_size);\n    if (workers == NULL) {\n        ggml_aligned_free(threadpool, sizeof(struct ggml_threadpool));\n        return NULL;\n    }\n\n    memset(workers, 0, workers_size);"
+        },
+        {
+          "before": "    ggml_mutex_init(&threadpool->mutex);\n    ggml_cond_init(&threadpool->cond);\n\n    // Spin the threads",
+          "after": "#if defined(_WIN32)\n    ggml_mutex_init(&threadpool->mutex);\n    ggml_cond_init(&threadpool->cond);\n#else\n    int init_error = ggml_mutex_init(&threadpool->mutex);\n    if (init_error == 0) {\n        init_error = ggml_cond_init(&threadpool->cond);\n        if (init_error != 0) {\n            ggml_mutex_destroy(&threadpool->mutex);\n        }\n    }\n    if (init_error != 0) {\n        if (native_error != NULL) {\n            *native_error = init_error;\n        }\n        ggml_aligned_free(workers, workers_size);\n        ggml_aligned_free(threadpool, sizeof(struct ggml_threadpool));\n        return NULL;\n    }\n#endif\n\n    // Spin the threads"
+        },
+        {
+          "before": "        GGML_ASSERT(rc == 0);\n    }\n\n    ggml_thread_cpumask_next(tpp->cpumask, workers[0].cpumask",
+          "after": "        if (rc != 0) {\n            if (native_error != NULL) {\n                *native_error = rc;\n            }\n            ggml_mutex_lock(&threadpool->mutex);\n            threadpool->stop = true;\n            threadpool->pause = false;\n            ggml_cond_broadcast(&threadpool->cond);\n            ggml_mutex_unlock(&threadpool->mutex);\n            for (int started = 1; started < j; ++started) {\n                ggml_thread_join(workers[started].thrd, NULL);\n            }\n            ggml_cond_destroy(&threadpool->cond);\n            ggml_mutex_destroy(&threadpool->mutex);\n            // Apple aligned_free requires the original allocation size.\n            ggml_aligned_free(workers, workers_size);\n            ggml_aligned_free(threadpool, sizeof(struct ggml_threadpool));\n            return NULL;\n        }\n    }\n\n    ggml_thread_cpumask_next(tpp->cpumask, workers[0].cpumask"
+        },
+        {
+          "before": "struct ggml_threadpool * ggml_threadpool_new(struct ggml_threadpool_params * tpp) {\n    return ggml_threadpool_new_impl(tpp, NULL, NULL);\n}",
+          "after": "// Private HYLE resource seam; not an installed ggml API.\nstruct ggml_threadpool * ggml_hyle_threadpool_new(struct ggml_threadpool_params * tpp, int * native_error);\nstruct ggml_threadpool * ggml_hyle_threadpool_new(struct ggml_threadpool_params * tpp, int * native_error) {\n    return ggml_threadpool_new_impl(tpp, NULL, NULL, native_error);\n}\n\nstruct ggml_threadpool * ggml_threadpool_new(struct ggml_threadpool_params * tpp) {\n    return ggml_threadpool_new_impl(tpp, NULL, NULL, NULL);\n}"
+        },
+        {
+          "before": "        threadpool = ggml_threadpool_new_impl(&ttp, cgraph, cplan);",
+          "after": "        threadpool = ggml_threadpool_new_impl(&ttp, cgraph, cplan, NULL);\n        if (threadpool == NULL) {\n            return GGML_STATUS_ALLOC_FAILED;\n        }"
+        },
+        {
+          "before": "    // needed to initialize ggml_time\n    {\n        struct ggml_init_params params = { 0, NULL, false };\n        struct ggml_context * ctx = ggml_init(params);\n        ggml_free(ctx);\n    }\n\n",
+          "after": ""
+        },
+        {
+          "before": "    if (is_first_call) {\n        // initialize GELU, Quick GELU, SILU and EXP F32 tables",
+          "after": "    if (is_first_call) {\n        ggml_time_init();\n        // initialize GELU, Quick GELU, SILU and EXP F32 tables"
+        }
+      ],
+      "after_sha256": "7331342629eb447d08bfc5cb5d2e69cb26086b7a5413a126c76a99b9e66ddf6a"
+    }
+  ]
+}

@@ -3,14 +3,27 @@
   "expanded_tree_algorithm": "hyle-path-hex-v1-raw-sha256",
   "dependencies": [
     {
-      "name": "ggml", "class": "fetchcontent",
-      "repository": "https://github.com/ggml-org/ggml.git", "version": "v0.21.0",
-      "revision": "8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b", "git_tree": "f6a93ab908d56ccf20c53a74c824148862e6c128",
-      "archive": { "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b", "sha256": "3623ae4195577c11795f035baa602fcb282b80aa9d91be024874b5023eb1d0b5" },
-      "expanded_tree_sha256": "e5340a3de6edbe3da3f7085ec54b8cc6498e374f1a219c2533abc4495f50aacb",
-      "license": { "expression": "MIT", "files": [
-        { "root": "dependency", "path": "LICENSE", "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d" }
-      ] }
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "version": "ggml-snapshot-456172ec733a",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/456172ec733a135778adcd32d00e576a58232e45",
+        "sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34"
+      },
+      "name": "ggml",
+      "class": "fetchcontent",
+      "expanded_tree_sha256": "41b7e10fd424cd22aee81a3d4e51960443ebd18735d4c82f19e1fe71ea3861d1",
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "dependency",
+            "path": "LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          }
+        ]
+      }
     },
     {
       "name": "onednn", "class": "fetchcontent",
@@ -426,7 +439,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_vulkan_runtime",
-        "tree_sha256": "fb15744d5705ded9d73b045faa0b916e02a22c0e59c69c451811e8e4062a47e5"
+        "tree_sha256": "591acbdc5309eb88c69a737824da2cc13842233459dda67e7864a574bbe42aab"
       },
       "license": {
         "expression": "MIT",
@@ -439,7 +452,38 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
-            "sha256": "0a69af58fe4f478772cd425e78020b463cd846fcbf944da12002f49cd4fa1f3f"
+            "sha256": "bbeb96c11f58dcaec143a782952e6cc067b37a23d64ff642d07c9c0470af7019"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ggml_runtime_patches",
+      "class": "in_tree",
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "version": "hyle-ggml-resource-integration-v1",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/456172ec733a135778adcd32d00e576a58232e45",
+        "sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34"
+      },
+      "vendored": {
+        "path": "third_party/ggml_runtime",
+        "tree_sha256": "5de401341f58b0ca85efb0df54d85772f1d4c3e88a6c15315c020f70b693ada1"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_runtime/LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_runtime/NOTICE.md",
+            "sha256": "08f0e3d14279fd4edeb0aebe39f787179ffe131a02edf8742ab5281f25120c95"
           }
         ]
       }

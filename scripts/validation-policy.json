@@ -55,6 +55,7 @@
     "compute_provider_ggml_vulkan": ["Windows", "Linux", "Darwin"]
   },
   "vendored_input_owners": {
+    "third_party/ggml_runtime/": ["compute_ggml_runtime"],
     "third_party/ggml_vulkan_shaders/": ["compute_route_vulkan"],
     "third_party/ggml_vulkan_runtime/": ["compute_provider_ggml_vulkan"],
     "third_party/marlin/": ["compute_provider_marlin"],

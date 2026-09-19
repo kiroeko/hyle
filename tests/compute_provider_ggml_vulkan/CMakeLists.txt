@@ -17,10 +17,10 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan"
     "${HYLE_GGML_VULKAN_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_provider_ggml_vulkan_test PRIVATE
-    ggml Vulkan-Headers hyle_mem hyle_error hyle_platform)
+    ggml Vulkan-Headers hyle_compute_ggml_runtime hyle_mem hyle_error hyle_platform)
   hyle_stage_runtime_dependencies(hyle_compute_provider_ggml_vulkan_test)
   if(MSVC AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
-    FetchContent_GetProperties(ggml_vulkan_runtime SOURCE_DIR _locked_ggml_source)
+    FetchContent_GetProperties(ggml SOURCE_DIR _locked_ggml_source)
     add_test(NAME hyle_ggml_vulkan_masm_composition_test
       COMMAND "${CMAKE_COMMAND}"
         "-DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}"

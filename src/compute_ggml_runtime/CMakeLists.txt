@@ -1,0 +1,128 @@
+# Shared source ownership does not imply a shared backend executor. Only the
+# selected CPU/Vulkan closures enable their native implementation targets.
+set(_cpu OFF)
+if(HYLE_BUILD_COMPUTE_BACKEND_CPU OR HYLE_BUILD_COMPUTE_PROVIDER_GGML OR
+   "compute_ggml_runtime" IN_LIST HYLE_DEV_FACTORS)
+  set(_cpu ON)
+endif()
+if(DEFINED HYLE_COMPUTE_CPU AND NOT HYLE_COMPUTE_CPU)
+  set(_cpu OFF)
+endif()
+set(HYLE_GGML_CPU_ENABLED "${_cpu}" PARENT_SCOPE)
+if(NOT _cpu AND NOT HYLE_COMPUTE_VULKAN_ENABLED)
+  hyle_add_module(compute_ggml_runtime OPTIONAL_ABSENT)
+  set_property(TARGET hyle_compute_ggml_runtime PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
+  return()
+endif()
+
+include(FetchContent)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+hyle_audit_in_tree_dependencies(ggml_runtime_patches)
+FetchContent_Declare(ggml
+  URL "${HYLE_DEP_GGML_ARCHIVE_URL}"
+  URL_HASH "SHA256=${HYLE_DEP_GGML_ARCHIVE_SHA256}"
+  DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+  SOURCE_SUBDIR hyle-verified-source-only)
+hyle_fetchcontent_make_available_locked(ggml)
+FetchContent_GetProperties(ggml)
+set(_patch_root "${HYLE_SOURCE_DIR}/third_party/ggml_runtime")
+set(_manifests "${_patch_root}/patches.json")
+set(_patch_args --manifest "${_patch_root}/patches.json")
+set(_source_identity "${HYLE_DEP_GGML_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
+set(_locked ggml ggml_runtime_patches)
+set(_licenses
+  "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-LICENSE"
+  "${_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-LICENSE"
+  "${_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-NOTICE.md")
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  hyle_audit_in_tree_dependencies(ggml_vulkan_runtime_patches)
+  set(_vk_patches "${HYLE_SOURCE_DIR}/third_party/ggml_vulkan_runtime")
+  list(APPEND _manifests "${_vk_patches}/patches.json")
+  list(APPEND _patch_args --manifest "${_vk_patches}/patches.json")
+  string(APPEND _source_identity "${HYLE_DEP_GGML_VULKAN_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
+  list(APPEND _locked ggml_vulkan_runtime_patches)
+  list(APPEND _licenses
+    "${_vk_patches}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-patches-LICENSE"
+    "${_vk_patches}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-patches-NOTICE.md")
+endif()
+string(SHA256 _source_identity "${_source_identity}")
+string(SUBSTRING "${_source_identity}" 0 16 _source_id)
+set(_patched_source "${CMAKE_CURRENT_BINARY_DIR}/source-${_source_id}")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${_manifests} "${CMAKE_CURRENT_SOURCE_DIR}/prepare_source.py")
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_source.py"
+    --source "${ggml_SOURCE_DIR}" --output "${_patched_source}" ${_patch_args}
+  RESULT_VARIABLE _result OUTPUT_VARIABLE _output ERROR_VARIABLE _error)
+if(NOT _result EQUAL 0)
+  message(FATAL_ERROR "ggml source preparation failed: ${_error}")
+endif()
+message(STATUS "${_output}")
+include(ExternalProject)
+set_property(DIRECTORY PROPERTY EP_PREFIX "${HYLE_DEP_BUILD_DIR}/gg-${_source_id}")
+
+block()
+  if(MSVC)
+    set(CMAKE_ASM_SOURCE_FILE_EXTENSIONS s S)
+  endif()
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(CMAKE_C_VISIBILITY_PRESET hidden)
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+  set(HYLE_GGML_PARENT_PROJECT_INCLUDE_BEFORE "${CMAKE_PROJECT_ggml_INCLUDE_BEFORE}")
+  set(CMAKE_PROJECT_ggml_INCLUDE_BEFORE "${HYLE_SOURCE_DIR}/cmake/HyleGgmlProjectPolicy.cmake")
+  set(BUILD_SHARED_LIBS OFF)
+  foreach(_option IN ITEMS CUDA HIP MUSA METAL BLAS SYCL VULKAN_CHECK_RESULTS
+      VULKAN_RUN_TESTS VULKAN_VALIDATE VULKAN_DEBUG VULKAN_MEMORY_DEBUG
+      OPENMP OPENMP_FETCH RPC OPENCL WEBGPU HEXAGON ZDNN VIRTGPU VIRTGPU_BACKEND
+      OPENVINO ET ET_SYSEMU CANN KOMPUTE ZENDNN NATIVE CCACHE BACKEND_DL LTO
+      STATIC CPU_ALL_VARIANTS BUILD_TESTS BUILD_EXAMPLES
+      ACCELERATE LLAMAFILE CPU_HBM CPU_KLEIDIAI SSE42 AVX AVX_VNNI AVX2 BMI2
+      AVX512 AVX512_VBMI AVX512_VNNI AVX512_BF16 FMA F16C AMX_TILE AMX_INT8 AMX_BF16)
+    set(GGML_${_option} OFF)
+  endforeach()
+  set(GGML_CPU "${_cpu}")
+  set(GGML_VULKAN "${HYLE_COMPUTE_VULKAN_ENABLED}")
+  set(GGML_BUILD_COMMIT "${HYLE_DEP_GGML_COMMIT}-hyle")
+  add_subdirectory("${_patched_source}" vendor EXCLUDE_FROM_ALL)
+endblock()
+
+set(_vendor_targets ggml ggml-base)
+set(_sources metadata_arena.cc)
+if(_cpu)
+  list(APPEND _vendor_targets ggml-cpu)
+  list(APPEND _sources cpu_execution.cc)
+endif()
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  list(APPEND _vendor_targets ggml-vulkan)
+  target_link_libraries(ggml-vulkan PRIVATE "$<BUILD_INTERFACE:Vulkan-Headers>")
+  target_include_directories(ggml-vulkan BEFORE PRIVATE
+    "$<TARGET_PROPERTY:Vulkan-Headers,INTERFACE_INCLUDE_DIRECTORIES>")
+  target_include_directories(ggml-vulkan PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan")
+  target_compile_definitions(ggml-base PRIVATE GGML_HYLE_EMBEDDED=1)
+endif()
+foreach(_target IN LISTS _vendor_targets)
+  if(NOT TARGET ${_target})
+    message(FATAL_ERROR "Locked ggml did not define '${_target}'")
+  endif()
+  set_target_properties(${_target} PROPERTIES
+    EXPORT_NAME "_ggml_${_target}" POSITION_INDEPENDENT_CODE ON)
+  hyle_apply_sanitizer(${_target})
+  if(MSVC)
+    target_compile_options(${_target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/EHsc->")
+  endif()
+endforeach()
+set_property(TARGET ggml PROPERTY PUBLIC_HEADER "")
+
+hyle_add_module(compute_ggml_runtime SOURCES ${_sources})
+target_link_libraries(hyle_compute_ggml_runtime PRIVATE ggml)
+set(HYLE_GGML_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
+set(HYLE_GGML_VULKAN_SOURCE_DIR "${_patched_source}" PARENT_SCOPE)
+hyle_register_package_dependency(
+  NAME ggml_runtime OWNER compute_ggml_runtime
+  STATIC_EXPORT_TARGETS ${_vendor_targets}
+  STATIC_FIND_DEPENDENCIES Threads
+  LOCKED_DEPENDENCIES ${_locked}
+  RUNTIME_FILE_SPECS ${_licenses})

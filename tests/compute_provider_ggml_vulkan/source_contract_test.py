@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
-    "ggml_vulkan_source", ROOT / "src/compute_provider_ggml_vulkan/prepare_source.py")
+    "ggml_vulkan_source", ROOT / "src/compute_ggml_runtime/prepare_source.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
@@ -71,6 +71,21 @@ class SourceContract(unittest.TestCase):
         (self.output / "injected.c").write_bytes(b"unexpected source\n")
         with self.assertRaisesRegex(ValueError, "unexpected files"):
             self.prepare()
+
+    def test_separate_backend_manifest_and_duplicate_ownership(self):
+        before, after = b"backend_old();\n", b"backend_new();\n"
+        (self.source / "backend.c").write_bytes(before)
+        backend = self.root / "backend.json"
+        backend.write_text(json.dumps({"files": [{
+            "path": "backend.c", "before_sha256": hashlib.sha256(before).hexdigest(),
+            "after_sha256": hashlib.sha256(after).hexdigest(),
+            "edits": [{"before": before.decode(), "after": after.decode()}]}]}),
+            encoding="utf-8")
+        MODULE.prepare(self.source, self.output, [self.manifest, backend])
+        self.assertEqual((self.output / "backend.c").read_bytes(), after)
+        self.assertEqual((self.source / "backend.c").read_bytes(), before)
+        with self.assertRaisesRegex(ValueError, "duplicate patch path"):
+            MODULE.prepare(self.source, self.output, [self.manifest, self.manifest])
 
 
 if __name__ == "__main__":
