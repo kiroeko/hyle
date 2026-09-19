@@ -1027,3 +1027,32 @@ source/static/shared普通片段沿C1固定bundle。首次W1先验证具名边�
 测试不得下载模型或把诊断输入写成真实权重。API/算法固定后的等责P1仍按C1原预算，本节不采样。
 原厂设备能力不具备时在冷建槽沿既有NativeGraph准入返回Unimplemented，不运行替代算法。
 产品纠正最多两轮；具体新反例按协议裁决，不无限改换实现。未运行平台/交付/整包门保持未证明。
+
+### Y27 实现与四构建局部结果
+
+候选`198cccba`已实现Y27-A/B/C的F32接入与普通测试。原版cumsum承载全部前缀数值计算，
+没有新增shader、vendor补丁或公开API；冷layout适配及原版DAG分段保持原资源/完成机制。
+[局部证据](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-scan/README.md)已归档：
+W1 static/shared分别108/107例，Air/Mini static分别108/107例，共430项通过；W1先行6例
+不重复计数，source/MASM检查各2项通过。没有产品纠正或P1，Mini缺少validation层的专属用例
+明确未运行。所选provider/Direct/Graph回归到此停止重复执行。
+
+数值验证沿已冻结Scan合同使用独立FP64前缀及前缀绝对值和误差界限，覆盖native两类程序、
+两级row尾块、任意轴/stride/起点、exclusive、非有限值；两个槽、5次变化、Graph上下游与旧
+结果保活通过。三交付、真实C1组合、整包优选与全局package gates仍未签收，不能由此次回归代签。
+统一实现LOC为47,759行/193文件，不含测试/bench/第三方，自检通过。Mini四份旧验证源码在
+当前源码和原始证据核验后清理344,914,592逻辑字节，保留当前build/cache。
+
+### 后续受检整数 Scan 的有界来源核对（仅审计输入）
+
+当前ggml原版CUMSUM只准入F32。第二个具名来源
+[GPUPrefixSums](https://github.com/b0nes164/GPUPrefixSums/tree/98d93a4e9ed2f3c8353119515bf9be90a2e137ad)
+已锁到`98d93a4e9ed2f3c8353119515bf9be90a2e137ad`，只读取ReduceThenScan的HLSL/WGSL与许可证，
+[输入摘要](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-scan/checked-integer-source-inputs.json)
+可复取。源码实现的是U32模加，未提供I32全前缀溢出检查或失败不写输出；其README也将WGPU端
+列为测试用途/未完整可移植。不能将它直接登记为已合格Vulkan Provider。
+
+可借鉴其reduce→spine scan→propagate分层算法，checked域仍需有符号宽累加、检查全部真实前缀
+（含exclusive最终total）与全局条件发布。局部block前缀越界不等于最终带carry的前缀越界；
+不能用总和检查或U32模加代替。当前仅固定缺口与来源，调查到此停止；I32的产品FIX、临时量/
+dispatch账单与具体实现须先独立定界，Y27不授权自写整数或Scatter核。

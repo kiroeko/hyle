@@ -1225,6 +1225,8 @@ Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留
 cumsum，route补轴/stride/exclusive及原厂ragged-row边界适配，Graph作直接消费验证。
 固定FIX和预算见[C1-Y的Y27](llm-moe-c1-ggml-vulkan-region.md)。I32受检Scan与Scatter未由本节授权，
 不增加payload shader，不把F32接入计为整个F02.4或C1完成。
+Y27候选`198cccba`的W1 static/shared、Air/Mini共430项回归现已通过，无产品纠正或P1。
+当前仍缺I32受检Scan、Scatter、完整C1实际片段/三交付/优选淘汰；统一实现LOC为47,759行/193文件。
 
 当前增量：2026-09-19，baseline `04643d18`，三个 Vulkan owner 对
 [C1-Y 的 Y26](llm-moe-c1-ggml-vulkan-region.md) 完成受检 Gather 的有限审计：原版 GetRows、

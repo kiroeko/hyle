@@ -1,0 +1,24 @@
+{
+  "revision": "98d93a4e9ed2f3c8353119515bf9be90a2e137ad",
+  "purpose": "bounded checked-I32 Scan source audit only; no dependency or product admission",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/b0nes164/GPUPrefixSums/98d93a4e9ed2f3c8353119515bf9be90a2e137ad/LICENSE",
+      "bytes": 3075,
+      "sha256": "666d401992c505e5f94ff355068f91a12763e086e32f964ab06865627b1ed899"
+    },
+    {
+      "path": "GPUPrefixSumsWebGPUapis/SharedShaders/rts.wgsl",
+      "url": "https://raw.githubusercontent.com/b0nes164/GPUPrefixSums/98d93a4e9ed2f3c8353119515bf9be90a2e137ad/GPUPrefixSumsWebGPUapis/SharedShaders/rts.wgsl",
+      "bytes": 10211,
+      "sha256": "a1124c8ad1ef3c4e2a692e5f48d578e82dad960279caed715f4c6f72550fe189"
+    },
+    {
+      "path": "GPUPrefixSumsD3D12/Shaders/ReduceThenScan.hlsl",
+      "url": "https://raw.githubusercontent.com/b0nes164/GPUPrefixSums/98d93a4e9ed2f3c8353119515bf9be90a2e137ad/GPUPrefixSumsD3D12/Shaders/ReduceThenScan.hlsl",
+      "bytes": 5204,
+      "sha256": "76c32f0653cba79ab7975209fb1547cc2fa0a2937b27a329024a308fd3c7d691"
+    }
+  ]
+}

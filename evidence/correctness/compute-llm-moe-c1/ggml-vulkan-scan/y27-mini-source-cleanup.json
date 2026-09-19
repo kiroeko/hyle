@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "candidate": "198cccba6d785132aace3e9744e9f1603dc342b0",
+  "verified_archive_sha256": "a8fed8f650e548ae0de6b001b74ee6b3638a2c7fd31c8054b4e60b93d395a939",
+  "removed": [
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-prior-y26",
+      "files": 5533,
+      "logical_bytes": 84807976
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-prior-y26-807bc22b",
+      "files": 5554,
+      "logical_bytes": 86678487
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-prior-y26-d54ddc5a",
+      "files": 5554,
+      "logical_bytes": 86681219
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/llm-moe-c1-20260918/source-prior-y27-198cccba",
+      "files": 5559,
+      "logical_bytes": 86746910
+    }
+  ],
+  "retained": [
+    "source",
+    "build-vulkan-static",
+    "vendor and tool caches",
+    "all validation logs and archives"
+  ]
+}
