@@ -1380,3 +1380,37 @@ dead patched-source副本共517,759,160逻辑字节。此定向修复停止追�
 依赖锁使selector扩展为112个selected门；目前只完成具名局部门，global余项继续随固定C1
 bundle完成，未记PASS。下一动作是原已授权的真实C1片段与Scan/Scatter source/static/shared
 消费、完整成本优选/淘汰和余项验收；CPU oneDNN资格BLOCKED保持，矩阵及C1完成通知未触发。
+
+### C1-Y31：真实张量状态片段与三交付（有限验证）
+
+2026-09-19，baseline `27cf8f41`，owner `/root`。本节执行已授权的C1实际consumer与交付，
+不授权新增产品FIX或P1。候选产品固定为Y30后的树；外部consumer、输入、oracle和命令在首次
+运行前分别锁hash。若暴露产品问题，先保留反例并重新定界有限FIX，不直接扩实现或放宽标准。
+
+- 输入：重新核验本地Qwen3.5-2B的13个文件；只提取实际BF16 embedding的34行×2048列及
+  第0层Gemma RMS的F32(1+BF16权重)。不下载，不把模型加载纳入HYLE。固定token序列来自C0。
+- 形状：`[B,T] = [1,1]/[1,17]/[1,128]/[1,23]/[1,129]/[2,23]/[2,129]`，后四为holdout；
+  batch2保持三维payload，不能展平成单batch。两个独立状态流各连续五步，共享不可变表。
+- 主链：I32索引差分→inclusive Scan→Gather→Cast F32→Gemma RMS→separate SiLU gate/value→
+  residual Add→Cast BF16→Scatter assign→Scatter add→Gather。前一步完整state作为下一步输入。
+  另外发布I32 exclusive Scan，以及实际scale派生F32输入的inclusive/exclusive Scan。
+  这是明确组合的基础库验证片段，不宣称该状态更新链是Qwen完整forward。
+- 同一数据/责任分别走普通Direct和Graph。每状态流一个保留快照槽、两个工作槽；全部冷准备。
+  每步把两个工作槽绑定到同一批真实新输入，释放旧input引用后交替提交；计入这些绑定和槽成本。
+  不用额外payload复制掩盖结果寿命或原位更新问题，早期结果必须逐位保持至Context关闭之后。
+- 独立oracle：FP64标量RMS/SiLU/residual，BF16最终RNE，update同时满足既有
+  `0.008*abs(expected)+2e-7`和最多一个相邻BF16编码。状态的独立上下界从这个既定update区间
+  按assign最后写入、add逐项F32相加并BF16 RNE传播；不能给整条链套单算子误差后临时放宽。
+  另以已独立合格的实际update逐位验证Scatter顺序/索引语义，明确区分两层证明。
+  I32精确；F32前缀用FP64参考，误差不超过`3e-6*max(1,sum(abs(included inputs)))`。
+- 生命周期：固定512MiB quota，冷热用量记录、工作槽重复不增长、两个state相互独立、原表逐位
+  不变、负索引失败槽退役而新槽可用、旧结果关闭后可读、最终quota归零。各算子的完整OOM/
+  部分接纳/drain边界复用Y28–Y30已锁同产品证据，不重复扩测。
+- 交付：Windows和Air各source/static/shared三条真实消费，源码包身份校验、安装后重定位、
+  隐藏producer与源码、仅依赖公开头和`hyle::graph`。DLL邻exe、PATH隔离、WERROR、无插桩、
+  validation layer；重型步骤串行、并行度2。每条consumer timeout300秒；每个平台两次producer
+  构建（source构建兼作static producer），不制造第三个完整build。Mini局部回归已覆盖，不再复制。
+
+首次失败日志保留；consumer接线纠正最多两轮，数值标准不变；产品失败另行审计。本节结束就
+裁决该组，不追加无反例调查。全局selector余门、四路线完整成本优选/淘汰和CPU oneDNN资格
+BLOCKED仍单独处理；本组通过不能触发C1完成通知，也不签64行/256格或整模型完成。
