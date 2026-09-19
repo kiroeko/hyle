@@ -1211,8 +1211,9 @@ ProviderPrepareOutcome compile_region(void *context,
                                       ProviderRegionPrepared *output) noexcept {
   auto &probe = *static_cast<RegionProbe *>(context);
   probe.compiled_workload = request.workload;
-  if (probe.required_workload != nullptr)
+  if (probe.required_workload != nullptr) {
     EXPECT_EQ(request.workload, *probe.required_workload);
+  }
   if (probe.observe_cleanup != nullptr)
     probe.observed_cleanup_at_compile =
         probe.observe_cleanup->destroy_prepared_count;

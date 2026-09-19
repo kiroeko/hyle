@@ -188,3 +188,7 @@ Mini随后通过18项原生/头检查。WSL在Graph测试夹具编译时，GCC�
 `-Werror=missing-field-initializers`要求新增的两个WorkloadContext成员显式`{}`初始化；
 仅补测试成员默认初始化，不改变产品实现、API或警告策略。原FAIL保留，只续跑受影响的WSL
 以及未运行门；Air/Mini的PASS继续绑定`7016443b`，不重签或重跑无关已通过项。
+
+GCC随后暴露两处测试`if`下的`EXPECT_EQ`宏需要大括号以避免`-Wdangling-else`；同批补齐
+Compute诊断断言和Graph workload断言。修正不删除断言、不放宽警告或修改产品。后续编译收集
+同批剩余诊断再裁决，不因夹具风格重跑已通过的机器或开启新的性能采样。

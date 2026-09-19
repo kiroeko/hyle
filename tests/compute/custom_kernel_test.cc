@@ -412,8 +412,9 @@ TEST(CustomKernel, DescriptorPreparationPreservesQualifiedDeclineDiagnostics) {
     EXPECT_NE(message.find("owning-affine"), std::string_view::npos);
     EXPECT_NE(message.find(qualified ? "declined" : "proposal declined"),
               std::string_view::npos);
-    if (qualified)
+    if (qualified) {
       EXPECT_EQ(message.find("proposal declined"), std::string_view::npos);
+    }
     EXPECT_EQ(first.preparations, qualified ? 1 : 0);
     EXPECT_EQ(last.preparations, 0);
     EXPECT_EQ(first.kernels, 0);
