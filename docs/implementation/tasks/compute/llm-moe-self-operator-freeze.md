@@ -10,6 +10,10 @@
 
 全体已有 HYLE 计算算法冻结，不限本轮新增文件、当前默认路径或某个平台：
 
+用户在 M0 期间再次明确：**自实现的 CUDA/Vulkan/Metal 等所有算子都冻结**。本表覆盖全部
+CPU/GPU 路线，包含 Graph lowering 内嵌数学、Provider 包装内算法、字符串 shader 与修改上游的
+自有数学部分；不能换目录、语言、源码摘取标签或编译器表示绕过冻结。最终裁决仍统一在 M5。
+
 | 范围 | 冻结内容 | 不受算法淘汰牵连的基础能力 |
 |---|---|---|
 | CPU Native / SIMD 算子 | tensor/cast/index/norm/reduce/activation/attention/MatMul 等自有计算与 SIMD 算子注册 | SIMD 模块本身、公共通用 API、非推理消费者 |

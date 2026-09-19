@@ -4943,6 +4943,7 @@
     "legacy_first_package": "C1..C6 label M3 acceptance groups only; not work order or implementation authorization",
     "new_self_algorithm_budget": "expected zero; only M4 with all required provider integrations complete and a proven residual requirement",
     "existing_self_algorithms": "frozen at ebe5af5109afb01b029c1ba85484d03be61d6fe6 until bounded M5 comparison; valid loss deletes, zero optimization rounds",
-    "provider_mapping": "llm-moe-c1-provider-reuse-audit.md"
+    "provider_mapping": "llm-moe-provider-map.json",
+    "provider_admission_and_work_packages": "llm-moe-provider-integration-ledger.md"
   }
 }

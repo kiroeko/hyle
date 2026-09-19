@@ -29,10 +29,10 @@
 
 | ID | 必需产物 | 当前事实 |
 |---|---|---|
-| M0-01 | 八个输入的模型能力→64需求→实际图/算子符号与状态/格式 | 原来源、64域与七大模型入口可复用；逐域后端映射待完成 |
-| M0-02 | 四后端支持/限制与 HYLE 已绑定域；成组 lowering/region 边界 | ggml Vulkan/MLX 已有基础，CPU runtime 仍阻塞；CUDA ggml 未接；不能记为全量接入 |
-| M0-03 | 全部候选的有限准入决定、版本/许可、C++ seam | 目录已重写为广覆盖优先；新增专用库的需求价值待逐项定案 |
-| M0-04 | 各 owner 接入 FIX、模型/配置/设备/驱动条件路由、适用验证、冻结基线和历史移交 | 冻结基线与旧授权撤回先落盘；产品 FIX 尚未授权 |
+| M0-01 | 八个输入的模型能力→64需求→实际图/算子符号与状态/格式 | 已交付64行映射，每行回指原模型/数值域并定位上游符号；未改需求或重做 C0 |
+| M0-02 | 四后端支持/限制与 HYLE 已绑定域；成组 lowering/region 边界 | 256个计划承载格已填；ggml/MLX/oneDNN/CUDA 实际绑定与类型/shape 限制分开，完整覆盖仍 UNPROVEN |
+| M0-03 | 全部候选的有限准入决定、版本/许可、C++ seam | 详细清单已给必需/复用/后备与条件资格处置；Vulkan 精确 FP8/I32 的 IREE 候选以 Q-VK 先行，未执行不写 PASS |
+| M0-04 | 各 owner 接入 FIX、模型/配置/设备/驱动条件路由、适用验证、冻结基线和历史移交 | M1六个接入包、M2六个模型片段批次及资格预算已固定；全部 CPU/CUDA/Metal/Vulkan 自研冻结，产品 FIX 仍为空 |
 
 ## 七问的本阶段边界
 
@@ -56,3 +56,26 @@
 前序状态检查通过，满足冻结记录的恢复条件。本次只将对应11个旧活动 owner 从 BLOCKED
 转为 SCOPED 并绑定本卡，产品 FIX 仍为空。ggml CPU、两个 oneDNN 的原 BLOCKED 及
 所有 CLOSED/QUEUED 均未变；无产品改动、native 构建、自研调查或 P1。
+
+## M0 计划交付
+
+- [逐需求四路线映射](llm-moe-provider-map.json)：64行、256个计划格；明确 provider、上游入口、
+  成批接法与后端资格项，不覆盖原矩阵的 UNPROVEN。
+- [准入与施工清单](llm-moe-provider-integration-ledger.md)：全部目录候选已处置；M1-G/R/C/A/V/B
+  与 M2-B1..B6 分配 owner、拟定 FIX、资源/数值门、适用验证和停止预算。预计新增自研0。
+- [源码身份](../../../../evidence/correctness/compute-llm-moe-m0/source-map.json)：复用既有
+  llama.cpp/ggml/SGLang 来源，新核对现有产品 pin 的 MLX/oneDNN，不把本地 peer HEAD 当产品锁。
+- 具体差异：CPU 旧 ggml lock 与模型后端版本、CUDA integer DUP、W8A16 激活重量化、FP8
+  dtype 缺席已分别写进接入资格项。接口/格式不相容没有变成自写理由。
+- 本阶段只完成有界源码与计划产物。registry 保持 SCOPED；原 CPU/oneDNN BLOCKED 不变，
+  新 factor 尚未登记/实现。依用户要求完成计划后先报告，后续从 M1-G 的有限资源 seam 审计开始。
+- 本次全部自研算法未读入性能研究、未扩张、未优化、未比较或删除；SIMD 来源核对结论沿用。
+
+### 本次验证与限制
+
+[计划一致性](../../../../evidence/correctness/compute-llm-moe-m0/plan-integrity.json)已核对64个需求
+原行未变、256格均指定接法、61个固定源码文件与125个符号入口、产品树相对冻结基线零改动。
+[文档/状态验证](../../../../evidence/correctness/compute-llm-moe-m0/validation.json)保存selector选择、
+实际日志与跳过原因；docs/closure通过，不构建、不运行P1。registry未改变，不制造状态升级。
+统一脚本的Compute+Graph全实现统计为49,270行、200个代码文件，不含测试/第三方；self-check通过。
+该LOC绑定已有不可变产品树，本次文档不改变它。Q-VK等接入资格项尚未运行，产品覆盖仍UNPROVEN。

@@ -1,0 +1,17 @@
+{
+  "kind": "M0_plan_integrity_not_product_acceptance",
+  "baseline": "b18578117606ad5141b09cfbcabb2a3bd9c010ab",
+  "checked_at_utc": "2026-09-19T15:20:47.789318+00:00",
+  "requirement_ids": 64,
+  "planned_route_cells": 256,
+  "pinned_source_files": 61,
+  "verified_source_symbols": 125,
+  "original_requirement_rows": "unchanged",
+  "coverage_verdicts_upgraded": 0,
+  "frozen_product_diff": [],
+  "status_registry_changed": false,
+  "assertions": "PASS",
+  "native_builds_run": 0,
+  "self_algorithm_research_or_performance_run": 0,
+  "scope_limit": "Source symbols and plan completeness only; numeric/backend/interop/delivery/performance qualification remains pending under integration cards."
+}

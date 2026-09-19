@@ -1,0 +1,2343 @@
+{
+  "schema_version": 1,
+  "kind": "model_to_mature_provider_integration_plan_not_coverage_verdict",
+  "baseline": "ebe5af5109afb01b029c1ba85484d03be61d6fe6",
+  "requirements": [
+    {
+      "id": "F01.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/0",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_view_4d",
+          "line": 1696
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_permute",
+          "line": 99
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "broadcast_to",
+          "line": 427
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F01.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/1",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_cont",
+          "line": 41
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_concat",
+          "line": 1107
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F01.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/2",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_cast",
+          "line": 1597
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "astype",
+          "line": 62
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F02.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/3",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_get_rows",
+          "line": 1726
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F02.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/4",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_set_rows",
+          "line": 1748
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_get_rows_back",
+          "line": 1731
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "scatter_add",
+          "line": 1159
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F02.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/5",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_diag_mask_inf",
+          "line": 1759
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_soft_max_ext",
+          "line": 1813
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "where",
+          "line": 118
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F02.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/6",
+      "models": [
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_argsort",
+          "line": 2452
+        },
+        {
+          "source": "iree:compiler/src/iree/compiler/Dialect/LinalgExt/IR/LinalgExtOps.td",
+          "symbol": "IREELinalgExt_ScanOp",
+          "line": 604
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "cumsum",
+          "line": 882
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-I",
+        "cuda": "CUDA-I",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-SHAPE: arbitrary rank/stride, checked dynamic index, duplicate scatter and stable integer semantics require qualified mature compositions; ggml name alone is insufficient"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F03.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/7",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_add",
+          "line": 50
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_div",
+          "line": 987
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_clamp",
+          "line": 1782
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F03.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/8",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_softplus",
+          "line": 1029
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_log",
+          "line": 652
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "rsqrt",
+          "line": 1352
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F03.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/9",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_swiglu",
+          "line": 1318
+        },
+        {
+          "source": "graph",
+          "symbol": "build_ffn",
+          "line": 1748
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F03.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/10",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t"
+      ],
+      "upstream_entries": [
+        {
+          "source": "qwen",
+          "symbol": "ggml_sigmoid",
+          "line": 323
+        },
+        {
+          "source": "qwen",
+          "symbol": "ggml_mul",
+          "line": 251
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F04.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/11",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_rms_norm",
+          "line": 1399
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F04.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/12",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_norm",
+          "line": 1389
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F04.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/13",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "qwen",
+          "symbol": "build_gdn_l2_norm",
+          "line": 429
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "sum",
+          "line": 621
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F04.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/14",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "qwen",
+          "symbol": "build_norm_gated",
+          "line": 243
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F04.5",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/15",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_sum_rows",
+          "line": 1059
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_soft_max_ext",
+          "line": 1813
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F04.6",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/16",
+      "models": [
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_top_k",
+          "line": 2457
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_argsort",
+          "line": 2452
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "argsort",
+          "line": 834
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-NUMERIC: stable transforms, L2 epsilon, gated rounding, all-masked softmax and tie/NaN policy must match C0 rather than backend default"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F05.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/17",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_mul_mat",
+          "line": 150
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F05.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/18",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_mul_mat",
+          "line": 150
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "matmul",
+          "line": 1113
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F05.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/19",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_transpose",
+          "line": 1717
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_mul_mat",
+          "line": 150
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F05.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/20",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "graph",
+          "symbol": "build_ffn",
+          "line": 1748
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F06.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/21",
+      "models": [
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "GGML_TYPE_Q4_0",
+          "line": 392
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "quantized_matmul",
+          "line": 1567
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-WXA16: lossless codes/scales repack or bounded upstream tile decode; quantized dot that requantizes activations is disallowed"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F06.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/22",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "GGML_TYPE_Q4_1",
+          "line": 393
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "gather_qmm",
+          "line": 1618
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-WXA16: lossless codes/scales repack or bounded upstream tile decode; quantized dot that requantizes activations is disallowed"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F06.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/23",
+      "models": [
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "GGML_TYPE_Q8_0",
+          "line": 398
+        },
+        {
+          "source": "ggml_cpu_runtime",
+          "symbol": ".vec_dot_type",
+          "line": 219
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "dequantize",
+          "line": 1588
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-WXA16: lossless codes/scales repack or bounded upstream tile decode; quantized dot that requantizes activations is disallowed"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F07.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/24",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t"
+      ],
+      "upstream_entries": [
+        {
+          "source": "graph",
+          "symbol": "build_attn_mha",
+          "line": 2591
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_flash_attn_ext",
+          "line": 2487
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-A",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F07.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/25",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_set_rows",
+          "line": 1748
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_get_rows",
+          "line": 1726
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "slice_update",
+          "line": 229
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F07.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/26",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t"
+      ],
+      "upstream_entries": [
+        {
+          "source": "qwen",
+          "symbol": "build_attn",
+          "line": 318
+        },
+        {
+          "source": "qwen",
+          "symbol": "ggml_sigmoid",
+          "line": 323
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-A",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F08.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/27",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_rope_ext",
+          "line": 1892
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F08.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/28",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_rope_ext",
+          "line": 1892
+        },
+        {
+          "source": "deepseek",
+          "symbol": "ggml_rope_ext",
+          "line": 509
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F08.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/29",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "hadamard",
+          "symbol": "llama_mul_mat_hadamard",
+          "line": 57
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-M",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F09.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/30",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_ssm_conv",
+          "line": 2524
+        },
+        {
+          "source": "qwen",
+          "symbol": "build_conv_state",
+          "line": 385
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-STATE: upstream fused vs original composed fallback selected by dtype/head/chunk; state orientation, nonzero history and rounding independently checked"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F09.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/31",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_ssm_conv",
+          "line": 2524
+        },
+        {
+          "source": "qwen",
+          "symbol": "build_conv_state",
+          "line": 385
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-STATE: upstream fused vs original composed fallback selected by dtype/head/chunk; state orientation, nonzero history and rounding independently checked"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F10.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/32",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "delta",
+          "symbol": "build_recurrent_attn",
+          "line": 527
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_gated_delta_net",
+          "line": 2639
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_solve_tri",
+          "line": 2631
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-STATE: upstream fused vs original composed fallback selected by dtype/head/chunk; state orientation, nonzero history and rounding independently checked"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F10.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/33",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash",
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "delta",
+          "symbol": "build_recurrent_attn",
+          "line": 527
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_gated_delta_net",
+          "line": 2639
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-STATE: upstream fused vs original composed fallback selected by dtype/head/chunk; state orientation, nonzero history and rounding independently checked"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F11.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/34",
+      "models": [
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "kimi",
+          "symbol": "build_kda_layer",
+          "line": 298
+        },
+        {
+          "source": "delta",
+          "symbol": "build_recurrent_attn",
+          "line": 527
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-STATE: upstream fused vs original composed fallback selected by dtype/head/chunk; state orientation, nonzero history and rounding independently checked"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F11.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/35",
+      "models": [
+        "kimi_k3",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "kimi",
+          "symbol": "build_kda_layer",
+          "line": 298
+        },
+        {
+          "source": "delta",
+          "symbol": "build_recurrent_attn",
+          "line": 527
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-STATE: upstream fused vs original composed fallback selected by dtype/head/chunk; state orientation, nonzero history and rounding independently checked"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F12.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/36",
+      "models": [
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "graph",
+          "symbol": "build_moe_ffn",
+          "line": 1949
+        },
+        {
+          "source": "deepseek",
+          "symbol": "build_moe_ffn",
+          "line": 1295
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F12.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/37",
+      "models": [
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "graph",
+          "symbol": "build_moe_ffn",
+          "line": 1949
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_top_k",
+          "line": 2457
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F12.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/38",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "deepseek",
+          "symbol": "ggml_get_rows",
+          "line": 236
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F13.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/39",
+      "models": [
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_mul_mat_id",
+          "line": 1500
+        },
+        {
+          "source": "graph",
+          "symbol": "build_moe_ffn",
+          "line": 1949
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F13.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/40",
+      "models": [
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "graph",
+          "symbol": "build_moe_ffn",
+          "line": 1949
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_sum_rows",
+          "line": 1059
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F13.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/41",
+      "models": [
+        "kimi_k3"
+      ],
+      "upstream_entries": [
+        {
+          "source": "kimi",
+          "symbol": "build_latent_moe",
+          "line": 322
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F14.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/42",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "deepseek",
+          "symbol": "build_hc_sinkhorn",
+          "line": 317
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_dsv4_hc_pre",
+          "line": 2701
+        },
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_dsv4_hc_post",
+          "line": 2712
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F14.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/43",
+      "models": [
+        "kimi_k3"
+      ],
+      "upstream_entries": [
+        {
+          "source": "kimi",
+          "symbol": "ggml_soft_max",
+          "line": 222
+        },
+        {
+          "source": "kimi",
+          "symbol": "ggml_sum_rows",
+          "line": 213
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F14.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/44",
+      "models": [
+        "qwen35_2b",
+        "qwen38_27b",
+        "qwen38_24t"
+      ],
+      "upstream_entries": [
+        {
+          "source": "qwen_mtp",
+          "symbol": "forward",
+          "line": 34
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F14.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/45",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ds_mtp",
+          "symbol": "forward",
+          "line": 26
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F14.5",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/46",
+      "models": [
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "glm_mtp",
+          "symbol": "NextN",
+          "line": 17
+        },
+        {
+          "source": "glm_mtp_base",
+          "symbol": "GlmMoeDsaForCausalLMNextN",
+          "line": 1449
+        },
+        {
+          "source": "nextn_base",
+          "symbol": "forward",
+          "line": 42
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-REGION: preserve existing upstream model composition; consumer owns model topology, HYLE owns declared region/resource edges"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F15.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/47",
+      "models": [
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "kimi",
+          "symbol": "build_mla_layer",
+          "line": 301
+        },
+        {
+          "source": "glm",
+          "symbol": "ggml_mul_mat",
+          "line": 255
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-A",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F15.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/48",
+      "models": [
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "kimi",
+          "symbol": "build_mla_layer",
+          "line": 301
+        },
+        {
+          "source": "glm_flash:src/models/glm5-next.cpp",
+          "symbol": "build_dsa_layer",
+          "line": 402
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-A",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F16.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/49",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "ggml_lightning_indexer",
+          "line": 2673
+        },
+        {
+          "source": "glm",
+          "symbol": "ggml_top_k",
+          "line": 359
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F16.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/50",
+      "models": [
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "glm",
+          "symbol": "build_attn_inp_k_dsa",
+          "line": 239
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F16.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/51",
+      "models": [
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "glm_flash:src/models/glm5-next.cpp",
+          "symbol": "build_kpool_select",
+          "line": 569
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F17.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/52",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "deepseek",
+          "symbol": "kv_comp_hca",
+          "line": 1116
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F17.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/53",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "deepseek",
+          "symbol": "kv_comp_csa_state",
+          "line": 986
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F17.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/54",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "deepseek",
+          "symbol": "kv_comp_lid_state",
+          "line": 1055
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-G",
+        "cuda": "CUDA-G",
+        "apple_mlx_metal": "APPLE-G",
+        "vulkan": "VK-G"
+      },
+      "qualification_tickets": [
+        "Q-SPARSE: masks, layout, persistent selections, compression schedules and native resource limits remain explicit guards"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F18.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/55",
+      "models": [
+        "qwen35_2b",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "sglang_group_quant",
+          "symbol": "fp8",
+          "line": 10
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "from_fp8",
+          "line": 1612
+        },
+        {
+          "source": "onednn_locked:src/cpu/reorder/cpu_reorder.cpp",
+          "symbol": "f8_e4m3",
+          "line": 32
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-FP8: exact weight/activation/index codec and scales are distinct; no FP8 dtype in locked ggml, no implicit A16 substitute"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F18.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/56",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "sglang_group_quant",
+          "symbol": "scale",
+          "line": 78
+        },
+        {
+          "source": "iree:compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp",
+          "symbol": "includeF8E8M0FNU",
+          "line": 267
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-FP8: exact weight/activation/index codec and scales are distinct; no FP8 dtype in locked ggml, no implicit A16 substitute"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F18.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/57",
+      "models": [
+        "kimi_k3"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "GGML_TYPE_MXFP4",
+          "line": 429
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "gather_qqmm",
+          "line": 1632
+        },
+        {
+          "source": "iree:compiler/src/iree/compiler/Codegen/Common/ConvertUnsupportedFloatArith.cpp",
+          "symbol": "Float4E2M1FNType",
+          "line": 799
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-FP8: exact weight/activation/index codec and scales are distinct; no FP8 dtype in locked ggml, no implicit A16 substitute"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F18.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/58",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_api",
+          "symbol": "GGML_TYPE_MXFP4",
+          "line": 429
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "qqmm",
+          "line": 1599
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-FP8: exact weight/activation/index codec and scales are distinct; no FP8 dtype in locked ggml, no implicit A16 substitute"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F18.5",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/59",
+      "models": [
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash"
+      ],
+      "upstream_entries": [
+        {
+          "source": "deepseek",
+          "symbol": "ggml_lightning_indexer",
+          "line": 647
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "from_fp8",
+          "line": 1612
+        }
+      ],
+      "route_plans": {
+        "cpu": "CPU-D",
+        "cuda": "CUDA-Q",
+        "apple_mlx_metal": "APPLE-Q",
+        "vulkan": "VK-C"
+      },
+      "qualification_tickets": [
+        "Q-FP8: exact weight/activation/index codec and scales are distinct; no FP8 dtype in locked ggml, no implicit A16 substitute"
+      ],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F19.1",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/60",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_runtime",
+          "symbol": "ggml_backend_supports_op",
+          "line": 108
+        },
+        {
+          "source": "mlx_locked:mlx/ops.h",
+          "symbol": "array",
+          "line": 8
+        }
+      ],
+      "route_plans": {
+        "cpu": "NATIVE-BOUNDARY",
+        "cuda": "NATIVE-BOUNDARY",
+        "apple_mlx_metal": "NATIVE-BOUNDARY",
+        "vulkan": "NATIVE-BOUNDARY"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F19.2",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/61",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_runtime",
+          "symbol": "ggml_backend_graph_compute_async",
+          "line": 105
+        },
+        {
+          "source": "mlx_locked:mlx/compile.h",
+          "symbol": "compile",
+          "line": 12
+        }
+      ],
+      "route_plans": {
+        "cpu": "NATIVE-BOUNDARY",
+        "cuda": "NATIVE-BOUNDARY",
+        "apple_mlx_metal": "NATIVE-BOUNDARY",
+        "vulkan": "NATIVE-BOUNDARY"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F19.3",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/62",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_runtime",
+          "symbol": "ggml_backend_graph_plan_create",
+          "line": 100
+        },
+        {
+          "source": "ggml_cpu_runtime",
+          "symbol": "ggml_threadpool_new",
+          "line": 3314
+        }
+      ],
+      "route_plans": {
+        "cpu": "NATIVE-BOUNDARY",
+        "cuda": "NATIVE-BOUNDARY",
+        "apple_mlx_metal": "NATIVE-BOUNDARY",
+        "vulkan": "NATIVE-BOUNDARY"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    },
+    {
+      "id": "F19.4",
+      "domain_ref": "llm-moe-coverage-matrix.json#/requirements/63",
+      "models": [
+        "qwen38_27b",
+        "qwen38_24t",
+        "kimi_k3",
+        "deepseek_v4_pro",
+        "deepseek_v4_flash",
+        "glm53",
+        "glm53_flash",
+        "qwen35_2b"
+      ],
+      "upstream_entries": [
+        {
+          "source": "ggml_runtime",
+          "symbol": "ggml_backend_synchronize",
+          "line": 98
+        },
+        {
+          "source": "iree:runtime/src/iree/hal/drivers/vulkan/api.h",
+          "symbol": "iree_hal_vulkan_wrap_device",
+          "line": 281
+        }
+      ],
+      "route_plans": {
+        "cpu": "NATIVE-BOUNDARY",
+        "cuda": "NATIVE-BOUNDARY",
+        "apple_mlx_metal": "NATIVE-BOUNDARY",
+        "vulkan": "NATIVE-BOUNDARY"
+      },
+      "qualification_tickets": [],
+      "coverage_verdict": "UNPROVEN — source mapping/plan only; no new execution receipt"
+    }
+  ],
+  "requirement_count": 64,
+  "route_cell_count": 256,
+  "admission_units": {
+    "required": [
+      "ggml_cpu",
+      "ggml_cuda",
+      "ggml_metal",
+      "ggml_vulkan",
+      "onednn",
+      "mlx",
+      "cublaslt",
+      "marlin",
+      "sglang",
+      "flashinfer"
+    ],
+    "conditional": [
+      "iree_vulkan"
+    ],
+    "complete_in_new_scope": [],
+    "excluded_from_provider_count": [
+      "embedded_cutlass_cute",
+      "runtime_patches",
+      "backup_candidates"
+    ],
+    "change_rule": "An explicit requirement/candidate counterexample and recorded replacement is required to change this denominator."
+  },
+  "policy": "All HYLE operator algorithms on CPU/CUDA/Metal/Vulkan frozen until M5; no self expansion/research/optimization/performance before third-party integration gate.",
+  "source_catalog": "../../../../evidence/correctness/compute-llm-moe-m0/source-map.json",
+  "model_sources": {
+    "qwen38_27b": [
+      "qwen",
+      "delta",
+      "graph"
+    ],
+    "qwen38_24t": [
+      "qwen_moe",
+      "delta",
+      "graph"
+    ],
+    "qwen35_2b": [
+      "qwen",
+      "delta",
+      "graph",
+      "qwen_mtp"
+    ],
+    "kimi_k3": [
+      "kimi",
+      "delta",
+      "graph"
+    ],
+    "deepseek_v4_pro": [
+      "deepseek",
+      "graph",
+      "ds_mtp"
+    ],
+    "deepseek_v4_flash": [
+      "deepseek",
+      "graph",
+      "ds_mtp"
+    ],
+    "glm53": [
+      "glm",
+      "graph",
+      "glm_mtp"
+    ],
+    "glm53_flash": [
+      "glm_flash:src/models/glm5-next.cpp",
+      "delta",
+      "graph"
+    ]
+  },
+  "route_plan_definitions": {
+    "CPU-G": {
+      "provider": "ggml CPU",
+      "mode": "borrow upstream graph/composite or fused op as a retained backend region",
+      "source": "ggml_cpu",
+      "owner": "compute_provider_ggml",
+      "product_binding": "BLOCKED by existing context/threadpool failure seam; no full backend binding",
+      "conditions": [
+        "M1-G patch-factor audit before original owner resumes",
+        "ggml rank <=4: higher rank needs proven fold/segmentation, never silently reduce requirement",
+        "check actual dispatch/type, supports_op default true is insufficient",
+        "F32 state/intermediate where upstream requires it; rounding contract still mandatory"
+      ]
+    },
+    "CPU-D": {
+      "provider": "oneDNN",
+      "mode": "primitive/Graph partition; mature reorder and bounded tile decode composed with floating MatMul",
+      "source": "onednn_locked:include/oneapi/dnnl/dnnl.hpp",
+      "owner": "compute_provider_onednn",
+      "product_binding": "BRGEMM/norm/post-ops subset exists; Q2 BLOCKED remains, new numeric domains UNPROVEN",
+      "conditions": [
+        "preserve original Q4/Q8/FP8 codes/scales",
+        "no A8 requant for W8A16",
+        "reorder FP4/FP8 source exists at product pin; exact block-scale composition and ISA execution unverified"
+      ]
+    },
+    "CPU-I": {
+      "provider": "C++ standard algorithms + oneDNN/ggml",
+      "mode": "existing library exclusive_scan/stable_sort and checked host-index boundary, followed by provider gather/scatter",
+      "source": "ggml_api",
+      "owner": "compute_provider_ggml",
+      "product_binding": "planned; no HYLE sorting/scan kernel research",
+      "conditions": [
+        "checked I32 overflow before narrowing",
+        "count/index buffers are CPU-route data",
+        "duplicate reduction/stability must match requirement"
+      ]
+    },
+    "CUDA-G": {
+      "provider": "ggml CUDA",
+      "mode": "retained native backend region and graph memory plan on the selected GPU",
+      "source": "ggml_cuda",
+      "owner": "compute_provider_ggml_cuda (proposed, register before code)",
+      "product_binding": "not integrated",
+      "conditions": [
+        "native stream/buffer export/import needs narrow runtime bridge",
+        "SSM convolution channel dimension multiple 128",
+        "GDN accepted on CUDA, not a claim for MUSA",
+        "TopK >1024 needs qualified CUB path",
+        "F32 HC intermediates; flash/indexer actual supports_op guards",
+        "independent pin rejects I32/I16 DUP while llama bundled pin accepts: qualify migration rather than interchange pins"
+      ]
+    },
+    "CUDA-A": {
+      "provider": "FlashInfer with ggml CUDA baseline",
+      "mode": "fixed C++/CUDA prefill/decode/attention region with native stream and prepared workspace",
+      "source": "flashinfer:include/flashinfer/attention/prefill.cuh",
+      "owner": "compute_provider_cuda / proposed FlashInfer factor",
+      "product_binding": "not integrated; source API identified",
+      "conditions": [
+        "SM89 machine explicitly qualified, not all README feature rows apply",
+        "head256 decode cannot be inherited from cuDNN head<=128 domain",
+        "Windows/MSVC and exact cache/mask/accumulation unverified",
+        "no Python/Torch product dependency or runtime autotuning"
+      ]
+    },
+    "CUDA-Q": {
+      "provider": "cuBLASLt / Marlin / SGLang-CUTLASS / ggml CUDA",
+      "mode": "reuse mature GEMM/quant programs; lossless packing or bounded upstream decode + GEMM where profile differs",
+      "source": "sglang_fp8",
+      "owner": "compute_provider_cuda",
+      "product_binding": "several narrow providers exist; all admitted profiles still UNPROVEN",
+      "conditions": [
+        "SM89 rowwise FP8 is not proof of block128 FP8",
+        "use exact upstream quantizers/format decode; no new quant kernel",
+        "W8A16 forbids activation requant",
+        "F18.3/4 cannot substitute native MXFP4 W4A16 for required W4A8",
+        "if no legal upstream block composition, hold named Q-FP8; do not implement custom algorithm"
+      ]
+    },
+    "CUDA-I": {
+      "provider": "CCCL CUB / ggml CUDA",
+      "mode": "native CUB scan/sort/histogram building blocks and ggml index region",
+      "source": "ggml_cuda",
+      "owner": "compute_provider_cuda",
+      "product_binding": "CUB dependency exists; full checked/stable coverage UNPROVEN",
+      "conditions": [
+        "stock DeviceScan/DeviceRadixSort/DeviceHistogram APIs",
+        "required validation and GPU completion stay included",
+        "do not extend frozen HYLE custom scatter/scan/sort code"
+      ]
+    },
+    "APPLE-M": {
+      "provider": "MLX",
+      "mode": "public C++ typed/compiled array region; existing operations composed at graph boundary",
+      "source": "mlx_locked:mlx/ops.h",
+      "owner": "compute_route_apple / graph_route_apple",
+      "product_binding": "broad subset already bound; mapping is not final coverage",
+      "conditions": [
+        "device remains Metal; functional state outputs retain old leases",
+        "tie/NaN/rounding and dtype promotions independently qualified",
+        "exact compile cache and stream ownership reuse"
+      ]
+    },
+    "APPLE-G": {
+      "provider": "ggml Metal",
+      "mode": "complete upstream recurrent/sparse/MoE graph region; narrow native resource bridge",
+      "source": "ggml_metal",
+      "owner": "compute_provider_ggml_metal (proposed, register before code)",
+      "product_binding": "not integrated; distinct runtime from MLX",
+      "conditions": [
+        "GDN needs simdgroup reduction and value head multiple32",
+        "flash/indexer dtype/head limits checked on Air/Mini",
+        "mHC pre/post HC4 and F32",
+        "same-GPU MLX/ggml boundary must preserve buffers, explicit synchronization and lifetime; no hidden CPU compute"
+      ]
+    },
+    "APPLE-Q": {
+      "provider": "MLX quantization + floating/quantized MatMul",
+      "mode": "quantized_matmul/gather_qmm/qqmm/from_fp8/to_fp8 or bounded mature dequantize composition",
+      "source": "mlx_locked:mlx/ops.h",
+      "owner": "compute_route_apple",
+      "product_binding": "source APIs present at current product pin; exact C0 formats unqualified",
+      "conditions": [
+        "affine and symmetric packing must preserve logical codes/scales",
+        "qqmm nvfp4 default is not automatic MXFP4/W4A8 equivalence",
+        "dynamic scales/rounding and SiTU requant verified separately",
+        "bound tile workspace, no whole-model floating residence"
+      ]
+    },
+    "VK-G": {
+      "provider": "ggml Vulkan",
+      "mode": "extend existing managed backend region with upstream model graph operations/fusions",
+      "source": "ggml_vulkan",
+      "owner": "compute_provider_ggml_vulkan / compute_route_vulkan / graph_route_vulkan",
+      "product_binding": "managed region and selected basics already bound; 64-domain closure UNPROVEN",
+      "conditions": [
+        "GDN six F32 inputs/output, value heads16/32/64/128",
+        "solve_tri workgroup/shared-memory bounds",
+        "get_rows_back F32 only; F32 scan is not checked I32 exclusive scan",
+        "lightning indexer head128/alignment/fp16 requirements",
+        "check native RTX4070 and Air/MoltenVK independently"
+      ]
+    },
+    "VK-C": {
+      "provider": "IREE Vulkan (conditional admission qualification)",
+      "mode": "offline-compiled parameterized standard-op region; C runtime wraps native VkDevice/buffer and completion",
+      "source": "iree:compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp",
+      "owner": "compute_provider_iree_vulkan (proposed; qualification gate first)",
+      "product_binding": "not integrated or run; source seam and standard scan/FP8 emulation identified",
+      "conditions": [
+        "Q-VK must prove exact E4M3/E2M1/UE8 and I32 operations on both devices",
+        "Vulkan1.3 baseline/timeline/scalarBlockLayout/synchronization2 must hold on MoltenVK",
+        "compiler is build tool; native SDK runtime must not require Python/model loader",
+        "only upstream standard operations/type legalization, no handwritten MLIR math kernel or tuning schedule",
+        "bounded tile region and compressed weights, never whole-model float expansion",
+        "if qualification fails, test named ncnn/MNN/upstream alternatives; no self authorization"
+      ]
+    },
+    "NATIVE-BOUNDARY": {
+      "provider": "HYLE resource/planning boundary + route native runtime",
+      "mode": "bind and validate descriptors/effects/leases/constant cache/fixed rules; delegate all mathematical execution",
+      "source": "ggml_runtime",
+      "owner": "compute / graph and corresponding route owners",
+      "product_binding": "foundation exists; new model/version rules and full provider lifecycle coverage required",
+      "conditions": [
+        "not a universal executor/queue or per-kernel vtable",
+        "model/config/phase + device/SM/driver/toolkit/OS/provider/rule versions in relevant identity",
+        "prepare matches/binds; execution never probes/searches/times",
+        "CMake one dependency declaration, source/static/shared, route OFF isolation",
+        "ordinary API receives semantic views/graph, never provider ranking"
+      ]
+    }
+  },
+  "status_boundary": "Map and integration order are reviewable. Backend domain qualification, native binding, correctness, delivery and performance remain distinct uncompleted gates."
+}

@@ -1,0 +1,737 @@
+{
+  "kind": "primary_source_identity_and_symbol_map_not_runtime_validation",
+  "files": {
+    "qwen": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/qwen35.cpp",
+      "sha256": "ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/qwen35.cpp"
+    },
+    "qwen_moe": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/qwen35moe.cpp",
+      "sha256": "ada74c413bfda274f1ffe8c4c32dbd80e999c777a5888244cc118da832f635a7",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/qwen35moe.cpp"
+    },
+    "kimi": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/kimi-k3.cpp",
+      "sha256": "642f45a129e8330cee1a932f56359c00dc9b87c7aec04dc6215a0ccd5b45410a",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/kimi-k3.cpp"
+    },
+    "deepseek": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/deepseek4.cpp",
+      "sha256": "6bad275618f2b3f6f671fe4e6506c7fcfa06083d4606456222b406792539e943",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/deepseek4.cpp"
+    },
+    "glm": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/glm-dsa.cpp",
+      "sha256": "51eb8e82df5d607eae137c7fbf358410c0f992c4842b8df9d5ca68da7f7ee3f3",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/glm-dsa.cpp"
+    },
+    "delta": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/delta-net-base.cpp",
+      "sha256": "5e3b318953f854b3825dd7cfe4b483ca7935cd5f6680438a3ece4be9b4d5428f",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/models/delta-net-base.cpp"
+    },
+    "graph": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/llama-graph.cpp",
+      "sha256": "90f5c6f082790599124630680ba1293d702b369e9ce9088680d210b69905c8d3",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/llama-graph.cpp"
+    },
+    "hadamard": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/llama-impl.h",
+      "sha256": "c9346ca1cb12c31e838380773eb822b97b4f467ab4ca85fa4e91a8a573d2a502",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/src/llama-impl.h"
+    },
+    "bundled_cuda": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "ggml/src/ggml-cuda/ggml-cuda.cu",
+      "sha256": "a4b41679c5936d9241b626056f2688974d7df7fe2e38815d5b3f54a7d2a88de8",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/4c9233c034fc450dcf34c7c0988aebe6da5cdf1a/ggml/src/ggml-cuda/ggml-cuda.cu"
+    },
+    "ggml_api": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "include/ggml.h",
+      "sha256": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/include/ggml.h"
+    },
+    "ggml_runtime": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "include/ggml-backend.h",
+      "sha256": "46d84cb998105f871240864fd0f55446939a2fe86c5c281afa63a010fb1f65a2",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/include/ggml-backend.h"
+    },
+    "ggml_cpu": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-cpu/ggml-cpu.cpp",
+      "sha256": "b620923a8966395ba9c5f2ee4acb35b8d42ea77a58943d7eb733a917c4c1cafb",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cpu/ggml-cpu.cpp"
+    },
+    "ggml_cpu_ops": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-cpu/ops.cpp",
+      "sha256": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cpu/ops.cpp"
+    },
+    "ggml_cpu_runtime": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-cpu/ggml-cpu.c",
+      "sha256": "839197aab9a2fb3c509221699e2810a4c4f3f3043416f55e653c380a46ed74cf",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cpu/ggml-cpu.c"
+    },
+    "ggml_context": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml.c",
+      "sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml.c"
+    },
+    "ggml_cuda": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-cuda/ggml-cuda.cu",
+      "sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-cuda/ggml-cuda.cu"
+    },
+    "ggml_metal": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-metal/ggml-metal-device.m",
+      "sha256": "1c129311f152c88bb455e14a720aac731196a76450e4b0da0791f1cce2bcbc47",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-metal/ggml-metal-device.m"
+    },
+    "ggml_vulkan": {
+      "repository": "ggml-org/ggml",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "path": "src/ggml-vulkan/ggml-vulkan.cpp",
+      "sha256": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+      "url": "https://github.com/ggml-org/ggml/blob/456172ec733a135778adcd32d00e576a58232e45/src/ggml-vulkan/ggml-vulkan.cpp"
+    },
+    "qwen_mtp": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/qwen3_5_mtp.py",
+      "sha256": "1ebc9643333046d5621ad8b1bd6bd005686988c0104576bd1ea6c3d5e51acf24",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/qwen3_5_mtp.py"
+    },
+    "ds_mtp": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/deepseek_v4_nextn.py",
+      "sha256": "918246d07dd261abd268e055733d8d3c1488c3484818ef04aa42d8c9cac1f454",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/deepseek_v4_nextn.py"
+    },
+    "glm_mtp": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/glm5_next_nextn.py",
+      "sha256": "ae00f0aa187d3f797a011e0691d9540e5a9ad84c350660670fc69ff78a40c153",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/glm5_next_nextn.py"
+    },
+    "nextn_base": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/deepseek_nextn.py",
+      "sha256": "56cf0d2267400050765fe6c870a2b89068bc7e032a24fd493d31da7ffc52d84f",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/deepseek_nextn.py"
+    },
+    "glm_mtp_base": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/models/glm4_moe.py",
+      "sha256": "5d4d9d01b1110c537470ee328678fa040bd9e814ff9b83341c2969008f0d7391",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/srt/models/glm4_moe.py"
+    },
+    "sglang_fp8": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/aot/csrc/gemm/fp8_gemm_kernel.cu",
+      "sha256": "681c8afd21ddd78fb656ce9643b4988743faa64f178f48d55b87dfb8be9217ad",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/kernels/aot/csrc/gemm/fp8_gemm_kernel.cu"
+    },
+    "sglang_group_quant": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/jit/csrc/gemm/per_token_group_quant.cuh",
+      "sha256": "238d3d4db7a36ae36e118bed8d37aeb9893cb40d0f5c2670cb307416499e9678",
+      "url": "https://github.com/sgl-project/sglang/blob/06992c92ad4494fe9f9636e75be3e35040512447/python/sglang/kernels/jit/csrc/gemm/per_token_group_quant.cuh"
+    },
+    "glm_flash:src/models/glm5-next.cpp": {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "de25343596a2c924ba62d35b126e811be0d38a49",
+      "path": "src/models/glm5-next.cpp",
+      "sha256": "42bbfdada39854d9b6c94cfc764c35c30eadac288771d34776fe17cd92ecde8c",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/de25343596a2c924ba62d35b126e811be0d38a49/src/models/glm5-next.cpp"
+    },
+    "flashinfer:README.md": {
+      "repository": "flashinfer-ai/flashinfer",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "path": "README.md",
+      "sha256": "7c163cfd6a584178790827028d578f2f2ce681e64381607459ad2ae1d4bd52c7",
+      "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/README.md"
+    },
+    "flashinfer:LICENSE": {
+      "repository": "flashinfer-ai/flashinfer",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "path": "LICENSE",
+      "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7",
+      "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/LICENSE"
+    },
+    "flashinfer:include/flashinfer/attention/decode.cuh": {
+      "repository": "flashinfer-ai/flashinfer",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "path": "include/flashinfer/attention/decode.cuh",
+      "sha256": "bd699c64cff0af922305e532de587ff4db8bc377c198bd653db1d48aa74c2942",
+      "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/attention/decode.cuh"
+    },
+    "flashinfer:include/flashinfer/attention/prefill.cuh": {
+      "repository": "flashinfer-ai/flashinfer",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "path": "include/flashinfer/attention/prefill.cuh",
+      "sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710",
+      "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/attention/prefill.cuh"
+    },
+    "flashinfer:include/flashinfer/quantization.cuh": {
+      "repository": "flashinfer-ai/flashinfer",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "path": "include/flashinfer/quantization.cuh",
+      "sha256": "1b0824b17ad2d5e31ccfc5b0558969a43ccb5f797718c3429ba71e250ce59bd9",
+      "url": "https://github.com/flashinfer-ai/flashinfer/blob/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/quantization.cuh"
+    },
+    "cudnn_frontend:README.md": {
+      "repository": "NVIDIA/cudnn-frontend",
+      "revision": "91dbf3e976a161c1a6833198c708a449330dc3ce",
+      "path": "README.md",
+      "sha256": "5b6463d80b776ad593def6b1c285946854fc2968c4a25548d0d4e2f9c88be916",
+      "url": "https://github.com/NVIDIA/cudnn-frontend/blob/91dbf3e976a161c1a6833198c708a449330dc3ce/README.md"
+    },
+    "cudnn_frontend:LICENSE.txt": {
+      "repository": "NVIDIA/cudnn-frontend",
+      "revision": "91dbf3e976a161c1a6833198c708a449330dc3ce",
+      "path": "LICENSE.txt",
+      "sha256": "a58e7a5653d57f4907c73b6ed3bde05119cd9fb96a985bc944b4239a22d8f7ea",
+      "url": "https://github.com/NVIDIA/cudnn-frontend/blob/91dbf3e976a161c1a6833198c708a449330dc3ce/LICENSE.txt"
+    },
+    "cudnn_frontend:include/cudnn_frontend/graph_interface.h": {
+      "repository": "NVIDIA/cudnn-frontend",
+      "revision": "91dbf3e976a161c1a6833198c708a449330dc3ce",
+      "path": "include/cudnn_frontend/graph_interface.h",
+      "sha256": "0e1cf54c238b49d13f8878e2c330e5827898017e2cdd500d747c65414eba8cfa",
+      "url": "https://github.com/NVIDIA/cudnn-frontend/blob/91dbf3e976a161c1a6833198c708a449330dc3ce/include/cudnn_frontend/graph_interface.h"
+    },
+    "cutlass:README.md": {
+      "repository": "NVIDIA/cutlass",
+      "revision": "f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c",
+      "path": "README.md",
+      "sha256": "a78c6aa81d87a88012db7b6570015c8a87f2778f663348c6ffc61936e06b9dce",
+      "url": "https://github.com/NVIDIA/cutlass/blob/f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c/README.md"
+    },
+    "cutlass:LICENSE.txt": {
+      "repository": "NVIDIA/cutlass",
+      "revision": "f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c",
+      "path": "LICENSE.txt",
+      "sha256": "ad1513ca983da737a6843364ad19e8424a56d860736c2da773b8c5be527e1475",
+      "url": "https://github.com/NVIDIA/cutlass/blob/f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c/LICENSE.txt"
+    },
+    "cutlass:examples/58_ada_fp8_gemm/ada_fp8_gemm.cu": {
+      "repository": "NVIDIA/cutlass",
+      "revision": "f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c",
+      "path": "examples/58_ada_fp8_gemm/ada_fp8_gemm.cu",
+      "sha256": "ec6f693a8e77cd49972bd9aa9c43fc9651cd83964367b56fe8e648f6809525ef",
+      "url": "https://github.com/NVIDIA/cutlass/blob/f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c/examples/58_ada_fp8_gemm/ada_fp8_gemm.cu"
+    },
+    "iree:LICENSE": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "LICENSE",
+      "sha256": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/LICENSE"
+    },
+    "iree:compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp",
+      "sha256": "0618e0b2807068e8f21f3ad60ca64442426438893bab0247e077ef8ff4addd03",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp"
+    },
+    "iree:compiler/src/iree/compiler/Codegen/Common/ConvertUnsupportedFloatArith.cpp": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "compiler/src/iree/compiler/Codegen/Common/ConvertUnsupportedFloatArith.cpp",
+      "sha256": "cdcc4a74053a9dcb0a540bc362d4a20c45c3b6816e3cb2e716dc60850a897f7a",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/compiler/src/iree/compiler/Codegen/Common/ConvertUnsupportedFloatArith.cpp"
+    },
+    "iree:compiler/src/iree/compiler/Dialect/LinalgExt/IR/LinalgExtOps.td": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "compiler/src/iree/compiler/Dialect/LinalgExt/IR/LinalgExtOps.td",
+      "sha256": "9f6f197532134dd06d587dceab120187ad8a076ef961d2b66250b8b82bf6673e",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/compiler/src/iree/compiler/Dialect/LinalgExt/IR/LinalgExtOps.td"
+    },
+    "iree:runtime/src/iree/hal/drivers/vulkan/api.h": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "runtime/src/iree/hal/drivers/vulkan/api.h",
+      "sha256": "0cd62093d21a4066772838e0d28a5801001782f5d6be4268b1b952d5639ee73d",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/hal/drivers/vulkan/api.h"
+    },
+    "iree:runtime/src/iree/hal/buffer.h": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "runtime/src/iree/hal/buffer.h",
+      "sha256": "81a1db95a295eed6a20aa955a143dbdfe9ef6b8703b2c48d0c39f15794af97b2",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/hal/buffer.h"
+    },
+    "iree:runtime/src/iree/runtime/api.h": {
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "path": "runtime/src/iree/runtime/api.h",
+      "sha256": "07b8a654fac35b3a48d5d01fb008e201a18923c1a8a6e3e6b543b9e0f8c53f3d",
+      "url": "https://github.com/iree-org/iree/blob/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/runtime/api.h"
+    },
+    "mlx_locked:mlx/ops.h": {
+      "repository": "ml-explore/mlx",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "mlx/ops.h",
+      "sha256": "7c10ea9c9e223e393903ff27285aa4939cb3ca53aa3ec5a78aa9c4a6d7113813",
+      "url": "https://github.com/ml-explore/mlx/blob/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/ops.h"
+    },
+    "mlx_locked:mlx/ops.cpp": {
+      "repository": "ml-explore/mlx",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "mlx/ops.cpp",
+      "sha256": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2",
+      "url": "https://github.com/ml-explore/mlx/blob/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/ops.cpp"
+    },
+    "mlx_locked:mlx/fast.h": {
+      "repository": "ml-explore/mlx",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "mlx/fast.h",
+      "sha256": "f3ed6a3a4e47e1061beda2594cb4dc916cf364d5021bf5e16b80ce60da8ff380",
+      "url": "https://github.com/ml-explore/mlx/blob/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/fast.h"
+    },
+    "mlx_locked:mlx/compile.h": {
+      "repository": "ml-explore/mlx",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "mlx/compile.h",
+      "sha256": "d6405672fe2470b9c304a9816644b94b1bd79981f430799dbd2ac2dc2cdbf739",
+      "url": "https://github.com/ml-explore/mlx/blob/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/compile.h"
+    },
+    "onednn_locked:src/cpu/reorder/cpu_reorder.cpp": {
+      "repository": "oneapi-src/oneDNN",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "path": "src/cpu/reorder/cpu_reorder.cpp",
+      "sha256": "1db50c6549088711e944efcc87dd2fb75711322acab7b023c657676b5ee8dbfb",
+      "url": "https://github.com/oneapi-src/oneDNN/blob/71094df451909e95ceeefc8f64c275cdcbbcdff5/src/cpu/reorder/cpu_reorder.cpp"
+    },
+    "onednn_locked:include/oneapi/dnnl/dnnl.hpp": {
+      "repository": "oneapi-src/oneDNN",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "path": "include/oneapi/dnnl/dnnl.hpp",
+      "sha256": "a5137e4f6e68a29ff38d5ba7ad471a8a6a9912ca02847d4a9087bca1c37bb7c5",
+      "url": "https://github.com/oneapi-src/oneDNN/blob/71094df451909e95ceeefc8f64c275cdcbbcdff5/include/oneapi/dnnl/dnnl.hpp"
+    },
+    "onednn_locked:src/common/type_helpers.hpp": {
+      "repository": "oneapi-src/oneDNN",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "path": "src/common/type_helpers.hpp",
+      "sha256": "47c43087d4592308f77438dd0b7d2b9b4218dc3c271fe6707dc981c870a04ae7",
+      "url": "https://github.com/oneapi-src/oneDNN/blob/71094df451909e95ceeefc8f64c275cdcbbcdff5/src/common/type_helpers.hpp"
+    },
+    "ncnn:LICENSE.txt": {
+      "repository": "Tencent/ncnn",
+      "revision": "70e7bfd6081b912a6521c73f436f9727eb335ce1",
+      "path": "LICENSE.txt",
+      "sha256": "7c974bac98848df46be1af5bdaa3c3c9c01f6082a90f55caeb7f60c6208aa255",
+      "url": "https://github.com/Tencent/ncnn/blob/70e7bfd6081b912a6521c73f436f9727eb335ce1/LICENSE.txt"
+    },
+    "ncnn:src/layer.h": {
+      "repository": "Tencent/ncnn",
+      "revision": "70e7bfd6081b912a6521c73f436f9727eb335ce1",
+      "path": "src/layer.h",
+      "sha256": "fdfa2afa73e201cdabf454ef36ce7347cb806dc4ee54ba78a5caca83288360c9",
+      "url": "https://github.com/Tencent/ncnn/blob/70e7bfd6081b912a6521c73f436f9727eb335ce1/src/layer.h"
+    },
+    "ncnn:src/layer/vulkan/gemm_vulkan.h": {
+      "repository": "Tencent/ncnn",
+      "revision": "70e7bfd6081b912a6521c73f436f9727eb335ce1",
+      "path": "src/layer/vulkan/gemm_vulkan.h",
+      "sha256": "f9496fb00d27b9333d65e5ae06327fd2b59db4357dd77c20ff944949ab87e61c",
+      "url": "https://github.com/Tencent/ncnn/blob/70e7bfd6081b912a6521c73f436f9727eb335ce1/src/layer/vulkan/gemm_vulkan.h"
+    },
+    "mnn:include/MNN/expr/Expr.hpp": {
+      "repository": "alibaba/MNN",
+      "revision": "397f85331fee0221df9ffe364f7be2df349f420b",
+      "path": "include/MNN/expr/Expr.hpp",
+      "sha256": "61731668921de87770fc703c4675995c8f92103677432c78768481fa346f072b",
+      "url": "https://github.com/alibaba/MNN/blob/397f85331fee0221df9ffe364f7be2df349f420b/include/MNN/expr/Expr.hpp"
+    },
+    "mnn:source/backend/vulkan/buffer/execution/VulkanMatMul.hpp": {
+      "repository": "alibaba/MNN",
+      "revision": "397f85331fee0221df9ffe364f7be2df349f420b",
+      "path": "source/backend/vulkan/buffer/execution/VulkanMatMul.hpp",
+      "sha256": "05e63e3a0f03cc0c7f34903c30acc3920ae468d991d7ac33add6b426556955b6",
+      "url": "https://github.com/alibaba/MNN/blob/397f85331fee0221df9ffe364f7be2df349f420b/source/backend/vulkan/buffer/execution/VulkanMatMul.hpp"
+    },
+    "mnn:LICENSE.txt": {
+      "repository": "alibaba/MNN",
+      "revision": "397f85331fee0221df9ffe364f7be2df349f420b",
+      "path": "LICENSE.txt",
+      "sha256": "a830d59c4f98d110e0540d0581efada06192ba6e798434307d1794b07a290302",
+      "url": "https://github.com/alibaba/MNN/blob/397f85331fee0221df9ffe364f7be2df349f420b/LICENSE.txt"
+    },
+    "xnnpack:LICENSE": {
+      "repository": "google/XNNPACK",
+      "revision": "81a0804a40c26a9cf97ebb1acaff0c516d37f5b8",
+      "path": "LICENSE",
+      "sha256": "63f519e15726f4c4f830bd958f694c84fecb4e0a4cacc527d2696bb71ef95ada",
+      "url": "https://github.com/google/XNNPACK/blob/81a0804a40c26a9cf97ebb1acaff0c516d37f5b8/LICENSE"
+    },
+    "xnnpack:include/xnnpack.h": {
+      "repository": "google/XNNPACK",
+      "revision": "81a0804a40c26a9cf97ebb1acaff0c516d37f5b8",
+      "path": "include/xnnpack.h",
+      "sha256": "e459d801227feb23035c8ec7ae6e6e1fc19063a0347d2fd9d2fd028bb25d9147",
+      "url": "https://github.com/google/XNNPACK/blob/81a0804a40c26a9cf97ebb1acaff0c516d37f5b8/include/xnnpack.h"
+    },
+    "flashattention:LICENSE": {
+      "repository": "Dao-AILab/flash-attention",
+      "revision": "1bda8f9290cd48d030f1516f0e680cd464ef3554",
+      "path": "LICENSE",
+      "sha256": "8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73",
+      "url": "https://github.com/Dao-AILab/flash-attention/blob/1bda8f9290cd48d030f1516f0e680cd464ef3554/LICENSE"
+    },
+    "flashattention:csrc/flash_attn/flash_api.cpp": {
+      "repository": "Dao-AILab/flash-attention",
+      "revision": "1bda8f9290cd48d030f1516f0e680cd464ef3554",
+      "path": "csrc/flash_attn/flash_api.cpp",
+      "sha256": "d80518f272d7d1e3a7b9482e383fef6593e76cace69b930a0dfa6cbb97a4332e",
+      "url": "https://github.com/Dao-AILab/flash-attention/blob/1bda8f9290cd48d030f1516f0e680cd464ef3554/csrc/flash_attn/flash_api.cpp"
+    }
+  },
+  "source_intake": [
+    {
+      "id": "glm_flash",
+      "repository": "ggml-org/llama.cpp",
+      "revision": "de25343596a2c924ba62d35b126e811be0d38a49",
+      "files": [
+        {
+          "path": "src/models/glm5-next.cpp",
+          "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/de25343596a2c924ba62d35b126e811be0d38a49/src/models/glm5-next.cpp",
+          "bytes": 41643,
+          "sha256": "42bbfdada39854d9b6c94cfc764c35c30eadac288771d34776fe17cd92ecde8c"
+        }
+      ]
+    },
+    {
+      "id": "flashinfer",
+      "repository": "flashinfer-ai/flashinfer",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/README.md",
+          "bytes": 10490,
+          "sha256": "7c163cfd6a584178790827028d578f2f2ce681e64381607459ad2ae1d4bd52c7"
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/LICENSE",
+          "bytes": 12390,
+          "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7"
+        },
+        {
+          "path": "include/flashinfer/attention/decode.cuh",
+          "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/attention/decode.cuh",
+          "bytes": 52677,
+          "sha256": "bd699c64cff0af922305e532de587ff4db8bc377c198bd653db1d48aa74c2942"
+        },
+        {
+          "path": "include/flashinfer/attention/prefill.cuh",
+          "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/attention/prefill.cuh",
+          "bytes": 231175,
+          "sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710"
+        },
+        {
+          "path": "include/flashinfer/quantization.cuh",
+          "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/quantization.cuh",
+          "bytes": 5126,
+          "sha256": "1b0824b17ad2d5e31ccfc5b0558969a43ccb5f797718c3429ba71e250ce59bd9"
+        }
+      ]
+    },
+    {
+      "id": "cudnn_frontend",
+      "repository": "NVIDIA/cudnn-frontend",
+      "revision": "91dbf3e976a161c1a6833198c708a449330dc3ce",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/NVIDIA/cudnn-frontend/91dbf3e976a161c1a6833198c708a449330dc3ce/README.md",
+          "bytes": 15264,
+          "sha256": "5b6463d80b776ad593def6b1c285946854fc2968c4a25548d0d4e2f9c88be916"
+        },
+        {
+          "path": "LICENSE.txt",
+          "url": "https://raw.githubusercontent.com/NVIDIA/cudnn-frontend/91dbf3e976a161c1a6833198c708a449330dc3ce/LICENSE.txt",
+          "bytes": 11438,
+          "sha256": "a58e7a5653d57f4907c73b6ed3bde05119cd9fb96a985bc944b4239a22d8f7ea"
+        },
+        {
+          "path": "include/cudnn_frontend/graph_interface.h",
+          "url": "https://raw.githubusercontent.com/NVIDIA/cudnn-frontend/91dbf3e976a161c1a6833198c708a449330dc3ce/include/cudnn_frontend/graph_interface.h",
+          "bytes": 191281,
+          "sha256": "0e1cf54c238b49d13f8878e2c330e5827898017e2cdd500d747c65414eba8cfa"
+        }
+      ]
+    },
+    {
+      "id": "cutlass",
+      "repository": "NVIDIA/cutlass",
+      "revision": "f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/NVIDIA/cutlass/f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c/README.md",
+          "bytes": 38652,
+          "sha256": "a78c6aa81d87a88012db7b6570015c8a87f2778f663348c6ffc61936e06b9dce"
+        },
+        {
+          "path": "LICENSE.txt",
+          "url": "https://raw.githubusercontent.com/NVIDIA/cutlass/f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c/LICENSE.txt",
+          "bytes": 1861,
+          "sha256": "ad1513ca983da737a6843364ad19e8424a56d860736c2da773b8c5be527e1475"
+        },
+        {
+          "path": "examples/58_ada_fp8_gemm/ada_fp8_gemm.cu",
+          "url": "https://raw.githubusercontent.com/NVIDIA/cutlass/f614dc40e17fb3ddb1b7b474318b48a8d5d21a2c/examples/58_ada_fp8_gemm/ada_fp8_gemm.cu",
+          "bytes": 28860,
+          "sha256": "ec6f693a8e77cd49972bd9aa9c43fc9651cd83964367b56fe8e648f6809525ef"
+        }
+      ]
+    },
+    {
+      "id": "iree",
+      "repository": "iree-org/iree",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/LICENSE",
+          "bytes": 12719,
+          "sha256": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0"
+        },
+        {
+          "path": "compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/compiler/src/iree/compiler/Codegen/SPIRV/Passes.cpp",
+          "bytes": 34864,
+          "sha256": "0618e0b2807068e8f21f3ad60ca64442426438893bab0247e077ef8ff4addd03"
+        },
+        {
+          "path": "compiler/src/iree/compiler/Codegen/Common/ConvertUnsupportedFloatArith.cpp",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/compiler/src/iree/compiler/Codegen/Common/ConvertUnsupportedFloatArith.cpp",
+          "bytes": 36724,
+          "sha256": "cdcc4a74053a9dcb0a540bc362d4a20c45c3b6816e3cb2e716dc60850a897f7a"
+        },
+        {
+          "path": "compiler/src/iree/compiler/Dialect/LinalgExt/IR/LinalgExtOps.td",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/compiler/src/iree/compiler/Dialect/LinalgExt/IR/LinalgExtOps.td",
+          "bytes": 92011,
+          "sha256": "9f6f197532134dd06d587dceab120187ad8a076ef961d2b66250b8b82bf6673e"
+        },
+        {
+          "path": "runtime/src/iree/hal/drivers/vulkan/api.h",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/hal/drivers/vulkan/api.h",
+          "bytes": 22357,
+          "sha256": "0cd62093d21a4066772838e0d28a5801001782f5d6be4268b1b952d5639ee73d"
+        },
+        {
+          "path": "runtime/src/iree/hal/drivers/vulkan/vulkan_allocator.cc",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/hal/drivers/vulkan/vulkan_allocator.cc",
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "path": "runtime/src/iree/hal/buffer.h",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/hal/buffer.h",
+          "bytes": 60259,
+          "sha256": "81a1db95a295eed6a20aa955a143dbdfe9ef6b8703b2c48d0c39f15794af97b2"
+        },
+        {
+          "path": "runtime/src/iree/runtime/api.h",
+          "url": "https://raw.githubusercontent.com/iree-org/iree/6ef606b6fa3e12bd2c12d36a07463069eb71185f/runtime/src/iree/runtime/api.h",
+          "bytes": 680,
+          "sha256": "07b8a654fac35b3a48d5d01fb008e201a18923c1a8a6e3e6b543b9e0f8c53f3d"
+        }
+      ]
+    },
+    {
+      "id": "mlx_locked",
+      "repository": "ml-explore/mlx",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "files": [
+        {
+          "path": "mlx/ops.h",
+          "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/ops.h",
+          "bytes": 57741,
+          "sha256": "7c10ea9c9e223e393903ff27285aa4939cb3ca53aa3ec5a78aa9c4a6d7113813"
+        },
+        {
+          "path": "mlx/ops.cpp",
+          "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/ops.cpp",
+          "bytes": 203048,
+          "sha256": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2"
+        },
+        {
+          "path": "mlx/fast.h",
+          "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/fast.h",
+          "bytes": 3131,
+          "sha256": "f3ed6a3a4e47e1061beda2594cb4dc916cf364d5021bf5e16b80ce60da8ff380"
+        },
+        {
+          "path": "mlx/compile.h",
+          "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/compile.h",
+          "bytes": 1363,
+          "sha256": "d6405672fe2470b9c304a9816644b94b1bd79981f430799dbd2ac2dc2cdbf739"
+        }
+      ]
+    },
+    {
+      "id": "onednn_locked",
+      "repository": "oneapi-src/oneDNN",
+      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "files": [
+        {
+          "path": "src/cpu/reorder/cpu_reorder.cpp",
+          "url": "https://raw.githubusercontent.com/oneapi-src/oneDNN/71094df451909e95ceeefc8f64c275cdcbbcdff5/src/cpu/reorder/cpu_reorder.cpp",
+          "bytes": 4502,
+          "sha256": "1db50c6549088711e944efcc87dd2fb75711322acab7b023c657676b5ee8dbfb"
+        },
+        {
+          "path": "include/oneapi/dnnl/dnnl.hpp",
+          "url": "https://raw.githubusercontent.com/oneapi-src/oneDNN/71094df451909e95ceeefc8f64c275cdcbbcdff5/include/oneapi/dnnl/dnnl.hpp",
+          "bytes": 665616,
+          "sha256": "a5137e4f6e68a29ff38d5ba7ad471a8a6a9912ca02847d4a9087bca1c37bb7c5"
+        },
+        {
+          "path": "src/common/type_helpers.hpp",
+          "url": "https://raw.githubusercontent.com/oneapi-src/oneDNN/71094df451909e95ceeefc8f64c275cdcbbcdff5/src/common/type_helpers.hpp",
+          "bytes": 46582,
+          "sha256": "47c43087d4592308f77438dd0b7d2b9b4218dc3c271fe6707dc981c870a04ae7"
+        }
+      ]
+    },
+    {
+      "id": "ncnn",
+      "repository": "Tencent/ncnn",
+      "revision": "70e7bfd6081b912a6521c73f436f9727eb335ce1",
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "url": "https://raw.githubusercontent.com/Tencent/ncnn/70e7bfd6081b912a6521c73f436f9727eb335ce1/LICENSE.txt",
+          "bytes": 6427,
+          "sha256": "7c974bac98848df46be1af5bdaa3c3c9c01f6082a90f55caeb7f60c6208aa255"
+        },
+        {
+          "path": "src/layer.h",
+          "url": "https://raw.githubusercontent.com/Tencent/ncnn/70e7bfd6081b912a6521c73f436f9727eb335ce1/src/layer.h",
+          "bytes": 5874,
+          "sha256": "fdfa2afa73e201cdabf454ef36ce7347cb806dc4ee54ba78a5caca83288360c9"
+        },
+        {
+          "path": "src/layer/vulkan/gemm_vulkan.h",
+          "url": "https://raw.githubusercontent.com/Tencent/ncnn/70e7bfd6081b912a6521c73f436f9727eb335ce1/src/layer/vulkan/gemm_vulkan.h",
+          "bytes": 1914,
+          "sha256": "f9496fb00d27b9333d65e5ae06327fd2b59db4357dd77c20ff944949ab87e61c"
+        }
+      ]
+    },
+    {
+      "id": "mnn",
+      "repository": "alibaba/MNN",
+      "revision": "397f85331fee0221df9ffe364f7be2df349f420b",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/alibaba/MNN/397f85331fee0221df9ffe364f7be2df349f420b/LICENSE",
+          "error": "HTTP Error 404: Not Found"
+        },
+        {
+          "path": "include/MNN/expr/Expr.hpp",
+          "url": "https://raw.githubusercontent.com/alibaba/MNN/397f85331fee0221df9ffe364f7be2df349f420b/include/MNN/expr/Expr.hpp",
+          "bytes": 7717,
+          "sha256": "61731668921de87770fc703c4675995c8f92103677432c78768481fa346f072b"
+        },
+        {
+          "path": "source/backend/vulkan/buffer/execution/VulkanMatMul.hpp",
+          "url": "https://raw.githubusercontent.com/alibaba/MNN/397f85331fee0221df9ffe364f7be2df349f420b/source/backend/vulkan/buffer/execution/VulkanMatMul.hpp",
+          "bytes": 825,
+          "sha256": "05e63e3a0f03cc0c7f34903c30acc3920ae468d991d7ac33add6b426556955b6"
+        },
+        {
+          "path": "LICENSE.txt",
+          "url": "https://raw.githubusercontent.com/alibaba/MNN/397f85331fee0221df9ffe364f7be2df349f420b/LICENSE.txt",
+          "bytes": 11346,
+          "sha256": "a830d59c4f98d110e0540d0581efada06192ba6e798434307d1794b07a290302"
+        }
+      ]
+    },
+    {
+      "id": "xnnpack",
+      "repository": "google/XNNPACK",
+      "revision": "81a0804a40c26a9cf97ebb1acaff0c516d37f5b8",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/google/XNNPACK/81a0804a40c26a9cf97ebb1acaff0c516d37f5b8/LICENSE",
+          "bytes": 1560,
+          "sha256": "63f519e15726f4c4f830bd958f694c84fecb4e0a4cacc527d2696bb71ef95ada"
+        },
+        {
+          "path": "include/xnnpack.h",
+          "url": "https://raw.githubusercontent.com/google/XNNPACK/81a0804a40c26a9cf97ebb1acaff0c516d37f5b8/include/xnnpack.h",
+          "bytes": 216261,
+          "sha256": "e459d801227feb23035c8ec7ae6e6e1fc19063a0347d2fd9d2fd028bb25d9147"
+        }
+      ]
+    },
+    {
+      "id": "flashattention",
+      "repository": "Dao-AILab/flash-attention",
+      "revision": "1bda8f9290cd48d030f1516f0e680cd464ef3554",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/Dao-AILab/flash-attention/1bda8f9290cd48d030f1516f0e680cd464ef3554/LICENSE",
+          "bytes": 1558,
+          "sha256": "8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73"
+        },
+        {
+          "path": "csrc/flash_attn/flash_api.cpp",
+          "url": "https://raw.githubusercontent.com/Dao-AILab/flash-attention/1bda8f9290cd48d030f1516f0e680cd464ef3554/csrc/flash_attn/flash_api.cpp",
+          "bytes": 74822,
+          "sha256": "d80518f272d7d1e3a7b9482e383fef6593e76cace69b930a0dfa6cbb97a4332e"
+        }
+      ]
+    }
+  ]
+}

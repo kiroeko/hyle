@@ -15,7 +15,7 @@
 
 模型配置、源码 pin、数学与格式继续复用[来源快照](llm-moe-model-sources.json)、
 [C0 资格](llm-moe-c0-source-qualification.json)及[需求矩阵](llm-moe-coverage-matrix.json)。
-下面按能力决定需要寻找的成熟实现；具体后端接受域必须由 M0 回填，不能预填 PASS。
+下表按模型定位成熟实现；M0 已交付[逐域映射](llm-moe-provider-map.json)，后端实际验收仍不能预填 PASS。
 
 | 模型输入 | 模型图要求 | 需求族 | 首选承载/接入方式 |
 |---|---|---|---|
@@ -68,66 +68,42 @@ Gated DeltaNet 接六个 F32 输入，value head dimension 为16/32/64/128；Top
 已有公开数值合同不静默放宽；真正不相容的域另记精确证据；全部必需第三方接入完成前，不据此调研或扩张自研。
 
 
-## 四路线 Provider 候选与接入优先级
+## M0 准入决定与施工入口
 
-### 广覆盖基线与已有实现
+[详细施工清单](llm-moe-provider-integration-ledger.md)已冻结 Provider 的必需/已有复用/后备/
+条件资格处置、精确源码身份、M1资源接口包、M2六个模型片段批次及适用验证。它与
+[64行四路线映射](llm-moe-provider-map.json)共同替代原“候选待定”队列；产品状态仍只看 registry。
 
-| Provider / 路线 | 已有事实 | 新计划要求的接法 / 待裁决点 |
-|---|---|---|
-| ggml CPU | HYLE owner BLOCKED，空 factor 不是已接入 | 以 backend/graph region 承载模型计算；优先依法解决 fallible context/threadpool 与持久 pool seam。算法不重写 |
-| ggml CUDA | 有已登记上游后端源码，尚无 HYLE 完整 backend 接入 | M0 映射需求域；M1/M2 用同 GPU 资源、stream/完成和 region 桥成批接入，不能拿已有 HYLE/CUB 核冒称 ggml |
-| ggml Metal | 有上游后端来源，不是 MLX backend，尚无 HYLE 完整接入 | 对 MLX 以外必需域/整模型片段优先核对；冻结 native buffer/command/同步互操作后接入，不能强行共享 MLX runtime |
-| ggml Vulkan | 已有 managed region 与具名 norm/逐元素/gate/TopK/Gather/F32 Scan/归约域 | 在同一后端扩展模型所需 region 映射，复用已验证资源 seam；不是另写一套 shader |
-| oneDNN / CPU | BRGEMM、RMSNorm/LayerNorm、Add/Mul post-ops 已接；Q2 测量资格 BLOCKED | 完整 primitive/Graph partition 按需求批接；共享 descriptor/线程/资源边界。旧 Q2 仅按原条件恢复，不拖住无关 Provider |
-| MLX / Apple | 已有较广 typed/compiled region 接入 | 批量补模型需要的公开运算与 state/quantization 组合，保留数组所有权与原生融合 |
-| cuBLASLt / CUDA | 已有普通工厂与成熟 GEMM 接入 | 复用适用 GEMM/GEMV/精度域，新增需求按必要 shape/type 扩接接口；不写 GEMM 替代 |
-| Marlin / CUDA | 固定上游量化 kernel 已接 | 复用准入 Q4 数值档位；其它格式先核对成熟实现，不把位宽相同当合同相同 |
-| SGLang / CUDA | 已接 activation；AB 增加 half RMSNorm 与 Unary，W1 static 局部通过 | 按 C++ 可交付的具名片段复用；AB 的 shared/WSL/真实2B三交付/P1 待对应批次补齐，不优先给旧自研跑竞速 |
+| 路线 | 必需广覆盖与已有复用 | 专用/条件资格 | 后备与触发条件 |
+|---|---|---|---|
+| CPU | ggml CPU；oneDNN primitive/partition/reorder | ggml fallible context/threadpool/plan 独立 patch factor；精确 W8A16/FP8 数值组合 | XNNPACK/平台 BLAS：主方案出现具名实际缺口时核对，不为重复 GEMM 数量接入 |
+| CUDA | ggml CUDA；cuBLASLt/Marlin/SGLang | FlashInfer C++ attention/KV；CUTLASS/CuTe 只作为已有成熟程序依赖；head256/SM89/Windows 资格 | cuDNN Graph、FlashAttention：按实际适用域补位；不引入 Python/Torch runtime |
+| Apple | MLX typed/compiled region + ggml Metal 完整递归/稀疏 region | MLX locked pin 的量化/FP8入口；两个 native runtime 的资源/完成桥 | MPSGraph：具名 MLX/ggml 不满足域时核对；OS/SDK版本进入资格 |
+| Vulkan | 已接 ggml Vulkan managed region 的模型图批量映射 | IREE Vulkan 条件资格 Q-VK：标准整数 scan 与 FP8/E2M1/UE8类型处理；未运行不得签覆盖 | ncnn/MNN：主方案在精确格式/设备/交付上失格时先核对；不能直接转自写 |
 
-“所有应接入”由模型需求与证据决定。ggml 四后端是首选广覆盖方案；若某后端由已合格成熟库
-完整覆盖且没有具名接入收益，可以在 M0 明确排除重复接入，但必须给需求逐域证据，不能静默
-遗漏。各 Provider 可承载一组原子、融合片段或完整 region；不要求每个库接其全部无关 API。
+上游源码表明可以先接成熟模型片段；也存在必须明说的边界：CPU ggml量化dot不自动满足
+W8A16，ggml没有本合同FP8 dtype，Vulkan F32 Scan不等于checked I32 exclusive scan。
+这些差异分别交给具名成熟组合/候选资格项，不降低原64域数值与四路线要求。
 
-### 必须在 M0 处置的专用候选
+## 固定的接入边界
 
-以下是有限候选池，**尚未逐项决定是否必需，也均不能据库名写成已接入**。M0 一次性把每项
-与需求行绑定，裁决必需接入/已有覆盖可复用/后备/不准入；未裁决时阻止进入自实现阶段。
+1. 优先公开 C++/C API 或完整 region，保留第三方的融合、packing、workspace和native执行。
+2. 缺 import/export、持久上下文、失败返回时，独立审计窄resource/runtime bridge；不是改写数学。
+3. 必须借用源码时采用固定的原版kernel/融合程序，保留provenance、许可与升级范围；改写公式
+   或手写shader/MLIR算法属于自研，不能借第三方名字绕过冻结。
+4. 状态、格式、多输出在片段边界统一适配；转换、同步、物化和检查计入完整资源成本。
+   普通Direct/Graph按规则消费，不让用户补Provider glue或排序候选。
 
-| 候选 | 对应模型需求 | 优先接入方式与定界 |
-|---|---|---|
-| FlashInfer | CUDA attention/KV、MoE/低精度等实际受支持域 | 可独立交付的 C++/CUDA API 或固定源码 region；核对硬件、缓存、失败及许可，不能安装 Python 就算 SDK 接入 |
-| cuDNN Graph | CUDA attention/卷积/归一化及可融合图域 | execution plan/graph API；固定算法/准备成本，保持 region 完整 |
-| CUTLASS / CuTe | CUDA dense/grouped/低精度 GEMM | 既有成熟实现实例化或现成 dispatch；模板工具箱本身不等于完整算子，不能借它默认自写 kernel |
-| FlashAttention | CUDA GQA/MLA 等 attention 域 | 可交付成熟融合程序；若已由 ggml/FlashInfer/cuDNN 满足则记录重叠，不为数量重复接库 |
-| MPSGraph | Apple 的具名 MLX/ggml Metal 未覆盖域 | Apple 原生图/资源桥；先证明真实需求与可交付性 |
-| ncnn / MNN | Vulkan 已有后端仍不满足的具名算子/量化域 | 成熟 C++/Vulkan region 或完整算子，不以通用推理框架名义引入模型引擎 |
-| XNNPACK / 平台 BLAS | CPU 具名实际缺口或完整消费收益 | 成熟 C API/BLAS 调用；ggml/oneDNN 已覆盖且无需求价值时排除 |
+模型家族/revision/配置、prefill/decode/region语义、shape/数值/量化与GPU/SM/架构、
+driver/toolkit/OS/Provider版本共同限定规则。consumer显式提供模型事实，HYLE不加载模型；
+名字不能跳过图与数值检查。相关事实纳入计划/编译缓存identity，改变时重新准备；热执行不探测、
+搜索或计时。M1-R用未知模型、版本不匹配、缓存失效和普通入口测试签收。
 
-无需把全部候选都变成依赖，但**所有需求和候选的处置必须先完成**。某候选调查到预算还不清楚，
-记录未决与具体事实缺口，禁止以“只查过两个库”为由准许自己实现。
+## 当前完成度和阻塞
 
-## 接入方式与非算法边界
-
-1. 能用成熟公开 API/完整 region 就直接接，保留其融合、packing、workspace 和 native 执行。
-2. 缺 import/export、持久上下文、错误返回等边界时，先审计一个小范围 resource/runtime bridge；
-   patch factor 有明确 pin/维护/升级/失败与三交付责任。接口缺陷不是重写其算子算法的理由。
-3. 完整 runtime 有具体不可消除的边界时，才固定原版 kernel/融合源码的窄 C++ 接入，保留
-   provenance、许可证与升级范围。数学改写属于自研，受冻结与全局前置门约束。
-4. 状态、量化和多输出在 region 边界统一适配，表驱动绑定一组操作。额外转换/同步/物化写进
-   成本与资源账单；不能省检查或让用户自己补 glue 来制造覆盖。
-
-## 模型与设备版本共同参与固定路由
-
-M0/M1 必须保留模型家族/模型 revision 与配置身份、prefill/decode/region 语义、量化/shape，
-以及实际设备/SM/架构、driver/toolkit/OS/Provider 版本的条件。模型知识由 consumer 显式给出，
-HYLE 不加载 checkpoint；条件只能缩小已有合法候选，不能仅凭名字跳过图/数值/资源检查。
-规则可选择整片段专用计算方法或融合，而非只替换单个 op；普通入口和编译缓存必须消费同一身份。
-规则/软件/模型配置变化使受影响计划失效；准备匹配绑定，执行不搜索或测速。
-
-## 当前阻塞与下一动作
-
-- ggml CPU：原非 abort context/threadpool/plan seam 或独立 source-patch factor 的恢复条件不变。
-  这是高优先级接入阻塞，不是 CPU 算子缺失证据。
-- oneDNN Q2：原 A/A 测量资格失败，产品采样0；需要原卡声明的独立新证据，不能因新 goal 重测。
-- GLM Flash 支持分支、每后端类型/形状/量化与 Windows C++ 可交付性还需 M0 定界。
-- 下一动作仅为 M0 全模型映射、候选处置和接入审计；禁止回到 Y/AB 后再逐个扩自写的旧队列。
+- M0的映射与详细计划已交付；源码存在、候选资格、产品绑定和实际验收分开记录。
+- ggml CPU原runtime abort与oneDNN Q2的BLOCKED保持原恢复条件，不能靠新计划解除。
+- Q-VK、Q-CUDA-API及数值/状态资格是下一步有限接入工作；当前未执行，不写PASS。
+- 全CPU/CUDA/Metal/Vulkan自研算子冻结，全部第三方接入完成前禁止扩张、调研、优化和性能比较。
+  最后M5统一有限裁决；SIMD基础库保留，Compute SIMD算子参加同样的淘汰。
+- 按用户要求先报告计划完成。后续首项为M1-G资源seam审计，绝不恢复旧Y/AB逐个自写队列。

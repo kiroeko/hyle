@@ -1,0 +1,165 @@
+{
+  "kind": "M0_documentation_validation_not_product_coverage",
+  "baseline": "b18578117606ad5141b09cfbcabb2a3bd9c010ab",
+  "verified_plan_tree": "4c43806289595e2caf7888a3fbcfea278ee2669e",
+  "scope": "Documentation/source map only; this receipt is added after its recorded verification tree.",
+  "selected_gates": [
+    {
+      "id": "docs",
+      "status": "PASS",
+      "command": [
+        [
+          "{python}",
+          "scripts/check-docs.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "4c43806289595e2caf7888a3fbcfea278ee2669e",
+        "contract_hash": "1bfe6a253fad4ecbc847d9b3cef67552d9431aed8825e2f1e5055b9ab6f01a39",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "logs": [
+        {
+          "sha256": "033055cace4e03fdd049c0e65397edddd4c46d39d3834491e3c4fb4591cb63c6",
+          "text": "documentation contract passed: 470 Markdown files, 2165 relative links checked\r\n"
+        }
+      ]
+    },
+    {
+      "id": "closure",
+      "status": "PASS",
+      "command": [
+        [
+          "{python}",
+          "scripts/check-module-closure.py"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "4c43806289595e2caf7888a3fbcfea278ee2669e",
+        "contract_hash": "d2a92077daba2752ce09afdcc97657bf2c958ee0212601595a4bbf1029e5af71",
+        "toolchain": {
+          "id": "python-maintenance",
+          "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+        },
+        "machine_profile": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe"
+        },
+        "observed_host": null,
+        "selector_hash": "898b1be5c1ee715d570581018a5177539bb28e62d9fc128154edf73d5af5247e"
+      },
+      "logs": [
+        {
+          "sha256": "5ec37ec70cd0ffe7d6267f2b8cf59312efd7de0b64c718d233bdf5f12f4092a2",
+          "text": "module closure contract passed: 51 components, schema 4\r\n"
+        }
+      ]
+    }
+  ],
+  "skipped_gate_reasons": {
+    "no product or factor test impact": 1,
+    "outside the change and its required consumer boundary": 49,
+    "no public-header seam change for this factor": 50,
+    "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests": 1,
+    "no global component/package seam change": 1,
+    "no delivery boundary change for this product": 15,
+    "no explicit frozen P1 card; sampling is never automatic": 1
+  },
+  "native_builds_run": 0,
+  "P1_run": false,
+  "loc": {
+    "commit": "b18578117606ad5141b09cfbcabb2a3bd9c010ab",
+    "tool": {
+      "cloc": "2.08"
+    },
+    "module_boundary": {
+      "name": "compute-graph-all",
+      "boundary": "explicit",
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute",
+        "src/compute_backend_cpu",
+        "src/compute_backend_cuda",
+        "src/compute_ops",
+        "src/compute_provider_cublas",
+        "src/compute_provider_cuda",
+        "src/compute_provider_ggml",
+        "src/compute_provider_ggml_vulkan",
+        "src/compute_provider_marlin",
+        "src/compute_provider_native",
+        "src/compute_provider_onednn",
+        "src/compute_route_apple",
+        "src/compute_route_cpu",
+        "src/compute_route_cuda",
+        "src/compute_route_vulkan",
+        "src/graph",
+        "src/graph_provider_onednn",
+        "src/graph_route_apple",
+        "src/graph_route_cpu",
+        "src/graph_route_cuda",
+        "src/graph_route_vulkan"
+      ],
+      "modules": null
+    },
+    "metric": {
+      "id": "module",
+      "label": "module implementation (compute-graph-all)",
+      "code": 49270,
+      "files": 200,
+      "selected_files": 226,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute",
+        "src/compute_backend_cpu",
+        "src/compute_backend_cuda",
+        "src/compute_ops",
+        "src/compute_provider_cublas",
+        "src/compute_provider_cuda",
+        "src/compute_provider_ggml",
+        "src/compute_provider_ggml_vulkan",
+        "src/compute_provider_marlin",
+        "src/compute_provider_native",
+        "src/compute_provider_onednn",
+        "src/compute_route_apple",
+        "src/compute_route_cpu",
+        "src/compute_route_cuda",
+        "src/compute_route_vulkan",
+        "src/graph",
+        "src/graph_provider_onednn",
+        "src/graph_route_apple",
+        "src/graph_route_cpu",
+        "src/graph_route_cuda",
+        "src/graph_route_vulkan"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    "self_check": "pass",
+    "reuse_basis": "No product diff from this immutable commit to the M0 documentation worktree."
+  }
+}

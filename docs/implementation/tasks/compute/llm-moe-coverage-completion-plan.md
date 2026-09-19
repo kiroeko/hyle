@@ -206,19 +206,22 @@ C1–C6 在上述表格与 JSON 的 `first_package` / case ID 中仅保留为验
 
 ### M0：先确定模型需求、Provider 与接入方式
 
-当前 owner `/root`；活动卡为 [M0](llm-moe-m0-provider-scope.md)。以下四项完成才结束 M0：
+当前 owner `/root`；活动卡为 [M0](llm-moe-m0-provider-scope.md)。M0 的计划交付已完成：
+[64行四路线映射](llm-moe-provider-map.json)、
+[Provider准入与详细施工清单](llm-moe-provider-integration-ledger.md)。以下勾选只表示计划产物，
+不表示产品覆盖；按用户要求先报告计划完成。当前无新产品改动，M1实施前仍须逐owner有限审计。
 
-- [ ] **M0-01 模型计算映射**：对 Kimi K3、DeepSeek V4 Pro/Flash、GLM 5.3/Flash、
+- [x] **M0-01 模型计算映射**：对 Kimi K3、DeepSeek V4 Pro/Flash、GLM 5.3/Flash、
   Qwen3.8 2.4T/27B、Qwen3.5-2B，按已固定配置/源码把64需求域回映到实际图节点、融合片段、
   状态与量化。每个节点记录源文件/符号、pin、输入输出及必需 shape；不从 HYLE 旧 API 推导需求。
-- [ ] **M0-02 四后端承载表**：以 llama.cpp 使用的 ggml 图与 CPU/CUDA/Metal/Vulkan 分派
+- [x] **M0-02 四后端承载表**：以 llama.cpp 使用的 ggml 图与 CPU/CUDA/Metal/Vulkan 分派
   为第一候选，区分源码存在、后端接受、HYLE 已绑定、正确性和三交付通过。已有研究直接复用。
   一次遍历模型图，按 Provider 的操作族/region 批量映射，不逐原子重新调查。
-- [ ] **M0-03 有限 Provider 准入表**：逐个将目录候选裁决为必需接入、已有可复用、后备或
+- [x] **M0-03 有限 Provider 准入表**：逐个将目录候选裁决为必需接入、已有可复用、后备或
   不准入；每项有需求 ID、具体理由、pin/license/C++ 入口及接入方式。ggml 四后端为首选广覆盖
   基线，oneDNN/MLX/已接 CUDA 库保留各自成熟能力；新增专用库必须有具名价值。
   不要求为数量接入所有重叠库，也不能把“尚未评估”写成不需要。未裁决必需域禁止进入 M4。
-- [ ] **M0-04 接入与冻结边界**：每条路线固定一个资源/执行 seam 和批量 lowering 方案，
+- [x] **M0-04 接入与冻结边界**：每条路线固定一个资源/执行 seam 和批量 lowering 方案，
   给 M1/M2 分配 owner、有限 FIX、适用验证与预算；归档自实现冻结清单。零产品算法改动。
 
 M0 的产物必须能回答每个需求“由哪个库、哪个入口、以何种方式进入 HYLE”。现有来源支持
