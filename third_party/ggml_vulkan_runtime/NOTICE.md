@@ -36,6 +36,12 @@ to match the upstream shader's fixed 512-lane workgroup. The original uint
 loads/stores and shader are unchanged. This prevents incomplete rows when a
 bit-preserving Gather spans more than one workgroup, including BF16 embeddings.
 
+The large Softmax second and third shaders accumulate their shared maximum at
+every reduction step. The original loops reused the initial lane-local maximum
+and could discard a preceding reduction's peak (for example block 64 at width
+32769). Only the two max expressions change; the upstream three-pass algorithm,
+dispatch, numerical storage and scratch ownership remain in place.
+
 The native embedding edits isolate Vulkan instance/dispatcher/registry state,
 publish fully initialized devices, roll back partial buffer/backend creation,
 account device memory through optional HYLE reservations, and permit an owned

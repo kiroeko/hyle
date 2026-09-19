@@ -45,7 +45,7 @@ TEST(VulkanGraph, HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots) {
     auto program =
         gv::compile(context, graph, std::array{epsilon}, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 5U);
+    EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 7U);
     EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 3U);
     EXPECT_EQ(report.retained_constant_owner_count, rows == 0 ? 0U : 1U);
     graph = {};
@@ -96,7 +96,7 @@ TEST(VulkanGraph, HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots) {
 }
 
 TEST(VulkanGraph,
-     OddInnerProbabilityUsesBoundedStatisticsAndPreservesOldResults) {
+     OddInnerMatureProbabilityAndNativeLogarithmPreserveOldResults) {
   auto context = vulkan_test::context().value();
   const auto desc = dense(c::DataType::kFloat16, {3, 129, 3});
   const auto mask_desc = dense(c::DataType::kBool, {1, 129, 1});
@@ -115,13 +115,17 @@ TEST(VulkanGraph,
   gv::CompileReport report;
   auto program = gv::compile(context, graph, {}, {.report = &report});
   ASSERT_TRUE(program) << program.error().message();
-  EXPECT_EQ(report.native_dispatch_count, 4U);
-  EXPECT_EQ(report.invocation_storage_block_bytes.size(), 3U);
+  EXPECT_EQ(report.native_dispatch_count, 6U);
+  EXPECT_EQ(report.managed_region_count, 1U);
   const auto output_capacity = (*desc.required_bytes() + 3) & ~std::size_t{3};
-  EXPECT_EQ(std::accumulate(report.invocation_storage_block_bytes.begin(),
-                            report.invocation_storage_block_bytes.end(),
-                            std::size_t{0}),
-            2 * output_capacity + 9 * 8);
+  const auto storage = std::accumulate(
+      report.invocation_storage_block_bytes.begin(),
+      report.invocation_storage_block_bytes.end(), std::size_t{0});
+  const auto float_capacity = *desc.element_count() * sizeof(float);
+  // Account F32 packing/masking and probability restoration, plus the native
+  // logarithm's row statistics. Lifetimes may reuse these private blocks.
+  EXPECT_GE(storage, 2 * output_capacity);
+  EXPECT_LE(storage, 2 * output_capacity + 3 * float_capacity + 4 + 9 * 8);
   graph = {};
   auto first = program->create_invocation().value(),
        second = program->create_invocation().value();

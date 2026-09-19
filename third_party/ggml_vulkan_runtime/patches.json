@@ -517,6 +517,28 @@
           "after": "                data_d[row_offset + c] = tmp_idx[idx_offset + c].x;"
         }
       ]
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large2.comp",
+      "before_sha256": "70a6f6c5ec1b767064bfab29559079b4d9c1f2d2a399654f2f3483ddd4249908",
+      "after_sha256": "a6a9caebe5d1e59787f22c823e7fd07177c597e9a52ab7a9075639260d44a7ed",
+      "edits": [
+        {
+          "before": "vals[tid] = max(max_val, vals[tid + s]);",
+          "after": "vals[tid] = max(vals[tid], vals[tid + s]);"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/soft_max_large3.comp",
+      "before_sha256": "38538fe375794ecdbc5b968675c4c554a0db950eb1b12540bdb39a99d3d24cdb",
+      "after_sha256": "a2cb7ccdfc19129b84df93dd3960248906cafb6e60c28584c2f3d7de88fa5499",
+      "edits": [
+        {
+          "before": "vals[tid] = max(max_val, vals[tid + s]);",
+          "after": "vals[tid] = max(vals[tid], vals[tid + s]);"
+        }
+      ]
     }
   ]
 }

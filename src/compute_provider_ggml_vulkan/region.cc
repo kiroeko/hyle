@@ -82,6 +82,28 @@ bool region_supports(const Operation &operation,
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
     return norm->accumulation_type == DataType::kFloat32;
+  if (const auto *reduce = operation.get_if<Reduce>()) {
+    const auto axes = reduce->axes.values();
+    return inputs.size() == 1 && inputs[0].rank() > 0 &&
+           reduce->keep_dimensions &&
+           (reduce->kind == ReductionKind::kSum ||
+            reduce->kind == ReductionKind::kMean) &&
+           (reduce->accumulation_type == DataType::kFloat32 ||
+            reduce->accumulation_type == DataType::kUnknown) &&
+           ((reduce->axes.is_all() && inputs[0].rank() == 1) ||
+            (!reduce->axes.is_all() && axes.size() == 1 &&
+             (axes[0] == -1 ||
+              axes[0] == static_cast<int>(inputs[0].rank()) - 1)));
+  }
+  if (const auto *softmax = operation.get_if<Softmax>())
+    return inputs[0].rank() > 0 && softmax->kind == SoftmaxKind::kSoftmax &&
+           (softmax->accumulation_type == DataType::kFloat32 ||
+            softmax->accumulation_type == DataType::kUnknown) &&
+           (softmax->axis == -1 ||
+            softmax->axis == static_cast<int>(inputs[0].rank()) - 1) &&
+           ((softmax->mask == MaskKind::kNone && inputs.size() == 1) ||
+            (softmax->mask == MaskKind::kAdditive && inputs.size() == 2 &&
+             softmax->scale == 1.0F && same_shape(inputs[0], inputs[1])));
   if (const auto *scan = operation.get_if<Scan>())
     return inputs.size() == 1 && inputs[0].rank() > 0 && !scan->exclusive &&
            (scan->axis == -1 ||
@@ -165,11 +187,12 @@ Result<Region> Region::create(NativeDevice device,
     }
     // TopK/Scan: at most 10/16 nodes including reshape/view/cont adapters.
     // LayerNorm: input reshape, GroupNorm, restored shape, optional Mul/Add.
-    // Other admitted operations need at most three (broadcast plus binary, or
-    // RMSNorm).
+    // Row reduction: up to three exact row pieces, concat and shape restore.
+    // Other operations need at most three (broadcast plus binary, or RMSNorm).
     auto capacity = recipe.inputs.size() + 16;
     for (const auto &node : recipe.nodes)
       capacity += node.operation.get_if<Scan>()        ? 16
+                  : node.operation.get_if<Reduce>()    ? 12
                   : node.operation.get_if<TopK>()      ? 10
                   : node.operation.get_if<LayerNorm>() ? 5
                                                        : 3;
@@ -269,6 +292,42 @@ Result<Region> Region::create(NativeDevice device,
         } else {
           output = ggml_cumsum(context, left);
         }
+      } else if (const auto *reduce = node.operation.get_if<Reduce>()) {
+        const auto row_reduce = [&](ggml_tensor *value) {
+          return reduce->kind == ReductionKind::kMean
+                     ? ggml_mean(context, value)
+                     : ggml_sum_rows(context, value);
+        };
+        const auto rows = ggml_nelements(left) / left->ne[0];
+        const auto tile = rows > 262144 ? 262144 : 512;
+        if (rows > 512 && rows % tile != 0) {
+          // SUM_ROWS has no padded-row guard. Preserve the upstream kernel,
+          // dispatching at most three exact XYZ row tiles, as for CUMSUM.
+          auto *matrix = ggml_reshape_2d(context, left, left->ne[0], rows);
+          std::int64_t offset = 0;
+          while (offset < rows) {
+            const auto remaining = rows - offset;
+            const auto block = remaining > 262144 ? 262144
+                               : remaining > 512  ? 512
+                                                  : 1;
+            const auto count = remaining / block * block;
+            auto *part = ggml_view_2d(context, matrix, left->ne[0], count,
+                                      matrix->nb[1], offset * matrix->nb[1]);
+            part = row_reduce(part);
+            output = output ? ggml_concat(context, output, part, 1) : part;
+            offset += count;
+          }
+          if (left->ne[2] != 1 || left->ne[3] != 1)
+            output = ggml_cont_4d(context, output, 1, left->ne[1], left->ne[2],
+                                  left->ne[3]);
+        } else {
+          output = row_reduce(left);
+        }
+      } else if (const auto *softmax = node.operation.get_if<Softmax>()) {
+        output = ggml_soft_max_ext(
+            context, left,
+            node.inputs.size() == 2 ? tensors[node.inputs[1]] : nullptr,
+            softmax->scale, 0.0F);
       } else if (const auto *norm = node.operation.get_if<RmsNorm>()) {
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)

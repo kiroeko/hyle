@@ -1,10 +1,133 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 #include "reduction_test_support.h"
 #include "vulkan_internal.h"
+#include "vulkan_program_internal.h"
 
 namespace {
 using namespace vulkan_reduction_test;
+
+void expect_managed(const v::Program &program) {
+  const auto &dispatches = v::detail::Access::program(program)->dispatches;
+  EXPECT_EQ(std::ranges::count_if(dispatches,
+                                  [](const auto &dispatch) {
+                                    return dispatch.region != nullptr;
+                                  }),
+            1);
+}
+
+TEST(VulkanReduction, MatureRowsCoverBothDispatchBoundariesAndHalfRounding) {
+  auto context = vulkan_test::context().value();
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16})
+    for (int rows : {511, 512, 513, 262145}) {
+      const int width = rows > 513 ? 1 : 3;
+      const auto description = dense(type, {rows, width});
+      const auto data = pattern(*description.element_count());
+      const auto input = make(context, description, data);
+      for (auto kind : {c::ReductionKind::kSum, c::ReductionKind::kMean}) {
+        SCOPED_TRACE(::testing::Message()
+                     << static_cast<int>(type) << '/' << rows << '/'
+                     << static_cast<int>(kind));
+        const c::Reduce operation{kind, c::Axes::from(std::array{-1}).value(),
+                                  true, c::DataType::kFloat32};
+        auto program = v::prepare(context, operation, description);
+        ASSERT_TRUE(program) << program.error().message();
+        expect_managed(*program);
+        auto slot = program->create_invocation().value();
+        ASSERT_TRUE(slot.bind(input).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        expect(
+            context, result->get()->tensors()[0],
+            reduce_reference(values(context, input), description, operation));
+      }
+    }
+}
+
+TEST(VulkanReduction, MatureLongProbabilityRetainsLastBlockPeak) {
+  auto context = vulkan_test::context().value();
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16})
+    for (int width : {1, 16384, 16385, 32769}) {
+      SCOPED_TRACE(::testing::Message()
+                   << static_cast<int>(type) << '/' << width);
+      const auto description = dense(type, {2, width});
+      std::vector<double> data(2 * width, 0.0);
+      data[width - 1] = 1000.0;
+      data[2 * width - 1] = -1000.0;
+      const auto input = make(context, description, data);
+      auto program = v::prepare(context, c::Softmax{}, description);
+      ASSERT_TRUE(program) << program.error().message();
+      expect_managed(*program);
+      auto slot = program->create_invocation().value();
+      ASSERT_TRUE(slot.bind(input).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      expect(context, result->get()->tensors()[0],
+             probability_reference(data, description, c::Softmax{}));
+    }
+}
+
+TEST(VulkanReduction, MatureMasksPreserveScaleOrderAndF32IntermediateRounding) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kFloat32, {1, 2});
+  const auto input =
+      make(context, description, std::array{10000.0009765625, 10000.0});
+  const auto mask =
+      make(context, description, std::array{-100000016.0, -100000008.0});
+  const c::Softmax additive{.scale = 10000.0009765625F,
+                            .mask = c::MaskKind::kAdditive};
+  auto program = v::prepare(context, additive, description, description);
+  ASSERT_TRUE(program) << program.error().message();
+  expect_managed(*program);
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(input, mask).ok());
+  auto work = slot.submit().value();
+  auto result = work.wait().value();
+  expect(context, result.get()->tensors()[0], std::array{0.5, 0.5});
+
+  const auto bad =
+      make(context, dense(c::DataType::kFloat32, {1, 3}),
+           std::array{std::numeric_limits<double>::quiet_NaN(), 2.0, -1.0});
+  const auto flags_desc = dense(c::DataType::kBool, {3});
+  const std::array<std::uint64_t, 3> flags{0, 1, 1};
+  const auto flags_tensor =
+      context.upload(flags_desc, payload(flags_desc, flags)).value();
+  for (float scale : {0.0F, -2.0F}) {
+    const c::Softmax boolean{.scale = scale, .mask = c::MaskKind::kBoolean};
+    auto output =
+        execute(context, c::Operation(boolean), std::array{bad, flags_tensor});
+    ASSERT_TRUE(output) << output.error().message();
+    expect(context, *output,
+           probability_reference(values(context, bad), bad.description(),
+                                 boolean, mask_values(flags)));
+  }
+}
+
+TEST(VulkanReduction, MatureReductionRespectsColdGridLimits) {
+  auto context = vulkan_test::context().value();
+  auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
+  const auto original = limits;
+  const auto description = dense(c::DataType::kFloat32, {3, 32769});
+  for (const auto operation :
+       {c::Operation(c::Reduce{.axes = c::Axes::from(std::array{-1}).value(),
+                               .keep_dimensions = true}),
+        c::Operation(c::Softmax{})}) {
+    limits.maxComputeWorkGroupCount[0] = 2;
+    auto program = v::prepare(context, operation, description);
+    limits = original;
+    ASSERT_TRUE(program) << program.error().message();
+    const auto &dispatches = v::detail::Access::program(*program)->dispatches;
+    EXPECT_TRUE(std::ranges::all_of(dispatches, [](const auto &dispatch) {
+      return dispatch.region == nullptr;
+    }));
+  }
+}
 
 TEST(VulkanReduction, AllTypesAxesLayoutsIdentitiesAndSignedZero) {
   auto context = vulkan_test::context().value();

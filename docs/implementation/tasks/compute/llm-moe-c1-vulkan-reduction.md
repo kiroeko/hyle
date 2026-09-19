@@ -47,3 +47,12 @@ P0：Sum/Mean与原版Softmax算术仍为O(N)，尾行最多三个原厂片段�
 
 审计裁决：有限FIX固定，产品尚未实施，适用验证未运行；C1整包、共同矩阵与性能未签收。
 C1全部适用验收完成后通知用户，并在C2前等待提问。
+
+## 首个实现候选
+
+审计提交`dedb80d5`后，Y34-A–D已实施：region支持Sum/Mean/Softmax，归约尾行用原厂
+分片/Concat处理；route完成任意轴/F32暂存/最终half舍入、mask与缩放顺序适配，冷期
+使用已存在的subgroup/设备限额。原厂长行两处累计max已按精确hash patch修正，依赖锁仅
+更新此patch目录内容与NOTICE身份。未改公共API、pin或治理/性能工具。
+新增真实managed反例与cold grid测试，既有图的资源账单按新增适配更新。selector因依赖锁
+扩为112个selected、8个未选；此处仅登记适用集合，首次编译/GPU资格尚未运行，不签PASS。
