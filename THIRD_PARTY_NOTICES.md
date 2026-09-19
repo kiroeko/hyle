@@ -27,7 +27,8 @@ license text and the notices in each source file control.
 | nlohmann/json 3.11.3 | MLX implementation dependency | MIT | fetched checkout `LICENSE.MIT` / `mlx-json-LICENSE` |
 | fmt 12.1.0 | MLX implementation dependency | MIT | fetched checkout `LICENSE` / `mlx-fmt-LICENSE` |
 | nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` / `nghttp2-LICENSE` |
-| ggml | `compute` CPU/CUDA operator implementation | MIT | fetched checkout `LICENSE` / `ggml-LICENSE` |
+| ggml | shared Compute metadata/CPU execution resources and native Vulkan regions | MIT | fetched checkout `LICENSE` / `ggml-runtime-LICENSE` |
+| ggml resource integration patches | fallible context/pool initialization and partial-start rollback | MIT | `third_party/ggml_runtime/LICENSE`, `NOTICE.md` / `ggml-runtime-patches-LICENSE`, `ggml-runtime-patches-NOTICE.md` |
 | volk | `compute` Vulkan meta-loader | MIT | fetched checkout `LICENSE.md` / `volk-LICENSE.md` |
 | Vulkan-Headers | Vulkan API declarations compiled with volk | Apache-2.0 OR MIT, by file | fetched checkout `LICENSE.md`, `LICENSES/` / `Vulkan-Headers/{LICENSE.md,Apache-2.0.txt,MIT.txt}` |
 

@@ -62,8 +62,8 @@
 | graph_route_apple | SCOPED | — | [record](tasks/compute/llm-moe-m0-provider-scope.md) | 新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。 |
 | compute_route_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m0-provider-scope.md) | 新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。 |
 | graph_route_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m0-provider-scope.md) | 新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。 |
-| compute_provider_ggml_vulkan | CANDIDATE | — | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G CANDIDATE：共同ggml资源seam/API固定；Windows全部所选门与CPU/Vulkan三交付、WSL、Air与Mini CPU适用门已通过；Air Vulkan尾项仍在验证，不签最终关闭或模型覆盖。 |
-| compute_ggml_runtime | CANDIDATE | — | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G CANDIDATE：共同ggml资源seam/API固定；Windows全部所选门与CPU/Vulkan三交付、WSL、Air与Mini CPU适用门已通过；Air Vulkan尾项仍在验证，不签最终关闭或模型覆盖。 |
+| compute_provider_ggml_vulkan | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md) | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G CLOSED：共同ggml资源seam、CPU可恢复pool/持久plan/workspace、Vulkan资源迁移完成；四环境CPU、Windows/Air Vulkan、适用三交付与P0通过。仅资源范围，不代签模型覆盖；原CPU Provider和oneDNN阻塞保持。 |
+| compute_ggml_runtime | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md) | [record](tasks/compute/llm-moe-m1-ggml-runtime.md) | M1-G CLOSED：共同ggml资源seam、CPU可恢复pool/持久plan/workspace、Vulkan资源迁移完成；四环境CPU、Windows/Air Vulkan、适用三交付与P0通过。仅资源范围，不代签模型覆盖；原CPU Provider和oneDNN阻塞保持。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

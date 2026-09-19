@@ -1,0 +1,11 @@
+{
+  "base": "b3dca3f5",
+  "selected": [
+    "docs",
+    "closure"
+  ],
+  "docs": "PASS: 472 Markdown files, 2179 links",
+  "closure": "PASS: 52 components, schema 4, explicit previous-ref",
+  "diff_check": "PASS",
+  "product_rebuild": "NOT_APPLICABLE: documentation/status/evidence only"
+}

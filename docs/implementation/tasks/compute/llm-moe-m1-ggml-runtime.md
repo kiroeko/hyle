@@ -161,3 +161,37 @@ G1–G5已完成以下资源/交付审计并冻结；本卡两个owner进入AUDI
   不含测试/第三方。P1在本资源卡不适用；没有研究、扩张或比较冻结自研算子。
 - 已完成的Windows交付/build目录、两台Mac旧archive副本按具名脚本清理，保留日志、
   hash、候选身份与当前验证副本。最终七门和可复现证据在剩余适用验证后裁决。
+
+## 最终裁决（2026-09-20，CLOSED）
+
+本节替代上面的进行中检查点。G1–G5均完成；两个owner关闭本轮资源范围，产品candidate仍为
+`04368a397859f2d03e71ab005a5d66227a5f9a0f`。本节之后的状态/证据/许可索引修改不改变产品candidate。
+完整命令、版本、失败及修正、收据身份与原始日志见
+[证据包](../../../../evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md)。
+
+| Gate | 实际证据与边界 | Verdict |
+|---|---|---|
+| scope | G1–G5完成；只修改资源/构建/交付接缝；原CPU与oneDNN阻塞不自动解除，256格无新增覆盖声明 | PASS |
+| architecture | 一个locked vendor源码owner；CPU/Vulkan各自原生执行；private RAII、slot隔离和借用合同；冻结Vulkan数学条目保持身份 | PASS |
+| correctness | Windows/WSL/Air/Mini真实CPU资源和原版计算；OOM、部分启动、取消/复用、并发；WSL ASan+LSan/UBSan/TSan；Windows与Air Vulkan资源/Direct/Graph回归 | PASS |
+| delivery | Windows全部所选native/header/组件与15产品三交付；本factor正式源码包执行、静态与OFF隔离；四环境CPU与Windows/Air CPU+Vulkan源码/静态/动态及relocation，私有头/许可检查 | PASS |
+| usability_docs | 普通入口未增加选择负担；私有接口注明容量、owner、并发和失败；本卡、NOTICE及证据明确资源范围与后续普通接入边界 | PASS |
+| red_team | 候选固定后独立一轮复核move/reset/失败销毁顺序、线程join、容量与冻结；证据复核发现Air旧CPU缓存漏选GPU回归，显式ON且检查真实测试名后补齐8项 | PASS |
+| engineering_performance | P0源码和分配账单：冷建context/pool/plan/workspace，steady不新增这些资源；运行不裁决Provider；上游数学/融合/worker循环不变；没有吞吐或赢家声明 | PASS |
+
+P1为NOT_APPLICABLE：这是具名资源维护与接入阶段，不是成熟Provider完整消费性能验收；后者仍由M2
+固定候选完成，也没有启动冻结自研对比。没有把未运行项或旧身份改写为当前PASS。
+
+红队修正的是验证脚本选择：Air三交付的全新build确已启用Vulkan；原native build缓存仍为OFF，
+最初5项只覆盖CPU和源码合同。保留其原日志及错误总结，用显式ON补跑Provider/Compute/Graph与
+共同资源共8项，全部通过。Windows漏链与POSIX计数修正也保留失败记录；没有扩大产品FIX。
+
+限制：本factor不接模型loader，不接受任意外来ggml图，不改变单slot禁止并发run/close的合同；
+CPU当前portable ISA floor不代表最终成熟CPU性能档位。普通CPU Provider批量lowering、模型条件与
+四路线M2片段仍未完成。本轮没有阻塞尾项，旧CPU Provider须依原恢复条件另建SCOPED卡。
+
+reopen triggers：升级ggml pin/资源补丁hunk、修改后端或ISA构建资格、私有资源/公开交付seam变更，
+或出现可复现OOM/并发/销毁反例；不因后续文档变更重跑产品验证。
+
+统一LOC：Compute+Graph **49,413行实现 / 203文件**，不含测试/第三方，工具self-check通过；
+统计含已有实现，不能把行数或本卡CLOSED算成模型覆盖。收据保留后清理本轮具名build/SDK副本。

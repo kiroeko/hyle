@@ -12,8 +12,9 @@
 改写数学 kernel、排序/归约/scan 算法、手写 shader 或以 MLIR/CUTLASS 模板改名自写。
 成熟库的已有原子组合与原版融合程序属于接入；其来源、转换和完整成本必须可追溯。
 
-本次交付施工计划后先向用户报告。模块保持 SCOPED，产品 FIX 为空；本页的拟定 FIX 必须由相应
-owner 的后续有限卡审计到 AUDITED 才能实施。旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
+本页的拟定 FIX 必须由相应 owner 的有限卡审计到 AUDITED 才能实施，当前状态以 registry 为准。
+M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 为下一包；其余未审范围不授权产品改动。
+旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
 ## 1. Provider 准入处置
 
@@ -23,7 +24,7 @@ owner 的后续有限卡审计到 AUDITED 才能实施。旧 ggml CPU、oneDNN �
 
 | Provider | 裁决与需求 | C++ 接法 / 版本与许可 | 明确边界 |
 |---|---|---|---|
-| ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；拟统一到 `456172ec`，MIT | 当前 CPU lock 是 `8599e0ea`，迁移与 failure patch 单独审计；不是已完成 |
+| ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；拟统一到 `456172ec`，MIT | M1-G已统一lock到`456172ec`并验收资源补丁；普通Provider/lowering仍未完成 |
 | ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | stream/device-buffer 桥未接；不以既有 HYLE CUDA 核代签 |
 | ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | 独立于 MLX runtime；保留上游融合，原生资源/完成需接通 |
 | ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | 既有少量原子不代替完整片段；原生类型/head/subgroup 条件逐域验证 |
@@ -88,8 +89,8 @@ scan/matmul 操作及上游类型合法化，编译器只作构建工具；sourc
 
 | 包 | owner / 先决条件 | 固定的拟定 FIX | 验收与停止 |
 |---|---|---|---|
-| M1-G | 拟新增 `compute_ggml_runtime`；原 CPU owner 仍 BLOCKED；必要 build owner 只定向开卡 | 一个共同 ggml vendor 源与按路线启用的原生后端；复用现有 context 失败 patch 的已审资源部分；CPU persistent pool/plan、OOM/线程创建失败回滚；解决 ggml target 重名/旧新 pin 混用 | 真实 norm→MatMul→状态片段，重复执行不重建 pool；allocation/thread failure、两个 invocation、close；对应源码/静态/动态和 route-OFF；不改原版数学 |
-| M1-R | compute / graph 与四路线 owner，现有 SCOPED | 批量 lowering 的共用语义检查、capability/诊断、模型/配置/phase 与软件/硬件规则 identity；常量、状态、多输出、effect/lease；每路线独立资源程序 | Direct 与 Graph 一组正交片段；未知模型/版本不匹配、缓存失效；热执行无探测、搜索或计时；不造万能执行器 |
+| M1-G | `compute_ggml_runtime`与`compute_provider_ggml_vulkan`已按[资源卡](llm-moe-m1-ggml-runtime.md)CLOSED；原CPU owner仍BLOCKED | 一个共同 ggml vendor 源与按路线启用的原生后端；复用现有 context 失败 patch 的已审资源部分；CPU persistent pool/plan、OOM/线程创建失败回滚；解决 ggml target 重名/旧新 pin 混用 | 真实 norm→MatMul→状态片段，重复执行不重建 pool；allocation/thread failure、两个 invocation、close；对应源码/静态/动态和 route-OFF；不改原版数学 |
+| M1-R | compute / graph 与四路线具名owner；以registry实际状态绑定，CPU/CUDA既有CLOSED须按模型条件新需求重定界 | 批量 lowering 的共用语义检查、capability/诊断、模型/配置/phase 与软件/硬件规则 identity；常量、状态、多输出、effect/lease；每路线独立资源程序 | Direct 与 Graph 一组正交片段；未知模型/版本不匹配、缓存失效；热执行无探测、搜索或计时；不造万能执行器 |
 | M1-C | CUDA backend/route + 拟新增 ggml CUDA / FlashInfer factor | 复用本路线 native stream/buffer/event；固定原版后端 import/export 或小资源桥；prepared workspace、capture/失败/完成 | 同 GPU ggml→成熟 GEMM/attention→结果的组合；错误后资源仍可回收、旧结果保活；Windows/WSL；DLL 邻置 |
 | M1-A | Apple route + 拟新增 ggml Metal factor | MLX 与 ggml Metal 各自持有原生 program；建立必要 buffer/完成边界；whole recurrent region，不分裂为逐 kernel 接口 | Air/Mini 正确性；状态交错、old output、原生同步成本；三交付；不能把共享地址当作无需同步 |
 | M1-V | 现有 ggml Vulkan/两 route owner；Q-VK 后才决定新增 IREE factor | 扩现有 managed region schema；需要时接独立 IREE 原生 Vulkan region/parameter buffer/完成；共享设备互操作受限时明确有界 GPU copy | RTX4070 和 Air/MoltenVK；所需 feature 诊断、同设备链路、失效/teardown 与三交付；无 CPU 模型 fallback |

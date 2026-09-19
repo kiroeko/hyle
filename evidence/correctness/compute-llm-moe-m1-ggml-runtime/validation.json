@@ -1,0 +1,120 @@
+{
+  "resource_product_commit": "6235ddc9c1e8a1f0af6d85c0c6689ed5c3573690",
+  "current_candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
+  "status": "PASS",
+  "native_evidence": [
+    {
+      "platform": "Windows",
+      "gate": "native CPU resources",
+      "status": "PASS",
+      "candidate": "6235ddc9c1e8a1f0af6d85c0c6689ed5c3573690",
+      "log": "windows-cpu-tests.log",
+      "sha256": "c6a24db483a2be18cf8723d6208b1b229802fecedc90f9e5ef36259eb504a309"
+    },
+    {
+      "platform": "Windows",
+      "gate": "Vulkan resource regression + MASM composition",
+      "status": "PASS",
+      "candidate": "6235ddc9c1e8a1f0af6d85c0c6689ed5c3573690",
+      "log": "windows-vulkan-tests.log",
+      "sha256": "ec62f59d5d7da22e0631fe4654e36e59014e4ce653c83e3ecd575d12b6ff30f1"
+    },
+    {
+      "platform": "WSL",
+      "gate": "ASan initial fixture",
+      "status": "FAIL_TEST_FIXTURE",
+      "candidate": "6235ddc9c1e8a1f0af6d85c0c6689ed5c3573690",
+      "log": "hyle-m1g-asan.log",
+      "sha256": "b21fc0ef1f09cde2de9038ae29bb1d17be041d9cb9b424391d295d141df3e481"
+    },
+    {
+      "platform": "WSL",
+      "gate": "ASan with leak detection",
+      "status": "PASS",
+      "candidate": "2c1011cbf5d5305a223c479bb6cc8e4274f387e7",
+      "log": "hyle-m1g-asan-fixed.log",
+      "sha256": "b47ced1ea186e409a2750abd3d899099f13165ea7e88f98f458e6566cae698a1"
+    },
+    {
+      "platform": "WSL",
+      "gate": "UBSan",
+      "status": "PASS",
+      "candidate": "2c1011cbf5d5305a223c479bb6cc8e4274f387e7",
+      "log": "hyle-m1g-ubsan.log",
+      "sha256": "d2ffe7ce93c06d9d0581593d463d2397cbdf3275bba7aad9f3c6c37a9a07eaa2"
+    },
+    {
+      "platform": "WSL",
+      "gate": "TSan, ASLR disabled for process",
+      "status": "PASS",
+      "candidate": "2c1011cbf5d5305a223c479bb6cc8e4274f387e7",
+      "log": "hyle-m1g-tsan.log",
+      "sha256": "5e09ab5260153491d6bcde89205ad3f07767b88203e388119cd955ef6c9d2c28"
+    },
+    {
+      "platform": "MacBook Air",
+      "gate": "native CPU resources",
+      "status": "PASS",
+      "candidate": "2c1011cbf5d5305a223c479bb6cc8e4274f387e7",
+      "log": "air-cpu.log",
+      "sha256": "9ff84af2295cd18071ff8cc6f8fcb63cb8db2278e63ed885fd082f628f6871a9"
+    },
+    {
+      "platform": "Mac mini",
+      "gate": "native CPU resources",
+      "status": "PASS",
+      "candidate": "2c1011cbf5d5305a223c479bb6cc8e4274f387e7",
+      "log": "mini-cpu.log",
+      "sha256": "4940dc5cee6be9bef6e32508384487a585d59dca7615017ee6e41ab994775ae2"
+    },
+    {
+      "platform": "WSL",
+      "gate": "CPU static native + source/shared/static/relocated SDK",
+      "status": "PASS",
+      "candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
+      "log": "wsl-cpu-delivery.log",
+      "sha256": "52831510800cea0855ad0591a70b7adb9d0e396b6c8034d277175ff1256e407f"
+    },
+    {
+      "platform": "MacBook Air",
+      "gate": "CPU static native + source/shared/static/relocated SDK",
+      "status": "PASS",
+      "candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
+      "log": "air-cpu-delivery.log",
+      "sha256": "606e72d68400dd2c12b932bf363601d08c15eb1a0109105a919fb45386325fc8"
+    },
+    {
+      "platform": "Mac mini",
+      "gate": "CPU static native + source/shared/static/relocated SDK",
+      "status": "PASS",
+      "candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
+      "log": "mini-cpu-delivery.log",
+      "sha256": "0a893180a52895faf6740f8d8c37db220faeb7d9e79990a49d055f49322f08e3"
+    },
+    {
+      "platform": "MacBook Air",
+      "gate": "CPU+Vulkan source/shared/static/relocated SDK only",
+      "status": "PASS",
+      "candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
+      "log": "air-vulkan-delivery.log",
+      "sha256": "58a5fd0db23e0881a0d6a0878bc5e80b42030429d7f85b9dcecfd1a7325f441e"
+    },
+    {
+      "platform": "MacBook Air",
+      "gate": "Vulkan actual native provider/Compute/Graph resource regression",
+      "status": "PASS",
+      "candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
+      "log": "air-vulkan-native.log",
+      "sha256": "5661e156c876a39b5a1dc4019c28248aad11228c27caf3723fb2177aef50bde1"
+    }
+  ],
+  "later_changes": "2c1011cb fixes a POSIX fixture counter; c76c041c normalizes explicit developer factor selection; 04368a39 fixes only the Vulkan bridge test link dependency. Every prior receipt retains its actual candidate identity.",
+  "unrun": [],
+  "performance": "P1 NOT_APPLICABLE to this resource stage; no self operator performance comparison",
+  "continuation": "continued-result.json",
+  "windows_compute_delivery": "windows-compute-delivery-payload.json",
+  "source_package": "source-package.json",
+  "loc": "loc-current.json",
+  "air_native_correction": "Initial Air script reused CPU-only cache; its five native tests do not prove Vulkan regression. Three SDK consumers used fresh Vulkan-ON builds and passed. Explicit ON plus actual GPU test-name checks reran only the missing native suite; original log retained without rewriting its misleading final marker.",
+  "p0": "PASS: cold context/pool/plan/workspace; allocation counters and exact join/free fixtures; no HYLE search/timing in run; upstream math/fusion/worker loops unchanged. No throughput or provider-winner claim."
+}
