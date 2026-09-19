@@ -250,4 +250,93 @@ TEST(VulkanGraph, PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds) 
     expect(context, retained, saved);
   }
 }
+TEST(VulkanGraph, StableModelGatesShareMatureRegionAndKeepPublishedForks) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
+                                  64 * 1024 * 1024);
+  v::Tensor retained;
+  std::vector<double> saved;
+  auto context = vulkan_test::context(&quota).value();
+  {
+    constexpr int rows = 3, width = 129;
+    const auto desc =
+        c::TensorDesc::strided_bytes(
+            c::DataType::kBFloat16, std::array<std::int64_t, 2>{rows, width},
+            std::array<std::int64_t, 2>{width * 3 + 1, 3})
+            .value();
+    const auto parameter = dense(c::DataType::kFloat32, {width});
+    std::vector<double> bias(width), logarithm(width);
+    for (int i = 0; i < width; ++i) {
+      bias[i] = (i % 5 - 2) * 0.125;
+      logarithm[i] = (i % 7 - 3) * 0.0625;
+    }
+    const std::array constants{make(context, parameter, bias),
+                               make(context, parameter, logarithm)};
+    auto builder = g::GraphBuilder::create().value();
+    const auto input = builder.input(desc).value();
+    const auto bias_id = builder.constant(parameter).value();
+    const auto log_id = builder.constant(parameter).value();
+    const auto wide =
+        builder.add(c::Cast{c::DataType::kFloat32}, input).value();
+    const auto added =
+        builder.add(c::Binary{c::BinaryKind::kAdd}, wide, bias_id).value();
+    const auto plus =
+        builder.add(c::Unary{c::UnaryKind::kSoftplus}, added).value();
+    const auto score = builder.add(c::Unary{c::UnaryKind::kSqrt}, plus).value();
+    const auto exponential =
+        builder.add(c::Unary{c::UnaryKind::kExp}, log_id).value();
+    const auto decay =
+        builder.add(c::Unary{c::UnaryKind::kNeg}, exponential).value();
+    const auto gate =
+        builder.add(c::Binary{c::BinaryKind::kMultiply}, plus, decay).value();
+    const auto sigmoid =
+        builder.add(c::Unary{c::UnaryKind::kSigmoid}, wide).value();
+    const auto attention =
+        builder.add(c::Binary{c::BinaryKind::kMultiply}, sigmoid, wide).value();
+    for (auto value : {plus, score, gate, attention})
+      ASSERT_TRUE(builder.publish(value).ok());
+    auto graph = std::move(builder).finish().value();
+    gv::CompileReport report;
+    auto program =
+        gv::compile(context, graph, constants, {.report = &report}).value();
+    EXPECT_EQ(report.managed_region_count, 1U);
+    auto first = program.create_invocation().value();
+    auto second = program.create_invocation().value();
+    for (int phase = 0; phase < 3; ++phase) {
+      std::vector<double> data(rows * width), softplus(data.size()),
+          root(data.size()), gated(data.size()), attended(data.size());
+      for (std::size_t i = 0; i < data.size(); ++i) {
+        data[i] = rounded((static_cast<int>((i + phase * 3) % 49) - 40) * 0.5,
+                          c::DataType::kBFloat16);
+        const auto x = static_cast<float>(data[i] + bias[i % width]);
+        softplus[i] = static_cast<float>(unary(c::UnaryKind::kSoftplus, x));
+        root[i] = std::sqrt(softplus[i]);
+        gated[i] =
+            softplus[i] * -static_cast<float>(std::exp(logarithm[i % width]));
+        attended[i] =
+            static_cast<float>(unary(c::UnaryKind::kSigmoid, data[i])) *
+            data[i];
+      }
+      const auto tensor = make(context, desc, data);
+      auto &slot = phase == 0 ? first : second;
+      ASSERT_TRUE(slot.bind(tensor).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait().value();
+      expect(context, result.get()->tensors()[0], softplus);
+      expect(context, result.get()->tensors()[1], root);
+      expect(context, result.get()->tensors()[2], gated);
+      expect(context, result.get()->tensors()[3], attended);
+      if (phase == 0) {
+        retained = result.get()->tensors()[2];
+        saved = gated;
+      } else {
+        expect(context, retained, saved);
+      }
+    }
+  }
+  ASSERT_TRUE(context.close().ok());
+  expect(context, retained, saved);
+  retained = {};
+  context = {};
+  EXPECT_EQ(quota.used(), 0U);
+}
 } // namespace

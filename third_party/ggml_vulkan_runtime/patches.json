@@ -461,22 +461,38 @@
     {
       "path": "src/ggml-vulkan/vulkan-shaders/unary.comp",
       "before_sha256": "224257d872b7658a3d9dba118818897511596093a4c5fc9b4ff866cfc7079709",
-      "after_sha256": "0d3a9cf0402eb756c034df55cdbd5098fe6884f9c42368bd8e72cb02b0777b98",
+      "after_sha256": "eb1c17f38d2d61f7313327d74915912f49c2c34818fd6094ec2d5f8ea9c327f7",
       "edits": [
         {
           "before": "float op_silu(float x) {\n    return x / (1.0f + exp(-x));\n}",
-          "after": "float op_silu(float x) {\n    // HYLE common semantics: SiLU(-Inf) is its +0 limit.\n    return isinf(x) && x < 0.0f ? 0.0f : x / (1.0f + exp(-x));\n}"
+          "after": "float op_silu(float x) {\n    // HYLE common semantics and stable negative tail, including SiLU(-Inf)=+0.\n    if (isinf(x)) return x > 0.0f ? x : 0.0f;\n    if (x >= 0.0f) return x / (1.0f + exp(-x));\n    const float e = exp(x);\n    return x * (e / (1.0f + e));\n}"
+        },
+        {
+          "before": "float op_sqrt(float x) {\n    return sqrt(x);\n}",
+          "after": "float op_sqrt(float x) {\n    // Explicit common negative-domain and signed-zero boundaries.\n    if (isnan(x) || x == 0.0f) return x;\n    if (x < 0.0f) return uintBitsToFloat(0x7fc00000u);\n    return isinf(x) ? x : sqrt(x);\n}"
+        },
+        {
+          "before": "float op_tanh(float x) {\n    return 1.0f - 2.0f / (exp(2.0f*x) + 1.0f);\n}",
+          "after": "float op_tanh(float x) {\n    // Avoid cancellation around zero and retain the input's zero sign.\n    if (isnan(x) || x == 0.0f) return x;\n    return isinf(x) ? sign(x) : tanh(x);\n}"
+        },
+        {
+          "before": "float op_sigmoid(float x) {\n    return 1.0f / (1.0f + exp(-x));\n}",
+          "after": "float op_sigmoid(float x) {\n    if (x >= 0.0f) return 1.0f / (1.0f + exp(-x));\n    const float e = exp(x);\n    return e / (1.0f + e);\n}"
+        },
+        {
+          "before": "float op_softplus(float x) {\n    return (x > 20.0f) ? x : log(1.0f + exp(x));\n}",
+          "after": "float op_softplus(float x) {\n    // HYLE's stable beta=1 contract; GLSL has no log1p intrinsic.\n    if (isnan(x)) return x;\n    if (isinf(x)) return x > 0.0f ? x : 0.0f;\n    const float e = exp(-abs(x));\n    precise float sum = 1.0f + e;\n    precise float delta = sum - 1.0f;\n    const float tail = sum == 1.0f ? e : log(sum) * (e / delta);\n    return max(x, 0.0f) + tail;\n}"
         }
       ]
     },
     {
       "path": "src/ggml-vulkan/vulkan-shaders/swiglu.comp",
       "before_sha256": "cd10f81a22d2a1d2435a5d229656a5b187cdaf664b45867da894452586b1943a",
-      "after_sha256": "04b207113ed7bc98e24b4f153c3c880fdc3695c2cc59610714a557211ad912ca",
+      "after_sha256": "83abd99f64caa408099f93e22cd27a0f22c8b3bdd2e735afd66f86a275f9ed00",
       "edits": [
         {
           "before": "    return a / (1.0f + exp(-a)) * b;",
-          "after": "    // Preserve multiplication by b, including 0 * Inf/NaN propagation.\n    const float activation = isinf(a) && a < 0.0f ? 0.0f : a / (1.0f + exp(-a));\n    return activation * b;"
+          "after": "    // Match stable SiLU while retaining the full multiply contract, 0*Inf/NaN.\n    float activation;\n    if (isinf(a)) {\n        activation = a > 0.0f ? a : 0.0f;\n    } else if (a >= 0.0f) {\n        activation = a / (1.0f + exp(-a));\n    } else {\n        const float e = exp(a);\n        activation = a * (e / (1.0f + e));\n    }\n    return activation * b;"
         }
       ]
     },
@@ -539,6 +555,17 @@
           "after": "vals[tid] = max(vals[tid], vals[tid + s]);"
         }
       ]
+    },
+    {
+      "path": "src/ggml-vulkan/vulkan-shaders/log.comp",
+      "before_sha256": "0c34bdbaa11a37c51b5a3c81ff7ece3adafb8ef42e2f36c3f53a82e603b17b37",
+      "edits": [
+        {
+          "before": "    data_d[get_doffset() + dst_idx(idx)] = D_TYPE(log(val));",
+          "after": "    // Explicit common-contract NaN, negative domain, zero and infinity.\n    const float result = isnan(val) ? val : val < 0.0f ? uintBitsToFloat(0x7fc00000u)\n                         : val == 0.0f ? uintBitsToFloat(0xff800000u)\n                         : isinf(val) ? val : log(val);\n    data_d[get_doffset() + dst_idx(idx)] = D_TYPE(result);"
+        }
+      ],
+      "after_sha256": "5acc3d885f97d4fc0385d12615f2bd50466310c49ad15f6a60f03b1640676016"
     }
   ]
 }

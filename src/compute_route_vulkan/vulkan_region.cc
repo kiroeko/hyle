@@ -83,6 +83,10 @@ bool managed_operation(const ProgramState &program,
                                  std::span(inputs).first(step.inputs.size()),
                                  std::span(outputs).first(step.outputs.size())))
     return false;
+  if ((step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
+       step.operation.get_if<GatedActivation>()) &&
+      !managed_elementwise_limits(program, step))
+    return false;
   // Original RMSNorm uses ne1/ne2/ne3 as workgroup counts. Other admitted
   // elementwise kernels split their flattened domain into bounded XYZ tiles.
   if (step.operation.get_if<RmsNorm>()) {

@@ -129,9 +129,11 @@ TEST(VulkanManaged, ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters) {
 
 TEST(VulkanManaged, PointwiseFamilyUsesRealProviderWithoutNormAnchor) {
   auto context = vulkan_test::context().value();
-  const std::array kinds{c::UnaryKind::kAbs, c::UnaryKind::kNeg,
-                         c::UnaryKind::kExp, c::UnaryKind::kTanh,
-                         c::UnaryKind::kSigmoid, c::UnaryKind::kSilu};
+  const std::array kinds{c::UnaryKind::kAbs,     c::UnaryKind::kNeg,
+                         c::UnaryKind::kExp,     c::UnaryKind::kTanh,
+                         c::UnaryKind::kSigmoid, c::UnaryKind::kSilu,
+                         c::UnaryKind::kLog,     c::UnaryKind::kSqrt,
+                         c::UnaryKind::kRsqrt,   c::UnaryKind::kSoftplus};
   const std::array descriptions{
       dense(c::DataType::kFloat32, {}),
       dense(c::DataType::kFloat32, {129}),
@@ -240,6 +242,193 @@ TEST(VulkanManaged, SubtractDividePreserveBothBroadcastOrdersAndScalar) {
         expect(context, input, data, true);
         expect(context, broadcast, small, true);
       }
+    }
+  }
+}
+TEST(VulkanManaged, StableTransformsPreserveSmallValuesAndHighRankHalfStorage) {
+  auto context = vulkan_test::context().value();
+  const std::array<double, 27> edges{
+      -80,  -40,       -20,      -15, -1, -1e-4, -1e-8, -0.0, 0.0,
+      1e-8, 1e-4,      0.5,      1,   2,  15,    20,    40,   80,
+      NAN,  -INFINITY, INFINITY, -2,  3,  0.25,  -0.25, 8,    16};
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    const auto size = static_cast<std::int64_t>(c::data_type_size(type));
+    const auto desc =
+        c::TensorDesc::strided_bytes(
+            type, std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 3, 9},
+            std::array<std::int64_t, 8>{0, 0, 0, 0, 0, 0, 9 * (size + 1) + 3,
+                                        size + 1})
+            .value();
+    const auto input = make(context, desc, edges);
+    const auto logical = values(context, input);
+    const auto original = bytes(context, input);
+    for (auto kind :
+         {c::UnaryKind::kLog, c::UnaryKind::kSqrt, c::UnaryKind::kRsqrt,
+          c::UnaryKind::kSoftplus, c::UnaryKind::kTanh, c::UnaryKind::kSigmoid,
+          c::UnaryKind::kSilu}) {
+      SCOPED_TRACE(::testing::Message()
+                   << static_cast<int>(type) << '/' << static_cast<int>(kind));
+      auto program = v::prepare(context, c::Unary{kind}, desc).value();
+      const auto &dispatches = d::Access::program(program)->dispatches;
+      ASSERT_EQ(std::ranges::count_if(dispatches,
+                                      [](const auto &dispatch) {
+                                        return dispatch.region != nullptr;
+                                      }),
+                1);
+      auto slot = program.create_invocation().value();
+      ASSERT_TRUE(slot.bind(input).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto observed = values(context, result->get()->tensors()[0]);
+      for (std::size_t i = 0; i < logical.size(); ++i) {
+        const auto reference = rounded(unary(kind, logical[i]), type);
+        if (std::isnan(reference)) {
+          EXPECT_TRUE(std::isnan(observed[i])) << i;
+        } else if (reference == 0 || std::isinf(reference)) {
+          EXPECT_EQ(observed[i], reference) << i;
+          EXPECT_EQ(std::signbit(observed[i]), std::signbit(reference)) << i;
+        } else {
+          const auto relative = type == c::DataType::kFloat32   ? 6e-6
+                                : type == c::DataType::kFloat16 ? 0.001
+                                                                : 0.008;
+          const auto quantum = type == c::DataType::kFloat16    ? 0x1p-24
+                               : type == c::DataType::kBFloat16 ? 0x1p-133
+                                                                : 1e-43;
+          EXPECT_NEAR(observed[i], reference,
+                      relative * std::abs(reference) + quantum)
+              << i;
+        }
+      }
+      EXPECT_EQ(bytes(context, input), original);
+    }
+  }
+}
+
+TEST(VulkanManaged, CrossBroadcastAndDegenerateRankEightUseMatureArithmetic) {
+  auto context = vulkan_test::context().value();
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    for (bool high : {false, true}) {
+      const auto left_desc =
+          high ? dense(type, {1, 1, 1, 1, 1, 3, 1, 1}) : dense(type, {3, 1});
+      const auto right_desc = high ? dense(type, {1, 1, 1, 1, 1, 1, 1, 129})
+                                   : dense(type, {1, 129});
+      const std::array<double, 3> rows{0.5, 2, 4};
+      std::vector<double> columns(129);
+      for (std::size_t i = 0; i < columns.size(); ++i)
+        columns[i] = 1 + (i % 13) * 0.125;
+      const auto left = make(context, left_desc, rows);
+      const auto right = make(context, right_desc, columns);
+      for (auto kind : {c::BinaryKind::kAdd, c::BinaryKind::kSubtract,
+                        c::BinaryKind::kMultiply, c::BinaryKind::kDivide}) {
+        for (bool reverse : {false, true}) {
+          const auto args =
+              reverse ? std::array{right, left} : std::array{left, right};
+          auto program =
+              v::prepare(context, c::Binary{kind}, args[0].description(),
+                         args[1].description())
+                  .value();
+          const auto &dispatches = d::Access::program(program)->dispatches;
+          ASSERT_EQ(std::ranges::count_if(dispatches,
+                                          [](const auto &dispatch) {
+                                            return dispatch.region != nullptr;
+                                          }),
+                    1);
+          auto slot = program.create_invocation().value();
+          ASSERT_TRUE(slot.bind(args).ok());
+          auto work = slot.submit().value();
+          auto result = work.wait().value();
+          std::vector<double> expected;
+          for (double row : rows)
+            for (double column : columns) {
+              const auto a = reverse ? column : row, b = reverse ? row : column;
+              expected.push_back(kind == c::BinaryKind::kAdd        ? a + b
+                                 : kind == c::BinaryKind::kSubtract ? a - b
+                                 : kind == c::BinaryKind::kMultiply ? a * b
+                                                                    : a / b);
+            }
+          expect(context, result.get()->tensors()[0], expected);
+        }
+      }
+    }
+    const auto singleton =
+        make(context, dense(type, {1, 1, 1, 1, 1, 1, 1, 1}), std::array{4.0});
+    auto result = execute(context, c::Operation(c::Unary{c::UnaryKind::kSqrt}),
+                          std::array{singleton})
+                      .value();
+    expect(context, result, std::array{2.0}, true);
+  }
+}
+
+TEST(VulkanManaged, ElementwiseDeviceLimitsRetainQualifiedFallbacks) {
+  auto context = vulkan_test::context().value();
+  auto &limits = d::Access::runtime(context)->device->properties.limits;
+  const auto original = limits;
+  limits.maxComputeWorkGroupInvocations = 256;
+  auto program = v::prepare(context, c::Unary{c::UnaryKind::kSoftplus},
+                            dense(c::DataType::kFloat32, {129}));
+  limits = original;
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_TRUE(std::ranges::all_of(
+      d::Access::program(*program)->dispatches,
+      [](const auto &dispatch) { return !dispatch.region; }));
+}
+
+TEST(VulkanManaged, PackedAndSeparateSwiGluRetainHighRankRowHalves) {
+  auto context = vulkan_test::context().value();
+  constexpr std::int64_t width = 129, rows = 3;
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    for (auto form :
+         {c::GatedInputKind::kPackedHalves, c::GatedInputKind::kSeparate}) {
+      const auto columns =
+          form == c::GatedInputKind::kPackedHalves ? 2 * width : width;
+      const auto size = static_cast<std::int64_t>(c::data_type_size(type));
+      const auto desc =
+          c::TensorDesc::strided_bytes(
+              type,
+              std::array<std::int64_t, 8>{1, 1, 1, 1, 1, rows, 1, columns},
+              std::array<std::int64_t, 8>{
+                  0, 0, 0, 0, 0, columns * (size + 1) + 3, 0, size + 1})
+              .value();
+      std::vector<double> data(rows * columns), factors(rows * width),
+          expected(rows * width);
+      for (std::size_t i = 0; i < data.size(); ++i)
+        data[i] = rounded((static_cast<int>(i % 31) - 15) * 0.5, type);
+      for (std::size_t i = 0; i < factors.size(); ++i)
+        factors[i] = rounded((static_cast<int>(i % 17) - 8) * 0.125, type);
+      std::vector<v::Tensor> inputs{make(context, desc, data)};
+      if (form == c::GatedInputKind::kSeparate)
+        inputs.push_back(make(context, desc, factors));
+      std::vector<v::Argument> arguments;
+      for (const auto &input : inputs)
+        arguments.emplace_back(input.description());
+      auto program = v::prepare(context,
+                                c::Operation(c::GatedActivation{
+                                    c::GatedActivationKind::kSilu, form}),
+                                std::span<const v::Argument>(arguments))
+                         .value();
+      ASSERT_EQ(std::ranges::count_if(
+                    d::Access::program(program)->dispatches,
+                    [](const auto &dispatch) { return !!dispatch.region; }),
+                1);
+      auto slot = program.create_invocation().value();
+      ASSERT_TRUE(slot.bind(inputs).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait().value();
+      for (std::int64_t row = 0; row < rows; ++row)
+        for (std::int64_t column = 0; column < width; ++column) {
+          const auto index = row * width + column;
+          const auto factor = form == c::GatedInputKind::kSeparate
+                                  ? factors[index]
+                                  : data[row * columns + width + column];
+          expected[index] = activate(c::GatedActivationKind::kSilu,
+                                     data[row * columns + column]) *
+                            factor;
+        }
+      expect(context, result.get()->tensors()[0], expected);
     }
   }
 }

@@ -16,8 +16,13 @@ parent application's Git repository.
 The SiLU and separate SwiGLU shaders additionally map negative infinity to the
 activation's positive-zero limit, as required by HYLE's common semantics.
 The gate still multiplies that activation by its other input, preserving
-zero-times-infinity/NaN behavior. Finite formulas, fusion and resource planning
-remain upstream implementations; these are explicit boundary corrections.
+zero-times-infinity/NaN behavior. Their negative finite branch uses exp(x) to
+avoid intermediate overflow, as does Sigmoid. Tanh uses the GLSL intrinsic
+instead of a subtractive formula that cancels tiny inputs. Softplus uses a
+compensated log1p expression with explicit NaN/Inf handling; Log and Sqrt also
+handle the common negative-domain and signed-zero boundaries explicitly.
+These are declared numerical adaptations, including changes to finite math.
+The original dispatch, fusion and resource planning remain in place.
 
 The two Argsort shaders retain the upstream bitonic sorting networks, barriers,
 dispatch and scratch management. Their comparison uses original F32 storage

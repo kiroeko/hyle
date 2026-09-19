@@ -37,6 +37,8 @@ ggml_unary_op unary_operation(UnaryKind kind) noexcept {
     return GGML_UNARY_OP_SIGMOID;
   case UnaryKind::kSilu:
     return GGML_UNARY_OP_SILU;
+  case UnaryKind::kSoftplus:
+    return GGML_UNARY_OP_SOFTPLUS;
   default:
     return GGML_UNARY_OP_COUNT;
   }
@@ -109,7 +111,9 @@ bool region_supports(const Operation &operation,
            (scan->axis == -1 ||
             scan->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
   if (const auto *unary = operation.get_if<Unary>())
-    return unary_operation(unary->kind) != GGML_UNARY_OP_COUNT;
+    return unary_operation(unary->kind) != GGML_UNARY_OP_COUNT ||
+           unary->kind == UnaryKind::kLog || unary->kind == UnaryKind::kSqrt ||
+           unary->kind == UnaryKind::kRsqrt;
   if (const auto *binary = operation.get_if<Binary>())
     return inputs.size() == 2 &&
            (binary->kind == BinaryKind::kAdd ||
@@ -118,8 +122,7 @@ bool region_supports(const Operation &operation,
             binary->kind == BinaryKind::kDivide) &&
            (same_shape(inputs[0], output) || same_shape(inputs[1], output));
   if (const auto *gate = operation.get_if<GatedActivation>())
-    return gate->activation == GatedActivationKind::kSilu &&
-           gate->inputs == GatedInputKind::kSeparate;
+    return gate->activation == GatedActivationKind::kSilu;
   return false;
 }
 
@@ -188,7 +191,7 @@ Result<Region> Region::create(NativeDevice device,
     // TopK/Scan: at most 10/16 nodes including reshape/view/cont adapters.
     // LayerNorm: input reshape, GroupNorm, restored shape, optional Mul/Add.
     // Row reduction: up to three exact row pieces, concat and shape restore.
-    // Other operations need at most three (broadcast plus binary, or RMSNorm).
+    // Other operations need at most three (Rsqrt: Fill, Sqrt, Div).
     auto capacity = recipe.inputs.size() + 16;
     for (const auto &node : recipe.nodes)
       capacity += node.operation.get_if<Scan>()        ? 16
@@ -350,9 +353,20 @@ Result<Region> Region::create(NativeDevice device,
             output = ggml_add(context, output, tensors[node.inputs[2]]);
         }
       } else if (const auto *unary = node.operation.get_if<Unary>()) {
-        output = ggml_unary(context, left, unary_operation(unary->kind));
-      } else if (node.operation.get_if<GatedActivation>()) {
-        output = ggml_swiglu_split(context, left, tensors[node.inputs[1]]);
+        if (unary->kind == UnaryKind::kLog)
+          output = ggml_log(context, left);
+        else if (unary->kind == UnaryKind::kSqrt)
+          output = ggml_sqrt(context, left);
+        else if (unary->kind == UnaryKind::kRsqrt)
+          output = ggml_div(context, ggml_fill(context, left, 1.0F),
+                            ggml_sqrt(context, left));
+        else
+          output = ggml_unary(context, left, unary_operation(unary->kind));
+      } else if (const auto *gate = node.operation.get_if<GatedActivation>()) {
+        output =
+            gate->inputs == GatedInputKind::kPackedHalves
+                ? ggml_swiglu(context, left)
+                : ggml_swiglu_split(context, left, tensors[node.inputs[1]]);
       } else {
         auto *right = tensors[node.inputs[1]];
         const auto kind = node.operation.get_if<Binary>()->kind;

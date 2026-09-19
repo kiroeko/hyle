@@ -123,15 +123,21 @@ dispatch和固定shared memory，无额外device scratch。RMSNorm两遍读取�
 的适用正确性；完整成本性能优选仍待C1验收。
 例如 `vk::prepare(context, c::RmsNorm{}, input_description, scale_tensor)` 捕获 scale，随后只绑定输入。
 
-正尺寸 dense F32、rank1–4 的 RMSNorm（F32 累加，可选同类型 scale）和分离式 SiLU gate
-默认绑定原版 ggml region。Abs/Neg/Exp/Tanh/Sigmoid/SiLU 和 Add/Subtract/Multiply/Divide
-在正尺寸 dense F32、rank0–4 域也通过同一普通入口绑定；scalar 使用单元素原厂存储。
+正尺寸 dense F32、rank1–4 的 RMSNorm（F32 累加，可选同类型 scale）和 SiLU gate
+绑定 ggml region。Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/SiLU/Softplus 及
+Add/Subtract/Multiply/Divide 在正尺寸 dense F32、rank0–4 域也通过同一普通入口绑定；
+scalar 使用单元素原厂存储。Log/Sqrt、稳定激活的数值边界按共同合同显式适配；Rsqrt 由
+原厂 Fill(1)、Sqrt、Div 组成，包含三个 dispatch 和两个中间张量。
 连续兼容操作一起交付，保留原厂内部融合与存储，不要求片段含归一化或门控。
-二元广播至少一侧须具有完整输出形状；减除法左侧广播时保留一个原版 Repeat 中间结果，
-该分配和执行计入成本。published 和跨片段使用的结果仍可独立读取。
+适配器支持 F16/BF16、rank≤8、stride 和两侧广播，必要时物化为 F32；half 最后一次舍入。
+低 rank 保留原广播形状；高 rank 的非标量广播可能需要完整物化。packed SiLU 保留行内
+两半，交原厂 GLU 执行。减除法左侧广播时保留原版 Repeat 中间结果；这些转换、分配和
+执行均计入成本。published 和跨片段使用的结果仍可独立读取。
 准备期无法证明端口起点四字节对齐时，固定加入现有 Copy 适配；这包含描述相同但 View
 起点可能改变的动态输入。已知对齐常量和计算结果直接导入，适配内存与复制属于真实成本。
-其他已支持的类型/布局继续使用原生实现。bind/submit 不选择 Provider；本批规则尚待等责 P1。
+空域、设备限制之外及 Min/Max 等未绑定域继续使用已有原生实现。bind/submit 不选择 Provider；
+[Y35 新接线](../implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md)仍待适用资格，
+完整成本优选尚待 C1 等责 P1。
 
 Concat 接受任意正数量的同类型输入、正负 axis、rank1..8 和合法 stride/View，按输入顺序拼接，
 保留原始存储位并生成独立 dense 结果。例如 `vk::prepare(context, c::Concat{-1}, left_desc,

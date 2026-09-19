@@ -404,6 +404,8 @@ Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept {
   try {
+    if (managed_elementwise_limits(program, step))
+      return lower_managed_elementwise(program, step);
     if (step.operation.kind() == OperationKind::kReduce ||
         step.operation.kind() == OperationKind::kSoftmax)
       return lower_managed_reduction(program, step);
