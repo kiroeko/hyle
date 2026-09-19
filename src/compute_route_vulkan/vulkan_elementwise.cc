@@ -54,7 +54,7 @@ bool managed_elementwise_limits(const ProgramState &program,
             type == DataType::kBFloat16) &&
            count && *count > 0 && *count <= INT32_MAX &&
            *count <= limits.maxStorageBufferRange / sizeof(float) &&
-           (std::min)((*count + 511) / 512, std::uint64_t{512}) <=
+           (std::min)((*count + 511) / 512, std::size_t{512}) <=
                limits.maxComputeWorkGroupCount[1] &&
            (*count + 262143) / 262144 <= limits.maxComputeWorkGroupCount[2] &&
            (!fill || (*count + 511) / 512 <=
