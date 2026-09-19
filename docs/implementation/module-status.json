@@ -272,14 +272,14 @@
     {
       "module": "compute",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "graph",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "container_concurrent",
@@ -401,8 +401,8 @@
     {
       "module": "compute_backend_cuda",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "compute_provider_native",
@@ -491,26 +491,26 @@
     {
       "module": "compute_route_apple",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "graph_route_apple",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
+      "summary": "M1-R SCOPED：模型/配置/阶段与原生环境条件的冷请求接缝；有限R1–R5待审计。保留各路线执行器、现有语义/资源检查及全部自研冻结；不代签模型覆盖。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
