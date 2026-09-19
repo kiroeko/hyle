@@ -32,6 +32,14 @@ bool managed_operation(const ProgramState &program,
               .maxComputeWorkGroupCount[axis - 1])
         return false;
   }
+  if (step.operation.get_if<Gather>()) {
+    const auto &limits = program.runtime->device->properties.limits;
+    if (limits.maxComputeWorkGroupInvocations < 512 ||
+        limits.maxComputeWorkGroupSize[0] < 512 ||
+        static_cast<std::uint64_t>(inputs[0].dimensions()[1]) >
+            std::uint64_t{limits.maxComputeWorkGroupCount[0]} * 512)
+      return false;
+  }
   return true;
 }
 
@@ -191,10 +199,12 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
     const auto padded_bytes = (row_bytes + 3) / 4 * 4;
     if (extent > limits.maxStorageBufferRange / padded_bytes ||
         count > limits.maxStorageBufferRange / padded_bytes ||
+        padded_bytes / 4 >
+            std::uint64_t{limits.maxComputeWorkGroupCount[0]} * 512 ||
         extent * (padded_bytes / size) > INT32_MAX ||
         count * (padded_bytes / size) > INT32_MAX)
       return Status::Unimplemented(
-          "Vulkan Gather row adapter exceeds device range");
+          "Vulkan Gather row adapter exceeds buffer or dispatch range");
     std::array<std::int32_t, kMaxTensorRank> axes{};
     axes[0] = static_cast<std::int32_t>(axis);
     std::size_t next = 1;

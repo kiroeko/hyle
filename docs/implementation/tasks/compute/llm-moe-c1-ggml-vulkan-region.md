@@ -929,3 +929,17 @@ Y26 shared、Air/Mini、真实本地BF16 embedding片段和source/static/shared�
 后者的输入/独立oracle及外部consumer已准备，不能算运行PASS。三个owner保持AUDITED，完整C1
 Scatter/Scan、固定优选/淘汰和矩阵签收未完成，CPU oneDNN资格BLOCKED不变。
 当前统一实现LOC为47,554行/193文件，不含测试、bench、第三方，自检通过。
+
+### Y26-F1：原版 GetRows 的冷调度上限（第一轮有限产品纠正）
+
+baseline `f6c37c33`；原产品仍为`3a59c5d8`。原版`ggml_vk_op_f32`为GetRows限制Y/Z并由
+shader循环覆盖，但X直接使用`ceil(row_words/512)`，`ggml_vk_dispatch_pipeline`在超设备上限时
+触发断言。当前checked布局适配未拒绝过宽行，unchecked I32成熟直通还绕过512-lane准入。
+已用真实Context的冷准备测试降低缓存能力界限，**不分配大payload、不提交非法dispatch**，
+复现3次错误接纳；原始失败保留在Y26归档。该注入只证明拒绝合同，不代替实际GPU正向验证。
+
+固定纠正：仅在`vulkan_region.cc`的managed匹配及Gather布局适配中检查512-lane能力与
+`row_words <= maxComputeWorkGroupCount[0]*512`；超界返回Unimplemented。
+增加一个checked/unchecked与workgroup/grid边界回归。原GetRows算法、shader、热期、ABI及
+状态语义不变。按selector验证受影响route factors，未变provider按相同身份复用；平台与实际消费者保持原范围。消耗两轮产品纠正预算中的
+第一轮，不扩展到其他算子或公共治理。

@@ -8,6 +8,32 @@
 namespace {
 using namespace vulkan_gather_test;
 
+TEST(VulkanGather, RejectsNativeGetRowsLimitsDuringPreparation) {
+  auto context = vulkan_test::context().value();
+  auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
+  const auto original = limits;
+  const auto source = dense(c::DataType::kInt32, {1, 1025});
+  const auto indices = dense(c::DataType::kInt32, {1});
+  // A reduced declared limit proves cold admission without a huge allocation
+  // or ever submitting an invalid dispatch to the original Provider.
+  for (const bool narrow_grid : {true, false}) {
+    limits = original;
+    if (narrow_grid)
+      limits.maxComputeWorkGroupCount[0] = 1;
+    else
+      limits.maxComputeWorkGroupInvocations = 256;
+    for (const auto bounds : {c::IndexBoundsPolicy::kChecked,
+                              c::IndexBoundsPolicy::kUnchecked}) {
+      auto program = v::prepare(context, c::Gather{0, bounds}, source, indices);
+      EXPECT_FALSE(program);
+      if (!program)
+        EXPECT_TRUE(program.error().IsUnimplemented())
+            << program.error().message();
+    }
+  }
+  limits = original;
+}
+
 TEST(VulkanGather, AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows) {
   auto context = vulkan_test::context().value();
   for (const auto type :
