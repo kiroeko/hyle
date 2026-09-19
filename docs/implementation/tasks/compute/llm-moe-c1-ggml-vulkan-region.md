@@ -1089,3 +1089,10 @@ Provider的源码/MASM组合另行执行，未把旧版本门直接代签为本�
 归档核验后清理45个重复producer，共9,492,226,425逻辑字节。实现仍48,737行/197文件。
 本批验收到此停止重复；C1其余Provider覆盖、完整成本比较/条件规则/存量淘汰与CPU Q2
 BLOCKED仍待处理，C1及共同矩阵没有签收。C1全部适用验收完成后通知用户，在C2前等待提问。
+
+### C1-Y35：逐元素及门控接入的有限重新定界
+
+baseline `1e43875a`，owner `/root`。当前 AUDITED 仅新增
+[Y35-A–D](llm-moe-c1-vulkan-elementwise.md) 的原厂操作/region 绑定、稳定数值 patch、route
+类型布局适配与具名资格门。不新增公共 runtime，不重开 CPU ggml 或 CPU Q2 的 BLOCKED。
+产品实施与实际设备/三交付/完整成本裁决尚未完成，不以本次审计回填共同矩阵 PASS。

@@ -1,0 +1,58 @@
+{
+  "status": "STATIC_AUDIT_INPUT_ONLY",
+  "baseline": "1e43875a22efdabed4e445e7ee15bf9823f31031",
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "source_sha256_lf": {
+    "include/ggml.h": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6",
+    "src/ggml.c": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+    "src/ggml-vulkan/ggml-vulkan.cpp": "c84f67465dfa0a24e034663f510d8b92310e3be7a7fbca231760be234b7c9f9d",
+    "src/ggml-vulkan/vulkan-shaders/unary.comp": "224257d872b7658a3d9dba118818897511596093a4c5fc9b4ff866cfc7079709",
+    "src/ggml-vulkan/vulkan-shaders/log.comp": "0c34bdbaa11a37c51b5a3c81ff7ece3adafb8ef42e2f36c3f53a82e603b17b37",
+    "src/ggml-vulkan/vulkan-shaders/swiglu.comp": "cd10f81a22d2a1d2435a5d229656a5b187cdaf664b45867da894452586b1943a"
+  },
+  "counterexamples": [
+    {
+      "operation": "Softplus",
+      "input": -40.0,
+      "source_f32_model": 0.0,
+      "fp64_reference": 4.248354255291589e-18
+    },
+    {
+      "operation": "Softplus",
+      "input": -20.0,
+      "source_f32_model": 0.0,
+      "fp64_reference": 2.061153620314381e-09
+    },
+    {
+      "operation": "Softplus",
+      "input": -15.0,
+      "source_f32_model": 3.576278118089249e-07,
+      "fp64_reference": 3.0590227371372044e-07
+    },
+    {
+      "operation": "Tanh",
+      "input": -1e-08,
+      "source_f32_model": 0.0,
+      "fp64_reference": -1e-08
+    },
+    {
+      "operation": "Tanh",
+      "input": 1e-08,
+      "source_f32_model": 0.0,
+      "fp64_reference": 1e-08
+    }
+  ],
+  "findings": [
+    "Log and Sqrt are dedicated ggml operations; Softplus is a Unary; none is currently mapped by region.cc.",
+    "Rsqrt can use original Fill(1), Sqrt and Div in one managed region; cost includes two full intermediates and three dispatches.",
+    "Original Softplus and Tanh formulas lose small nonzero values in float32; model above is not a device measurement.",
+    "Log and Sqrt lack explicit common-contract negative-domain and signed-zero handling; this is not a claim that every GPU fails.",
+    "The existing SiLU(-Inf) correction remains; stable negative-tail handling must be shared by Unary and SwiGLU.",
+    "Packed and separate SwiGLU have original entry points; packed rows need not be split into two host-controlled kernels.",
+    "No same-contract dynamic Binary Min/Max entry was identified; scalar Clamp is not a substitute.",
+    "F01 conversion and byte-stride ownership stay with existing HYLE adapters; dtype/layout differences alone do not justify a new arithmetic kernel."
+  ],
+  "gpu_runs": 0,
+  "performance_runs": 0,
+  "product_fix_authority": "docs/implementation/tasks/compute/llm-moe-c1-vulkan-elementwise.md"
+}

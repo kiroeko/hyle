@@ -1522,3 +1522,10 @@ Provider的源码/MASM组合另行执行，未把旧版本门直接代签为本�
 归档核验后清理45个重复producer，共9,492,226,425逻辑字节。实现仍48,737行/197文件。
 本批验收到此停止重复；C1其余Provider覆盖、完整成本比较/条件规则/存量淘汰与CPU Q2
 BLOCKED仍待处理，C1及共同矩阵没有签收。C1全部适用验收完成后通知用户，在C2前等待提问。
+
+### C1-Y35：成熟逐元素及门控接入（SCOPED / AUDITED）
+
+baseline `1e43875a`，owner `/root`。Vulkan 三个当前 owner 仅按
+[Y35-A–D](llm-moe-c1-vulkan-elementwise.md)重新定界：Log/Sqrt/Softplus/Rsqrt/packed SwiGLU
+接入、必要稳定数学修正及三浮点/布局适配，沿普通 Direct/Graph 和原厂 region。源码事实与
+有限验证先固定后实施；旧 Y34 验收停止重复。本批不跑 P1，CPU Q2 BLOCKED 和 C1 通知条件不变。
