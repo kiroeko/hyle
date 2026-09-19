@@ -1,0 +1,23 @@
+{
+  "scope": "Y26-F2 W1 static workgroup-boundary correctness only",
+  "status": "PASS",
+  "baseline": "79ece7db9ac144b941cdfeec59dac3bf3bd66f2d",
+  "patch_sha256": "d1a00e8363fce188c9e1f39b61f8641800569740808a33975fe02884b0abd670",
+  "source_identity": {
+    "cmake/HyleDependencyLock.json": "ce845abcce62c2f12d77378e35b6dd99e9adc7e8275950e55ebc3aa517d501ee",
+    "third_party/ggml_vulkan_runtime/patches.json": "7688bcf2ffb9990254cd5840943a179f20680f788ae938913cd7a99336ce81cc",
+    "third_party/ggml_vulkan_runtime/NOTICE.md": "b0c49ff577ea8cf124c460710155ad65ccad430b867a22f6b2849b5e6f4b363e",
+    "tests/compute_route_vulkan/gather_test.cc": "338535611a6d198d6626c9cf4275de9fd5659f348c80d82df75c34218ecf6e15"
+  },
+  "tests": 1,
+  "profiles": 60,
+  "archive": "w1-correction-raw.zip",
+  "archive_sha256": "4cad6fe15f8cfd7c081f77253554c6dc1656675c3145edc396963884c966dad2",
+  "remaining": [
+    "full selected gates",
+    "W1 shared",
+    "Air and Mini current-product checks",
+    "W1/Air actual BF16 source/static/shared"
+  ],
+  "performance": "NOT_RUN"
+}

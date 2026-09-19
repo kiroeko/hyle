@@ -1,0 +1,27 @@
+{
+  "product_candidate": "807bc22bb1b50cc6eaf9bc03d7f8a72be417a597",
+  "status": "FAIL",
+  "scope": "Y26 actual BF16 row and independent workgroup-boundary regression before F2",
+  "cause": "I32 GetRows uses 1024 host X divisor for a fixed 512-lane shader",
+  "actual_input": "34 actual BF16 embedding rows, width 2048, from the frozen local Qwen3.5-2B asset",
+  "first_mismatch": {
+    "route": "Direct",
+    "rows": 1,
+    "phase": 0,
+    "element": 1024,
+    "actual_bits": "0000",
+    "expected_bits": "bc11"
+  },
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "correction_owner": "compute_provider_ggml_vulkan",
+  "archive": "raw.zip",
+  "archive_sha256": "de5cd11cad3f6599cd5b824e606505871a5a5837c7da06a9946033233e833754",
+  "archive_bytes": 32207,
+  "model_payload_in_archive": false,
+  "not_claimed": [
+    "full C1",
+    "model inference",
+    "performance acceptance",
+    "post-F2 correctness"
+  ]
+}

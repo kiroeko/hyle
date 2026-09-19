@@ -954,13 +954,16 @@ baseline `f6c37c33`；原产品仍为`3a59c5d8`。原版`ggml_vk_op_f32`为GetRo
 - 本地2B的真实BF16 embedding子表（34行、宽2048）在source consumer首次实际运行失败：
   Direct第一个输出的元素1024为`0000`，独立原始输入为`bc11`；此前1024个元素一致。
   这是位保持合同的明确反例，不放宽容差，不继续推进其余交付来寻找PASS。
+  [失败归档](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-gather/wide-row-counterexample/README.md)
+  保存首次运行、最小诊断、宽行回归及先前独立的consumer编译失败。
 - 锁定ggml `456172ec` 的 `get_rows.comp` 固定 `local_size_x=512`，I32专用编译使用uint
   原始读取/写入；但 `ggml-vulkan.cpp` 创建 `pipeline_get_rows[GGML_TYPE_I32]` 时将
   `wg_denoms[0]` 写成1024。host只录制`ceil(row_words/1024)`组，宽于512字的行会漏写。
   此前小尺寸边界没有跨过原生工作组，F1的512-lane上限仍是修正后应遵守的准入界限。
 
 固定FIX仅为：在既有带输入/输出摘要的vendor patch manifest中，将上述I32 pipeline的单个
-分母1024纠正为512，并更新该文件结果摘要和NOTICE；保留原pin、shader、算法、原生资源和ABI。
+分母1024纠正为512，并同步文件结果摘要、NOTICE及既有dependency lock的对应内容/说明摘要；
+保留原pin、shader、算法、原生资源和ABI。
 不修改上游checkout或共享source cache，不新增payload kernel，也不扩公共构建/性能工具。
 增加跨511/512/513/1024/1025字边界的普通Gather位级回归，包含窄字适配与原生I32直通。
 
@@ -969,3 +972,9 @@ P0：恢复覆盖整个输出所需的工作组数；复杂度O(output)，没有
 Air/Mini，随后继续既定W1/Air真实权重source/static/shared旅程；原失败和每次候选身份保留。
 本次不运行P1，正确性通过不签性能胜出。此FIX消耗Y26两轮产品纠正预算中的最后一轮；若仍有
 产品失败，按具体反例裁决而不无界追加修复。完整C1仍缺Scatter/Scan、优选/淘汰和矩阵签收。
+
+F2单值补丁现已实施。W1新增宽行回归先在原实现复现FAIL，纠正后60个dtype/边界/checked
+组合逐位通过；这只签该回归，不替代完整平台与真实片段交付。结果及源码身份见
+[W1定向纠正记录](../../../../evidence/correctness/compute-llm-moe-c1/ggml-vulkan-gather/wide-row-counterexample/w1-correction.json)。
+完整selector的其余适用门尚待执行，未签全量PASS；本轮未运行P1。统一实现LOC仍为
+47,564行/193文件（不含测试、bench、第三方）；F2只改vendor配置及测试，HYLE实现集合未变。

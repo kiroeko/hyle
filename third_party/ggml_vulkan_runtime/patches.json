@@ -296,9 +296,13 @@
         {
           "before": "        std::vector<const char *> device_extensions;",
           "after": "        std::vector<const char *> device_extensions;\n        // HYLE: required for every device advertising Vulkan portability.\n        for (const auto &extension : ext_props) {\n            if (strcmp(extension.extensionName, \"VK_KHR_portability_subset\") == 0) {\n                device_extensions.push_back(\"VK_KHR_portability_subset\");\n                break;\n            }\n        }"
+        },
+        {
+          "before": "    ggml_vk_create_pipeline(device, device->pipeline_get_rows[GGML_TYPE_I32],     \"get_rows_i32\",     get_rows_i32_len,     get_rows_i32_data,     \"main\", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);",
+          "after": "    ggml_vk_create_pipeline(device, device->pipeline_get_rows[GGML_TYPE_I32],     \"get_rows_i32\",     get_rows_i32_len,     get_rows_i32_data,     \"main\", 3, sizeof(vk_op_binary_push_constants), { 512, 1, 1}, {}, 1);"
         }
       ],
-      "after_sha256": "67aa68c51d1989b6af49e94e676debdbb963a8d49487a614eb1e02872d8bd993"
+      "after_sha256": "827eacdd221628f065d2374668898c81b0c260ceb2d141afbbb917e614ff6412"
     },
     {
       "path": "src/ggml.cpp",

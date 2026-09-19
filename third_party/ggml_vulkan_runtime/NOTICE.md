@@ -26,6 +26,11 @@ either order, and valid elements before tail padding. Descending order is
 encoded in that comparison; output reversal is removed to preserve tie order.
 This is an explicit semantic adaptation, not an unmodified upstream algorithm.
 
+The I32 GetRows pipeline's X dispatch divisor is corrected from 1024 to 512
+to match the upstream shader's fixed 512-lane workgroup. The original uint
+loads/stores and shader are unchanged. This prevents incomplete rows when a
+bit-preserving Gather spans more than one workgroup, including BF16 embeddings.
+
 The native embedding edits isolate Vulkan instance/dispatcher/registry state,
 publish fully initialized devices, roll back partial buffer/backend creation,
 account device memory through optional HYLE reservations, and permit an owned

@@ -82,6 +82,38 @@ TEST(VulkanGather, AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows) {
   }
 }
 
+TEST(VulkanGather, WideRowsCoverEveryNativeWorkgroup) {
+  auto context = vulkan_test::context().value();
+  const std::array<std::uint64_t, 4> positions{2, 0, 1, 2};
+  const auto index_desc = dense(c::DataType::kInt32, {4});
+  const auto indices =
+      context.upload(index_desc, payload(index_desc, positions)).value();
+  for (const auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16,
+        c::DataType::kInt32, c::DataType::kInt64, c::DataType::kBool}) {
+    const auto size = c::data_type_size(type);
+    // The original I32 shader has 512 lanes. Include exact, partial and
+    // multiple workgroups, as required by the real width-2048 BF16 table.
+    for (const std::size_t words : {511U, 512U, 513U, 1024U, 1025U}) {
+      const auto columns = static_cast<std::int64_t>((words * 4 + size - 1) / size);
+      const auto desc = dense(type, {3, columns});
+      const auto host = payload(desc, raw_pattern(desc));
+      const auto source = context.upload(desc, host).value();
+      const auto expected = reference(desc, host, positions, 0);
+      for (const auto bounds : {c::IndexBoundsPolicy::kChecked,
+                                c::IndexBoundsPolicy::kUnchecked}) {
+        SCOPED_TRACE(::testing::Message()
+                     << static_cast<int>(type) << '/' << words << '/'
+                     << static_cast<int>(bounds));
+        auto output = execute(context, c::Operation(c::Gather{0, bounds}),
+                              std::array{source, indices});
+        ASSERT_TRUE(output) << output.error().message();
+        EXPECT_TRUE(std::ranges::equal(bits(context, *output), expected));
+      }
+    }
+  }
+}
+
 TEST(VulkanGather, OddStridesBroadcastIndicesScalarAndRankEight) {
   auto context = vulkan_test::context().value();
   const std::array shape{std::int64_t{2}, std::int64_t{5}, std::int64_t{3}};

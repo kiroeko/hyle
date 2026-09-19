@@ -3,6 +3,9 @@
 当前 CPU 成熟归一化/融合接入见 [C1-AA](llm-moe-c1-onednn-normalization.md)；
 oneDNN 两个 owner 的具体状态以 registry 为准。
 
+用户里程碑要求（2026-09-19）：C1全部适用验收完成后单独明确通知，汇总能力、性能取舍及限制，
+供用户提问；局部实现或单项测试通过不能触发C1完成通知。
+
 ## Closure card
 
 - round / current owner：LLM/MoE C1，`/root`。
@@ -1221,8 +1224,9 @@ Compute 固定规则、边界资源、Recorder 与 Run/Completion；Graph 保留
 当前增量：2026-09-19，baseline `04643d18`，三个 Vulkan owner 对
 [C1-Y 的 Y26](llm-moe-c1-ggml-vulkan-region.md) 完成受检 Gather 的有限审计：原版 GetRows、
 GPU 索引检查、逐位布局适配及真实完成后错误回报。仅授权 Y26-A–D；Scatter/Scan 另行定界，
-Y26-A–C现已实现，W1 static三factor共100例及头/source/MASM检查通过；
-shared、Air/Mini、真实BF16片段/三交付与整包优选仍未验收，CPU 性能 blocker 不变。
+Y26-A–C现已实现；F1的W1 static/shared、Air/Mini局部回归均通过。真实宽2048的BF16片段
+随后暴露锁定ggml的I32 GetRows工作组分母错误；Y26-F2已受审并作单值纠正，W1宽行位级回归
+从FAIL转为PASS。F2完整平台、真实片段/三交付及整包优选仍待验证，CPU性能blocker不变。
 
 2026-09-19，baseline `dff6a509`，owner `/root`：`compute_route_vulkan` 按
 [C1-Y 的 Y17–Y19](llm-moe-c1-ggml-vulkan-region.md) 重新定界普通入口的冷 managed span
