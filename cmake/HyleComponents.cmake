@@ -476,11 +476,11 @@ _hyle_declare_component(compute_provider_ggml_vulkan
 _hyle_declare_component(compute_ggml_runtime
   PRIVATE_DEPS core error mem)
 
-# M1-C admission identities only. Native resource/ABI audit precedes targets,
-# dependencies and normal CUDA factory composition.
-_hyle_declare_component(compute_provider_ggml_cuda QUEUED)
-_hyle_declare_component(graph_provider_ggml_cuda QUEUED)
-_hyle_declare_component(compute_provider_flashinfer QUEUED)
+# M1-C SCOPED identities only; no dependency, public header or product root is
+# granted until the native resource/ABI audit freezes those contracts.
+_hyle_declare_component(compute_provider_ggml_cuda)
+_hyle_declare_component(graph_provider_ggml_cuda)
+_hyle_declare_component(compute_provider_flashinfer)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

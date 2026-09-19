@@ -3,12 +3,15 @@
 ## Closure card
 
 - owner：`/root`；baseline：`0f54dad4fd95714ef3a03f455f04dc746edccaea`，Windows main。
-- 当前阶段：登记新身份 QUEUED；尚未授权产品实现，后续逐 owner 进入 SCOPED/AUDITED。
-- 拟新增：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`、`compute_provider_flashinfer`。
+- 当前阶段：SCOPED；三个新身份已在`77caf875`登记QUEUED；本卡六owner先审计，不授权产品实现。
+- 新增身份：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`、`compute_provider_flashinfer`。
   分别拥有 Direct/native program、Graph region 接线与原版 attention 接入，不建立空 target。
 - 既有 owner：`compute_ggml_runtime`的 CUDA vendor/资源补丁投影，`compute_route_cuda`与
   `graph_route_cuda`的普通工厂组装；按本卡新需求重定界。原生 backend 借用/错误机制先复用，
   只有具体缺口才将 `compute_backend_cuda`纳入，不预先重审整个 CUDA runtime。
+
+上述三个既有owner按本卡明确的新后端/普通入口需求从CLOSED重开至SCOPED，原terminal record
+保留为已有范围的证据；此动作不重审其旧数学。新身份仍没有target、依赖或公开头，不计接入完成。
 - trigger：[M0清单](llm-moe-provider-integration-ledger.md)的 M1-C/Q-CUDA-API；现有 CUDA
   普通入口没有 ggml region 和 FlashInfer，ggml 公开 API 缺少外来 device buffer/stream 接缝。
 - 先决：[M1-G](llm-moe-m1-ggml-runtime.md)与[M1-R](llm-moe-m1-route-binding.md)均 CLOSED。
