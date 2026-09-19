@@ -115,6 +115,8 @@ Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;
 bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
+bool layer_norm_limits(const ProgramState &, const TensorDesc &) noexcept;
+Status lower_layer_norm(ProgramState &, const PlanStep &) noexcept;
 Status lower_topk(ProgramState &, const PlanStep &) noexcept;
 Status lower_gather(ProgramState &, const PlanStep &) noexcept;
 Status lower_scan(ProgramState &, const PlanStep &) noexcept;

@@ -8,6 +8,55 @@ using namespace vulkan_gate_norm_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
 
+TEST(VulkanGraph,
+     ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks) {
+  auto context = vulkan_test::context().value();
+  constexpr int width = 129;
+  std::vector<double> storage(4 * width);
+  for (std::size_t i = 0; i < storage.size(); ++i)
+    storage[i] = (static_cast<int>(i % 29) - 14) * 0.125;
+  auto parent =
+      make(context, dense(c::DataType::kFloat32, {4, width}), storage);
+  auto input = parent.view(c::View::slice(0, 1, 3).value()).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto captured = builder.constant(input.description()).value();
+  const auto normalized = builder.add(c::LayerNorm{}, captured).value();
+  const auto residual =
+      builder.add(c::Binary{c::BinaryKind::kAdd}, normalized, captured).value();
+  ASSERT_TRUE(builder.publish(normalized).ok());
+  ASSERT_TRUE(builder.publish(residual).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  auto program =
+      gv::compile(context, graph, std::array{input}, {.report = &report});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(report.managed_region_count, 1U);
+  EXPECT_EQ(report.native_dispatch_count, 1U); // Descriptor alignment adapter.
+  auto slot = program->create_invocation().value();
+  graph = {};
+  input = {};
+  parent = {};
+  ASSERT_TRUE(slot.bind(std::span<const v::Tensor>{}).ok());
+  v::Tensor retained;
+  const auto data = std::span<const double>(storage).subspan(width);
+  const auto expected = norm(data, width, true, 1e-5F);
+  std::vector<double> added(expected.size());
+  for (std::size_t i = 0; i < added.size(); ++i)
+    added[i] = expected[i] + data[i];
+  {
+    auto work = slot.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    expect(context, result->get()->tensors()[0], expected);
+    expect(context, result->get()->tensors()[1], added);
+    retained = result->get()->tensors()[0];
+  }
+  slot = {};
+  *program = {};
+  ASSERT_TRUE(context.close().ok());
+  expect(context, retained, expected);
+}
+
 TEST(VulkanGraph, ManagedNormFusionPreservesPublishedForksAndNativeBoundaries) {
   auto context = vulkan_test::context().value();
   constexpr int width = 2048;

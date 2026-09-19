@@ -103,6 +103,9 @@ bool managed_operation(const ProgramState &program,
   }
   if (step.operation.get_if<Scan>() && !scan_limits(program, inputs[0]))
     return false;
+  if (step.operation.get_if<LayerNorm>() &&
+      !layer_norm_limits(program, inputs[0]))
+    return false;
   if (const auto *selection = step.operation.get_if<TopK>();
       selection && !topk_limits(program, inputs[0], *selection))
     return false;
@@ -140,9 +143,10 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       provider::RegionNode node{step.operation, {}, {}};
       for (const auto input : step.inputs)
         node.inputs.push_back(local(input));
-      // Argsort and the multi-pass Scan require descriptor-aligned inputs.
+      // Argsort, GroupNorm and the multi-pass Scan need aligned descriptors.
       // Other admitted operations retain their offset-aware input contract.
-      if (step.operation.get_if<TopK>() || step.operation.get_if<Scan>())
+      if (step.operation.get_if<TopK>() || step.operation.get_if<Scan>() ||
+          step.operation.get_if<LayerNorm>())
         uses[local(step.inputs[0])].descriptor_aligned = true;
       for (const auto output : step.outputs) {
         node.outputs.push_back(local(output));

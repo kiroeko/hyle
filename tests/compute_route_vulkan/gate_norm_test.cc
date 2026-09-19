@@ -2,9 +2,83 @@
 
 #include "gate_norm_test_support.h"
 #include "vulkan_internal.h"
+#include "vulkan_program_internal.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
+
+TEST(VulkanGateNorm, LayerNormUsesMatureRegionsThroughHighRankStorageAdapters) {
+  auto context = vulkan_test::context().value();
+  constexpr std::int64_t width = 129;
+  constexpr std::size_t elements = 3 * width;
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    const auto size = static_cast<std::int64_t>(c::data_type_size(type));
+    const auto description =
+        c::TensorDesc::strided_bytes(
+            type, std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 3, 1, width},
+            std::array<std::int64_t, 8>{0, 0, 0, 0, 0, width * (size + 1) + 3,
+                                        0, size + 1})
+            .value();
+    std::vector<double> data(elements), scale(width), bias(width);
+    for (std::size_t i = 0; i < data.size(); ++i)
+      data[i] = rounded((static_cast<int>(i % 23) - 11) * 0.125, type);
+    for (std::size_t i = 0; i < scale.size(); ++i) {
+      scale[i] = static_cast<float>(1.001 + (i % 7) * 0.0625);
+      bias[i] = rounded((static_cast<int>(i % 9) - 4) * 0.03125, type);
+    }
+    for (std::size_t parameters = 0; parameters <= 2; ++parameters) {
+      SCOPED_TRACE(::testing::Message()
+                   << static_cast<int>(type) << ':' << parameters);
+      std::vector<v::Tensor> tensors{make(context, description, data)};
+      if (parameters > 0)
+        tensors.push_back(
+            make(context, dense(c::DataType::kFloat32, {width}), scale));
+      if (parameters > 1)
+        tensors.push_back(make(context, dense(type, {width}), bias));
+      std::vector<v::Argument> arguments;
+      for (const auto &tensor : tensors)
+        arguments.emplace_back(tensor.description());
+      auto program = v::prepare(context, c::LayerNorm{},
+                                std::span<const v::Argument>(arguments));
+      ASSERT_TRUE(program) << program.error().message();
+      const auto &dispatches = v::detail::Access::program(*program)->dispatches;
+      EXPECT_EQ(std::ranges::count_if(dispatches,
+                                      [](const auto &dispatch) {
+                                        return dispatch.region != nullptr;
+                                      }),
+                1);
+      auto slot = program->create_invocation().value();
+      ASSERT_TRUE(slot.bind(tensors).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      expect(context, result->get()->tensors()[0],
+             norm(data, width, true, 1e-5F,
+                  parameters > 0 ? std::span<const double>(scale)
+                                 : std::span<const double>{},
+                  parameters > 1 ? std::span<const double>(bias)
+                                 : std::span<const double>{}));
+    }
+  }
+}
+
+TEST(VulkanGateNorm, MatureLayerNormRejectsAnOversizedGroupGridBeforeDispatch) {
+  auto context = vulkan_test::context().value();
+  v::detail::ProgramState state;
+  state.runtime = v::detail::Access::runtime(context);
+  const auto &limits = state.runtime->device->properties.limits;
+  EXPECT_TRUE(v::detail::layer_norm_limits(
+      state, dense(c::DataType::kFloat32, {3, 129})));
+  const auto too_many =
+      static_cast<std::int64_t>(limits.maxComputeWorkGroupCount[0]) + 1;
+  EXPECT_FALSE(v::detail::layer_norm_limits(
+      state, dense(c::DataType::kFloat32, {too_many, 1})));
+  const auto too_wide =
+      static_cast<std::int64_t>(limits.maxStorageBufferRange) / 4 + 1;
+  EXPECT_FALSE(v::detail::layer_norm_limits(
+      state, dense(c::DataType::kFloat32, {1, too_wide})));
+}
 
 TEST(VulkanGateNorm, ThreeGatesSupportBothLayoutsAndOddByteOrigins) {
   auto context = vulkan_test::context().value();

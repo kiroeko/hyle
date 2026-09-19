@@ -404,6 +404,8 @@ Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept {
   try {
+    if (step.operation.kind() == OperationKind::kLayerNorm)
+      return lower_layer_norm(program, step);
     if (step.operation.kind() == OperationKind::kTopK)
       return lower_topk(program, step);
     if (step.operation.kind() == OperationKind::kGather)
