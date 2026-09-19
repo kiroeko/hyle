@@ -369,3 +369,8 @@ dump。沿已有固定`active-cpu/p1`作fresh build，冷EXE已按hash另行备�
 退回AUDITED；修正合同参数与模块落点，加无计时回归后按原停止条件BLOCKED。
 产品F1/正确性/三交付不变，未产生产品性能样本；默认规则、淘汰和第二轮产品纠正预算未签署。
 不因为这是接线错误而忽略另一项A/A失败或追加同样实验，C1其他独立验收继续。
+
+Q2-D已在`7f625eb4`修复并通过12项Python回归及docs/closure；C++、原门和产品子树不变。
+两个owner依法从AUDITED进入BLOCKED，详细恢复/停止条件见[Q2终局](llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)。
+没有重新构建、冷执行或P1；目录修复不签原失败通过，也不决定赢家。统一脚本为48,294实现行/
+195文件，自检PASS。CPU局部阻塞不替代C1其他独立验收，整包及64行/256格仍未签收。

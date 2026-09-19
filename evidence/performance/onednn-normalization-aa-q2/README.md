@@ -51,3 +51,14 @@ dump环境由模块自己的child环境清除/设置，普通采样EXE拒绝未�
 原始字面目录在核验归档后安全移到`.scratch/validation/onednn-aa/q2/failed-record-root`，
 保留原argv/cwd；仓库根无此垃圾目录。Q2-D只修模块参数与目录命名并做不计时回归；公共
 仪器、门限和产品C++不变。当前失败与原Q1异常均保留，不能用日志修复标记性能PASS。
+
+## 接线修复收口
+
+`7f625eb4`的[修复收据](path-fix-result.json)与[12项Python测试](path-fix-tests.txt)通过：
+合同使用完整`{output}` token，由模块追加记录namespace；实际公共expander的带空格路径
+回归覆盖到模块错误落盘。AST核对只改`main`，合同只改一个参数；不重建、不启动native
+benchmark/冷检查/P1。原323份临时记录移位后再次与ZIP逐字节匹配。
+
+资格仍FAIL、产品性能INCONCLUSIVE，两个owner按原预算进入BLOCKED；恢复要求见
+[终局](../../../docs/implementation/tasks/compute/llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)。
+[完整实现LOC](all-implementation-loc.json)为48,294行/195文件，自检PASS，不包含tests/bench/vendor。

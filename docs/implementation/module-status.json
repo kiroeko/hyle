@@ -353,9 +353,13 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA-Q2-D AUDITED：唯一恢复实验在产品采样前触发目录接线及oneDNN自身A/A gross失败，完整原始记录已归档。只修模块output参数并作无计时回归，随后按停止条件BLOCKED；不重跑、不改产品/门限、不签默认规则。"
+      "summary": "C1-AA-Q2 BLOCKED：16个A/A进程与完整实例原记录保留，原门FAIL且产品采样0；Q2-D目录接线修复及12项Python回归通过，无native/build/P1重试。F1正确性/三交付不变，默认规则/淘汰未裁决，其他C1独立验收继续。",
+      "blocked_from": "AUDITED",
+      "blocker": "Q2唯一恢复实验的preflight中oneDNN对自身Direct LayerNorm 17x257吞吐比0.906388、倒数1.103281，违反原10% gross门；同次目录接线错误已在7f625eb4修复，但不能消除资格FAIL。产品采样0，性能INCONCLUSIVE。",
+      "blocker_owner": "/root：模块资格；若需改变门限或接受例外由用户决策",
+      "resume_condition": "独立证据指向具名的公平性/测量缺陷或相关环境变化，先在单独有限卡审计纠正及资格预算；改变门限或接受例外须用户明确决策。仅日志/目录修复、候选改名、等待空闲不满足，不原样追加计时。"
     },
     {
       "module": "compute_provider_ggml",
@@ -369,9 +373,13 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/llm-moe-c1-onednn-normalization.md",
-      "summary": "C1-AA-Q2-D AUDITED：唯一恢复实验在产品采样前触发目录接线及oneDNN自身A/A gross失败，完整原始记录已归档。只修模块output参数并作无计时回归，随后按停止条件BLOCKED；不重跑、不改产品/门限、不签默认规则。"
+      "summary": "C1-AA-Q2 BLOCKED：16个A/A进程与完整实例原记录保留，原门FAIL且产品采样0；Q2-D目录接线修复及12项Python回归通过，无native/build/P1重试。F1正确性/三交付不变，默认规则/淘汰未裁决，其他C1独立验收继续。",
+      "blocked_from": "AUDITED",
+      "blocker": "Q2唯一恢复实验的preflight中oneDNN对自身Direct LayerNorm 17x257吞吐比0.906388、倒数1.103281，违反原10% gross门；同次目录接线错误已在7f625eb4修复，但不能消除资格FAIL。产品采样0，性能INCONCLUSIVE。",
+      "blocker_owner": "/root：模块资格；若需改变门限或接受例外由用户决策",
+      "resume_condition": "独立证据指向具名的公平性/测量缺陷或相关环境变化，先在单独有限卡审计纠正及资格预算；改变门限或接受例外须用户明确决策。仅日志/目录修复、候选改名、等待空闲不满足，不原样追加计时。"
     },
     {
       "module": "compute_ops",

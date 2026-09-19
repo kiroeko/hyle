@@ -173,3 +173,22 @@ oneDNN/oneDNN Direct LayerNorm 17×257，primary、peer先执行/candidate先分
 当前记录能确认相同Provider、共享输入、独立输出/workspace及CPU2；粗粒度线程时间和代码
 区域不能归因到两条arm，也不能证明某个JIT地址导致越线。不扩大根因调查、不裁决赢家或删
 Native。独立C1剩余项继续，整包完成通知尚未触发。
+
+### Q2 终局：BLOCKED
+
+Q2-D修复为`7f625eb4e18e928f1a782be3ada169297d249f56`；
+[接线结果](../../../../evidence/performance/onednn-normalization-aa-q2/path-fix-result.json)与
+[12项测试](../../../../evidence/performance/onednn-normalization-aa-q2/path-fix-tests.txt)通过。
+实际公共expander处理带空格输出路径后，模块将失败记录放到该output下独立nonce目录。
+AST确认只改`main`，合同只有output token变化，C++/公共仪器未变。无构建、native benchmark、
+冷检查或P1重试；selector只选docs/closure并保留118项跳过理由，两门通过。
+
+本轮最终为：记录接线已修复；原实验A/A资格FAIL；产品性能INCONCLUSIVE，默认规则及Native
+淘汰仍未裁决。两个oneDNN owner从AUDITED进入BLOCKED，owner `/root`，只阻塞这组性能资格。
+恢复必须有独立证据指向具名的公平性/测量缺陷或相关环境变化，并先在单独有限卡审计纠正与
+资格预算；若需要改变统计门或接受例外，须用户明确决策。仅补日志、路径已修复、换候选名或
+等待机器空闲均不满足恢复条件，不隐式启动Q3或重置预算。
+
+独立C1实现/验收继续；全部适用门未齐，不能通知C1完成或进入C2。统一脚本按完整Compute与
+Graph（含各provider/backend/route）实现边界统计为48,294行/195文件，自检PASS；不含测试、
+bench、第三方及文档。该数量没有被当作功能进度。
