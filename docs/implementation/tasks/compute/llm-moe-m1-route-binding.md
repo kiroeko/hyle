@@ -183,3 +183,8 @@ owner统一绑定此快照。Air通过全部22项原生/头检查，包含CPU、
 Direct/Graph；原shared链接失败和对应源码/导出符号证据保留。其他环境与三交付、sanitizer
 继续按原声明串行验证。Windows已通过的28门来自旧快照，Apple专有修复不改变这些已验路径，
 复用其原身份并保留差异说明；不把复用写成新候选重新运行。未运行门仍不签PASS。
+
+Mini随后通过18项原生/头检查。WSL在Graph测试夹具编译时，GCC的
+`-Werror=missing-field-initializers`要求新增的两个WorkloadContext成员显式`{}`初始化；
+仅补测试成员默认初始化，不改变产品实现、API或警告策略。原FAIL保留，只续跑受影响的WSL
+以及未运行门；Air/Mini的PASS继续绑定`7016443b`，不重签或重跑无关已通过项。

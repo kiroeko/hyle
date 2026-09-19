@@ -103,8 +103,8 @@ struct RegionProbe final {
   std::uint64_t device_identity = 0;
   ProposalMode mode = ProposalMode::kPairs;
   const hyle::compute::WorkloadContext *required_workload = nullptr;
-  hyle::compute::WorkloadContext resource_workload;
-  hyle::compute::WorkloadContext compiled_workload;
+  hyle::compute::WorkloadContext resource_workload{};
+  hyle::compute::WorkloadContext compiled_workload{};
   std::size_t singleton_node = 0;
   std::optional<std::uint32_t> proposal_dispatch_count = 1;
   std::size_t propose_count = 0;
