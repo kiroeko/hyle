@@ -1,5 +1,5 @@
 {
-  "candidate": "256c45473f13e7554d318a10b246e6fd18b10959",
+  "candidate": "67f4339e7b8b8dc06c535df00a176e773e4b4263",
   "status": "PASS",
   "scope": "One factor-owned CMake path; no gate/P1/evidence reuse changes",
   "original_suite": {
@@ -12,16 +12,31 @@
     "pass": 3
   },
   "unique_tests_covered": 57,
-  "correction": "New Windows fixture originally omitted its header-suite target; added that fixture target only, then reran all three new cases. Tool implementation unchanged.",
+  "correction": "The original fixture correction was insufficient: immutable history scans omitted mapped external CMake paths. Added those exact paths to the existing rev-list, with READY and genuine CLOSED-owner rejection regression assertions. The full 57-test suite then passed on the final tool candidate.",
   "inputs": {
     "scripts/validation-policy.json": "4e934be1b1db22cf308126ed8d34ad028a8bfe2bd901c69154973637c7cb33d6",
-    "scripts/validation-select.py": "9a877d966561dffca56e9ec80fa4562c93fe24d0e610f827a5696a674edf3023",
-    "tests/tooling/validation_selector_test.py": "4eb233d345c0f65465bf2239468c3a19b3e27db104c067674353257e99641594"
+    "scripts/validation-select.py": "8d850ee3f838feb3e45c358f940f31cdd5f55a3a4233aee4efe990a6b7dd8278",
+    "tests/tooling/validation_selector_test.py": "deb2cc7d5418af0b7f1269bb6903ba9d186ab746fe5d797d646dcf963adc1271"
   },
   "files": {
     "selector-apple-owner-tests.log": "1b86a22915c7ce7d60c8e96dadf3f3ab61ee0b58b854025555c6059780234bc2",
     "selector-apple-owner-focused.log": "90487e0f1dea2e6f1dec00dfd2c76e2a7a2b12b1dd4f58f121690c5d1406f54b",
     "r5b-product-plan.json": "94bc3840791214743a0587ec0dbd530e8b263c373326b57e5c3f839816525ebb",
-    "r5b-owned-plan.json": "29abc6873f923f52fdb9cb7be80c80f0da38e159617736a800f848e739b71891"
-  }
+    "r5b-owned-plan.json": "29abc6873f923f52fdb9cb7be80c80f0da38e159617736a800f848e739b71891",
+    "2772d84969f6093177bf4d3a83c346f4470cb0651081bd7d8c6b6cc187d24879-0.log": "dfeb5f7f2f4f6054cfe15dd193c70ff1f07c7de38a3b5ff4e6ec0b04b0e7702d",
+    "2772d84969f6093177bf4d3a83c346f4470cb0651081bd7d8c6b6cc187d24879.json": "dda8475ecd2f46b225df8a07ee69b6a42aa1c18e38ded21f3ab6995d101bdd64",
+    "selector-apple-owner-history.log": "7cf1633d79b8e95561ba3e8b8b89d92a9d200edb828e1253d5bcfcb3fa2c8ec8",
+    "r5b-selected-result-before-history-map.json": "e66d4a7d39a837a4d44ccae6708caa5d8971b00b839b02e095440ecbb5042310",
+    "r5b-selected-result.json": "eb994e548bac166d169a7e4a2dfd826a6f782fb98c214fe32aec4f475164a728",
+    "validation-before-history-map.json": "f553f59ce045ee848ee3ecec974b75ffdb85fb3e2e7eefb8e886400c0b1bf099"
+  },
+  "final_suite": {
+    "tests": 57,
+    "pass": 57
+  },
+  "historical_authorization_focused": {
+    "tests": 5,
+    "pass": 5
+  },
+  "prior_candidate": "256c45473f13e7554d318a10b246e6fd18b10959"
 }

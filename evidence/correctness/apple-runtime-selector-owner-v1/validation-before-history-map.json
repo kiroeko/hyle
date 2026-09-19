@@ -1,0 +1,27 @@
+{
+  "candidate": "256c45473f13e7554d318a10b246e6fd18b10959",
+  "status": "PASS",
+  "scope": "One factor-owned CMake path; no gate/P1/evidence reuse changes",
+  "original_suite": {
+    "tests": 57,
+    "pass": 56,
+    "fixture_failure": 1
+  },
+  "corrected_focused": {
+    "tests": 3,
+    "pass": 3
+  },
+  "unique_tests_covered": 57,
+  "correction": "New Windows fixture originally omitted its header-suite target; added that fixture target only, then reran all three new cases. Tool implementation unchanged.",
+  "inputs": {
+    "scripts/validation-policy.json": "4e934be1b1db22cf308126ed8d34ad028a8bfe2bd901c69154973637c7cb33d6",
+    "scripts/validation-select.py": "9a877d966561dffca56e9ec80fa4562c93fe24d0e610f827a5696a674edf3023",
+    "tests/tooling/validation_selector_test.py": "4eb233d345c0f65465bf2239468c3a19b3e27db104c067674353257e99641594"
+  },
+  "files": {
+    "selector-apple-owner-tests.log": "1b86a22915c7ce7d60c8e96dadf3f3ab61ee0b58b854025555c6059780234bc2",
+    "selector-apple-owner-focused.log": "90487e0f1dea2e6f1dec00dfd2c76e2a7a2b12b1dd4f58f121690c5d1406f54b",
+    "r5b-product-plan.json": "94bc3840791214743a0587ec0dbd530e8b263c373326b57e5c3f839816525ebb",
+    "r5b-owned-plan.json": "29abc6873f923f52fdb9cb7be80c80f0da38e159617736a800f848e739b71891"
+  }
+}

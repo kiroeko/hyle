@@ -2,7 +2,7 @@
 
 ## 有限工具卡
 
-- owner：`/root`；baseline：`ec8cab7f`；状态：AUDITED（只改维护工具，无产品 factor）。
+- owner：`/root`；baseline：`ec8cab7f`；状态：CLOSED（只改维护工具，无产品 factor）。
 - trigger：[M1-R R5b](../compute/llm-moe-m1-route-binding.md)仅修改Apple暂存函数，当前selector把
   所有`cmake/`文件统一视为全库共享接缝，选择113门。函数只由`compute_route_apple`包含并安装，
   实际反向消费者是`graph_route_apple`，交付属于Compute/Graph。
@@ -33,3 +33,12 @@ owner仍被拒绝，P1不自动启动。docs/closure通过；未运行C++或性�
 实际不可变候选随后发现T2的历史扫描仍只列旧路径前缀，遗漏新映射的外置CMake文件，故无法
 把改动归因至产品提交。撤回上述终审；在原15分钟预算内仅将具名映射路径纳入原rev-list，
 强化正常候选READY与真实CLOSED前态拒绝断言。不改变状态门、不跳过原授权。
+
+## 最终裁决（2026-09-20）
+
+本节替代上面撤回的终审。最终工具候选`67f4339e7b8b8dc06c535df00a176e773e4b4263`
+通过完整57项原工具suite；历史授权专项5项亦通过。真实R5b不可变候选正确追溯至事先AUDITED的
+产品提交，保持Apple owner/直接消费者/三交付/OFF边界；实际选中7门全部通过。
+本工具卡只签T1–T3，不代签M1-R运行时；原夹具失败和遗漏历史路径导致的BLOCKED计划均保留。
+没有修改原门命令、状态协议、P1或证据复用合同，P0范围关闭。后续只有具名owner映射或授权
+追溯的可复现错误才重开，不扩大为全库CMake重分类。
