@@ -40,7 +40,7 @@ CPU/CUDA便利factory只建立Context；模型阶段随每次prepare/compile而�
 DefaultContextOptions，也不为传参无故重开CPU/CUDA route owner。`compute_provider_ggml`及两项
 oneDNN仍保持原BLOCKED；如M2要恢复CPU Provider，另建SCOPED卡并引用M1-G满足的恢复条件。
 
-### 拟定有限 FIX（SCOPED，尚不授权实现）
+### 有限 FIX（下述AUDITED决定固定R1–R5）
 
 | ID | 允许改动 | 必需验收 |
 |---|---|---|
@@ -78,7 +78,33 @@ oneDNN仍保持原BLOCKED；如M2要恢复CPU Provider，另建SCOPED卡并引�
   correctness/build，原性能BLOCKED和预算保持，不重跑其Q2。
 - 文档/状态提交只跑docs/closure与diff。P1在本冷接缝卡不适用；模型/片段默认性能由M2逐批签署。
 
-## 当前状态
+## AUDITED决定与七问（2026-09-20）
 
-SCOPED：已绑定当前owner和有限审计方向，产品FIX尚未授权。先完成API/owner/冷成本审计并固定R1–R5，
-再进入AUDITED实现。M1-G的CLOSED与其证据不受本卡改变；本卡没有新增覆盖或性能PASS。
+1. **来源/升级**：模型需求和成熟Provider来源继续使用M0的已锁映射；本卡不更新模型或库pin。
+   ModelDescription是consumer声明，HYLE不读取HF/JSON/权重。Provider自己的版本/原生能力由对应
+   实现读取；未知/缺失事实不能伪造为已资格化。无通用规则解释器，无数学实现变更。
+2. **消费/语义**：普通调用形状固定为可选WorkloadContext传给Direct prepare与Graph CompileOptions。
+   同模型可建立不同phase/region的artifact；ModelIdentity拥有字符串，copy保留同一个不可变owner，
+   相等用完整内容而非指针。known规则必须完整匹配family/revision/configuration，且仍检查真实IR。
+3. **下层复用**：Mem allocator与Util已有RefCounted负责所有权，不另造原子计数或分配器。
+   CPU硬件机制复用platform；CUDA只在已有Context创建边界采集事实；Apple/Vulkan沿现有Environment。
+   不重开这些下层模块，不新增全局CPU/device探测器或模型registry。
+4. **成本**：有注解时ModelIdentity一次连续冷分配保存header+三个字符串，空对象零分配；
+   handle复制/最后释放用已有引用计数。WorkloadContext只进入冷请求和artifact元数据，大小/保留位置
+   随候选记录；Invocation/submit不复制它，不执行字符串比较、native query或新锁/系统调用。
+   本卡没有新的算术/吞吐结论，P0只证明上述边界；后续模型规则的完整成本属于M2。
+5. **接口**：ModelDescription三个独立string_view只借用至create返回；ModelIdentity是一个私有state
+   指针的普通C++ owner。空family不得带孤立revision/configuration；缺失revision/configuration可记录，
+   但不能匹配完整专用资格。WorkloadPhase限unspecified/prefill/decode，region语义用带version的
+   namespace/id强类型；非法enum或半初始化region在准备前拒绝。没有Native FFI/稳定跨版本ABI承诺。
+6. **交付/依赖**：现有compute component承载新小头与compiled实现，已有util/mem私有依赖足够。
+   不改变中央组件图，不引入新第三方target。Provider私有request追加冷字段并提升合同版本；
+   RegionCompileRequest能在propose_resources阶段匹配模型，因此无需修改既有oneDNN发现回调或
+   重开其BLOCKED实现。跨factor真实消费者与三交付由selector在完整候选上验证。
+7. **易用/停止**：调用方只提供自己已知的模型/阶段声明和路线，不配置Provider优先级、设备版本
+   猜值或timing profile。无注解仍是普通入口；已有artifact不支持原地改模型标签，相关事实变化
+   必须重新准备。R4分别证明资格条件/请求传递和真实成熟计算，不能据此宣传尚未接入的模型优化。
+
+先实施R1不可变身份与失败/寿命验证，再接R2/R3/R4，最后固定候选执行R5。schema/多输出/effect/
+lease已有路径逐项复用；若模型片段暴露具体能力缺口，登记在对应M2批，不以本卡扩张自研。
+本次owner进入AUDITED；R1–R5之外无产品改动授权。M1-G仍CLOSED，旧ggml CPU与oneDNN仍BLOCKED。
