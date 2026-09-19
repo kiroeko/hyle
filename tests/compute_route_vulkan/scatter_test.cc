@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <optional>
 
 #include "scatter_test_support.h"
