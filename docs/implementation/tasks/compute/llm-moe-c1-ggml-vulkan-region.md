@@ -933,7 +933,7 @@ Scatter/Scan、固定优选/淘汰和矩阵签收未完成，CPU oneDNN资格BLO
 ### Y26-F1：原版 GetRows 的冷调度上限（第一轮有限产品纠正）
 
 baseline `f6c37c33`；原产品仍为`3a59c5d8`。原版`ggml_vk_op_f32`为GetRows限制Y/Z并由
-shader循环覆盖，但X直接使用`ceil(row_words/512)`，`ggml_vk_dispatch_pipeline`在超设备上限时
+ shader循环覆盖，X必须按512个实际shader lane覆盖，`ggml_vk_dispatch_pipeline`在超设备上限时
 触发断言。当前checked布局适配未拒绝过宽行，unchecked I32成熟直通还绕过512-lane准入。
 已用真实Context的冷准备测试降低缓存能力界限，**不分配大payload、不提交非法dispatch**，
 复现3次错误接纳；原始失败保留在Y26归档。该注入只证明拒绝合同，不代替实际GPU正向验证。
@@ -943,3 +943,29 @@ shader循环覆盖，但X直接使用`ceil(row_words/512)`，`ggml_vk_dispatch_p
 增加一个checked/unchecked与workgroup/grid边界回归。原GetRows算法、shader、热期、ABI及
 状态语义不变。按selector验证受影响route factors，未变provider按相同身份复用；平台与实际消费者保持原范围。消耗两轮产品纠正预算中的
 第一轮，不扩展到其他算子或公共治理。
+
+### Y26-F2：真实 BF16 宽行暴露的上游 GetRows 工作组配置（第二轮有限纠正）
+
+2026-09-19，owner `/root`，baseline `807bc22bb1b50cc6eaf9bc03d7f8a72be417a597`。
+本节先固定 SCOPED/AUDITED 边界；三个当前 Vulkan owner 仍为 AUDITED。
+
+- F1 的受影响 Direct/Graph 在 Windows static/shared、Air/Mini 分别通过82/81/82/82例。
+  原 provider 用例按未变身份复用；这些用例没有证明任意宽行的真实模型片段。
+- 本地2B的真实BF16 embedding子表（34行、宽2048）在source consumer首次实际运行失败：
+  Direct第一个输出的元素1024为`0000`，独立原始输入为`bc11`；此前1024个元素一致。
+  这是位保持合同的明确反例，不放宽容差，不继续推进其余交付来寻找PASS。
+- 锁定ggml `456172ec` 的 `get_rows.comp` 固定 `local_size_x=512`，I32专用编译使用uint
+  原始读取/写入；但 `ggml-vulkan.cpp` 创建 `pipeline_get_rows[GGML_TYPE_I32]` 时将
+  `wg_denoms[0]` 写成1024。host只录制`ceil(row_words/1024)`组，宽于512字的行会漏写。
+  此前小尺寸边界没有跨过原生工作组，F1的512-lane上限仍是修正后应遵守的准入界限。
+
+固定FIX仅为：在既有带输入/输出摘要的vendor patch manifest中，将上述I32 pipeline的单个
+分母1024纠正为512，并更新该文件结果摘要和NOTICE；保留原pin、shader、算法、原生资源和ABI。
+不修改上游checkout或共享source cache，不新增payload kernel，也不扩公共构建/性能工具。
+增加跨511/512/513/1024/1025字边界的普通Gather位级回归，包含窄字适配与原生I32直通。
+
+P0：恢复覆盖整个输出所需的工作组数；复杂度O(output)，没有新增metadata、拷贝、分配或同步。
+验证限于selector选中的provider及两个直接route factor、原source/补丁合同、W1 static/shared、
+Air/Mini，随后继续既定W1/Air真实权重source/static/shared旅程；原失败和每次候选身份保留。
+本次不运行P1，正确性通过不签性能胜出。此FIX消耗Y26两轮产品纠正预算中的最后一轮；若仍有
+产品失败，按具体反例裁决而不无界追加修复。完整C1仍缺Scatter/Scan、优选/淘汰和矩阵签收。
