@@ -48,3 +48,11 @@
 
 旧轮未完成且不复活。新计划重写不算产品进度；现有64行/256格全门验收状态保持 UNPROVEN。
 本卡只授权有限源码/文档工作，已有自实现全部冻结至 M5；预计新增自研为0。
+
+
+## 新 scope 移交依据
+
+`4de4ddbd` 已单独提交旧授权撤回、新总计划、Provider 目录与冻结合同；docs/closure 及
+前序状态检查通过，满足冻结记录的恢复条件。本次只将对应11个旧活动 owner 从 BLOCKED
+转为 SCOPED 并绑定本卡，产品 FIX 仍为空。ggml CPU、两个 oneDNN 的原 BLOCKED 及
+所有 CLOSED/QUEUED 均未变；无产品改动、native 构建、自研调查或 P1。

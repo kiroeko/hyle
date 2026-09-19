@@ -271,23 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "graph",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "SCOPED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "container_concurrent",
@@ -391,13 +383,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "compute_backend_cpu",
@@ -412,23 +400,15 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "compute_provider_native",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "compute_sched",
@@ -482,13 +462,9 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "compute_route_cuda",
@@ -514,53 +490,33 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "graph_route_apple",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "BLOCKED",
-      "summary": "旧 C1 授权撤回：用户要求按全模型需求先接成熟 Provider，所有自实现冻结；已有局部证据保留，未签旧轮完成，等待新 M0 scope 移交。",
-      "record": "docs/implementation/tasks/compute/llm-moe-self-operator-freeze.md",
-      "blocked_from": "AUDITED",
-      "blocker": "用户明确改变原施工顺序并撤回逐算子/旧 FIX 授权；旧轮无法按原卡继续实现或关闭。",
-      "blocker_owner": "/root：按用户要求重写计划并依法重新定界",
-      "resume_condition": "新 M0–M6 总计划、全体自实现冻结合同和 M0 有限模型/Provider/接入方式审计卡落盘，经单独提交与状态验证后仅恢复为 SCOPED；产品仍须新的有限 AUDITED FIX。"
+      "state": "SCOPED",
+      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。",
+      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md"
     }
   ]
 }
