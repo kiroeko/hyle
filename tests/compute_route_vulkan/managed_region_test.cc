@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
 

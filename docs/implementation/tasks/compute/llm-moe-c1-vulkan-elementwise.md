@@ -63,3 +63,7 @@ C1 全部适用验收完成后单独通知用户，在 C2 前等待提问。
 patch-tree 为 `3ee02da8a740cc831d6cef427cf8dd9302c9fd3cd931a5586782094bf43f2852`，
 原版依赖 pin 不变。五个 source contract 测试通过；实际编译、设备与交付资格尚未运行，
 没有 P1。selector 因依赖锁扩为112项 selected、8项未选，未执行门不记 PASS。
+
+首次 W1 构建在新增 Direct 测试缺少 `<algorithm>` 时停止（MSVC C2039/C3861，
+`std::ranges::count_if/all_of`）；尚未执行 GPU 测试。补显式头依赖后按同一缓存增量构建，
+保留首败日志。产品/算法纠正0，测试编译纠正1；不改变数值门、运行语义或统计工具。
