@@ -177,3 +177,9 @@ Air完整原生候选在链接`libhyle_compute_route_apple`时失败：旧`with_
 15分钟，纠正最多两次。owner `compute_route_apple`从CANDIDATE退回AUDITED，其他六项保持候选。
 修复后只续跑Air失败构建/原生测试以及尚未运行的声明门，已通过Windows门保留原身份。
 本轮不改公共API、布局、Provider pin、CMake或性能预算；完成后重新固定不可变候选。
+
+R5a已在`7016443b1bf895fc4300958e12099e89385de954`修复；该提交成为本卡后续完整候选，七个
+owner统一绑定此快照。Air通过全部22项原生/头检查，包含CPU、Apple Direct/Graph、Vulkan
+Direct/Graph；原shared链接失败和对应源码/导出符号证据保留。其他环境与三交付、sanitizer
+继续按原声明串行验证。Windows已通过的28门来自旧快照，Apple专有修复不改变这些已验路径，
+复用其原身份并保留差异说明；不把复用写成新候选重新运行。未运行门仍不签PASS。
