@@ -87,11 +87,13 @@ bool representable(const TensorDesc &description) noexcept {
                   0;
          });
 }
-bool row_operand(const TensorDesc &input, const TensorDesc &output) noexcept {
+bool matrix_operand(const TensorDesc &input,
+                    const TensorDesc &output) noexcept {
   return std::ranges::equal(input.dimensions(), output.dimensions()) ||
          elements(input) == 1 ||
          (elements(input) == static_cast<std::size_t>(columns(output)) &&
-          columns(input) == columns(output));
+          columns(input) == columns(output)) ||
+         (columns(input) == 1 && rows(input) == rows(output));
 }
 std::int32_t axis(std::int32_t value, std::size_t rank) noexcept {
   return value < 0 ? value + static_cast<std::int32_t>(rank) : value;
@@ -250,15 +252,23 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
       result = result ? ggml_concat(context, result, part, 1)
                       : ggml_dup(context, part);
     }
-  } else if (node.operation.get_if<Gather>()) {
+  } else if (const auto *gather = node.operation.get_if<Gather>()) {
     const auto &source = recipe.values[node.inputs[0]];
-    auto *table = ggml_reshape_2d(context, input(0),
-                                  static_cast<std::int64_t>(elements(source)) /
-                                      source.dimensions()[0],
-                                  source.dimensions()[0]);
-    auto *indices = ggml_reshape_1d(
-        context, input(1),
-        static_cast<std::int64_t>(elements(recipe.values[node.inputs[1]])));
+    const auto selected =
+        static_cast<std::size_t>(axis(gather->axis, source.rank()));
+    std::int64_t inner = 1;
+    std::int64_t outer = 1;
+    for (std::size_t i = 0; i < selected; ++i)
+      outer *= source.dimensions()[i];
+    for (std::size_t i = selected + 1; i < source.rank(); ++i)
+      inner *= source.dimensions()[i];
+    auto *table = ggml_reshape_3d(context, input(0), inner,
+                                  source.dimensions()[selected], outer);
+    const auto count =
+        static_cast<std::int64_t>(elements(recipe.values[node.inputs[1]]));
+    auto *indices = ggml_reshape_1d(context, input(1), count);
+    if (outer != 1)
+      indices = ggml_repeat_4d(context, indices, count, outer, 1, 1);
     result = ggml_get_rows(context, table, indices);
   }
   return result ? as_output(context, result, output) : nullptr;
@@ -436,9 +446,24 @@ Status run(Program &program, Invocation &invocation,
   // original kernel can assert, and before mapping or modifying any output.
   for (const auto &check : program.index_checks) {
     const auto *bytes = invocation.input_maps[check.input].bytes().data();
+    const auto &description =
+        program.recipe.values[program.recipe.inputs[check.input]];
     for (std::size_t i = 0; i < check.count; ++i) {
+      std::size_t offset = i * sizeof(std::int32_t);
+      if (!description.is_dense()) {
+        offset = 0;
+        auto remaining = i;
+        for (std::size_t dimension = description.rank(); dimension-- > 0;) {
+          const auto extent =
+              static_cast<std::size_t>(description.dimensions()[dimension]);
+          offset +=
+              (remaining % extent) *
+              static_cast<std::size_t>(description.byte_strides()[dimension]);
+          remaining /= extent;
+        }
+      }
       std::int32_t index = 0;
-      std::memcpy(&index, bytes + i * sizeof(index), sizeof(index));
+      std::memcpy(&index, bytes + offset, sizeof(index));
       if (index < 0 || index >= check.limit)
         return finish(
             Status::OutOfRange("ggml CPU Gather index is outside its source"));
@@ -656,7 +681,8 @@ bool supports(void *context, Operation operation,
   if (const auto *binary = operation.get_if<Binary>())
     return binary->kind != BinaryKind::kMinimum &&
            binary->kind != BinaryKind::kMaximum &&
-           row_operand(inputs[0], output) && row_operand(inputs[1], output);
+           matrix_operand(inputs[0], output) &&
+           matrix_operand(inputs[1], output);
   if (const auto *rms = operation.get_if<RmsNorm>())
     return rms->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
@@ -670,9 +696,8 @@ bool supports(void *context, Operation operation,
             (reduce->axes.values().size() == 1 &&
              axis(reduce->axes.values()[0], inputs[0].rank()) ==
                  static_cast<std::int32_t>(inputs[0].rank()) - 1));
-  if (const auto *gather = operation.get_if<Gather>())
-    return axis(gather->axis, inputs[0].rank()) == 0 && inputs[1].is_dense() &&
-           inputs[1].data_type() == DataType::kInt32;
+  if (operation.get_if<Gather>())
+    return inputs[1].data_type() == DataType::kInt32;
   return false;
 }
 bool region_operation(Operation operation) noexcept {
@@ -710,7 +735,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
                     std::span(&recipe.values[node.output], 1)))
         return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
             "ggml CPU recipe contains an unqualified node"));
-      if (node.operation.get_if<Gather>()) {
+      if (const auto *gather = node.operation.get_if<Gather>()) {
         const auto index = std::ranges::find(recipe.inputs, node.inputs[1]);
         if (index == recipe.inputs.end())
           return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
@@ -718,7 +743,8 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
         index_checks.push_back(
             {static_cast<std::uint32_t>(index - recipe.inputs.begin()),
              elements(recipe.values[node.inputs[1]]),
-             recipe.values[node.inputs[0]].dimensions()[0]});
+             inputs[0].dimensions()[static_cast<std::size_t>(
+                 axis(gather->axis, inputs[0].rank()))]});
       }
       available[node.output] = true;
     }

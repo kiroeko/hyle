@@ -95,6 +95,9 @@ auto compiled = hyle::graph::compile(logical_graph, *context, options);
 
 该入口自动组装 CPU 的 region 与 leaf 实现。M2 当前新增原版 ggml 的合法多节点片段，能保留
 已发布中间值和多个输出；对应有限域见[ggml CPU 接入检查点](compute.md#ggml-cpu-接入检查点)。
+L2 可以直接用 F32 输入（低精度先 Cast）、平方、末轴 Sum、加 epsilon、Sqrt、除法组成同一
+原版 region；epsilon 位于根号内，低精度输出最后显式 Cast。普通入口支持这份组合的重复执行
+和中间归约结果发布，不需要新增 L2 专用 API。
 支持的常量权重四节点 gated FFN 仍可保留 oneDNN 完整 region，其余节点按 CPU leaf 规则处理。
 普通用户不排列 Provider，compile 不接受 timing profile。标准 x64 构建通过 oneDNN AUTO 提供
 其实现；oneDNN 不可用时继续匹配 ggml/Native。超出已有能力明确返回错误。

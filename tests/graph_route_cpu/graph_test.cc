@@ -2,8 +2,10 @@
 
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <limits>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
@@ -562,6 +564,173 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
 }
 
 #if defined(HYLE_COMPUTE_GGML_CPU)
+template <class Value> void check_l2_region() {
+  for (const std::int64_t width : {1, 7, 31}) {
+    auto stats =
+        hyle::mem::StatsAllocator::create(hyle::mem::system_allocator())
+            .value();
+    {
+      auto context =
+          graph::cpu::create_context({.metadata_allocator = stats.get()})
+              .value();
+      auto queue = context.create_queue().value();
+      const auto description =
+          compute::TensorDesc::dense(
+              half_test::data_type<Value>(),
+              std::array<std::int64_t, 6>{2, 1, 3, 1, 2, width})
+              .value();
+      const auto scalar =
+          compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                     std::span<const std::int64_t>{})
+              .value();
+      constexpr float epsilon = 0.0001F;
+      auto epsilon_buffer = half_test::buffer<float>(std::array{epsilon});
+      auto builder = graph::GraphBuilder::create().value();
+      const auto input = builder.input(description).value();
+      const auto eps = builder.constant(scalar).value();
+      auto fp32 = input;
+      if constexpr (!std::is_same_v<Value, float>)
+        fp32 = builder.add(compute::Cast{compute::DataType::kFloat32}, input)
+                   .value();
+      const auto squares =
+          builder
+              .add(compute::Binary{compute::BinaryKind::kMultiply}, fp32, fp32)
+              .value();
+      const auto sum =
+          builder
+              .add(compute::Reduce{.kind = compute::ReductionKind::kSum,
+                                   .axes = compute::Axes::from(
+                                               std::array<std::int32_t, 1>{-1})
+                                               .value(),
+                                   .keep_dimensions = true,
+                                   .accumulation_type =
+                                       compute::DataType::kFloat32},
+                   squares)
+              .value();
+      const auto adjusted =
+          builder.add(compute::Binary{compute::BinaryKind::kAdd}, sum, eps)
+              .value();
+      const auto length =
+          builder.add(compute::Unary{compute::UnaryKind::kSqrt}, adjusted)
+              .value();
+      auto normalized =
+          builder
+              .add(compute::Binary{compute::BinaryKind::kDivide}, fp32, length)
+              .value();
+      if constexpr (!std::is_same_v<Value, float>)
+        normalized =
+            builder
+                .add(compute::Cast{half_test::data_type<Value>()}, normalized)
+                .value();
+      ASSERT_TRUE(builder.publish(sum).ok());
+      ASSERT_TRUE(builder.publish(normalized).ok());
+      auto logical = std::move(builder).finish().value();
+      const std::array constants{graph::ConstantBinding{
+          eps, compute::ConstTensorView::create(scalar, epsilon_buffer.view())
+                   .value()}};
+      auto compiled =
+          graph::compile(logical, context, {.constants = constants});
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      ASSERT_EQ(compiled->report.region_count(), 1U);
+      ASSERT_EQ(compiled->report.step_count(), 1U);
+      EXPECT_EQ(compiled->report.step(0)->provider.id,
+                compute::ggml_cpu::kProviderId);
+      EXPECT_EQ(compiled->report.step(0)->node_count,
+                (std::is_same_v<Value, float> ? 5U : 7U));
+      const auto size = description.element_count().value();
+      std::vector<Value> values(size);
+      auto source = half_test::buffer<Value>(values);
+      std::array outputs{half_test::buffer<Value>(values),
+                         half_test::buffer<Value>(values)};
+      std::array sums{half_test::buffer<float>(std::vector<float>(12)),
+                      half_test::buffer<float>(std::vector<float>(12))};
+      std::array invocations{compiled->executable.create_invocation().value(),
+                             compiled->executable.create_invocation().value()};
+      const std::array queues{graph::QueueBinding{
+          .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+      for (std::size_t slot = 0; slot < invocations.size(); ++slot) {
+        ASSERT_TRUE(invocations[slot]
+                        .bind(input, compute::ConstTensorView::create(
+                                         description, source.view())
+                                         .value())
+                        .ok());
+        ASSERT_TRUE(invocations[slot]
+                        .bind(sum, compute::TensorView::create(
+                                       logical.value_description(sum).value(),
+                                       sums[slot].view())
+                                       .value())
+                        .ok());
+        ASSERT_TRUE(invocations[slot]
+                        .bind(normalized, compute::TensorView::create(
+                                              description, outputs[slot].view())
+                                              .value())
+                        .ok());
+        ASSERT_TRUE(invocations[slot].prepare_replay(queues).ok());
+      }
+      const auto allocations = stats.snapshot().total_allocs;
+      std::array<std::vector<Value>, 2> previous;
+      for (std::size_t run = 0; run < 4; ++run) {
+        const auto slot = run % 2;
+        for (std::size_t i = 0; i < size; ++i) {
+          const auto row = i / static_cast<std::size_t>(width);
+          const double value =
+              row == 0   ? 0
+              : row == 1 ? 0.00001 * static_cast<double>(run + 1)
+                         : static_cast<double>(static_cast<int>(i % 17) - 8) *
+                               static_cast<double>(run + 1) / 16;
+          values[i] = half_test::encode<Value>(value);
+        }
+        ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+        auto done = invocations[slot].submit(queue);
+        ASSERT_TRUE(done) << done.error().message();
+        ASSERT_TRUE(done->wait().ok());
+        const auto actual = half_test::read<Value>(outputs[slot]);
+        const auto actual_sums = half_test::read<float>(sums[slot]);
+        for (std::size_t row = 0; row < 12; ++row) {
+          double squared = 0;
+          for (std::size_t col = 0; col < static_cast<std::size_t>(width);
+               ++col) {
+            const float value = static_cast<float>(half_test::decode(
+                values[row * static_cast<std::size_t>(width) + col]));
+            squared += static_cast<double>(value * value);
+          }
+          EXPECT_NEAR(actual_sums[row], squared,
+                      1.e-6 + std::abs(squared) * 1.e-6);
+          const float divisor =
+              std::sqrt(static_cast<float>(squared) + epsilon);
+          for (std::size_t col = 0; col < static_cast<std::size_t>(width);
+               ++col) {
+            const auto offset = row * static_cast<std::size_t>(width) + col;
+            const float expected =
+                static_cast<float>(half_test::decode(values[offset])) / divisor;
+            if constexpr (std::is_same_v<Value, float>)
+              EXPECT_NEAR(actual[offset], expected, 2.e-6F);
+            else
+              half_test::expect_near(actual[offset], expected);
+          }
+        }
+        previous[slot] = actual;
+        if (run != 0) {
+          const auto old = half_test::read<Value>(outputs[1 - slot]);
+          ASSERT_EQ(old.size(), previous[1 - slot].size());
+          EXPECT_EQ(std::memcmp(old.data(), previous[1 - slot].data(),
+                                old.size() * sizeof(Value)),
+                    0);
+        }
+      }
+      EXPECT_EQ(stats.snapshot().total_allocs, allocations);
+    }
+    EXPECT_TRUE(stats.balanced());
+  }
+}
+
+TEST(CpuDefaultGraph,
+     MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay) {
+  check_l2_region<float>();
+  check_l2_region<hyle::simd::float16_t>();
+  check_l2_region<hyle::simd::bfloat16_t>();
+}
+
 TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
   auto context = graph::cpu::create_context().value();
   auto queue = context.create_queue().value();

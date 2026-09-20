@@ -1,0 +1,60 @@
+{
+  "kind": "M2-B1 C1-L development checkpoint; not full coverage or performance acceptance",
+  "audit_commit": "0b4155a0b0b354304eb4b9d30ca322e4e223a941",
+  "candidate": "WORKTREE product/test hashes; no product/test changes after the recorded native tests",
+  "machine": "Windows x64 MSVC 19.50.35728.0; Release shared; oneDNN OFF; CPU only; parallel2, tests serial",
+  "implementation": "Original ggml get_rows/repeat/cont and binary column broadcast; L2 is an ordinary FP32 graph composition with explicit half casts, not a new mathematical kernel",
+  "verification": {
+    "verdict": "PASS",
+    "ctest_targets": 7,
+    "provider_cases": 14,
+    "ordinary_direct_cases": 6,
+    "ordinary_graph_cases": 12,
+    "self_contained_headers": 3,
+    "executor_consumers": 1
+  },
+  "covered_checks": [
+    "F32/F16/BF16/I32 Gather; dense rank6 and strided source; scalar/matrix/strided I32 indices",
+    "Arbitrary axes; repeated/first/last indices; changed payload replay; bounds failure preserves output; empty indices",
+    "Both operand orders of add/subtract/multiply/divide column broadcast",
+    "F32/F16/BF16 ordinary Graph L2; widths 1/7/31; zero/tiny rows; epsilon inside sqrt",
+    "One original region with intermediate sum publication; two invocations; old outputs; no hot HYLE allocator calls"
+  ],
+  "unrun": [
+    "Full B1 selector and three deliveries",
+    "WSL/Air/Mini and applicable sanitizers",
+    "oneDNN composition",
+    "P1; no timing or frozen HYLE comparison"
+  ],
+  "complete_requirement_cells": 0,
+  "loc": {
+    "implementation_lines": 54988,
+    "files": 239,
+    "tests_and_vendors_excluded": true
+  },
+  "archive": {
+    "path": "layout-windows-raw.zip",
+    "sha256": "25d9fde3cd22a337e7a1f5d273abc9ed26eff9a765adaf39f480f5362638d20f",
+    "bytes": 47541,
+    "files": 13
+  },
+  "build": {
+    "path": "C:\\hv\\m2b1-cpu",
+    "bytes": 105020670,
+    "retained_reason": "Only active small CPU M2 build, reused; no additional build directory created"
+  },
+  "source_hashes": [
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "ed96453174ed7589c0acf94630eb3f9650e3988dbbdb8005c156b09ff2f390fe"
+    },
+    {
+      "path": "tests/compute_provider_ggml/cpu_provider_test.cc",
+      "sha256": "2cf08fe20e84e4e6c4be945a0f855afb9ae4053a1d5aa19f51e4cae5b61103ab"
+    },
+    {
+      "path": "tests/graph_route_cpu/graph_test.cc",
+      "sha256": "73f86e2e821f327b0b4d346e51a87dc9d9c79c56f83302f6dcea46528c8fcfb2"
+    }
+  ]
+}

@@ -214,3 +214,13 @@ CPU `ops.cpp:5105–5216` 的 get_rows 分派支持 F32/F16/BF16/I32；I32 使�
 
 本次及前一检查点尚未入账的定向源码核对合计保守扣12分钟；源码/设计累计90分钟，剩余30分钟，
 总预算仍为120分钟。实现和预声明验证沿原预算/仪器；不触及冻结自研，也不重开旧 oneDNN Q2。
+
+### C1-L 实现中检查点
+
+原版任意轴 Gather、非连续索引检查、列广播与普通 Graph L2 组合已落地。Windows 同一
+CPU-only、oneDNN-OFF、shared 开发配置的7个目标通过（Provider 14、Direct 6、Graph 12用例）。
+Gather 验证四种 storage、rank6 dense/非连续源、标量/矩阵/非连续索引、重复/首尾、变 payload
+重放、越界输出不变和空索引；大 I32 未经过浮点数值转换。L2 验证 F32/F16/BF16、宽1/7/31、
+零/极小行、根号内 epsilon、中间归约结果发布、一个原版 region、两 slot 和无热 HYLE allocation。
+原始日志、失败修正和文件身份见 `layout-windows.json` 及其 archive；这里只是开发检查点，
+不是完整21行、所有平台/交付/插桩或 P1 的验收。其余精确域保持，不增加256格完成数。

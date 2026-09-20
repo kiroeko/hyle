@@ -375,7 +375,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：首批ggml普通Direct/Graph已通过Windows定向开发验证；C1-I已重新定界并审计M0 CPU-I标准库Scan/TopK接入，先固定有限增量再改代码。21行完整门未关闭，新覆盖0，自研冻结。"
+      "summary": "M2-B1 CPU AUDITED：首批ggml Direct/Graph、标准库Scan/TopK、任意轴Gather和L2原版组合已通过Windows定向开发验证（32用例）。21行完整门、跨平台/三交付/P1未完成；新覆盖0，自研冻结。"
     },
     {
       "module": "graph_provider_onednn",
@@ -440,13 +440,13 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：C1–C6原版ggml批量接线与线程/资源/Graph边界已固定；21行完整门保持，I32 Scan/稳定TopK/全mask等精确域仍需成熟补位。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
+      "summary": "M2-B1 CPU AUDITED：ggml与标准库成熟路径、任意轴Gather/列广播已通过Windows定向开发验证；Scatter/稳定激活/全mask等域及跨平台/三交付/P1仍未完成。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：C1–C6原版ggml批量接线与线程/资源/Graph边界已固定；21行完整门保持，I32 Scan/稳定TopK/全mask等精确域仍需成熟补位。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
+      "summary": "M2-B1 CPU AUDITED：ggml region、标准库叶程序与L2原版组合已通过Windows定向开发验证，包含中间值发布/双slot/无热HYLE分配；21行完整门与跨平台/三交付/P1仍未完成。自研冻结，旧oneDNN Q2阻塞保持。"
     },
     {
       "module": "compute_provider_cublas",

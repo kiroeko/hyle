@@ -1,7 +1,7 @@
 # HYLE Compute：何时直接执行一个计算
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 Native/oneDNN 实现；
+> [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
@@ -661,11 +661,15 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 
 [M2-B1](../implementation/tasks/compute/llm-moe-m2-b1-cpu.md)正在接入原版 ggml CPU 程序。
 普通 CPU 工厂已组装这一 Provider；独立入口为 `compute/providers/ggml_cpu.h` 中的
-`ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、axis0 Gather、Add/Sub/Mul/Div、
+`ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、任意轴 Gather、Add/Sub/Mul/Div、
 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和末轴/全轴 Sum/Mean 的有限域。
 half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实执行成本。dense 可折叠高 rank，
 非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活等仍等待成熟
 承载，不能由名称相同推导已支持。
+
+Gather 使用 I32 索引，支持标量或多维索引，以及上述已准入的非连续布局；每次运行都先按实际
+索引 stride 检查边界，再调用原版 get_rows。不同 outer 行必要的索引 repeat 保存在每请求工作区。
+二元运算支持同形、标量、末轴行向量和逐行标量广播，保持左右操作数顺序。
 
 同一 CPU 接入还组合 M0 已登记的 C++ 标准库 indexed 路径：F32/I32 `Scan` 调用原版
 `std::inclusive_scan`，I32 在 I64 临时域检查全部前缀和最终总和，再发布 inclusive/exclusive
@@ -679,7 +683,7 @@ half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实�
 `cpu::DefaultContextOptions::native_threads` 默认1，包括提交线程，显式大于1才创建持久 workers。
 借用的 executor 接收一个完整原版程序，不把其 concurrency 自动变为 ggml worker 数量。
 程序同步完成后返回终态，索引越界先于输出写入拒绝；一个 invocation 不允许并发运行或关闭。
-当前只完成首轮 Windows CPU-only 开发验证，跨平台、三交付与性能资格仍以活动卡为准。
+当前完成 Windows CPU-only 的阶段开发验证，跨平台、三交付与性能资格仍以活动卡为准。
 
 ```cpp
 #include <hyle/compute/providers/onednn.h>

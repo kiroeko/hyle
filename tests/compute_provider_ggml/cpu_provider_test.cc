@@ -7,6 +7,7 @@
 #include <limits>
 #include <span>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
@@ -248,6 +249,185 @@ TEST(GgmlCpuProvider, DenseRankSixBroadcastStridedCopyConcatAndGather) {
                    TensorView::create(selected, gathered.view()).value());
   EXPECT_TRUE(status.IsOutOfRange()) << status.message();
   EXPECT_EQ(half_test::read<float>(gathered), gathered_values);
+}
+
+template <class Value> void check_gather_axes() {
+  const auto type = std::is_same_v<Value, std::int32_t>
+                        ? DataType::kInt32
+                        : half_test::data_type<Value>();
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto queue = context.create_queue().value();
+  for (const bool strided_source : {false, true}) {
+    const auto item = static_cast<std::int64_t>(sizeof(Value));
+    const auto description =
+        strided_source ? TensorDesc::strided_bytes(
+                             type, std::array<std::int64_t, 3>{2, 3, 5},
+                             std::array{30 * item, 10 * item, 2 * item})
+                             .value()
+                       : dense(type, {2, 1, 3, 2, 1, 5});
+    const auto count = description.element_count().value();
+    const std::size_t spacing = strided_source ? 2 : 1;
+    std::vector<Value> logical(count), physical(count * spacing);
+    for (std::size_t i = 0; i < count; ++i) {
+      if constexpr (std::is_same_v<Value, std::int32_t>)
+        logical[i] = 16777217 + static_cast<std::int32_t>(i * 3);
+      else
+        logical[i] = half_test::encode<Value>(static_cast<double>(i) / 8 - 3);
+      physical[i * spacing] = logical[i];
+    }
+    auto source = half_test::buffer<Value>(physical);
+    for (std::size_t selected = 0; selected < description.rank(); ++selected) {
+      const auto extent = description.dimensions()[selected];
+      std::size_t inner = 1, outer = 1;
+      for (std::size_t i = 0; i < selected; ++i)
+        outer *= static_cast<std::size_t>(description.dimensions()[i]);
+      for (std::size_t i = selected + 1; i < description.rank(); ++i)
+        inner *= static_cast<std::size_t>(description.dimensions()[i]);
+      for (int layout = 0; layout < 3; ++layout) {
+        SCOPED_TRACE(::testing::Message()
+                     << "axis=" << selected << " indices=" << layout
+                     << " strided source=" << strided_source);
+        const auto index_desc =
+            layout == 0 ? dense(DataType::kInt32, {})
+            : layout == 1
+                ? dense(DataType::kInt32, {2, 2})
+                : TensorDesc::strided_bytes(DataType::kInt32,
+                                            std::array<std::int64_t, 2>{2, 2},
+                                            std::array<std::int64_t, 2>{24, 8})
+                      .value();
+        const std::size_t index_count = layout == 0 ? 1 : 4;
+        const std::array<std::size_t, 4> offsets =
+            layout == 2 ? std::array<std::size_t, 4>{0, 2, 6, 8}
+                        : std::array<std::size_t, 4>{0, 1, 2, 3};
+        std::vector<std::int32_t> index_data(layout == 2 ? 9 : index_count,
+                                             -99);
+        std::array<std::int32_t, 4> ids{static_cast<std::int32_t>(extent - 1),
+                                        0,
+                                        static_cast<std::int32_t>(extent - 1),
+                                        static_cast<std::int32_t>(extent / 2)};
+        auto indices = half_test::buffer<std::int32_t>(index_data);
+        const Gather operation{
+            .axis = static_cast<std::int32_t>(selected) -
+                    static_cast<std::int32_t>(description.rank())};
+        const std::array descriptors{description, index_desc};
+        const auto out_desc =
+            infer_single_output(Operation(operation), descriptors).value();
+        auto output = output_buffer(out_desc);
+        const std::array inputs{
+            ConstTensorView::create(description, source.view()).value(),
+            ConstTensorView::create(index_desc, indices.view()).value()};
+        auto out_view = TensorView::create(out_desc, output.view()).value();
+        auto prepared = prepare(context, Operation(operation), inputs,
+                                std::span(&out_view, 1));
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+        auto invocation = prepared->create_invocation();
+        ASSERT_TRUE(invocation) << invocation.error().message();
+        const auto submit = [&]() -> hyle::Status {
+          auto done =
+              invocation->submit(queue, inputs, std::span(&out_view, 1));
+          if (!done)
+            return std::move(done).error();
+          return done->wait();
+        };
+        std::vector<Value> expected(outer * index_count * inner);
+        for (int run = 0; run < 2; ++run) {
+          for (std::size_t i = 0; i < index_count; ++i)
+            index_data[offsets[i]] = ids[i];
+          ASSERT_TRUE(
+              indices.view().write(std::as_bytes(std::span(index_data))).ok());
+          const auto status = submit();
+          ASSERT_TRUE(status.ok()) << status.message();
+          for (std::size_t row = 0; row < outer; ++row)
+            for (std::size_t i = 0; i < index_count; ++i)
+              for (std::size_t col = 0; col < inner; ++col)
+                expected[(row * index_count + i) * inner + col] =
+                    logical[(row * static_cast<std::size_t>(extent) +
+                             static_cast<std::size_t>(ids[i])) *
+                                inner +
+                            col];
+          const auto actual = half_test::read<Value>(output);
+          ASSERT_EQ(actual.size(), expected.size());
+          EXPECT_EQ(std::memcmp(actual.data(), expected.data(),
+                                actual.size() * sizeof(Value)),
+                    0);
+          for (auto &id : ids)
+            id = static_cast<std::int32_t>(extent - 1) - id;
+        }
+        index_data[offsets[index_count - 1]] =
+            static_cast<std::int32_t>(extent);
+        ASSERT_TRUE(
+            indices.view().write(std::as_bytes(std::span(index_data))).ok());
+        EXPECT_TRUE(submit().IsOutOfRange());
+        const auto unchanged = half_test::read<Value>(output);
+        EXPECT_EQ(std::memcmp(unchanged.data(), expected.data(),
+                              unchanged.size() * sizeof(Value)),
+                  0);
+      }
+    }
+  }
+}
+
+TEST(GgmlCpuProvider, GatherAxesPreserveTypesAndValidateCurrentStridedIndices) {
+  check_gather_axes<float>();
+  check_gather_axes<hyle::simd::float16_t>();
+  check_gather_axes<hyle::simd::bfloat16_t>();
+  check_gather_axes<std::int32_t>();
+}
+
+TEST(GgmlCpuProvider, GatherEmptyIndicesNeedNoPayload) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto description = dense(DataType::kFloat32, {3, 5});
+  const auto index_desc = dense(DataType::kInt32, {0});
+  const auto out_desc = dense(DataType::kFloat32, {3, 0});
+  auto source = output_buffer(description);
+  auto indices = output_buffer(index_desc);
+  auto output = output_buffer(out_desc);
+  const std::array inputs{
+      ConstTensorView::create(description, source.view()).value(),
+      ConstTensorView::create(index_desc, indices.view()).value()};
+  const auto status =
+      execute(context, Gather{.axis = -1}, inputs,
+              TensorView::create(out_desc, output.view()).value());
+  EXPECT_TRUE(status.ok()) << status.message();
+}
+
+TEST(GgmlCpuProvider, ColumnBroadcastKeepsOperandOrder) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto description = dense(DataType::kFloat32, {2, 1, 3, 2, 1, 7});
+  const auto column = dense(DataType::kFloat32, {2, 1, 3, 2, 1, 1});
+  std::vector<float> values(84), scalars(12);
+  for (std::size_t i = 0; i < values.size(); ++i)
+    values[i] = static_cast<float>(i + 4);
+  for (std::size_t i = 0; i < scalars.size(); ++i)
+    scalars[i] = static_cast<float>(i + 2);
+  auto source = half_test::buffer<float>(values);
+  auto scales = half_test::buffer<float>(scalars);
+  auto output = output_buffer(description);
+  for (const auto kind : {BinaryKind::kAdd, BinaryKind::kSubtract,
+                          BinaryKind::kMultiply, BinaryKind::kDivide}) {
+    for (const bool column_first : {false, true}) {
+      const auto whole =
+          ConstTensorView::create(description, source.view()).value();
+      const auto part = ConstTensorView::create(column, scales.view()).value();
+      const std::array inputs{column_first ? part : whole,
+                              column_first ? whole : part};
+      const auto status =
+          execute(context, Binary{kind}, inputs,
+                  TensorView::create(description, output.view()).value());
+      ASSERT_TRUE(status.ok()) << status.message();
+      const auto actual = half_test::read<float>(output);
+      for (std::size_t i = 0; i < values.size(); ++i) {
+        const float a = column_first ? scalars[i / 7] : values[i];
+        const float b = column_first ? values[i] : scalars[i / 7];
+        const float expected = kind == BinaryKind::kAdd        ? a + b
+                               : kind == BinaryKind::kSubtract ? a - b
+                               : kind == BinaryKind::kMultiply ? a * b
+                                                               : a / b;
+        EXPECT_FLOAT_EQ(actual[i], expected);
+      }
+    }
+  }
 }
 
 TEST(GgmlCpuProvider, PersistentIndependentSlotsHonorExecutorAndClose) {
