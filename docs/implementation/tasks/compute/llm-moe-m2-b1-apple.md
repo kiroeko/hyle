@@ -185,3 +185,27 @@ rank/stride与已有checked/empty行为保持；output/index/update元素数继�
 调用与O(output+axis extent+indices)临时/工作量；无逐update图展开或host payload回读。
 新增普通compiled来源断言检查`Scatter Max`；既有独立赋值/边界/Graph状态用例作为实际回归，
 相关数值/资源与三交付/P1仍按整卡完整门执行。源码/设计46/120分钟，余74分钟。
+
+## Scatter 赋值接线开发检查点
+
+产品检查点`ccaa44ee`（完整tree `e2ce79d4220d5f15a4ab231a5ac90ed9896071a4`）已落实A-S1：
+普通Direct/Graph的Scatter assign冷绑定原版MLX Scatter Max→take/where组合。保留六storage
+原始位、任意轴/非连续、重复索引最后赋值、空域、checked失败和旧结果寿命；原冻结数学文件
+逐字节不变。add仍保留已记录的三个原版顺序反例，成熟承载尚未解决，不签该域完整覆盖。
+
+Windows完整源码快照与Air的Git tree核对一致后，Air Release/shared/WERROR开发构建通过；
+本轮4/4 CTest通过，含两个公开头门和34个Direct、11个Graph用例。这次全组45个用例均通过，
+不改写前一检查点首次来源断言失败的历史。Windows Apple-OFF配置和两个公开头门通过。
+来源节点断言确认本次赋值使用原版Scatter Max，原有独立oracle/状态用例完成实际产品回归。
+原始日志、源码/产物hash及适用未运行项见
+[开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/scatter-development.json)。
+
+源码/设计仍为46/120分钟，余74分钟；正常实现与已声明开发验证单列。其余B1数值域、Mini、
+host插桩、新域三交付、WSL OFF、最终selected门与不可变候选P1尚未完成。整卡保持AUDITED，
+完整验收INCONCLUSIVE，新增完整需求覆盖仍为0；未将本开发检查点作为整批完成。
+
+统一`loc-report.py --self-check`核对全Compute+Graph为**56,573实现行 / 246文件**，不含测试
+或第三方源码；全库代码1,081,414行，自实现不含测试151,758行，绑定上述产品检查点。
+本轮已清理Windows与Air各60,347,869字节的完整源码归档，以及Windows1,660,941字节的
+临时OFF构建；删除前核对绝对路径与任务owner。保留Air活动构建、依赖缓存和本地模型；
+必要日志归档为26,741字节证据包。本次记录变更仅执行docs/closure，不再构建或采样。

@@ -1,0 +1,87 @@
+{
+  "kind": "M2-B1 Apple original scatter assignment binding development checkpoint; not whole-batch acceptance",
+  "candidate_commit": "ccaa44ee5a9bc47257d4c40430e14a45b2db115b",
+  "candidate_tree": "e2ce79d4220d5f15a4ab231a5ac90ed9896071a4",
+  "audit_commit": "9a66c68b978af3bbb27cc1d80987a0d2cfb2c208",
+  "machine": {
+    "machine_model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "source_checkout_commit": "9a66c68b978af3bbb27cc1d80987a0d2cfb2c208",
+    "canonical_validation_tree": "e2ce79d4220d5f15a4ab231a5ac90ed9896071a4",
+    "unstaged_changes": "",
+    "source_sha256": {
+      "src/compute_route_apple/apple_mature_indexing.cc": "33587a1fcb9bfb597437ce524cf70c6978d822660b18b719264dffdbf1fe4b9c",
+      "src/compute_route_apple/apple_mature_indexing.h": "e6536bcb3c31f26c1952a8f0ea5e52d1dc8f1ef0ee5d1ce29409da22d988585a",
+      "src/compute_route_apple/apple_tensor.cc": "2e601bb00ecf95983575965f1f638ee79216e5dfbefa4ca25703c567e7c5037c",
+      "src/compute_route_apple/CMakeLists.txt": "e1f02fcc38d269eebcf592acc2b7d8c6a79621a6cb7b31384ebc93b011b5d2ee",
+      "tests/compute_route_apple/indexing_test.cc": "efa6810a467ef2ec97416c7ed4e65673b3d45bb72389ca215b86ff430a9095d3",
+      "tests/compute_route_apple/reduction_test.cc": "a9aa835192311c589494d27b38243710834c5c0d8d65ad9a58e64548602a28f3",
+      "tests/graph_route_apple/indexing_test.cc": "48ca2a04da6102268fc665661f77961f7421dd76e805bbca4ebeaf0057031bc5",
+      "docs/user/apple-compute.md": "36e42a8ee1e36e838025a86120ee91d154842ce9e26c042b1905eaf78ee85c5f"
+    },
+    "mlx_api_sha256": "8d41b1955d681949b0526f9a7ca1051add0fd1ec21ca5cd853ac8e78671eb73e",
+    "artifact_sha256": {
+      "libhyle_compute_route_apple.dylib": "7b9189c02e995ab6ae5e55a5d7f3e2f1944428831a3e2bfd3afd66f8942378ad",
+      "libhyle_graph_route_apple.dylib": "50b8a02c6517d9b3bc4a8adb65b8d785aa2a07384b9594f1b5de48626558a59e",
+      "libmlx.dylib": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93",
+      "hyle_compute_route_apple_test": "aed17a1f2d07069a4a2d3e64e060a24c5622a26d64085375ac1c03218ece6710",
+      "hyle_graph_route_apple_test": "9a260065346c3477eb7f1d3f89399374acbbc7c99050f6173c63254744057251"
+    },
+    "configuration": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:STRING=/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "CMAKE_OSX_DEPLOYMENT_TARGET:STRING=14.4",
+      "HYLE_COMPUTE_APPLE:STRING=ON",
+      "HYLE_STATIC:BOOL=OFF",
+      "HYLE_WERROR:BOOL=ON",
+      "MLX_BUILD_CPU:BOOL=OFF",
+      "MLX_BUILD_CUDA:BOOL=OFF",
+      "MLX_BUILD_METAL:BOOL=ON",
+      "MLX_METAL_JIT:BOOL=ON"
+    ]
+  },
+  "qualification": "scatter-qualification.json",
+  "checks": {
+    "air_build": "PASS Release/shared/WERROR, parallel 2",
+    "air_ctest": "4/4 PASS including two public-header checks",
+    "air_gtest_cases": {
+      "direct": 34,
+      "graph": 11,
+      "total": 45
+    },
+    "windows_apple_off": "configure and 2/2 public-header checks PASS, PowerShell 7"
+  },
+  "implementation": "Ordinary Scatter assign uses original I32 Scatter Max then take/where; bit views retain raw payloads, safe indices and existing hidden status protect checked failure; arbitrary axis/strides, repeated updates, empty inputs and native old-result ownership preserved",
+  "cost": "Fixed number of original calls; O(output elements + axis extent + indices) work/storage; native MLX managed allocations and necessary layout conversions remain charged",
+  "frozen_math_files_unchanged": true,
+  "pending": [
+    "original mature ordered Scatter add carrier",
+    "other B1 numerical domains",
+    "Mac mini",
+    "host instrumentation",
+    "new-domain source/static/shared delivery",
+    "WSL OFF",
+    "whole-batch final selected checks and immutable P1"
+  ],
+  "full_B1_verdict": "INCONCLUSIVE",
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "source_design_budget_minutes": {
+    "used": 46,
+    "remaining": 74,
+    "total": 120
+  },
+  "loc": {
+    "compute_graph_implementation": 56573,
+    "implementation_files": 246,
+    "all_repository_code": 1081414,
+    "self_written_excluding_tests": 151758,
+    "policy": "canonical loc-report.py --self-check; excludes tests and third-party source"
+  },
+  "archive": {
+    "path": "scatter-development-raw.zip",
+    "sha256": "d1c2d1e9bca862965aa6b6e1b38baf7d7c43539436c63d74b5b39d69f9a748c7",
+    "bytes": 26741
+  }
+}

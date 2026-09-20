@@ -490,7 +490,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple AUDITED：Gather/Scan/stable TopK开发验证保持；原版Scatter赋值242组资格通过并冻结A-S1接线，原版add的3个有序反例保留，未授权自研。整批/多环境/三交付/P1未完成；源码/设计46/120分钟，自研冻结，覆盖0。"
+      "summary": "M2-B1 Apple AUDITED：原版MLX Gather/Scan/stable TopK与Scatter赋值已接普通Direct/Graph；Air本轮4/4 CTest、45用例及Windows OFF开发验证通过。add三个顺序反例保留；整批/多环境/三交付/P1未完成，源码/设计46/120分钟，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_apple",
