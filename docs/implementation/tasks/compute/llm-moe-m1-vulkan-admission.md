@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；阶段：CANDIDATE；baseline：`0e9cf67dbb233132c081f711402ec9c2529d1c07`，
+- owner：`/root`；阶段：CLOSED；baseline：`0e9cf67dbb233132c081f711402ec9c2529d1c07`，
   Windows main，工作树干净。M1-G/R/C/A 已关闭各自有限范围。
 - 当前 owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、`graph_route_vulkan`。
   M1-G 只验 ggml 资源，M1-R 只验冷身份；本轮新的完整成熟 region / 外来原生程序消费者构成
@@ -267,3 +267,30 @@ Windows Release、Air Release/host ASan各10项CTest通过。Windows原版C runt
 148,669行；模块数字排除测试/vendor且包含冻结存量。归档后已清理结束的SDK/OFF/资格工具与
 中断构建副本及旧普通Vulkan构建，共约5.6GB；共享缓存、本地模型及活动构建保留。五owner先进入CANDIDATE，
 随后依法单独迁移CLOSED；本候选不因文档/状态提交改变，不重建或跑P1。M5前用户停止点保持。
+
+
+## Terminal：CLOSED（有限 M1-V 接入范围）
+
+候选保持 `0e5b276ae0894b9fc2cb88452c7ed468c4a8addc`。AUDITED→CANDIDATE与本次CLOSED
+为独立状态检查点，后续只变文档/状态/证据。七门裁决覆盖V1–V5及子卡I1–I7：
+
+| Gate | Verdict与证据 |
+|---|---|
+| scope | PASS：原版递归、MXFP4、IREE checked Scan/FP8及自然普通组合已完整完成有限FIX；没有把全64×4覆盖移入本卡或代签 |
+| architecture | PASS：各原版native owner/池/VM/程序保留，复用同设备queue锁与Completion；Graph只管理边界，冷绑定且热期不搜索/计时 |
+| correctness | PASS：两机独立oracle、变化形状/非零状态/重复/两请求/旧结果、失败不发布/前缀排空、取消/关闭；原版C+HYLE host ASan、适用UBSan/OFF与最终120 selected门 |
+| delivery | PASS：Windows/Air普通Direct/Graph source/static/shared六格；prefix搬移、隐藏producer、许可/资源/导出、DLL邻置；最终组件合同及15组产品三交付 |
+| usability_docs | PASS：自然格式工厂、prepare/Graph和成熟片段样例；支持域、quota、lease、owner失败、实际复制/同步/workspace和运行端依赖均明确 |
+| red_team | PASS：候选固定后的单次分离复核、1001交付输入和6归档身份校验；补齐flag可见性反例，所有失败/中断/skip保留，无新范围内产品缺陷 |
+| engineering_performance | PASS / P0：原版线程/分配/编码、显存池、VM、边界copy、flag读回、片段F32 workspace、显式quota表和ggml cont完整计费；无P1、SOTA或零成本声明 |
+
+限制与[最终收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/final-acceptance.json)
+一致：recurrent为本卡F32/equal-head和原生D域；IREE需要实际enabled feature与所列保守grid/buffer域；
+FP8非原生FP8 GEMM。host插桩不签driver/device，Air无leak检测，opt-in validation-layer仍SKIPPED；
+最终Windows整合的CUDA编译仅签实际SM89。数值overflow与VM基础设施故障的owner边界保持区别。
+
+重开仅限可复现数值/资源/失败/UB缺陷、M2真实consumer的新数值/shape/片段需求、相关已采用
+上游升级，或公平同合同material回归；不会因历史卡/benchmark名称自动恢复施工。
+本卡关闭不解除旧CPU ggml/oneDNN的BLOCKED，也不改变冻结自研。M1-G/R/C/A/V各自有限接入
+均完成，下一步按M2的模型片段表成批接成熟路径。新增模型完整覆盖仍 **0/256**；
+统一Compute+Graph仍 **53,484行/232文件**。整个goal尚未完成；进入M5前必须暂停并等待用户。

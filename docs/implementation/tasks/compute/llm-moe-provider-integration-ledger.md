@@ -16,7 +16,7 @@
 M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路由卡](llm-moe-m1-route-binding.md)
 关闭冷模型条件/原生环境接缝；四环境原生、三交付及适用插桩通过，新增模型覆盖0。
 [M1-C](llm-moe-m1-cuda-admission.md)已CLOSED：Windows/WSL普通入口与三交付、原生失败/资源、
-host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新增模型覆盖仍为0。[M1-A](llm-moe-m1-apple-admission.md)也已CLOSED，原版Metal/MLX普通组合、两台Mac三交付、资源/host插桩与最终selected门通过；下一包M1-V；
+host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新增模型覆盖仍为0。[M1-A](llm-moe-m1-apple-admission.md)也已CLOSED，原版Metal/MLX普通组合、两台Mac三交付、资源/host插桩与最终selected门通过；[M1-V](llm-moe-m1-vulkan-admission.md)也已CLOSED：两机普通原版recurrent/MXFP4/IREE Scan/FP8、资源失败/插桩/六格三交付和120个selected门完成；下一步M2；
 其余未审范围不授权产品改动。
 旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
@@ -39,7 +39,7 @@ host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新�
 | SGLang | 已有复用并扩接；CUDA activation/norm、F18 量化/专家程序 | `06992c92` 已有 C++/CUDA 源码片段，Apache-2.0 | AB 只有 W1 static 局部收据；不把 Python/Torch 安装当 SDK 接入 |
 | FlashInfer | 必需；合格Linux CUDA的F07/F15 attention、KV 与成熟融合候选 | 0.6.18 `69ff11fc` 的 CUDA headers/固定入口，Apache-2.0 | M1-C原版WSL head256/SM89 FP16与BF16普通入口、资源与三交付通过；Windows本pin编译失格，已接ggml合格attention；完整覆盖仍待M2 |
 | CUTLASS / CuTe | 作为成熟程序的内部依赖准入；F05/F18 | 优先 SGLang/FlashInfer 已采用的固定版本；候选源 `f614dc40`，BSD-3-Clause | 不创建空 Provider，也不从模板另写 GEMM；SM89 FP8 示例不等于 block128 已满足 |
-| IREE Vulkan | **条件准入资格先行**；F02.4、F06/F18 精确数值补位 | `6ef606b6`；标准算子离线编译成参数化 region，C runtime，Apache-2.0 WITH LLVM-exception | 源码有 SPIR-V FP8 legalization、scan/sort/scatter、VkDevice 包装；Q-VK 必须先过，禁止以 compiler 为名手写算法 |
+| IREE Vulkan | 限定分工资格及M1普通接入完成；F02.4/F18精确数值补位 | `6ef606b6`；原版标准算子离线参数化region与私有C runtime，Apache-2.0 WITH LLVM-exception | checked I32 Scan和两种scale的FP8 MatMul已接普通Direct/Graph与三交付；FP4由原版ggml MXFP4承载；完整域待M2/M3，不以compiler名义写算法 |
 | cuDNN Graph | 后备；F07 的合格 attention 域 | frontend `91dbf3e9`，Apache-2.0；backend 是 NVIDIA SDK，版本在实际准入时锁定 | 已选 ggml/FlashInfer 承载；公开支持表中 Ada decode head≤128，不能代签 Qwen head256 |
 | FlashAttention | 后备；F07 的融合 attention | `1bda8f92`，BSD-3-Clause；固定原版 CUDA 程序 | 与已选 ggml/FlashInfer 重叠；Torch 包装不进入 SDK，Windows 原生接法若启用须单独资格化 |
 | MPSGraph | 后备；Apple 具名 MLX/ggml Metal 不满足的域 | Apple 系统 framework 的 graph executable；版本随 macOS/SDK receipt | 当前无必须另引入的独有域，不宣称它不支持模型；失败时按具名域启用调查 |
@@ -87,7 +87,7 @@ MLX、cuBLASLt、Marlin、SGLang、FlashInfer计6；IREE Vulkan是条件单元�
 Q-VK 是一个窄候选的可行性门，不把通用编译器重构纳入 HYLE。拟采用标准 cast/quantization/
 scan/matmul 操作及上游类型合法化，编译器只作构建工具；source/static/shared 交付同一组参数化
 程序与原生 runtime，普通消费者不安装 Python、不提供 MLIR、不运行编译器。若该交付形状不可行，
-必须明确裁决该候选，不能偷偷增加 SDK 使用负担。首次 Q-VK 的 IREE packed-FP4 路径已失格，日志和部分通过项见 M1-V 卡；原版 LLVM UE8 预转换已消除观察到的 NaN。限定组合 IREE scan/FP8 + 原版 ggml MXFP4 已取得两台机器的数值与 C++ 原生资源证据，见[进度收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/native-progress.json)。后续[限定资格](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/checked-queue-qualification.json)已补齐两台机器的 checked-overflow 和共享单队列自动续执行；IREE独立owner已完成SCOPED/AUDITED；原生runtime/queue/quota/异步产品门在Windows/Air通过，Air host ASan也通过，见[原生检查点](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/iree-native-checkpoint.json)。普通HYLE Scan/FP8混合入口及产品三交付仍待验收，不计覆盖，原调查预算不重置。
+必须明确裁决该候选，不能偷偷增加 SDK 使用负担。首次 Q-VK 的 IREE packed-FP4 路径已失格，日志和部分通过项见 M1-V 卡；原版 LLVM UE8 预转换已消除观察到的 NaN。限定组合 IREE scan/FP8 + 原版 ggml MXFP4 已取得两台机器的数值与 C++ 原生资源证据，见[进度收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/native-progress.json)。后续[限定资格](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/checked-queue-qualification.json)已补齐两台机器的 checked-overflow 和共享单队列自动续执行；IREE独立owner已完成SCOPED/AUDITED；原生runtime/queue/quota/异步产品门在Windows/Air通过，Air host ASan也通过，见[原生检查点](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/iree-native-checkpoint.json)。普通HYLE Scan/FP8混合入口、资源失败与产品三交付现已完成，见[最终收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/final-acceptance.json)；M1限定接入关闭，完整模型域不计覆盖，原调查预算不重置。
 
 ## 3. M1 有限接入工作包
 
@@ -97,7 +97,7 @@ scan/matmul 操作及上游类型合法化，编译器只作构建工具；sourc
 | M1-R | compute / graph 与四路线具名owner；以registry实际状态绑定，CPU/CUDA既有CLOSED须按模型条件新需求重定界 | 批量 lowering 的共用语义检查、capability/诊断、模型/配置/phase 与软件/硬件规则 identity；常量、状态、多输出、effect/lease；每路线独立资源程序 | Direct 与 Graph 一组正交片段；未知模型/版本不匹配、缓存失效；热执行无探测、搜索或计时；不造万能执行器 |
 | M1-C | 六owner已按[接入卡](llm-moe-m1-cuda-admission.md)CLOSED，GQA两owner按独立卡CLOSED | 原版ggml CUDA/Linux FlashInfer、外来buffer与两event边界、每invocation资源/失败/完成；managed成本明确，不冒称prepared零查询 | Windows/WSL普通Direct/Graph、同GPU cuBLAS组合、三交付及host插桩，Air/Mini OFF与公共语义；源码/设计调查已停止 |
 | M1-A | 五 owner 按[接入卡](llm-moe-m1-apple-admission.md) CLOSED，有限接入域/P0 | 原版 ggml Metal whole recurrent 已接普通 Direct/Graph；MLX native buffer/region 边界、独立 invocation、共同 GatedDeltaNet 语义已实现；自研冻结 | Air/Mini 普通入口、原生及三交付、Air host ASan/UBSan、Windows/WSL 共享资源与 OFF 门通过；最终 119 个 selected 门及独立候选复核通过；P0，新增模型覆盖0 |
-| M1-V | 三 owner 按[接入卡](llm-moe-m1-vulkan-admission.md) AUDITED；原版 recurrent已接；Q-VK分工资格通过；独立IREE owner已AUDITED，原生runtime/异步/配额门Windows/Air通过；普通Scan/FP8混合接线待完成 | 扩现有 managed region schema；需要时接独立 IREE 原生 Vulkan region/parameter buffer/完成；共享设备互操作受限时明确有界 GPU copy | RTX4070 和 Air/MoltenVK；所需 feature 诊断、同设备链路、失效/teardown 与三交付；无 CPU 模型 fallback |
+| M1-V | 五owner按[父卡](llm-moe-m1-vulkan-admission.md)及[IREE卡](llm-moe-m1-vulkan-iree-product.md)CLOSED，有限接入/P0 | 原版recurrent/MXFP4和IREE checked Scan/FP8接普通Direct/Graph，复用实际feature/queue/quota与原版异步推进；默认冷绑定，无自研数学 | Windows/Air六格普通三交付、资源/失败/host插桩、三环境OFF及120 selected门通过；完整数值/shape域仍待M2/M3，新增覆盖0/256 |
 | M1-B | 以上每包所属 build owner 的有限范围 | 复用 lock/features/vendor targets/private patch/resources/license/install；同份 CMake 声明贯通三交付；短 build 根与共享只读缓存 | 开关隔离、单/组合 Provider、源码父工程、静态/动态干净 consumer；关闭路线零下载/链接；不重写构建系统或治理工具 |
 
 新增 ID 在实现前依法 QUEUED→SCOPED→AUDITED 登记；此表中的拟定名称不是空 target，不能算接入。

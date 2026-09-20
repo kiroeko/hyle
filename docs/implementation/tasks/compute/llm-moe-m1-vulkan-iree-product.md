@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；当前阶段 CANDIDATE；baseline `31be591067ea9a1a6773cb640bc138a00cf35c39`；
+- owner：`/root`；当前阶段 CLOSED；baseline `31be591067ea9a1a6773cb640bc138a00cf35c39`；
   SCOPED 检查点 `c0e65357`。实现必须在本次 AUDITED commit 之后。
 - 本卡 owner：`compute_provider_iree_vulkan`（已在 baseline 登记 QUEUED）、`compute_ops`。
   后者因具名压缩格式尚无自然 descriptor factory 的新消费者需求从 CLOSED 重开；不重审旧数学。
@@ -269,3 +269,15 @@ checked Scan/FP8、混合链、cancel/close/失败不发布输出、产品三交
 默认值不变。原validation-layer opt-in用例保持SKIPPED，host插桩不签driver，Air无leak检测。
 FP8是原版转换+MatMul的片段级F32 workspace，非原生FP8 GEMM；实际feature/grid/buffer域和
 owner故障隔离仍有明确限制。七问/P0与LOC见父卡；无P1、自研比较或新增256格完整覆盖。
+
+
+## Terminal：CLOSED
+
+两个owner按独立CANDIDATE检查点后进入CLOSED，候选保持 `0e5b276a`。
+I1–I7与[父卡七门](llm-moe-m1-vulkan-admission.md#terminalclosed有限-m1-v-接入范围)全部通过；
+性能tier为P0，证据/实际命令、首次失败与适用限制见上述最终收据。公共C++格式、私有原版runtime、
+普通Scan/FP8与混合程序及三交付完成；没有公开VM/MLIR/C ABI或新HYLE数学。
+
+重开条件与父卡相同：具名可复现缺陷、真实新consumer域、相关上游升级或合格material回归。
+新M2模型覆盖仍须独立绑定owner与有限FIX。Compute+Graph **53,484行/232文件**，完整覆盖0/256；
+旧CPU阻塞与全自研冻结不变，M5前停止点保持。

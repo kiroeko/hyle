@@ -216,7 +216,7 @@ C1–C6 在上述表格与 JSON 的 `first_package` / case ID 中仅保留为验
 已关闭各自有限资源/冷条件范围；[M1-C CUDA接入](llm-moe-m1-cuda-admission.md)及其GQA语义卡也已
 CLOSED，Windows/WSL普通入口/三交付/适用插桩与Mac适用门通过。
 [M1-A Apple接入](llm-moe-m1-apple-admission.md)也已CLOSED：原版Metal与MLX组合、普通入口、
-两台Mac三交付、host插桩及最终selected回归通过。新增256格覆盖仍为0；下一包M1-V。
+两台Mac三交付、host插桩及最终selected回归通过。[M1-V](llm-moe-m1-vulkan-admission.md)也已CLOSED：原版recurrent/MXFP4/IREE Scan/FP8普通入口、资源/失败、两机六格三交付和最终120个selected门完成。新增256格覆盖仍为0；进入M2批量成熟路径接入。
 尚未审计的包仍须逐owner
 固定有限FIX，不继承旧卡的产品授权。
 
@@ -248,21 +248,25 @@ consumer 显式提供模型/工作负载事实，HYLE 不做模型加载；未�
 
 ### M1：先打通能承载一批算子的共同接入边界
 
-- [ ] **M1-01 ggml CPU 运行时**：优先解决已登记的 context/threadpool 可恢复失败与持久 pool
+- [x] **M1-01 ggml CPU 运行时**：优先解决已登记的 context/threadpool 可恢复失败与持久 pool
   阻塞。按原恢复条件核对精确版本或独立登记窄 source-patch factor；维护/升级、OOM、并发、
   三交付审计齐备后才恢复 owner。不能绕过 abort，也不能因这项接口工作改写 CPU 算子。
-- [ ] **M1-02 每路线原生桥**：固定 tensor/storage、device/context、执行与完成、workspace、
+- [x] **M1-02 每路线原生桥**：固定 tensor/storage、device/context、执行与完成、workspace、
   constants、状态输入输出和多输出的所有权。CPU persistent executor、CUDA stream/capture、
   MLX array/compiled region、ggml Metal/Vulkan backend 分别承载；不造万能 Queue/vtable。
-- [ ] **M1-03 批量映射结构**：按 provider operation schema/region lowerings 共用 dtype/layout/
+- [x] **M1-03 批量映射结构**：按 provider operation schema/region lowerings 共用 dtype/layout/
   参数与能力查询；同类算子的枚举和测试由表驱动。按真实消费保留融合，不能为逐节点排程拆坏库。
   Direct 可复用单节点/片段程序，Graph 可接完整 region；用户只选路线，无需写 provider glue。
-- [ ] **M1-04 CMake 接入**：以现有 route/feature、lock、vendor targets、私有补丁、资源、许可证
+- [x] **M1-04 CMake 接入**：以现有 route/feature、lock、vendor targets、私有补丁、资源、许可证
   和 package 合同集中描述依赖，source/static/shared 共用同一声明。关闭路线不下载或链接其库。
   缓存原件只读，补丁在 build-local 源码；不另造正常用户下载/编译脚本或重写公共治理。
 
 可独立的路线 seam 顺序推进；重型构建/验证串行。每个 seam 用一组有真实计算、复用状态和失败
 边界的片段证明，不以空 target、设备枚举或 copy 签收。seam 验收一次，后续批量映射复用证据。
+
+M1勾选表示共同资源/批量映射结构和各路线有限真实纵切验收完成，不表示所有第三方需求域已经接通。
+CPU ggml的普通Provider/lowering仍归M2：M1-G已完成其独立资源patch恢复前提，原owner须依法另建
+SCOPED卡恢复，不能直接清除BLOCKED；oneDNN原性能阻塞也不由M1解除。各域的四路线覆盖继续由M2/M3逐项回填。
 
 ### M2：四路线接入成熟库的实际计算覆盖
 

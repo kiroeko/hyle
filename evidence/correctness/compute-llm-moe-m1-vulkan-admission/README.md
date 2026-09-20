@@ -1,6 +1,6 @@
 # M1-V 原版 ggml/IREE 接入验收
 
-当前候选为 `0e5b276a`，本包有限接入的实际验证已完成；五owner处于CANDIDATE。新增模型完整覆盖仍为 **0/256**。此前检查点的pending仅指当时状态。
+当前候选为 `0e5b276a`，本包有限接入的实际验证已完成；五owner已按独立CANDIDATE检查点后CLOSED。新增模型完整覆盖仍为 **0/256**。此前检查点的pending仅指当时状态。
 
 - `qvk-first-candidate.json`：IREE 单独 packed-FP4 候选失格、部分数值结果、未运行项及具名后续。
 - `qvk-first-candidate-raw.zip`：原样保留编译/运行日志、原输入/oracle、失败 VMFB、工具版本与

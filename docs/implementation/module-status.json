@@ -393,10 +393,14 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V CANDIDATE：有限原版recurrent/MXFP4/IREE Scan/FP8接入固定；普通Direct/Graph、资源/失败、Windows/Air六格三交付、适用host/OFF及120 selected门通过，候选复核/P0完成。原失败/skip保留，自研冻结，新增完整覆盖0/256。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc"
+      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
+      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
+      }
     },
     {
       "module": "compute_backend_cpu",
@@ -533,24 +537,36 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V CANDIDATE：有限原版recurrent/MXFP4/IREE Scan/FP8接入固定；普通Direct/Graph、资源/失败、Windows/Air六格三交付、适用host/OFF及120 selected门通过，候选复核/P0完成。原失败/skip保留，自研冻结，新增完整覆盖0/256。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc"
+      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
+      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V CANDIDATE：有限原版recurrent/MXFP4/IREE Scan/FP8接入固定；普通Direct/Graph、资源/失败、Windows/Air六格三交付、适用host/OFF及120 selected门通过，候选复核/P0完成。原失败/skip保留，自研冻结，新增完整覆盖0/256。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc"
+      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
+      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V CANDIDATE：有限原版recurrent/MXFP4/IREE Scan/FP8接入固定；普通Direct/Graph、资源/失败、Windows/Air六格三交付、适用host/OFF及120 selected门通过，候选复核/P0完成。原失败/skip保留，自研冻结，新增完整覆盖0/256。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc"
+      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
+      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
+      }
     },
     {
       "module": "compute_ggml_runtime",
@@ -609,10 +625,14 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V CANDIDATE：有限原版recurrent/MXFP4/IREE Scan/FP8接入固定；普通Direct/Graph、资源/失败、Windows/Air六格三交付、适用host/OFF及120 selected门通过，候选复核/P0完成。原失败/skip保留，自研冻结，新增完整覆盖0/256。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc"
+      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
+      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
+      }
     }
   ]
 }
