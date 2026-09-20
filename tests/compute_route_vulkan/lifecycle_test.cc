@@ -220,6 +220,43 @@ TEST(VulkanLifetime, IreeCancellationReusesSlotAndCloseDrainsAbandonment) {
   EXPECT_EQ(quota.used(), 0U);
 }
 
+TEST(VulkanLifetime, IreeNoncoherentFlagFailurePreservesCallerOutput) {
+  for (bool reject_observation : {false, true}) {
+    auto context = t::context().value();
+    const auto desc = vulkan_tensor_test::dense(c::DataType::kInt32, {257});
+    const auto data = vulkan_scan_test::integer_pattern(257);
+    const std::vector<std::int32_t> sentinel(257, 0x55aa55aa);
+    const auto input = vulkan_scan_test::make_integer(context, desc, data);
+    const auto output = vulkan_scan_test::make_integer(context, desc, sentinel);
+    auto scan = v::prepare(context, c::Scan{}, desc).value();
+    NativeBoundary boundary(context);
+    // Qualify the adapter branch using real mapped memory and Vulkan calls;
+    // this is not a claim about a physical noncoherent device memory type.
+    for (std::uint32_t index = 0;
+         index < boundary.device.memory_properties.memoryTypeCount; ++index)
+      boundary.device.memory_properties.memoryTypes[index].propertyFlags &=
+          ~static_cast<VkMemoryPropertyFlags>(
+              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto recorder = v::Recorder::create(context).value();
+    ASSERT_TRUE(
+        recorder.append(scan, std::array{input}, std::array{output}).ok());
+    auto program = recorder.finish().value();
+    boundary.fail_invalidate = reject_observation;
+    auto work = program.submit().value();
+    const auto status = work.wait();
+    EXPECT_EQ(boundary.invalidations, 1);
+    if (reject_observation) {
+      EXPECT_TRUE(status.IsResourceExhausted());
+      EXPECT_EQ(vulkan_scan_test::integer_values(context, output), sentinel);
+    } else {
+      ASSERT_TRUE(status.ok()) << status.message();
+      vulkan_scan_test::expect_integer_prefix(context, output, desc, data,
+                                              c::Scan{});
+    }
+    EXPECT_TRUE(context.close().ok());
+  }
+}
+
 TEST(VulkanLifetime, NoncoherentTransferBranchUsesRealFlushAndInvalidate) {
   auto context = t::context();
   ASSERT_TRUE(context);
