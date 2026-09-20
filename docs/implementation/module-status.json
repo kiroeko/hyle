@@ -474,19 +474,14 @@
     {
       "module": "compute_provider_cuda",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
+      "summary": "M2-B1 CUDA-I SCOPED：原版CCCL Scan/TopK与普通入口有限接线，先资格和冻结I1–I4；与父卡共用120分钟预算。全部旧自研kernel冻结，未签完整覆盖，旧oneDNN条件不变。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
+      "summary": "M2-B1 CUDA-I SCOPED：原版CCCL Scan/TopK与普通入口有限接线，先资格和冻结I1–I4；与父卡共用120分钟预算。全部旧自研kernel冻结，未签完整覆盖，旧oneDNN条件不变。"
     },
     {
       "module": "graph_route_cuda",
