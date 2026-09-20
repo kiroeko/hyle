@@ -223,3 +223,9 @@ CUDA 测试链接失败，原因是测试直接使用 `system_allocator` / `Stat
 不修改产品依赖或计算实现。原始失败保留，仅重跑受影响测试并继续尚未执行的门。
 最后 selected gates 与候选复核仍待通过，未进入 CANDIDATE/CLOSED，无 P1 或自研对比。
 M1 接入进度约 **75%**；M1-V 尚未开始，新增模型覆盖仍为 0/256。M5 前暂停约定不变。
+
+补齐链接后，此 CUDA fixture 实际运行暴露 `0xc0000094`。一次 Windows debug-event 与 linker
+map 定位到 exe 内的 `ggml_time_us + 0x24`：测试静态嵌入的 ggml timer 未初始化，
+`MetadataArena` 只初始化其 DLL 内的私有副本。普通 CUDA provider 已在冷 context 创建中调用
+上游 `ggml_time_init()`，其三交付结果未失效。测试在自己的原生创建边界执行相同初始化；
+不改变产品代码，不关闭断言或跳过 CUDA 执行。重跑该 factor 后再继续未执行的 selected 门。

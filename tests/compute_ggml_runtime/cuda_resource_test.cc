@@ -67,6 +67,9 @@ struct NativeProgram final {
 
   NativeProgram() {
     try {
+      // This executable embeds ggml separately from the MetadataArena DLL.
+      // Initialize its upstream timer just as the ordinary CUDA provider does.
+      ggml_time_init();
       arena = hyle::compute::ggml_runtime::MetadataArena::for_graph(
                   8, 16, hyle::mem::system_allocator())
                   .value();
