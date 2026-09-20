@@ -4,6 +4,7 @@
 #include <atomic>
 #include <barrier>
 #include <chrono>
+#include <iostream>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -174,7 +175,7 @@ TEST(VulkanLifetime, IreeCheckedScanCopyFailuresDrainAcceptedPrefix) {
 
 TEST(VulkanLifetime, IreeCancellationReusesSlotAndCloseDrainsAbandonment) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
-                                  128 * 1024 * 1024);
+                                  256 * 1024 * 1024);
   {
     auto context = t::context(&quota).value();
     const auto desc = vulkan_tensor_test::dense(c::DataType::kInt32, {257});
@@ -182,6 +183,8 @@ TEST(VulkanLifetime, IreeCancellationReusesSlotAndCloseDrainsAbandonment) {
     const auto input = vulkan_scan_test::make_integer(context, desc, data);
     auto prepared = v::prepare(context, c::Scan{}, desc);
     ASSERT_TRUE(prepared) << prepared.error().message();
+    std::cout << "IREE P0 actual VkDeviceMemory after preparation: "
+              << quota.used() << " bytes\n";
     auto program = std::move(*prepared);
     auto first_slot = program.create_invocation();
     ASSERT_TRUE(first_slot) << first_slot.error().message();
