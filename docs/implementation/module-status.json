@@ -473,15 +473,15 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I SCOPED：原版CCCL Scan/TopK与普通入口有限接线，先资格和冻结I1–I4；与父卡共用120分钟预算。全部旧自研kernel冻结，未签完整覆盖，旧oneDNN条件不变。"
+      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK的I1–I4已冻结，原版8组扫描/12组稳定排序资格通过；接普通Direct/Graph与真实workspace/完成，尚无产品覆盖。与父卡共用预算，旧自研kernel全部冻结。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I SCOPED：原版CCCL Scan/TopK与普通入口有限接线，先资格和冻结I1–I4；与父卡共用120分钟预算。全部旧自研kernel冻结，未签完整覆盖，旧oneDNN条件不变。"
+      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK的I1–I4已冻结，原版8组扫描/12组稳定排序资格通过；接普通Direct/Graph与真实workspace/完成，尚无产品覆盖。与父卡共用预算，旧自研kernel全部冻结。"
     },
     {
       "module": "graph_route_cuda",

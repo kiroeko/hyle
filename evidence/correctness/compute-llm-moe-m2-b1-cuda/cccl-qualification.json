@@ -1,0 +1,76 @@
+{
+  "kind": "Bounded original CCCL numerical/semantic qualification, not HYLE product or performance acceptance",
+  "scope_checkpoint": "c1923e1aec68613805fec51ae90e0c9cd51e99bd",
+  "machine": "Windows RTX4070 SM89; MSVC19.50.35728, CUDA Toolkit13.3.73, CUB3.3.4 / 300304",
+  "scan": {
+    "verdict": "PASS",
+    "cases": 8,
+    "algorithm": "Original InclusiveSumByKey on widened I32, original Min/Max, scalar validation and original Transform projection",
+    "coverage": "multiple rows, inclusive/exclusive, INT32_MIN/MAX, intermediate overflow and final total overflow, entire output sentinel unchanged on overflow"
+  },
+  "topk": {
+    "verdict": "PASS",
+    "cases": 12,
+    "algorithm": "Original radix SortPairs custom decomposer of row/nan/directed-value, stable original index, original Transform extraction",
+    "coverage": "F32 and I32; both directions, k=1/7/8, two rows, NaN signs/payloads, infinities, signed zero, ties, integer keys beyond 2^24; selected source bits unchanged"
+  },
+  "limits": [
+    "No ordinary HYLE entry or resource/Completion/Graph acceptance yet",
+    "No F16/BF16 qualification in raw probe",
+    "No WSL, SDK delivery, sanitizer or P1",
+    "No self-written math investigation, comparison, optimization or deletion"
+  ],
+  "implementation_rule": "Only stock DeviceScan/DeviceRadixSort/DeviceReduce/DeviceTransform algorithms; scalar API projection functors specify public ordering/address/type semantics, no own global kernel or scan/sort loop",
+  "archive": {
+    "path": "cccl-qualification-raw.zip",
+    "sha256": "728ca2c81cf76b459b2c6a8d4a12a27d34bad902b5f4d4fdd77e56ee8ed9f383",
+    "bytes": 14585
+  },
+  "executable_sha256": "e993149baaccb63cb741f44b47e880a1a7395579503d3fa08ce0c6d97464abd7",
+  "original_sdk_source_hashes": [
+    {
+      "path": "cub/version.cuh",
+      "sha256": "8c2cb6635dfbd2404a952c29cf3e418d00ed2667612afda6086bf9f1d794b950"
+    },
+    {
+      "path": "cub/device/device_scan.cuh",
+      "sha256": "bc8838cc99fe78186b281ae39f9a8b7afb895904e80846d8c50deceede9d863e"
+    },
+    {
+      "path": "cub/device/device_radix_sort.cuh",
+      "sha256": "2ae54a065ed5e7cc47370b553b150a2daec07577d0c7dc451613e869f79af96f"
+    },
+    {
+      "path": "cub/device/device_reduce.cuh",
+      "sha256": "d9747d8ce73d19ca8eba020651d4f7f58c9cc23bbeff8b5261852f525d0c9b99"
+    },
+    {
+      "path": "cub/device/device_transform.cuh",
+      "sha256": "502ee466de2944c45cf454637f478078cec8cb03252497cc4083cc397fc99a82"
+    },
+    {
+      "path": "thrust/iterator/transform_iterator.h",
+      "sha256": "68e932afb393883ddf8688db6d8d4a0a57b14fbd7c7c32dbfb63320bc8aa7ef7"
+    },
+    {
+      "path": "thrust/iterator/counting_iterator.h",
+      "sha256": "5ac630eab0676791db74798ee5534b22f67449b390e51ce73664963a2598924a"
+    },
+    {
+      "path": "cuda/std/tuple",
+      "sha256": "546a7029fbb036d43a9a81890db945b2815491aa3009f485e62be438894494a9"
+    }
+  ],
+  "licenses": {
+    "source": "https://raw.githubusercontent.com/NVIDIA/cccl/v3.3.4/LICENSE",
+    "sha256": "f96f51edda77fb9897de29d924d615e6bd153f4969db85fc6b7a22d7a624631e",
+    "terms": "CUB BSD-3, Thrust Apache-2.0 with Boost exceptions, libcu++ Apache-2.0 WITH LLVM-exception; original combined license preserved"
+  },
+  "shared_source_design_budget_minutes": {
+    "used": 88,
+    "remaining": 32,
+    "total": 120
+  },
+  "new_complete_requirement_cells": 0,
+  "performance_samples": 0
+}
