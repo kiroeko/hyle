@@ -224,3 +224,20 @@ Gather 验证四种 storage、rank6 dense/非连续源、标量/矩阵/非连续
 零/极小行、根号内 epsilon、中间归约结果发布、一个原版 region、两 slot 和无热 HYLE allocation。
 原始日志、失败修正和文件身份见 `layout-windows.json` 及其 archive；这里只是开发检查点，
 不是完整21行、所有平台/交付/插桩或 P1 的验收。其余精确域保持，不增加256格完成数。
+
+## C1-B 广播与归约的有限审计（b4094ca7 后）
+
+仍在 C1–C6 和三个 AUDITED owner 内，不改变21行分母、公开 shape/数值合同或原 runtime。
+`ggml.c:2584–2607` 的 repeat_4d 为每次广播产生真实原版节点；`3854–3873` 的 view_4d
+接收 size_t strides，可表达分组转置，再沿原版 cont 物化。没有修改或复制任何数学内核。
+
+| FIX | 冻结接法 | 验证 |
+|---|---|---|
+| C1-B1 | 对公共 inference 已确认合法的 Add/Sub/Mul/Div 广播，保留同形/标量/行/列原快接法；其余按逻辑轴折为 `[inner, 1, outer]` 并调用原版 repeat，再接同一 binary | F32/F16/BF16、rank0..8已准入布局、交错广播和两操作数顺序；独立坐标 oracle，输入不改写 |
+| C1-B2 | Sum/Mean 先将相邻选中轴分组，用原版 view_4d/cont 稳定移至末尾，再调用 sum_rows/mean；half 显式 F32 累积/末尾舍入。空集合用原版 repeat 发布0或NaN | 任意正负轴集合、keep-dim、rank6全部非空轴子集、非连续输入、空集合/空输出、scalar；普通Graph组合及重放 |
+
+只生成冷布局和原版程序，执行不排序 Provider、不建图或计时。每个实际转置/广播的中间 tensor
+由同一 invocation allocator 冷分配，生命周期与配额不变；多次物化属于真实成本，不能记作零拷贝。
+一般广播每轴至多一侧扩张；归约至多每组一次 cont，原 metadata 容量上界仍覆盖这些节点。
+本轮设计及定向源码核对扣12分钟，累计102分钟、剩余18分钟，总预算不重置。其它成熟补位仍待
+完成，自研冻结及旧 oneDNN Q2 条件不变。

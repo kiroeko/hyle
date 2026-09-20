@@ -42,6 +42,13 @@
   ],
   "action": "Implement original ggml admitted domains; qualify mature companion for remaining exact domains. No self-written math; no P1 started.",
   "complete_requirement_cells": 0,
+  "broadcast_reduce_followup": {
+    "baseline": "b4094ca7cd3a385916ca1f7ca849542e3ff0751a",
+    "decision": "Original repeat for general broadcast; grouped view_4d/cont followed by original Sum/Mean for selected axes; original repeat publishes empty identities. Only cold descriptor/program glue.",
+    "sources": ["src/ggml.c:2489-2534", "src/ggml.c:2584-2607", "src/ggml.c:3854-3873"],
+    "source_design_budget_minutes": {"used": 102, "remaining": 18, "total": 120},
+    "execution_verdict": "UNRUN"
+  },
   "layout_followup": {
     "baseline": "4776264a09d69e89cff6ade945f8124bcdb1abd3",
     "decision": "Original ggml arbitrary-axis get_rows with I32 repeat; column-broadcast binary enables FP32 L2 graph composition. No new mathematical kernel.",
