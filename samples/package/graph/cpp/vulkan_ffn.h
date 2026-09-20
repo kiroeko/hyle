@@ -3,6 +3,7 @@
 #include <hyle/graph/vulkan.h>
 
 #include "../../compute/cpp/vulkan_ffn.h"
+#include "vulkan_mature.h"
 
 namespace sample_vulkan_graph {
 namespace s = sample_vulkan_direct;
@@ -149,6 +150,7 @@ inline hyle::Status topk(const v::Context &context) {
 
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  HYLE_RETURN_IF_ERROR(sample_vulkan_mature_graph::run(context));
   HYLE_RETURN_IF_ERROR(topk(context));
   const s::Weights weights;
   for (int rows : {1, 16}) {

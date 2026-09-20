@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "vulkan_affine.h"
+#include "vulkan_mature.h"
 #include "vulkan_topk.h"
 
 namespace sample_vulkan_direct {
@@ -193,6 +194,7 @@ inline hyle::Status recorded_ffn(const v::Context &context,
 
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  HYLE_RETURN_IF_ERROR(sample_vulkan_mature::direct(context));
   HYLE_RETURN_IF_ERROR(ordinary(context));
   HYLE_RETURN_IF_ERROR(sample_vulkan_topk::direct(context));
   const Weights weights;
