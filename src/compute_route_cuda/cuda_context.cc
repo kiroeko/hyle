@@ -1,5 +1,5 @@
-#include "hyle/compute/cuda.h"
 #include "default_context.h"
+#include "hyle/compute/cuda.h"
 
 #include <array>
 
@@ -16,7 +16,7 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
 }
 
 Result<Context> internal::create_context(DefaultContextOptions options,
-                                        Provider ggml) noexcept {
+                                         Provider ggml) noexcept {
   auto selected = device(options.device_ordinal);
   if (!selected)
     return std::unexpected(std::move(selected).error());
@@ -25,7 +25,10 @@ Result<Context> internal::create_context(DefaultContextOptions options,
       flashinfer::provider(),
 #endif
       ggml,
-      cublas::provider(), marlin::provider(), cuda_native::sglang_provider(),
+      cublas::provider(),
+      marlin::provider(),
+      cuda_native::sglang_provider(),
+      cuda_native::cccl_provider(),
       cuda_native::provider()};
   return Context::create(*selected,
                          {.metadata_allocator = options.metadata_allocator,

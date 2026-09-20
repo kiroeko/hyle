@@ -113,10 +113,23 @@ TEST(CudaDefaultGraph,
                                             gates_desc, resource.ref())
                                .value();
         EXPECT_EQ(direct_counts.provider().id,
-                  compute::cuda_native::kProviderId);
-        EXPECT_EQ(direct_gate.provider().id, compute::cuda_native::kProviderId);
-        auto direct_counts_slot = direct_counts.create_invocation().value();
-        auto direct_gate_slot = direct_gate.create_invocation().value();
+                  compute::cuda_native::kCcclProviderId);
+        EXPECT_EQ(direct_gate.provider().id,
+                  compute::cuda_native::kCcclProviderId);
+        const auto counts_need = direct_counts.workspace_requirement();
+        const auto gates_need = direct_gate.workspace_requirement();
+        auto counts_workspace =
+            mem::Buffer::create(resource.ref(), counts_need.size,
+                                counts_need.alignment)
+                .value();
+        auto gates_workspace =
+            mem::Buffer::create(resource.ref(), gates_need.size,
+                                gates_need.alignment)
+                .value();
+        auto direct_counts_slot =
+            direct_counts.create_invocation(counts_workspace.view()).value();
+        auto direct_gate_slot =
+            direct_gate.create_invocation(gates_workspace.view()).value();
         Tensor table(table_desc, resource.ref()),
             scales(scales_desc, resource.ref()),
             direct_offsets(counts_desc, resource.ref()),
@@ -246,7 +259,19 @@ TEST(CudaDefaultGraph,
                             direct_prefix.view)
                     .value();
             ASSERT_TRUE(direct_f.wait().ok());
-            EXPECT_EQ(direct_prefix.read<float>(), actual_prefix);
+            const auto direct_actual = direct_prefix.read<float>();
+            for (std::size_t batch = 0; batch < 2; ++batch)
+              for (std::size_t head = 0; head < static_cast<std::size_t>(heads);
+                   ++head) {
+                double expected = 0;
+                for (std::size_t token = 0;
+                     token < static_cast<std::size_t>(tokens); ++token) {
+                  const auto index = (batch * tokens + token) * heads + head;
+                  expected += actual_gate[index];
+                  EXPECT_NEAR(direct_actual[index], expected,
+                              6e-6 * std::abs(expected) + 1e-6);
+                }
+              }
             if (lane == 0) {
               retained_offsets = actual_offsets;
               retained_gather = actual_gather;
@@ -298,7 +323,10 @@ void failure_case(bool abandon) {
     ASSERT_TRUE(builder.publish(out).ok());
     auto logical = std::move(builder).finish().value();
     auto compiled =
-        graph::cuda::compile(logical, owner, resource.ref()).value();
+        graph::cuda::compile(
+            logical, owner, resource.ref(),
+            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared})
+            .value();
     Tensor input(desc, resource.ref()), output(desc, resource.ref());
     ASSERT_TRUE(input
                     .write<std::int32_t>(

@@ -5,6 +5,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   endif()
   enable_language(CUDA)
   hyle_add_module(compute_provider_cuda SOURCES
+    collectives_provider.cc collectives.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
     reduction_provider.cc reduction_kernel.cu topk_provider.cc topk_kernel.cu
@@ -32,11 +33,17 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   if(MSVC)
     # SDK collectives include CCCL headers, which require the conforming
     # preprocessor in nvcc's MSVC host preprocessing phase.
-    set_property(SOURCE norm_kernel.cu reduction_kernel.cu topk_kernel.cu scatter_kernel.cu scan_kernel.cu APPEND PROPERTY
+    set_property(SOURCE collectives.cu norm_kernel.cu reduction_kernel.cu topk_kernel.cu scatter_kernel.cu scan_kernel.cu APPEND PROPERTY
       COMPILE_OPTIONS -Xcompiler=/Zc:preprocessor)
     target_compile_options(hyle_compute_provider_cuda PRIVATE
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
   endif()
+  # CCCL is supplied by the user-installed CUDA SDK, not a FetchContent or
+  # vendored source dependency. Ship its original aggregate license with the
+  # instantiated device code in both SDK forms; the source form includes it.
+  install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/CCCL-LICENSE.txt"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+    RENAME cuda-cccl-LICENSE.txt COMPONENT Hyle_Runtime)
   hyle_register_package_dependency(
     NAME sglang_activation
     OWNER compute_provider_cuda

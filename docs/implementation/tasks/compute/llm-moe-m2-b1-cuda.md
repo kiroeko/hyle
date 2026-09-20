@@ -180,3 +180,13 @@ Add→Sqrt→Divide 组合继续承载 L2，不能替换成同名原子。
 补充接缝/别名与失败归因计6分钟，源码/设计累计 **72/120分钟、余48分钟**。完整 B1 验收和
 剩余成熟域继续未完成；没有新增完整需求 PASS。统一 Compute + Graph 实现 LOC 为
 **55,510行 / 241文件**（排除测试/vendor），仍只保留当前CPU/CUDA开发构建。
+
+### 原版 CCCL 索引 collectives 开发结果
+
+[CUDA-I有限卡](llm-moe-m2-b1-cuda-collectives.md)已按`c1923e1a` SCOPED→`59cc78fb` AUDITED
+接入原版DeviceScan/DeviceRadixSort/DeviceReduce/DeviceTransform，承载F02.4/F04.6的Scan/TopK。
+普通Direct/Graph自动选择具名成熟Provider；Windows 10/10 CTest与100次GoogleTest执行通过。
+原版语义投影、工作区和失败成本见该卡，旧自研math保持不变。完整21行及跨平台/交付/P1仍未完成。
+
+该子卡与本卡共享同一120分钟源码/设计额度；当前累计 **96分钟、余24分钟**，不另开研究预算。
+统一Compute+Graph实现 **56,172行/244文件**（不含测试/vendor），完整需求覆盖仍为0/256。

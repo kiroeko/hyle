@@ -65,16 +65,16 @@
     "fixed metadata arena reserves count*4 + nodes*64 + variadic concat ports*4 + 16 with prechecked overflow"
   ],
   "remaining": [
-    "empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
+    "ggml empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
     "other storage types and checked index cast",
-    "dynamic Gather/Scatter, checked Scan and stable TopK",
+    "dynamic Gather/Scatter; CCCL Scan/TopK Windows development passed but full applicable acceptance remains",
     "Select/min/max, stable activation/gates, Boolean Softmax mask and LogSoftmax qualification",
     "cross-environment delivery, sanitizer and immutable-candidate performance gates"
   ],
   "softmax_contract_correction": "Public no-valid-row result is NaN, not zero; CPU Release numeric rejection corrected in fd37c586. Native Debug and full-domain qualification remain distinct. No oneDNN Q2 recovery.",
   "source_design_budget_minutes": {
-    "used": 72,
-    "remaining": 48,
+    "used": 96,
+    "remaining": 24,
     "total": 120
   },
   "performance_samples": 0,
@@ -107,5 +107,19 @@
     "decision": "Copy/Cast/Concat use each storage type alignment. Recipe and Graph combine all reader/writer requirements for a boundary value; non-copy math remains 256. Cold immutable per-value alignment, same native pointer checks, no extra copy or new kernel.",
     "root_cause_corrections": 1,
     "regression": "Direct slices and Graph slice-Copy-Unary, plus capture tests with existing prepared-only compile contract"
+  },
+  "third_binding": {
+    "audited_checkpoint": "59cc78fb122c61b4c1dd7a11a172dd58b23b236f",
+    "owner": [
+      "compute_provider_cuda",
+      "compute_route_cuda"
+    ],
+    "operation": "Original CCCL checked Scan F32/I32 and stable TopK F32/F16/BF16/I32",
+    "domain": "CUDA13.3 toolkit/runtime, CUB3.3.4, SM89; plain rank<=8, arbitrary axis/byte strides, dense outputs, count<=INT32_MAX, no alias",
+    "algorithm": "Original InclusiveSumByKey with widened I32, Reduce Min/Max, stable RadixSort of row/NaN/directed score, Transform of values and indices",
+    "projection": "Only scalar public semantic key/type/layout projection; no own scan/sort/reduce kernel or loop",
+    "resources": "Caller-owned per-slot workspace; shared native stream, managed replay; I32 Scan returns two validation scalars and blocks host; output written only after validation",
+    "execution_evidence": "collectives-windows.json",
+    "card_verdict": "INCONCLUSIVE; Windows development pass does not close B1 or full applicable acceptance"
   }
 }

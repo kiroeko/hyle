@@ -124,6 +124,7 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
 | SGLang RMSNorm | dense 同类型 F16/BF16 输入和必需 scale，F32 累加、输出最终 RNE；宽度64/128/256、256倍数至8192、512倍数至16384；16字节对齐、允许精确 input0 原位；混合F32参数不先窄化，继续由下一合法候选承载 |
 | SGLang Unary | dense F32/F16/BF16 SiLU/GELU/GELU-tanh，完整16字节向量、对齐16字节、允许精确原位；普通 Unary 的稳定尾值和 -Inf 极限合同由明确数学适配保留；输出元素数<=INT32_MAX |
+| CCCL Scan / TopK | CUDA13.3 toolkit/runtime、CCCL3.3.4、SM89；Scan为F32/I32，TopK为F32/F16/BF16/I32；plain rank≤8、任意axis/byte stride、dense输出、元素数≤INT32_MAX、不重叠；每invocation独立caller workspace，managed执行 |
 | HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
 | HYLE 基本 tensor | plain View、Copy、Fill、Select；F32/F16/BF16 Cast、全部既有 Unary/Binary 模式；rank≤8，rank0/broadcast/非负及奇数 byte stride，非 View 输出 dense、元素数≤INT32_MAX |
 | HYLE CUDA norms | dense F32/F16/BF16 RMSNorm、LayerNorm，最后一轴、FP32 accumulation；scale/bias 各自为输入类型或 half 输入的 F32 参数，元素数≤INT32_MAX；LayerNorm 使用先均值再 centered variance |
@@ -180,11 +181,14 @@ Reduce 和 Softmax/LogSoftmax 支持 F32/F16/BF16、任意轴/普通 byte stride
 产生 NaN。每个原子一次 native launch，无 caller workspace 或槽私有状态；Softmax 在≤8192列时
 缓存 F32 行（最多32 KiB片上空间），更长行读取输入三遍。上述输入/输出非空元素数≤INT32_MAX。
 这些新能力尚待 C1 完整片段的等责性能和全部交付验收，不从正确性推断最快规则。
-TopK 使用同一普通入口，返回原始位模式的 F32/F16/BF16 values 与 I32 indices；支持任意轴和
-byte stride，两个输出 dense，输入与输出及两输出之间都不重叠。同分（包括±0）按较小列号优先，
-NaN 排在全部非 NaN 后；largest/smallest 均可，sorted=false 仍可返回有序结果。k=1 使用 SDK
-选择，k>1 对≤4096列使用 CUB BlockRadixSort；都一次 native launch、无 caller workspace/槽
-私有状态，片上排序 scratch 和 code storage 仍有实际成本。长序列 k>1 当前准备时明确拒绝。
+TopK 在上述已资格化环境通过普通入口绑定原版CCCL，返回原始位模式的 F32/F16/BF16/I32 values
+与 I32 indices；支持任意轴和byte stride，两个输出dense，输入与输出及两输出之间都不重叠。
+同分（包括±0）按较小列号优先，NaN排在全部非NaN后；largest/smallest均可，sorted=false仍可
+返回有序结果。原版DeviceRadixSort对逻辑行与分数稳定排序，再通过库Transform提取原值/下标，
+没有4096列限制。按`workspace_requirement()`分配每个invocation的独立CUDA工作区；其大小随
+输入元素数增长，包括两份keys/indices及SDK临时区。默认managed执行不接受外部capture。
+expert `cuda_native::provider()`和Graph明确要求prepared的既有路径仍保留原范围：F32/F16/BF16，
+k=1或k>1且列数≤4096，无caller workspace，允许原生capture；这不是新增性能裁决。
 Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byte stride 和 dense output，
 逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
 双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
@@ -204,11 +208,16 @@ Scatter输出保持原值，通过Completion报告；失败槽退役后可建新
 普通Direct复用它，外层CUDA Graph接入原生child graph；执行期不重新调用排序准备。原位更新省去
 整状态复制，opaque CUDA graph私有内存如实报告unknown，不能当成零内存。完整成本包括索引检查、
 排序、必要source复制、逐目标有序更新与完成回报，不等同于无序atomic scatter。
-CUDA `Scan` 支持I32/F32、inclusive/exclusive、任意axis/普通byte stride、dense输出和同描述精确
-原位执行；非空总元素≤INT32_MAX，空域不访问payload。SDK BlockScan以固定CTA分块沿row求和，
-零caller workspace/槽私有状态；F32一次launch，exclusive直接求前缀而非减去当前元素。I32先用
-I64检查所有row的全部前缀（包括exclusive的最后总和），再第二次读取并写出；任一溢出报告
-OutOfRange且所有output保持原值。整数检查/状态回报和长行跨tile carry的成本均属于该路线。
+CUDA `Scan` 在上述环境默认由原版CCCL承载I32/F32、inclusive/exclusive、任意axis/普通byte
+stride与dense输出；非空总元素≤INT32_MAX，空域不访问payload。原版ScanByKey计算每个逻辑行
+的inclusive前缀，再由库Transform提取所需输出；exclusive首项为零。I32先提升到I64扫描，原版
+Reduce检查全部前缀（包括exclusive最后总和），仅两个验证标量返回host；任一越界通过Completion
+返回OutOfRange，所有用户output保持原值。检查包含一次host等待，不能声称整条路径不阻塞host。
+Direct必须提供独立caller workspace，不接受输入/输出别名；Graph规划同一工作区。caller的
+tensor、workspace和Queue须活到Completion结束，即使PreparedOperation/Invocation句柄已释放。
+既有expert/prepared-only Scan仍保留其原生capture和精确原位范围；默认CCCL不声明这些能力。
+CCCL这两项的Windows开发验证与尚未运行的跨平台/三交付/P1见
+[当前接入卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md)，不代表完整模型覆盖。
 整数/FP8 Cast 与算术等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。

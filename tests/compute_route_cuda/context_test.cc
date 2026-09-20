@@ -1,5 +1,5 @@
-#include "ffn_support.h"
 #include "../compute/workload_fixture.h"
+#include "ffn_support.h"
 #include "hyle/compute/providers/flashinfer.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 
@@ -16,8 +16,11 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
 #if defined(__linux__)
         compute::flashinfer::kProviderId,
 #endif
-        compute::ggml_cuda::kProviderId, compute::cublas::kProviderId,
-        compute::marlin::kProviderId, compute::cuda_native::kSglangProviderId,
+        compute::ggml_cuda::kProviderId,
+        compute::cublas::kProviderId,
+        compute::marlin::kProviderId,
+        compute::cuda_native::kSglangProviderId,
+        compute::cuda_native::kCcclProviderId,
         compute::cuda_native::kProviderId};
     ASSERT_EQ(owner.provider_count(), expected.size());
     for (std::size_t i = 0; i < expected.size(); ++i)
@@ -41,23 +44,20 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
                      Lane(type, rows, resource.ref())};
     const auto a_inputs = first.inputs(lanes[0].input.view.as_const());
     const auto b_inputs = second.inputs(lanes[0].activated.view.as_const());
-    auto workload = workload_test::known(rows == 1
-                                            ? compute::WorkloadPhase::kDecode
-                                            : compute::WorkloadPhase::kPrefill);
-    auto a = compute::prepare(owner, first.operation(),
-                              std::span(a_inputs).first(first.arity()),
-                              std::array{lanes[0].gate_up.view}, resource.ref(),
-                              workload);
+    auto workload =
+        workload_test::known(rows == 1 ? compute::WorkloadPhase::kDecode
+                                       : compute::WorkloadPhase::kPrefill);
+    auto a = compute::prepare(
+        owner, first.operation(), std::span(a_inputs).first(first.arity()),
+        std::array{lanes[0].gate_up.view}, resource.ref(), workload);
     ASSERT_TRUE(a.has_value()) << a.error().message();
-    auto b =
-        compute::prepare(owner, compute::GatedActivation{},
-                         lanes[0].gate_up.view.description(), resource.ref(),
-                         workload);
+    auto b = compute::prepare(owner, compute::GatedActivation{},
+                              lanes[0].gate_up.view.description(),
+                              resource.ref(), workload);
     ASSERT_TRUE(b.has_value()) << b.error().message();
-    auto c = compute::prepare(owner, second.operation(),
-                              std::span(b_inputs).first(second.arity()),
-                              std::array{lanes[0].output.view}, resource.ref(),
-                              workload);
+    auto c = compute::prepare(
+        owner, second.operation(), std::span(b_inputs).first(second.arity()),
+        std::array{lanes[0].output.view}, resource.ref(), workload);
     ASSERT_TRUE(c.has_value()) << c.error().message();
     std::array programs{std::move(*a), std::move(*b), std::move(*c)};
     for (const auto &program : programs)

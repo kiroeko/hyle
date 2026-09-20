@@ -47,7 +47,7 @@
 - Windows/WSL真GPU、适用host插桩；Air/Mini CUDA-OFF；稳定程序的一份source/static/shared
   relocated消费旅程，producer隐藏、依赖/许可证/DLL邻置。重型串行，parallel2，不弹UAC。
 - selector选中门、docs/closure（状态更改用明确previous-ref）、最终候选复核及适用P1。
-- 当前仅SCOPED；所有能力/验收未签，没有完整新增需求PASS，不用probe代签产品覆盖。
+- 定界时仅SCOPED；后续AUDITED及开发证据见下节，完整能力/验收未签，不用probe代签产品覆盖。
 
 ## 已核对的原版事实
 
@@ -87,3 +87,41 @@
 
 补充原版接缝、资格与打包核对计8分钟，父卡共同源码/设计累计 **88/120分钟、余32分钟**。
 I1–I4由本节冻结后方可实施；未运行的产品/跨平台/三交付/P1均未签。
+
+## Windows 开发检查点
+
+I1–I4产品接线已实现；[产品receipt](../../../../evidence/correctness/compute-llm-moe-m2-b1-cuda/collectives-windows.json)
+保存精确实现hash、失败及修正和原始日志。Windows SM89 Release/shared实跑 **10/10 CTest、
+100次GoogleTest执行**，包括7个CCCL Provider测试、普通Direct与两个新增Graph测试。
+
+- Scan：F32/I32，正负axis、rank6/8、奇数字节stride/零stride、空域和8193列；特殊浮点前缀；
+  I32最终/中间正负溢出覆盖inclusive/exclusive，所有输出保留，fresh invocation可恢复。
+- TopK：F32/F16/BF16/I32，三个axis、rank8、奇数字节stride/零stride、k=1/整轴/8193列取7；
+  ±0、NaN payload、Inf、重复值、超过2^24的整数，独立stable host oracle验证下标与原始bits。
+- 资源：caller workspace不足、精确/部分别名和外部capture提前拒绝；Context/Prepared/Invocation
+  每个HYLE metadata分配点失败清理及重试；Completion保活Provider句柄，提前close后正确排空。
+  Direct的payload、workspace、Queue仍由caller保活；Graph管理每slot workspace并保留另一slot旧结果。
+- 普通工厂自动选择独立CCCL ID；Graph TopK→Scan使用默认prepare_replay选项、两个slot和变化输入。
+  旧capture验收明确要求prepared，保留原有capture/失败门。F32不同实现按既有FP64合同和原容差
+  验证，不要求逐位相等；整数及TopK原值/索引仍精确。
+- 第一次CMake误用需要源码lock的runtime-asset注册；CCCL由已安装CUDA SDK提供，因此在所属factor
+  用标准`install(FILES ... COMPONENT Hyle_Runtime)`交付原版合并LICENSE，不新增下载器或改治理。
+  CUDA-OFF不安装该文件；源码包原样携带。实际relocated三交付仍待本批稳定后验证。
+- 首轮测试失败为新fixture非法1字节tensor起始偏移、旧Provider数量断言；已按公共格式对齐与新增
+  identity修正，保留奇数stride。另一新测试提前释放borrowed workspace，导致cuMemFree等待尚未
+  释放的测试Gate；按既有合同保活caller工作区，仍提前释放Prepared/Invocation并close后验证排空。
+  构建还修正一处GoogleTest宏的逗号括号。均保留原失败日志；无产品数学纠正或冻结实现比较。
+
+P0：Scan工作区保存N个F32/I64前缀，I32另含两个I64标量和原版reduce临时区；完整成本包括
+scan、两次reduce、16字节回传/host等待及输出投影。TopK使用两份复合keys/indices和SDK临时区，
+固定radix位数下按输入规模增长；layout投影、原版runtime dispatch及所有输出提取均计入成本。
+不将原版内部查询/分配记零，不保证原生GPU故障有整事务回滚；校验错误的输出保留已实测。
+
+SDK版本条件精确为CUDA toolkit/runtime13.3、CCCL3.3.4、SM89；未知环境准备时拒绝候选。
+`HostWaitPolicy`只控制Graph跨队列依赖，I32 Scan内部等待仍由`blocks_host=true`声明，不会被该
+选项消除。资源/打包/失败接缝补充核对共8分钟，父卡共享源码/设计累计 **96/120、余24分钟**。
+实现规模按统一脚本为Compute+Graph **56,172行/244文件**，不含测试/vendor；新增代码是描述符、
+原版调用、标量key/layout投影和资源adapter，没有自写scan/sort/reduce kernel。
+
+状态仍AUDITED，整卡门仍INCONCLUSIVE：WSL GPU、两Mac CUDA-OFF、host插桩、三交付、最终候选
+复核及不可变候选P1尚未运行。本检查点不签父卡21行、两行四平台完整验收或新增覆盖格。

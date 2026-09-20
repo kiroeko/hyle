@@ -1,0 +1,159 @@
+{
+  "kind": "M2-B1 CUDA-I product development checkpoint; no full model coverage or terminal card verdict",
+  "baseline": "93b5095ff9e652cacc288d7ffb5da2cae1b38645",
+  "scope_checkpoint": "c1923e1aec68613805fec51ae90e0c9cd51e99bd",
+  "audited_checkpoint": "59cc78fb122c61b4c1dd7a11a172dd58b23b236f",
+  "candidate": "WORKTREE; exact product/test hashes below; not immutable P1 candidate",
+  "selector_candidate_tree": "6249823222296660e7b4c0c2e8fce5d92eac7bbe",
+  "machine": "Windows RTX4070 SM89; MSVC19.50.35728; CUDA13.3.73 / CUB3.3.4; Ninja Release shared",
+  "settings": {
+    "cuda_architectures": "89-real",
+    "werror": true,
+    "cpu": false,
+    "cuda": true,
+    "build_parallel": 2,
+    "test_parallel": 1,
+    "sanitizer": "off",
+    "dlls_adjacent": true,
+    "error_mode": "0x8003",
+    "uac_or_power_changes": false
+  },
+  "binding": {
+    "audited_checkpoint": "59cc78fb122c61b4c1dd7a11a172dd58b23b236f",
+    "owner": [
+      "compute_provider_cuda",
+      "compute_route_cuda"
+    ],
+    "operation": "Original CCCL checked Scan F32/I32 and stable TopK F32/F16/BF16/I32",
+    "domain": "CUDA13.3 toolkit/runtime, CUB3.3.4, SM89; plain rank<=8, arbitrary axis/byte strides, dense outputs, count<=INT32_MAX, no alias",
+    "algorithm": "Original InclusiveSumByKey with widened I32, Reduce Min/Max, stable RadixSort of row/NaN/directed score, Transform of values and indices",
+    "projection": "Only scalar public semantic key/type/layout projection; no own scan/sort/reduce kernel or loop",
+    "resources": "Caller-owned per-slot workspace; shared native stream, managed replay; I32 Scan returns two validation scalars and blocks host; output written only after validation",
+    "execution_evidence": "collectives-windows.json",
+    "card_verdict": "INCONCLUSIVE; Windows development pass does not close B1 or full applicable acceptance"
+  },
+  "windows_development": {
+    "verdict": "PASS",
+    "ctest_targets": 10,
+    "header_targets": 5,
+    "gtest_executions": 100,
+    "cccl_and_existing_cuda_provider": 50,
+    "ordinary_direct": 8,
+    "ordinary_graph": 24,
+    "ggml_compute": 13,
+    "ggml_graph": 5,
+    "post_default_option_test_change": "Only Graph factor repeated: 1/1 CTest and 24 GTests PASS; ordinary prepare_replay defaults proved"
+  },
+  "coverage": [
+    "Scan F32/I32 axes, rank6/8, odd byte strides, broadcast stride, empty and 8193 columns; inclusive/exclusive, NaN/Inf, integer intermediate/final overflow",
+    "TopK four scalar types; every axis; rank8, odd/broadcast strides, k1/full/7-of-8193, empty outer, stable ties and signed zero, NaN payload/Inf, I32 values beyond 2^24; exact value bits and indices",
+    "Workspace missing/short and exact/partial alias reject before acceptance; external capture rejected and normal retry succeeds",
+    "Every HYLE metadata allocation point in Context, Prepared, Invocation failed in turn with balanced rollback and retry; no native GPU OOM injection claim",
+    "Warm native TopK behind real CUDA host gate: pending Completion retains Provider handles after close; caller workspace/payload/Queue remain alive by contract",
+    "Ordinary Graph TopK->Scan two independent slots, changed inputs, old results and failure/fresh-slot recovery; default replay chooses commands"
+  ],
+  "preserved_failures": [
+    {
+      "log": "collectives-build.log",
+      "cause": "Runtime asset registry requires locked source dependency; CCCL is installed system SDK",
+      "fix": "Standard factor-owned install(FILES ... COMPONENT Hyle_Runtime); no new downloader or governance change"
+    },
+    {
+      "log": "collectives-build-tests.log",
+      "cause": "GoogleTest macro initializer-list comma",
+      "fix": "Parenthesized expected expression"
+    },
+    {
+      "log": "collectives-ctest.log",
+      "cause": "New fixture constructed illegal 1-byte tensor base offset; old test expected five providers",
+      "fix": "Typed base offset with odd strides retained; six provider identities asserted"
+    },
+    {
+      "log": "collectives-ctest-c1.log",
+      "cause": "New lifetime test freed borrowed caller workspace while its own CUDA host gate was blocked, so cuMemFree waited",
+      "fix": "Preserve caller workspace by documented contract; release Provider handles and close before completion; final gate has no timeout"
+    }
+  ],
+  "p0": [
+    "Cold fixed preparation/workspace sizing; managed original dispatch, no HYLE hot provider search or timing",
+    "O(N) Scan prefix plus native temp; I32 original min/max passes, 16-byte host summary and wait charged",
+    "Fixed-width radix work with two key/index arrays plus native temp; all layout projections/value-index extraction charged",
+    "No new runtime, stream, completion event, private thread, own global math kernel or self-written algorithm"
+  ],
+  "selector": {
+    "selection_verdict": "READY",
+    "selected_ids": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_cuda",
+      "headers:compute_provider_cuda",
+      "factor:compute_route_cuda",
+      "factor:graph_route_cuda",
+      "delivery:compute",
+      "delivery:graph"
+    ],
+    "skipped_count": 123,
+    "skipped_reasons": "Full plan in raw archive",
+    "aggregate_execution": "INCONCLUSIVE; delivery gates unrun"
+  },
+  "maintenance": {
+    "docs": "PASS",
+    "closure": "PASS",
+    "loc_self_check": "PASS"
+  },
+  "remaining_unrun": [
+    "WSL native GPU",
+    "Air/Mini CUDA-OFF",
+    "host sanitizers",
+    "source/static/shared relocated consumer",
+    "final candidate review",
+    "immutable-candidate P1"
+  ],
+  "all_21_b1_rows": "INCONCLUSIVE; unbound exact domains and unrun applicable gates remain",
+  "new_complete_requirement_cells": 0,
+  "frozen_math_changed_paths": [],
+  "performance_samples": 0,
+  "source_design_budget_minutes": {
+    "used": 96,
+    "remaining": 24,
+    "total": 120
+  },
+  "loc": {
+    "compute_graph_implementation": 56172,
+    "files": 244,
+    "excludes": "tests/vendor",
+    "raw": "collectives-loc.log"
+  },
+  "cleanup": "Archived disposable CCCL probe build removed (1545395 bytes); reuse current CPU/CUDA builds only",
+  "product_and_test_sha256": {
+    "include/hyle/compute/providers/cuda.h": "a8c17be5e031c01dc9668f5ad95a5a191427388542daa3cc6da6da45d89bfc8b",
+    "src/compute_provider_cuda/CCCL-LICENSE.txt": "f96f51edda77fb9897de29d924d615e6bd153f4969db85fc6b7a22d7a624631e",
+    "src/compute_provider_cuda/CMakeLists.txt": "aca811f68b98096e3c8e76d57a8c41ea7a36800919b7c54f706b01c0c1c108af",
+    "src/compute_provider_cuda/collectives.cu": "62f6465b39fd5d7d534ffbf3f9cea161bfe33e5acf864a62a19b495232f4b7b8",
+    "src/compute_provider_cuda/collectives.h": "e42b6a16db881b453058cac1e93174dca7ee6281a69eed64510d5010e9d0b69e",
+    "src/compute_provider_cuda/collectives_provider.cc": "0ccf26afd18fbac5b5fa21cdf5441ed1b4e25bda5b2443f086274e9dd0e278a9",
+    "src/compute_route_cuda/cuda_context.cc": "d5aaebbbf24fbdf5a282507f1b0ea12c2286c7eb5ae3aa3fe22371066152c0d1",
+    "tests/compute_provider_cuda/CMakeLists.txt": "0ff9dbf3e159a84395ae4826763168c9ba70faf5a72ad48fead0630dd6c4f226",
+    "tests/compute_provider_cuda/collectives_test.cc": "6da10ddaae7c4fa9a0f953d2ddf0cdbb938b45950abc3c2e0fb8adcad6c72fc2",
+    "tests/compute_provider_cuda/collectives_test_support.h": "f21ff0db9eadcb82e507562afd251fbdd427366455bd002d87fee481fc9dd45d",
+    "tests/compute_route_cuda/context_test.cc": "39020dd30b398571999885ff4c967b02c99a6d2e84685e4b2c5b27fade73fa32",
+    "tests/compute_route_cuda/ggml_test.cc": "748b44a528c010c3a2fb7176f39e0ef818973449789dd297bb3954f5fbfa001a",
+    "tests/graph_route_cuda/CMakeLists.txt": "bf87135190e487a8817548253178b49e02e9469d604866f4b015e1892fd8e057",
+    "tests/graph_route_cuda/collectives_test.cc": "f43925a510af269ec843c14472535bedb9ec2dae97935ab5e5cc2639c3de056d",
+    "tests/graph_route_cuda/scan_test.cc": "c56a583eec0778377760b533c7df34c38cf76159993206578a6f429b29b14138",
+    "tests/graph_route_cuda/topk_test.cc": "418f3dda526e1c0f22c0eed4ea3c99516fcae894e6422288970e29df6bcc67a7"
+  },
+  "artifact_sha256": {
+    "hyle_compute_provider_cuda.dll": "abdb2a1dacc02375b7ba6bf1e238348081ac102d98e4bbc558045d98c18b6fe8",
+    "hyle_compute_route_cuda.dll": "e549af14ff13a90b9345fbcf9bca862578e6f466fa32b80129c110bf4a2449ed",
+    "hyle_compute_provider_cuda_test.exe": "cd8d9188ebeb13b8ff375cfa231afcd5181ee380b3c9bb6f6ee25734fcafaca0",
+    "hyle_compute_route_cuda_test.exe": "fc521f1809010d4a494e1b745ebf200016efff156b1e0e3d086bd4a2e768f169",
+    "hyle_graph_route_cuda_test.exe": "0db1de08b66d3fe6c2709efb46d7c230a59452cb7e0ddcab9c70bac379fc92cf"
+  },
+  "archive": {
+    "path": "collectives-windows-raw.zip",
+    "sha256": "dac0d69c6db48dacf88cab37c678f0d135af777f1b4dba61503232ddbbe5789c",
+    "bytes": 114223
+  }
+}

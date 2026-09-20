@@ -117,9 +117,15 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
               compute::prepare(owner, top_op, desc, resource.ref());
           ASSERT_TRUE(direct_top.has_value()) << direct_top.error().message();
           EXPECT_EQ(direct_top->provider().id,
-                    compute::cuda_native::kProviderId);
+                    compute::cuda_native::kCcclProviderId);
           auto softmax_slot = direct_softmax->create_invocation().value();
-          auto top_slot = direct_top->create_invocation().value();
+          const auto top_need = direct_top->workspace_requirement();
+          auto top_workspace =
+              mem::Buffer::create(resource.ref(), top_need.size,
+                                  top_need.alignment)
+                  .value();
+          auto top_slot =
+              direct_top->create_invocation(top_workspace.view()).value();
           Tensor direct_probabilities(desc, resource.ref()),
               direct_values(values_desc, resource.ref()),
               direct_indices(indices_desc, resource.ref());
