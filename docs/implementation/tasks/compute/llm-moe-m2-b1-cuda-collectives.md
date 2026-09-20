@@ -3,6 +3,8 @@
 ## Closure card
 
 - component / owner：`compute_provider_cuda`、`compute_route_cuda`；`/root`。
+- 2026-09-20后续定界：Provider的I5 Gather增量待审；registry保留既有AUDITED（仅授权I1–I4），
+  不作非法AUDITED→SCOPED倒退。无新增route产品改动；未决验收和父卡需求不缩小。
 - baseline：`93b5095f`，Windows canonical，工作树干净。当前阶段 AUDITED；`c1923e1a`独立绑定SCOPED。
 - trigger：[M0 CUDA-I](llm-moe-provider-map.json)已将成熟 CUB scan/sort 分给现有 CUDA Provider。
   前者仍绑定 M0 空 FIX，须换成本卡；普通 CUDA 工厂需要新成熟选择，满足 M1-C 新能力 reopen。
@@ -125,3 +127,25 @@ SDK版本条件精确为CUDA toolkit/runtime13.3、CCCL3.3.4、SM89；未知环�
 
 状态仍AUDITED，整卡门仍INCONCLUSIVE：WSL GPU、两Mac CUDA-OFF、host插桩、三交付、最终候选
 复核及不可变候选P1尚未运行。本检查点不签父卡21行、两行四平台完整验收或新增覆盖格。
+
+## I5 Gather 增量：待审有限定界
+
+- baseline：`9d65d637`，工作树干净。具名触发是F02.1 embedding/索引读取；原版ggml get_rows
+  没有checked动态越界返回，M0 CUDA-I/CCCL可承载相邻indexed primitive。I1–I4不回退，也不
+  因增量已接就继承尚未运行的WSL/交付/插桩/P1门。
+- 只扩`compute_provider_cuda`同一CCCL identity，新增原版`thrust::gather`；原版DeviceReduce
+  Min/Max验证I32/I64索引，回传两个I64控制标量，成功后才gather。caller声明unchecked时不重复
+  验证；空输出按共同合同no-op。库transform/permutation iterator的函数对象仅做dtype位宽和
+  source/index逻辑坐标到byte stride的地址投影，没有自写gather loop或kernel。
+- 接受plain 1/2/4/8-byte source、I32/I64 indices，公共合法rank/axis/byte stride与dense输出；
+  output/indices各≤INT32_MAX，存储跨度≤PTRDIFF_MAX。checked负数或≥axis width均OutOfRange，
+  用户output完全不改。输入/output不得重叠；源张量不缩窄为F32，保留原始storage位。
+- caller workspace仅保存两个控制标量及原版reduce临时区；每invocation独立，实际host等待以
+  `blocks_host`声明。沿同一原生stream/Completion/冷版本条件，不创建第二套runtime。
+- 预声明：先原版I32/I64、全部storage位宽、坏索引/输出不变资格；再产品的所有axis、rank6/8、
+  非连续source/index、重复/空/边界/巨大I64索引、资源/失败/恢复；普通Direct和TopK→Gather的
+  Graph组合、两slot/旧结果，继承本卡其它适用平台/三交付/不可变候选P1。
+- 不接Scatter、不改冻结kernel/公共schema/Graph产品，也不开展自研比较。本次前置定界与
+  原版gather/合法状态流核对计9分钟，父卡源码/设计共 **105/120、余15分钟**；不新增研究预算。
+- 当前只允许原版资格探针；I5未AUDITED之前不得改产品。失败最多两次源码驱动纠正，预算耗尽
+  明确裁决；整个B1及64×4需求分母保持不变。
