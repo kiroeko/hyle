@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <span>
 #include <vector>
 
@@ -530,6 +531,11 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
       compute::ConstTensorView::create(data_desc, data_buffer.view()).value()}};
   auto compiled = graph::compile(logical, context, {.constants = constants});
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
+#if defined(HYLE_COMPUTE_GGML_CPU)
+  ASSERT_EQ(compiled->report.step_count(), 2U);
+  for (std::size_t step = 0; step < 2; ++step)
+    EXPECT_EQ(compiled->report.step(step)->provider.id, compute::ggml_cpu::kProviderId);
+#endif
   auto invocation = compiled->executable.create_invocation().value();
   ASSERT_TRUE(invocation
                   .bind(input, compute::ConstTensorView::create(
@@ -555,4 +561,46 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
   }
 }
 
+#if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto description = compute::TensorDesc::dense(compute::DataType::kFloat32,
+      std::array<std::int64_t, 1>{7}).value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  const std::array arguments{input};
+  const auto node = builder.add_node(compute::Operation(compute::TopK{.count = 3}), arguments).value();
+  const auto values = builder.result(node, 0).value();
+  const auto indices = builder.result(node, 1).value();
+  ASSERT_TRUE(builder.publish(values).ok());
+  ASSERT_TRUE(builder.publish(indices).ok());
+  auto logical = std::move(builder).finish().value();
+  auto compiled = graph::compile(logical, context).value();
+  ASSERT_EQ(compiled.report.step_count(), 1U);
+  EXPECT_EQ(compiled.report.step(0)->provider.id, compute::ggml_cpu::kProviderId);
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const std::array<std::array<float, 7>, 2> inputs{{
+      {7, 3, 7, nan, -1, 9, 9}, {7, 9, 7, nan, -1, 3, 9}}};
+  const std::array<std::array<std::int32_t, 3>, 2> expected{{{5, 6, 0}, {1, 6, 0}}};
+  auto source = half_test::buffer<float>(inputs[0]);
+  auto value_buffer = half_test::buffer<float>(std::array<float, 3>{});
+  auto index_buffer = half_test::buffer<std::int32_t>(std::array<std::int32_t, 3>{});
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input, compute::ConstTensorView::create(description, source.view()).value()).ok());
+  ASSERT_TRUE(invocation.bind(values, compute::TensorView::create(logical.value_description(values).value(), value_buffer.view()).value()).ok());
+  ASSERT_TRUE(invocation.bind(indices, compute::TensorView::create(logical.value_description(indices).value(), index_buffer.view()).value()).ok());
+  const std::array queues{graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (std::size_t run = 0; run < inputs.size(); ++run) {
+    ASSERT_TRUE(source.view().write(std::as_bytes(std::span(inputs[run]))).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    EXPECT_EQ(half_test::read<std::int32_t>(index_buffer),
+              std::vector<std::int32_t>(expected[run].begin(), expected[run].end()));
+    EXPECT_EQ(half_test::read<float>(value_buffer), (std::vector<float>{9, 9, 7}));
+  }
+}
+#endif
 } // namespace

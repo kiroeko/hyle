@@ -1,0 +1,73 @@
+{
+  "kind": "M2-B1 C1-I development checkpoint; not full coverage or performance acceptance",
+  "audit_commit": "cf2d8f062b2206fd67943fd2dbe47753c125d61a",
+  "candidate": "WORKTREE product/test hashes; public header explanatory comment updated after native tests",
+  "machine": "Windows x64 MSVC 19.50.35728.0; Release shared; oneDNN OFF; CPU only; parallel2, tests serial",
+  "algorithms": "Original non-parallel C++ inclusive_scan and partial_sort; ggml public scalar conversion; HYLE only bindings/checks/lifecycle/contract comparator",
+  "verification": {
+    "verdict": "PASS",
+    "ctest_targets": 7,
+    "provider_cases": 11,
+    "ordinary_direct_cases": 6,
+    "ordinary_graph_cases": 11,
+    "self_contained_headers": 3,
+    "executor_consumers": 1
+  },
+  "unrun": [
+    "Full selector and three deliveries",
+    "WSL/Air/Mini and applicable sanitizers",
+    "oneDNN composition",
+    "P1; no timing or frozen HYLE comparison"
+  ],
+  "complete_requirement_cells": 0,
+  "loc": {
+    "implementation_lines": 54962,
+    "files": 239,
+    "tests_and_vendors_excluded": true
+  },
+  "archive": {
+    "path": "index-windows-raw.zip",
+    "sha256": "862023c962d8cd4278563fb079019fdf7a136534a139e2b2ebce28d873c4b82d",
+    "bytes": 47734,
+    "files": 12
+  },
+  "build": {
+    "path": "C:\\hv\\m2b1-cpu",
+    "bytes": 104460625,
+    "retained_reason": "Only active CPU M2 build, reused by the next required checks"
+  },
+  "source_hashes": [
+    {
+      "path": "include/hyle/compute/providers/ggml_cpu.h",
+      "sha256": "85961136fa490c9cfc05988ad908788c8a541457878e46618b59dd18f36e9724"
+    },
+    {
+      "path": "src/compute_provider_ggml/CMakeLists.txt",
+      "sha256": "f3014ef88f5ecd42336b6100d8b9fdc3b552a8523a8afe84101482da8f85cfe3"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "f05c472f6f65160bb2e15245c0970296c5f0703e5758717be6118c091cfbdb31"
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.cc",
+      "sha256": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8"
+    },
+    {
+      "path": "src/compute_provider_ggml/standard_index.h",
+      "sha256": "9a760f757eafad3aa86ff8d08110a80e37b8ebffa9595e963d26f4f4699ea2a2"
+    },
+    {
+      "path": "tests/compute_provider_ggml/cpu_provider_test.cc",
+      "sha256": "9978d82de874efc8aae8e2e112da6d5963a91e0ad2a705ca6e413feacbc733c8"
+    },
+    {
+      "path": "tests/compute_route_cpu/context_test.cc",
+      "sha256": "728ee75e857b2e8a17809ddda66c97589408d3a2be309bb72524eafdcbb8a393"
+    },
+    {
+      "path": "tests/graph_route_cpu/graph_test.cc",
+      "sha256": "d1baa7381b19a5130b74769488a8363bc11594f76e5ffe6617ea2e7d383264b5"
+    }
+  ]
+}

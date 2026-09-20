@@ -76,6 +76,21 @@ TEST(CpuDefaultContext, GgmlBindsThroughOrdinaryFactory) {
             ProviderReplayClass::kPrepared);
   EXPECT_FALSE(prepared->runtime_properties().uses_private_threads);
 }
+
+TEST(CpuDefaultContext, StandardIndexProgramsBindThroughOrdinaryFactory) {
+  auto context = create_context().value();
+  const auto scores = matrix(2, 9);
+  auto topk = prepare(context, TopK{.count = 3}, scores);
+  ASSERT_TRUE(topk) << topk.error().message();
+  EXPECT_EQ(topk->provider().id, ggml_cpu::kProviderId);
+  EXPECT_EQ(topk->output_count(), 2U);
+  const auto counts = TensorDesc::dense(DataType::kInt32,
+      std::array<std::int64_t, 1>{9}).value();
+  auto scan = prepare(context, Scan{.exclusive = true}, counts);
+  ASSERT_TRUE(scan) << scan.error().message();
+  EXPECT_EQ(scan->provider().id, ggml_cpu::kProviderId);
+  EXPECT_FALSE(scan->runtime_properties().uses_private_threads);
+}
 #endif
 
 #if defined(HYLE_COMPUTE_ONEDNN)

@@ -1,4 +1,5 @@
 #include "program.h"
+#include "standard_index.h"
 
 #include <algorithm>
 #include <array>
@@ -524,10 +525,12 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *output) noexcept {
   *output = {};
+  const bool standard = standard_index::supports(
+      request.operation, request.inputs, request.outputs);
   if (static_cast<Configuration *>(context)->extension ||
       !request.shape.exact() ||
-      !internal::supports(context, request.operation, request.inputs,
-                          request.outputs))
+      (!standard && !internal::supports(context, request.operation,
+                                        request.inputs, request.outputs)))
     return Status::Unimplemented("ggml CPU operation domain is not admitted");
   for (std::size_t i = 0; i < inputs.size(); ++i)
     inputs[i] = {.required_properties = mem::MemoryProperty::kHostAccessible,
@@ -535,8 +538,9 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
   for (std::size_t i = 0; i < outputs.size(); ++i)
     outputs[i] = {.required_properties = mem::MemoryProperty::kHostAccessible,
                   .minimum_alignment = request.outputs[i].required_alignment()};
-  *output = {.route = 1,
-             .runtime = internal::runtime(context),
+  *output = {.route = standard ? standard_index::kRoute : 1,
+             .runtime = standard ? standard_index::runtime()
+                                 : internal::runtime(context),
              .workspace_resource = {.required_properties =
                                         mem::MemoryProperty::kHostAccessible},
              .cost = {.workspace = WorkspaceRequirement{},
@@ -545,7 +549,10 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
                       .repack_bytes = 0,
                       .synchronization_count = 0,
                       .dispatch_count = 1},
-             .profile_key = ProviderRouteKey{1}};
+             .profile_key =
+                 ProviderRouteKey{standard ? standard_index::kRoute : 1}};
+  if (standard)
+    output->cost = standard_index::costs();
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *context,
@@ -553,6 +560,10 @@ ProviderPrepareOutcome prepare(void *context,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
   *output = {};
+  if (request.route == standard_index::kRoute)
+    return standard_index::prepare(
+        static_cast<Configuration *>(context)->options, request, allocator,
+        output);
   if (request.route != 1 || !request.shape.exact() ||
       !internal::supports(context, request.operation, request.inputs,
                           request.outputs))

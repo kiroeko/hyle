@@ -28,7 +28,7 @@ host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新�
 
 | Provider | 裁决与需求 | C++ 接法 / 版本与许可 | 明确边界 |
 |---|---|---|---|
-| ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；拟统一到 `456172ec`，MIT | M1-G已统一lock到`456172ec`并验收资源补丁；普通Provider/lowering仍未完成 |
+| ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；`456172ec`，MIT | M1-G资源补丁已验收；M2-B1已接首批普通Direct/Graph与CPU-I标准Scan/TopK，Windows开发验证通过；完整批量域/四环境/三交付/P1仍未完成 |
 | ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | M1-C已接原生stream/device-buffer与有限F32/attention片段，完整批量覆盖仍待M2；不以既有 HYLE CUDA 核代签 |
 | ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | M1-A 已接 F32 whole recurrent 与 MLX 普通 Direct/Graph 组合、原生资源/完成及三交付；批量覆盖待 M2 |
 | ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | 既有少量原子不代替完整片段；原生类型/head/subgroup 条件逐域验证 |

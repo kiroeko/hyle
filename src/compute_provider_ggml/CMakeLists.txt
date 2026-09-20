@@ -3,7 +3,7 @@ if(NOT HYLE_GGML_CPU_ENABLED)
   set_property(TARGET hyle_compute_provider_ggml PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
 endif()
-hyle_add_module(compute_provider_ggml SOURCES ggml_cpu_provider.cc)
+hyle_add_module(compute_provider_ggml SOURCES ggml_cpu_provider.cc standard_index.cc)
 target_include_directories(hyle_compute_provider_ggml PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute"
   "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")

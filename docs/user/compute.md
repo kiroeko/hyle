@@ -664,8 +664,16 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 `ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、axis0 Gather、Add/Sub/Mul/Div、
 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和末轴/全轴 Sum/Mean 的有限域。
 half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实执行成本。dense 可折叠高 rank，
-非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活、I32 Scan、
-稳定 TopK 等仍等待成熟承载，不能由名称相同推导已支持。
+非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活等仍等待成熟
+承载，不能由名称相同推导已支持。
+
+同一 CPU 接入还组合 M0 已登记的 C++ 标准库 indexed 路径：F32/I32 `Scan` 调用原版
+`std::inclusive_scan`，I32 在 I64 临时域检查全部前缀和最终总和，再发布 inclusive/exclusive
+结果；越界不写输出。F32/F16/BF16/I32 `TopK` 调用 `std::partial_sort`，按 value 与原下标
+的全序保留 ties，NaN 始终放在非 NaN 后，values 保留输入位模式，indices 为 I32。
+这两个叶程序支持 rank1..8、任意合法 axis、非负 byte stride；不进入 ggml 数学图，也没有
+私有 worker。每个 invocation 的 scratch 通过所供 allocator 冷分配，执行沿同一 CPU Queue
+与同步 executor。两输出和动态失败边界也适用于普通 Graph。
 
 每个 invocation 在准备期持有 graph、plan、工作区和独立 pool；重复执行只绑定当前数据。
 `cpu::DefaultContextOptions::native_threads` 默认1，包括提交线程，显式大于1才创建持久 workers。

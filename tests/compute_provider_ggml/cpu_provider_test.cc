@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <limits>
 #include <span>
 #include <thread>
@@ -325,9 +326,9 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
     ASSERT_FALSE(result);
     EXPECT_TRUE(result.error().IsUnimplemented());
   }
-  auto scan = prepare(context, Scan{}, dense(DataType::kInt32, {7}));
-  ASSERT_FALSE(scan);
-  EXPECT_TRUE(scan.error().IsUnimplemented());
+  auto softmax = prepare(context, Softmax{}, description);
+  ASSERT_FALSE(softmax);
+  EXPECT_TRUE(softmax.error().IsUnimplemented());
   for (auto threads : {0U, std::numeric_limits<std::uint32_t>::max()}) {
     auto invalid = Context::create(
         cpu::device(), ggml_cpu::provider({.native_threads = threads}));
@@ -381,5 +382,228 @@ TEST(GgmlCpuProvider, InvocationAllocationFailureRollsBackAndCanRecover) {
     EXPECT_TRUE(prepared.create_invocation());
   }
   EXPECT_TRUE(stats.balanced());
+}
+TEST(GgmlCpuProvider, StandardScanHandlesAxisStridesAndCheckedOverflow) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto description =
+      TensorDesc::strided_bytes(DataType::kInt32,
+                                std::array<std::int64_t, 3>{2, 7, 3},
+                                std::array<std::int64_t, 3>{140, 19, 5})
+          .value();
+  std::vector<std::byte> bytes(description.required_bytes().value());
+  std::array<std::int32_t, 42> logical{};
+  for (std::size_t a = 0; a < 2; ++a)
+    for (std::size_t b = 0; b < 7; ++b)
+      for (std::size_t c = 0; c < 3; ++c) {
+        const auto value =
+            static_cast<std::int32_t>(b) - 2 + static_cast<std::int32_t>(c);
+        logical[(a * 7 + b) * 3 + c] = value;
+        std::memcpy(bytes.data() + a * 140 + b * 19 + c * 5, &value,
+                    sizeof(value));
+      }
+  auto source =
+      Buffer::create(hyle::mem::system_resource(), bytes.size(), 64).value();
+  ASSERT_TRUE(source.view().write(bytes).ok());
+  const auto input =
+      ConstTensorView::create(description, source.view()).value();
+  const auto output_desc = dense(DataType::kInt32, {2, 7, 3});
+  auto output = output_buffer(output_desc);
+  for (bool exclusive : {false, true}) {
+    auto status = execute(
+        context, Scan{.axis = 1, .exclusive = exclusive}, std::span(&input, 1),
+        TensorView::create(output_desc, output.view()).value());
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = half_test::read<std::int32_t>(output);
+    for (std::size_t a = 0; a < 2; ++a)
+      for (std::size_t c = 0; c < 3; ++c) {
+        std::int64_t sum = 0;
+        for (std::size_t b = 0; b < 7; ++b) {
+          const auto index = (a * 7 + b) * 3 + c;
+          if (exclusive)
+            EXPECT_EQ(actual[index], sum);
+          sum += logical[index];
+          if (!exclusive)
+            EXPECT_EQ(actual[index], sum);
+        }
+      }
+  }
+  const auto small = dense(DataType::kInt32, {2, 3});
+  const std::array<std::array<std::int32_t, 6>, 2> overflows{
+      {{1, 2, 3, INT32_MAX, 1, -1}, {1, 2, 3, INT32_MAX - 1, 0, 2}}};
+  const std::array<std::int32_t, 6> sentinel{91, 92, 93, 94, 95, 96};
+  auto preserved = half_test::buffer<std::int32_t>(sentinel);
+  for (const auto &values : overflows) {
+    auto bad = half_test::buffer<std::int32_t>(values);
+    const auto bad_input = ConstTensorView::create(small, bad.view()).value();
+    for (bool exclusive : {false, true}) {
+      auto status = execute(
+          context, Scan{.exclusive = exclusive}, std::span(&bad_input, 1),
+          TensorView::create(small, preserved.view()).value());
+      EXPECT_TRUE(status.IsOutOfRange()) << status.message();
+      EXPECT_EQ(half_test::read<std::int32_t>(preserved),
+                std::vector<std::int32_t>(sentinel.begin(), sentinel.end()));
+    }
+  }
+}
+
+template <class T> void standard_topk() {
+  const auto type = half_test::data_type<T>();
+  const auto description = dense(type, {1, 2, 1, 9, 1, 3});
+  const std::array values{std::numeric_limits<double>::quiet_NaN(),
+                          -0.0,
+                          0.0,
+                          3.0,
+                          3.0,
+                          -std::numeric_limits<double>::infinity(),
+                          std::numeric_limits<double>::infinity(),
+                          std::numeric_limits<double>::quiet_NaN(),
+                          -5.0};
+  const std::array<std::int32_t, 9> descending{6, 3, 4, 1, 2, 8, 5, 0, 7};
+  const std::array<std::int32_t, 9> ascending{5, 8, 1, 2, 3, 4, 6, 0, 7};
+  std::vector<T> payload(54);
+  for (std::size_t outer = 0; outer < 2; ++outer)
+    for (std::size_t i = 0; i < 9; ++i)
+      for (std::size_t inner = 0; inner < 3; ++inner)
+        payload[(outer * 9 + i) * 3 + inner] = half_test::encode<T>(values[i]);
+  auto source = half_test::buffer<T>(payload);
+  const auto input =
+      ConstTensorView::create(description, source.view()).value();
+  auto context =
+      Context::create(cpu::device(), ggml_cpu::provider({.native_threads = 2}))
+          .value();
+  auto queue = context.create_queue().value();
+  for (std::size_t count : {1U, 3U, 9U})
+    for (bool largest : {false, true}) {
+      auto prepared =
+          prepare(context, TopK{.count = count, .axis = 3, .largest = largest},
+                  description);
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+      EXPECT_FALSE(prepared->runtime_properties().uses_private_threads);
+      auto first = output_buffer(prepared->output_description(0).value());
+      auto second = output_buffer(prepared->output_description(1).value());
+      const std::array outputs{
+          TensorView::create(prepared->output_description(0).value(),
+                             first.view())
+              .value(),
+          TensorView::create(prepared->output_description(1).value(),
+                             second.view())
+              .value()};
+      auto invocation = prepared->create_invocation().value();
+      auto completion = invocation.submit(queue, std::span(&input, 1), outputs);
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual_values = half_test::read<T>(first);
+      const auto actual_indices = half_test::read<std::int32_t>(second);
+      const auto &expected = largest ? descending : ascending;
+      for (std::size_t outer = 0; outer < 2; ++outer)
+        for (std::size_t i = 0; i < count; ++i)
+          for (std::size_t inner = 0; inner < 3; ++inner) {
+            const auto index = (outer * count + i) * 3 + inner;
+            EXPECT_EQ(actual_indices[index], expected[i]);
+            const auto &original =
+                payload[(outer * 9 + expected[i]) * 3 + inner];
+            EXPECT_EQ(std::memcmp(&actual_values[index], &original, sizeof(T)),
+                      0);
+          }
+    }
+}
+TEST(GgmlCpuProvider, StandardSelectionPreservesStableOrderAndStorageBits) {
+  standard_topk<float>();
+  standard_topk<hyle::simd::float16_t>();
+  standard_topk<hyle::simd::bfloat16_t>();
+}
+
+TEST(GgmlCpuProvider, StandardScanReplaysWithoutAllocationsAndHonorsQuota) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  hyle::mem::QuotaAllocator quota(stats.get(), 1 << 20);
+  {
+    const std::array providers{ggml_cpu::provider({.native_threads = 2})};
+    auto context =
+        Context::create(cpu::device(), {.metadata_allocator = quota.get(),
+                                        .providers = providers})
+            .value();
+    const auto description = dense(DataType::kFloat32, {2, 7});
+    auto prepared =
+        prepare(context, Scan{.exclusive = true}, description).value();
+    EXPECT_EQ(prepared.provider().id, ggml_cpu::kProviderId);
+    EXPECT_FALSE(prepared.runtime_properties().uses_private_threads);
+    EXPECT_EQ(prepared.invocation_private_bytes(), 0U);
+    {
+      auto reserved = quota.try_reserve_bytes(quota.remaining());
+      ASSERT_TRUE(reserved);
+      auto denied = prepared.create_invocation();
+      ASSERT_FALSE(denied);
+      EXPECT_TRUE(denied.error().IsResourceExhausted());
+    }
+    auto first = prepared.create_invocation().value();
+    auto second = prepared.create_invocation().value();
+    auto source = output_buffer(description);
+    std::array outputs{output_buffer(description), output_buffer(description)};
+    const auto input =
+        ConstTensorView::create(description, source.view()).value();
+    auto queue = context.create_queue().value();
+    const auto before = stats.snapshot();
+    for (std::size_t run = 0; run < 4; ++run) {
+      const std::vector<float> values(14, static_cast<float>(run + 1));
+      ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+      const auto output =
+          TensorView::create(description, outputs[run % 2].view()).value();
+      auto completion =
+          (run % 2 == 0 ? first : second)
+              .submit(queue, std::span(&input, 1), std::span(&output, 1));
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual = half_test::read<float>(outputs[run % 2]);
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_FLOAT_EQ(actual[i], static_cast<float>((i % 7) * (run + 1)));
+      if (run > 0) {
+        const auto retained = half_test::read<float>(outputs[(run + 1) % 2]);
+        for (std::size_t i = 0; i < retained.size(); ++i)
+          EXPECT_FLOAT_EQ(retained[i], static_cast<float>((i % 7) * run));
+      }
+    }
+    EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+    EXPECT_EQ(stats.snapshot().reallocs, before.reallocs);
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(GgmlCpuProvider, StandardSelectionKeepsAdjacentLargeIntegersDistinct) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto description = dense(DataType::kInt32, {6});
+  const std::array<std::int32_t, 6> payload{
+      INT32_MAX, INT32_MAX - 1, INT32_MIN, 0, 0, INT32_MAX};
+  const std::array<std::int32_t, 3> expected{0, 5, 1};
+  auto source = half_test::buffer<std::int32_t>(payload);
+  auto prepared = prepare(context, TopK{.count = 3}, description).value();
+  auto values = output_buffer(prepared.output_description(0).value());
+  auto indices = output_buffer(prepared.output_description(1).value());
+  auto invocation = prepared.create_invocation().value();
+  auto queue = context.create_queue().value();
+  auto done = invocation.submit(
+      queue, ConstTensorView::create(description, source.view()).value(),
+      TensorView::create(prepared.output_description(0).value(), values.view())
+          .value(),
+      TensorView::create(prepared.output_description(1).value(), indices.view())
+          .value());
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  EXPECT_EQ(half_test::read<std::int32_t>(indices),
+            std::vector<std::int32_t>(expected.begin(), expected.end()));
+  EXPECT_EQ(half_test::read<std::int32_t>(values),
+            (std::vector<std::int32_t>{INT32_MAX, INT32_MAX, INT32_MAX - 1}));
+}
+
+TEST(GgmlCpuProvider, EmptyScanHasNoNativeEpisodeOrPayloadAccess) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto description = dense(DataType::kInt32, {2, 0, 3});
+  auto source = output_buffer(description), output = output_buffer(description);
+  const auto input =
+      ConstTensorView::create(description, source.view()).value();
+  auto status = execute(context, Scan{.axis = 1}, std::span(&input, 1),
+                        TensorView::create(description, output.view()).value());
+  EXPECT_TRUE(status.ok()) << status.message();
 }
 } // namespace

@@ -27,8 +27,9 @@ struct Options final {
   std::uint32_t native_threads = 1;
 };
 
-// Original ggml CPU programs. Preparation owns graph/plan/workspace; replay
-// updates bindings and synchronously completes the fixed native program.
+// Original ggml CPU programs and qualified standard index algorithms.
+// Preparation owns each program's resources; replay updates bindings and
+// synchronously completes the fixed program.
 // Invocations are independent; one invocation cannot run or close concurrently.
 #if defined(HYLE_COMPUTE_GGML_CPU)
 HYLE_COMPUTE_PROVIDER_GGML_API Provider provider(Options options = {}) noexcept;

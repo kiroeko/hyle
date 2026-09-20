@@ -184,3 +184,11 @@ local-sync/embedded-ELF 的有限源码核对保留为后备，没有下载/构�
 
 此增量不包含稳定浮点激活、Select/min/max、L2、Scatter 或新 IREE CPU 接入；它们仍属于21行
 剩余责任。本次定界扣6分钟，源码/设计累计78分钟、仍余42分钟；不重置，不启动冻结自研的比较或研究。
+
+### C1-I 实现中检查点
+
+原版标准算法的私有叶程序、普通工厂和 Graph 两输出/Scan→Gather 接线已落地。Windows
+CPU-only、oneDNN-OFF、shared 下7个定向目标通过（Provider 11、Direct 6、Graph 11项用例，
+另有3个头自足检查及实际 executor consumer）。覆盖非末轴/奇数字节 stride、I32 中途与
+最终总和溢出而输出不变、F16/BF16/NaN/±0位保留、稳定 ties、大 I32 比较、两请求重放和配额失败。
+该记录只签开发检查点；全21行、所有环境/交付、完整 selector与P1仍未完成，不关闭 owner。
