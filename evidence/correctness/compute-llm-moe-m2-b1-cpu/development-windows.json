@@ -1,0 +1,123 @@
+{
+  "kind": "M2-B1 development checkpoint; not a complete card or model-coverage verdict",
+  "baseline": "d89b3828ace47f90a51a896c053bc4b5ab87e23e",
+  "candidate": "WORKTREE; product and test hashes below",
+  "machine": "Windows x64; MSVC 19.50.35728.0; Ninja; Release shared",
+  "settings": {
+    "cpu": true,
+    "onednn": false,
+    "cuda": false,
+    "apple": false,
+    "vulkan": false,
+    "parallel_build": 2,
+    "parallel_test": 1,
+    "werror": true
+  },
+  "selected_development_targets": {
+    "verdict": "PASS",
+    "ctest_targets": 7,
+    "provider_cases": 6,
+    "ordinary_direct_cases": 5,
+    "ordinary_graph_cases": 9,
+    "self_contained_headers": 3,
+    "executor_consumers": 1
+  },
+  "limitations": [
+    "Only Windows CPU-only with oneDNN OFF; original frozen fallback regression is not new mature coverage",
+    "Remaining exact domains and mature companions are not connected",
+    "Full selector, oneDNN composition, WSL, Air, Mini, sanitizers and three deliveries remain unrun for this checkpoint",
+    "P1 has not started; no SOTA or non-inferiority verdict",
+    "Only HYLE allocator replay counts were checked; no global-new or native allocation certificate"
+  ],
+  "complete_requirement_cells": 0,
+  "loc": {
+    "implementation_lines": 54567,
+    "files": 237,
+    "tests_and_vendors_excluded": true
+  },
+  "archive": {
+    "path": "development-windows-raw.zip",
+    "sha256": "0570414e14294050fad365b556429198a2512e6851a5ee7f86317c93bf2121f4",
+    "files": 18,
+    "bytes": 41721
+  },
+  "build_directory": {
+    "path": "C:\\hv\\m2b1-cpu",
+    "bytes": 103565496,
+    "retained_reason": "Single active M2 development build for the next required integration checks"
+  },
+  "source_hashes": [
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "3e9d2956df8965394ddfa6137e55ef7df81abc915ef3e24c60ef394d6f0da765"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "sha256": "9027d03738a4b982a2c1ba36c28b31d19ab4656732ef8efc3fc40365628431a5"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cpu.h",
+      "sha256": "b1e6a3328a07adff3097ed530aa1f2dd6555199f970ad96533345be9352f754e"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+    },
+    {
+      "path": "src/compute_provider_ggml/CMakeLists.txt",
+      "sha256": "1c0b8cd0e5f003540893829ddf800e7afb9f6729ce138c5c7f1c8876ba855662"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "91808c442e7d45185d3d2a7903f42c88332d78409d9d0a3c07e36eb311ddaa8e"
+    },
+    {
+      "path": "src/compute_provider_ggml/program.h",
+      "sha256": "b5109a288e8147b899db4be44e6e957726d1fca6c11233e46aa07ea4c485ad27"
+    },
+    {
+      "path": "src/compute_route_cpu/cpu_context.cc",
+      "sha256": "009b6ceff5551f1a861816ca53db722571828f29fc8210bb52a5806f5402416e"
+    },
+    {
+      "path": "src/graph_route_cpu/CMakeLists.txt",
+      "sha256": "da87ecc46916b09c58809311e68b255468087504e084aee4ea50aa138a46e3f6"
+    },
+    {
+      "path": "src/graph_route_cpu/cpu_context.cc",
+      "sha256": "2c87e9b88fa1cab75e77a921eeae69f992e0c9106ec698a8b4dd84b3b2270337"
+    },
+    {
+      "path": "src/graph_route_cpu/ggml_region.cc",
+      "sha256": "4c6d8afdef200b61022ded4ddd98368c40aba92530e3b989f0ba16fd4a050ea2"
+    },
+    {
+      "path": "src/graph_route_cpu/ggml_region.h",
+      "sha256": "7e48271ff689b9e6287f49632da42a1ab9f0b932c01474fa2f762714507d667f"
+    },
+    {
+      "path": "tests/compute_provider_ggml/CMakeLists.txt",
+      "sha256": "809589ce89132131b1d91da09507c8e5c910cba30797345a8002820b5b8e29eb"
+    },
+    {
+      "path": "tests/compute_provider_ggml/cpu_provider_test.cc",
+      "sha256": "95857bf369f7dafa2b9be45e031e127e3e108e7c237e77f3bcaba85007745ca6"
+    },
+    {
+      "path": "tests/compute_route_cpu/CMakeLists.txt",
+      "sha256": "868b39b9e50b84cdba90ce85dac799eaa42f7b85f226e24a247eae09b8b66cbe"
+    },
+    {
+      "path": "tests/compute_route_cpu/context_test.cc",
+      "sha256": "577eae5b68fead4b20ee3cee2711ff6a23fa65318a2fe5a04e68ba39c30b9162"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "sha256": "a49424ae1db6d7a92a6817e0c7dfbaee75354c107c28f18fca48c8f3458f73d9"
+    },
+    {
+      "path": "tests/graph_route_cpu/graph_test.cc",
+      "sha256": "84e50b74c5bdecea4a4438d7c1d726fe677528aa0f3994be6c054b4647ed21e4"
+    }
+  ]
+}

@@ -357,10 +357,13 @@ _hyle_declare_component(compute_provider_onednn
   TEST_DEPS compute_backend_cpu
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/onednn.h)
 
-# Active SCOPED identity for the ggml compiled-region provider audit.  It owns
-# no product capability, dependency, public header or feature switch until the
-# audit freezes those facts and advances the component to AUDITED.
-_hyle_declare_component(compute_provider_ggml)
+# Original CPU programs use the separately audited fallible native runtime.
+# Graph translation stays in its CPU route, never in this Compute factor.
+_hyle_declare_component(compute_provider_ggml
+  PRIVATE_DEPS compute_backend_cpu compute_ops compute_ggml_runtime error mem
+  PUBLIC_DEPS core compute
+  TEST_DEPS simd
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/ggml_cpu.h)
 
 # Graph-only oneDNN BRGEMM region.  Its public factory remains provider-erased;
 # Graph/SIMD and the private BRGEMM mechanism are implementation dependencies,
@@ -412,12 +415,12 @@ _hyle_declare_component(compute_sched QUEUED)
 # Compiled defaults own implementation composition at the CPU route boundary.
 # Compute never acquires a reverse dependency on Graph or its region providers.
 _hyle_declare_component(compute_route_cpu
-  PRIVATE_DEPS compute_provider_native compute_provider_onednn
+  PRIVATE_DEPS compute_provider_native compute_provider_onednn compute_provider_ggml
   PUBLIC_DEPS core compute compute_backend_cpu
   SPLIT_PUBLIC_HEADERS hyle/compute/cpu.h)
 _hyle_declare_component(graph_route_cpu
   PRIVATE_DEPS compute_provider_native compute_provider_onednn
-               graph_provider_onednn
+               graph_provider_onednn compute_provider_ggml
   PUBLIC_DEPS core compute_route_cpu graph
   TEST_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu.h)

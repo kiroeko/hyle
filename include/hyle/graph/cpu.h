@@ -14,8 +14,8 @@
 
 namespace hyle::graph::cpu {
 
-// CPU Graph with development-qualified region and leaf rules. Compile retains
-// eligible oneDNN regions and uses the CPU leaf rules for the remaining nodes.
+// CPU Graph with fixed mature region and leaf rules. Compile retains eligible
+// ggml/oneDNN programs and uses the CPU leaf rules for remaining nodes.
 // The options' allocator/executor are borrowed through all derived artifacts.
 HYLE_GRAPH_ROUTE_CPU_API Result<compute::Context>
 create_context(compute::cpu::DefaultContextOptions options = {}) noexcept;

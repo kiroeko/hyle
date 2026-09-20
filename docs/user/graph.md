@@ -93,11 +93,14 @@ if (!context) return context.error();
 auto compiled = hyle::graph::compile(logical_graph, *context, options);
 ```
 
-该入口自动组装 CPU 的 region 与 leaf 实现。支持的常量权重四节点 gated FFN 可以保留 oneDNN
-完整 region；RMSNorm、转置权重及其它节点按 CPU leaf 规则处理。普通用户不排列 Provider，compile
-不接受 timing profile。标准 x64 CPU 构建通过 oneDNN AUTO 提供该实现，Apple Silicon 或显式 OFF
-使用 Native；超出已有能力明确返回错误。`compute::cpu::DefaultContextOptions` 可传入借用的
-metadata allocator 和同步 executor，默认使用调用线程，不隐建线程池。
+该入口自动组装 CPU 的 region 与 leaf 实现。M2 当前新增原版 ggml 的合法多节点片段，能保留
+已发布中间值和多个输出；对应有限域见[ggml CPU 接入检查点](compute.md#ggml-cpu-接入检查点)。
+支持的常量权重四节点 gated FFN 仍可保留 oneDNN 完整 region，其余节点按 CPU leaf 规则处理。
+普通用户不排列 Provider，compile 不接受 timing profile。标准 x64 构建通过 oneDNN AUTO 提供
+其实现；oneDNN 不可用时继续匹配 ggml/Native。超出已有能力明确返回错误。
+`compute::cpu::DefaultContextOptions` 可传入借用的 metadata allocator、同步 executor 和独立
+`native_threads` 预算；默认1使用调用线程，显式大于1才为每个 ggml invocation 准备持久 workers。
+M2 新增映射仍在验收中，不代表全部模型需求或跨平台性能已经完成。
 
 `graph/cpu.h` 是普通 Graph CPU 入口；`compute/cpu.h` 用于 Direct Compute。两者的 Context、
 PreparedOperation/Executable、Invocation 和 Completion 仍遵守本文的真实生命周期。可运行的

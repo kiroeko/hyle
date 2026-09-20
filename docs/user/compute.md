@@ -644,8 +644,8 @@ executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-nativ
 
 oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]`，显式 F32
 accumulation，可选 scale/bias；scale 和 bias 同时存在时需同类型。F16/BF16 原生执行受
-oneDNN 的 CPU ISA 要求限制，不满足时由普通 CPU context 选择现有 Native 实现，不隐式转换
-整个 tensor。F32 norm 后的最多4个 Add/Mul 可在普通 Graph 中绑定原生 post-ops，支持 scalar、
+oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。不满足时普通 CPU context
+继续匹配 ggml，再匹配现有 Native。F32 norm 后的最多4个 Add/Mul 可由 oneDNN region 绑定原生 post-ops，支持 scalar、
 末轴向量及单行的完整同形状操作数。批量完整同形状 Add/Mul 保留为后续节点，使此前的归一化/
 广播前缀继续使用优化内核；冷准备拒绝已识别的通用慢速融合实现。中间输出被发布或分叉时
 保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收
@@ -656,6 +656,22 @@ oneDNN 的 CPU ISA 要求限制，不满足时由普通 CPU context 选择现有
 路线。每个 invocation 独立拥有 native stream/argument handles 和 caller scratchpad，可并发运行；
 支持精确 input0/output 原地重叠。接受后的执行失败退休当前 invocation，需创建新槽，不能重放
 到另一个 Provider。既有 BRGEMM 的 prepared replay 合同保持不变。
+
+### ggml CPU 接入检查点
+
+[M2-B1](../implementation/tasks/compute/llm-moe-m2-b1-cpu.md)正在接入原版 ggml CPU 程序。
+普通 CPU 工厂已组装这一 Provider；独立入口为 `compute/providers/ggml_cpu.h` 中的
+`ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、axis0 Gather、Add/Sub/Mul/Div、
+Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和末轴/全轴 Sum/Mean 的有限域。
+half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实执行成本。dense 可折叠高 rank，
+非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活、I32 Scan、
+稳定 TopK 等仍等待成熟承载，不能由名称相同推导已支持。
+
+每个 invocation 在准备期持有 graph、plan、工作区和独立 pool；重复执行只绑定当前数据。
+`cpu::DefaultContextOptions::native_threads` 默认1，包括提交线程，显式大于1才创建持久 workers。
+借用的 executor 接收一个完整原版程序，不把其 concurrency 自动变为 ggml worker 数量。
+程序同步完成后返回终态，索引越界先于输出写入拒绝；一个 invocation 不允许并发运行或关闭。
+当前只完成首轮 Windows CPU-only 开发验证，跨平台、三交付与性能资格仍以活动卡为准。
 
 ```cpp
 #include <hyle/compute/providers/onednn.h>

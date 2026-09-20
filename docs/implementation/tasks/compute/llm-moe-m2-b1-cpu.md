@@ -96,6 +96,10 @@
   不能把无 mask 的普通样例推成全域资格。
 - 数组 min/max、Select、任意不可折叠 rank6 stride、受检查的浮点→索引转换，还需要具名成熟
   组合/后备接线。现有 oneDNN adapter 只接 MatMul/norm，不能假称已经接了整个 oneDNN 目录。
+- 首轮接线的特殊值核对进一步固定：原版 ReLU 将 NaN 变为0，SiLU/GELU及相应 gate 在
+  负无穷上不满足已登记极限语义，Sigmoid/Softplus 的极小尾值也不能直接代签。普通 ggml
+  factory 暂不接这些模式，不用有限正常值样例缩小原需求，也不插入自研数学修补。
+  plain byte stride 还须满足原版元素对齐；奇数字节 stride 保留为后续成熟承载责任。
 
 这些是21行中的剩余接入责任，**不是缩小 B1 分母、授权自研或关闭本包的理由**。
 后备优先核对 M0 已定位的 IREE 标准 Scan/类型/选择程序的 CPU 承载；涉及新 factor/原共享
@@ -137,3 +141,16 @@ runtime owner 时先独立 QUEUED/SCOPED/AUDITED。该后备产品不包含在�
 
 SCOPED→AUDITED 为独立元数据检查点，随后才改产品。剩余精确域和后备审计继续计入同一总预算，
 不因子卡改名续杯；实现细节调查不扩大上述公开/所有权合同。本包与全部256格仍未新增完整验收。
+
+## 实现中检查点
+
+CPU 普通工厂、ggml 私有 recipe/Direct、Graph region 翻译和每请求持久 pool/plan 已开始实施。
+动态索引的检查表在准备期生成，运行仅检查当前 payload；原版 repeat 直接声明输出尺寸，不为
+广播额外分配同大小占位 tensor。Windows MSVC shared、CPU-only、oneDNN-OFF 的7个开发验证
+目标已通过：ggml 6项、普通 Direct 5项、普通 Graph 9项用例，另有3个头自足检查及一个实际
+executor consumer。覆盖归一化/舍入、rank6广播、strided copy/concat/gather、越界保留输出、
+两 slot 重放、OOM回收、多输出原版 region；旧 fallback 通过不计成熟覆盖。
+尚未产生完整 selector、跨平台、三交付或 P1 verdict；整个21行包仍为 AUDITED、未关闭。
+对应原始日志和产品/测试hash见[开发检查点](../../../../evidence/correctness/compute-llm-moe-m2-b1-cpu/README.md)。
+源码/设计预算累计保守记72分钟（前置40、初审17、本次实现疑问定位15），仍余48分钟；
+本次构建与用例编写不算新的调查预算，不因后备卡改名重置。

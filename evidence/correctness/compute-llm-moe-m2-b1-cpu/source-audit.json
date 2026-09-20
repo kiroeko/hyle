@@ -27,12 +27,18 @@
     {
       "path": "src/ggml-cpu/binary-ops.cpp",
       "sha256": "2df261aadce36a20f5e3bf6961d4ca27b8c2d461afc41488361ee6ad09c1730d"
+    },
+    {
+      "path": "src/ggml-cpu/vec.h",
+      "sha256": "926330bae1c5d003bd654035426e31381fafcdca23ffcc23201d219dbb97cbeb"
     }
   ],
   "confirmed_non_equivalence": [
     "CPU cumsum dispatches only F32, not checked I32",
     "argsort lacks stable tie/NaN ordering; top_k swaps first two outputs",
-    "softmax requires positive exponential sum, no all-masked qualification"
+    "softmax requires positive exponential sum, no all-masked qualification",
+    "ReLU maps NaN to zero; GELU/SiLU and split gates have incompatible negative-infinity limits",
+    "Sigmoid overflows exp(-x) for negative tails; softplus log(1+exp(x)) loses small tails"
   ],
   "action": "Implement original ggml admitted domains; qualify mature companion for remaining exact domains. No self-written math; no P1 started.",
   "complete_requirement_cells": 0

@@ -3,7 +3,7 @@ hyle_add_header_self_contained_test(graph_route_cpu
 hyle_add_test(graph_route_cpu SOURCES
   ../compute_route_cpu/context_test.cc graph_test.cc
   DEPS hyle_compute_provider_native hyle_compute_provider_onednn
-       hyle_graph_provider_onednn)
+       hyle_graph_provider_onednn hyle_compute_provider_ggml)
 target_compile_definitions(hyle_graph_route_cpu_test PRIVATE
   HYLE_TEST_GRAPH_ROUTE_CPU=1)
 

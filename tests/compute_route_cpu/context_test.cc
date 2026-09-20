@@ -13,6 +13,7 @@
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
+#include "hyle/compute/providers/ggml_cpu.h"
 #if defined(HYLE_COMPUTE_ONEDNN)
 #include "hyle/compute/providers/onednn.h"
 #endif
@@ -64,6 +65,19 @@ TEST(CpuDefaultContext, ColdFailureReleasesPartialProviderAssembly) {
   EXPECT_TRUE(stats.balanced());
 }
 
+#if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultContext, GgmlBindsThroughOrdinaryFactory) {
+  auto context = create_context().value();
+  const auto description = matrix(17, 31);
+  auto prepared = prepare(context, Unary{UnaryKind::kNeg}, description);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  EXPECT_EQ(prepared->runtime_properties().replay_class,
+            ProviderReplayClass::kPrepared);
+  EXPECT_FALSE(prepared->runtime_properties().uses_private_threads);
+}
+#endif
+
 #if defined(HYLE_COMPUTE_ONEDNN)
 TEST(CpuDefaultContext, MatureNormalizationBindsThroughOrdinaryFactory) {
   auto context = create_context().value();
@@ -86,7 +100,11 @@ TEST(CpuDefaultContext, MatureNormalizationBindsThroughOrdinaryFactory) {
                 ProviderReplayClass::kManaged);
     } else {
       ASSERT_TRUE(vendor.error().IsUnimplemented());
+#if defined(HYLE_COMPUTE_GGML_CPU)
+      EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+#else
       EXPECT_EQ(prepared->provider().id, native::kProviderId);
+#endif
       EXPECT_EQ(prepared->runtime_properties().replay_class,
                 ProviderReplayClass::kPrepared);
     }

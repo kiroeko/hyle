@@ -1,5 +1,12 @@
 hyle_add_module(graph_route_cpu SOURCES cpu_context.cc)
 
+if(HYLE_GGML_CPU_ENABLED)
+  target_sources(hyle_graph_route_cpu PRIVATE ggml_region.cc)
+  target_include_directories(hyle_graph_route_cpu PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute"
+    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml")
+endif()
+
 if(HYLE_STATIC AND NOT HYLE_COMPUTE_ONEDNN_ENABLED)
   get_target_property(_route_links hyle_graph_route_cpu
     INTERFACE_LINK_LIBRARIES)
