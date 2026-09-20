@@ -97,7 +97,7 @@ scan/matmul 操作及上游类型合法化，编译器只作构建工具；sourc
 | M1-R | compute / graph 与四路线具名owner；以registry实际状态绑定，CPU/CUDA既有CLOSED须按模型条件新需求重定界 | 批量 lowering 的共用语义检查、capability/诊断、模型/配置/phase 与软件/硬件规则 identity；常量、状态、多输出、effect/lease；每路线独立资源程序 | Direct 与 Graph 一组正交片段；未知模型/版本不匹配、缓存失效；热执行无探测、搜索或计时；不造万能执行器 |
 | M1-C | 六owner已按[接入卡](llm-moe-m1-cuda-admission.md)CLOSED，GQA两owner按独立卡CLOSED | 原版ggml CUDA/Linux FlashInfer、外来buffer与两event边界、每invocation资源/失败/完成；managed成本明确，不冒称prepared零查询 | Windows/WSL普通Direct/Graph、同GPU cuBLAS组合、三交付及host插桩，Air/Mini OFF与公共语义；源码/设计调查已停止 |
 | M1-A | 五 owner 按[接入卡](llm-moe-m1-apple-admission.md) CLOSED，有限接入域/P0 | 原版 ggml Metal whole recurrent 已接普通 Direct/Graph；MLX native buffer/region 边界、独立 invocation、共同 GatedDeltaNet 语义已实现；自研冻结 | Air/Mini 普通入口、原生及三交付、Air host ASan/UBSan、Windows/WSL 共享资源与 OFF 门通过；最终 119 个 selected 门及独立候选复核通过；P0，新增模型覆盖0 |
-| M1-V | 现有 ggml Vulkan/两 route owner；Q-VK 后才决定新增 IREE factor | 扩现有 managed region schema；需要时接独立 IREE 原生 Vulkan region/parameter buffer/完成；共享设备互操作受限时明确有界 GPU copy | RTX4070 和 Air/MoltenVK；所需 feature 诊断、同设备链路、失效/teardown 与三交付；无 CPU 模型 fallback |
+| M1-V | 三 owner 按[接入卡](llm-moe-m1-vulkan-admission.md) SCOPED；Q-VK 后才决定新增 IREE factor | 扩现有 managed region schema；需要时接独立 IREE 原生 Vulkan region/parameter buffer/完成；共享设备互操作受限时明确有界 GPU copy | RTX4070 和 Air/MoltenVK；所需 feature 诊断、同设备链路、失效/teardown 与三交付；无 CPU 模型 fallback |
 | M1-B | 以上每包所属 build owner 的有限范围 | 复用 lock/features/vendor targets/private patch/resources/license/install；同份 CMake 声明贯通三交付；短 build 根与共享只读缓存 | 开关隔离、单/组合 Provider、源码父工程、静态/动态干净 consumer；关闭路线零下载/链接；不重写构建系统或治理工具 |
 
 新增 ID 在实现前依法 QUEUED→SCOPED→AUDITED 登记；此表中的拟定名称不是空 target，不能算接入。

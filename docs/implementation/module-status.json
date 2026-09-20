@@ -537,36 +537,21 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
+      "summary": "M1-V SCOPED：原版ggml whole region/多输出与原生资源、条件IREE Q-VK资格；四小时有限审计，资格通过才新建factor；自研冻结，未授权产品修改。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
+      "summary": "M1-V SCOPED：原版ggml whole region/多输出与原生资源、条件IREE Q-VK资格；四小时有限审计，资格通过才新建factor；自研冻结，未授权产品修改。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "summary": "M1-G CLOSED：共同ggml资源seam、CPU可恢复pool/持久plan/workspace、Vulkan资源迁移完成；四环境CPU、Windows/Air Vulkan、适用三交付与P0通过。仅资源范围，不代签模型覆盖；原CPU Provider和oneDNN阻塞保持。",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-ggml-runtime.md",
-      "candidate": "04368a397859f2d03e71ab005a5d66227a5f9a0f",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-ggml-runtime/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
+      "summary": "M1-V SCOPED：原版ggml whole region/多输出与原生资源、条件IREE Q-VK资格；四小时有限审计，资格通过才新建factor；自研冻结，未授权产品修改。"
     },
     {
       "module": "compute_ggml_runtime",
