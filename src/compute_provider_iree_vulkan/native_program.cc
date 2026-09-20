@@ -93,9 +93,33 @@ struct NativeProgram::State final {
   CompletionNotify notify = nullptr;
   void *notify_data = nullptr;
   bool notified = false;
+  bool notifying = false;
   bool pending = false;
   bool invoked = false;
   Status failure;
+
+  void notify_ready(std::unique_lock<std::mutex> &lock) noexcept {
+    // A notification may enqueue a native copy and extend this same slot.
+    // If that copy finishes while the notification is returning, the last
+    // caller of this helper delivers its next notification without polling.
+    while (vm_finished && gpu_finished && callbacks == 0 && !notifying) {
+      if (!notified) {
+        notified = true;
+        notifying = true;
+        const auto callback = notify;
+        const auto status = failure;
+        lock.unlock();
+        if (callback)
+          callback(notify_data, status);
+        lock.lock();
+        notifying = false;
+        continue;
+      }
+      pending = false;
+      break;
+    }
+    changed.notify_all();
+  }
 
   iree_hal_fence_t *completion_fence() const noexcept {
     return retiring ? retired.get() : done.get();
@@ -228,20 +252,10 @@ struct NativeProgram::State final {
       state.failure = detail::consume_status(called);
     else
       iree_status_free(called);
-    // Keep this final callback counted while the route advances its next
-    // region. Host wait/close cannot release our owner during that callback.
-    if (state.vm_finished && state.gpu_finished && state.callbacks == 1) {
-      state.notified = true;
-      const auto notify = state.notify;
-      const auto failure = state.failure;
-      lock.unlock();
-      if (notify)
-        notify(state.notify_data, failure);
-      lock.lock();
-      state.pending = false;
-    }
     --state.callbacks;
-    state.changed.notify_all();
+    // notifying keeps the slot alive through the route callback tail, even
+    // when that callback extends this program with a native-copy observation.
+    state.notify_ready(lock);
   }
   static iree_status_t gpu_completed(void *data, iree_vm_loop_t,
                                      iree_status_t status) noexcept {
@@ -486,7 +500,9 @@ WorkState NativeProgram::observe(bool blocking) noexcept {
   std::unique_lock lock(state.mutex);
   if (!state.pending)
     return {state.failure, false};
-  auto finished = [&] { return state.vm_finished && state.callbacks == 0; };
+  auto finished = [&] {
+    return state.vm_finished && state.callbacks == 0 && !state.notifying;
+  };
   if (blocking)
     state.changed.wait(lock, finished);
   else if (!finished())
@@ -515,14 +531,37 @@ WorkState NativeProgram::observe(bool blocking) noexcept {
     return {state.failure, true};
   }
   state.gpu_finished = true;
-  if (!state.notified && state.notify) {
-    state.notified = true;
-    lock.unlock();
-    state.notify(state.notify_data, state.failure);
-    lock.lock();
+  state.notify_ready(lock);
+  return {state.failure, state.pending};
+}
+
+Status NativeProgram::after_native_submissions(CompletionNotify notify,
+                                               void *user_data) noexcept {
+  auto &state = *state_;
+  std::lock_guard lock(state.mutex);
+  if (!state.notifying || !state.pending || !state.gpu_finished ||
+      !state.vm_finished || state.retiring || !state.failure.ok())
+    return Status::FailedPrecondition(
+        "IREE native continuation needs a successful notification");
+  HYLE_ASSIGN_OR_RETURN(auto done, fence(state.device.state_->device.get()));
+  const auto signals = iree_hal_fence_semaphore_list(done.get());
+  auto status = detail::consume_status(iree_hal_device_queue_barrier(
+      state.device.state_->device.get(), IREE_HAL_QUEUE_AFFINITY_ANY,
+      iree_hal_semaphore_list_empty(), signals, IREE_HAL_EXECUTE_FLAG_NONE));
+  if (!status.ok()) {
+    state.failure = status;
+    state.gpu_finished = false;
+    state.notify = nullptr;
+    state.retire_owner();
+    return status;
   }
-  state.pending = false;
-  return {state.failure, false};
+  state.done = std::move(done);
+  state.gpu_finished = false;
+  state.notified = false;
+  state.notify = notify;
+  state.notify_data = user_data;
+  state.observe_completion();
+  return state.failure;
 }
 WorkState NativeProgram::poll() noexcept { return observe(false); }
 WorkState NativeProgram::wait() noexcept { return observe(true); }

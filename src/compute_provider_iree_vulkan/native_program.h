@@ -49,6 +49,12 @@ public:
   // this slot. wait/poll include the notification's return in retirement.
   HYLE_IREE_VULKAN_INTERNAL_API WorkState
   invoke(CompletionNotify notify = nullptr, void *user_data = nullptr) noexcept;
+  // Only from this slot's completion notification, after enqueueing native
+  // commands on the shared physical queue. Extends the slot through that
+  // accepted native batch and a second notification on the original proactor.
+  // This is not a drain proof for unsubmitted/deferred provider work.
+  HYLE_IREE_VULKAN_INTERNAL_API Status
+  after_native_submissions(CompletionNotify notify, void *user_data) noexcept;
   HYLE_IREE_VULKAN_INTERNAL_API WorkState poll() noexcept;
   HYLE_IREE_VULKAN_INTERNAL_API WorkState wait() noexcept;
   HYLE_IREE_VULKAN_INTERNAL_API Result<BufferSpan>

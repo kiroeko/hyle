@@ -1,9 +1,10 @@
 #include "../compute_ops/view_alias.h"
+#include "vulkan_iree.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
 
-#include "hyle/obs/trace.h"
 #include "hyle/compute/low_precision.h"
+#include "hyle/obs/trace.h"
 
 #include <algorithm>
 #include <functional>
@@ -157,18 +158,14 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       const auto &description = value.description;
       const auto bytes = description.required_bytes();
       const auto elements = description.element_count();
-      const auto packed = description.rank() == 2
-                              ? mxfp4_weight_description(
-                                    description.dimensions()[0],
-                                    description.dimensions()[1])
-                              : Result<TensorDesc>{};
       if (!description.valid() ||
           !tensor_storage_type(description.data_type()) ||
-          (!description.is_plain() && (!packed || *packed != description)) || !bytes ||
+          (!description.is_plain() && !named_compressed_storage(description)) ||
+          !bytes ||
           *bytes > runtime->device->properties.limits.maxStorageBufferRange ||
           !elements || *elements > (std::numeric_limits<std::int32_t>::max)())
         return std::unexpected(Status::Unimplemented(
-            "Vulkan plan requires supported plain or named MXFP4 "
+            "Vulkan plan requires supported plain or named compressed "
             "storage within device limits"));
       HYLE_ASSIGN_OR_RETURN(auto capacity, buffer_capacity(*bytes));
       if (capacity > runtime->device->properties.limits.maxStorageBufferRange)
@@ -246,6 +243,11 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> packs;
     for (std::size_t index = 0; index < plan.steps.size();) {
       const auto &step = plan.steps[index];
+      if (iree_operation(*program, step)) {
+        HYLE_RETURN_IF_ERROR(lower_iree(*program, step));
+        ++index;
+        continue;
+      }
       if (managed_operation(*program, step)) {
         auto end = index;
         while (end < plan.steps.size() &&
@@ -308,7 +310,7 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     if (facts != nullptr) {
       PlanFacts snapshot;
       for (const auto &dispatch : program->dispatches)
-        if (dispatch.region)
+        if (dispatch.region || dispatch.iree)
           ++snapshot.managed_region_count;
         else
           ++snapshot.native_dispatch_count;
@@ -546,6 +548,26 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
       const auto offset = state_->program->aliases[binding.value].byte_offset;
       if (offset > buffer->bytes || buffer->offset > SIZE_MAX - offset)
         return Status::InvalidArgument("Vulkan managed input view range");
+    }
+    for (const auto &stage : run.stages) {
+      if (!stage.iree)
+        continue;
+      for (std::size_t port = 0; port < stage.iree->input_count; ++port) {
+        const auto &input = stage.iree->inputs[port];
+        const auto alias = state_->program->aliases[input.value];
+        const auto position =
+            std::ranges::find(state_->program->inputs, alias.root);
+        if (position == state_->program->inputs.end())
+          continue;
+        const auto &buffer =
+            detail::Access::buffer(inputs[static_cast<std::size_t>(
+                position - state_->program->inputs.begin())]);
+        if (alias.byte_offset > buffer->bytes ||
+            input.offset > buffer->bytes - alias.byte_offset ||
+            input.destination.bytes >
+                buffer->bytes - alias.byte_offset - input.offset)
+          return Status::InvalidArgument("Vulkan IREE input view range");
+      }
     }
     for (const auto &binding : state_->region_inputs) {
       const auto &buffer = detail::Access::buffer(inputs[binding.input_port]);

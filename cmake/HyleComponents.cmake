@@ -461,7 +461,7 @@ _hyle_declare_component(graph_route_apple
 # Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
 _hyle_declare_component(compute_route_vulkan
   TRACE
-  PRIVATE_DEPS time compute_provider_ggml_vulkan
+  PRIVATE_DEPS time compute_provider_ggml_vulkan compute_provider_iree_vulkan
   PUBLIC_DEPS core compute compute_ops error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/detail/vulkan_plan.h)
 _hyle_declare_component(graph_route_vulkan

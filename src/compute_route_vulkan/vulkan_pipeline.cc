@@ -282,7 +282,7 @@ Status record(const std::shared_ptr<Run> &run,
     return Status::ResourceExhausted("Vulkan checked status metadata");
   }
   if (std::ranges::any_of(dispatches, [](const auto &dispatch) {
-        return dispatch.region != nullptr;
+        return dispatch.region != nullptr || dispatch.iree.has_value();
       }))
     return record_regions(run, values, dispatches, dynamic_bindings);
   try {

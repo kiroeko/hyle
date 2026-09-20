@@ -35,7 +35,9 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed managed ggml dense F32 norm/gate/pointwise/TopK/recurrent and MXFP4 regions and "
+          "Fixed managed ggml dense F32 norm/gate/pointwise/TopK/recurrent and "
+          "MXFP4 regions, "
+          "original IREE checked I32 Scan/FP8 regions, and "
           "native tensor "
           "shaders plus cold custom "
           "SPIR-V; "
@@ -43,12 +45,16 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       report->numerical_policy =
           "F32/F16/BF16 tensor arithmetic with F32 evaluation and storage RNE; "
           "I32/I64/Bool exact storage operations; "
-          "original recurrent F32 equal heads D16/32/64/128 with explicit state; "
+          "original recurrent F32 equal heads D16/32/64/128 with explicit "
+          "state; "
           "MXFP4 weights with F16 activation/output and F32 accumulation; "
+          "named FP8 inputs with F32 region workspace/output; I32 Scan checks "
+          "every prefix and final total; "
           "custom nodes retain their declared schema contract";
       report->boundary_policy =
           "Ready same-device inputs/constants; cold weight packing; "
-          "explicit compute visibility barriers; no host output copy; "
+          "explicit compute visibility barriers; IREE boundaries use GPU "
+          "copies and checked Scan reads a 4-byte flag; "
           "imported buffers require a completed visibility handoff";
       report->concurrency_policy =
           "Each Invocation owns native commands, managed work and mutable "

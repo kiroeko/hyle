@@ -15,7 +15,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   hyle_add_module(compute_route_vulkan TRACE SOURCES
     vulkan_device.cc vulkan_run.cc vulkan_transfer.cc
     vulkan_pipeline.cc vulkan_operations.cc vulkan_tensor.cc vulkan_program.cc vulkan_recorder.cc vulkan_region.cc vulkan_scatter.cc
-    vulkan_normalization.cc vulkan_reduction.cc vulkan_elementwise.cc
+    vulkan_normalization.cc vulkan_reduction.cc vulkan_elementwise.cc vulkan_iree.cc
     "${_shader_output}/vulkan_shaders.cc")
   target_include_directories(hyle_compute_route_vulkan PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute" "${CMAKE_CURRENT_BINARY_DIR}"

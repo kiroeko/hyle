@@ -8,6 +8,7 @@
 
 #include "../compute_provider_ggml_vulkan/native_device.h"
 #include "../compute_provider_ggml_vulkan/region.h"
+#include "../compute_provider_iree_vulkan/native_device.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/vulkan.h"
 
@@ -79,6 +80,8 @@ struct Device final {
   // One native owner for HYLE commands and complete managed ggml regions.
   // It outlives every Buffer/Run and owns loader, instance, device and queues.
   ggml_vulkan::detail::NativeDevice provider;
+  // Created only by an admitted IREE preparation, under Runtime::mutex.
+  iree_vulkan::NativeDevice iree;
   InstanceFunctions instance_fn;
   DeviceFunctions fn;
   NativeDevice native;
@@ -109,10 +112,16 @@ struct Buffer final {
 
 struct Run;
 struct NativeEncoding;
+struct IreeStage;
+struct AsyncRun final {
+  std::size_t next_stage = 0;
+  bool finished = false;
+};
 struct RunStage final {
   std::shared_ptr<Run> native;
   std::shared_ptr<NativeEncoding> encoding;
   std::unique_ptr<ggml_vulkan::detail::Region> managed;
+  std::shared_ptr<IreeStage> iree;
   std::vector<std::uint32_t>
       values; // Compact local port/value -> parent value.
   std::vector<ggml_vulkan::detail::RegionBinding> bindings;
@@ -148,6 +157,7 @@ struct Run final {
   VkFence completion_fence =
       VK_NULL_HANDLE;           // Borrowed last actual batch fence.
   std::vector<RunStage> stages; // Empty for the original single native batch.
+  std::unique_ptr<AsyncRun> async;
   Run *next = nullptr;
   Run **previous = nullptr;
   cd::CompletionLifetime abandoned;
@@ -213,6 +223,9 @@ create_run(const std::shared_ptr<Runtime> &runtime) noexcept;
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed = false) noexcept;
 Status collect(const std::shared_ptr<Runtime> &runtime, bool drain) noexcept;
+Status submit_native(const Device &, VkCommandBuffer, VkFence) noexcept;
+// Runtime::mutex protects the route's stage cursor and native submissions.
+bool advance_async_locked(Run &) noexcept;
 void memory_barrier(Device &device, VkCommandBuffer command,
                     VkPipelineStageFlags source_stage,
                     VkAccessFlags source_access,

@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 
+#include "../compute_provider_iree_vulkan/native_program.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/detail/vulkan_plan.h"
 #include "vulkan_internal.h"
@@ -25,6 +26,7 @@ struct Pipeline final {
 struct Dispatch final {
   std::shared_ptr<Pipeline> pipeline;
   std::shared_ptr<const ggml_vulkan::detail::RegionRecipe> region;
+  std::optional<iree_vulkan::ProgramSpec> iree;
   std::vector<std::uint32_t> values;
   std::vector<std::byte> push;
   std::array<std::uint32_t, 3> groups{1, 1, 1};
@@ -131,6 +133,9 @@ Status lower_scatter(ProgramState &, const PlanStep &) noexcept;
 Status lower_region(ProgramState &, const Plan &, std::size_t first,
                     std::size_t end,
                     std::span<const std::size_t> last_uses) noexcept;
+bool named_compressed_storage(const TensorDesc &) noexcept;
+bool iree_operation(const ProgramState &, const PlanStep &) noexcept;
+Status lower_iree(ProgramState &, const PlanStep &) noexcept;
 Status record_regions(const std::shared_ptr<Run> &, std::span<const PlanValue>,
                       std::span<const Dispatch>,
                       std::vector<DescriptorBinding> *) noexcept;

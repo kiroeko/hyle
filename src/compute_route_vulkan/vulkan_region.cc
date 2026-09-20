@@ -1,3 +1,4 @@
+#include "vulkan_iree.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
 
@@ -111,8 +112,7 @@ bool managed_operation(const ProgramState &program,
         packed_elements > limits.maxStorageBufferRange / sizeof(float))
       return false;
     for (const auto &input : inputs)
-      if (*input.element_count() >
-          limits.maxStorageBufferRange / sizeof(float))
+      if (*input.element_count() > limits.maxStorageBufferRange / sizeof(float))
         return false;
   }
   if ((step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
@@ -766,6 +766,8 @@ Status bind_regions(Run &run) noexcept {
   for (auto &stage : run.stages) {
     if (stage.managed) {
       HYLE_RETURN_IF_ERROR(stage.managed->bind(stage.bindings));
+    } else if (stage.iree) {
+      HYLE_RETURN_IF_ERROR(stage.iree->bind());
     } else {
       for (std::size_t i = 0; i < stage.values.size(); ++i)
         stage.native->retained_buffers[i] =
@@ -785,7 +787,12 @@ Status record_regions(const std::shared_ptr<Run> &run,
   try {
     for (std::size_t first = 0; first < dispatches.size();) {
       RunStage stage;
-      if (dispatches[first].region) {
+      if (dispatches[first].iree) {
+        const auto &dispatch = dispatches[first++];
+        stage.values = dispatch.values;
+        HYLE_ASSIGN_OR_RETURN(stage.iree,
+                              create_iree_stage(run, dispatch, values));
+      } else if (dispatches[first].region) {
         const auto &dispatch = dispatches[first++];
         stage.values = dispatch.values;
         stage.bindings.resize(stage.values.size());
@@ -796,7 +803,8 @@ Status record_regions(const std::shared_ptr<Run> &run,
         stage.managed = std::make_unique<provider::Region>(std::move(region));
       } else {
         auto end = first + 1;
-        while (end < dispatches.size() && !dispatches[end].region)
+        while (end < dispatches.size() && !dispatches[end].region &&
+               !dispatches[end].iree)
           ++end;
         for (auto i = first; i < end; ++i)
           stage.values.insert(stage.values.end(), dispatches[i].values.begin(),

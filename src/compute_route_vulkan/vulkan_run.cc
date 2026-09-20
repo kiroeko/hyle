@@ -1,4 +1,5 @@
 #include "vulkan_internal.h"
+#include "vulkan_iree.h"
 
 #include "hyle/obs/trace.h"
 
@@ -157,6 +158,8 @@ bool retire_regions(Run &run, bool drain) noexcept {
   return retired;
 }
 
+} // namespace
+
 Status submit_native(const Device &device, VkCommandBuffer command,
                      VkFence fence) noexcept {
   VkSubmitInfo info{};
@@ -176,6 +179,8 @@ Status submit_native(const Device &device, VkCommandBuffer command,
       &submission);
 }
 
+namespace {
+
 Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
                                bool wait) noexcept {
   auto &runtime = *run->runtime;
@@ -187,6 +192,45 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     return CompletionPoll::kComplete;
   }
   ++run->observers;
+  if (run->async) {
+    // The current IREE notification advances all following native/managed
+    // stages until the next IREE boundary. Never wait while holding its route
+    // mutex: those notifications need the same mutex to publish/advance.
+    while (!run->async->finished) {
+      auto &program = *run->stages[run->async->next_stage].iree->program;
+      lock.unlock();
+      const auto state = wait ? program.wait() : program.poll();
+      lock.lock();
+      if (!state.status.ok() && run->observation_error.ok())
+        run->observation_error = state.status;
+      if ((!wait && !run->async->finished) ||
+          (state.pending && !state.status.ok())) {
+        --run->observers;
+        return CompletionPoll::kPending;
+      }
+    }
+    // The final fence can signal before the last notification returns.
+    // Include every callback tail before dropping the parent ownership.
+    lock.unlock();
+    bool retired = true;
+    Status failure;
+    for (auto &stage : run->stages) {
+      if (!stage.iree)
+        continue;
+      const auto state =
+          wait ? stage.iree->program->wait() : stage.iree->program->poll();
+      retired = retired && !state.pending;
+      if (!state.status.ok() && failure.ok())
+        failure = state.status;
+    }
+    lock.lock();
+    if (!failure.ok() && run->observation_error.ok())
+      run->observation_error = failure;
+    if (!retired) {
+      --run->observers;
+      return CompletionPoll::kPending;
+    }
+  }
   // Native fence waits do not hold the queue host mutex. A second producer
   // may submit its independent slot while this thread waits. observers prevents
   // fence reset/reuse until every concurrent observer has left the old run.
@@ -402,8 +446,13 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
     }
   }
   run->needs_drain = false;
+  run->cancelled = false;
   bool accepted = false;
-  if (run->stages.empty()) {
+  if (run->async) {
+    *run->async = {};
+    accepted = advance_async_locked(*run);
+    status = run->submission_failure;
+  } else if (run->stages.empty()) {
     status = submit_native(device, run->command, run->fence);
     accepted = status.ok();
   } else {

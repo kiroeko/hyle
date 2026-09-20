@@ -390,11 +390,13 @@ TEST(VulkanIntegerScan, OriginsIndependentSlotsAndRetainedResults) {
   EXPECT_TRUE(context.close().ok());
 }
 
-TEST(VulkanIntegerScan, ScratchAndWorkgroupLimitsRejectBeforeSubmission) {
+TEST(VulkanIntegerScan, FrozenNonLastAxisLimitsRejectBeforeSubmission) {
   auto context = vulkan_test::context().value();
   auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
   const auto saved = limits;
-  const auto desc = dense(c::DataType::kInt32, {2, 8193});
+  // Keep exercising the unchanged non-last-axis implementation. Last-axis
+  // dense inputs now use the original IREE program's different launch bounds.
+  const auto desc = dense(c::DataType::kInt32, {8193, 2});
   for (int mode = 0; mode < 5; ++mode) {
     limits = saved;
     if (mode == 0)
@@ -410,7 +412,7 @@ TEST(VulkanIntegerScan, ScratchAndWorkgroupLimitsRejectBeforeSubmission) {
       limits.maxComputeWorkGroupCount[0] = 1;
       limits.maxComputeWorkGroupCount[1] = 1;
     }
-    auto rejected = v::prepare(context, c::Scan{}, desc);
+    auto rejected = v::prepare(context, c::Scan{.axis = 0}, desc);
     EXPECT_FALSE(rejected);
     if (!rejected)
       EXPECT_TRUE(rejected.error().IsUnimplemented() ||
