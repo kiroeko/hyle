@@ -1,0 +1,41 @@
+{
+  "kind": "Original CCCL/Thrust Gather qualification, not HYLE product acceptance",
+  "scope_checkpoint": "fa65e0dcfeacaf2b6bfafdb2b7a1209041a87bf1",
+  "machine": "Windows RTX4070 SM89; MSVC19.50.35728; CUDA13.3.73 / CCCL3.3.4",
+  "algorithm": "Original DeviceReduce Min/Max of logical I32/I64 indices, two host validation scalars, thrust::gather with par_nosync on native stream; source/index iterators only project byte strides and axes",
+  "verdict": "PASS",
+  "cases": 40,
+  "coverage": [
+    "1/2/4/8-byte source bit patterns",
+    "I32/I64 indices",
+    "odd source/index byte strides",
+    "middle-axis with two outer and three inner values",
+    "repeated indices",
+    "negative, axis-width and maximum-signed index rejection leaves whole output sentinel unchanged",
+    "changed valid indices after failed cases"
+  ],
+  "limits": [
+    "Not ordinary HYLE entry/Graph/resource acceptance",
+    "No CUDA self-written math inspection or performance comparison",
+    "No WSL/SDK/sanitizer/P1"
+  ],
+  "sdk_source_sha256": {
+    "thrust/gather.h": "7ed1e6256033464146026975fec4b704f14ce22f884ab9c32ecfc2949b96fb87",
+    "thrust/system/cuda/detail/gather.h": "a8e9fa4143195881a2603e0d5d42aa5e76b5ecfbf1b9d29c750bb884f4946499",
+    "thrust/system/cuda/detail/transform.h": "cca4ec4b84af44fbd93327de9bc6e32159254b52af3c5eb94a9c8fbd64e8656d",
+    "cub/device/device_reduce.cuh": "d9747d8ce73d19ca8eba020651d4f7f58c9cc23bbeff8b5261852f525d0c9b99"
+  },
+  "executable_sha256": "099823dc2e1bf835abe010465c13c14aa7a551081bdf8278dbf2ba71ea48ef01",
+  "archive": {
+    "path": "gather-qualification-raw.zip",
+    "sha256": "a670643ad3960482df61b846605c019980fa41eb5ca5c11e11cce3ba5c5ab43d",
+    "bytes": 5252
+  },
+  "shared_source_design_budget_minutes": {
+    "used": 108,
+    "remaining": 12,
+    "total": 120
+  },
+  "new_complete_requirement_cells": 0,
+  "performance_samples": 0
+}

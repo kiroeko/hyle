@@ -475,7 +475,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I AUDITED仅授权I1–I4：已接原版CCCL Scan/TopK的Windows开发检查点；F02.1原版Thrust Gather的I5增量处于待审定界，尚不授权产品实现，既有验收和自研冻结保留，父卡共用120分钟预算。"
+      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK已获Windows开发证据；I5原版Thrust Gather在40组原版资格通过后冻结有限接法，checked I32/I64与全storage位宽、普通入口和资源验证，父卡共享120分钟预算，旧自研冻结。"
     },
     {
       "module": "compute_route_cuda",

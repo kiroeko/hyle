@@ -3,8 +3,8 @@
 ## Closure card
 
 - component / owner：`compute_provider_cuda`、`compute_route_cuda`；`/root`。
-- 2026-09-20后续定界：Provider的I5 Gather增量待审；registry保留既有AUDITED（仅授权I1–I4），
-  不作非法AUDITED→SCOPED倒退。无新增route产品改动；未决验收和父卡需求不缩小。
+- 2026-09-20后续定界：`fa65e0dc`独立提交I5 Gather待审范围后，以下原版资格及有限接法已冻结
+  为AUDITED；registry未作非法AUDITED→SCOPED倒退。未决验收和父卡需求不缩小。
 - baseline：`93b5095f`，Windows canonical，工作树干净。当前阶段 AUDITED；`c1923e1a`独立绑定SCOPED。
 - trigger：[M0 CUDA-I](llm-moe-provider-map.json)已将成熟 CUB scan/sort 分给现有 CUDA Provider。
   前者仍绑定 M0 空 FIX，须换成本卡；普通 CUDA 工厂需要新成熟选择，满足 M1-C 新能力 reopen。
@@ -149,3 +149,21 @@ SDK版本条件精确为CUDA toolkit/runtime13.3、CCCL3.3.4、SM89；未知环�
   原版gather/合法状态流核对计9分钟，父卡源码/设计共 **105/120、余15分钟**；不新增研究预算。
 - 当前只允许原版资格探针；I5未AUDITED之前不得改产品。失败最多两次源码驱动纠正，预算耗尽
   明确裁决；整个B1及64×4需求分母保持不变。
+
+### I5 AUDITED：原版接法冻结
+
+[原版资格](../../../../evidence/correctness/compute-llm-moe-m2-b1-cuda/gather-qualification.json)实跑
+40组（4种storage位宽×I32/I64×5种索引payload），奇数字节stride、重复/变化索引、负数、axis
+width与最大有符号索引，以及非法时整个输出不变均通过。未调用HYLE/frozen实现或计时。
+
+产品仅扩既有私有Program描述符、同一CCCL proposal/prepare/submit和factory说明：原版
+`DeviceReduce::{Min,Max}`与`thrust::gather(thrust::cuda::par_nosync.on(stream), ...)`，标量函数对象
+只负责逻辑source/index地址换算和I32→I64类型提升；storage按同宽无符号类型传递，不做数值转换。
+checked原版归约先裁决`min>=0 && max<axis_width`，只回传16字节；unchecked按公共caller前提
+省略验证，空输出不读payload。原版Thrust异常在adapter边界保留CUDA错误码，可恢复分配错误
+转现有Status；Provider晚期错误仍保留已接受prefix。无外部capture、无别名，Graph叶子自动消费。
+
+这仍是I1–I4同一owner/SDK/资源与执行方式；Gather新增索引layout是冷Prepared描述符，不新增
+常态线程/队列或张量常驻副本。两条输入的resource/alignment都要验证，caller工作区活到Completion。
+原版资格及接缝核对计3分钟，累计 **108/120、余12分钟**。本节与registry摘要提交后才能实施I5；
+全部产品/跨平台/三交付/P1仍待验证，不用原版probe填完整覆盖矩阵。
