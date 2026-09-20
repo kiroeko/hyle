@@ -1,8 +1,30 @@
-# M1-C / Q-CUDA-API
+# M1-C / 原生接入检查点
 
 本目录保存[M1-C资源卡](../../../docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md)
-的有界上游入口资格，不是Provider完成证书。产品实现、两请求并发、失败寿命、三交付和完整
-模型需求覆盖仍待该卡后续验证；新增64域×四路线覆盖格为0。
+的有界上游入口资格及后续Linux FlashInfer接入检查点，不是M1-C整包完成证书。
+ggml CUDA普通接入、剩余平台/风险门和完整模型需求覆盖仍待验证；新增64域×四路线覆盖格为0。
+
+## Linux FlashInfer产品接入（2026-09-20）
+
+实现`67f3651f`；`6ef8884d`只补nvcc主机代码的私有符号可见性，数学与C++ adapter不变。
+[接入收据](flashinfer-admission.json)及`flashinfer-admission-raw.zip`记录实际命令、原失败、
+工具链和文件哈希。默认CUDA Direct/Graph接入原版head256、8/2 causal GQA，FP16/BF16，
+batch2的prefill(q17/kv31)和decode(q1/kv513)。
+
+- 6项WSL native/header门通过；FlashInfer五项测试包含两请求同时提交、三次复用、旧输出、
+  放弃Completion、逐冷分配OOM回滚、域拒绝及部分原生失败。失败槽退役后，新槽可恢复。
+- 源码嵌入、搬移后的static/shared安装消费通过；安装消费期间隐藏producer源码/构建目录。
+  普通Direct/Graph调用方不排序Provider。首次共享消费虽通过，导出复核发现原版模板可见；
+  修正后重新通过源码/shared消费，FlashInfer动态库只导出公开C++工厂。
+- Windows GQA公共语义/旧CPU能力隔离4门通过；WSL同两owner的ASan通过。
+  FlashInfer ASan及公共语义/FlashInfer UBSan通过，主机插桩不代签GPU设备内存安全。
+- 原ASan在CUDA初始化前置失败；无HYLE的`cuInit/cudaGetDeviceCount`控制也返回OOM。
+  按[NVIDIA说明](https://docs.nvidia.com/deeplearning/tensorrt/latest/reference/troubleshooting-analysis-tools.html)
+  设置进程级`protect_shadow_gap=0`后恢复。控制和产品均残留WSL `libcuda.so.1`的260+20字节，
+  LSan只抑制该具名驱动库，HYLE/FlashInfer host分配仍检查；未关闭泄漏或越界检测。
+
+managed派发含原版capability/occupancy/kernel属性查询，不承诺external capture或性能赢家。
+Windows FlashInfer仍未准入；Mac GQA与CUDA-OFF门尚待运行。此检查点不解除自研冻结。
 
 ## FlashInfer原版入口
 

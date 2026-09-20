@@ -1,0 +1,299 @@
+{
+  "stage": "M1-C Linux FlashInfer admission checkpoint; full M1-C remains AUDITED",
+  "implementation": "67f3651f458980827334f056542e0f6216130e7f",
+  "shared_visibility_correction": "6ef8884d",
+  "coverage_cells_signed": 0,
+  "native": {
+    "windows_gqa": "PASS (4 CTest gates)",
+    "linux": "PASS (6 CTest gates; 5 FlashInfer tests plus ordinary Direct/Graph attention)"
+  },
+  "delivery": {
+    "static": "PASS at 67f3651f; relocated prefix, hidden producer",
+    "source": "PASS at 67f3651f and 6ef8884d",
+    "shared": "PASS at 67f3651f and 6ef8884d; relocated prefix, hidden producer; private symbols hidden at 6ef8884d"
+  },
+  "sanitizers": {
+    "asan_cpu": "PASS compute_ops and compute_provider_native",
+    "asan_cuda": "PASS with protect_shadow_gap=0 and named WSL libcuda loader-only LSan suppression; original initialization FAIL retained",
+    "ubsan": "PASS compute_ops and compute_provider_flashinfer"
+  },
+  "asan_control": {
+    "cuda_only_before": "cuInit=2 / cudaGetDeviceCount=2; no HYLE code",
+    "cuda_only_after": "both APIs success, one device; 260+20 native loader bytes remain and are specifically suppressed",
+    "source": "https://docs.nvidia.com/deeplearning/tensorrt/latest/reference/troubleshooting-analysis-tools.html"
+  },
+  "limitations": [
+    "Linux SM89 head256 dense causal Q/KV heads 8/2, FP16/BF16 only",
+    "Managed upstream dispatch; no external capture or performance-winner claim",
+    "Windows FlashInfer pin not admitted; ggml CUDA, remaining lifecycle and OFF gates pending",
+    "Host sanitizers do not certify CUDA device memory safety",
+    "Mac GQA semantic gates and overall M1-C acceptance remain pending"
+  ],
+  "bundle": {
+    "name": "flashinfer-admission-raw.zip",
+    "bytes": 44614,
+    "sha256": "dc34e0e7285fbef3fafccb189b71f87536428e0676c8fefba4df657d0fdb5eed",
+    "files": [
+      {
+        "name": "asan-build.log",
+        "bytes": 15168,
+        "sha256": "ea3fb37154b2e1ed50db98a31be765f0b6efc424f5e11c3b499a68f18df44e54"
+      },
+      {
+        "name": "asan-configure.log",
+        "bytes": 2511,
+        "sha256": "df06a186ea1f1f34e1612fb4ca0415c29b2f3d4d42a24183d882c47f9beb5bf2"
+      },
+      {
+        "name": "asan-qualified-LastTest.log",
+        "bytes": 2170,
+        "sha256": "279af7c90a035daabc57199ee80320475418d07249149c8a36ce3eef79534aa2"
+      },
+      {
+        "name": "asan-qualified-tests.log",
+        "bytes": 382,
+        "sha256": "ab1ab754e40585c53797892e6476d388502811e11458fd77c5a667034ecdd831"
+      },
+      {
+        "name": "asan-tests.log",
+        "bytes": 4425,
+        "sha256": "a633a7fafa7d8dcf9ccf105b57bfa39bc7c79fb53ff9e4e5a4f633ffda665bef"
+      },
+      {
+        "name": "cuda-init-asan-qualified.log",
+        "bytes": 268,
+        "sha256": "96213d84514adba5a79086d3831d6923ee4cc0afe20327fb163fda6ce662d430"
+      },
+      {
+        "name": "cuda-init-asan.log",
+        "bytes": 4319,
+        "sha256": "d618d2c105c679a54480b0b9938405ab29485167f72445fa959c0463b5f9b015"
+      },
+      {
+        "name": "cuda-sanitizer-init.cc",
+        "bytes": 543,
+        "sha256": "aab9e39ecb4311fa26b159927e51a64b73a9c8f4be9a506032801a38add65e0d"
+      },
+      {
+        "name": "cuda-sanitizer-init.sh",
+        "bytes": 568,
+        "sha256": "ebc10e1b629ddfd3cc3f886405001a4a164949f020aa5a8985240c1dd6acd424"
+      },
+      {
+        "name": "delivery-logs/receipt.json",
+        "bytes": 5758,
+        "sha256": "21d1b06aac4a2552bd5645c8314143bf439b099a0821fdffaf5e36fff8245468"
+      },
+      {
+        "name": "delivery-logs/shared-consumer-build.log",
+        "bytes": 424,
+        "sha256": "1c9fc4f8bb3def5b79517c95dda5aeb5c7403f4c009dcd9f7c915bc6c9e3b1e6"
+      },
+      {
+        "name": "delivery-logs/shared-consumer-configure.log",
+        "bytes": 890,
+        "sha256": "81f4cc1182c5c51168459721ea2d2aa7b4b61e4183df38ae075c96319f1f921a"
+      },
+      {
+        "name": "delivery-logs/shared-consumer-test.log",
+        "bytes": 300,
+        "sha256": "d85405f1fbd4260da44b91087aaa52cea3bb941b4fdb9bcfa2433ee468b1940c"
+      },
+      {
+        "name": "delivery-logs/shared-install.log",
+        "bytes": 16797,
+        "sha256": "618adafd9d76cf4187754acdcc67b45dfa8e00362e55337dc0f4d268237ac602"
+      },
+      {
+        "name": "delivery-logs/source-build.log",
+        "bytes": 12297,
+        "sha256": "ce2560f00314dca469f4c18736019519668c060442a3a9805af079ae369faae2"
+      },
+      {
+        "name": "delivery-logs/source-configure.log",
+        "bytes": 2645,
+        "sha256": "8f2e8775799bff928b4dd5cb605566bc140fd7262353bfc2ccf70ae80b8b85ab"
+      },
+      {
+        "name": "delivery-logs/source-test.log",
+        "bytes": 294,
+        "sha256": "776526c62f2413add16be29f967f512b8229cd644e6f4bbd2538f6bb06377104"
+      },
+      {
+        "name": "delivery-logs/static-build.log",
+        "bytes": 63,
+        "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+      },
+      {
+        "name": "delivery-logs/static-configure.log",
+        "bytes": 1655,
+        "sha256": "9fecd1a7127c7a0be4d2cd4d793a6ecdc7e29f87f0a9af9e0f6768f65433ebbd"
+      },
+      {
+        "name": "delivery-logs/static-consumer-build.log",
+        "bytes": 424,
+        "sha256": "1c9fc4f8bb3def5b79517c95dda5aeb5c7403f4c009dcd9f7c915bc6c9e3b1e6"
+      },
+      {
+        "name": "delivery-logs/static-consumer-configure.log",
+        "bytes": 890,
+        "sha256": "3828be56b189fc1ea39ebde1609651cbc592b2799560d9da9fd929ab0e4af1cd"
+      },
+      {
+        "name": "delivery-logs/static-consumer-test.log",
+        "bytes": 300,
+        "sha256": "78c766ee7c4116db844474727398343e278534fe800805053b76fd65f4d4d447"
+      },
+      {
+        "name": "delivery-logs/static-install.log",
+        "bytes": 13416,
+        "sha256": "933629b55defb0052d88e2e97828a297cbdc4f3763ee2afffb48c4081947dc70"
+      },
+      {
+        "name": "delivery.py",
+        "bytes": 5541,
+        "sha256": "7e3f25b8e80d5ad627329fb69c3ac954cfdf4533be70f384d0b9282b9eee9ec4"
+      },
+      {
+        "name": "flashinfer-wsl-build.log",
+        "bytes": 5159,
+        "sha256": "870351e824412548c36c3d5b32a8721199ea63bc7edfcd1d113e665ae24ac662"
+      },
+      {
+        "name": "flashinfer-wsl-configure.log",
+        "bytes": 948,
+        "sha256": "cb128de696e9b27cecf7a119f56306e0c29c40c3ef59ba7ce2e07588be29610c"
+      },
+      {
+        "name": "flashinfer-wsl-tests.log",
+        "bytes": 638,
+        "sha256": "ed03ce0ea8e1dc725a0b65fdf1106c52bc385ee415b185ab8bb2e84ac6b40233"
+      },
+      {
+        "name": "gqa-windows-build.log",
+        "bytes": 13735,
+        "sha256": "2a62b4cbbaa461232200e4b6f601c0b8d0e2669bbca9ea5f3172511993c4c38f"
+      },
+      {
+        "name": "gqa-windows-configure.log",
+        "bytes": 2161,
+        "sha256": "d20d034eb96882999607dd71a6fe5470ed584d68dec97ce6ef7ee5d46573b9ca"
+      },
+      {
+        "name": "gqa-windows-tests.log",
+        "bytes": 898,
+        "sha256": "d856b233cf5f3aacfe870c4a2198106aecb92f1013b42ee7795b72c0aaa98b75"
+      },
+      {
+        "name": "normal-cuda-wsl-build-gcc-warning.log",
+        "bytes": 6732,
+        "sha256": "281ea2a31b57e950bfc19f90ea05bb08fe700b252564f251eab077603f423027"
+      },
+      {
+        "name": "normal-cuda-wsl-build.log",
+        "bytes": 386,
+        "sha256": "1936b466cbdd7dc1d998cba98fa7bbdd54085a33263f81ac6691cdc095bce9c3"
+      },
+      {
+        "name": "normal-cuda-wsl-configure.log",
+        "bytes": 1261,
+        "sha256": "dc488be5d9ed398412d952b254a300c9576591294d713015bce8efbcbdce3723"
+      },
+      {
+        "name": "normal-cuda-wsl-LastTest.log",
+        "bytes": 17314,
+        "sha256": "a01f678239cbc1c4ee68309984e6f36371b793a9a7b44233569ba3742ebab088"
+      },
+      {
+        "name": "normal-cuda-wsl-tests.log",
+        "bytes": 1351,
+        "sha256": "be42c9466ef4536f05c9f7caab39c0cc1237c2362a7ad2c5cc38235e95b10215"
+      },
+      {
+        "name": "resume-asan.sh",
+        "bytes": 742,
+        "sha256": "148b46684aafa9a78785755b4e2481a91356092b5b153c1620fdb61d23569779"
+      },
+      {
+        "name": "run-flashinfer-wsl.sh",
+        "bytes": 1628,
+        "sha256": "e3c27a4dd37850778cf32c898c66d70646e3d4d423e32d9e9217fab099786030"
+      },
+      {
+        "name": "run-gqa-windows.ps1",
+        "bytes": 1801,
+        "sha256": "875584cb475c5e67aecb6f50c6d57f894ee42e1853193d0f40fec33704239439"
+      },
+      {
+        "name": "run-normal-cuda-wsl.sh",
+        "bytes": 906,
+        "sha256": "a25d39e617c15122a760153f004f6af03ca08693f02305098ce1fa3d795685b9"
+      },
+      {
+        "name": "sanitizers.sh",
+        "bytes": 2105,
+        "sha256": "42315befdaef072c4b00784d6e24c5b2d71a73f05ed547b51b87a792047f4d72"
+      },
+      {
+        "name": "shared-visibility-build.log",
+        "bytes": 2461,
+        "sha256": "fff6b57af87f246c2e49fa75e3e0746c59364386583cd081c3baab347e81b276"
+      },
+      {
+        "name": "shared-visibility-exports.log",
+        "bytes": 59,
+        "sha256": "8514f607a0544efd81d1885d32c93d7886c4e91ab93a050d0b6ed3a9fdc21743"
+      },
+      {
+        "name": "shared-visibility-hygiene.log",
+        "bytes": 71,
+        "sha256": "31b98c41da3745b109ab0dafab6ab1b5a9751cee3364fd161d1a383ba7c1997a"
+      },
+      {
+        "name": "shared-visibility-install.log",
+        "bytes": 15649,
+        "sha256": "93d5dec5c4605419f56f6d0b239bf2f1a172534497d116d698d8b2d3b1030e63"
+      },
+      {
+        "name": "shared-visibility-installed-test.log",
+        "bytes": 300,
+        "sha256": "2d369805ae45014ef3727dea617a3058e1385a4f2f3e9eadfe4fd08fc721b9f1"
+      },
+      {
+        "name": "shared-visibility-source-test.log",
+        "bytes": 294,
+        "sha256": "d5bf69101e64920442d09ff4ee90cb8793be8630f020e45b8b44d1800b49acd8"
+      },
+      {
+        "name": "shared-visibility.sh",
+        "bytes": 1321,
+        "sha256": "18b2795702e9483f87e646ad3c7d87a86cd65920e53313094884a4a99b0023cf"
+      },
+      {
+        "name": "ubsan-build.log",
+        "bytes": 5557,
+        "sha256": "acdbf10f5f7f4f92ca20434a2bfa366f4ffbc2cac9bf79ea39a759459f908b43"
+      },
+      {
+        "name": "ubsan-configure.log",
+        "bytes": 2281,
+        "sha256": "470c810d500db00b735a1046467e30bf01e89e47f613f67f43058add6d4b4ad5"
+      },
+      {
+        "name": "ubsan-LastTest.log",
+        "bytes": 9923,
+        "sha256": "c26868efafdca7aecdbac02d2ee95ac4ec90dc7caea78427407f29b94ee12d68"
+      },
+      {
+        "name": "ubsan-tests.log",
+        "bytes": 555,
+        "sha256": "47cc616f281bc77a7bc914cba240097d53feb046579abffd150d481e9cf56b26"
+      },
+      {
+        "name": "wsl-driver-lsan.supp",
+        "bytes": 272,
+        "sha256": "f308e46af60089a6a9cdf8b7e8185e5b13e1dfd37f2d16901ae3186bfdaef6bb"
+      }
+    ]
+  }
+}

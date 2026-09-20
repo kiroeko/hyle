@@ -151,3 +151,20 @@ ggml成熟实现承载attention，仍须做相同head/类型/数值/资源验收
   产物，避免反复冷编同一第三方库。完成后归档并清理本卡产物，保留缓存与本地模型。
 - selector、docs/closure、统一 Compute+Graph LOC 按既有协议执行。本卡不解除冻结，也不签
   64域×四路线覆盖；下一层批量算子/片段接入仍由 M2 有限卡承载。
+
+## 实施检查点（2026-09-20，仍为AUDITED）
+
+FlashInfer原版已在`67f3651f`接入Linux普通CUDA Direct/Graph；`6ef8884d`仅修正nvcc生成
+host实例的共享库可见性。原五项Provider测试、普通入口及source/static/shared已实际通过，
+逐分配OOM与第二batch故障验证原生错误、accepted prefix保活和失败槽退役。
+ASan/UBSan及环境修正边界见[接入收据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md)。
+无P1或冻结自研比较；新增签署模型覆盖格仍为0，不把本检查点当成整个C1–C6完成。
+
+C2的ggml CUDA资源补丁正在实现/编译：原版stream、pool、fusion和capture由ggml保有，
+HYLE只补外来buffer、原生错误、部分构造与capture失败回收。独立ggml默认关闭CUDA graph，
+本路线显式启用其原版capture并关闭不在范围内的NCCL；首次未启用graph的构建在执行前停止，
+原日志保留，不记验证通过。C3完整region、C4 Windows attention、其余平台与收口门尚未完成。
+
+新增vendor目录的selector归属与新Provider平台事实由
+[独立映射卡](../build/ggml-cuda-selector-owner-v1.md)登记；不改治理算法或门命令。
+本检查点源码/设计保守追加15分钟，累计100分钟，余20分钟；编译/预声明验证不计成研究。
