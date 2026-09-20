@@ -251,3 +251,27 @@ Gather 验证四种 storage、rank6 dense/非连续源、标量/矩阵/非连续
 普通 Graph 的分组均值→广播相减→方差在一个原版 region 内执行，双 slot 重放及无热 HYLE
 allocation 通过。原始记录为 `broadcast-windows.json` 与 archive；不签全21行、跨平台/三交付/
 插桩/P1，也不增加完整覆盖格。API/算法尚未全部稳定，未启动性能采样。
+
+## M2-D1：oneDNN 新能力范围的待决方案
+
+此节是可审阅的范围变更方案，尚未改变两个 oneDNN owner 的 BLOCKED，也不授权其产品修改。
+当前 Q2 的 Direct A/A 两边确实使用同一 `DirectRoute::run()`、同一 oneDNN factory 和相同
+submit/wait 边界；本次只读核对未找到新的公平性缺陷，不追加计时。旧失败及恢复条件继续有效。
+
+模型仍需的 Select、比较/掩码与一般布局可以进一步资格化当前锁定 oneDNN 的成熟接口：
+`dnnl.hpp` 已有 `binary_select`、比较和 min/max，以及原版 reorder。`math_utils.hpp` 的
+soft_relu 使用 log1p/exp；logistic 会截断部分负尾，swish 在负无穷仍有不相容，因此不能因
+解除流程阻塞就宣称全部数值域已通过，也不直接用同名 primitive 代签稳定合同。
+
+若用户允许将**新能力接入**与**旧自研竞速资格**分开，后续有限卡固定为：
+
+1. 先对 Select/比较、reorder、softplus 及必要原版组合做类型/布局/特殊值资格；只接实际合格域。
+2. 复用既有 oneDNN engine、stream、私有 primitive 与每请求资源路径，接普通 Direct/Graph；
+   原 norm/MatMul 数学和旧 Q2 benchmark/门限/FAIL 记录保持，不启动旧自研比较或淘汰。
+3. 新映射仍完成正确性、动态错误/资源、四环境、三交付与同一成熟完整调用的成本验证；
+   完整语义缺口继续记账，不能以新 scope 名字变成 PASS。
+4. 用户决定后才绑定新的 SCOPED→AUDITED 记录；调查仍计入本 B1 总预算，不借换卡续杯。
+
+若保持现有恢复限制，则 oneDNN 原样 BLOCKED，继续其他成熟接入及其他路线，B1 仍未完成。
+需要决定的原因是[现有 Q2 恢复条款](llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)
+和 registry 明确限制重新开启，而不是算子库存在权限或安全问题。
