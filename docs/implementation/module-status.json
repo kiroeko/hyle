@@ -539,19 +539,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V AUDITED：有限FIX只授权原版ggml GatedDeltaNet普通Direct/Graph、多输出/资源与三交付；IREE packed-FP4失格保留，scan/FP8+原版ggml MXFP4组合资格仍待验证；自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：原版ggml recurrent普通Direct/Graph已实现；checked Scan/FP8、MXFP4与单队列异步续执行资格通过。IREE先登记自身owner；普通混合接入与产品三交付未完成，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V AUDITED：有限FIX只授权原版ggml GatedDeltaNet普通Direct/Graph、多输出/资源与三交付；IREE packed-FP4失格保留，scan/FP8+原版ggml MXFP4组合资格仍待验证；自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：原版ggml recurrent普通Direct/Graph已实现；checked Scan/FP8、MXFP4与单队列异步续执行资格通过。IREE先登记自身owner；普通混合接入与产品三交付未完成，自研冻结，覆盖0。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V AUDITED：有限FIX只授权原版ggml GatedDeltaNet普通Direct/Graph、多输出/资源与三交付；IREE packed-FP4失格保留，scan/FP8+原版ggml MXFP4组合资格仍待验证；自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：原版ggml recurrent普通Direct/Graph已实现；checked Scan/FP8、MXFP4与单队列异步续执行资格通过。IREE先登记自身owner；普通混合接入与产品三交付未完成，自研冻结，覆盖0。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -607,6 +607,11 @@
         "tier": "P0",
         "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
       }
+    },
+    {
+      "module": "compute_provider_iree_vulkan",
+      "state": "QUEUED",
+      "summary": "M1-V 条件资格已通过，登记独立IREE Vulkan runtime/制品/资源owner身份；尚无产品target、普通入口或依赖，先SCOPED/AUDITED。"
     }
   ]
 }

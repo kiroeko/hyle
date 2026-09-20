@@ -154,3 +154,38 @@ Python/编译器。一个原版 HAL device group/module 配两个 VM context；�
 调查截止仍为 **12:02:33 UTC**，不因新证据重置预算。统一脚本当前统计 Compute+Graph
 **51,953 行 / 222 文件**，排除测试/vendor；相对本包启动增加 61 行接线实现。
 新增完整模型覆盖仍为 **0/256**；M5 开始前的用户停止点不变。
+
+## 条件资格收口：checked Scan 与单队列异步续执行
+
+[限定资格收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/checked-queue-qualification.json)
+及同目录 raw archive 保存 Windows / Air 的输入、原版 recipe、独立 oracle、编译/执行日志和
+资源补丁首次失败。下面补齐上一节的资格缺口，不改变首次 packed-FP4 失格，也不关闭产品包。
+
+- checked I32 inclusive / exclusive 共 12 例在两台机器逐项通过，包含正/负中间前缀溢出后抵消、
+  exclusive 仅最终总和溢出、单元素极值和变化形状。使用原版 I64 scan、标准转换/比较/归约，
+  没有手写 scan 算法或 shader。首次发现原版 exclusive 的 accumulator 不含最后输入，增加
+  原版 reduce 检查总和，一次纠正后通过。shaderInt64 必须实际启用；私有截断结果不能在错误时
+  发布到普通输出，后者继续列为产品验收。
+- 原版 IREE 计算 → 原生 GPU 边界 copy → 原版 IREE 计算，两条同时在途链路各 repeat3，
+  Windows / Air 的 C++ static/shared 消费者全部通过。调用方只等最终状态，自动推进由原版
+  proactor semaphore-wait 驱动；前段依赖失败会跳过后段。Air 的 compute queue 实数为 1。
+- 四文件私有资源 overlay 给原版 QueueSubmit2/BindSparse 增加同步 owner callback，保留其
+  原内锁与默认路径。产品将通过既有 NativeDevice::with_queue 复用 ggml 的锁与 NVIDIA 锁顺序，
+  不能把两个独立 mutex 当作共用保护；不在持有 native queue 锁时调用 IREE。数学和编译器未改。
+  opaque VkQueue 声明遗漏和 offset-zero HAL resource header 布局失误均保留原始失败及纠正。
+- 原版每队列 completion thread 与 proactor runner 都是实际资源成本；跨片段通知、GPU copy、
+  原版 VM/临时资源分配与编码同样计费，不承诺零开销。不增加 HYLE 通用执行器或轮询线程。
+
+**Q-VK 分工的数值和外来队列续执行资格通过；普通产品接入仍为 INCONCLUSIVE。**
+当前实际产品仍只完成原版 recurrent 纵切，未把资格程序计作实现或 256 格覆盖。
+`compute_provider_iree_vulkan` 现在只登记 QUEUED 身份，没有空 target；先完成自身 SCOPED / AUDITED，
+再接普通 Scan / 低精度 MatMul、实际 ggml owner 的 feature/queue/lifetime 桥及 Direct/Graph。
+具名压缩格式工厂由共同语义 owner 单独按新消费者重开，不扩张任何自研数学。
+
+这部分资格调查停止，后续按已验证接法实施；必要有限 API/资源细化仍受原 **12:02:33 UTC**
+总调查截止约束，不重开资格预算。产品 Windows/Air 三交付搬移、host 插桩/OFF、失败不写输出、
+实际混合片段和最终 P0 仍待完成。Compute+Graph 仍为 **51,953 行 / 222 文件**（排除测试/vendor）。
+
+本次 QUEUED 登记只增加身份，不改变已实现 target/依赖/头。selector 的完整计划保留；其因中央
+manifest 变化选出的产品门仍是 SELECTED，留给固定后的产品候选，未写 PASS。本阶段执行
+closure（previous ref `2e4d8ecb`）、docs 和 diff；没有为状态/证据登记重建产品或运行 P1。

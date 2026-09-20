@@ -19,6 +19,10 @@ ggml `456172ec`（MIT）、ncnn `70e7bfd6`（BSD-3-Clause）、MNN `397f8533`（
   同步和产品三交付；聚合接入 INCONCLUSIVE。
 - `native-progress-loc.json`：统一脚本的全部 Compute+Graph 实现统计，51,953 行 / 222 文件，
   排除测试与 vendor。资格程序没有计入产品实现或覆盖。
+- `checked-queue-qualification.json` / `checked-queue-qualification-raw.zip`：补齐两台机器各 12 例
+  checked Scan 与单队列自动续执行资格；两请求 repeat3、失败跳过后段和 C++ static/shared
+  消费通过。私有资源 overlay 的首轮失败与纠正全部保留。真实 HYLE/ggml/IREE 普通接入和产品
+  三交付仍待验收，产品聚合仍为 INCONCLUSIVE，不能以这份资格代签。
 
 源码与工具都在本卡具名 scratch 内；产品只以 Windows checkout 为真相。资格结束后归档并
 清理下载/展开的工具及验证副本，保留项目共享依赖 cache 与模型。

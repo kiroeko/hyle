@@ -1,0 +1,554 @@
+{
+  "kind": "M1-V assigned numerical and external-queue continuation qualification; ordinary product acceptance still pending",
+  "product_head": "2e4d8ecb37c3e2baf3cdae55b20691f381258838",
+  "qualification": "PASS for checked I32 semantics and original asynchronous external-queue composition on Windows RTX4070 and Air/MoltenVK",
+  "product_admission": "INCONCLUSIVE",
+  "new_full_coverage_cells": 0,
+  "pins": {
+    "iree": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+    "ggml": "456172ec733a135778adcd32d00e576a58232e45"
+  },
+  "checked_scan": {
+    "windows": {
+      "status": "PASS",
+      "runtime_sha256": "57d4d00a8d2a55f94dc7e60199acca8f0d644bcfbac7234e1f1919cf2934bbe2",
+      "module_sha256": "5e47cfa0aeafbf6304ef51a7e27fc9e34be2696fd9216352a209451cb701109b",
+      "cases": [
+        {
+          "index": 0,
+          "function": "scan_inclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-0.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-0.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-0.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "fcaed6c72e9b31ad1ea4a51fe519b0fb4b02931f1ec521004ad8d08494a1d3ff",
+          "elapsed_seconds": 0.22803974151611328
+        },
+        {
+          "index": 1,
+          "function": "scan_exclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-0.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-1.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-1.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "3cca5bd754a545d581bbfb68d07cfe4c95f0b0b883fdcc27a2e32661743eb3d9",
+          "elapsed_seconds": 0.21096420288085938
+        },
+        {
+          "index": 2,
+          "function": "scan_inclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-1.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-2.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-2.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "fcaed6c72e9b31ad1ea4a51fe519b0fb4b02931f1ec521004ad8d08494a1d3ff",
+          "elapsed_seconds": 0.2177281379699707
+        },
+        {
+          "index": 3,
+          "function": "scan_exclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-1.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-3.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-3.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "3cca5bd754a545d581bbfb68d07cfe4c95f0b0b883fdcc27a2e32661743eb3d9",
+          "elapsed_seconds": 0.20883846282958984
+        },
+        {
+          "index": 4,
+          "function": "scan_inclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-2.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-4.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-4.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "fcaed6c72e9b31ad1ea4a51fe519b0fb4b02931f1ec521004ad8d08494a1d3ff",
+          "elapsed_seconds": 0.21331405639648438
+        },
+        {
+          "index": 5,
+          "function": "scan_exclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-2.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-5.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-5.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "3cca5bd754a545d581bbfb68d07cfe4c95f0b0b883fdcc27a2e32661743eb3d9",
+          "elapsed_seconds": 0.21898865699768066
+        },
+        {
+          "index": 6,
+          "function": "scan_inclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-3.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-6.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-6.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "fcaed6c72e9b31ad1ea4a51fe519b0fb4b02931f1ec521004ad8d08494a1d3ff",
+          "elapsed_seconds": 0.21193242073059082
+        },
+        {
+          "index": 7,
+          "function": "scan_exclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-3.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-7.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-7.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "3cca5bd754a545d581bbfb68d07cfe4c95f0b0b883fdcc27a2e32661743eb3d9",
+          "elapsed_seconds": 0.211806058883667
+        },
+        {
+          "index": 8,
+          "function": "scan_inclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-4.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-8.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-8.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "fcaed6c72e9b31ad1ea4a51fe519b0fb4b02931f1ec521004ad8d08494a1d3ff",
+          "elapsed_seconds": 0.22212886810302734
+        },
+        {
+          "index": 9,
+          "function": "scan_exclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-4.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-9.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-9.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "3cca5bd754a545d581bbfb68d07cfe4c95f0b0b883fdcc27a2e32661743eb3d9",
+          "elapsed_seconds": 0.21310043334960938
+        },
+        {
+          "index": 10,
+          "function": "scan_inclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-5.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-10.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-10.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "fcaed6c72e9b31ad1ea4a51fe519b0fb4b02931f1ec521004ad8d08494a1d3ff",
+          "elapsed_seconds": 0.2121601104736328
+        },
+        {
+          "index": 11,
+          "function": "scan_exclusive",
+          "argv": [
+            "C:\\hv\\tools-win\\iree\\_runtime_libs\\iree-run-module.exe",
+            "--device=vulkan://GPU-e73765606f5dec196ee43dd3a2c81ef8",
+            "--module=C:\\hv\\checked-scan-c1\\sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@C:\\hv\\checked-scan-c1\\input-5.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\actual-11.npy",
+            "--output=@C:\\hv\\checked-scan-c1\\flag-11.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "3cca5bd754a545d581bbfb68d07cfe4c95f0b0b883fdcc27a2e32661743eb3d9",
+          "elapsed_seconds": 0.26059460639953613
+        }
+      ]
+    },
+    "air": {
+      "status": "PASS",
+      "runtime_sha256": "b7453aadc4197325d58dd66dd8cb22145b54f6ac5e9efaaa4e8ad746e588d496",
+      "module_sha256": "5e47cfa0aeafbf6304ef51a7e27fc9e34be2696fd9216352a209451cb701109b",
+      "cases": [
+        {
+          "index": 0,
+          "function": "scan_inclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-0.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-0.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-0.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "c9515eb5bebc2d44c735e432a7227b1a184100bcb16f5c54ed5c1328f8e7f1fa",
+          "elapsed_seconds": 0.2105579376220703
+        },
+        {
+          "index": 1,
+          "function": "scan_exclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-0.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-1.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-1.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "c70a0ce6380b7c0bde99e6f7fb72d807142c6ac7235dbd1c2c0af2a05f693706",
+          "elapsed_seconds": 0.04821276664733887
+        },
+        {
+          "index": 2,
+          "function": "scan_inclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-1.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-2.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-2.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "c9515eb5bebc2d44c735e432a7227b1a184100bcb16f5c54ed5c1328f8e7f1fa",
+          "elapsed_seconds": 0.047905921936035156
+        },
+        {
+          "index": 3,
+          "function": "scan_exclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-1.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-3.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-3.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "c70a0ce6380b7c0bde99e6f7fb72d807142c6ac7235dbd1c2c0af2a05f693706",
+          "elapsed_seconds": 0.04801297187805176
+        },
+        {
+          "index": 4,
+          "function": "scan_inclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-2.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-4.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-4.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "c9515eb5bebc2d44c735e432a7227b1a184100bcb16f5c54ed5c1328f8e7f1fa",
+          "elapsed_seconds": 0.04792189598083496
+        },
+        {
+          "index": 5,
+          "function": "scan_exclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-2.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-5.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-5.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "c70a0ce6380b7c0bde99e6f7fb72d807142c6ac7235dbd1c2c0af2a05f693706",
+          "elapsed_seconds": 0.047950029373168945
+        },
+        {
+          "index": 6,
+          "function": "scan_inclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-3.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-6.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-6.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "c9515eb5bebc2d44c735e432a7227b1a184100bcb16f5c54ed5c1328f8e7f1fa",
+          "elapsed_seconds": 0.047926902770996094
+        },
+        {
+          "index": 7,
+          "function": "scan_exclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-3.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-7.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-7.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 1,
+          "log_sha256": "c70a0ce6380b7c0bde99e6f7fb72d807142c6ac7235dbd1c2c0af2a05f693706",
+          "elapsed_seconds": 0.0479123592376709
+        },
+        {
+          "index": 8,
+          "function": "scan_inclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-4.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-8.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-8.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "c9515eb5bebc2d44c735e432a7227b1a184100bcb16f5c54ed5c1328f8e7f1fa",
+          "elapsed_seconds": 0.0480341911315918
+        },
+        {
+          "index": 9,
+          "function": "scan_exclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-4.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-9.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-9.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "c70a0ce6380b7c0bde99e6f7fb72d807142c6ac7235dbd1c2c0af2a05f693706",
+          "elapsed_seconds": 0.04798007011413574
+        },
+        {
+          "index": 10,
+          "function": "scan_inclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_inclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-5.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-10.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-10.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "c9515eb5bebc2d44c735e432a7227b1a184100bcb16f5c54ed5c1328f8e7f1fa",
+          "elapsed_seconds": 0.04822397232055664
+        },
+        {
+          "index": 11,
+          "function": "scan_exclusive",
+          "argv": [
+            "/Users/kiro/hyle-m1v-qvk/runtime-build/tools/iree-run-module",
+            "--device=vulkan",
+            "--module=/Users/kiro/hyle-m1v-qvk/checked-scan-c1/sync.vmfb",
+            "--function=scan_exclusive",
+            "--input=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/input-5.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/actual-11.npy",
+            "--output=@/Users/kiro/hyle-m1v-qvk/checked-scan-c1/flag-11.npy"
+          ],
+          "exit_code": 0,
+          "pass": true,
+          "expected_error": 0,
+          "log_sha256": "c70a0ce6380b7c0bde99e6f7fb72d807142c6ac7235dbd1c2c0af2a05f693706",
+          "elapsed_seconds": 0.04812002182006836
+        }
+      ]
+    },
+    "oracle": "Independent int64 prefix sums; exact output in valid cases, overflow flag in invalid cases",
+    "cases": [
+      "valid boundary rows",
+      "positive overflow then cancellation",
+      "negative overflow then cancellation",
+      "exclusive final-total-only overflow",
+      "one element min/max",
+      "3 by 513 normal"
+    ],
+    "implementation": "Original i64 scan plus original conversion/comparison/reduction; no custom scan or shader",
+    "first_failure": "Original exclusive scan accumulator excludes the last input. Case 7 returned no error for [INT32_MAX,1].",
+    "correction": "One correction: original linalg.reduce adds the final total check; no tolerance relaxation",
+    "private_workspace": "Truncated data stays private until the wrapper validates the flag; public output must remain unwritten on overflow",
+    "required_native_feature": "shaderInt64 must be actually enabled, not only supported"
+  },
+  "shared_queue": {
+    "windows_cpp_static_shared": "PASS",
+    "air_cpp_static_shared": "PASS on one compute queue",
+    "sequence": "Original IREE scan -> native GPU boundary copy -> original IREE scan, two simultaneously pending chains, repeat3; caller only waits for final state",
+    "failure": "A failed accepted ready dependency reaches asynchronous completion and skips dependent native work",
+    "progress": "Original iree_async_semaphore_wait_operation_t on the original runtime proactor pool; no extra HYLE thread or polling loop",
+    "host_access": "Four-file private resource-only overlay wraps original QueueSubmit2/BindSparse in a synchronous external owner callback, retaining original internal mutex; default call unchanged",
+    "hook_calls_per_consumer": 48,
+    "owner_and_cost": "One original completion thread for the queue plus original proactor runner; VM and transient allocations/encodings remain provider-owned; boundary copies and notifications are real costs",
+    "limits": "Uses a qualification native queue owner, not yet the product ggml NativeDevice; actual HYLE/ggml/IREE feature bridge, ordinary graph and accepted-prefix teardown remain product gates"
+  },
+  "failed_attempts_preserved": [
+    "Windows source copy hit an unrelated broken documentation symlink; runtime copy excludes docs",
+    "Resource overlay API initially omitted opaque VkQueue declaration; one declaration correction",
+    "A generated launch filename replacement also changed the build path; corrected path, original failed receipt retained",
+    "Resource overlay fields initially preceded required offset-zero HAL resource header, causing access violation; one layout correction"
+  ],
+  "remaining": [
+    "Register, scope and audit independent IREE factor plus named public low-precision descriptors",
+    "Actual product native feature/host-lock/lifetime seam and ordinary Direct/Graph",
+    "Checked Scan failure without output writes and FP8/MXFP4 ordinary MatMul",
+    "Declared Windows/Air product source/static/shared relocation, applicable host instrumentation/OFF gates and P0"
+  ],
+  "budget": {
+    "start_utc": "2026-09-20 08:02:33 UTC",
+    "deadline_utc": "2026-09-20 12:02:33 UTC",
+    "reset": false
+  },
+  "archive": {
+    "path": "checked-queue-qualification-raw.zip",
+    "bytes": 331007,
+    "sha256": "98e618bfe2972deb45cf1eb16c922e821e16aac74f8e57ef09a086fa4a5ecf1f"
+  },
+  "loc": {
+    "implementation_lines": 51953,
+    "files": 222,
+    "excluded": [
+      "tests",
+      "bench",
+      "third_party"
+    ]
+  },
+  "identity_registration": {
+    "factor": "compute_provider_iree_vulkan",
+    "state": "QUEUED",
+    "implementation_target": false,
+    "base": "2e4d8ecb37c3e2baf3cdae55b20691f381258838",
+    "maintenance_checks": {
+      "closure_previous_ref": "PASS",
+      "docs": "PASS",
+      "diff": "PASS"
+    },
+    "selector": "Complete exploratory plan retained. Central-manifest product gates are SELECTED for the later immutable product candidate; not executed or marked PASS in this metadata phase."
+  },
+  "cleanup": {
+    "windows": [
+      {
+        "path": "C:\\hv\\queue-source",
+        "bytes": 101600826,
+        "removed": true
+      },
+      {
+        "path": "C:\\hv\\queue-win-build",
+        "bytes": 38724581,
+        "removed": true
+      }
+    ],
+    "air": [
+      {
+        "path": "/Users/kiro/hyle-m1v-qvk/queue-source",
+        "bytes": 101600826,
+        "removed": true
+      },
+      {
+        "path": "/Users/kiro/hyle-m1v-qvk/queue-build",
+        "bytes": 14936908,
+        "removed": true
+      }
+    ],
+    "preserved": "Canonical checkout, shared caches, local model, active integration inputs and archived qualification sources/receipts"
+  }
+}
