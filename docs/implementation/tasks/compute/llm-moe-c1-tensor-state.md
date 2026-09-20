@@ -30,5 +30,6 @@
 | [Vulkan Y](llm-moe-c1-ggml-vulkan-region.md) | managed region、TopK/Gather/Scan 的接入与交付 |
 | [Y33](llm-moe-c1-vulkan-layernorm.md) / [Y34](llm-moe-c1-vulkan-reduction.md) / [Y35](llm-moe-c1-vulkan-elementwise.md) | 对应批次已完成的资格与未决性能 |
 
-原 C1 用户通知约定由新计划 M3-01 承接：全部适用验收完成时明确通知并暂停供用户提问；
-不把移交、文档提交或旧测试数算完成。矩阵和 registry 仍为当前能力/模块状态的对应真相。
+原C1通知约定曾由M3-01承接；2026-09-20用户已取消该专门通知/暂停，改为**M5开始前暂停并汇报，
+等待明确继续**。当前约定以总计划为准。不把移交、文档提交或旧测试数算完成。
+矩阵和 registry 仍为当前能力/模块状态的对应真相。

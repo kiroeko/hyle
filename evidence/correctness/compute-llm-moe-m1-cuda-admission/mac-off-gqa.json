@@ -1,0 +1,17 @@
+{
+  "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+  "scope": "M1-C CUDA-OFF isolation plus M1-C7 public GQA semantics and old native capability boundary",
+  "air": "PASS: Mac16,12 AppleClang 21.0.0.21000334, CMake 4.3.4, arm64, deployment 14.4; 3 OFF/header + 4 GQA/native/header gates",
+  "mini": "PASS: Mac16,10 AppleClang 21, CMake 4.4.3, arm64, deployment 14.4; exact compiler version in configure log; 3 OFF/header + 4 GQA/native/header gates",
+  "source_identity": "each machine final-source-manifest.json; all product hashes match candidate; later candidate/terminal metadata does not alter compiled files",
+  "off_proof": "all routes OFF; no CUDA compiler discovery and no ggml/FlashInfer acquisition in CMakeCache",
+  "failure_and_fix": "Air static fixture referenced a shared-only descriptor without guarding its declaration; -Werror preserved, identical !HYLE_STATIC condition applied to declaration; original failure retained, shared tests unchanged",
+  "not_covered": [
+    "CUDA device execution on Mac",
+    "Apple GPU provider",
+    "model coverage",
+    "performance"
+  ],
+  "raw": "mac-off-gqa-raw.zip",
+  "raw_sha256": "92d1ff4df64699bd29bfb6ce4c8a30f634d6b4fa751f9b94d02a47277815282d"
+}

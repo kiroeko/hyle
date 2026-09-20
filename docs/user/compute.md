@@ -148,8 +148,8 @@ ggml域由普通CUDA入口冷绑定；expert工厂为`compute::ggml_cuda::provid
 capture cache，输入输出借用到Completion。HYLE用入口/出口两个event连接现有Queue，ggml
 保留片段内部调度和融合。该路径为managed，原版首轮pool/handle与后续capture/cache维护可能
 分配或阻塞host；不在prepare偷跑payload，不支持外部capture。运行失败先收束已接受的原生
-工作并退役该invocation，同一prepared program可创建新槽。M1-C仍在接入验收，完整三交付
-不得由F32或attention正确性代签；全需求域与成熟实现性能规则由M2裁决。
+工作并退役该invocation，同一prepared program可创建新槽。上述限定域已完成Windows/WSL
+源码、静态与动态安装消费；全需求域与成熟实现性能规则由M2裁决。
 
 基本 tensor 使用同一普通 `prepare()` 和 CUDA Graph 入口，程序准备后无需 workspace 或槽私有
 device storage。View 按共同 byte offset 必须别名原 storage；其余逐元素操作仅在输入与输出描述符

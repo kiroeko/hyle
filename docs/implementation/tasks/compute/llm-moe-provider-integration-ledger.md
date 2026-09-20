@@ -15,7 +15,8 @@
 本页的拟定 FIX 必须由相应 owner 的有限卡审计到 AUDITED 才能实施，当前状态以 registry 为准。
 M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路由卡](llm-moe-m1-route-binding.md)
 关闭冷模型条件/原生环境接缝；四环境原生、三交付及适用插桩通过，新增模型覆盖0。
-下一包[M1-C](llm-moe-m1-cuda-admission.md)已完成资源/ABI审计并固定C1–C6；其余未审范围不授权产品改动。
+当前[M1-C](llm-moe-m1-cuda-admission.md)已固定产品候选，Windows/WSL普通入口与三交付、两台Mac
+适用门通过，剩余ggml host插桩待收齐；其余未审范围不授权产品改动。
 旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
 ## 1. Provider 准入处置
@@ -27,7 +28,7 @@ M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路
 | Provider | 裁决与需求 | C++ 接法 / 版本与许可 | 明确边界 |
 |---|---|---|---|
 | ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；拟统一到 `456172ec`，MIT | M1-G已统一lock到`456172ec`并验收资源补丁；普通Provider/lowering仍未完成 |
-| ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | stream/device-buffer 桥未接；不以既有 HYLE CUDA 核代签 |
+| ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | M1-C已接原生stream/device-buffer与有限F32/attention片段，完整批量覆盖仍待M2；不以既有 HYLE CUDA 核代签 |
 | ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | 独立于 MLX runtime；保留上游融合，原生资源/完成需接通 |
 | ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | 既有少量原子不代替完整片段；原生类型/head/subgroup 条件逐域验证 |
 | oneDNN | 已有复用并扩接；CPU F01/F04–F06/F18 | primitive/Graph partition、reorder + MatMul；3.13.2 `71094df4`，Apache-2.0 | locked pin 已有 FP8/E2M1/UE8 reorder 源码；格式组合与设备资格待验证；Q2 原阻塞仍在 |
@@ -112,7 +113,7 @@ M1-G 的独立 patch factor 完成维护/升级/OOM/并发/三交付审计之前
 
 | 批 | 需求行 | 实际消费与可复用映射 | 到点产物 |
 |---|---|---|---|
-| B1 张量与状态基础 | F01–F04/F19 | embedding→norm/gate→residual/index/state；一份参数/类型表驱动四 Provider lowering | 四路线普通 Direct/Graph、动态错误、两请求/旧结果、适用三交付；满足全部门后触发 M3-01 通知并暂停供用户提问 |
+| B1 张量与状态基础 | F01–F04/F19 | embedding→norm/gate→residual/index/state；一份参数/类型表驱动四 Provider lowering | 四路线普通 Direct/Graph、动态错误、两请求/旧结果、适用三交付；满足全部门后记入M3-01，按用户最新指示直接继续 |
 | B2 线性与注意力 | F05–F08 | 原版 dense/quantized FFN、GQA prefill/decode、KV/RoPE/YaRN/Hadamard；用整片段复用 packing/workspace | 相同 codes/scales 的 Q4/Q8 消费，head256、变 position/length、压缩驻留和必要转换账单 |
 | B3 递归混合 | F09–F11 | 原版 conv/DeltaNet/KDA fused 或现成图组合；state 输入输出整体接入 | prompt1/17/128、257-token chunk 与单步等价、非零状态；本地2B B16/Q4/Q8 的24层、8步 teacher-forced decode |
 | B4 MoE 与模型片段 | F12–F14 | 上游 routing/dispatch/grouped expert/combine、latent/SiTU、mHC/AttnRes/MTP 组合 | 空/偏斜专家、重复 combine、真实宽度、共享状态；不把引擎调度/采样带入 SDK |
@@ -129,6 +130,9 @@ M2 的批量映射不按256格各建一套 adapter；不同 Provider 仍有自�
 M3 汇总64行四路线的实际证据；准入第三方未接通数不为0、资格项未裁决或适用验证未运行时，
 M4/M5 均不得启动。只有成熟组合、版本和后备路径都存在具名反例的残余缺口，才允许 M4 单独
 审计最小补缺；预计新增自研0，接口缺陷不能算算法缺失。
+
+按2026-09-20用户指示，**进入M5前必须暂停并汇报成熟Provider覆盖、模型验证和剩余缺口，
+等待用户明确继续**。原M3-01专门通知/暂停已取消。
 
 M5 才核对所有 CPU/CUDA/Metal/Vulkan 冻结算法。有效 LOSS 即删除可完整替代域；算法优化预算0，
 总分析2小时/采样2小时，不按旧算子数量续杯。无需求旧域直接清理，不新造性能课题。SIMD 基础库

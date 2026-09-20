@@ -2,7 +2,7 @@
 
 本目录保存[M1-C资源卡](../../../docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md)
 的有界上游入口资格及后续Linux FlashInfer接入检查点，不是M1-C整包完成证书。
-各检查点按下文保留实际状态；最新三交付已通过，剩余host插桩/Mac门与完整模型需求覆盖仍待验证。
+各检查点按下文保留实际状态；最新三交付与Mac适用门已通过，剩余host插桩与完整模型需求覆盖仍待验证。
 新增64域×四路线覆盖格为0。
 
 ## Linux FlashInfer产品接入（2026-09-20）
@@ -71,6 +71,17 @@ Provider DLL各自嵌入ggml，后者timer尚未初始化。冷context调用上�
 这两项产品修复只在Windows生效，WSL原收据身份与复用条件保持明确；没有据此重跑Linux交付。
 当前Compute+Graph为51,161实现行/217文件，不含测试。host插桩与两台Mac剩余门尚待完成，
 M1-C仍未关闭，不签模型覆盖或P1。
+
+## Mac 适用门与候选复核
+
+[Mac收据](mac-off-gqa.json)及raw包记录Air/Mini各三项CUDA-OFF/逐头门、四项公共GQA语义/
+旧CPU不支持域隔离/逐头门。OFF缓存明确没有CUDA compiler与ggml/FlashInfer source获取。
+Air首次编译的shared-only测试声明警告保留，声明按原用例相同条件修正；Werror与数值门未降低。
+这些结果不代表Mac运行CUDA，也不签Apple GPU新Provider。候选为`43732241`，后续状态文档不改产品。
+
+[候选复核](candidate-review.md)单独检查资源/失败/图边界/数值/安装及P0成本，没有新增产品FIX。
+Windows SDK及两台Mac已完成的临时副本归档后清理，共3,228,056,181字节；保留依赖缓存、本地
+模型以及仍在验证的原生/插桩目录。ggml host sanitizer结果仍待收齐。
 
 ## FlashInfer原版入口资格
 
