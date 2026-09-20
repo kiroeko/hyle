@@ -1,0 +1,96 @@
+{
+  "kind": "M2-B1 CUDA bounded original-library source audit; not full product coverage",
+  "baseline": "c9744a45b9f6aa2fab27d857af70410f04685518",
+  "scoped_checkpoint": "be44efa5",
+  "audited_checkpoint": "4d46d4d0",
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "sources": [
+    {
+      "path": "src/ggml-cuda/ggml-cuda.cu",
+      "sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634"
+    },
+    {
+      "path": "src/ggml-cuda/unary.cu",
+      "sha256": "e8340525baecc6d34b6250fb4e588c774ddf22accc49b6526fa15691ae7def9a"
+    },
+    {
+      "path": "src/ggml-cuda/binbcast.cu",
+      "sha256": "08c4e21cc2144ee317c52b23c940105f04ffa47a3ed71cbf1f5e06ecaa8cb810"
+    },
+    {
+      "path": "src/ggml-cuda/cpy.cu",
+      "sha256": "db0520aac5613b26956422e7b10253c564f34cec81cbbe90cdf8b28143ba0984"
+    },
+    {
+      "path": "src/ggml-cuda/concat.cu",
+      "sha256": "3cba4d2a26e6a70970ae9b77017f449e41d48e9b1297ba64966e18c6146e53db"
+    },
+    {
+      "path": "src/ggml-cuda/norm.cu",
+      "sha256": "8cb872a9633a7c68c5e9fa8c1f7d39afe9e66636c1299b9fc610b1b4217e7307"
+    },
+    {
+      "path": "src/ggml-cuda/sumrows.cu",
+      "sha256": "ad4dd1986b0c9446d9b472baa68b29c1638af80a3c11ac47f45a2ae209c5dff9"
+    },
+    {
+      "path": "src/ggml-cuda/softmax.cu",
+      "sha256": "ac288d3d091ceab46e56b05e298b893f37f6129a7e3b36703c3244675d384976"
+    },
+    {
+      "path": "src/ggml.c",
+      "sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67"
+    }
+  ],
+  "first_binding": {
+    "storage": "plain F32/F16/BF16; nonempty dense rank0..8 or element-aligned rank<=4 strides",
+    "operations": [
+      "Copy",
+      "Cast",
+      "Concat",
+      "Add/Subtract/Multiply/Divide broadcasting",
+      "Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh",
+      "RmsNorm with affine",
+      "LayerNorm centered two-pass with affine",
+      "Sum/Mean selected axes"
+    ],
+    "native_execution": "Original ggml CUDA kernels and graph backend; no new kernel, CPU model fallback, pin or resource-patch change",
+    "lifetime": "existing independent backend/streams/buffers/events per invocation; bind producer roots through reshape views, mark published roots and views; cold scalar uploads; account variadic ports in metadata capacity",
+    "numeric_note": "Original CUDA LayerNorm uses E[x*x]-E[x]*E[x]. Adapter composes original mean/sub/sqr/mean/add/sqrt/div to express centered variance; shifted-input oracle declared. No timing or old-HYLE comparison."
+  },
+  "capacity_review": [
+    "element count <= (INT32_MAX-1024)/sizeof(float), required bytes and strides <= INT32_MAX",
+    "original CUDA cpy scalar transpose falls back to generic 1D when grid_y/grid_z exceed USHRT_MAX; no arbitrary descriptor rank-dependent launch restriction added",
+    "dense matrix normalization and row reduction have singleton channel/sample dimensions; original binbcast handles broadcast indices; concat uses its original contiguous flattened kernel",
+    "fixed metadata arena reserves count*4 + nodes*64 + variadic concat ports*4 + 16 with prechecked overflow"
+  ],
+  "remaining": [
+    "empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
+    "other storage types and checked index cast",
+    "dynamic Gather/Scatter, checked Scan and stable TopK",
+    "Select/min/max, stable activation/gates, full masked Softmax/LogSoftmax qualification",
+    "cross-environment delivery, sanitizer and immutable-candidate performance gates"
+  ],
+  "softmax_contract_correction": "Public no-valid-row result is NaN, not zero; CPU Release numeric rejection corrected in fd37c586. Native Debug and full-domain qualification remain distinct. No oneDNN Q2 recovery.",
+  "source_design_budget_minutes": {
+    "used": 56,
+    "remaining": 64,
+    "total": 120
+  },
+  "performance_samples": 0,
+  "frozen_hyle_math_changes": 0,
+  "new_complete_requirement_cells": 0,
+  "slice_boundary_refinement": {
+    "counterexamples": [
+      "tests/graph_route_cuda/concat_test.cc: Direct Concat of BF16 slices",
+      "tests/graph_route_cuda/tensor_test.cc: Direct Copy of typed offset slice"
+    ],
+    "sources": [
+      "src/ggml-cuda/cpy.cu:180-245",
+      "src/ggml-cuda/concat.cu: byte-width scalar copies"
+    ],
+    "decision": "Copy/Cast/Concat use each storage type alignment. Recipe and Graph combine all reader/writer requirements for a boundary value; non-copy math remains 256. Cold immutable per-value alignment, same native pointer checks, no extra copy or new kernel.",
+    "root_cause_corrections": 1,
+    "regression": "Direct slices and Graph slice-Copy-Unary, plus capture tests with existing prepared-only compile contract"
+  }
+}

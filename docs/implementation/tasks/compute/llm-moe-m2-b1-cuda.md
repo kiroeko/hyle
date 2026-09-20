@@ -97,3 +97,21 @@ Graph合并合法pure节点，发布的view及其root都标output；attention仍
 C1–C4 的首批实现由上述精确域约束；未绑定域和全部适用验证继续留在本卡，不按一批提交签收B1。
 预声明差分增加：rank6/8双向广播、非相邻轴归约、scalar/strided输入、三种浮点的转换/特殊值，
 LayerNorm大偏移常量/低方差行，以及一张发布中间值的多节点图在两个slot重放。
+
+### C2 定向细化：真实 slice 边界（实施前冻结）
+
+首轮 Windows 真机的新数学/资源/Graph 测试通过，普通 Graph 回归暴露旧 capture 消费者没有在
+编译期声明 prepared-only。迁移到既有 `ProviderReplayPolicy::kRequirePrepared` 后保留其原
+capture 验收；普通无限制入口另验 managed ggml，既有 owner/API 无需改动。
+
+接着两个旧普通 Direct 消费者提供了真实反例：Copy/Concat 接受元素对齐的 slice，却被继承的
+256字节端口要求在 submit 拒绝。原版 `cpy.cu:180–245` 和 `concat.cu` 使用各storage类型的
+scalar load/store，转置tile只对shared tile要求更高对齐；无需256字节外来地址。C2 因此固定：
+
+- Copy/Cast/Concat 的输入和输出最小对齐取相应storage类型；其余数学/attention仍保持256。
+- Graph 对每个boundary value合并所有原版读/写节点要求，取最严格值；发布的复制结果若随后
+  被数学节点使用，仍须数学对齐，不能只检查最后一个writer。Compute Recipe应用完全相同的规则。
+- 不改资源bridge，不热搜索或添加copy；不可变Program保存每value已算好的对齐要求，submit
+  保留原生指针/offset检查。新增两个slice Direct回归及一张slice→Copy→Unary的原版region。
+- 这是一项具名资源根因的第一次修正；不降低数值/capture门，不解冻任何旧数学。源码/设计
+  累计56分钟、余64分钟；普通编译和正确性单列。全部21行与后续平台/交付/P1仍未完成。
