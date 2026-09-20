@@ -229,3 +229,8 @@ map 定位到 exe 内的 `ggml_time_us + 0x24`：测试静态嵌入的 ggml time
 `MetadataArena` 只初始化其 DLL 内的私有副本。普通 CUDA provider 已在冷 context 创建中调用
 上游 `ggml_time_init()`，其三交付结果未失效。测试在自己的原生创建边界执行相同初始化；
 不改变产品代码，不关闭断言或跳过 CUDA 执行。重跑该 factor 后再继续未执行的 selected 门。
+
+共同 runtime 五门随后全部通过。剩余回归已通过 oneDNN、Compute 的 CPU/CUDA/Vulkan 路线
+及 Graph 本体；`graph_provider_ggml_cuda` 的独立测试同样漏写直接使用的 `hyle_graph` 链接
+依赖（25 个未解析符号均来自 GraphBuilder/Graph/Invocation/compile）。仅补该测试的 DEPS，
+不改已关闭 Provider 的产品依赖；保留 41 个已通过门的精确候选结果，从失败门继续。
