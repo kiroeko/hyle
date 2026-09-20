@@ -3,6 +3,126 @@
   "expanded_tree_algorithm": "hyle-path-hex-v1-raw-sha256",
   "dependencies": [
     {
+      "name": "iree_runtime",
+      "class": "fetchcontent",
+      "repository": "https://github.com/iree-org/iree.git",
+      "version": "3.12.0rc20260919",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "git_tree": "35b33a4180e5288aa2aef1f80b40aacf0101e059",
+      "archive": {
+        "url": "https://codeload.github.com/iree-org/iree/tar.gz/6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+        "sha256": "7ddac6a12f17c3822dbcbf1227abe67ee7de68f40d429f307d9ab2bdf137e702"
+      },
+      "expanded_tree_sha256": "a1d2c997a8d6975697b1bf696114c1a0dcba2108872cb878b2325483562fa946",
+      "license": {
+        "expression": "Apache-2.0 WITH LLVM-exception",
+        "files": [
+          {
+            "root": "dependency",
+            "path": "LICENSE",
+            "sha256": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "iree_flatcc",
+      "class": "fetchcontent",
+      "repository": "https://github.com/dvidelabs/flatcc.git",
+      "version": "9362cd00f000",
+      "revision": "9362cd00f0007d8cbee7bff86e90fb4b6b227ff3",
+      "git_tree": "1856f00c1fa72c7ab377539402356f50634a2175",
+      "archive": {
+        "url": "https://codeload.github.com/dvidelabs/flatcc/tar.gz/9362cd00f0007d8cbee7bff86e90fb4b6b227ff3",
+        "sha256": "f77f842e996f5bbfa25305a7b38b40d1325fb44154f2bf9880c58356ece92c62"
+      },
+      "expanded_tree_sha256": "5640fe0b16539a264496249a92dde43e11f2ea42764355a17d12dee1a49a6c74",
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "dependency",
+            "path": "LICENSE",
+            "sha256": "c8f0d9c1f92c658d87ebd854ee7447a3d3912d2c3a5c78c117787be5d5da8af3"
+          },
+          {
+            "root": "dependency",
+            "path": "NOTICE",
+            "sha256": "adc7608d0e1b6b88ddec742473dc4a05878b1788d8dd8b8b4abfc0e3404488f4"
+          },
+          {
+            "root": "dependency",
+            "path": "include/flatcc/portable/LICENSE",
+            "sha256": "cdaa0a9f209382e44e614ab520c05111b0edfc486e3800da093b77c054d02ea1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "iree_vulkan_headers",
+      "class": "fetchcontent",
+      "repository": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+      "version": "df60f0316899",
+      "revision": "df60f0316899460eeaaefa06d2dd7e4e300c1604",
+      "git_tree": "63a29d8b32897987f3464da8c8910ab99f0ff1d0",
+      "archive": {
+        "url": "https://codeload.github.com/KhronosGroup/Vulkan-Headers/tar.gz/df60f0316899460eeaaefa06d2dd7e4e300c1604",
+        "sha256": "70de3ec1eec289552052dfb886a49a4578b65d84fd536da3254731c8165cb3e6"
+      },
+      "expanded_tree_sha256": "ee8016d9fd7d13446c2cd5f7f4df2be56067bd2201b8bff8dc40a99e0cb944e0",
+      "license": {
+        "expression": "Apache-2.0 OR MIT",
+        "files": [
+          {
+            "root": "dependency",
+            "path": "LICENSE.md",
+            "sha256": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc"
+          },
+          {
+            "root": "dependency",
+            "path": "LICENSES/Apache-2.0.txt",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "root": "dependency",
+            "path": "LICENSES/MIT.txt",
+            "sha256": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227"
+          }
+        ]
+      }
+    },
+    {
+      "name": "iree_vulkan_runtime_patches",
+      "class": "in_tree",
+      "repository": "https://github.com/iree-org/iree.git",
+      "version": "3.12.0rc20260919",
+      "revision": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "git_tree": "35b33a4180e5288aa2aef1f80b40aacf0101e059",
+      "archive": {
+        "url": "https://codeload.github.com/iree-org/iree/tar.gz/6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+        "sha256": "7ddac6a12f17c3822dbcbf1227abe67ee7de68f40d429f307d9ab2bdf137e702"
+      },
+      "license": {
+        "expression": "Apache-2.0 WITH LLVM-exception",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/LICENSE",
+            "sha256": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/NOTICE.md",
+            "sha256": "140e1559e931065ba3b712a4b8ef48f56778e78fe7eb00ea952ec2b16da82249"
+          }
+        ]
+      },
+      "vendored": {
+        "path": "third_party/iree_vulkan_runtime",
+        "tree_sha256": "c724b8c3fc0ee5752f2aa999b0c57d67202ad3b31b30523e288f2fe5823fcccd"
+      }
+    },
+    {
       "repository": "https://github.com/ggml-org/ggml.git",
       "version": "ggml-snapshot-456172ec733a",
       "revision": "456172ec733a135778adcd32d00e576a58232e45",
@@ -439,7 +559,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_vulkan_runtime",
-        "tree_sha256": "591acbdc5309eb88c69a737824da2cc13842233459dda67e7864a574bbe42aab"
+        "tree_sha256": "20884df730f6e617b5788196aa3cb4e38ad85dff21c8f5dfa04326a7ff7b32a9"
       },
       "license": {
         "expression": "MIT",
@@ -452,7 +572,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_vulkan_runtime/NOTICE.md",
-            "sha256": "bbeb96c11f58dcaec143a782952e6cc067b37a23d64ff642d07c9c0470af7019"
+            "sha256": "0ed9773155d730f95cfdf150cc9f737a7ecbfb37377f824faa165ebeb74d823c"
           }
         ]
       }

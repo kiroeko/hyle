@@ -93,7 +93,17 @@ Failure create(const Options &options, Runtime **result,
                device->buffer_device_address,
                device->hyle_storage_update_after_bind,
                options.get_instance_proc_addr,
-               device->properties.limits.minStorageBufferOffsetAlignment};
+               device->properties.limits.minStorageBufferOffsetAlignment,
+               device->hyle_sync2,
+               device->hyle_timeline,
+               device->hyle_scalar_layout,
+               device->hyle_shader_f16,
+               device->hyle_storage16,
+               device->shader_int64,
+               device->hyle_portability_subset,
+               device->has_internally_synchronized_queues
+                   ? static_cast<std::uint32_t>(eInternallySynchronizedKHR)
+                   : 0u};
     *result = runtime;
     return {};
   } catch (...) {

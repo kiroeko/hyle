@@ -497,9 +497,9 @@ _hyle_declare_component(compute_provider_flashinfer
 _hyle_declare_component(compute_provider_ggml_metal
   PRIVATE_DEPS core compute_ops compute_ggml_runtime error mem)
 
-# M1-V: numerical and native queue qualification passed; identity only until
-# the independent runtime/artifact owner completes SCOPED and AUDITED.
-_hyle_declare_component(compute_provider_iree_vulkan QUEUED)
+# Independent original Vulkan VM/program owner; no dependency on Graph or the route.
+_hyle_declare_component(compute_provider_iree_vulkan
+  PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

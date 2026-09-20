@@ -124,6 +124,19 @@ IREE Scan 首个普通域为 dense I32、末轴、正形状；其余已存在功
 七问裁决：成熟实现承载、明确有限域、复用Mem/Error/native owner、P0完整计费、私有C边界、
 三交付同源、普通接口可达；实现及适用验收尚未签字。调查未新增预算，按上述有限FIX开始实施。
 
+### I3/I6 实施细化：VM 挂起与失败前缀
+
+原版 `vm/invocation.c` 允许 FP8 在一次调用内挂起；同步 invoke 后才释放输入 fence 会形成等待环。
+使用原版 asynchronous invoke，私有适配仅把锁定程序的 HAL semaphore wait 交给原 proactor；
+不建立 HYLE 线程、轮询循环或 kernel 调度器。回调返回之前仍保留 invocation，普通执行不用用户 poll 推进。
+
+`vulkan/queue.c` 的 deferred submission 在依赖就绪时才取得 epoch，故失败后一个无依赖 barrier
+可能越过此前 deferred 前缀，不能作为排空证明。有限 FIX 改为暴露原 completion thread 已有
+stop/cancel-deferred/drain-pending 路径的完成 semaphore。仅 VM/执行基础设施错误使该 IREE
+owner 终止并取消其余请求，重建 owner 后恢复；数值 overflow 由私有 flag 返回，不触发此路径。
+它不销毁借用的 VkDevice/queue，也不停止同设备 ggml owner。此故障域须由普通入口说明和失败门
+验收；当前仍是实现中，不因 native 数值测试通过而签 I6/I7。调查预算不延长，不新增数学范围。
+
 ## 实施检查点：共同格式与 MXFP4 普通入口
 
 AUDITED 检查点为 `8b3c5c30`，随后产品候选 `d5cd5568c179d0f9bbff1cd528b306f3a9bde558`

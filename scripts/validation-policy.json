@@ -5,6 +5,7 @@
     "cmake/HyleAppleRuntime.cmake": "compute_route_apple"
   },
   "factor_configure_cache": {
+    "compute_provider_iree_vulkan": {"HYLE_COMPUTE_VULKAN": "ON"},
     "compute_provider_ggml_metal": {"HYLE_COMPUTE_APPLE": "ON"},
     "compute_provider_flashinfer": {"HYLE_COMPUTE_CUDA": "ON"},
     "compute_provider_ggml_cuda": {"HYLE_COMPUTE_CUDA": "ON"},
@@ -50,6 +51,7 @@
     }
   },
   "factor_supported_systems": {
+    "compute_provider_iree_vulkan": ["Windows", "Linux", "Darwin"],
     "compute_provider_ggml_metal": ["Darwin"],
     "compute_provider_flashinfer": ["Linux"],
     "compute_provider_ggml_cuda": ["Windows", "Linux"],
@@ -67,6 +69,7 @@
     "compute_provider_ggml_vulkan": ["Windows", "Linux", "Darwin"]
   },
   "vendored_input_owners": {
+    "third_party/iree_vulkan_runtime/": ["compute_provider_iree_vulkan"],
     "third_party/ggml_cuda_runtime/": ["compute_ggml_runtime"],
     "third_party/ggml_runtime/": ["compute_ggml_runtime"],
     "third_party/ggml_vulkan_shaders/": ["compute_route_vulkan"],

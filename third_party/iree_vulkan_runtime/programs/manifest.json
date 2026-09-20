@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "upstream_iree": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+  "contract": "Original parameterized Vulkan 1.3 baseline descriptor programs; async external fences. Checked scan uses original I64 scan/reduce/compare/trunc; FP8 uses original conversion/linalg MatMul. No runtime Python/compiler or model-sized persistent F32 expansion.",
+  "qualification": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/checked-queue-qualification.json",
+  "programs": [
+    {
+      "name": "checked_scan",
+      "file": "checked_scan.vmfb.b64",
+      "sha256": "e943a189a10732fb3e8b902c15c0687421d6cd696c65202b14eb52e6970bd5fb",
+      "bytes": 38751,
+      "recipe": "checked_scan.mlir",
+      "recipe_sha256": "d454110942190ee0752c9b644f31b81ddc89713f130519aaa56a8519a2f06630",
+      "exports_used": [
+        "scan_inclusive",
+        "scan_exclusive"
+      ]
+    },
+    {
+      "name": "fp8",
+      "file": "fp8.vmfb.b64",
+      "sha256": "5ee3469dcb7db4e7f560fd19e6592803c1fa6a355d27c429adcfa8a85b4a059b",
+      "bytes": 37541,
+      "recipe": "fp8.mlir",
+      "recipe_sha256": "d8cb4b55da90681d67b8ea5f0c7468f8cb1af529b0711fda9b7433a18f62c56d",
+      "exports_used": [
+        "fp8_f32_scale",
+        "fp8_ue8_scale"
+      ]
+    }
+  ]
+}

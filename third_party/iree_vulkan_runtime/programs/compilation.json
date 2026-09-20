@@ -1,0 +1,122 @@
+{
+  "checked_scan": {
+    "kind": "Public checked Scan qualification via original wide scan, standard conversion/comparison/reduction; no custom math kernel",
+    "status": "PASS",
+    "recipe_sha256": "d454110942190ee0752c9b644f31b81ddc89713f130519aaa56a8519a2f06630",
+    "commands": [
+      {
+        "argv": [
+          "C:/hv/tools-win/iree/compiler/_mlir_libs/iree-compile.exe",
+          "C:\\hv\\checked-scan-c1\\checked.mlir",
+          "--iree-hal-target-device=vulkan",
+          "--iree-vulkan-target=vp_android_baseline_2022",
+          "--iree-vulkan-dispatch-abi=descriptors",
+          "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int64",
+          "-o",
+          "C:\\hv\\checked-scan-c1\\sync.vmfb"
+        ],
+        "exit_code": 0,
+        "valid": true,
+        "elapsed_seconds": 0.18650126457214355,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv": [
+          "C:/hv/tools-win/iree/compiler/_mlir_libs/iree-compile.exe",
+          "C:\\hv\\checked-scan-c1\\checked.mlir",
+          "--iree-hal-target-device=vulkan",
+          "--iree-vulkan-target=vp_android_baseline_2022",
+          "--iree-vulkan-dispatch-abi=descriptors",
+          "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int64",
+          "--iree-execution-model=async-external",
+          "-o",
+          "C:\\hv\\checked-scan-c1\\async.vmfb"
+        ],
+        "exit_code": 0,
+        "valid": true,
+        "elapsed_seconds": 0.18706154823303223,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "sync_vmfb_sha256": "5e47cfa0aeafbf6304ef51a7e27fc9e34be2696fd9216352a209451cb701109b",
+    "async_vmfb_sha256": "e943a189a10732fb3e8b902c15c0687421d6cd696c65202b14eb52e6970bd5fb"
+  },
+  "fp8": {
+    "kind": "Q-VK original operation composition, parameterized-c2 offline artifact",
+    "status": "PASS",
+    "commands": [
+      {
+        "argv": [
+          "C:/hv/tools-win/iree/compiler/_mlir_libs/iree-opt.exe",
+          "C:\\hv\\qvk\\parameterized-c2.mlir",
+          "--mlir-print-op-generic",
+          "-o",
+          "C:\\hv\\qvk\\parameterized-c2-generic.mlir"
+        ],
+        "exit_code": 0,
+        "valid": true,
+        "elapsed_seconds": 0.022160053253173828,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv": [
+          "wsl",
+          "-e",
+          "env",
+          "LD_LIBRARY_PATH=/mnt/c/hv/llvm23/usr/lib/x86_64-linux-gnu:/mnt/c/hv/llvm23/usr/lib/llvm-23/lib",
+          "/mnt/c/hv/llvm23/usr/lib/llvm-23/bin/mlir-opt",
+          "/mnt/c/hv/qvk/parameterized-c2-generic.mlir",
+          "--allow-unregistered-dialect",
+          "--pass-pipeline=builtin.module(arith-expand{include-f8e8m0=true})",
+          "--mlir-print-op-generic",
+          "-o",
+          "/mnt/c/hv/qvk/parameterized-c2-llvm23.mlir"
+        ],
+        "exit_code": 0,
+        "valid": true,
+        "elapsed_seconds": 2.8131558895111084,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv": [
+          "C:/hv/tools-win/iree/compiler/_mlir_libs/iree-compile.exe",
+          "C:\\hv\\qvk\\parameterized-c2-llvm23.mlir",
+          "--iree-hal-target-device=vulkan",
+          "--iree-vulkan-target=vp_android_baseline_2022",
+          "--iree-vulkan-dispatch-abi=descriptors",
+          "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Float16,cap:StorageBuffer16BitAccess,ext:SPV_KHR_16bit_storage",
+          "-o",
+          "C:\\hv\\qvk\\parameterized-c2-sync.vmfb"
+        ],
+        "exit_code": 0,
+        "valid": true,
+        "elapsed_seconds": 0.19313502311706543,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv": [
+          "C:/hv/tools-win/iree/compiler/_mlir_libs/iree-compile.exe",
+          "C:\\hv\\qvk\\parameterized-c2-llvm23.mlir",
+          "--iree-hal-target-device=vulkan",
+          "--iree-vulkan-target=vp_android_baseline_2022",
+          "--iree-vulkan-dispatch-abi=descriptors",
+          "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Float16,cap:StorageBuffer16BitAccess,ext:SPV_KHR_16bit_storage",
+          "--iree-execution-model=async-external",
+          "-o",
+          "C:\\hv\\qvk\\parameterized-c2-async.vmfb"
+        ],
+        "exit_code": 0,
+        "valid": true,
+        "elapsed_seconds": 0.19753193855285645,
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "recipe_sha256": "d8cb4b55da90681d67b8ea5f0c7468f8cb1af529b0711fda9b7433a18f62c56d",
+    "sync_vmfb_sha256": "888bd23103fa515547b842df825610ded065dc680884f374735a78b49f023e75",
+    "async_vmfb_sha256": "5ee3469dcb7db4e7f560fd19e6592803c1fa6a355d27c429adcfa8a85b4a059b"
+  },
+  "fp8_legalized_sha256": "44a9e21f92c1dbc94eade7093acde876bee3afb6e5c8d8171ae1904e14059749",
+  "note": "Original qualification command paths document tool identity; install consumers only use embedded bytecode.",
+  "vendored_fp8_legalized_sha256": "7c3b77c2d7b7019ef8c4e9b62804754287b63489cb8d148b46ed3bff9ed05376",
+  "vendored_fp8_legalized_normalization": "Only the final empty line was removed; original compiler-input hash above and qualified VMFB bytes are preserved."
+}

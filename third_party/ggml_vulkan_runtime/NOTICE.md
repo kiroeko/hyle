@@ -58,3 +58,9 @@ extension enumeration; devices without that extension do not request it.
 These changes do not certify asynchronous partial-submission failure handling
 or the ordinary Direct/Graph adapter; those have separate remaining acceptance.
 The CPU ggml provider remains governed by its separate blocked record.
+
+The native owner now queries and enables synchronization2 when the physical
+device and instance API both support Vulkan 1.3. It publishes only features
+actually enabled at device creation for IREE's external-device contract;
+1.2-only devices retain their existing path without advertising synchronization2.
+No shader or numerical behavior is changed by this resource integration.

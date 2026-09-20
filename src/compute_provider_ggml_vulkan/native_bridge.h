@@ -37,6 +37,14 @@ struct Native {
   bool storage_update_after_bind = false;
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
   std::uint64_t storage_buffer_alignment = 1;
+  bool synchronization2 = false;
+  bool timeline_semaphore = false;
+  bool scalar_block_layout = false;
+  bool shader_float16 = false;
+  bool storage_buffer16 = false;
+  bool shader_int64 = false;
+  bool portability_subset = false;
+  std::uint32_t queue_create_flags = 0;
 };
 enum class Error {
   None,

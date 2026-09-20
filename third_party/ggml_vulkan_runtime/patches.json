@@ -49,7 +49,7 @@
         },
         {
           "before": "    ggml_backend_buffer_type buffer_type;",
-          "after": "    ggml_backend_buffer_type buffer_type{};\n    bool hyle_storage_update_after_bind = false;"
+          "after": "    ggml_backend_buffer_type buffer_type{};\n    bool hyle_storage_update_after_bind = false;\n    bool hyle_sync2 = false;\n    bool hyle_timeline = false;\n    bool hyle_scalar_layout = false;\n    bool hyle_shader_f16 = false;\n    bool hyle_storage16 = false;\n    bool hyle_portability_subset = false;"
         },
         {
           "before": "        VK_LOG_DEBUG(\"destroy device \" << name);",
@@ -73,7 +73,7 @@
         },
         {
           "before": "        device->device = device->physical_device.createDevice(device_create_info);",
-          "after": "        device->hyle_storage_update_after_bind = vk12_features.descriptorBindingStorageBufferUpdateAfterBind;\n        device->device = device->physical_device.createDevice(device_create_info);"
+          "after": "        device->hyle_storage_update_after_bind = vk12_features.descriptorBindingStorageBufferUpdateAfterBind;\n        device->hyle_sync2 = hyle_sync2.synchronization2;\n        device->hyle_timeline = vk12_features.timelineSemaphore;\n        device->hyle_scalar_layout = vk12_features.scalarBlockLayout;\n        device->hyle_shader_f16 = vk12_features.shaderFloat16;\n        device->hyle_storage16 = vk11_features.storageBuffer16BitAccess;\n        device->device = device->physical_device.createDevice(device_create_info);"
         },
         {
           "before": "        return device;\n    }\n\n    return vk_instance.devices[idx];",
@@ -269,7 +269,7 @@
         },
         {
           "before": "        std::vector<const char *> device_extensions;",
-          "after": "        std::vector<const char *> device_extensions;\n        // HYLE: required for every device advertising Vulkan portability.\n        for (const auto &extension : ext_props) {\n            if (strcmp(extension.extensionName, \"VK_KHR_portability_subset\") == 0) {\n                device_extensions.push_back(\"VK_KHR_portability_subset\");\n                break;\n            }\n        }"
+          "after": "        std::vector<const char *> device_extensions;\n        // HYLE: required for every device advertising Vulkan portability.\n        for (const auto &extension : ext_props) {\n            if (strcmp(extension.extensionName, \"VK_KHR_portability_subset\") == 0) {\n                device_extensions.push_back(\"VK_KHR_portability_subset\");\n                device->hyle_portability_subset = true;\n                break;\n            }\n        }"
         },
         {
           "before": "    ggml_vk_create_pipeline(device, device->pipeline_get_rows[GGML_TYPE_I32],     \"get_rows_i32\",     get_rows_i32_len,     get_rows_i32_data,     \"main\", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);",
@@ -278,9 +278,13 @@
         {
           "before": "    uint32_t ncols_pad_log2 = (uint32_t)ceilf(log2f(float(ncols)));\n    uint32_t ncolsp2 = 1 << ncols_pad_log2;",
           "after": "    // HYLE: F32 log2 rounds 2^21+1 down and drops the final input.\n    uint32_t ncols_pad_log2 = 0;\n    for (uint32_t remaining = ncols > 0 ? ncols - 1 : 0; remaining != 0; remaining >>= 1) {\n        ++ncols_pad_log2;\n    }\n    uint32_t ncolsp2 = uint32_t{1} << ncols_pad_log2;"
+        },
+        {
+          "before": "        last_struct = (VkBaseOutStructure *)&vk12_features;\n\n        VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR",
+          "after": "        last_struct = (VkBaseOutStructure *)&vk12_features;\n        VkPhysicalDeviceSynchronization2Features hyle_sync2{};\n        hyle_sync2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;\n        if (device->properties.apiVersion >= VK_API_VERSION_1_3 &&\n            vk_instance.loader_version >= VK_API_VERSION_1_3) {\n            last_struct->pNext = (VkBaseOutStructure *)&hyle_sync2;\n            last_struct = (VkBaseOutStructure *)&hyle_sync2;\n        }\n\n        VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR"
         }
       ],
-      "after_sha256": "2d12fca6ffdf7aee254847ef4ca2ea082f5809d67af0463abe3d1382fce0a45d"
+      "after_sha256": "d102b3ed762a5df0d50e42ece0faf84b775ba1ae37ca0b3286174c3d5e4fda70"
     },
     {
       "path": "src/ggml.cpp",
