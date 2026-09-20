@@ -3,6 +3,7 @@
 #include "vulkan_tensor.h"
 
 #include "hyle/obs/trace.h"
+#include "hyle/compute/low_precision.h"
 
 #include <algorithm>
 #include <functional>
@@ -156,14 +157,19 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       const auto &description = value.description;
       const auto bytes = description.required_bytes();
       const auto elements = description.element_count();
+      const auto packed = description.rank() == 2
+                              ? mxfp4_weight_description(
+                                    description.dimensions()[0],
+                                    description.dimensions()[1])
+                              : Result<TensorDesc>{};
       if (!description.valid() ||
           !tensor_storage_type(description.data_type()) ||
-          !description.is_plain() || !bytes ||
+          (!description.is_plain() && (!packed || *packed != description)) || !bytes ||
           *bytes > runtime->device->properties.limits.maxStorageBufferRange ||
           !elements || *elements > (std::numeric_limits<std::int32_t>::max)())
         return std::unexpected(Status::Unimplemented(
-            "Vulkan plan requires fixed plain F32/F16/BF16/I32/I64/Bool "
-            "tensors within device limits"));
+            "Vulkan plan requires supported plain or named MXFP4 "
+            "storage within device limits"));
       HYLE_ASSIGN_OR_RETURN(auto capacity, buffer_capacity(*bytes));
       if (capacity > runtime->device->properties.limits.maxStorageBufferRange)
         return std::unexpected(Status::Unimplemented(
@@ -251,6 +257,10 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         continue;
       }
       ++index;
+      for (const auto input : step.inputs)
+        if (!program->values[input].description.is_plain())
+          return std::unexpected(Status::Unimplemented(
+              "Vulkan compressed storage requires a matching mature region"));
       if (step.operation.get_if<GatedDeltaNet>())
         return std::unexpected(Status::Unimplemented(
             "Vulkan GatedDeltaNet requires dense F32 equal heads, "

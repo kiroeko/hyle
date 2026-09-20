@@ -380,6 +380,7 @@ _hyle_declare_component(compute_ops
   SPLIT_PUBLIC_HEADERS
     hyle/compute/ops_visibility.h
     hyle/compute/tensor_desc.h
+    hyle/compute/low_precision.h
     hyle/compute/operation.h)
 
 # Explicit CPU execution axis and HYLE reference/optimized operation provider.

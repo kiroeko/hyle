@@ -35,7 +35,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed managed ggml dense F32 norm/gate/pointwise/TopK/recurrent regions and "
+          "Fixed managed ggml dense F32 norm/gate/pointwise/TopK/recurrent and MXFP4 regions and "
           "native tensor "
           "shaders plus cold custom "
           "SPIR-V; "
@@ -44,6 +44,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
           "F32/F16/BF16 tensor arithmetic with F32 evaluation and storage RNE; "
           "I32/I64/Bool exact storage operations; "
           "original recurrent F32 equal heads D16/32/64/128 with explicit state; "
+          "MXFP4 weights with F16 activation/output and F32 accumulation; "
           "custom nodes retain their declared schema contract";
       report->boundary_policy =
           "Ready same-device inputs/constants; cold weight packing; "

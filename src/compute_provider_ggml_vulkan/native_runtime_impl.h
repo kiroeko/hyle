@@ -92,7 +92,8 @@ Failure create(const Options &options, Runtime **result,
                runtime->instance.loader_version,
                device->buffer_device_address,
                device->hyle_storage_update_after_bind,
-               options.get_instance_proc_addr};
+               options.get_instance_proc_addr,
+               device->properties.limits.minStorageBufferOffsetAlignment};
     *result = runtime;
     return {};
   } catch (...) {

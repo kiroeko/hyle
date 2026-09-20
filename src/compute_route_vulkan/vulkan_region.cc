@@ -83,6 +83,18 @@ bool managed_operation(const ProgramState &program,
                                  std::span(inputs).first(step.inputs.size()),
                                  std::span(outputs).first(step.outputs.size())))
     return false;
+  if (step.operation.get_if<MatMul>()) {
+    const auto &limits = program.runtime->device->properties.limits;
+    const auto rows = static_cast<std::uint64_t>(inputs[0].dimensions()[0]);
+    const auto columns = static_cast<std::uint64_t>(inputs[1].dimensions()[1]);
+    // Original matmul may choose up to eight split-K pieces. Bound both its
+    // F32 partial workspace and all grids before native graph allocation.
+    if (rows > limits.maxComputeWorkGroupCount[1] ||
+        columns > limits.maxComputeWorkGroupCount[0] / 8 ||
+        rows * columns > limits.maxStorageBufferRange / (8 * sizeof(float)) ||
+        rows * columns > limits.maxComputeWorkGroupCount[0])
+      return false;
+  }
   if (step.operation.get_if<GatedDeltaNet>()) {
     const auto dimensions = inputs[2].dimensions();
     const auto &limits = program.runtime->device->properties.limits;
@@ -182,6 +194,9 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       if (step.operation.get_if<GatedDeltaNet>())
         for (const auto input : step.inputs)
           uses[local(input)].descriptor_aligned = true;
+      if (step.operation.get_if<MatMul>())
+        for (const auto input : step.inputs)
+          uses[local(input)].descriptor_aligned = true;
       for (const auto output : step.outputs) {
         node.outputs.push_back(local(output));
         uses[local(output)].produced = true;
@@ -207,6 +222,13 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       const auto value = ids[input];
       const auto alias = program.aliases[value];
       const auto &constant = program.values[alias.root].constant;
+      if (!program.values[value].description.is_plain()) {
+        // Preserve compressed bytes. Borrowed compressed ports require native
+        // descriptor alignment, checked before binding; no scalar Copy can
+        // interpret a block encoding as its logical F16 elements.
+        dispatch.values.push_back(value);
+        continue;
+      }
       const auto alignment =
           uses[input].descriptor_aligned
               ? (std::max)(VkDeviceSize{sizeof(float)},

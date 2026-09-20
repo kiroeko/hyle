@@ -36,6 +36,7 @@ struct Native {
   bool buffer_device_address = false;
   bool storage_update_after_bind = false;
   PFN_vkGetInstanceProcAddr get_instance_proc_addr = nullptr;
+  std::uint64_t storage_buffer_alignment = 1;
 };
 enum class Error {
   None,

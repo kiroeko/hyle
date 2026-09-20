@@ -7,14 +7,25 @@
 
 #include "ggml-backend.h"
 #include "ggml.h"
+#include "hyle/compute/low_precision.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
+bool mxfp4_domain(const TensorDesc &description) noexcept {
+  if (description.rank() != 2 ||
+      description.storage_format().id() != kMxfp4Weight)
+    return false;
+  const auto canonical = mxfp4_weight_description(description.dimensions()[0],
+                                                  description.dimensions()[1]);
+  return canonical && *canonical == description;
+}
 bool tensor_domain(const TensorDesc &description) noexcept {
-  return description.valid() && description.is_plain() &&
-         description.is_dense() &&
-         (description.data_type() == DataType::kFloat32 ||
-          description.data_type() == DataType::kInt32) &&
+  return description.valid() &&
+         (mxfp4_domain(description) ||
+          (description.is_plain() && description.is_dense() &&
+           (description.data_type() == DataType::kFloat32 ||
+            description.data_type() == DataType::kFloat16 ||
+            description.data_type() == DataType::kInt32))) &&
          description.rank() <= GGML_MAX_DIMS && description.element_count() &&
          *description.element_count() > 0 &&
          *description.element_count() <= INT32_MAX;
@@ -60,6 +71,14 @@ bool region_supports(const Operation &operation,
   if (!std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  if (const auto *matmul = operation.get_if<MatMul>())
+    return inputs.size() == 2 && outputs.size() == 1 &&
+           matmul->accumulation_type == DataType::kFloat32 &&
+           inputs[0].rank() == 2 && inputs[0].is_plain() &&
+           inputs[0].data_type() == DataType::kFloat16 &&
+           mxfp4_domain(inputs[1]) && outputs[0].rank() == 2 &&
+           outputs[0].is_plain() &&
+           outputs[0].data_type() == DataType::kFloat16;
   if (operation.get_if<GatedDeltaNet>()) {
     if (inputs.size() != 6 || outputs.size() != 2 ||
         !std::ranges::all_of(inputs, [](const auto &input) {
@@ -240,12 +259,22 @@ Result<Region> Region::create(NativeDevice device,
     std::vector<ggml_tensor *> tensors(recipe.values.size());
     for (const auto input : recipe.inputs) {
       std::int64_t shape[GGML_MAX_DIMS]{1, 1, 1, 1};
-      const auto dimensions = recipe.values[input].dimensions();
-      std::ranges::reverse_copy(dimensions, shape);
+      const auto &description = recipe.values[input];
+      const auto dimensions = description.dimensions();
+      const bool mxfp4 = mxfp4_domain(description);
+      if (mxfp4) {
+        // Public [K,N] describes physical rows [N,K]; ggml puts K first.
+        shape[0] = dimensions[0];
+        shape[1] = dimensions[1];
+      } else {
+        std::ranges::reverse_copy(dimensions, shape);
+      }
       tensors[input] = ggml_new_tensor(
           context,
-          recipe.values[input].data_type() == DataType::kInt32 ? GGML_TYPE_I32
-                                                               : GGML_TYPE_F32,
+          mxfp4 ? GGML_TYPE_MXFP4
+          : description.data_type() == DataType::kInt32 ? GGML_TYPE_I32
+          : description.data_type() == DataType::kFloat16 ? GGML_TYPE_F16
+                                                         : GGML_TYPE_F32,
           (std::max)(1, static_cast<int>(dimensions.size())), shape);
       ggml_set_input(tensors[input]);
       state.ports.push_back(tensors[input]);
@@ -253,7 +282,13 @@ Result<Region> Region::create(NativeDevice device,
     for (const auto &node : recipe.nodes) {
       auto *left = tensors[node.inputs[0]];
       ggml_tensor *output = nullptr;
-      if (node.operation.get_if<GatedDeltaNet>()) {
+      if (node.operation.get_if<MatMul>()) {
+        auto *product = ggml_mul_mat(context, tensors[node.inputs[1]], left);
+        if (!ggml_prec_set_acc(product, GGML_PREC_F32))
+          return std::unexpected(
+              Status::Unimplemented("ggml Vulkan MXFP4 F32 accumulation"));
+        output = ggml_cast(context, product, GGML_TYPE_F16);
+      } else if (node.operation.get_if<GatedDeltaNet>()) {
         auto *value = tensors[node.inputs[2]];
         auto *initial = tensors[node.inputs[5]];
         auto *fused = ggml_gated_delta_net(
@@ -480,6 +515,8 @@ Region::validate(std::span<const RegionBinding> bindings) const noexcept {
         ggml_backend_buffer_get_base(state_->imports->buffers[i]));
     if (port.handle == VK_NULL_HANDLE || !port.owner ||
         port.offset % sizeof(float) ||
+        (state_->ports[i]->type == GGML_TYPE_MXFP4 &&
+         port.offset % state_->device.native().storage_buffer_alignment) ||
         port.capacity < ggml_nbytes(state_->ports[i]) ||
         port.offset > SIZE_MAX - port.capacity ||
         port.offset > UINTPTR_MAX - base)
