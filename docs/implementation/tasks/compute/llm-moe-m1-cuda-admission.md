@@ -3,7 +3,7 @@
 ## Closure card
 
 - owner：`/root`；baseline：`0f54dad4fd95714ef3a03f455f04dc746edccaea`，Windows main。
-- 当前阶段：AUDITED；三个新身份已在`77caf875`登记QUEUED，六owner在`2673c5eb`完成SCOPED。
+- 当前阶段：CANDIDATE；三个新身份已在`77caf875`登记QUEUED，六owner在`2673c5eb`完成SCOPED。
   本轮只授权下列C1–C6资源与成熟实现接入，不授权自研数学。
 - 新增身份：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`、`compute_provider_flashinfer`。
   分别拥有 Direct/native program、Graph region 接线与原版 attention 接入，不建立空 target。
@@ -244,3 +244,10 @@ CUDA Provider冷context创建调用上游线程安全`ggml_time_init`；只在Wi
 Linux既有19库/1011符号与三交付收据按Windows条件不生效的源码事实复用。失败、调用栈/map与
 最终身份见[三交付证据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md)。
 统一统计51,161实现行/217文件；host插桩与Mac适用门尚待完成，不能写整包PASS。
+
+## 不可变候选（2026-09-20）
+
+产品候选`43732241adf81ad2bad9f64594e72d752b900b37`，tree
+`9d430abb908d5c754941f1fdad191bb99a2fdc1d`。C1–C6有限产品改动固定，六owner进入CANDIDATE。
+Windows/WSL native与三交付已有实际收据；Mac Air的CUDA-OFF三门和公共语义/旧CPU隔离四门通过。
+Mini与ggml host sanitizer尚待收齐，未运行门不代签；文档、状态、证据更新不重建产品或启动P1。

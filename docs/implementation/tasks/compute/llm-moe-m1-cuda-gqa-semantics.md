@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；component：`compute_ops`与`compute_provider_native`；阶段AUDITED。
+- owner：`/root`；component：`compute_ops`与`compute_provider_native`；阶段CANDIDATE。
 - baseline：`fb2be1c2`（完整身份由Git解析）；两个owner从M0的SCOPED移交，旧自研数学冻结不变。
 - trigger：M1-C实际接入的Qwen head256、Q/KV heads=8/2被
   `src/compute_ops/operation.cc::infer_attention`的同head检查拒绝；FlashInfer原版入口已经实际通过。
@@ -38,3 +38,7 @@ SCOPED/AUDITED元数据只跑docs/closure/diff；产品候选由selector选择co
 Mac静态回归首次编译发现既有shared-only测试描述符未随其用例条件编译，AppleClang的
 `-Werror`报告两个未用常量。仅给该测试描述符加与原用例相同的`!HYLE_STATIC`条件，保留原
 警告级别与全部适用用例；产品/API/数学不变。CUDA-OFF三门已通过，GQA门按修正后fixture续跑。
+
+不可变candidate为`43732241adf81ad2bad9f64594e72d752b900b37`；S1–S3产品固定。
+Windows/WSL公共语义/旧CPU隔离及已声明host插桩、M1-C自然attention三交付通过；Air四门通过，
+Mini待收齐。本卡进入CANDIDATE，尚未关闭，不研究或比较旧attention数学。

@@ -393,9 +393,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 AUDITED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
+      "summary": "M1-C7 CANDIDATE：GQA公共语义及旧CPU不支持域隔离固定；Windows/WSL与Air回归通过，Mini待收齐；产品数学未改，三交付由M1-C真实attention消费覆盖。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "compute_backend_cpu",
@@ -421,9 +422,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 AUDITED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
+      "summary": "M1-C7 CANDIDATE：GQA公共语义及旧CPU不支持域隔离固定；Windows/WSL与Air回归通过，Mini待收齐；产品数学未改，三交付由M1-C真实attention消费覆盖。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "compute_sched",
@@ -483,15 +485,17 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C AUDITED：冻结C1–C6成熟CUDA接入；ggml自有stream以device event连接既有Queue/Completion，资源/失败补丁不改数学。FlashInfer原版WSL head256资格通过、Windows本pin失格转ggml成熟路径；产品实现与验收尚未完成，全部自研冻结。"
+      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C AUDITED：冻结C1–C6成熟CUDA接入；ggml自有stream以device event连接既有Queue/Completion，资源/失败补丁不改数学。FlashInfer原版WSL head256资格通过、Windows本pin失格转ggml成熟路径；产品实现与验收尚未完成，全部自研冻结。"
+      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "compute_route_apple",
@@ -550,27 +554,31 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C AUDITED：冻结C1–C6成熟CUDA接入；ggml自有stream以device event连接既有Queue/Completion，资源/失败补丁不改数学。FlashInfer原版WSL head256资格通过、Windows本pin失格转ggml成熟路径；产品实现与验收尚未完成，全部自研冻结。"
+      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C AUDITED：冻结C1–C6成熟CUDA接入；ggml自有stream以device event连接既有Queue/Completion，资源/失败补丁不改数学。FlashInfer原版WSL head256资格通过、Windows本pin失格转ggml成熟路径；产品实现与验收尚未完成，全部自研冻结。"
+      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C AUDITED：冻结C1–C6成熟CUDA接入；ggml自有stream以device event连接既有Queue/Completion，资源/失败补丁不改数学。FlashInfer原版WSL head256资格通过、Windows本pin失格转ggml成熟路径；产品实现与验收尚未完成，全部自研冻结。"
+      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C AUDITED：冻结C1–C6成熟CUDA接入；ggml自有stream以device event连接既有Queue/Completion，资源/失败补丁不改数学。FlashInfer原版WSL head256资格通过、Windows本pin失格转ggml成熟路径；产品实现与验收尚未完成，全部自研冻结。"
+      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
     }
   ]
 }
