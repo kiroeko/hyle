@@ -34,3 +34,7 @@ API/usability没有新增对象或重载，默认描述不变。S2只在`native_
 
 SCOPED/AUDITED元数据只跑docs/closure/diff；产品候选由selector选择compute_ops、native与
 真实直接消费者，公共shape回归在四环境执行。最终收据随M1-C保存；未运行不写PASS。
+
+Mac静态回归首次编译发现既有shared-only测试描述符未随其用例条件编译，AppleClang的
+`-Werror`报告两个未用常量。仅给该测试描述符加与原用例相同的`!HYLE_STATIC`条件，保留原
+警告级别与全部适用用例；产品/API/数学不变。CUDA-OFF三门已通过，GQA门按修正后fixture续跑。

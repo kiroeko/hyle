@@ -2,7 +2,8 @@
 
 本目录保存[M1-C资源卡](../../../docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md)
 的有界上游入口资格及后续Linux FlashInfer接入检查点，不是M1-C整包完成证书。
-ggml CUDA普通接入、剩余平台/风险门和完整模型需求覆盖仍待验证；新增64域×四路线覆盖格为0。
+各检查点按下文保留实际状态；最新三交付已通过，剩余host插桩/Mac门与完整模型需求覆盖仍待验证。
+新增64域×四路线覆盖格为0。
 
 ## Linux FlashInfer产品接入（2026-09-20）
 
@@ -53,6 +54,23 @@ prefill 17/31与decode 1/513，独立double oracle与原容差。双请求/变�
 BF16使用原版F32运算图，含score矩阵与转换成本；未修改kernel或降低精度要求，未签性能赢家。
 原始编译/样例失败与最终运行、源码/二进制身份、统一LOC均在包内。ggml host sanitizer、
 三交付、Mac CUDA-OFF尚待完成；本段不关闭M1-C、不签模型覆盖，当前51,158行/217文件。
+
+## ggml CUDA 三交付检查点
+
+[WSL收据](ggml-wsl-sdk.json)与[Windows收据](ggml-windows-sdk.json)及各自raw包记录源码嵌入、
+搬移static/shared安装后的四项普通Direct/Graph消费。安装消费期间实际隐藏producer源码/build；
+两平台都运行F32完整region、同GPU cuBLAS组合、head256 GQA prefill/decode与资源复用。
+Linux默认attention为FlashInfer，Windows为ggml。共享导出检查分别覆盖19库/1011符号与18库/881符号。
+
+Windows首次静态导出错误地传递了未准入FlashInfer占位目标，修为仅build interface依赖。
+后续shared消费触发除零，任务内调用栈/map定位原版`ggml_time_us+0x24`：metadata DLL与CUDA
+Provider DLL各自嵌入ggml，后者timer尚未初始化。冷context调用上游线程安全初始化后，源码与
+独立安装消费全部通过。所有失败、诊断脚本、修正后完整源码/consumer哈希和二进制身份都保留。
+测试fixture仅Linux包含FlashInfer头，Windows不要求不存在的SDK头。DLL均邻置，无UAC或电源变更。
+
+这两项产品修复只在Windows生效，WSL原收据身份与复用条件保持明确；没有据此重跑Linux交付。
+当前Compute+Graph为51,161实现行/217文件，不含测试。host插桩与两台Mac剩余门尚待完成，
+M1-C仍未关闭，不签模型覆盖或P1。
 
 ## FlashInfer原版入口资格
 

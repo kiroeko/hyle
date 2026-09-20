@@ -577,6 +577,7 @@ struct WrongSizeCustomIdentity final {
   }
 };
 
+#if !defined(HYLE_STATIC)
 struct SharedConsumerIdentity final {
   static constexpr OperationId operation_id{0x48594c4554455354ULL,
                                              0x435553544f4d0001ULL};
@@ -590,6 +591,7 @@ struct SharedConsumerIdentity final {
     return hyle::Status::Ok();
   }
 };
+#endif
 
 TEST(OperationCustom, UsesInlineTypedDescriptorWithoutGlobalRegistry) {
   const Operation operation = Operation::custom(CustomIdentity{.tag = 7});

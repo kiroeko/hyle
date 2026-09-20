@@ -1,0 +1,28 @@
+{
+  "scope": "M1-C ggml CUDA Linux source/static/shared SDK journeys; full admission remains AUDITED",
+  "candidate": "62d4b15ed69bc2dd56043e6d6d8b9a5e1ecc8279",
+  "source_identity": "logs/source-manifest.json in raw bundle, including exact product file hashes",
+  "reuse_condition": "later Windows-only absent-FlashInfer export and timer initialization conditions are false on Linux; the attention fixture retains the identical Linux include and numerical code",
+  "source_embedding": "PASS: ordinary CUDA Direct, whole ggml Graph region, same-GPU cuBLAS and default FlashInfer attention",
+  "installed_static": "PASS: relocated prefix and hidden producer source/build; same four consumer cases",
+  "installed_shared": "PASS: relocated prefix and hidden producer source/build; same four consumer cases",
+  "consumer": [
+    "CudaDefault.OriginalGgmlThroughOrdinaryDirectEntry",
+    "CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas",
+    "CudaDefaultGraph.UnrelatedCublasNodeDoesNotSplitGgmlRegion",
+    "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+  ],
+  "exports": "PASS: standard checker inspected 19 HYLE libraries/1011 exports; ggml factory/private same-build bridge plus permitted standard-library weak symbols, no upstream ggml C exports",
+  "native_graph_resources": "independent invocations, changing inputs, retained outputs, borrowed payload and managed replay exercised through installed APIs",
+  "toolchain": "GCC 14.2, CUDA 13.3.73, RTX 4070 SM89; static SM89-real, source/shared SM89 SASS+PTX, exact cache files retained",
+  "not_covered": [
+    "Windows SDK",
+    "ggml host sanitizers",
+    "Mac CUDA-OFF",
+    "64-domain model coverage",
+    "P1"
+  ],
+  "self_written_math": "frozen; no new algorithms or comparison",
+  "raw": "ggml-wsl-sdk-raw.zip",
+  "raw_sha256": "a77d0be7c8550cecaf8c4f91de16f2bc9ec1deeafd4fa96e63d4911e8d0161c7"
+}

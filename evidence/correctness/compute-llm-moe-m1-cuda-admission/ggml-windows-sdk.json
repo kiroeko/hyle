@@ -1,0 +1,31 @@
+{
+  "scope": "M1-C Windows original ggml CUDA source/static/shared SDK; remaining admission gates separate",
+  "candidate_base": "2e1d2bdf589ea64c3c6aba6536a536c5cbf992ed",
+  "source_identity": "logs/fixed-source-manifest.json: full canonical snapshot with export/timer fixes; consumer hashes separately retained",
+  "source_embedding": "PASS: shared and static normal Direct/Graph consumers, four cases each",
+  "installed_static": "PASS: corrected static SDK, relocated prefix and hidden producer source/build",
+  "installed_shared": "PASS: corrected shared SDK, relocated prefix and hidden producer source/build",
+  "consumer": [
+    "CudaDefault.OriginalGgmlThroughOrdinaryDirectEntry",
+    "CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas",
+    "CudaDefaultGraph.UnrelatedCublasNodeDoesNotSplitGgmlRegion",
+    "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+  ],
+  "failures_preserved": [
+    "Windows static export incorrectly required the absent FlashInfer target; non-Linux build-only edge fixed",
+    "Windows shared ggml_time_us divided by zero; vectored stack/map located ggml_time_us+0x24 via CUDA graph cache; cold Provider initializes its private upstream timer",
+    "test fixture includes FlashInfer factory only on its admitted Linux platform"
+  ],
+  "exports": "PASS: existing shared-export checker; upstream C headers and absent FlashInfer not installed",
+  "toolchain": "MSVC 19.50, CUDA 13.3.73, RTX 4070 SM89-real; exact caches retained",
+  "dll_loading": "DLLs copied beside every EXE before launch; SetErrorMode suppresses loader dialogs; no UAC or system settings changes",
+  "not_covered": [
+    "ggml host sanitizers",
+    "Mac CUDA-OFF",
+    "64-domain model coverage",
+    "P1"
+  ],
+  "self_written_math": "frozen; no new algorithms or comparison",
+  "raw": "ggml-windows-sdk-raw.zip",
+  "raw_sha256": "d2ecf5179fe95a07288b34a622f61b5824939df70e9ee162b90f6b1b19f86004"
+}

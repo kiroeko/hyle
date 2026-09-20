@@ -296,6 +296,11 @@ Status create_context(const Provider &provider, Device device, void *backend,
   cuda::detail::ScopedPrimaryContext scope(primary);
   HYLE_RETURN_IF_ERROR(scope.status());
   try {
+#if defined(_WIN32)
+    // This DLL embeds its own ggml copy. MetadataArena initializes a separate
+    // copy; native graph-cache timestamps need this copy's thread-safe timer.
+    ggml_time_init();
+#endif
     const int native_device = bridge::device_index(environment->device_ordinal);
     if (native_device < 0)
       return Status::Unimplemented("ggml CUDA physical device is unavailable");

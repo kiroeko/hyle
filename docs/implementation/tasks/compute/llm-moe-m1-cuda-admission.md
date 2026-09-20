@@ -223,3 +223,24 @@ FP16/BF16的prefill/decode、双请求/重绑/旧输出、零负scale与BF16大�
 见[attention收据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/ggml-attention-admission.json)。
 Compute+Graph统一统计51,158实现行、217文件，不含测试；host sanitizer、三交付与Mac OFF
 仍未签，M1-C保持AUDITED，模型覆盖仍为0格。
+
+C6交付触发具体C1缺陷：Windows静态SDK的`compute_route_cuda`把未准入的FlashInfer
+内部占位目标作为传递链接项导出，CMake拒绝生成安装集。修复限定在该owner的模块CMake：
+非Linux的该私有占位边仅保留于build interface，安装接口不依赖不存在的Provider；
+Linux真实依赖保持原声明。无需修改中央组件图、export checker或提供假的已接入target。
+本次定位/定界计2分钟，源码/设计累计119分钟、余1分钟；一项具名导出根因，仍属C1/C6。
+WSL三交付与19库导出卫生已通过；Windows在configure首次失败，失败日志保留，修复后续跑。
+
+C6续跑：Windows源码/static安装消费通过，共享源码消费复现整数除零。一次任务内调用栈及
+linker map定位到原版`ggml_time_us+0x24`，调用者是CUDA graph cache。私有静态ggml分别进入
+metadata与CUDA Provider DLL；前者的`ggml_init`没有初始化后者的Windows timer。限定修正为
+CUDA Provider冷context创建调用上游线程安全`ggml_time_init`；只在Windows编译，不改数学、
+正常submit或上游graph启发式。这是C2/C6既有资源初始化责任的缺陷纠正，不新增算法或接法。
+源码/设计预算至此已耗尽（累计至少120分钟）；停止新增接法研究，仅完成已定位根因的有限
+纠正与预声明门。每根因最多两次纠正，仍失败即记录具体阻塞，不重置预算。
+
+上述两个C6根因均在一次产品纠正后通过：Windows同一源码的静态/动态源码嵌入，以及隐藏producer、
+搬移prefix的static/shared安装消费均运行四项普通Direct/Graph用例。共享导出卫生通过18库/881符号；
+Linux既有19库/1011符号与三交付收据按Windows条件不生效的源码事实复用。失败、调用栈/map与
+最终身份见[三交付证据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md)。
+统一统计51,161实现行/217文件；host插桩与Mac适用门尚待完成，不能写整包PASS。
