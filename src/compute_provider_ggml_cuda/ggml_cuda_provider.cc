@@ -1,0 +1,424 @@
+#include "program.h"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <exception>
+#include <limits>
+#include <new>
+
+#include <ggml-backend.h>
+#include <ggml-cuda.h>
+#include <ggml.h>
+
+#include "metadata_arena.h"
+#include "native_bridge.h"
+#include "native_context.h"
+
+namespace hyle::compute::ggml_cuda {
+namespace {
+
+struct Extension final {
+  ProviderExtensionId id{};
+  const void *table = nullptr;
+};
+struct Context final {
+  CUcontext primary = nullptr;
+  int device = -1;
+  bool qualified = false;
+  Extension extension;
+};
+struct Program final {
+  CUcontext primary = nullptr;
+  int device = -1;
+  internal::Recipe recipe;
+};
+
+// Called only from catch blocks; native namespaces and numbers survive the
+// private vendor exception boundary. No exception crosses a public callback.
+Status failure() noexcept {
+  try {
+    throw;
+  } catch (const bridge::NativeFailure<cudaError_t> &error) {
+    return cuda::status(error.code);
+  } catch (const bridge::NativeFailure<CUresult> &error) {
+    return cuda::status(error.code);
+  } catch (const bridge::NativeFailure<cublasStatus_t> &error) {
+    const auto code = error.code == CUBLAS_STATUS_ALLOC_FAILED
+                          ? StatusCode::ResourceExhausted
+                          : StatusCode::Internal;
+    return Status::FromNative(
+        code,
+        NativeError{NativeErrorDomain::Unknown,
+                    static_cast<std::int64_t>(error.code)},
+        error.operation);
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("ggml CUDA host allocation failed");
+  } catch (const std::exception &error) {
+    return Status::Internal(error.what());
+  } catch (...) {
+    return Status::Internal("ggml CUDA unknown native failure");
+  }
+}
+
+struct Invocation final {
+  CUcontext primary = nullptr;
+  ggml_runtime::MetadataArena arena;
+  ggml_backend *backend = nullptr;
+  cudaStream_t root = nullptr;
+  cudaEvent_t entry = nullptr;
+  cudaEvent_t exit = nullptr;
+  ggml_cgraph *graph = nullptr;
+  std::vector<ggml_tensor *> tensors;
+  std::vector<ggml_backend_buffer *> buffers;
+  std::vector<void *> pointers;
+  bool failed = false;
+
+  Invocation() = default;
+  Invocation(const Invocation &) = delete;
+  Invocation &operator=(const Invocation &) = delete;
+  ~Invocation() {
+    cuda::detail::ScopedPrimaryContext scope(primary);
+    if (backend)
+      (void)bridge::drain(backend);
+    if (entry)
+      (void)cudaEventDestroy(entry);
+    if (exit)
+      (void)cudaEventDestroy(exit);
+    for (auto *buffer : buffers)
+      ggml_backend_buffer_free(buffer);
+    ggml_backend_free(backend);
+  }
+
+  Status initialize(const Program &program, mem::AllocatorRef allocator) {
+    primary = program.primary;
+    cuda::detail::ScopedPrimaryContext scope(primary);
+    HYLE_RETURN_IF_ERROR(scope.status());
+    const auto &recipe = program.recipe;
+    const auto count = recipe.values.size();
+    if (count > (std::numeric_limits<std::size_t>::max)() / 4 - 16)
+      return Status::OutOfRange("ggml CUDA metadata count overflows");
+    const auto capacity = count * 4 + 16;
+    auto metadata =
+        ggml_runtime::MetadataArena::for_graph(capacity, capacity, allocator);
+    if (!metadata)
+      return std::move(metadata).error();
+    arena = std::move(*metadata);
+    tensors.resize(count, nullptr);
+    buffers.resize(count, nullptr);
+    pointers.resize(recipe.inputs.size() + recipe.outputs.size());
+    backend = ggml_backend_cuda_init(program.device);
+    if (!backend)
+      return Status::ResourceExhausted("ggml CUDA backend allocation failed");
+    root = bridge::root_stream(backend);
+    HYLE_RETURN_IF_ERROR(
+        cuda::status(cudaEventCreateWithFlags(&entry, cudaEventDisableTiming)));
+    HYLE_RETURN_IF_ERROR(
+        cuda::status(cudaEventCreateWithFlags(&exit, cudaEventDisableTiming)));
+    for (const auto id : recipe.inputs) {
+      const auto dimensions = recipe.values[id].dimensions();
+      tensors[id] = ggml_new_tensor_2d(arena.get(), GGML_TYPE_F32,
+                                       dimensions[1], dimensions[0]);
+      ggml_set_input(tensors[id]);
+    }
+    for (const auto &node : recipe.nodes) {
+      auto *a = tensors[node.inputs[0]];
+      ggml_tensor *result = nullptr;
+      if (const auto *norm = node.operation.get_if<RmsNorm>())
+        result = ggml_rms_norm(arena.get(), a, norm->epsilon);
+      else
+        result = ggml_add(arena.get(), a, tensors[node.inputs[1]]);
+      if (!ggml_backend_supports_op(backend, result))
+        return Status::Unimplemented("ggml CUDA native operation declined");
+      tensors[node.output] = result;
+    }
+    graph = ggml_new_graph_custom(arena.get(), capacity, false);
+    for (const auto id : recipe.outputs) {
+      ggml_set_output(tensors[id]);
+      ggml_build_forward_expand(graph, tensors[id]);
+    }
+    for (std::size_t id = 0; id < count; ++id) {
+      if (!tensors[id])
+        return Status::InvalidArgument("ggml CUDA recipe has an unused value");
+      const auto bytes = ggml_nbytes(tensors[id]);
+      const bool external =
+          std::ranges::find(recipe.inputs, id) != recipe.inputs.end() ||
+          std::ranges::find(recipe.outputs, id) != recipe.outputs.end();
+      if (external) {
+        buffers[id] = bridge::binding_buffer(program.device, bytes);
+        // An idle external binding has no payload. Submission installs both
+        // the buffer base and tensor address after provenance/size admission.
+        tensors[id]->buffer = buffers[id];
+      } else {
+        buffers[id] = ggml_backend_buft_alloc_buffer(
+            ggml_backend_cuda_buffer_type(program.device), bytes);
+        if (!buffers[id])
+          return Status::ResourceExhausted(
+              "ggml CUDA scratch allocation failed");
+        if (ggml_backend_tensor_alloc(buffers[id], tensors[id],
+                                      ggml_backend_buffer_get_base(
+                                          buffers[id])) != GGML_STATUS_SUCCESS)
+          return Status::Internal("ggml CUDA scratch binding failed");
+      }
+    }
+    return Status::Ok();
+  }
+};
+
+Status create_context(const Provider &provider, Device device, void *backend,
+                      mem::AllocatorRef allocator, void **output) noexcept {
+  *output = nullptr;
+  if (device.backend_id() != cuda::kBackendId)
+    return Status::Unimplemented("ggml CUDA requires a CUDA device");
+  const auto primary = cuda::detail::borrow_primary_context(backend);
+  const auto *environment = cuda::detail::borrow_environment(backend);
+  if (!primary || !environment)
+    return Status::FailedPrecondition("ggml CUDA backend context is invalid");
+  cuda::detail::ScopedPrimaryContext scope(primary);
+  HYLE_RETURN_IF_ERROR(scope.status());
+  try {
+    const int native_device = bridge::device_index(environment->device_ordinal);
+    if (native_device < 0)
+      return Status::Unimplemented("ggml CUDA physical device is unavailable");
+    void *storage = allocator.allocate(sizeof(Context), alignof(Context));
+    if (!storage)
+      return Status::ResourceExhausted("ggml CUDA context allocation failed");
+    *output = ::new (storage)
+        Context{primary, native_device,
+                environment->sm_major == 8 && environment->sm_minor == 9,
+                detail::ProviderAccess::payload<Extension>(provider)};
+    return Status::Ok();
+  } catch (...) {
+    return failure();
+  }
+}
+void destroy_context(void *value, mem::AllocatorRef allocator) noexcept {
+  auto *context = static_cast<Context *>(value);
+  if (context) {
+    context->~Context();
+    allocator.deallocate(context, sizeof(Context), alignof(Context));
+  }
+}
+void destroy_program(void *value, mem::AllocatorRef allocator) noexcept {
+  auto *program = static_cast<Program *>(value);
+  if (program) {
+    program->~Program();
+    allocator.deallocate(program, sizeof(Program), alignof(Program));
+  }
+}
+void destroy_invocation(void *value, mem::AllocatorRef allocator) noexcept {
+  auto *invocation = static_cast<Invocation *>(value);
+  if (invocation) {
+    invocation->~Invocation();
+    allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
+  }
+}
+Status create_invocation(void *value, mem::AllocatorRef allocator,
+                         mem::BufferView, void **output) noexcept {
+  *output = nullptr;
+  void *storage = allocator.allocate(sizeof(Invocation), alignof(Invocation));
+  if (!storage)
+    return Status::ResourceExhausted("ggml CUDA invocation allocation failed");
+  auto *invocation = ::new (storage) Invocation;
+  *output = invocation; // The caller owns cleanup even after partial failure.
+  try {
+    return invocation->initialize(*static_cast<Program *>(value), allocator);
+  } catch (...) {
+    return failure();
+  }
+}
+detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
+                             std::span<const ConstTensorView> inputs,
+                             std::span<const TensorView> outputs) noexcept {
+  const auto &program = *static_cast<Program *>(value);
+  auto &invocation = *static_cast<Invocation *>(lane);
+  const auto &recipe = program.recipe;
+  if (invocation.failed)
+    return detail::EnqueueResult::rejected(Status::FailedPrecondition(
+        "ggml CUDA invocation failed; instantiate another"));
+  if (inputs.size() != recipe.inputs.size() ||
+      outputs.size() != recipe.outputs.size())
+    return detail::EnqueueResult::rejected(
+        Status::InvalidArgument("ggml CUDA binding counts differ"));
+  auto stream = cuda::stream(queue);
+  if (!stream)
+    return detail::EnqueueResult::rejected(std::move(stream).error());
+  for (std::size_t i = 0; i < inputs.size(); ++i) {
+    auto pointer = cuda::detail::const_pointer(inputs[i].storage(), 256, 1);
+    if (!pointer)
+      return detail::EnqueueResult::rejected(std::move(pointer).error());
+    invocation.pointers[i] = const_cast<void *>(*pointer);
+  }
+  for (std::size_t i = 0; i < outputs.size(); ++i) {
+    auto pointer = cuda::detail::mutable_pointer(outputs[i].storage(), 256, 1);
+    if (!pointer)
+      return detail::EnqueueResult::rejected(std::move(pointer).error());
+    invocation.pointers[inputs.size() + i] = *pointer;
+  }
+  cuda::detail::ScopedPrimaryContext scope(program.primary);
+  if (!scope)
+    return detail::EnqueueResult::rejected(scope.status());
+  const auto bind = [&](std::uint32_t id, void *pointer) {
+    bridge::bind_buffer(invocation.buffers[id], pointer);
+    invocation.tensors[id]->data = pointer;
+  };
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    bind(recipe.inputs[i], invocation.pointers[i]);
+  for (std::size_t i = 0; i < outputs.size(); ++i)
+    bind(recipe.outputs[i], invocation.pointers[inputs.size() + i]);
+
+  Status terminal = cuda::status(cudaEventRecord(invocation.entry, *stream));
+  if (terminal.ok())
+    terminal =
+        cuda::status(cudaStreamWaitEvent(invocation.root, invocation.entry, 0));
+  if (terminal.ok()) {
+    try {
+      if (ggml_backend_graph_compute_async(
+              invocation.backend, invocation.graph) != GGML_STATUS_SUCCESS)
+        terminal = Status::Internal("ggml CUDA native graph failed");
+    } catch (...) {
+      terminal = failure();
+    }
+  }
+  if (terminal.ok())
+    terminal = cuda::status(cudaEventRecord(invocation.exit, invocation.root));
+  if (terminal.ok())
+    terminal = cuda::status(cudaStreamWaitEvent(*stream, invocation.exit, 0));
+  if (!terminal.ok()) {
+    invocation.failed = true;
+    // A failed exit event cannot transfer native ownership to HYLE's stream.
+    // Quiesce every accepted upstream stream before exposing the failure.
+    (void)bridge::drain(invocation.backend);
+  }
+  return detail::EnqueueResult::accepted_command(std::move(terminal));
+}
+AliasSupport alias_support(void *, std::size_t, std::size_t) noexcept {
+  return {};
+}
+const detail::ProviderPreparedVTable kPrepared{
+    .destroy_prepared = &destroy_program,
+    .alias_support = &alias_support,
+    .create_invocation = &create_invocation,
+    .destroy_invocation = &destroy_invocation,
+    .shared_submit = &submit};
+
+Status propose(void *context, const detail::ProviderOperationRequest &request,
+               std::span<detail::ResourceBindingRequirement> inputs,
+               std::span<detail::ResourceBindingRequirement> outputs,
+               detail::ProviderOperationProposal *output) noexcept {
+  *output = {};
+  if (!request.shape.exact() ||
+      !internal::supports(context, request.operation, request.inputs,
+                          request.outputs))
+    return Status::Unimplemented("ggml CUDA operation domain is not admitted");
+  std::ranges::fill(inputs, internal::kBinding);
+  std::ranges::fill(outputs, internal::kBinding);
+  *output = {.route = 1,
+             .runtime = internal::kRuntime,
+             .workspace_resource = internal::kBinding,
+             .cost = {.workspace = WorkspaceRequirement{},
+                      .persistent_bytes = std::nullopt,
+                      .copy_bytes = 0,
+                      .repack_bytes = 0,
+                      .synchronization_count = 2,
+                      .dispatch_count = std::nullopt},
+             .profile_key = ProviderRouteKey{1}};
+  return Status::Ok();
+}
+ProviderPrepareOutcome prepare(void *context,
+                               const detail::ProviderPrepareRequest &request,
+                               mem::AllocatorRef allocator,
+                               detail::ProviderPrepared *output) noexcept {
+  *output = {};
+  if (request.route != 1 || !request.shape.exact() ||
+      !internal::supports(context, request.operation, request.inputs,
+                          request.outputs))
+    return ProviderPrepareOutcome::unsupported(
+        Status::Unimplemented("ggml CUDA prepare domain differs"));
+  try {
+    internal::Recipe recipe;
+    recipe.values.assign(request.inputs.begin(), request.inputs.end());
+    recipe.values.push_back(request.outputs[0]);
+    internal::Node node{request.operation,
+                        {},
+                        static_cast<std::uint32_t>(request.inputs.size())};
+    for (std::uint32_t i = 0; i < request.inputs.size(); ++i) {
+      recipe.inputs.push_back(i);
+      node.inputs.push_back(i);
+    }
+    recipe.outputs.push_back(node.output);
+    recipe.nodes.push_back(std::move(node));
+    return internal::compile(context, std::move(recipe), allocator, output);
+  } catch (...) {
+    return ProviderPrepareOutcome::error(failure());
+  }
+}
+Status drain_context(void *) noexcept { return Status::Ok(); }
+const void *query_extension(void *value, ProviderExtensionId id) noexcept {
+  const auto &extension = static_cast<Context *>(value)->extension;
+  return id == extension.id ? extension.table : nullptr;
+}
+const detail::ProviderVTable kProvider{
+    .identity = {.id = kProviderId,
+                 .name = "ggml-cuda",
+                 .version = "456172ec+hyle-resource-v1"},
+    .create_context = &create_context,
+    .destroy_context = &destroy_context,
+    .propose = &propose,
+    .prepare = &prepare,
+    .drain_context = &drain_context,
+    .query_extension = &query_extension};
+} // namespace
+
+namespace internal {
+bool supports(void *value, Operation operation,
+              std::span<const TensorDesc> inputs,
+              std::span<const TensorDesc> outputs) noexcept {
+  if (!value || !static_cast<Context *>(value)->qualified ||
+      outputs.size() != 1)
+    return false;
+  const auto domain = [](const TensorDesc &description) {
+    return description.valid() && description.is_plain() &&
+           description.is_dense() &&
+           description.data_type() == DataType::kFloat32 &&
+           description.rank() == 2 && description.dimensions()[0] > 0 &&
+           description.dimensions()[0] <= 65535 &&
+           description.dimensions()[1] > 0 && description.element_count() &&
+           *description.element_count() <= INT32_MAX;
+  };
+  if (!std::ranges::all_of(inputs, domain) || !domain(outputs[0]))
+    return false;
+  if (const auto *norm = operation.get_if<RmsNorm>())
+    return inputs.size() == 1 && inputs[0] == outputs[0] &&
+           norm->accumulation_type == DataType::kFloat32 &&
+           std::isfinite(norm->epsilon) && norm->epsilon >= 0;
+  const auto *binary = operation.get_if<Binary>();
+  return binary && binary->kind == BinaryKind::kAdd && inputs.size() == 2 &&
+         inputs[0] == inputs[1] && inputs[0] == outputs[0];
+}
+
+ProviderPrepareOutcome compile(void *value, Recipe recipe,
+                               mem::AllocatorRef allocator,
+                               detail::ProviderPrepared *output) noexcept {
+  *output = {};
+  const auto &context = *static_cast<Context *>(value);
+  void *storage = allocator.allocate(sizeof(Program), alignof(Program));
+  if (!storage)
+    return ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("ggml CUDA program allocation failed"));
+  *output = {.vtable = &kPrepared,
+             .state = ::new (storage)
+                 Program{context.primary, context.device, std::move(recipe)},
+             .workspace = {},
+             .runtime = kRuntime,
+             .persistent_bytes = std::nullopt,
+             .invocation_private_bytes = std::nullopt};
+  return ProviderPrepareOutcome::prepared();
+}
+Provider with_extension(ProviderExtensionId id, const void *table) noexcept {
+  return detail::ProviderAccess::make(&kProvider, Extension{id, table});
+}
+} // namespace internal
+
+Provider provider() noexcept { return internal::with_extension({}, nullptr); }
+} // namespace hyle::compute::ggml_cuda

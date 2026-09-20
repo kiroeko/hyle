@@ -1,0 +1,119 @@
+{
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "files": [
+    {
+      "path": "src/ggml-cuda/common.cuh",
+      "before_sha256": "a210a71f965419ab55cce071b900df118c2520c1566ea5e068d8be07805644a2",
+      "after_sha256": "7d8dff005468c2ebbd2da854cb446be69c72a8c2d50ae6241e8fcc4bb84d6093",
+      "edits": [
+        {
+          "before": "#define STRINGIZE_IMPL",
+          "after": "#include \"native_bridge.h\"\n\n#define STRINGIZE_IMPL"
+        },
+        {
+          "before": "ggml_cuda_error(#err, __func__, __FILE__, __LINE__, error_fn(err_));",
+          "after": "hyle::compute::ggml_cuda::bridge::fail(err_, #err);"
+        },
+        {
+          "before": "    ~ggml_cuda_graph() {\n        if (instance != nullptr) {\n            CUDA_CHECK(cudaGraphExecDestroy(instance));\n        }\n        if (graph != nullptr) {\n            CUDA_CHECK(cudaGraphDestroy(graph));\n        }\n    }\n",
+          "after": "    ~ggml_cuda_graph() {\n        if (instance != nullptr) {\n            (void)(cudaGraphExecDestroy(instance));\n        }\n        if (graph != nullptr) {\n            (void)(cudaGraphDestroy(graph));\n        }\n    }\n"
+        },
+        {
+          "before": "    ~ggml_cuda_concurrent_event() {\n        if (fork_event != nullptr) {\n            CUDA_CHECK(cudaEventDestroy(fork_event));\n        }\n        for (cudaEvent_t e : join_events) {\n            if (e != nullptr) {\n                CUDA_CHECK(cudaEventDestroy(e));\n            }\n        }\n    }\n};\n",
+          "after": "    ~ggml_cuda_concurrent_event() {\n        if (fork_event != nullptr) {\n            (void)(cudaEventDestroy(fork_event));\n        }\n        for (cudaEvent_t e : join_events) {\n            if (e != nullptr) {\n                (void)(cudaEventDestroy(e));\n            }\n        }\n    }\n};\n"
+        },
+        {
+          "before": "    const ggml_tensor * join_node;",
+          "after": "    const ggml_tensor * join_node = nullptr;"
+        },
+        {
+          "before": "    explicit ggml_cuda_concurrent_event(int n_streams) : n_streams(n_streams) {\n        join_events.resize(n_streams);\n\n        for (size_t i = 0; i < join_events.size(); ++i) {\n            CUDA_CHECK(cudaEventCreateWithFlags(&join_events[i], cudaEventDisableTiming));\n        }\n\n        CUDA_CHECK(cudaEventCreateWithFlags(&fork_event, cudaEventDisableTiming));\n    }\n\n",
+          "after": "    explicit ggml_cuda_concurrent_event(int n_streams) : n_streams(n_streams) {\n        join_events.resize(n_streams);\n        try {\n            for (auto & event : join_events) {\n                CUDA_CHECK(cudaEventCreateWithFlags(&event, cudaEventDisableTiming));\n            }\n            CUDA_CHECK(cudaEventCreateWithFlags(&fork_event, cudaEventDisableTiming));\n        } catch (...) {\n            for (auto event : join_events) {\n                if (event != nullptr) (void) cudaEventDestroy(event);\n            }\n            if (fork_event != nullptr) (void) cudaEventDestroy(fork_event);\n            throw;\n        }\n    }\n\n"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-cuda/ggml-cuda.cu",
+      "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
+      "after_sha256": "766f024a0439fc6f5a28f2ad2930e341bdffea48503ce3b7136c706f7ce85974",
+      "edits": [
+        {
+          "before": "    void clear_pool() {\n        ggml_cuda_set_device(device);\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                CUDA_CHECK(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n",
+          "after": "    void clear_pool() noexcept {\n        (void) cudaSetDevice(ggml_cuda_get_physical_device(device));\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                (void)(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n"
+        },
+        {
+          "before": "    void free(void * ptr, size_t size) override {\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer& b = buffer_pool[i];\n            if (b.ptr == nullptr) {\n                b.ptr = ptr;\n                b.size = size;\n                return;\n            }\n        }\n        GGML_LOG_DEBUG(GGML_CUDA_NAME \" buffer pool full, increase MAX_CUDA_BUFFERS\\n\");\n        ggml_cuda_set_device(device);\n        CUDA_CHECK(cudaFree(ptr));\n        pool_size -= size;\n    }",
+          "after": "    void free(void * ptr, size_t size) noexcept override {\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer& b = buffer_pool[i];\n            if (b.ptr == nullptr) {\n                b.ptr = ptr;\n                b.size = size;\n                return;\n            }\n        }\n        GGML_LOG_DEBUG(GGML_CUDA_NAME \" buffer pool full, increase MAX_CUDA_BUFFERS\\n\");\n        (void) cudaSetDevice(ggml_cuda_get_physical_device(device));\n        (void)(cudaFree(ptr));\n        pool_size -= size;\n    }"
+        },
+        {
+          "before": "    ~ggml_cuda_pool_vmm() {\n        if (pool_addr != 0) {\n#if defined(GGML_USE_HIP)\n            // Workaround for https://github.com/ROCm/ROCR-Runtime/issues/285\n            for (std::pair<CUdeviceptr, size_t> & mapping : mappings) {\n                CU_CHECK(cuMemUnmap(mapping.first, mapping.second));\n            }\n#else\n            CU_CHECK(cuMemUnmap(pool_addr, pool_size));\n#endif\n            CU_CHECK(cuMemAddressFree(pool_addr, CUDA_POOL_VMM_MAX_SIZE));\n        }\n    }\n\n",
+          "after": "    ~ggml_cuda_pool_vmm() {\n        if (pool_addr != 0) {\n#if defined(GGML_USE_HIP)\n            // Workaround for https://github.com/ROCm/ROCR-Runtime/issues/285\n            for (std::pair<CUdeviceptr, size_t> & mapping : mappings) {\n                (void)(cuMemUnmap(mapping.first, mapping.second));\n            }\n#else\n            if (pool_size != 0) (void) cuMemUnmap(pool_addr, pool_size);\n#endif\n            (void)(cuMemAddressFree(pool_addr, CUDA_POOL_VMM_MAX_SIZE));\n        }\n    }\n\n"
+        },
+        {
+          "before": "            GGML_ASSERT(pool_size + reserve_size <= CUDA_POOL_VMM_MAX_SIZE);",
+          "after": "            if (reserve_size > CUDA_POOL_VMM_MAX_SIZE - pool_size) throw std::bad_alloc();"
+        },
+        {
+          "before": "        const size_t alignment = 128;\n        size = alignment * ((size + alignment - 1) / alignment);",
+          "after": "        const size_t alignment = 128;\n        if (size > CUDA_POOL_VMM_MAX_SIZE) throw std::bad_alloc();\n        size = alignment * ((size + alignment - 1) / alignment);"
+        },
+        {
+          "before": "            CUmemGenericAllocationHandle handle;\n            CU_CHECK(cuMemCreate(&handle, reserve_size, &prop, 0));",
+          "after": "            struct HandleOwner {\n                CUmemGenericAllocationHandle value = 0;\n                ~HandleOwner() { if (value != 0) (void) cuMemRelease(value); }\n            } handle_owner;\n            CU_CHECK(cuMemCreate(&handle_owner.value, reserve_size, &prop, 0));\n            const auto handle = handle_owner.value;"
+        },
+        {
+          "before": "            CU_CHECK(cuMemMap(start_ptr, reserve_size, 0, handle, 0));",
+          "after": "            CU_CHECK(cuMemMap(start_ptr, reserve_size, 0, handle, 0));\n            struct MappingOwner {\n                CUdeviceptr pointer;\n                size_t size;\n                ~MappingOwner() { if (pointer != 0) (void) cuMemUnmap(pointer, size); }\n            } mapping_owner{start_ptr, reserve_size};"
+        },
+        {
+          "before": "            CU_CHECK(cuMemRelease(handle));",
+          "after": "            CU_CHECK(cuMemRelease(handle));\n            handle_owner.value = 0;"
+        },
+        {
+          "before": "            pool_size += reserve_size;",
+          "after": "            pool_size += reserve_size;\n            mapping_owner.pointer = 0;"
+        },
+        {
+          "before": "ggml_backend_cuda_context::~ggml_backend_cuda_context() {\n    std::unique_lock<std::mutex> lock(ggml_cuda_lock);\n    ggml_cuda_lock_cv.wait(lock, []{ return ggml_cuda_lock_counter.load(std::memory_order_relaxed) == 0; });\n\n    if (copy_event != nullptr) {\n        CUDA_CHECK(cudaEventDestroy(copy_event));\n    }\n    for (int i = 0; i < GGML_CUDA_MAX_DEVICES; ++i) {\n        for (int j = 0; j < GGML_CUDA_MAX_STREAMS; ++j) {\n            if (streams[i][j] != nullptr) {\n                CUDA_CHECK(cudaStreamDestroy(streams[i][j]));\n            }\n            if (cublas_handles[i][j] != nullptr) {\n                CUBLAS_CHECK(cublasDestroy(cublas_handles[i][j]));\n            }\n            if (cublas_workspaces[i][j] != nullptr) {\n                CUDA_CHECK(cudaFree(cublas_workspaces[i][j]));\n            }\n        }\n    }\n}\n\n\n",
+          "after": "ggml_backend_cuda_context::~ggml_backend_cuda_context() {\n    std::unique_lock<std::mutex> lock(ggml_cuda_lock);\n    ggml_cuda_lock_cv.wait(lock, []{ return ggml_cuda_lock_counter.load(std::memory_order_relaxed) == 0; });\n\n    if (copy_event != nullptr) {\n        (void)(cudaEventDestroy(copy_event));\n    }\n    for (int i = 0; i < GGML_CUDA_MAX_DEVICES; ++i) {\n        for (int j = 0; j < GGML_CUDA_MAX_STREAMS; ++j) {\n            if (streams[i][j] != nullptr) {\n                (void)(cudaStreamDestroy(streams[i][j]));\n            }\n            if (cublas_handles[i][j] != nullptr) {\n                (void)(cublasDestroy(cublas_handles[i][j]));\n            }\n            if (cublas_workspaces[i][j] != nullptr) {\n                (void)(cudaFree(cublas_workspaces[i][j]));\n            }\n        }\n    }\n}\n\n\n"
+        },
+        {
+          "before": "    void * dev_ptr = nullptr;\n    std::string name;",
+          "after": "    void * dev_ptr = nullptr;\n    bool owns_payload = true;\n    std::string name;"
+        },
+        {
+          "before": "    ~ggml_backend_cuda_buffer_context() {\n        CUDA_CHECK(cudaFree(dev_ptr));\n    }",
+          "after": "    ~ggml_backend_cuda_buffer_context() {\n        if (owns_payload && dev_ptr != nullptr) (void) cudaFree(dev_ptr);\n    }"
+        },
+        {
+          "before": "    void * dev_ptr;\n    cudaError_t err = ggml_cuda_device_malloc(&dev_ptr, size, buft_ctx->device);\n    if (err != cudaSuccess) {\n        // clear the error\n        (void)cudaGetLastError();\n        GGML_LOG_ERROR(\"%s: allocating %.2f MiB on device %d: cudaMalloc failed: %s\\n\", __func__, size / 1024.0 / 1024.0, buft_ctx->device, cudaGetErrorString(err));\n        return nullptr;\n    }\n\n    ggml_backend_cuda_buffer_context * ctx = new ggml_backend_cuda_buffer_context(buft_ctx->device, dev_ptr);\n\n    return ggml_backend_buffer_init(buft, ggml_backend_cuda_buffer_interface, ctx, size);",
+          "after": "    // Allocate metadata first; both a native failure and a later host allocation\n    // failure unwind through the same non-throwing payload owner.\n    auto ctx = std::make_unique<ggml_backend_cuda_buffer_context>(buft_ctx->device, nullptr);\n    CUDA_CHECK(ggml_cuda_device_malloc(&ctx->dev_ptr, size, buft_ctx->device));\n    auto buffer = ggml_backend_buffer_init(buft, ggml_backend_cuda_buffer_interface, ctx.get(), size);\n    ctx.release();\n    return buffer;"
+        },
+        {
+          "before": "    ggml_backend_cuda_context * ctx = new ggml_backend_cuda_context(device);\n    if (ctx == nullptr) {\n        GGML_LOG_ERROR(\"%s: failed to allocate context\\n\", __func__);\n        return nullptr;\n    }\n\n    ggml_backend_t cuda_backend = new ggml_backend {\n        /* .guid    = */ ggml_backend_cuda_guid(),\n        /* .iface   = */ ggml_backend_cuda_interface,\n        /* .device  = */ ggml_backend_reg_dev_get(ggml_backend_cuda_reg(), device),\n        /* .context = */ ctx,\n    };\n",
+          "after": "    auto ctx = std::make_unique<ggml_backend_cuda_context>(device);\n\n    ggml_backend_t cuda_backend = new ggml_backend {\n        /* .guid    = */ ggml_backend_cuda_guid(),\n        /* .iface   = */ ggml_backend_cuda_interface,\n        /* .device  = */ ggml_backend_reg_dev_get(ggml_backend_cuda_reg(), device),\n        /* .context = */ ctx.get(),\n    };\n\n    ctx.release();\n"
+        },
+        {
+          "before": "static std::atomic<int> ggml_cuda_lock_counter;",
+          "after": "static std::atomic<int> ggml_cuda_lock_counter;\n\n// Resource-only capture guard. A failed begin/end/encode must release the\n// process-wide capture count and destroy any discarded partial native graph.\nstruct ggml_hyle_capture_guard {\n    cudaStream_t stream = nullptr;\n    bool counted = false;\n    bool capturing = false;\n    void release_count() noexcept {\n        if (!counted) return;\n        std::lock_guard<std::mutex> lock(ggml_cuda_lock);\n        counted = false;\n        if (ggml_cuda_lock_counter.fetch_sub(1, std::memory_order_relaxed) == 1)\n            ggml_cuda_lock_cv.notify_all();\n    }\n    void begin(cudaStream_t native_stream) {\n        stream = native_stream;\n        {\n            std::lock_guard<std::mutex> lock(ggml_cuda_lock);\n            ggml_cuda_lock_counter.fetch_add(1, std::memory_order_relaxed);\n            counted = true;\n        }\n        CUDA_CHECK(cudaStreamBeginCapture(stream, cudaStreamCaptureModeRelaxed));\n        capturing = true;\n    }\n    void end(cudaGraph_t * graph) {\n        const auto status = cudaStreamEndCapture(stream, graph);\n        capturing = false;\n        release_count();\n        CUDA_CHECK(status);\n    }\n    ~ggml_hyle_capture_guard() {\n        if (capturing) {\n            cudaGraph_t discarded = nullptr;\n            (void) cudaStreamEndCapture(stream, &discarded);\n            if (discarded != nullptr) (void) cudaGraphDestroy(discarded);\n        }\n        release_count();\n    }\n};\n"
+        },
+        {
+          "before": "static void ggml_cuda_graph_evaluate_and_capture(ggml_backend_cuda_context * cuda_ctx, ggml_cgraph * cgraph, const bool use_cuda_graph, const bool cuda_graph_update_required, const void * graph_key) {",
+          "after": "static void ggml_cuda_graph_evaluate_and_capture(ggml_backend_cuda_context * cuda_ctx, ggml_cgraph * cgraph, const bool use_cuda_graph, const bool cuda_graph_update_required, const void * graph_key, [[maybe_unused]] ggml_hyle_capture_guard & capture) {"
+        },
+        {
+          "before": "            CUDA_CHECK(cudaStreamEndCapture(cuda_ctx->stream(), &graph->graph));\n            graph_evaluated_or_captured = true; // CUDA graph has been captured\n\n            std::lock_guard<std::mutex> lock(ggml_cuda_lock);\n            if (ggml_cuda_lock_counter.fetch_sub(1, std::memory_order_relaxed) == 1) {\n                ggml_cuda_lock_cv.notify_all();\n            }",
+          "after": "            capture.end(&graph->graph);\n            graph_evaluated_or_captured = true; // CUDA graph has been captured"
+        },
+        {
+          "before": "    if (use_cuda_graph && cuda_graph_update_required) {\n        // Start CUDA graph capture\n        {\n            std::lock_guard<std::mutex> lock(ggml_cuda_lock);\n            ggml_cuda_lock_counter.fetch_add(1, std::memory_order_relaxed);\n        }\n\n        CUDA_CHECK(cudaStreamBeginCapture(cuda_ctx->stream(), cudaStreamCaptureModeRelaxed));\n    }\n\n    ggml_cuda_graph_evaluate_and_capture(cuda_ctx, cgraph, use_cuda_graph, cuda_graph_update_required, graph_key);",
+          "after": "    ggml_hyle_capture_guard capture;\n    if (use_cuda_graph && cuda_graph_update_required) {\n        capture.begin(cuda_ctx->stream());\n    }\n\n    ggml_cuda_graph_evaluate_and_capture(cuda_ctx, cgraph, use_cuda_graph, cuda_graph_update_required, graph_key, capture);"
+        },
+        {
+          "before": "GGML_BACKEND_DL_IMPL(ggml_backend_cuda_reg)",
+          "after": "#include \"native_bridge_impl.h\"\n\nGGML_BACKEND_DL_IMPL(ggml_backend_cuda_reg)"
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,23 @@ add_test(NAME hyle_ggml_runtime_source_contract_test
     "${HYLE_SOURCE_DIR}/tests/compute_provider_ggml_vulkan/source_contract_test.py")
 set_tests_properties(hyle_ggml_runtime_source_contract_test PROPERTIES
   LABELS "compute_ggml_runtime")
+if(HYLE_COMPUTE_CUDA_ENABLED)
+  hyle_add_test(compute_ggml_runtime NAME cuda SOURCES cuda_resource_test.cc)
+  target_include_directories(hyle_compute_ggml_runtime_cuda_test PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda"
+    "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
+  target_link_libraries(hyle_compute_ggml_runtime_cuda_test PRIVATE ggml CUDA::cudart)
+  if(HYLE_STATIC AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_compile_definitions(hyle_compute_ggml_runtime_cuda_test PRIVATE
+      HYLE_GGML_CUDA_FAULT_INJECTION=1)
+    target_link_options(hyle_compute_ggml_runtime_cuda_test PRIVATE
+      LINKER:--wrap=cudaStreamBeginCapture
+      LINKER:--wrap=cudaStreamEndCapture
+      LINKER:--wrap=cudaGetLastError)
+  endif()
+  set_tests_properties(hyle_compute_ggml_runtime_cuda_test PROPERTIES TIMEOUT 60)
+  hyle_stage_runtime_dependencies(hyle_compute_ggml_runtime_cuda_test)
+endif()
 if(HYLE_GGML_CPU_ENABLED)
   hyle_add_test(compute_ggml_runtime SOURCES execution_test.cc
     ../compute_provider_ggml_vulkan/metadata_test.cc)

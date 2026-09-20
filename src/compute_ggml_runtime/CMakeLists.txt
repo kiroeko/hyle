@@ -1,5 +1,5 @@
 # Shared source ownership does not imply a shared backend executor. Only the
-# selected CPU/Vulkan closures enable their native implementation targets.
+# selected CPU/CUDA/Vulkan closures enable their native implementation targets.
 set(_cpu OFF)
 set(_explicit_factors "${HYLE_DEV_FACTORS}")
 string(REPLACE "," ";" _explicit_factors "${_explicit_factors}")
@@ -13,7 +13,7 @@ if(DEFINED HYLE_COMPUTE_CPU AND NOT HYLE_COMPUTE_CPU)
   set(_cpu OFF)
 endif()
 set(HYLE_GGML_CPU_ENABLED "${_cpu}" PARENT_SCOPE)
-if(NOT _cpu AND NOT HYLE_COMPUTE_VULKAN_ENABLED)
+if(NOT _cpu AND NOT HYLE_COMPUTE_VULKAN_ENABLED AND NOT HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_module(compute_ggml_runtime OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_ggml_runtime PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
@@ -48,6 +48,17 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   list(APPEND _licenses
     "${_vk_patches}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-patches-LICENSE"
     "${_vk_patches}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-vulkan-patches-NOTICE.md")
+endif()
+if(HYLE_COMPUTE_CUDA_ENABLED)
+  hyle_audit_in_tree_dependencies(ggml_cuda_runtime_patches)
+  set(_cuda_patches "${HYLE_SOURCE_DIR}/third_party/ggml_cuda_runtime")
+  list(APPEND _manifests "${_cuda_patches}/patches.json")
+  list(APPEND _patch_args --manifest "${_cuda_patches}/patches.json")
+  string(APPEND _source_identity "${HYLE_DEP_GGML_CUDA_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
+  list(APPEND _locked ggml_cuda_runtime_patches)
+  list(APPEND _licenses
+    "${_cuda_patches}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cuda-patches-LICENSE"
+    "${_cuda_patches}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cuda-patches-NOTICE.md")
 endif()
 string(SHA256 _source_identity "${_source_identity}")
 string(SUBSTRING "${_source_identity}" 0 16 _source_id)
@@ -87,6 +98,9 @@ block()
     set(GGML_${_option} OFF)
   endforeach()
   set(GGML_CPU "${_cpu}")
+  set(GGML_CUDA "${HYLE_COMPUTE_CUDA_ENABLED}")
+  set(GGML_CUDA_GRAPHS "${HYLE_COMPUTE_CUDA_ENABLED}")
+  set(GGML_CUDA_NCCL OFF)
   set(GGML_VULKAN "${HYLE_COMPUTE_VULKAN_ENABLED}")
   set(GGML_BUILD_COMMIT "${HYLE_DEP_GGML_COMMIT}-hyle")
   add_subdirectory("${_patched_source}" vendor EXCLUDE_FROM_ALL)
@@ -97,6 +111,19 @@ set(_sources metadata_arena.cc)
 if(_cpu)
   list(APPEND _vendor_targets ggml-cpu)
   list(APPEND _sources cpu_execution.cc)
+endif()
+if(HYLE_COMPUTE_CUDA_ENABLED)
+  list(APPEND _vendor_targets ggml-cuda)
+  target_include_directories(ggml-cuda PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda")
+  target_compile_options(ggml-cuda PRIVATE
+    "$<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<NOT:$<BOOL:${MSVC}>>>:-Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden>")
+  if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")
+    target_compile_options(ggml-cuda PRIVATE
+      "$<$<COMPILE_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
+    target_link_options(ggml-cuda PRIVATE
+      "$<$<LINK_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
+  endif()
 endif()
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   list(APPEND _vendor_targets ggml-vulkan)
@@ -114,7 +141,7 @@ foreach(_target IN LISTS _vendor_targets)
   set_target_properties(${_target} PROPERTIES
     EXPORT_NAME "_ggml_${_target}" POSITION_INDEPENDENT_CODE ON)
   hyle_apply_sanitizer(${_target})
-  if(MSVC)
+  if(MSVC AND NOT _target STREQUAL "ggml-cuda")
     target_compile_options(${_target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/EHsc->")
   endif()
 endforeach()
@@ -130,3 +157,8 @@ hyle_register_package_dependency(
   STATIC_FIND_DEPENDENCIES Threads
   LOCKED_DEPENDENCIES ${_locked}
   RUNTIME_FILE_SPECS ${_licenses})
+if(HYLE_COMPUTE_CUDA_ENABLED)
+  hyle_register_package_dependency(
+    NAME ggml_cuda_sdk OWNER compute_ggml_runtime
+    FEATURES compute_cuda FIND_DEPENDENCIES CUDAToolkit|13.3)
+endif()

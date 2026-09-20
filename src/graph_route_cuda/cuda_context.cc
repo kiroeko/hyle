@@ -3,12 +3,14 @@
 #include <array>
 
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/graph/providers/ggml_cuda.h"
+#include "default_context.h"
 
 namespace hyle::graph::cuda {
 
 Result<compute::Context>
 create_context(compute::cuda::DefaultContextOptions options) noexcept {
-  return compute::cuda::create_context(options);
+  return compute::cuda::internal::create_context(options, ggml_cuda::provider());
 }
 
 Result<CompiledGraph> compile(const Graph &graph,

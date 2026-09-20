@@ -438,11 +438,11 @@ _hyle_declare_component(compute_provider_cuda
 # Compiled CUDA defaults compose native implementations without a CPU route.
 _hyle_declare_component(compute_route_cuda
   PRIVATE_DEPS compute_backend_cuda compute_provider_cublas compute_provider_cuda
-               compute_provider_flashinfer
+               compute_provider_flashinfer compute_provider_ggml_cuda
   PUBLIC_DEPS core compute compute_provider_marlin
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h)
 _hyle_declare_component(graph_route_cuda
-  PRIVATE_DEPS compute_backend_cuda
+  PRIVATE_DEPS compute_backend_cuda graph_provider_ggml_cuda
   PUBLIC_DEPS core compute_route_cuda graph
   SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
@@ -479,8 +479,14 @@ _hyle_declare_component(compute_ggml_runtime
 
 # M1-C AUDITED identities; the finite native resource/ABI contract is frozen.
 # Product dependencies and headers are added with their real implementation.
-_hyle_declare_component(compute_provider_ggml_cuda)
-_hyle_declare_component(graph_provider_ggml_cuda)
+_hyle_declare_component(compute_provider_ggml_cuda
+  PRIVATE_DEPS compute_backend_cuda compute_ops compute_ggml_runtime error mem
+  PUBLIC_DEPS core compute
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/ggml_cuda.h)
+_hyle_declare_component(graph_provider_ggml_cuda
+  PRIVATE_DEPS compute_provider_ggml_cuda compute_ops error mem graph
+  PUBLIC_DEPS core compute
+  SPLIT_PUBLIC_HEADERS hyle/graph/providers/ggml_cuda.h)
 _hyle_declare_component(compute_provider_flashinfer
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute

@@ -1,5 +1,7 @@
 #include "ffn_support.h"
 #include "../compute/workload_fixture.h"
+#include "hyle/compute/providers/flashinfer.h"
+#include "hyle/compute/providers/ggml_cuda.h"
 
 namespace {
 using namespace cuda_route_test;
@@ -10,7 +12,16 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
   {
     auto owner =
         cuda::create_context({.metadata_allocator = stats.get()}).value();
-    EXPECT_EQ(owner.provider_count(), 4U);
+    const std::array expected{
+#if defined(__linux__)
+        compute::flashinfer::kProviderId,
+#endif
+        compute::ggml_cuda::kProviderId, compute::cublas::kProviderId,
+        compute::marlin::kProviderId, compute::cuda_native::kSglangProviderId,
+        compute::cuda_native::kProviderId};
+    ASSERT_EQ(owner.provider_count(), expected.size());
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      EXPECT_EQ(owner.provider_identity(i)->id, expected[i]);
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
     Linear first(owner, resource.ref(), type, 128, 256, first_q4, 1);

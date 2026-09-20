@@ -148,10 +148,15 @@ Provider-private layout 只能留在一个 region 内，公开 region boundary �
 因此 Graph 不伪造一个没有 layout producer/consumer 合同的通用 `Repack` step；将来某个真实 provider 需要
 跨 region opaque layout handoff 时，必须先增加有版本的 boundary-layout 合同和可执行 repack owner。
 
-对于 ggml、MLX 或 TensorRT 这类自己 host 图/engine 的 runtime，未来 adapter 会在 compile 冷路径把一个
+对于 ggml、MLX 或 TensorRT 这类自己 host 图/engine 的 runtime，adapter 在 compile 冷路径把一个
 HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
 保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
-安装且通过当前 backend/storage/completion 审计的 Provider 才能提案；当前尚无可用 ggml region provider。
+安装且通过当前 backend/storage/completion 审计的 Provider 才能提案。
+当前普通CUDA Graph入口已组装`graph::ggml_cuda::provider()`：在Compute指南限定的F32域，
+把可合法收缩的RMSNorm/Add节点集合交给同一原版ggml程序；无关节点的插入位置不拆散片段，
+离开再进入集合的路径不强行融合。它可与同设备cuBLAS片段串接，共用真实Completion。
+每个invocation持有独立原生资源，旧结果不被其他槽覆盖；prefer-capture对该managed程序使用
+commands，ggml保留自己的内部capture。它不是全算子覆盖或其他平台接入完成的声明。
 第三方的 `compile` 不必然意味着每次调用零分配：Provider 分别声明 prepared/managed/unknown 成本，
 严格使用者可在 compile 要求 prepared-only；它与 `ReplayMode` 的 command/capture 选择互相独立。
 

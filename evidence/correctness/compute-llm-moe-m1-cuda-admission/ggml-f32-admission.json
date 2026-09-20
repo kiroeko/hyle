@@ -1,0 +1,86 @@
+{
+  "stage": "M1-C ggml F32 Direct/Graph admission checkpoint; full card remains AUDITED",
+  "baseline": "f4942423",
+  "candidate": "Windows worktree; exact changed source hashes below",
+  "source_sha256": {
+    "cmake/HyleComponents.cmake": "1ad0538feabfbe67d497a634380a01a82cb7f805aa1713de37a1575b5e1475c4",
+    "cmake/HyleDependencyLock.json": "d7e1436fd4cd2f9cfa3ebddf4cf6e78eb00f1dfb9eb64afa7661a7d5f64c4822",
+    "include/hyle/compute/cuda.h": "387238c7a8091a8310dd9f61f336e6d79549efc3ba2d0bf63961531e5f30e619",
+    "include/hyle/compute/providers/ggml_cuda.h": "8e4c1534b50ef979b70311f547ebde3400079b1c0a92856af60f917edfc23f3e",
+    "include/hyle/graph/providers/ggml_cuda.h": "9e809a554d9958445c74ac60fd063a6ceb4b35f9efcb603ed4374b0e9db24890",
+    "src/compute_ggml_runtime/CMakeLists.txt": "e9491e25faa11df94d8fc1e415dfedcaca4c6e8451c6f90011f322c388257d27",
+    "src/compute_provider_ggml_cuda/CMakeLists.txt": "6d3864068a8c46eecf74fc1c75ac398f8a7b223f673c5d099b53a8abdf4b3200",
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc": "4383ec0a27b5bcdd148868e284068a830a9d02f452c865990b9a08de0b4da96e",
+    "src/compute_provider_ggml_cuda/native_bridge.h": "ef4396085c72729326314637c9511968bdaf9d3eab7a7781bfc9d8230fd7f9d2",
+    "src/compute_provider_ggml_cuda/native_bridge_impl.h": "cd7b0f7fa934b5018ecedd33d221da4900eddc00970b636246d6232a42817edc",
+    "src/compute_provider_ggml_cuda/program.h": "777383c654e3491cef1cc585a38e35d142bb9b5e5e771ecad6b037aec0ce99bf",
+    "src/compute_route_cuda/cuda_context.cc": "8ebf8b13362221b54cfe4e9b34c6f9d8b7920dd6dac0f630964a82c9f7c0c6f0",
+    "src/compute_route_cuda/default_context.h": "1c67bd330071ddc66e5fa2111ddffa93f5f04ab8e7e676a5ef89e44bbd085918",
+    "src/graph_provider_ggml_cuda/CMakeLists.txt": "e9efbd1ce1dbb5712cb9b646194572a047080d0adbfb7f0aeabde1e372addc24",
+    "src/graph_provider_ggml_cuda/ggml_cuda_region.cc": "29a73116d8f520ae8a628163f27157dc99f62af537fa891c89d8c9f53f0fe702",
+    "src/graph_route_cuda/CMakeLists.txt": "7d0a86bccb6ec8dc5d5c30aad0a4b1edc8700c599b66e170f0aaf7d5b101ec9a",
+    "src/graph_route_cuda/cuda_context.cc": "17bd2957190a4f3e4a178bdec1e67850f6c09067145a460c95d4f691a7684a07",
+    "tests/compute_ggml_runtime/CMakeLists.txt": "1748ce808d960f402d7831c8ac40d5051ae373f262c48415be967143654309ae",
+    "tests/compute_ggml_runtime/cuda_resource_test.cc": "92f05d3ff347d9324bdb8a01ee1753d6d0c4d38cbfcb8465c3e138fb1d64f4c8",
+    "tests/compute_provider_ggml_cuda/CMakeLists.txt": "8828ea1262d9b026de40f298e12dd5b278d97ed83c2ba5d63781ce55a49ed611",
+    "tests/compute_provider_ggml_cuda/allocation_test.cc": "552c4a5d3f5c3732da0d173790af5e6cc8bd25deab0ae57be13c90e3d5aa0a6d",
+    "tests/compute_provider_ggml_cuda/provider_test.cc": "e3c9177f0164aab385aeae13204729fadfb624cf4b830f0f3f5cfe86fbcade5b",
+    "tests/compute_provider_ggml_cuda/test_support.h": "d7a652e36b7453a1fd5c39763d3030804b04d0da1ea2c6f9034f51bd7b8cdbee",
+    "tests/compute_route_cuda/CMakeLists.txt": "e0b1e639db11af9b99786a123bfefee3638fd1f9b9de2095757434410a5eec92",
+    "tests/compute_route_cuda/context_test.cc": "bd6fca9f9ca33444873e107fa10e4f39c2f6b999a458d75de2901fb420c532a2",
+    "tests/compute_route_cuda/ggml_test.cc": "89962df054d77202c571d680ddca9daf7bf7ace54cdbcdf1a2caf8c51564a467",
+    "tests/graph_provider_ggml_cuda/CMakeLists.txt": "547888b42a7ccc2b0441b599429ed3c32e2ab4072ec079011b25535a6d9ff1dd",
+    "tests/graph_provider_ggml_cuda/region_test.cc": "c51f602869b4b5c567f2bc2d3faa31e7c13c8ca1cf43ba5661dbeaed4ec2d496",
+    "tests/graph_provider_ggml_cuda/region_test_support.h": "752e079943f64708d1bfad563a8db0f5f937b0fb438d7f865d81beb408c844b7",
+    "tests/graph_route_cuda/CMakeLists.txt": "3907b6293e133bd0f038b0f04c3f91833974c774f516e4688c574c1add429cd7",
+    "tests/graph_route_cuda/ggml_test.cc": "104ed7a56e82ccbb0f50fd87a08786f973673d053f75c23bebb2b66946f25274",
+    "third_party/ggml_cuda_runtime/LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+    "third_party/ggml_cuda_runtime/NOTICE.md": "fb4df10d7e2f639124bf0813d860bbb1d89738ca5f9a3da3e5acda1f481b40e5",
+    "third_party/ggml_cuda_runtime/patches.json": "ca528f8909e3b13173d2006732c742e37abb0365c08a4a4e328caa057f8b6304"
+  },
+  "windows_executable_sha256": {
+    "hyle_compute_provider_ggml_cuda_test.exe": "9c920b3cce0a94023cbb2e5c3bf77632d393b1dbbb944882b4b4d38fc5a352c8",
+    "hyle_graph_provider_ggml_cuda_test.exe": "7222d9839c5f388da1614e2fa436a82cc183d6c3c65a97e87e46cc0d335fe929",
+    "hyle_compute_route_cuda_test.exe": "b685fc6dc635a230c379fc78bc03a542795de1f1443a67f450347b7eb14bb285",
+    "hyle_graph_route_cuda_test.exe": "efb1ee92a3c740e42385ad00954a3801e7dfbd0190da0cd39db882fcb5a3e285"
+  },
+  "wsl_source_identity": "bundled product-worktree-manifest.json; subsequent differences are user docs, cuda.h comments and test-only LF normalization",
+  "original_provider": "ggml 456172ec733a135778adcd32d00e576a58232e45, resource-only patches",
+  "native": {
+    "windows": "PASS: 8 CTest gates (4 native, 4 headers)",
+    "wsl": "PASS: 8 CTest gates (4 native, 4 headers)"
+  },
+  "resources": {
+    "windows": "PASS: original RMSNorm+residual, two native backends, changed input replay and borrowed-buffer lifetime",
+    "wsl": "PASS: same plus capture Begin/encode/End error injection with preserved native codes and teardown"
+  },
+  "ordinary_paths": [
+    "Direct selects ggml",
+    "whole Graph RMSNorm+Add region",
+    "same-GPU ggml-to-cuBLAS boundary",
+    "unrelated cuBLAS node does not split region",
+    "independent invocations, retained old output, abandoned completion",
+    "cold metadata allocation rollback; failed invocation retirement and replacement"
+  ],
+  "retained_failures": [
+    "C2 first compile stopped before execution to enable original CUDA graphs",
+    "C2 test cudaMalloc typed-pointer compile error corrected",
+    "Graph private dependency initially declared public; CMake rejected it",
+    "old Direct test hard-coded four providers; migrated to platform-qualified roster"
+  ],
+  "coverage_cells_signed": 0,
+  "not_yet_run_for_ggml": [
+    "head256 FP16/BF16 attention",
+    "host sanitizers",
+    "source/static/shared SDK delivery",
+    "Mac CUDA-OFF"
+  ],
+  "performance": "P0 only; no P1 or investigation/comparison of frozen HYLE math",
+  "loc": {
+    "implementation_lines": 51012,
+    "implementation_files": 217,
+    "tests_included": false
+  },
+  "bundle": "ggml-f32-admission-raw.zip",
+  "bundle_sha256": "e4e025f00252236254d01453b2a143b0420f6d2168b1c00cc03d51c1953e50fc"
+}

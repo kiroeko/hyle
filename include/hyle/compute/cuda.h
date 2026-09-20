@@ -27,7 +27,9 @@ struct DefaultContextOptions final {
 // FP16 activation/output, K % 128 == 0, N % 64 == 0, M in [1,64], SM80+.
 using QuantizedWeights = marlin::QuantizedWeights;
 
-// Fixed development rules: dense FP16/FP32 MatMul uses cuBLASLt; the exact Q4
+// Fixed development rules: qualified Linux head256 GQA uses FlashInfer;
+// SM89 dense rank-2 F32 plain RMSNorm/Add use original ggml CUDA programs.
+// Dense FP16/FP32 MatMul uses cuBLASLt; the exact Q4
 // carrier uses Marlin. Packed FP16/FP32 SwiGLU uses pinned precise SGLang for
 // complete 16-byte vectors (hidden % 8/4 == 0), with 16-byte tensor alignment.
 // Separate inputs and non-vector tails use HYLE CUDA kernels.

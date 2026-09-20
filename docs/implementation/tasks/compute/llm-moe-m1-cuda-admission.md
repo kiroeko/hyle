@@ -168,3 +168,23 @@ HYLE只补外来buffer、原生错误、部分构造与capture失败回收。独
 新增vendor目录的selector归属与新Provider平台事实由
 [独立映射卡](../build/ggml-cuda-selector-owner-v1.md)登记并修正复现的共享CUDA开关冲突；不改门命令、授权或P1规则。
 本检查点源码/设计保守追加15分钟，累计100分钟，余20分钟；编译/预声明验证不计成研究。
+
+### ggml F32接线检查点（2026-09-20，仍为AUDITED）
+
+C2原版资源纵切已在Windows/WSL实际运行；WSL还注入capture开始、encode与结束错误，验证
+原生数值及不遗留capture计数。C3/C5实现复用同一Compute程序、每invocation资源和边界event，
+Graph只附加region扩展，普通路线名单只保留一处组装。首域为dense rank-2 F32无参数RMSNorm
+与同形Add；MatMul仍由已有cuBLAS承担同GPU串接，不新增数学kernel。
+
+普通Direct、Graph完整片段、两个请求/重复执行/旧结果、失败槽退役和HYLE metadata逐分配
+OOM已进入本轮测试。旧Direct测试写死四Provider的断言按当前平台名单迁移；不改其数学或
+数值门。Graph提案按数据流合法收缩，不因无关cuBLAS节点的插入位置拆碎ggml片段。
+该有限接法当前只提案整体合格集合；集合不能合法收缩时沿用单算子成熟路径，进一步片段
+覆盖由M2批量lowering承载，不在此重写Graph planner。
+
+本段续查/设计追加12分钟，累计112分钟，余8分钟；实现、编译与预声明验证单列，不重置预算。
+C4 ggml Windows attention及剩余插桩/三交付/OFF仍待完成，新增签署模型覆盖格仍为0。
+
+上述F32接线最终Windows/WSL各8项native/header门通过，原始失败与最终结果见
+[检查点收据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/ggml-f32-admission.json)。
+统一脚本统计Compute+Graph实现51,012行、217文件，不含测试；本记录不关闭M1-C。

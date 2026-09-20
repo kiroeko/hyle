@@ -26,7 +26,22 @@ batch2的prefill(q17/kv31)和decode(q1/kv513)。
 managed派发含原版capability/occupancy/kernel属性查询，不承诺external capture或性能赢家。
 Windows FlashInfer仍未准入；Mac GQA与CUDA-OFF门尚待运行。此检查点不解除自研冻结。
 
-## FlashInfer原版入口
+## ggml F32 Direct/Graph 接入检查点
+
+[具名收据](ggml-f32-admission.json)与`ggml-f32-admission-raw.zip`保留Windows/WSL配置、编译、
+原始失败、最终8项CTest门、二进制/源码身份及统一LOC。原版RMSNorm+残差资源测试在两环境通过，
+WSL另有Begin/encode/End capture故障。普通Direct、完整Graph片段、ggml→cuBLAS串接及
+无关cuBLAS节点插入后的数据流片段均通过；每invocation原生资源独立，变化输入/旧输出及
+HYLE metadata逐分配OOM回滚通过。WSL Provider测试还验证失败Completion、退役槽与新槽恢复。
+
+这些是in-tree构建的接入收据。ggml head256 attention、host sanitizer、源码嵌入/搬移static/
+shared SDK与Mac CUDA-OFF尚未运行，不从FlashInfer的既有收据继承PASS。M1-C仍AUDITED，
+新增签署覆盖格0；当前Compute+Graph全部实现为51,012行/217文件，不含测试。
+
+已归档的FlashInfer ASan/UBSan/旧static构建与Windows GQA构建共393,920,250字节临时文件
+已按明确路径清理；当前ggml构建、共享交付复用目录、依赖缓存和本地模型保留。
+
+## FlashInfer原版入口资格
 
 - 上游`69ff11fc4954396d98326656dc85debd2223f637`，archive SHA见[q-cuda-api.json](q-cuda-api.json)。
 - WSL Ubuntu24.04、GCC14.2、CUDA13.3.73、RTX4070 SM89；原版CUDA头、不含Torch。
