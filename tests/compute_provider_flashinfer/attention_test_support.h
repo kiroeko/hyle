@@ -64,7 +64,8 @@ template <class T> std::vector<T> payload(Tensor &tensor, int seed) {
 template <class T>
 void check_output(Tensor &output, const std::vector<T> &q,
                   const std::vector<T> &k, const std::vector<T> &v,
-                  int query_length, int kv_length, double tolerance) {
+                  int query_length, int kv_length, double tolerance,
+                  float scale = 0.0625F) {
   std::vector<T> actual(q.size());
   ASSERT_TRUE(output.storage.view()
                   .read(std::as_writable_bytes(std::span(actual)))
@@ -83,7 +84,7 @@ void check_output(Tensor &output, const std::vector<T> &q,
           double dot = 0;
           for (std::size_t d = 0; d < 256; ++d)
             dot += double(decode(q[qo_offset + d])) * decode(k[kv_offset + d]);
-          weights[static_cast<std::size_t>(s)] = dot / 16.0;
+          weights[static_cast<std::size_t>(s)] = dot * scale;
         }
         const double maximum =
             *std::max_element(weights.begin(), weights.end());

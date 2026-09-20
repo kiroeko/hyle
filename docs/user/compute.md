@@ -118,6 +118,7 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 |---|---|
 | FlashInfer causal GQA | Linux CUDA SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、Q/K/V depth=256，正 batch/sequence、KV length≥Q length，无额外 mask，FP32 累加；head256 prefill/decode 使用锁定原版实现 |
 | ggml CUDA F32 片段 | Windows/Linux SM89；无额外scale的RMSNorm与同形状Add，dense rank-2 F32、正维度、行数≤65535、元素数≤INT32_MAX、端口256字节对齐；RMSNorm声明FP32累加 |
+| ggml CUDA causal GQA | Windows默认、Linux可显式组合；SM89，dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
@@ -132,15 +133,23 @@ Direct 调用者按 `workspace_requirement()` 为每个并发 invocation 分配�
 Graph 自动规划同一资源。输入、输出和 workspace 必须活到实际 Completion 结束。
 原版派发包含 capability、occupancy 和 kernel attribute 查询，属于 managed 执行，当前不支持
 外部 capture；普通 Graph 的 prefer-capture 会报告 commands 路线。失败后重建 invocation，
-不在执行时改选其它实现。Windows 未准入此 FlashInfer pin，不能据此推断该平台已支持 attention。
+不在执行时改选其它实现。Windows 未准入此 FlashInfer pin，普通入口在上述域使用ggml。
+
+ggml attention采用相同bottom-right causal合同。FP16保留原版融合attention；该版本的
+SM89融合路径会缩窄BF16 K/V，因此BF16使用原版F32 MatMul/softmax组合与原版cast，
+不将大指数BF16静默转成FP16。此组合持有score矩阵与转换临时值，成本随
+`batch * query_heads * query_length * kv_length`增长，性能资格仍待M2。
+ggml自管每invocation临时资源；`workspace_requirement().size == 0`时直接创建invocation，
+不分配零字节workspace。因果mask只在冷准备时上传，重放只绑定地址。BF16域要求未设置
+`GGML_CUDA_CUBLAS_COMPUTE_TYPE`，否则冷拒绝；Context绑定后不得修改影响上游数值的环境变量。
 
 ggml域由普通CUDA入口冷绑定；expert工厂为`compute::ggml_cuda::provider()`，头为
 `hyle/compute/providers/ggml_cuda.h`。每个invocation独立拥有原版backend、stream、scratch与
 capture cache，输入输出借用到Completion。HYLE用入口/出口两个event连接现有Queue，ggml
 保留片段内部调度和融合。该路径为managed，原版首轮pool/handle与后续capture/cache维护可能
 分配或阻塞host；不在prepare偷跑payload，不支持外部capture。运行失败先收束已接受的原生
-工作并退役该invocation，同一prepared program可创建新槽。M1-C仍在接入验收，完整三交付及
-Windows attention不得由此段F32验证代签；全需求域与成熟实现性能规则由M2裁决。
+工作并退役该invocation，同一prepared program可创建新槽。M1-C仍在接入验收，完整三交付
+不得由F32或attention正确性代签；全需求域与成熟实现性能规则由M2裁决。
 
 基本 tensor 使用同一普通 `prepare()` 和 CUDA Graph 入口，程序准备后无需 workspace 或槽私有
 device storage。View 按共同 byte offset 必须别名原 storage；其余逐元素操作仅在输入与输出描述符

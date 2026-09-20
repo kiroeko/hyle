@@ -157,6 +157,9 @@ HYLE region 翻译成 provider-native artifact；单节点 region 可以像函�
 离开再进入集合的路径不强行融合。它可与同设备cuBLAS片段串接，共用真实Completion。
 每个invocation持有独立原生资源，旧结果不被其他槽覆盖；prefer-capture对该managed程序使用
 commands，ggml保留自己的内部capture。它不是全算子覆盖或其他平台接入完成的声明。
+普通SDPA节点亦复用Compute的完整原版attention程序；Windows选择ggml，Linux优先
+FlashInfer，具体类型/head/数值域见Compute指南。多节点ggml region在当前接入阶段仍限定
+为上述F32集合；attention不由这项region规则抢占Linux已准入的FlashInfer路线。
 第三方的 `compile` 不必然意味着每次调用零分配：Provider 分别声明 prepared/managed/unknown 成本，
 严格使用者可在 compile 要求 prepared-only；它与 `ReplayMode` 的 command/capture 选择互相独立。
 

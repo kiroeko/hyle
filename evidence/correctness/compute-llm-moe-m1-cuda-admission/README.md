@@ -41,6 +41,19 @@ shared SDK与Mac CUDA-OFF尚未运行，不从FlashInfer的既有收据继承PAS
 已归档的FlashInfer ASan/UBSan/旧static构建与Windows GQA构建共393,920,250字节临时文件
 已按明确路径清理；当前ggml构建、共享交付复用目录、依赖缓存和本地模型保留。
 
+## ggml head256 attention 接入检查点
+
+[具名收据](ggml-attention-admission.json)与`ggml-attention-admission-raw.zip`记录C4：
+Windows/WSL各8项native/header门通过，FP16/BF16、batch2、8/2 GQA、head256，
+prefill 17/31与decode 1/513，独立double oracle与原容差。双请求/变化输入、地址重绑、
+旧输出、放弃Completion、零负scale及BF16大指数反例均通过。普通Direct/Graph在Windows
+选择ggml、Linux保持FlashInfer；原F32 region和cuBLAS组合回归通过。
+
+原版ggml的SM89融合attention可能将BF16 K/V缩成FP16。本接法对FP16保留原版融合，
+BF16使用原版F32运算图，含score矩阵与转换成本；未修改kernel或降低精度要求，未签性能赢家。
+原始编译/样例失败与最终运行、源码/二进制身份、统一LOC均在包内。ggml host sanitizer、
+三交付、Mac CUDA-OFF尚待完成；本段不关闭M1-C、不签模型覆盖，当前51,158行/217文件。
+
 ## FlashInfer原版入口资格
 
 - 上游`69ff11fc4954396d98326656dc85debd2223f637`，archive SHA见[q-cuda-api.json](q-cuda-api.json)。
@@ -57,7 +70,8 @@ shared SDK与Mac CUDA-OFF尚未运行，不从FlashInfer的既有收据继承PAS
 MSVC14.50.35717/CUDA13.3.73的原版编译失败。保留标准预处理器修正，以及GNU属性、
 LLP64 `std::max`、`ushort`的窄等价诊断。后续NVCC把一个host模板的限定符生成为裸`restrict`；
 两次修正仍失败，第二次host宏污染SDK `__declspec(restrict)`。预算到此停止，Windows本pin
-不准入；全部诊断修改不进入产品。Windows以ggml原版attention继续相同计算需求，尚未签PASS。
+不准入；全部诊断修改不进入产品。Windows相同计算需求已由上方ggml C4检查点签正确性，
+其余M1-C收口门仍待完成。
 
 ## 文件
 

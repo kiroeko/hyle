@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 #include <exception>
 #include <limits>
 #include <new>
@@ -18,6 +19,16 @@
 namespace hyle::compute::ggml_cuda {
 namespace {
 
+bool default_cublas_precision() noexcept {
+#if defined(_WIN32)
+  std::size_t bytes = 0;
+  return ::getenv_s(&bytes, nullptr, 0, "GGML_CUDA_CUBLAS_COMPUTE_TYPE") == 0 &&
+         bytes == 0;
+#else
+  return std::getenv("GGML_CUDA_CUBLAS_COMPUTE_TYPE") == nullptr;
+#endif
+}
+
 struct Extension final {
   ProviderExtensionId id{};
   const void *table = nullptr;
@@ -26,6 +37,7 @@ struct Context final {
   CUcontext primary = nullptr;
   int device = -1;
   bool qualified = false;
+  bool bfloat16_attention = false;
   Extension extension;
 };
 struct Program final {
@@ -71,6 +83,9 @@ struct Invocation final {
   ggml_cgraph *graph = nullptr;
   std::vector<ggml_tensor *> tensors;
   std::vector<ggml_backend_buffer *> buffers;
+  std::vector<ggml_backend_buffer *> scratch;
+  std::vector<ggml_tensor *> masks;
+  std::vector<ggml_tensor *> views;
   std::vector<void *> pointers;
   bool failed = false;
 
@@ -87,7 +102,81 @@ struct Invocation final {
       (void)cudaEventDestroy(exit);
     for (auto *buffer : buffers)
       ggml_backend_buffer_free(buffer);
+    for (auto *buffer : scratch)
+      ggml_backend_buffer_free(buffer);
     ggml_backend_free(backend);
+  }
+
+  ggml_tensor *attention(const internal::Node &node) {
+    const auto &operation = *node.operation.get_if<ScaledDotProductAttention>();
+    auto *context = arena.get();
+    auto *query = tensors[node.inputs[0]];
+    auto *key = tensors[node.inputs[1]];
+    auto *value = tensors[node.inputs[2]];
+    const auto type = query->type;
+    // BSHD is [D,H,S,B] in ggml. Its attention/GQA inputs are [D,S,H,B].
+    query = ggml_permute(context, ggml_cast(context, query, GGML_TYPE_F32), 0,
+                         2, 1, 3);
+    if (type == GGML_TYPE_F16) {
+      key = ggml_permute(context, key, 0, 2, 1, 3);
+      value = ggml_permute(context, value, 0, 2, 1, 3);
+      auto *mask =
+          ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1], query->ne[1]);
+      masks.push_back(mask);
+      auto *result = ggml_flash_attn_ext(context, query, key, value, mask,
+                                         operation.scale, 0, 0);
+      (void)ggml_prec_set_acc(result, GGML_PREC_F32);
+      return ggml_cast(context, result, type);
+    }
+    // This upstream pin narrows BF16 K/V in its SM89 MMA flash path. Use
+    // its original F32 graph to preserve the BF16 exponent range instead.
+    key = ggml_permute(context, ggml_cast(context, key, GGML_TYPE_F32), 0, 2, 1,
+                       3);
+    value = ggml_permute(context, ggml_cast(context, value, GGML_TYPE_F32), 0,
+                         2, 1, 3);
+    auto *scores = ggml_mul_mat(context, key, query);
+    (void)ggml_prec_set_acc(scores, GGML_PREC_F32);
+    (void)ggml_prec_set_src(scores, GGML_PREC_F32, 1);
+    // Scale before masking: a zero or negative scale must not turn -inf
+    // into NaN or +inf. Bottom-right causal offset is KV length - Q length.
+    scores = ggml_scale(context, scores, operation.scale);
+    scores = ggml_diag_mask_inf(context, scores,
+                                static_cast<int>(key->ne[1] - query->ne[1]));
+    auto *probabilities = ggml_soft_max(context, scores);
+    value = ggml_cont(context, ggml_transpose(context, value));
+    auto *result = ggml_mul_mat(context, value, probabilities);
+    (void)ggml_prec_set_acc(result, GGML_PREC_F32);
+    (void)ggml_prec_set_src(result, GGML_PREC_F32, 1);
+    return ggml_cast(context, ggml_permute(context, result, 0, 2, 1, 3), type);
+  }
+
+  Status allocate(ggml_tensor *tensor, ggml_backend_buffer_type_t type) {
+    if (tensor->view_src) {
+      views.push_back(tensor);
+      return Status::Ok();
+    }
+    if (tensor->buffer)
+      return Status::Ok(); // Already bound external tensor.
+    auto *buffer = ggml_backend_buft_alloc_buffer(
+        type, ggml_backend_buft_get_alloc_size(type, tensor));
+    if (!buffer)
+      return Status::ResourceExhausted("ggml CUDA scratch allocation failed");
+    scratch.push_back(buffer); // Capacity reserved before acquiring resources.
+    if (ggml_backend_tensor_alloc(buffer, tensor,
+                                  ggml_backend_buffer_get_base(buffer)) !=
+        GGML_STATUS_SUCCESS)
+      return Status::Internal("ggml CUDA scratch binding failed");
+    return Status::Ok();
+  }
+
+  void bind_views() noexcept {
+    for (auto *tensor : views) {
+      const auto *source = tensor->view_src;
+      tensor->buffer = source->buffer;
+      tensor->data = source->data ? static_cast<std::byte *>(source->data) +
+                                        tensor->view_offs
+                                  : nullptr;
+    }
   }
 
   Status initialize(const Program &program, mem::AllocatorRef allocator) {
@@ -96,9 +185,10 @@ struct Invocation final {
     HYLE_RETURN_IF_ERROR(scope.status());
     const auto &recipe = program.recipe;
     const auto count = recipe.values.size();
-    if (count > (std::numeric_limits<std::size_t>::max)() / 4 - 16)
+    constexpr auto maximum = static_cast<std::size_t>(INT32_MAX) - 16;
+    if (count > maximum / 4 || recipe.nodes.size() > (maximum - count * 4) / 24)
       return Status::OutOfRange("ggml CUDA metadata count overflows");
-    const auto capacity = count * 4 + 16;
+    const auto capacity = count * 4 + recipe.nodes.size() * 24 + 16;
     auto metadata =
         ggml_runtime::MetadataArena::for_graph(capacity, capacity, allocator);
     if (!metadata)
@@ -116,9 +206,17 @@ struct Invocation final {
     HYLE_RETURN_IF_ERROR(
         cuda::status(cudaEventCreateWithFlags(&exit, cudaEventDisableTiming)));
     for (const auto id : recipe.inputs) {
-      const auto dimensions = recipe.values[id].dimensions();
-      tensors[id] = ggml_new_tensor_2d(arena.get(), GGML_TYPE_F32,
-                                       dimensions[1], dimensions[0]);
+      const auto &description = recipe.values[id];
+      const auto dimensions = description.dimensions();
+      std::array<std::int64_t, 4> shape{1, 1, 1, 1};
+      std::reverse_copy(dimensions.begin(), dimensions.end(), shape.begin());
+      const auto type =
+          description.data_type() == DataType::kFloat16    ? GGML_TYPE_F16
+          : description.data_type() == DataType::kBFloat16 ? GGML_TYPE_BF16
+                                                           : GGML_TYPE_F32;
+      tensors[id] =
+          ggml_new_tensor(arena.get(), type,
+                          static_cast<int>(description.rank()), shape.data());
       ggml_set_input(tensors[id]);
     }
     for (const auto &node : recipe.nodes) {
@@ -126,6 +224,8 @@ struct Invocation final {
       ggml_tensor *result = nullptr;
       if (const auto *norm = node.operation.get_if<RmsNorm>())
         result = ggml_rms_norm(arena.get(), a, norm->epsilon);
+      else if (node.operation.get_if<ScaledDotProductAttention>())
+        result = attention(node);
       else
         result = ggml_add(arena.get(), a, tensors[node.inputs[1]]);
       if (!ggml_backend_supports_op(backend, result))
@@ -149,17 +249,36 @@ struct Invocation final {
         // An idle external binding has no payload. Submission installs both
         // the buffer base and tensor address after provenance/size admission.
         tensors[id]->buffer = buffers[id];
-      } else {
-        buffers[id] = ggml_backend_buft_alloc_buffer(
-            ggml_backend_cuda_buffer_type(program.device), bytes);
-        if (!buffers[id])
-          return Status::ResourceExhausted(
-              "ggml CUDA scratch allocation failed");
-        if (ggml_backend_tensor_alloc(buffers[id], tensors[id],
-                                      ggml_backend_buffer_get_base(
-                                          buffers[id])) != GGML_STATUS_SUCCESS)
-          return Status::Internal("ggml CUDA scratch binding failed");
       }
+    }
+    const auto nodes = ggml_graph_n_nodes(graph);
+    std::size_t resources = 0;
+    for (auto *tensor = ggml_get_first_tensor(arena.get()); tensor;
+         tensor = ggml_get_next_tensor(arena.get(), tensor))
+      ++resources;
+    scratch.reserve(resources);
+    views.reserve(resources);
+    auto *type = ggml_backend_cuda_buffer_type(program.device);
+    for (auto *tensor = ggml_get_first_tensor(arena.get()); tensor;
+         tensor = ggml_get_next_tensor(arena.get(), tensor))
+      HYLE_RETURN_IF_ERROR(allocate(tensor, type));
+    for (int i = 0; i < nodes; ++i) {
+      auto *tensor = ggml_graph_node(graph, i);
+      if (!ggml_backend_supports_op(backend, tensor))
+        return Status::Unimplemented("ggml CUDA native graph node declined");
+    }
+    bind_views();
+    for (auto *mask : masks) {
+      const auto columns = static_cast<std::size_t>(mask->ne[0]);
+      const auto rows = static_cast<std::size_t>(mask->ne[1]);
+      std::vector<std::uint16_t> data(columns * rows, 0);
+      for (std::size_t row = 0; row < rows; ++row)
+        std::fill(data.begin() + static_cast<std::ptrdiff_t>(
+                                     row * columns + columns - rows + row + 1),
+                  data.begin() +
+                      static_cast<std::ptrdiff_t>((row + 1) * columns),
+                  std::uint16_t{0xfc00}); // Exact IEEE FP16 negative infinity.
+      ggml_backend_tensor_set(mask, data.data(), 0, ggml_nbytes(mask));
     }
     return Status::Ok();
   }
@@ -186,6 +305,7 @@ Status create_context(const Provider &provider, Device device, void *backend,
     *output = ::new (storage)
         Context{primary, native_device,
                 environment->sm_major == 8 && environment->sm_minor == 9,
+                default_cublas_precision(),
                 detail::ProviderAccess::payload<Extension>(provider)};
     return Status::Ok();
   } catch (...) {
@@ -266,6 +386,7 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
     bind(recipe.inputs[i], invocation.pointers[i]);
   for (std::size_t i = 0; i < outputs.size(); ++i)
     bind(recipe.outputs[i], invocation.pointers[inputs.size() + i]);
+  invocation.bind_views();
 
   Status terminal = cuda::status(cudaEventRecord(invocation.entry, *stream));
   if (terminal.ok())
@@ -318,8 +439,14 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
              .workspace_resource = internal::kBinding,
              .cost = {.workspace = WorkspaceRequirement{},
                       .persistent_bytes = std::nullopt,
-                      .copy_bytes = 0,
-                      .repack_bytes = 0,
+                      .copy_bytes =
+                          request.operation.get_if<ScaledDotProductAttention>()
+                              ? std::nullopt
+                              : std::optional<std::size_t>{0},
+                      .repack_bytes =
+                          request.operation.get_if<ScaledDotProductAttention>()
+                              ? std::nullopt
+                              : std::optional<std::size_t>{0},
                       .synchronization_count = 2,
                       .dispatch_count = std::nullopt},
              .profile_key = ProviderRouteKey{1}};
@@ -377,6 +504,34 @@ bool supports(void *value, Operation operation,
   if (!value || !static_cast<Context *>(value)->qualified ||
       outputs.size() != 1)
     return false;
+  if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
+    if (inputs.size() != 3 || !attention->causal ||
+        attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
+        attention->mask != MaskKind::kNone ||
+        attention->accumulation_type != DataType::kFloat32 ||
+        !std::isfinite(attention->scale))
+      return false;
+    const auto type = inputs[0].data_type();
+    if ((type != DataType::kFloat16 && type != DataType::kBFloat16) ||
+        (type == DataType::kBFloat16 &&
+         !static_cast<Context *>(value)->bfloat16_attention))
+      return false;
+    for (const auto &description : inputs)
+      if (!description.valid() || !description.is_plain() ||
+          !description.is_dense() || description.rank() != 4 ||
+          description.data_type() != type || !description.element_count() ||
+          *description.element_count() > INT32_MAX)
+        return false;
+    const auto q = inputs[0].dimensions();
+    const auto k = inputs[1].dimensions();
+    if (q[0] <= 0 || q[0] > 65535 || q[1] <= 0 || k[1] < q[1] || q[2] != 8 ||
+        k[2] != 2 || q[3] != 256 || k[3] != 256 || q[0] != k[0] ||
+        inputs[1] != inputs[2] || outputs[0] != inputs[0])
+      return false;
+    // Bound native indexing and the BF16 score/mask allocation before any
+    // upstream API asserts or buffer-size arithmetic can be reached.
+    return k[1] <= INT32_MAX / q[1] / q[2] / q[0];
+  }
   const auto domain = [](const TensorDesc &description) {
     return description.valid() && description.is_plain() &&
            description.is_dense() &&

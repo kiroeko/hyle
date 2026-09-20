@@ -1,0 +1,73 @@
+{
+  "stage": "M1-C C4 original ggml attention checkpoint; full card remains AUDITED",
+  "baseline": "d5de485f",
+  "candidate": "Windows worktree; changed source hashes below",
+  "source_sha256": {
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc": "e34714f4f8a1909d7f288fcdb9b995d1574c4387fdb84fc3f7308b076c97537a",
+    "src/graph_provider_ggml_cuda/ggml_cuda_region.cc": "90c42e6d8da22d1826e85352af329895669e5dc5dafe2164ff178e536159d283",
+    "tests/compute_provider_flashinfer/attention_test_support.h": "efc15628ea2e12d958b8a9a63dfef305372c4c6b3115d90356cfde39f6bfe0ed",
+    "tests/compute_provider_ggml_cuda/CMakeLists.txt": "82ea9acef5f4a55ba395427c006f23507e4f788a97575f7fa1319ac6d62a4ce5",
+    "tests/compute_provider_ggml_cuda/attention_test.cc": "0d602ab8a618bf3b9c415efd22bc7e91d3128f46d48edd4c6024174dcde1ed60",
+    "tests/graph_route_cuda/CMakeLists.txt": "207a764e0cf554998e6d9e57b134a5f7d3c2ce6a33fc31c48bb5dadfd1b5bd0e",
+    "tests/graph_route_cuda/attention_test.cc": "e27d52ace659d3c94b4d18056f62a4d6c12a9c9cbdafec000e9b70be9937d2bb"
+  },
+  "windows_executable_sha256": {
+    "hyle_compute_provider_ggml_cuda_test.exe": "5d9db7c0b9ccf1d14888edfa2bba24986aa578dee0116c033ac199f0206db791",
+    "hyle_graph_provider_ggml_cuda_test.exe": "f046f653110ae44781266baa6bac5bcc68fbbea76353befb30a6d82053a506c6",
+    "hyle_compute_route_cuda_test.exe": "b0fb6f34a0cd6bfef58a4f770178eda97553f0be126510a371efd9b178ba4e2b",
+    "hyle_graph_route_cuda_test.exe": "2f7acc39f4a6adfe5b588b8d636b1da3267542d8db1f77c719b8fbcce2fb3b75"
+  },
+  "wsl_source_identity": "bundled full snapshot manifest; final changes after it are evidence/docs only",
+  "windows_source_identity": "same product source; final test-only predicate changes HYLE_COMPUTE_FLASHINFER to __linux__; both are false on Windows, preserving its tested branch",
+  "original_provider": "ggml 456172ec733a135778adcd32d00e576a58232e45, unchanged math and existing resource-only patches",
+  "native": {
+    "windows": "PASS: 8 CTest native/header gates",
+    "wsl": "PASS: 8 CTest native/header gates"
+  },
+  "attention": {
+    "domain": "SM89 BSHD head256 Q/KV heads 8/2, batch 2, causal bottom-right",
+    "prefill": "Q=17, KV=31",
+    "decode": "Q=1, KV=513",
+    "precision": "FP16 original fused FA; BF16 original F32 cast/MatMul/scale/mask/softmax/MatMul/cast graph",
+    "oracle": "independent double reference over actual dtype values",
+    "absolute_tolerance": {
+      "fp16": 0.002,
+      "bf16": 0.01
+    },
+    "cases": [
+      "two independent invocations/queues",
+      "three changed inputs",
+      "rebind every input/output address",
+      "retain old output",
+      "abandoned completion",
+      "zero and negative scale",
+      "BF16 K and V outside FP16 finite range"
+    ],
+    "ordinary_direct_graph": "PASS: Windows ggml, Linux retains FlashInfer default",
+    "existing_f32_regressions": "PASS including full ggml region, same-GPU cuBLAS and Linux native capture failure"
+  },
+  "retained_failures": [
+    "MSVC getenv deprecation and optional/non-optional Graph cost field compile diagnostics; cold environment read fixed and F32 region scope retained",
+    "Windows ordinary-entry sample attempted zero-byte caller workspace for provider-managed ggml scratch; sample now honors actual requirement",
+    "Linux sample expected ggml because private FlashInfer compile definition is not public; expectation now uses the declared platform roster"
+  ],
+  "limitations": [
+    "BF16 uses O(B*H*Q*KV) F32 score storage; no SOTA claim",
+    "BF16 cold-declines GGML_CUDA_CUBLAS_COMPUTE_TYPE override; numerical environment must remain stable after binding",
+    "multi-operation ggml region remains qualified F32 norm/add domain",
+    "no new self-written math; coverage cells signed remain zero"
+  ],
+  "not_yet_run_for_ggml": [
+    "host sanitizers",
+    "source/static/shared SDK delivery",
+    "Mac CUDA-OFF"
+  ],
+  "performance": "P0 integration only; no P1 or frozen HYLE math investigation/comparison",
+  "loc": {
+    "implementation_lines": 51158,
+    "implementation_files": 217,
+    "tests_included": false
+  },
+  "bundle": "ggml-attention-admission-raw.zip",
+  "bundle_sha256": "146bb2907a18f261a271ab0e7c8b3ee45f0908d472326bc0e4b31dd422ac8df0"
+}

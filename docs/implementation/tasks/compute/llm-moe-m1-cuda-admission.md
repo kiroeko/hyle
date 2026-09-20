@@ -188,3 +188,38 @@ C4 ggml Windows attention及剩余插桩/三交付/OFF仍待完成，新增签�
 上述F32接线最终Windows/WSL各8项native/header门通过，原始失败与最终结果见
 [检查点收据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/ggml-f32-admission.json)。
 统一脚本统计Compute+Graph实现51,012行、217文件，不含测试；本记录不关闭M1-C。
+
+### C4原版attention接法定界（产品修改前）
+
+锁定pin的`fattn.cu::ggml_cuda_get_best_fattn_kernel`在SM89/head256及未对齐KV长度
+选择MMA_F16；`fattn-common.cuh::launch_fattn`会将BF16 K/V转成FP16。BF16有限大值
+由此可变成无穷，不能靠小输入通过来签相同数值合同，也不修改上游数学或启发式。
+
+- FP16采用原版`ggml_flash_attn_ext`及F32累加；Q无损升F32，因果mask在invocation
+  冷准备时一次上传，输出用原版cast回FP16。
+- BF16采用原版cast、F32 MatMul、scale、diag-mask、softmax及MatMul的完整ggml图；
+  两个MatMul显式F32输入/累加精度。保留BF16范围，临时score矩阵与转换成本计入，
+  本卡不声称该组合有性能优势。`GGML_CUDA_CUBLAS_COMPUTE_TYPE`存在时该BF16域冷拒绝，
+  不修改进程环境；绑定后不得修改影响上游数值的环境变量。
+- C2资源映射只扩展到上述原版内部tensor/view与常量；submit重新绑定边界及派生view地址，
+  不重建图、不提前执行用户payload。Graph继续复用相同Compute程序。
+- 原C4数值门增加BF16大指数反例、零/负scale及双请求/重绑；原C3回归继续适用。
+  验证未执行前仍不签PASS。该定界仍属于C2/C4/C5有限FIX，公开API、pins及owner不变。
+
+此次依据检查/定界计5分钟，源码/设计累计117分钟，余3分钟；到此结束接法研究，
+进入实现与已声明验证，不重置预算或调查冻结自研。
+
+C4实现保持多节点region的F32范围；单SDPA节点已通过相同Compute程序执行完整原版ggml图，
+不因扩展Compute准入而隐式把多个attention融合/改选。FP16 mask与BF16中间值均在冷准备
+分配，view随外来地址重绑，原版图/capture复用。转换成本在提案中标未知而非零。
+首轮Windows编译发现MSVC的getenv告警及region成本字段类型不匹配；修正冷环境读取，
+并恢复本卡F32 region界限。随后native测试7/8通过；普通入口样例沿用caller workspace
+模式误分配0字节，改为按实际workspace需求分配后Windows最终8/8通过。两次失败日志保留，
+均未修改算术/容差；WSL及剩余生命周期/交付收口门仍待验证。
+
+WSL同样完成最终8/8门；首次普通入口期望值误用未传给consumer的私有FlashInfer编译宏，
+改按已声明Linux名单校验后通过，产品路由未改。Windows编译分支保持相同，复用其8/8结果。
+FP16/BF16的prefill/decode、双请求/重绑/旧输出、零负scale与BF16大指数均已实际运行，
+见[attention收据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/ggml-attention-admission.json)。
+Compute+Graph统一统计51,158实现行、217文件，不含测试；host sanitizer、三交付与Mac OFF
+仍未签，M1-C保持AUDITED，模型覆盖仍为0格。

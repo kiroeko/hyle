@@ -1,3 +1,4 @@
+#include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 
 #include "../compute_provider_flashinfer/attention_test_support.h"
@@ -5,6 +6,11 @@
 namespace {
 using namespace flashinfer_test;
 namespace graph = hyle::graph;
+#if defined(__linux__)
+constexpr auto kAttentionProvider = compute::flashinfer::kProviderId;
+#else
+constexpr auto kAttentionProvider = compute::ggml_cuda::kProviderId;
+#endif
 
 template <class T>
 void run_attention(compute::DataType type, int query_length, int kv_length,
@@ -25,12 +31,18 @@ void run_attention(compute::DataType type, int query_length, int kv_length,
   auto prepared = compute::prepare(context, compute::Operation(operation),
                                    inputs, outputs, memory.ref())
                       .value();
-  ASSERT_EQ(prepared.provider().id, compute::flashinfer::kProviderId);
+  ASSERT_EQ(prepared.provider().id, kAttentionProvider);
   const auto requirement = prepared.workspace_requirement();
-  auto workspace =
-      mem::Buffer::create(memory.ref(), requirement.size, requirement.alignment)
-          .value();
-  auto direct = prepared.create_invocation(workspace.view()).value();
+  mem::Buffer workspace;
+  if (requirement.size != 0) {
+    auto allocated = mem::Buffer::create(memory.ref(), requirement.size,
+                                         requirement.alignment);
+    ASSERT_TRUE(allocated) << allocated.error().message();
+    workspace = std::move(*allocated);
+  }
+  auto direct_result = prepared.create_invocation(workspace.view());
+  ASSERT_TRUE(direct_result) << direct_result.error().message();
+  auto direct = std::move(*direct_result);
 
   auto builder = graph::GraphBuilder::create().value();
   auto q_id = builder.input(query.description).value();
@@ -42,9 +54,10 @@ void run_attention(compute::DataType type, int query_length, int kv_length,
   auto compiled = graph::cuda::compile(logical, context, memory.ref());
   ASSERT_TRUE(compiled) << compiled.error().message();
   ASSERT_EQ(compiled->report.step_count(), 1u);
-  EXPECT_EQ(compiled->report.step(0)->provider.id,
-            compute::flashinfer::kProviderId);
-  auto invocation = compiled->executable.create_invocation().value();
+  EXPECT_EQ(compiled->report.step(0)->provider.id, kAttentionProvider);
+  auto invocation_result = compiled->executable.create_invocation();
+  ASSERT_TRUE(invocation_result) << invocation_result.error().message();
+  auto invocation = std::move(*invocation_result);
   ASSERT_TRUE(invocation.bind(q_id, query.view.as_const()).ok());
   ASSERT_TRUE(invocation.bind(k_id, key.view.as_const()).ok());
   ASSERT_TRUE(invocation.bind(v_id, value.view.as_const()).ok());
@@ -66,7 +79,7 @@ void run_attention(compute::DataType type, int query_length, int kv_length,
   }
 }
 
-TEST(CudaDefaultGraph, FlashinferPrefillDecodeThroughNormalEntries) {
+TEST(CudaDefaultGraph, MaturePrefillDecodeThroughNormalEntries) {
   run_attention<__half>(compute::DataType::kFloat16, 17, 31, 0.002);
   run_attention<__half>(compute::DataType::kFloat16, 1, 513, 0.002);
   run_attention<__nv_bfloat16>(compute::DataType::kBFloat16, 17, 31, 0.01);

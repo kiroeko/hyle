@@ -18,6 +18,10 @@ Result<bool> supported_node(void *context, const Graph &graph,
   auto operation = graph.operation(node);
   if (!operation)
     return false; // Symbolic metadata views are not this exact native domain.
+  // Attention already lowers to a complete native program through Compute.
+  // This seam's multi-operation region remains the qualified F32 norm/add set.
+  if (operation->get_if<compute::ScaledDotProductAttention>())
+    return false;
   auto input_count = graph.node_input_count(node);
   auto output_count = graph.node_output_count(node);
   auto effects = graph.node_resource_count(node);
