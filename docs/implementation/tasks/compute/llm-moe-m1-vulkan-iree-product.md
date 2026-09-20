@@ -139,6 +139,20 @@ owner 终止并取消其余请求，重建 owner 后恢复；数值 overflow 由
 
 ## 实施检查点：共同格式与 MXFP4 普通入口
 
+### I3 适用 host 验证发现的有限资源修复
+
+候选 `778aa484` 在 Air 的原生 Scan 重复执行触发堆损坏。一次 ASan 构建同时插桩 HYLE
+adapter 与原版 IREE runtime，确认 `async/platform/posix/proactor.c` 的
+`iree_async_proactor_posix_drain_pending_semaphore_waits` 在 final callback 之后写
+`wait_op->base.next`，而原版 `async/operation.h` 明确允许 final callback 释放该操作。
+Windows 的 IOCP 路径不包含这次非法访问；其既有 PASS 不代签 POSIX。
+
+本项属于已审 I3/I6 的 callback 存储归还接缝，owner 与数学/普通接口范围不变。固定唯一 FIX：
+在调用 final callback **之前**清理操作上的 tracker 引用，callback 返回后不再访问操作；
+使用现有精确 hash 资源 overlay，保留原版队列、等待、worker 和数值程序。最多两次同根因
+纠正；重用已经复现的 Scan/repeat/自动推进/尾回调测试和一次 ASan 纠正验证，随后执行普通
+Release 回归。当前未修、未签 PASS；不以该具体缺陷重启 Q-VK 调查或冻结算子研究。
+
 AUDITED 检查点为 `8b3c5c30`，随后产品候选 `d5cd5568c179d0f9bbff1cd528b306f3a9bde558`
 实现 I1，以及 I5/I6 中独立的原版 ggml MXFP4 纵切。
 [产品收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/mxfp4-product.json)
