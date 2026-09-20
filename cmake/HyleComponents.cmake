@@ -476,8 +476,8 @@ _hyle_declare_component(compute_provider_ggml_vulkan
 _hyle_declare_component(compute_ggml_runtime
   PRIVATE_DEPS core error mem)
 
-# M1-C SCOPED identities only; no dependency, public header or product root is
-# granted until the native resource/ABI audit freezes those contracts.
+# M1-C AUDITED identities; the finite native resource/ABI contract is frozen.
+# Product dependencies and headers are added with their real implementation.
 _hyle_declare_component(compute_provider_ggml_cuda)
 _hyle_declare_component(graph_provider_ggml_cuda)
 _hyle_declare_component(compute_provider_flashinfer)

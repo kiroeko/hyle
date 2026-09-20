@@ -1,0 +1,40 @@
+{
+  "baseline": "2673c5ebf94d9735350d7a7367204f90477966c2",
+  "upstream_commit": "69ff11fc4954396d98326656dc85debd2223f637",
+  "upstream_archive_sha256": "4fc85abaa6210d6a1773e6011ff572aa0c04b7030644b74f75a2db2dbda472a9",
+  "probe_sha256": "a8d52cad2e89260a7602718a891f895919edff6c5fc8960198fb20abf036a835",
+  "qualification_only": true,
+  "new_model_coverage_cells": 0,
+  "wsl": {
+    "original_headers": true,
+    "sm": 89,
+    "head_dim": 256,
+    "returncode": 0,
+    "verdict": "PASS_ENTRY_QUALIFICATION",
+    "prefill": [
+      17,
+      17
+    ],
+    "decode": [
+      1,
+      257
+    ],
+    "dtypes": [
+      "FP16",
+      "BF16"
+    ],
+    "replays": 3
+  },
+  "windows": {
+    "verdict": "NOT_ADMITTED_THIS_PIN",
+    "reason": "native C++ compilation failed; bounded restrict root corrections exhausted",
+    "mature_alternative": "ggml CUDA original attention; product validation remains required",
+    "diagnostic_source_patches_shipped": false
+  },
+  "raw": {
+    "file": "q-cuda-api-raw.zip",
+    "sha256": "35062b6fa429bbbde5e658a62a1a0cb3d90fa07bf63969308655faab0a3bae00",
+    "bytes": 62978,
+    "members": 30
+  }
+}

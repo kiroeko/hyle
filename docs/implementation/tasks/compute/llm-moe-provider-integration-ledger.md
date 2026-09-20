@@ -15,7 +15,7 @@
 本页的拟定 FIX 必须由相应 owner 的有限卡审计到 AUDITED 才能实施，当前状态以 registry 为准。
 M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路由卡](llm-moe-m1-route-binding.md)
 关闭冷模型条件/原生环境接缝；四环境原生、三交付及适用插桩通过，新增模型覆盖0。
-下一包[M1-C](llm-moe-m1-cuda-admission.md)已登记新身份，先定界资源/ABI资格；其余未审范围不授权产品改动。
+下一包[M1-C](llm-moe-m1-cuda-admission.md)已完成资源/ABI审计并固定C1–C6；其余未审范围不授权产品改动。
 旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
 ## 1. Provider 准入处置
@@ -35,7 +35,7 @@ M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路
 | cuBLASLt | 已有复用；CUDA F05 与量化解码后的合法浮点 GEMM | CUDA Toolkit 的公开 C API，精确 toolkit/driver 由已有环境与 package receipt 绑定 | 不增加第二份 toolkit 下载器；属于 NVIDIA SDK 分发合同 |
 | Marlin | 已有复用；CUDA F06 合格 W4A16 域 | 已锁 vLLM `51918e25` 原版窄源码，Apache-2.0 | group/zero/packing 与数值档位逐一匹配，不能只匹配4bit |
 | SGLang | 已有复用并扩接；CUDA activation/norm、F18 量化/专家程序 | `06992c92` 已有 C++/CUDA 源码片段，Apache-2.0 | AB 只有 W1 static 局部收据；不把 Python/Torch 安装当 SDK 接入 |
-| FlashInfer | 必需；CUDA F07/F15 attention、KV 与成熟融合候选 | 0.6.18 `69ff11fc` 的 CUDA headers/固定入口，Apache-2.0 | C++ prefill/decode 入口接收 stream；Windows、head256、SM89 与资源资格先验证 |
+| FlashInfer | 必需；合格Linux CUDA的F07/F15 attention、KV 与成熟融合候选 | 0.6.18 `69ff11fc` 的 CUDA headers/固定入口，Apache-2.0 | M1-C原版WSL head256/SM89 FP16与BF16入口资格通过；Windows有限编译适配失格，本pin不接入，改接ggml原版attention；产品资源/覆盖仍未完成 |
 | CUTLASS / CuTe | 作为成熟程序的内部依赖准入；F05/F18 | 优先 SGLang/FlashInfer 已采用的固定版本；候选源 `f614dc40`，BSD-3-Clause | 不创建空 Provider，也不从模板另写 GEMM；SM89 FP8 示例不等于 block128 已满足 |
 | IREE Vulkan | **条件准入资格先行**；F02.4、F06/F18 精确数值补位 | `6ef606b6`；标准算子离线编译成参数化 region，C runtime，Apache-2.0 WITH LLVM-exception | 源码有 SPIR-V FP8 legalization、scan/sort/scatter、VkDevice 包装；Q-VK 必须先过，禁止以 compiler 为名手写算法 |
 | cuDNN Graph | 后备；F07 的合格 attention 域 | frontend `91dbf3e9`，Apache-2.0；backend 是 NVIDIA SDK，版本在实际准入时锁定 | 已选 ggml/FlashInfer 承载；公开支持表中 Ada decode head≤128，不能代签 Qwen head256 |
@@ -79,7 +79,7 @@ MLX、cuBLASLt、Marlin、SGLang、FlashInfer计6；IREE Vulkan是条件单元�
 | Q-WXA16 | 三种 Q4/Q8 编码的无损 packing 与 W*A16/F32 累加 | 一个 Q4/Q8 混合线性片段，预填逻辑 codes/scales；禁 A8 重量化、禁全模型浮点常驻 |
 | Q-FP8 | F18 的权重/激活/index 格式与 F32/UE8 scales、SiTU 再量化 | 各路线一个覆盖五行的受控格式 bundle；同量化值和独立格式 oracle，不下载大模型 |
 | Q-VK | IREE 参数化 I32 scan 与 E4M3/E2M1/UE8→标准 MatMul region，在 RTX4070/MoltenVK 同设备运行 | 首次资格含准备最多4小时、每设备一个串行 bundle；检查 Vulkan1.3 基线、压缩驻留与三交付接法；失败只登记具体缺项，下一轮先核对 ncnn/MNN/具名上游实现，不默认自写 |
-| Q-CUDA-API | FlashInfer 原版 headers/依赖可由 Windows/WSL C++ 使用；head256 prefill/decode、独立请求、stream/workspace | 接法调查最多2小时；若入口失格保留 ggml 合法 baseline、登记具体改用的成熟入口；禁止无边界移植整个引擎 |
+| Q-CUDA-API | M1-C原版WSL C++ head256 prefill/decode数值通过；Windows本pin编译失格转ggml原版attention；两请求同时在途/资源完成仍由产品卡验收 | 接法调查计入M1-C总2小时；Windows根因纠正预算已停止；保留原始失败和具名成熟替代，不降低计算需求、不移植整个引擎 |
 | Q-STATE / Q-SPARSE | recurrent state、索引 carry、压缩窗口与原生 shape 条件 | 从已登记模型图借用完整组合，在边界维度差分；不拆融合来追求逐节点统一 |
 
 Q-VK 是一个窄候选的可行性门，不把通用编译器重构纳入 HYLE。拟采用标准 cast/quantization/

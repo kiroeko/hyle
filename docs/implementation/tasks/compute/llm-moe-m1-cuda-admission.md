@@ -3,15 +3,16 @@
 ## Closure card
 
 - owner：`/root`；baseline：`0f54dad4fd95714ef3a03f455f04dc746edccaea`，Windows main。
-- 当前阶段：SCOPED；三个新身份已在`77caf875`登记QUEUED；本卡六owner先审计，不授权产品实现。
+- 当前阶段：AUDITED；三个新身份已在`77caf875`登记QUEUED，六owner在`2673c5eb`完成SCOPED。
+  本轮只授权下列C1–C6资源与成熟实现接入，不授权自研数学。
 - 新增身份：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`、`compute_provider_flashinfer`。
   分别拥有 Direct/native program、Graph region 接线与原版 attention 接入，不建立空 target。
 - 既有 owner：`compute_ggml_runtime`的 CUDA vendor/资源补丁投影，`compute_route_cuda`与
   `graph_route_cuda`的普通工厂组装；按本卡新需求重定界。原生 backend 借用/错误机制先复用，
   只有具体缺口才将 `compute_backend_cuda`纳入，不预先重审整个 CUDA runtime。
 
-上述三个既有owner按本卡明确的新后端/普通入口需求从CLOSED重开至SCOPED，原terminal record
-保留为已有范围的证据；此动作不重审其旧数学。新身份仍没有target、依赖或公开头，不计接入完成。
+上述三个既有owner按本卡明确的新后端/普通入口需求重开，原terminal record保留为已有范围的证据；
+此动作不重审其旧数学。审计阶段仍没有新增target、依赖或公开头，不计接入完成。
 - trigger：[M0清单](llm-moe-provider-integration-ledger.md)的 M1-C/Q-CUDA-API；现有 CUDA
   普通入口没有 ggml region 和 FlashInfer，ggml 公开 API 缺少外来 device buffer/stream 接缝。
 - 先决：[M1-G](llm-moe-m1-ggml-runtime.md)与[M1-R](llm-moe-m1-route-binding.md)均 CLOSED。
@@ -26,7 +27,8 @@
 - tier：P0，签资源与接入成本结构；M2 承担成熟默认路径的适用 P1，M5 前不比较冻结自研。
 - 预算：本 seam 源码/设计总2小时，包含 Q-CUDA-API，不另叠加。前序只读输入从
   2026-09-19 21:43 UTC开始，22:37–22:45续查；保守计入已耗用60分钟，余60分钟。
-  编译/已声明验证时间不冒称研究；每根因最多两次纠正，范围变化重新审计且不重置预算。
+  至2026-09-20 00:08 UTC，续查保守追加25分钟，累计85分钟，余35分钟。编译/已声明验证
+  时间不冒称研究；每根因最多两次纠正，范围变化重新审计且不重置预算。
 - 机器：Windows/WSL SM89 原生与三交付，不支持 CUDA 的平台验 OFF；重型串行、parallel2。
   Windows DLL 邻置，无 UAC、电源策略修改或远端源码回灌。
 - stop：有限接入与适用门完成后关闭；源文件存在、空 target、枚举、copy-only 不构成验收。
@@ -53,20 +55,83 @@ ggml `456172ec733a135778adcd32d00e576a58232e45`（MIT）；FlashInfer
 6. HYLE 已有 `ScaledDotProductAttention`的 layout/mask/scale/causal/accumulation 描述，
    先核对真实数值与 causal 对齐合同，不再建立同义 attention API。
 
-## 有限拟定 FIX（AUDITED 前不实施）
+## 有限 FIX（本轮冻结）
 
 | ID | 准入与承载 | 允许修改 | 验收 |
 |---|---|---|---|
 | C1 | BORROW 原版依赖 | 一个 ggml vendor 源按需启用 CUDA；FlashInfer 原版 C++ 入口；复用 lock/cache/package/license | CUDA OFF 不获取/探测；三交付从同份 target/资源描述导出 |
-| C2 | BORROW 算法、HYLE 资源边界 | ggml primary context、stream、外来 buffer owner、native error、部分回滚与无抛析构桥 | 不误 free 外来指针，不 abort 运营失败，capture 失败不遗留计数/活资源，不假报完成 |
+| C2 | BORROW 算法、HYLE 资源边界 | ggml保留自有stream，通过两个device event连接已准入HYLE Queue；primary context、非 owning buffer、native error、部分回滚与无抛析构桥 | 不误 free 外来指针，不 abort 运营失败，capture 失败不遗留计数/活资源，不假报完成 |
 | C3 | BORROW 原版 region | 每 invocation 保留 ggml program；Direct/Graph 共用必要 schema/资源映射，Graph 类型不下沉 Compute | 真实 norm/MatMul/状态片段、重复执行、两个请求、旧结果与放弃 completion；如实声明 managed/prepared 成本 |
-| C4 | BORROW 原版 attention | Q-CUDA-API 先证明 C++/head256/SM89，再绑定既有公共描述 | Windows/WSL prefill/decode；布局、causal、scale、累加与 workspace/stream；失格先查清单中的成熟替代 |
+| C4 | BORROW 原版 attention | WSL/Linux采用已资格化FlashInfer原版入口；Windows本pin原生接法失格，采用ggml原版attention；绑定既有公共描述 | 两平台均须完成head256 prefill/decode；布局、bottom-right causal、scale、FP32累加与workspace/stream；不同Provider不降低相同数值需求 |
 | C5 | HYLE 冷规则与普通入口 | 组装已资格化成熟实现；使用 M1-R 模型/环境事实，保留真实图边界 | 未知条件不误命中，消费者不排序 Provider/提供 timing；同 GPU 正确完成与失败回收 |
 | C6 | 交付与生命周期 | 适用测试、三交付、指南与有限证据归档 | 普通 Direct/Graph 实际执行，producer 隐藏与 prefix 搬移，DLL 邻置；未运行项不写 PASS |
 
-AUDITED 前固定具体 stream/completion 接法、buffer 保活、并发/关闭、失败退场、冷/热成本
-等级与公开工厂形状。借用 stream 或独立 native runtime 均须保留原版融合并计入必要 copy/sync；
-不能因熟悉某种 vtable 而强迫上游逐 kernel 执行。
+## 能力、公开形状与资源合同
+
+| 能力族 | 层级与当前覆盖 | 本轮承载与有限裁决 |
+|---|---|---|
+| CUDA原版region | 复合功能，MISSING | BORROW ggml完整backend graph；Compute拥有不含Graph类型的私有program/schema，Graph只翻译region边界；不拆上游内部融合/stream调度 |
+| head256 GQA | 复合功能，PARTIAL（仅入口资格） | BORROW FlashInfer Linux与ggml Windows；复用`ScaledDotProductAttention`，mask/类型/layout未资格化的域明确decline |
+| 原生buffer与完成 | 原子组合，PARTIAL | KEEP backend primary-context/resource/QueueSequence/Completion；FIX ggml的非owning wrapper与原生stream桥 |
+| 普通Direct/Graph | 复合功能，PARTIAL | FIX现有`compute::cuda::create_context`与`graph::cuda::{create_context,compile}`的成熟Provider组合；调用方不排序库 |
+| 模型/硬件规则 | 冷策略，ROUTED | KEEP M1-R `WorkloadContext`/CUDA Environment；绑定后不计时、竞速或搜索赢家，未知条件不冒用模型特例 |
+| 全F01–F19映射/模型读取 | M2与应用边界，OUT_OF_SCOPE | DEFER批量lowering到M2；模型读取始终不进入SDK，不能因本卡的seam样例签64域 |
+
+公开增量限三个expert工厂：`compute::ggml_cuda::provider()`、
+`compute::flashinfer::provider()`与`graph::ggml_cuda::provider()`，头不暴露上游或CUDA SDK类型。
+Graph工厂为同一计算实现附加现有region extension；Compute不依赖Graph。普通用户仍按现有
+CUDA入口创建Context、prepare/compile、instantiate、submit和等待真实Completion。
+
+- 每个ggml invocation独立持有backend、metadata graph、临时device buffer、cuBLAS/pool/cache
+  与两个边界event；不可变prepared program只保存描述与冷绑定规则。不同invocation可并发；
+  同一invocation按既有运行状态机串行，调用方不能提前释放借用的payload/allocator。
+- ggml继续拥有自己的root与内部stream。submit在已准入HYLE Queue上record入口event，原生
+  root等待后执行完整region，出口event回接HYLE stream，由既有Completion代表完整完成。
+  不改cuBLAS的stream所有权，不另造Completion线程/事件循环；这两个device event成本计入接入。
+- 外来device tensor使用明确非owning buffer wrapper，尺寸/对齐/provenance在HYLE边界验证；
+  wrapper在invocation准备时建立，submit只重新绑定已验证地址，不释放输入/输出的外来指针。
+  Graph内部值按liveness由invocation拥有；旧结果遵守既有result owner寿命。
+- CUDA/cuBLAS/Driver运营错误保留原生数值，在adapter边界转Status。改写限失败/资源路径：
+  部分构造RAII回滚、析构不抛、capture RAII平衡计数/EndCapture、失败时收束所有已接受原生
+  stream。不能只catch最外层异常，也不能把原生错误化成成功的空Completion。
+- 一旦运行已接受后失败，本invocation失效并保留到quiescence，后续submit明确失败；可从
+  不可变program创建新invocation。放弃Completion仍走既有保活/回收责任，close不得提前free。
+- ggml签`kSharedQueue/kManaged`、provider workspace、不可外部capture，保守声明可能阻塞host。
+  原版首轮pool/handle分配、graph属性检查、稳定后的capture与cache维护如实记账；不在prepare
+  偷跑用户状态来制造prepared资格。动态值必要转换计入完整region，常量不能热路径重打包。
+- FlashInfer直接使用已准入HYLE stream、每invocation显式workspace与原版固定模板入口；签
+  managed并披露原版capability/occupancy/attribute查询，不冒称零查询prepared。成功路径无
+  runtime编译或计时。现有bottom-right causal合同见`docs/user/compute.md`；FP16 QK reduction
+  不启用，BF16/FP16入口各自资格化。workspace大小/溢出冷验证。
+- CUDA-OFF时两个新增Compute factor与Graph factor均absent，不获取依赖/探测SDK；FlashInfer
+  本pin仅Linux CUDA准入，Windows不生成失格target。ggml启用CUDA仍复用一个vendor源，不带入
+  CPU模型fallback。source/static/shared从同一target/资源/许可证声明投影。
+
+## Q-CUDA-API资格裁决
+
+[原始记录](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md)固定源码、
+探针与全部失败。WSL CUDA13.3/GCC14.2、RTX4070 SM89实际运行原版header入口：head256，
+Q/KV heads=8/2，prefill q=kv=17、decode q=1/kv=257，FP16/BF16各3次，独立double oracle通过。
+每项单独持有stream/workspace；这不是两个同时在途请求、产品生命周期或三交付证明。
+
+Windows MSVC14.50/CUDA13.3先因传统预处理器失败，使用标准预处理器后暴露GNU属性、
+LLP64类型推导与`ushort`别名；有限等价兼容诊断后又暴露NVCC生成的host模板中裸`restrict`。
+同根因两次纠正均未通过（改源限定符仍输出裸restrict；host宏又污染SDK的declspec）。
+到此停止该Windows移植，不再扩编译补丁、不改数学、不将失格写成PASS。Windows本轮明确由
+ggml成熟实现承载attention，仍须做相同head/类型/数值/资源验收；WSL入口资格不代签该结果。
+
+## 七问的审计结论（待实现验证）
+
+1. 版本/许可证按上方pins；ggml窄资源补丁独立锁定、build-local生成，FlashInfer Linux用原版
+   header，诊断用Windows修改不进入产品。失格平台已有具名成熟接法，未证明域不fallback自研。
+2. 主head256与正交F32纵切准入C1–C6；同GPU组合、状态与两请求在本卡验证，全模型覆盖仍在M2/M3。
+3. 复用已审Compute/backend/error/mem与MetadataArena；不重开backend，不复制Queue/Completion。
+4. P0分别列冷资源、每invocation存储与边界event、原生managed内部成本；无P1/冻结自研比较。
+5. 仅自然C++三交付，vendor C入口私有，不形成HYLE C/FFI产品。
+6. CUDA vendor与runtime库、FlashInfer header编译目标的锁/许可证/安装由各owner一处描述；
+   三交付和OFF只有实际运行后才能判PASS。
+7. 普通入口继续按路线创建；expert只表达显式组合。managed成本、借用payload和失败后重建
+   invocation写入guide与公开工厂注释，不让用户拼第二套运行生命周期。
 
 ## 预声明验证与边界
 
