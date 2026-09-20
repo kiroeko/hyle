@@ -22,3 +22,8 @@ wrapping only; the original scheduling and math remain unchanged.
 
 The external wrapper (including distinct logical lanes on one native queue) exposes original stop/drain completion through
 a retained HAL semaphore. No new worker, scheduler or math is introduced.
+
+The POSIX semaphore completion path clears its operation tracker reference
+before the final callback, which may free the operation under the original
+async ownership contract. This fixes a reproduced host use-after-free without
+changing numerical programs or adding a new execution mechanism.

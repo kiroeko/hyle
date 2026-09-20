@@ -113,13 +113,13 @@
           {
             "root": "hyle",
             "path": "third_party/iree_vulkan_runtime/NOTICE.md",
-            "sha256": "140e1559e931065ba3b712a4b8ef48f56778e78fe7eb00ea952ec2b16da82249"
+            "sha256": "0c0f68b316132cd31218b91f38eaa6da13ef5e2542dc1dd0ce7ef267e064734e"
           }
         ]
       },
       "vendored": {
         "path": "third_party/iree_vulkan_runtime",
-        "tree_sha256": "c724b8c3fc0ee5752f2aa999b0c57d67202ad3b31b30523e288f2fe5823fcccd"
+        "tree_sha256": "6fd0c440e98339f689628c662e29cab002a818ca7e993b12f7ea6ac8ed07a2fd"
       }
     },
     {
