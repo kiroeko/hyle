@@ -3,7 +3,7 @@
 ## Closure card
 
 - owner：`/root`；baseline：`0f54dad4fd95714ef3a03f455f04dc746edccaea`，Windows main。
-- 当前阶段：CANDIDATE；三个新身份已在`77caf875`登记QUEUED，六owner在`2673c5eb`完成SCOPED。
+- 当前阶段：CLOSED；三个新身份已在`77caf875`登记QUEUED，六owner在`2673c5eb`完成SCOPED。
   本轮只授权下列C1–C6资源与成熟实现接入，不授权自研数学。
 - 新增身份：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`、`compute_provider_flashinfer`。
   分别拥有 Direct/native program、Graph region 接线与原版 attention 接入，不建立空 target。
@@ -251,3 +251,41 @@ Linux既有19库/1011符号与三交付收据按Windows条件不生效的源码�
 `9d430abb908d5c754941f1fdad191bb99a2fdc1d`。C1–C6有限产品改动固定，六owner进入CANDIDATE。
 Windows/WSL native与三交付已有实际收据；Mac Air的CUDA-OFF三门和公共语义/旧CPU隔离四门通过。
 Mini与ggml host sanitizer尚待收齐，未运行门不代签；文档、状态、证据更新不重建产品或启动P1。
+
+## 最终裁决（2026-09-20，CLOSED）
+
+本节替代前面的进行中检查点。C1–C6完成，六owner关闭本轮有限接入范围；candidate仍为
+`43732241adf81ad2bad9f64594e72d752b900b37`。全部适用门已有实际收据，后续状态/文档更新不改产品。
+[最终原生/插桩收据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/final-native-host-sanitizers.json)
+记录Windows最终8项native/header与WSL ASan/UBSan各4项门。ASan保留泄漏检测，CUDA-only控制
+仍只出现既有WSL驱动库280字节；没有新增HYLE/ggml抑制。host插桩不代签GPU device内存安全。
+
+| Gate | 实际证据与边界 | Verdict |
+|---|---|---|
+| scope | C1–C6原版资源/调用/默认入口/交付完成；F32 region与head256 GQA是有限接入纵切，64域覆盖仍待M2/M3 | PASS |
+| architecture | ggml原生backend/stream/pool/capture保有；同GPU边界event复用HYLE Queue/Completion；Graph只附加region边界；无自研数学或万能执行器 | PASS |
+| correctness | Windows/WSL真实F32与FP16/BF16 prefill/decode、双请求/重绑/旧输出/放弃completion、OOM与失败槽退役；WSL capture故障和host ASan/UBSan；Air/Mini CUDA-OFF与公共GQA语义 | PASS |
+| delivery | Windows/WSL普通Direct/Graph源码/static/shared、producer隐藏与prefix搬移；18/19库导出卫生、许可与DLL邻置；Mac OFF无CUDA探测/依赖获取 | PASS |
+| usability_docs | 普通路线冷组装成熟库，调用方不排序Provider；公开工厂、用户指南明确准入域、BF16成本、managed重放、借用与失败后重建 | PASS |
+| red_team | 候选固定后独立一遍资源/数值/图边界/安装审查；Windows每DLL计时器反例修复并完成受影响8门；Mac fixture修正保留原失败；814份产品输入身份对账 | PASS |
+| engineering_performance | P0成本账单通过：冷资源与每invocation所有权明确、两event边界、上游managed维护与BF16转换/score成本如实披露；执行不搜索/计时/裁决Provider | PASS |
+
+完整来源、命令、失败及修正和独立SDK收据见[证据索引](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md)。
+Linux三交付的旧源码身份不改写；两个后续条件块在Linux均不生效，去掉它们精确恢复原文件hash。
+Windows SDK和本次host插桩的814个产品文件与candidate完全匹配。旧FlashInfer/GQA风险证据按
+不变实现复用；最终普通SDK消费已实际验证当前Provider组合。
+
+P1为NOT_APPLICABLE：本卡只签资源接入的P0范围，成熟默认路径的完整消费性能仍由M2/M3完成。
+没有把这些未执行的后续门写成已通过，也没有开始冻结自研的性能比较。
+
+限制：仅已资格化SM89与声明dtype/layout/head/容量；Linux FlashInfer、Windows ggml的合格
+attention接法不同。BF16 ggml使用F32原版图，score存储随B×H×Q×KV增长，不声称SOTA或完整
+模型支持。ggml仍为managed、可能阻塞host、不可外部capture；payload和allocator须满足既有借用
+寿命。Windows FlashInfer本pin失格记录保留，不把后备接通当成其资格恢复。
+
+本卡无阻塞尾项；旧CPU/oneDNN BLOCKED条件不变，M1-A/M1-V和M2/M3按各自有限卡继续。
+reopen triggers：pin/资源补丁或native owner/交付变化；新批量片段需求；可复现错误、OOM、并发、
+完成/销毁或平台反例。源码/设计预算已耗尽，停止本卡新增调查；正常重放不测速。
+
+统一`loc-report.py --self-check`在candidate上统计Compute+Graph **51,161实现行 / 217文件**，
+不含测试/第三方，包含全部冻结存量。新增签署模型覆盖仍为0/256；不把CLOSED或LOC当成模型覆盖。

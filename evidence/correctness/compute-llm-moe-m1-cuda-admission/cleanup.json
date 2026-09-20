@@ -1,0 +1,72 @@
+{
+  "scope": "Completed M1-C SDK/Mac and final native/host-instrumented validation artifacts; earlier FlashInfer cleanup is separate",
+  "removed_logical_bytes": 5860791920,
+  "paths": [
+    {
+      "target": "C:\\hyle-scratch\\m1cs",
+      "removed": true,
+      "evidence_sha256": "d2ecf5179fe95a07288b34a622f61b5824939df70e9ee162b90f6b1b19f86004",
+      "logical_bytes": 3113772746.0
+    },
+    {
+      "machine": "air",
+      "path": "/Users/kiro/hyle-m1c-verify",
+      "logical_bytes": 57367487,
+      "removed": true,
+      "canonical_evidence_sha256": "92d1ff4df64699bd29bfb6ce4c8a30f634d6b4fa751f9b94d02a47277815282d"
+    },
+    {
+      "machine": "mini",
+      "path": "/Users/kiro/hyle-m1c-verify",
+      "logical_bytes": 56915948,
+      "removed": true,
+      "canonical_evidence_sha256": "92d1ff4df64699bd29bfb6ce4c8a30f634d6b4fa751f9b94d02a47277815282d"
+    },
+    {
+      "path": "/root/hyle-m1c-sdk",
+      "logical_bytes": 799155891,
+      "removed": true
+    },
+    {
+      "path": "/root/hyle-m1c-source",
+      "logical_bytes": 32416817,
+      "removed": true
+    },
+    {
+      "removed": true,
+      "logical_bytes": 1045636600.0,
+      "path": "C:\\hyle-scratch\\m1cg"
+    },
+    {
+      "removed": true,
+      "logical_bytes": 4797871.0,
+      "path": "C:\\hyle-scratch\\m1c-qapi"
+    },
+    {
+      "removed": true,
+      "logical_bytes": 52241703.0,
+      "path": "C:\\hyle-scratch\\m1c-fi-full"
+    },
+    {
+      "path": "/root/hyle-m1c-ggml-build",
+      "logical_bytes": 666018463,
+      "removed": true,
+      "file_sha256": null
+    },
+    {
+      "path": "/root/hyle-m1c-ggml-source",
+      "logical_bytes": 32426898,
+      "removed": true,
+      "file_sha256": null
+    },
+    {
+      "path": "/root/hyle-m1c-cuda-init-asan",
+      "logical_bytes": 41496,
+      "removed": true,
+      "file_sha256": "5b50bf098321303e2888e6d255bffea1a032711c5bfe48187ac647f107ef81bd"
+    }
+  ],
+  "kept": "canonical repository, archived evidence, shared dependency caches, local model files",
+  "raw": "cleanup-raw.zip",
+  "raw_sha256": "19eb564d060767d02f6fdb16dd9ae6eeb9e08451df3886bf75832ad4211f5464"
+}

@@ -1,9 +1,9 @@
-# M1-C / 原生接入检查点
+# M1-C / 原生接入验收
 
 本目录保存[M1-C资源卡](../../../docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md)
-的有界上游入口资格及后续Linux FlashInfer接入检查点，不是M1-C整包完成证书。
-各检查点按下文保留实际状态；最新三交付与Mac适用门已通过，剩余host插桩与完整模型需求覆盖仍待验证。
-新增64域×四路线覆盖格为0。
+的有界上游入口资格、实施检查点及最终验收。M1-C与GQA语义卡已CLOSED，产品候选为
+`43732241adf81ad2bad9f64594e72d752b900b37`。下文历史检查点保留当时状态，最终结论见本页
+“最终原生、插桩与清理”及施工卡terminal record；新增64域×四路线覆盖格仍为0。
 
 ## Linux FlashInfer产品接入（2026-09-20）
 
@@ -82,6 +82,21 @@ Air首次编译的shared-only测试声明警告保留，声明按原用例相同
 [候选复核](candidate-review.md)单独检查资源/失败/图边界/数值/安装及P0成本，没有新增产品FIX。
 Windows SDK及两台Mac已完成的临时副本归档后清理，共3,228,056,181字节；保留依赖缓存、本地
 模型以及仍在验证的原生/插桩目录。ggml host sanitizer结果仍待收齐。
+
+## 最终原生、插桩与清理
+
+[最终收据](final-native-host-sanitizers.json)及raw包记录候选的Windows最终8项native/header门、
+WSL ASan/UBSan各4项门全部通过。资源/失败、Direct/Graph、FP16/BF16及capture故障均实际运行。
+ASan继续启用泄漏检查，只保留原CUDA-only控制所证明的WSL `libcuda.so.1` 280字节抑制，
+没有HYLE/ggml抑制；GPU设备内存不由host插桩代签。四个Windows EXE与三种插桩EXE的hash、
+完整cache/flags/LastTest及源码身份保留。统一工具在candidate统计51,161实现行/217文件。
+
+本轮有限C1–C6与S1–S3已完成，七门及P0见当前卡。完整模型覆盖、成熟默认路径P1和M1-A/M1-V
+仍归后续有限任务；冻结自研未比较/优化/删除，旧CPU与oneDNN阻塞没有自动解除。
+
+[清理收据](cleanup.json)保留各平台具名路径、证据先行校验和删除脚本。本次续跑删除临时SDK、
+原生/插桩构建、资格副本共5,860,791,920字节（文件逻辑大小）；此前FlashInfer清理单独记录。
+Windows canonical源码、证据、共享依赖缓存和本地模型保留；此后文档/状态变更不重建或跑P1。
 
 ## FlashInfer原版入口资格
 

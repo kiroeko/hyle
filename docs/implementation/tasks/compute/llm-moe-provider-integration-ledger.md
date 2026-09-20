@@ -15,8 +15,9 @@
 本页的拟定 FIX 必须由相应 owner 的有限卡审计到 AUDITED 才能实施，当前状态以 registry 为准。
 M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路由卡](llm-moe-m1-route-binding.md)
 关闭冷模型条件/原生环境接缝；四环境原生、三交付及适用插桩通过，新增模型覆盖0。
-当前[M1-C](llm-moe-m1-cuda-admission.md)已固定产品候选，Windows/WSL普通入口与三交付、两台Mac
-适用门通过，剩余ggml host插桩待收齐；其余未审范围不授权产品改动。
+[M1-C](llm-moe-m1-cuda-admission.md)已CLOSED：Windows/WSL普通入口与三交付、原生失败/资源、
+host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新增模型覆盖仍为0。下一包M1-A；
+其余未审范围不授权产品改动。
 旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
 ## 1. Provider 准入处置
@@ -36,7 +37,7 @@ M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路
 | cuBLASLt | 已有复用；CUDA F05 与量化解码后的合法浮点 GEMM | CUDA Toolkit 的公开 C API，精确 toolkit/driver 由已有环境与 package receipt 绑定 | 不增加第二份 toolkit 下载器；属于 NVIDIA SDK 分发合同 |
 | Marlin | 已有复用；CUDA F06 合格 W4A16 域 | 已锁 vLLM `51918e25` 原版窄源码，Apache-2.0 | group/zero/packing 与数值档位逐一匹配，不能只匹配4bit |
 | SGLang | 已有复用并扩接；CUDA activation/norm、F18 量化/专家程序 | `06992c92` 已有 C++/CUDA 源码片段，Apache-2.0 | AB 只有 W1 static 局部收据；不把 Python/Torch 安装当 SDK 接入 |
-| FlashInfer | 必需；合格Linux CUDA的F07/F15 attention、KV 与成熟融合候选 | 0.6.18 `69ff11fc` 的 CUDA headers/固定入口，Apache-2.0 | M1-C原版WSL head256/SM89 FP16与BF16入口资格通过；Windows有限编译适配失格，本pin不接入，改接ggml原版attention；产品资源/覆盖仍未完成 |
+| FlashInfer | 必需；合格Linux CUDA的F07/F15 attention、KV 与成熟融合候选 | 0.6.18 `69ff11fc` 的 CUDA headers/固定入口，Apache-2.0 | M1-C原版WSL head256/SM89 FP16与BF16普通入口、资源与三交付通过；Windows本pin编译失格，已接ggml合格attention；完整覆盖仍待M2 |
 | CUTLASS / CuTe | 作为成熟程序的内部依赖准入；F05/F18 | 优先 SGLang/FlashInfer 已采用的固定版本；候选源 `f614dc40`，BSD-3-Clause | 不创建空 Provider，也不从模板另写 GEMM；SM89 FP8 示例不等于 block128 已满足 |
 | IREE Vulkan | **条件准入资格先行**；F02.4、F06/F18 精确数值补位 | `6ef606b6`；标准算子离线编译成参数化 region，C runtime，Apache-2.0 WITH LLVM-exception | 源码有 SPIR-V FP8 legalization、scan/sort/scatter、VkDevice 包装；Q-VK 必须先过，禁止以 compiler 为名手写算法 |
 | cuDNN Graph | 后备；F07 的合格 attention 域 | frontend `91dbf3e9`，Apache-2.0；backend 是 NVIDIA SDK，版本在实际准入时锁定 | 已选 ggml/FlashInfer 承载；公开支持表中 Ada decode head≤128，不能代签 Qwen head256 |
@@ -94,7 +95,7 @@ scan/matmul 操作及上游类型合法化，编译器只作构建工具；sourc
 |---|---|---|---|
 | M1-G | `compute_ggml_runtime`与`compute_provider_ggml_vulkan`已按[资源卡](llm-moe-m1-ggml-runtime.md)CLOSED；原CPU owner仍BLOCKED | 一个共同 ggml vendor 源与按路线启用的原生后端；复用现有 context 失败 patch 的已审资源部分；CPU persistent pool/plan、OOM/线程创建失败回滚；解决 ggml target 重名/旧新 pin 混用 | 真实 norm→MatMul→状态片段，重复执行不重建 pool；allocation/thread failure、两个 invocation、close；对应源码/静态/动态和 route-OFF；不改原版数学 |
 | M1-R | compute / graph 与四路线具名owner；以registry实际状态绑定，CPU/CUDA既有CLOSED须按模型条件新需求重定界 | 批量 lowering 的共用语义检查、capability/诊断、模型/配置/phase 与软件/硬件规则 identity；常量、状态、多输出、effect/lease；每路线独立资源程序 | Direct 与 Graph 一组正交片段；未知模型/版本不匹配、缓存失效；热执行无探测、搜索或计时；不造万能执行器 |
-| M1-C | CUDA backend/route + 拟新增 ggml CUDA / FlashInfer factor | 复用本路线 native stream/buffer/event；固定原版后端 import/export 或小资源桥；prepared workspace、capture/失败/完成 | 同 GPU ggml→成熟 GEMM/attention→结果的组合；错误后资源仍可回收、旧结果保活；Windows/WSL；DLL 邻置 |
+| M1-C | 六owner已按[接入卡](llm-moe-m1-cuda-admission.md)CLOSED，GQA两owner按独立卡CLOSED | 原版ggml CUDA/Linux FlashInfer、外来buffer与两event边界、每invocation资源/失败/完成；managed成本明确，不冒称prepared零查询 | Windows/WSL普通Direct/Graph、同GPU cuBLAS组合、三交付及host插桩，Air/Mini OFF与公共语义；源码/设计调查已停止 |
 | M1-A | Apple route + 拟新增 ggml Metal factor | MLX 与 ggml Metal 各自持有原生 program；建立必要 buffer/完成边界；whole recurrent region，不分裂为逐 kernel 接口 | Air/Mini 正确性；状态交错、old output、原生同步成本；三交付；不能把共享地址当作无需同步 |
 | M1-V | 现有 ggml Vulkan/两 route owner；Q-VK 后才决定新增 IREE factor | 扩现有 managed region schema；需要时接独立 IREE 原生 Vulkan region/parameter buffer/完成；共享设备互操作受限时明确有界 GPU copy | RTX4070 和 Air/MoltenVK；所需 feature 诊断、同设备链路、失效/teardown 与三交付；无 CPU 模型 fallback |
 | M1-B | 以上每包所属 build owner 的有限范围 | 复用 lock/features/vendor targets/private patch/resources/license/install；同份 CMake 声明贯通三交付；短 build 根与共享只读缓存 | 开关隔离、单/组合 Provider、源码父工程、静态/动态干净 consumer；关闭路线零下载/链接；不重写构建系统或治理工具 |

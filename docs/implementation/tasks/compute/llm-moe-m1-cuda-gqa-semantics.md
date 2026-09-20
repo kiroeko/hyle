@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；component：`compute_ops`与`compute_provider_native`；阶段CANDIDATE。
+- owner：`/root`；component：`compute_ops`与`compute_provider_native`；阶段CLOSED。
 - baseline：`fb2be1c2`（完整身份由Git解析）；两个owner从M0的SCOPED移交，旧自研数学冻结不变。
 - trigger：M1-C实际接入的Qwen head256、Q/KV heads=8/2被
   `src/compute_ops/operation.cc::infer_attention`的同head检查拒绝；FlashInfer原版入口已经实际通过。
@@ -42,3 +42,23 @@ Mac静态回归首次编译发现既有shared-only测试描述符未随其用例
 不可变candidate为`43732241adf81ad2bad9f64594e72d752b900b37`；S1–S3产品固定。
 Windows/WSL公共语义/旧CPU隔离及已声明host插桩、M1-C自然attention三交付通过；Air四门通过，
 Mini待收齐。本卡进入CANDIDATE，尚未关闭，不研究或比较旧attention数学。
+
+## 最终裁决（2026-09-20，CLOSED）
+
+S1–S3完成，candidate仍为`43732241adf81ad2bad9f64594e72d752b900b37`。本节替代前面的进行中
+检查点；Windows/WSL/Air/Mini公共形状及旧CPU隔离回归通过，适用WSL host插桩沿不变产品代码
+复用；自然GQA在M1-C的Windows/WSL源码/static/shared普通Direct/Graph消费中实际运行。
+原始失败、fixture修正与身份见[M1-C证据](../../../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md)。
+
+| Gate | 结论与证据 | Verdict |
+|---|---|---|
+| scope | 只扩共同GQA/MQA形状语义并隔离旧CPU未支持域；S1–S3完成 | PASS |
+| architecture | 复用SDPA/TensorDesc/错误；分组映射固定，无新增运行时/第二API | PASS |
+| correctness | 四环境正负形状、旧MHA回归与GQA冷拒绝；成熟CUDA 8/2实际数值与资源旅程，适用host插桩 | PASS |
+| delivery | 随M1-C闭包的自然attention源码/static/shared真实消费，隐藏producer与搬移prefix | PASS |
+| usability_docs | 公开描述与指南说明Q/KV head关系、输出形状、分组和旧CPU域边界 | PASS |
+| red_team | 冷检查不进入旧attention数学；空sequence合同不变；Mac静态fixture条件与共享用例一致，未关闭Werror | PASS |
+| engineering_performance | P0只有冷shape/支持域验证，无新增submit成本、数学或存储；P1不适用本语义纠正 | PASS |
+
+无本卡阻塞；未来新增形状/语义、实际消费者不相容或正确性反例才重开。全部旧自研数学继续冻结。
+统一Compute+Graph统计随M1-C为51,161实现行/217文件，不含测试/第三方；本卡不签模型覆盖。

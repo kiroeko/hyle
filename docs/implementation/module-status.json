@@ -393,10 +393,14 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 CANDIDATE：GQA公共语义及旧CPU不支持域隔离固定；Windows/WSL与Air回归通过，Mini待收齐；产品数学未改，三交付由M1-C真实attention消费覆盖。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C7 CLOSED：S1–S3 GQA/MQA公共语义与旧CPU不支持域隔离完成；四环境语义/回归、适用host插桩及M1-C普通attention三交付通过；未改变旧attention数学。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "compute_backend_cpu",
@@ -422,10 +426,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 CANDIDATE：GQA公共语义及旧CPU不支持域隔离固定；Windows/WSL与Air回归通过，Mini待收齐；产品数学未改，三交付由M1-C真实attention消费覆盖。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C7 CLOSED：S1–S3 GQA/MQA公共语义与旧CPU不支持域隔离完成；四环境语义/回归、适用host插桩及M1-C普通attention三交付通过；未改变旧attention数学。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -485,17 +493,25 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "compute_route_apple",
@@ -554,31 +570,47 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CANDIDATE：C1–C6产品/API固定；ggml CUDA与Linux FlashInfer原版Direct/Graph及Windows/WSL三交付通过，剩余host插桩与Mac适用门待收齐；P0接入范围，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37"
+      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
+      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
+      }
     }
   ]
 }

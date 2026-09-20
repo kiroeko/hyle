@@ -213,7 +213,9 @@ C1–C6 在上述表格与 JSON 的 `first_package` / case ID 中仅保留为验
 [Provider准入与详细施工清单](llm-moe-provider-integration-ledger.md)。以下勾选只表示计划产物，
 不表示产品覆盖。实施已进入M1，当前状态以registry及其绑定的有限卡为准；
 [M1-G资源卡](llm-moe-m1-ggml-runtime.md)与[M1-R路由卡](llm-moe-m1-route-binding.md)
-已关闭各自有限资源/冷条件范围，新增256格覆盖仍为0；下一包M1-C。尚未审计的包仍须逐owner
+已关闭各自有限资源/冷条件范围；[M1-C CUDA接入](llm-moe-m1-cuda-admission.md)及其GQA语义卡也已
+CLOSED，Windows/WSL普通入口/三交付/适用插桩与Mac适用门通过。新增256格覆盖仍为0；下一包M1-A。
+尚未审计的包仍须逐owner
 固定有限FIX，不继承旧卡的产品授权。
 
 - [x] **M0-01 模型计算映射**：对 Kimi K3、DeepSeek V4 Pro/Flash、GLM 5.3/Flash、

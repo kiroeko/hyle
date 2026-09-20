@@ -1,0 +1,17 @@
+{
+  "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
+  "scope": "Final Windows affected Provider/default-route regression and WSL ggml host resource instrumentation",
+  "windows": "PASS: corrected candidate; four factor native/header pairs (8 CTest gates), exact logs and binary hashes retained",
+  "asan": "PASS: shared ggml resources/source contract, CUDA Direct provider, Graph region; CUDA fault-injection, replay and failure retirement; 4 CTest gates",
+  "ubsan": "PASS: same four declared gates; halt_on_error enabled",
+  "asan_runtime": "protect_shadow_gap=0; leak detection enabled; only named /usr/lib/wsl/lib/libcuda.so.1 suppression retained from CUDA-only control; no HYLE/ggml suppression",
+  "instrumentation_scope": "host C/C++ ownership and generated CUDA host code; no claim of GPU device instrumentation",
+  "toolchain": "Windows MSVC 19.50; WSL GCC 14.2; CUDA 13.3.73, SM89-real; exact caches/build commands retained",
+  "limits": [
+    "only current admitted M1-C domains",
+    "no model coverage or performance comparison",
+    "self-written math remains frozen"
+  ],
+  "raw": "final-native-host-sanitizers-raw.zip",
+  "raw_sha256": "dbe44e6d9183dddda56dc803aa3362577f08cd7d3c045750d6a0b5fcc4aa56cd"
+}
