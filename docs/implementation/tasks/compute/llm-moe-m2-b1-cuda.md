@@ -4,7 +4,7 @@
 
 - component / owner：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`；`/root`。
 - baseline：`c9744a45b9f6aa2fab27d857af70410f04685518`；Windows canonical，工作树干净。
-- 当前阶段：SCOPED；本检查点只绑定范围，产品 FIX 须在独立 AUDITED 检查点后执行。
+- 当前阶段：AUDITED；`be44efa5` 已独立完成 SCOPED，以下 C1–C4 及本节精确域冻结后实施。
 - trigger：[M0 接入清单](llm-moe-provider-integration-ledger.md)的 B1 新批量片段需求，符合
   [M1-C terminal](llm-moe-m1-cuda-admission.md)的 reopen trigger。现有原版 CUDA adapter
   只接有限 F32 rank2 RMSNorm/Add 及 attention，不能承载张量、门控、索引和状态的完整需求。
@@ -66,3 +66,34 @@
   均未最终裁决；不存在新增完整覆盖 PASS，矩阵仍0/256。
 
 本轮沿用已有公开 CUDA 工厂；pending oneDNN 决策不影响本卡独立工作，也不由本卡代为批准。
+
+## AUDITED：批量承载与精确域
+
+2026-09-20 UTC 核对原 pin 的 `ggml-cuda/{ggml-cuda,unary,binbcast,cpy,concat,norm,sumrows,softmax}.cu`
+及已验收 HYLE bridge/Recipe。源码预算累计25分钟、余95分钟；这是同一120分钟预算。
+
+| 需求族 | 原版事实与当前覆盖 | 有限裁决 |
+|---|---|---|
+| F01 布局/复制/转换 | CUDA CPY 支持 F32/F16/BF16 相互转换；Concat 按 storage 位宽复制；公开 rank 高于原生4维 | PARTIAL/BORROW：dense 高 rank 冷折叠，原生可表示的 aligned stride 用 cont；最终 dense 输出。非浮点与 checked index Cast 仍未接 |
+| F03 广播/Unary | binbcast 原版 Add/Sub/Mul/Div/Repeat；Unary F32/F16，BF16 不直接进入该 kernel | PARTIAL/BORROW：半精度先原版转F32、最终一次cast；用原版 reshape/repeat 译完整合法广播；首批 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh |
+| F04 norm/归约 | RMSNorm/F32 sum_rows/mean、reshape/view/cont 已有后端；CUDA norm 使用二阶矩相减 | PARTIAL/BORROW：RMS 原版+affine；LayerNorm 用 mean→sub→sqr→mean→epsilon→sqrt/div 原版两遍组合，再affine和最终cast；任意归约轴先冷布局翻译 |
+| F02/部分 F03–F04 | 动态索引、重复Scatter、checked Scan、stable TopK、Select/min/max、stable gate、masked Softmax尚无本轮同合同资格 | PARTIAL；不冒用CPU原版结论，也不以已有自研填新覆盖；下一成熟承载必须具名核对，任何新owner先合法定界 |
+| F19 生命周期 | 已有不可变Recipe、每slot原生backend/stream、非owning boundary buffer、两event、真实Completion | PARTIAL/FIX：新增scalar constants在冷期上传；输出reshape的实际root也要绑定外来buffer并标记output，防止view重绑覆盖或融合吞掉发布中间值 |
+
+首批输出/输入须 plain F32/F16/BF16，dense 支持公共 rank0..8；非dense先限原生rank≤4且stride
+按元素对齐。空张量、不可折叠高rank stride、奇数字节stride、其它storage与剩余算子仍属于21行
+的未完成部分，不削分母。公开 schema 先推导并核对输出，检查元素/byte/原版索引容量；原生每个
+中间节点再次核对后端和实际launch维度，不能把 `supports_op` 泛化为所有内部数值域正确。
+
+普通 Direct/Graph 工厂已有 ggml 优先绑定，不需修改其 CLOSED owner。保持 SM89 资格与 M1-R
+冷模型/环境事实；未知条件不扩大证书。新算子没有自己的公开factory、runtime或queue。
+
+资源/API freeze：沿用现有public工厂和私有Recipe；每个slot创建一次图/metadata/backend/scratch，
+提交只更新外来地址、view依赖及既有两event桥。新增常量由slot独立持有并冷上传，不在prepare执行
+用户数据；FP32转换、repeat/cont及原版managed维护如实收费，无法确知的copy/repack/私有字节不写0。
+Graph合并合法pure节点，发布的view及其root都标output；attention仍保留已验收完整leaf，动态检查
+节点未证明可融合前保留边界。没有新增数学kernel、CPU计算fallback、依赖pin或公共owner变化。
+
+C1–C4 的首批实现由上述精确域约束；未绑定域和全部适用验证继续留在本卡，不按一批提交签收B1。
+预声明差分增加：rank6/8双向广播、非相邻轴归约、scalar/strided输入、三种浮点的转换/特殊值，
+LayerNorm大偏移常量/低方差行，以及一张发布中间值的多节点图在两个slot重放。
