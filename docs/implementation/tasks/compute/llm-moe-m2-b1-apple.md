@@ -142,3 +142,25 @@ WSL OFF、最终selected门与P1尚未完成，整卡仍AUDITED/验收INCONCLUSI
 本检查点已清理Windows与Air各60,298,074字节的完整源码归档，以及Windows
 1,660,940字节的临时OFF构建；先核对绝对路径与任务owner后删除。Air原生开发构建保留复用，
 缓存/本地模型未改，原始必要日志已压入37,337字节证据包。
+
+## 待审增量：原版 Scatter 赋值与 add 资格边界
+
+`54c02a4e`后继续同一B1，原A-I1..3授权保持。本节只固定原版资格范围；新产品FIX尚未AUDITED。
+F02.2需求包含unique assign和duplicate add；现公开Scatter额外承诺重复assign取最后项、add逐次
+舍入。未核对的原版同名函数不能代签这些语义，也不因接库擅自放宽合同。
+
+- 锁定MLX的`backend/metal/indexing.cpp:232–257`拒绝8字节scatter值，并从base复制输出；
+  `kernels/indexing/scatter.h`以`op.atomic_update`提交不同线程的更新，未承诺逻辑行主序。
+  这些是原版源码；未读取冻结HYLE Scatter算法。
+- 待资格接法：原版I32 `scatter_max`把每个目标映射到最大逻辑更新位置，再原版take/where
+  选择更新或base。数据不交给8字节scatter；F32/F16/BF16选择用原版同宽bit view保持storage，
+  I64/Bool直接原版选择。索引/布局和checked摘要复用已资格的原版操作组合。
+- 限定原版资格：六种storage×两种index宽度、scalar/多维/repeated/strided、动态坏索引与
+  恢复、raw bits、空域；独立host赋值oracle。一次F32原版scatter_add非结合序列核对只验证其
+  能否满足当前逐次add合同，保留失败/无保证结论，不调用旧HYLE数学、不计时。
+- 成本预审：临时I32目标映射O(axis extent)与更新位置O(index count)，原版take/where为
+  O(output elements)，固定数量原版调用；不建立按每条更新展开的巨大图，不新增Metal核。
+  add不合格时保持具名成熟承载缺口，不转为自研授权或缩小完整B1分母。
+
+本次合同/原版源码与接法核对累计44/120分钟，余76分钟；资格执行单列。先归档资格、冻结
+具体有限FIX并提交AUDITED检查点，再改产品分派。其它成熟张量/归约域仍待整批来源/语义核对。
