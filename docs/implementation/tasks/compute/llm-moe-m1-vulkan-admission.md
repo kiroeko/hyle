@@ -194,3 +194,9 @@ IREE 普通接入与共同格式的新 owner 已转入[独立产品卡](llm-moe-
 AUDITED（经独立SCOPED检查点）；本卡已有三 owner 保持 AUDITED。IREE 相关产品改动严格限于
 该卡 I1–I7 已冻结的共同格式、实际native feature/queue/quota/异步片段适配和普通入口，禁止
 扩张自研数学。本卡原版 recurrent 已完成的范围与父包未决验收不变。
+
+新增产品检查点 `d5cd5568` 已通过普通MXFP4 Direct/Graph的Windows shared / Air static四factor
+及头验收，详见[独立产品卡](llm-moe-m1-vulkan-iree-product.md)和
+[产品收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/mxfp4-product.json)。
+共同具名格式已实现；FP8/checked Scan的IREE普通接线和整包未决门继续保留，不能把格式或原生资格
+代签产品。Compute+Graph **52,110 行 / 224 文件**，新增完整覆盖仍 **0/256**；M1-V未关闭。

@@ -123,3 +123,29 @@ IREE Scan 首个普通域为 dense I32、末轴、正形状；其余已存在功
 普通 `graph::vulkan::compile`。本卡只增加格式说明与私有适配，禁止要求用户直接管理 VM/MLIR。
 七问裁决：成熟实现承载、明确有限域、复用Mem/Error/native owner、P0完整计费、私有C边界、
 三交付同源、普通接口可达；实现及适用验收尚未签字。调查未新增预算，按上述有限FIX开始实施。
+
+## 实施检查点：共同格式与 MXFP4 普通入口
+
+AUDITED 检查点为 `8b3c5c30`，随后产品候选 `d5cd5568c179d0f9bbff1cd528b306f3a9bde558`
+实现 I1，以及 I5/I6 中独立的原版 ggml MXFP4 纵切。
+[产品收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/mxfp4-product.json)
+及同目录 raw archive 保留完整 selector、命令、原始测试、Windows/Air源码身份和统一LOC。
+
+- 新 `low_precision.h` 提供四种FP8布局和MXFP4的具名描述；按公共普通MatMul推导F32/F16输出，
+  不增加数学实现或量化器。非法块、物理字节溢出、逻辑/物理方向已验证。FP8的格式可构造，
+  其Vulkan普通执行仍未接完，不能因此签覆盖。
+- 普通Vulkan MatMul与Graph已绑定原版ggml MXFP4 `mul_mat` + F16 Cast，F32累加。压缩输入
+  直接以具名原版布局驻留；不把逻辑F16元素数当作压缩字节Copy，也不解压整模型。动态F16
+  activation仍可能有既有对齐Copy，原厂F32结果、最多八份split-K暂存和编码均是实际成本。
+- 支持正尺寸2D、K完整32值块；在既有buffer范围之外，冷期保守限制M/N与split-K grid/暂存。
+  压缩borrowed端口须native descriptor对齐，错误格式与非对应普通算子明确拒绝。
+- Windows shared的9个CTest门、Air/MoltenVK static的8个门全部通过；包括三个变化形状、
+  独立逻辑oracle、repeat3、两个invocation槽、旧结果、压缩输入不变、quota归零，以及Graph
+  两个原版MatMul串接并发布中间结果。Air只接收经前后文件hash核对的Windows提交前向delta。
+- 复用两端已有本包build，无新增native构建树。公共头/manifest使selector选出更宽的完整计划，
+  已原样保存；本检查点只运行预声明四factor及头门，其余selected/交付/host/OFF仍未决，未写PASS。
+
+统一 Compute+Graph 当前 **52,110 行 / 224 文件**，不含测试/vendor；相对本卡启动增加157行
+格式与接线实现。IREE native owner、queue/quota/异步桥、普通checked Scan/FP8、真实混合链和
+整包三交付仍待实施/验收；本卡保持AUDITED，聚合INCONCLUSIVE，新增完整覆盖 **0/256**。
+不因这次检查点关闭M1-V，也不提前研究/比较/改动冻结自研算子。M5前停止点保持。

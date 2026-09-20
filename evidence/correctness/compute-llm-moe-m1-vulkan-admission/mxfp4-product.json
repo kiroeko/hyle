@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "kind": "M1-V original ggml MXFP4 ordinary product slice; partial admission",
+  "candidate": "d5cd5568c179d0f9bbff1cd528b306f3a9bde558",
+  "audit_checkpoint": "8b3c5c30",
+  "upstream_ggml": "456172ec733a135778adcd32d00e576a58232e45",
+  "implemented": [
+    "provider-neutral FP8/MXFP4 named format factories",
+    "ordinary Vulkan MatMul and Graph via original ggml MXFP4 mul_mat plus F16 cast",
+    "compressed resident ports, canonical layouts, native descriptor alignment and conservative device limits"
+  ],
+  "verified": {
+    "windows": {
+      "status": "PASS",
+      "ctest_gates": 9,
+      "linkage": "shared"
+    },
+    "air_moltenvk": {
+      "status": "PASS",
+      "ctest_gates": 8,
+      "linkage": "static"
+    },
+    "cases": [
+      "format bytes/orientation/invalid blocks/overflow/MatMul inference",
+      "Direct shapes [1,32,5], [2,128,16], [7,256,32], independent logical oracle",
+      "two invocation slots, repeat3, unchanged compressed weights/activations, retained old results",
+      "actual quota returns to zero after close and owners retire",
+      "ordinary Graph chains two original matmuls with resident constants and publishes both outputs",
+      "unknown format and incompatible operation/accumulator rejection",
+      "existing affected factor and standalone header regressions"
+    ]
+  },
+  "remaining": [
+    "IREE runtime/product resources, actual native feature/queue/quota adapter",
+    "ordinary checked Scan and FP8, automatic mixed-provider advancement/failure handling",
+    "Windows/Air relocated source/static/shared product consumers",
+    "WSL/Mini common schema/OFF, applicable host instrumentation and full selected closure gates",
+    "M1 final P0 and review"
+  ],
+  "selection": "Full broad plan retained; declared four-factor slice executed. Unrun full selected gates remain pending, not PASS.",
+  "admission_verdict": "INCONCLUSIVE",
+  "new_fully_signed_coverage_cells": 0,
+  "total_cells": 256,
+  "p1": "NOT_RUN: M1 is P0 and all self-implemented mathematics remain frozen",
+  "loc": {
+    "code": 52110,
+    "files": 224,
+    "self_check": "pass",
+    "boundary": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "excludes": "tests and third-party; includes frozen product stock"
+  },
+  "archive": {
+    "path": "mxfp4-product-raw.zip",
+    "sha256": "b80f76e4328dc165110b6a653ef97222c22754a504c7ab7029ae19b2e4eac9f1",
+    "bytes": 1439912
+  },
+  "workspace": "Windows canonical; Air verified forward-only delta, no copied-back product source",
+  "scratch": "Reused Windows and Air M1 build trees; no new native build tree. Retained for next IREE implementation."
+}

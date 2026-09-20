@@ -21,8 +21,8 @@ ggml 片段复用其图和存储，但仍执行原厂编码及内部资源管理
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
-当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 正接入原版递归片段；
-该新增纵切的完整交付与资源资格仍在验收，不代表全模型算子覆盖。
+当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 已接入原版递归片段和
+MXFP4 MatMul；新增纵切的整包交付与资源验收仍未完成，不代表全模型算子覆盖。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
 Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算成功。
 
@@ -91,6 +91,14 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 
 - 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
   MatMul 保持已有设备/shape 性能资格。
+- 二维 MXFP4 weight MatMul：`<hyle/compute/low_precision.h>` 的
+  `mxfp4_weight_description(k, n)` 描述逻辑 `[K,N]`、物理 `[N,K]` 的32值/17字节块，
+  K须为32的倍数；activation为dense F16，F32累加后输出F16。普通
+  `vk::prepare(context, c::MatMul{}, activation_desc, weight_tensor)` 捕获已上传的压缩权重，
+  Graph使用同一描述和MatMul。初始域要求正尺寸、设备buffer/grid限制及保守split-K暂存上限。
+  原版ggml承担计算和输出Cast；动态activation的对齐Copy、F32暂存及原厂编码计入实际成本。
+  压缩权重不经逻辑F16 Copy；借用端口起点必须满足设备descriptor对齐，非法View在绑定时拒绝。
+  Windows/Air普通入口与重复消费已实测，完整三交付与性能验收尚未签字。
 - F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
 - 同三浮点类型的 Reduce Sum/Mean/Min/Max（任意合法轴集合/keepdim）和 Softmax/LogSoftmax
@@ -115,6 +123,10 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 与非空传输一样允许在 close 后读取。`borrow_ready` 的 `available_bytes`
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
+
+同一公共头的 `float8_activation_description` / `float8_weight_description` 描述已有 E4M3FN
+数据及 F32 block128 / UE8M0 group32 scale 表；它们不量化或加载模型。当前 Vulkan 普通 FP8
+执行尚在 M1-V 接入中，不能把格式描述可构造当作该路线已支持计算。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
