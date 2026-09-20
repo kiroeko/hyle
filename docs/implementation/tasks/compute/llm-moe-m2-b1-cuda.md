@@ -140,3 +140,27 @@ parallel2 构建、串行测试；最终 **8/8 CTest、42 次 GoogleTest 执行*
 
 源码/设计预算仍累计56/120分钟；当前保持 AUDITED，继续同一有限改动集。没有展开、调查、
 优化、比较或删除冻结的自研数学；oneDNN 旧 Q2 条件和用户的 M5 前暂停要求均保持。
+
+## C1/C2 第二批定向审计：原版 Softmax（实施前冻结）
+
+沿同一 pin 核对 `ggml.c` 的 `ggml_soft_max_ext` 与 CUDA `softmax.cu`：原版接收 F32 行和
+F32/F16 additive mask，scale 在 mask 相加之前应用；无有效值行的指数和为 NaN，与公开合同
+一致。原版 CUDA `l2_norm` 使用 `max(sum,epsilon²)`，不满足 F04.3；已接原版 Multiply→Sum→
+Add→Sqrt→Divide 组合继续承载 L2，不能替换成同名原子。
+
+本次有限增量仍属 C1–C4，固定如下：
+
+- `SoftmaxKind::kSoftmax`，F32/F16/BF16、F32 accumulation、任意合法 axis、scale；无 mask
+  或同类型可广播 additive mask。沿首批非空/容量/布局范围，半精度原版转F32、末端一次cast。
+- 以原版 reshape/permute/cont 把 `[outer,axis,inner]` 转为行矩阵；mask 按已审广播展开后作
+  同样轴变换，调用原版 `ggml_soft_max_ext`，再逆变换。保留原版 fused scale/mask/Softmax；
+  原版 materialization/managed 成本仍未知，不冒称零copy或capture。
+- Direct 只为单节点 Softmax 的 input0/output0、相同 dense 描述符声明精确原位别名；
+  additive mask 与输出不允许别名，部分重叠仍拒绝。Graph region 保持原有不别名边界。
+- 独立 FP64 log-sum-exp oracle：三dtype、所有轴、rank6/8、strided、广播mask、全遮罩、
+  NaN/Inf、长行；另外检查精确原位、部分重叠拒绝、普通 Direct/Graph、多slot和重复执行。
+- `LogSoftmax`、Bool mask 和其余尚未绑定域继续明确未完成；不以 `log(softmax)` 冒充稳定
+  LogSoftmax，不接入未资格化的激活，不调查或修改冻结自研数学。
+
+本次合同/源码核对计10分钟，累计 **66/120分钟、余54分钟**。本次只推进有限成熟接入；完整
+21行、跨平台、交付、插桩与不可变候选性能仍未验收，状态保持 AUDITED。
