@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 
 #include <gtest/gtest.h>
 #include "ggml-backend.h"
@@ -48,9 +49,27 @@ TEST(GgmlVulkanQualification, Mxfp4PreservesFrozenQvkValues) {
     ggml_set_input(weights);
     ggml_set_input(activation);
     ggml_set_output(output);
+    // Persistent inputs must live outside gallocr's reusable graph workspace.
+    // GGML_TENSOR_FLAG_INPUT reserves an input early; it does not keep it live
+    // after its last consumer. This mirrors the provider's external port owner.
+    auto imports = std::make_shared<
+        std::array<std::shared_ptr<ggml_backend_buffer>, 2>>();
+    const std::array<ggml_tensor *, 2> inputs{weights, activation};
+    for (std::size_t i = 0; i < inputs.size(); ++i) {
+      auto allocation = device->allocate_buffer(ggml_nbytes(inputs[i]));
+      ASSERT_TRUE(allocation);
+      (*imports)[i] = std::shared_ptr<ggml_backend_buffer>(*allocation,
+          [owner = *device](ggml_backend_buffer *buffer) {
+            auto active = owner.activate();
+            ggml_backend_buffer_free(buffer);
+          });
+      auto active = device->activate();
+      ASSERT_EQ(ggml_backend_tensor_alloc((*imports)[i].get(), inputs[i],
+          ggml_backend_buffer_get_base((*imports)[i].get())), GGML_STATUS_SUCCESS);
+    }
     auto *graph = ggml_new_graph_custom(context, 16, false);
     ggml_build_forward_expand(graph, output);
-    auto storage = NativeGraph::allocate(*device, std::move(*arena), graph);
+    auto storage = NativeGraph::allocate(*device, std::move(*arena), graph, imports);
     ASSERT_TRUE(storage) << storage.error().message();
     std::array<std::uint8_t, 16 * 4 * 17> packed{};
     std::array<std::uint16_t, 256> input{};
@@ -79,6 +98,12 @@ TEST(GgmlVulkanQualification, Mxfp4PreservesFrozenQvkValues) {
       auto active = device->activate();
       ggml_backend_tensor_get(output, actual.data(), 0, sizeof(actual));
       EXPECT_EQ(actual, kExpected[variant]);
+      decltype(packed) retained_weights{};
+      decltype(input) retained_activation{};
+      ggml_backend_tensor_get(weights, retained_weights.data(), 0, sizeof(packed));
+      ggml_backend_tensor_get(activation, retained_activation.data(), 0, sizeof(input));
+      EXPECT_EQ(retained_weights, packed);
+      EXPECT_EQ(retained_activation, input);
     }
   }
 }
