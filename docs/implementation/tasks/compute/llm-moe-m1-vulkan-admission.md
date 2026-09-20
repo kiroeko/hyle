@@ -200,3 +200,9 @@ AUDITED（经独立SCOPED检查点）；本卡已有三 owner 保持 AUDITED。I
 [产品收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/mxfp4-product.json)。
 共同具名格式已实现；FP8/checked Scan的IREE普通接线和整包未决门继续保留，不能把格式或原生资格
 代签产品。Compute+Graph **52,110 行 / 224 文件**，新增完整覆盖仍 **0/256**；M1-V未关闭。
+
+IREE 原生产品候选 `dee6ad64` 已完成独立 runtime/制品、共享queue/feature、实际显存配额和
+原版异步推进，见[原生检查点](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/iree-native-checkpoint.json)。
+Windows shared、Air static Release及Air host ASan各通过7项native与6项source验证；ASan发现的
+原版POSIX callback释放后写经有限资源overlay纠正。普通Scan/FP8、混合链和整包交付/剩余门仍待
+验收，不能以native factor代签普通产品。当前统一LOC为 **53,003行 / 230文件**，完整覆盖仍0/256。

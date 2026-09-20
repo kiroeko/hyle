@@ -395,7 +395,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V IREE普通接入AUDITED：I1–I7冻结具名低精度格式、原版runtime/制品、实际显存配额、共享queue/原版proactor续执行、普通Direct/Graph及三交付；自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：具名低精度格式/MXFP4普通入口与IREE原生runtime、queue/feature/quota/异步推进已实现；Windows/Air原生及Air host ASan通过。普通Scan/FP8混合接线和整包验收未完成，自研冻结，覆盖0。"
     },
     {
       "module": "compute_backend_cpu",
@@ -534,19 +534,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V AUDITED：原版ggml recurrent普通Direct/Graph已实现；checked Scan/FP8、MXFP4与单队列异步续执行资格通过。IREE先登记自身owner；普通混合接入与产品三交付未完成，自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：原版ggml recurrent/MXFP4普通Direct/Graph已实现；IREE独立owner已审计，原生runtime/queue/quota/异步门Windows/Air通过。普通Scan/FP8混合接线和整包验收未完成，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V AUDITED：原版ggml recurrent普通Direct/Graph已实现；checked Scan/FP8、MXFP4与单队列异步续执行资格通过。IREE先登记自身owner；普通混合接入与产品三交付未完成，自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：原版ggml recurrent/MXFP4普通Direct/Graph已实现；IREE独立owner已审计，原生runtime/queue/quota/异步门Windows/Air通过。普通Scan/FP8混合接线和整包验收未完成，自研冻结，覆盖0。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V AUDITED：原版ggml recurrent普通Direct/Graph已实现；checked Scan/FP8、MXFP4与单队列异步续执行资格通过。IREE先登记自身owner；普通混合接入与产品三交付未完成，自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：原版ggml recurrent/MXFP4普通Direct/Graph已实现；IREE独立owner已审计，原生runtime/queue/quota/异步门Windows/Air通过。普通Scan/FP8混合接线和整包验收未完成，自研冻结，覆盖0。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -607,7 +607,7 @@
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V IREE普通接入AUDITED：I1–I7冻结具名低精度格式、原版runtime/制品、实际显存配额、共享queue/原版proactor续执行、普通Direct/Graph及三交付；自研冻结，覆盖0。"
+      "summary": "M1-V AUDITED：具名低精度格式/MXFP4普通入口与IREE原生runtime、queue/feature/quota/异步推进已实现；Windows/Air原生及Air host ASan通过。普通Scan/FP8混合接线和整包验收未完成，自研冻结，覆盖0。"
     }
   ]
 }

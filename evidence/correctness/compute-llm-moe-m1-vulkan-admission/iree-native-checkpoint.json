@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "kind": "M1-V private IREE Vulkan native product checkpoint; ordinary route still pending",
+  "candidate": "dee6ad642fc0952d0c47a46daa36330db8291e82",
+  "initial_native_candidate": "aa26de0f2ef0457638fbe89349ee9476bb613375",
+  "audit_checkpoint": "8b3c5c30",
+  "posix_fix_audit": "a22d4836",
+  "upstream_iree": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+  "implemented": [
+    "locked private C runtime, original offline VMFB and same-device native owner",
+    "actual enabled features and shared queue ownership",
+    "actual VkDeviceMemory quota reservation/rollback/release",
+    "original asynchronous VM and proactor completion, independent invocation contexts",
+    "original logical-lane stop/drain notification for accepted failed prefixes",
+    "private checked I32 Scan and two FP8 scale-mode native programs",
+    "authenticated idempotent source preparation and safe owned updates"
+  ],
+  "verified": {
+    "windows_rtx4070_shared": {
+      "status": "PASS",
+      "candidate": "dee6ad642fc0952d0c47a46daa36330db8291e82",
+      "ctest_gates": 2,
+      "native_tests": 7,
+      "source_tests": 6
+    },
+    "air_moltenvk_static_release": {
+      "status": "PASS",
+      "candidate": "dee6ad642fc0952d0c47a46daa36330db8291e82",
+      "ctest_gates": 2,
+      "native_tests": 7,
+      "source_tests": 6
+    },
+    "air_host_asan": {
+      "status": "PASS",
+      "candidate": "dee6ad642fc0952d0c47a46daa36330db8291e82",
+      "ctest_gates": 2,
+      "native_tests": 7,
+      "source_tests": 6,
+      "instrumentation": "HYLE adapter and original IREE POSIX runtime; compile commands archived",
+      "limits": "detect_leaks=0; does not instrument GPU shaders or driver internals"
+    },
+    "cases": [
+      "inclusive/exclusive I32 Scan repeated three times with independent oracle",
+      "both FP8 scale modes and independent invocations with distinct inputs",
+      "original proactor automatically starts a second program without host polling",
+      "intermediate and exclusive-final overflow flag, unchanged input",
+      "runtime quota exhaustion drains both logical lanes and keeps borrowed queue usable",
+      "final notification tail keeps invocation busy until return",
+      "source identity/idempotence/tamper refusal and manifest path containment"
+    ]
+  },
+  "reproduced_failures": [
+    {
+      "root": "POSIX original semaphore completion writes operation after final callback",
+      "candidate": "778aa484",
+      "evidence": "Release SIGTRAP and one ASan heap-use-after-free",
+      "fix": "clear tracker link before final callback; exact resource overlay only",
+      "corrections": 1,
+      "verdict": "PASS on corrected Air ASan and Release"
+    },
+    {
+      "root": "original ARM GNU C dialect and original C headers under strict C++ diagnostics",
+      "fix": "private IREE C extensions and system-header boundary, HYLE warnings retained"
+    },
+    {
+      "root": "Clang missing-field warnings in test aggregates",
+      "fix": "zero-initialize and assign Vulkan sType; explicit test promise initializer"
+    }
+  ],
+  "p0": [
+    "lazy original runtime and proactor pool; original platform workers and per-logical-queue completion threads",
+    "VM context/input storage per invocation; original runtime may allocate and encode per invocation",
+    "actual GPU allocations accounted before allocation, slab lifetime retained; explicit quota table only",
+    "route boundary input/output copies and FP8 F32 region workspace remain required costs",
+    "no compiler/Python at installed runtime; embedded locked programs"
+  ],
+  "remaining": [
+    "ordinary Vulkan Direct/Graph checked Scan and FP8 lowering",
+    "native/ggml/IREE mixed chain and checked-output publication, ordinary cancel/close/accepted-prefix failure gates",
+    "relocated source/static/shared ordinary product consumers and OFF isolation",
+    "applicable remaining host/public-schema and full selected closure gates",
+    "M1 final P0 and review"
+  ],
+  "selection": {
+    "selected": 120,
+    "skipped": 13,
+    "contract": "full plan archived; native checkpoint only, all other selected gates remain pending"
+  },
+  "admission_verdict": "INCONCLUSIVE",
+  "new_fully_signed_coverage_cells": 0,
+  "total_cells": 256,
+  "p1": "NOT_RUN: P0 admission; self-implemented mathematics frozen",
+  "loc": {
+    "code": 53003,
+    "files": 230,
+    "self_check": "pass",
+    "boundary": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "excludes": "tests and third-party; includes frozen product stock"
+  },
+  "archive": {
+    "path": "iree-native-checkpoint-raw.zip",
+    "sha256": "e61a59892de81b6f213b817ec3f14c14fb4f45ab13ee8a5a5cbafe03ab0aa7ba",
+    "bytes": 2877637,
+    "entries": 145
+  },
+  "workspace": "Windows canonical, Air verified commit deltas only; no product source copied back",
+  "cleanup": "reused native build roots; inactive Windows native attempts archived then 208235085 bytes removed; one bounded Air ASan tree retained for ordinary lifecycle integration"
+}

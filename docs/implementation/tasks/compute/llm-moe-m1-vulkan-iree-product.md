@@ -137,8 +137,6 @@ owner 终止并取消其余请求，重建 owner 后恢复；数值 overflow 由
 它不销毁借用的 VkDevice/queue，也不停止同设备 ggml owner。此故障域须由普通入口说明和失败门
 验收；当前仍是实现中，不因 native 数值测试通过而签 I6/I7。调查预算不延长，不新增数学范围。
 
-## 实施检查点：共同格式与 MXFP4 普通入口
-
 ### I3 适用 host 验证发现的有限资源修复
 
 候选 `778aa484` 在 Air 的原生 Scan 重复执行触发堆损坏。一次 ASan 构建同时插桩 HYLE
@@ -151,7 +149,10 @@ Windows 的 IOCP 路径不包含这次非法访问；其既有 PASS 不代签 PO
 在调用 final callback **之前**清理操作上的 tracker 引用，callback 返回后不再访问操作；
 使用现有精确 hash 资源 overlay，保留原版队列、等待、worker 和数值程序。最多两次同根因
 纠正；重用已经复现的 Scan/repeat/自动推进/尾回调测试和一次 ASan 纠正验证，随后执行普通
-Release 回归。当前未修、未签 PASS；不以该具体缺陷重启 Q-VK 调查或冻结算子研究。
+Release 回归。登记本 FIX 时尚未修、未签 PASS；后续纠正结果见原生检查点。
+不以该具体缺陷重启 Q-VK 调查或冻结算子研究。
+
+## 实施检查点：共同格式与 MXFP4 普通入口
 
 AUDITED 检查点为 `8b3c5c30`，随后产品候选 `d5cd5568c179d0f9bbff1cd528b306f3a9bde558`
 实现 I1，以及 I5/I6 中独立的原版 ggml MXFP4 纵切。
@@ -176,3 +177,30 @@ AUDITED 检查点为 `8b3c5c30`，随后产品候选 `d5cd5568c179d0f9bbff1cd528
 格式与接线实现。IREE native owner、queue/quota/异步桥、普通checked Scan/FP8、真实混合链和
 整包三交付仍待实施/验收；本卡保持AUDITED，聚合INCONCLUSIVE，新增完整覆盖 **0/256**。
 不因这次检查点关闭M1-V，也不提前研究/比较/改动冻结自研算子。M5前停止点保持。
+
+## 实施检查点：IREE 原生资源与异步程序
+
+原生实现 `aa26de0f`、最终可移植候选 `dee6ad642fc0952d0c47a46daa36330db8291e82` 的
+[产品收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/iree-native-checkpoint.json)
+与 raw archive 保存首次失败、有限纠正、完整 selector、前向源码身份和实际测试日志。
+
+- I2/I3/I4 已实现独立原版 C runtime、离线参数化制品、同 ggml VkDevice/queue 的 owner、
+  实际启用 feature、原生内存配额和原版 proactor/VM 异步推进；没有运行时编译器或新 HYLE worker。
+- checked Scan 与两种 FP8 scale 的私有 native program 已能重复执行、保留独立请求输入，
+  检查中间/最终 I32 overflow flag。普通入口的私有结果发布与下游截断仍待接线。
+- VM/执行基础设施错误经原版 stop/drain 路径等待计算与传输两个逻辑 lane 退场；同一物理队列
+  不能只等待一个 lane。失败使该 IREE owner 停止接受新程序，同设备 ggml/native owner仍可使用。
+  数值 overflow 不停止 owner。回调尾部返回之前 invocation 仍 pending，不能重用或释放。
+- Windows shared、Air/MoltenVK static Release 各通过 **7项native + 6项source** 测试。Air首次
+  Release失败后，一次原版runtime与HYLE adapter同时插桩的ASan明确复现POSIX释放后写；按上节
+  唯一FIX纠正后，ASan与Release同一组测试通过。ASan不签GPU/driver内部，也未启用leak检测。
+- 源码准备验证原版和overlay身份，拒绝非预期修改；更新只影响自己已登记的文件。包含绝对路径、
+  drive、parent traversal、symlink/junction边界保护。失效Windows构建副本已归档并回收约199MiB。
+
+P0包括原版运行线程、每请求VM/资源、原版分配/编码、显式quota表，以及接线所需GPU copy和FP8
+region F32 workspace。它们不是零开销承诺，也没有运行P1或比较冻结数学。
+
+完整selector有120个selected、13个skipped，本检查点只签上述native门；普通Direct/Graph的
+checked Scan/FP8、混合链、cancel/close/失败不发布输出、产品三交付、剩余host/OFF与全selected
+仍未决。本卡/父包保持AUDITED、聚合INCONCLUSIVE，新增完整覆盖仍 **0/256**。
+统一Compute+Graph **53,003行 / 230文件**，不含测试/vendor；M5前用户停止点保持。
