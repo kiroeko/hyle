@@ -117,7 +117,7 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | 默认规则 | 支持域 |
 |---|---|
 | FlashInfer causal GQA | Linux CUDA SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、Q/K/V depth=256，正 batch/sequence、KV length≥Q length，无额外 mask，FP32 累加；head256 prefill/decode 使用锁定原版实现 |
-| ggml CUDA 张量片段 | SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
+| ggml CUDA 张量片段 | SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean与无mask/浮点additive mask的Softmax；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
 | ggml CUDA causal GQA | Windows默认、Linux可显式组合；SM89，dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
@@ -143,6 +143,9 @@ M2 新增 ggml CUDA 张量映射仍在逐平台验收，具体门见
 Copy/Cast/Concat接受按storage类型对齐的subview；数学节点仍要求256字节。Graph对边界值的
 所有读写者合并要求，发布的复制结果若被数学节点继续使用也须256字节，准备/提交不会跳过检查。
 LayerNorm 用原版mean/sub/sqr/mean/epsilon/sqrt/div实现两遍中心化方差；gamma/beta遵守公共舍入点。
+Softmax 保留原版scale/mask融合，先应用scale再加可广播同类型浮点mask；任意axis通过原版布局
+变换转为行。无有效值行返回NaN。Direct允许相同dense描述符的精确input0原位，部分重叠或
+mask/output重叠拒绝；Graph region仍要求不别名。Bool mask及LogSoftmax尚未由这份映射承载。
 必要cast/repeat/cont和每slot冷常量上传属于完整成本，managed重放仍可能在原版pool中分配。
 原版内部copy/repack在提案中仍为未知；Graph报告的copy_bytes=0仅表示适配边界没有额外搬运，
 不能用它推断原版程序没有materialization成本。

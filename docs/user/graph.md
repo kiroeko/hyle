@@ -160,7 +160,7 @@ HYLE region 翻译成 provider-native artifact；单节点 region 可以像函�
 保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
 安装且通过当前 backend/storage/completion 审计的 Provider 才能提案。
 当前普通CUDA Graph入口已组装`graph::ggml_cuda::provider()`：在Compute指南限定的浮点张量域，
-把可合法收缩的Copy/Cast/Concat、广播/Unary、norm/归约节点集合交给同一原版ggml程序；无关节点的插入位置不拆散片段，
+把可合法收缩的Copy/Cast/Concat、广播/Unary、norm/归约及无mask/浮点mask Softmax节点集合交给同一原版ggml程序；无关节点的插入位置不拆散片段，
 离开再进入集合的路径不强行融合。它可与同设备cuBLAS片段串接，共用真实Completion。
 每个invocation持有独立原生资源，旧结果不被其他槽覆盖；prefer-capture对该managed程序使用
 commands，ggml保留自己的内部capture。它不是全算子覆盖或其他平台接入完成的声明。

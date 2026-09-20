@@ -162,6 +162,30 @@ ggml_tensor *reduction_rows(ggml_context *context, ggml_tensor *value,
                          static_cast<std::int64_t>(elements(source)) / width);
 }
 
+ggml_tensor *axis_matrix(ggml_context *context, ggml_tensor *value,
+                         const TensorDesc &description, std::size_t selected) {
+  const auto shape = description.dimensions();
+  const auto inner = extent_product(shape.subspan(selected + 1));
+  const auto outer = extent_product(shape.first(selected));
+  if (inner != 1) {
+    value = ggml_reshape_3d(context, value, inner, shape[selected], outer);
+    value = ggml_cont(context, ggml_permute(context, value, 1, 0, 2, 3));
+  }
+  return ggml_reshape_2d(context, value, shape[selected], outer * inner);
+}
+
+ggml_tensor *restore_axis(ggml_context *context, ggml_tensor *value,
+                          const TensorDesc &description, std::size_t selected) {
+  const auto shape = description.dimensions();
+  const auto inner = extent_product(shape.subspan(selected + 1));
+  if (inner != 1) {
+    const auto outer = extent_product(shape.first(selected));
+    value = ggml_reshape_3d(context, value, shape[selected], inner, outer);
+    value = ggml_cont(context, ggml_permute(context, value, 1, 0, 2, 3));
+  }
+  return value;
+}
+
 } // namespace
 
 bool tensor_operation_supports(Operation operation,
@@ -208,6 +232,10 @@ bool tensor_operation_supports(Operation operation,
             reduce->kind == ReductionKind::kMean) &&
            (reduce->accumulation_type == DataType::kUnknown ||
             reduce->accumulation_type == DataType::kFloat32);
+  if (const auto *softmax = operation.get_if<Softmax>())
+    return softmax->kind == SoftmaxKind::kSoftmax &&
+           softmax->mask != MaskKind::kBoolean &&
+           softmax->accumulation_type == DataType::kFloat32;
   return false;
 }
 
@@ -325,6 +353,21 @@ ggml_tensor *lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     auto *a = reduction_rows(context, fp(0), source, reduce->axes);
     result = reduce->kind == ReductionKind::kMean ? ggml_mean(context, a)
                                                   : ggml_sum_rows(context, a);
+  } else if (const auto *softmax = node.operation.get_if<Softmax>()) {
+    const auto selected =
+        static_cast<std::size_t>(axis(softmax->axis, output.rank()));
+    auto *a = axis_matrix(context, fp(0), output, selected);
+    ggml_tensor *mask = nullptr;
+    if (softmax->mask == MaskKind::kAdditive) {
+      mask = expand_broadcast(context, fp(1), recipe.values[node.inputs[1]],
+                              output);
+      if (mask->ne[0] != columns(output) || mask->ne[1] != rows(output))
+        mask =
+            ggml_repeat_4d(context, mask, columns(output), rows(output), 1, 1);
+      mask = axis_matrix(context, mask, output, selected);
+    }
+    result = ggml_soft_max_ext(context, a, mask, softmax->scale, 0.0F);
+    result = restore_axis(context, result, output, selected);
   } else if (const auto *concat = node.operation.get_if<Concat>()) {
     const auto selected =
         static_cast<std::size_t>(axis(concat->axis, output.rank()));

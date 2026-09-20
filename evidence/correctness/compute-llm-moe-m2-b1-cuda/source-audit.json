@@ -68,13 +68,13 @@
     "empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
     "other storage types and checked index cast",
     "dynamic Gather/Scatter, checked Scan and stable TopK",
-    "Select/min/max, stable activation/gates, full masked Softmax/LogSoftmax qualification",
+    "Select/min/max, stable activation/gates, Boolean Softmax mask and LogSoftmax qualification",
     "cross-environment delivery, sanitizer and immutable-candidate performance gates"
   ],
   "softmax_contract_correction": "Public no-valid-row result is NaN, not zero; CPU Release numeric rejection corrected in fd37c586. Native Debug and full-domain qualification remain distinct. No oneDNN Q2 recovery.",
   "source_design_budget_minutes": {
-    "used": 56,
-    "remaining": 64,
+    "used": 72,
+    "remaining": 48,
     "total": 120
   },
   "performance_samples": 0,
@@ -84,6 +84,16 @@
     "path": "development-windows.json",
     "scope": "Windows SM89 development only; 8/8 CTest and 42 GoogleTest executions pass",
     "card_verdict": "INCONCLUSIVE; remaining exact domains and applicable acceptance unrun, owner remains AUDITED"
+  },
+  "second_binding": {
+    "audited_checkpoint": "e44226dc8896f233d7f9e8147bbdfabda8be6020",
+    "operation": "Softmax only; arbitrary logical axis, F32 accumulation, F32/F16/BF16, none or same-type broadcast additive mask; same nonempty/capacity/layout domain as first batch",
+    "lowering": "Original reshape/permute/cont, FP32 conversion, optional broadcast repeat, fused ggml_soft_max_ext scale plus mask, inverse layout and final cast",
+    "alias": "Direct single Softmax input0/output0 exact alias for identical dense descriptions; no partial overlap or mask/output alias; Graph region alias remains forbidden",
+    "numeric": "Independent FP64 reference for every axis, rank6/8, strided, special/all-masked rows and 32769-column native long rows; 78 provider parameter cases across three types plus ordinary consumers. Native launch strategy is selected by the original backend, not separately traced.",
+    "l2": "Original CUDA l2_norm uses max(sum,epsilon^2), incompatible with F04.3; retain already-bound original multiply/sum/add/sqrt/div composition",
+    "execution_evidence": "softmax-windows.json",
+    "card_verdict": "INCONCLUSIVE; Windows development pass does not close 21-row B1 or cross-platform/delivery/performance acceptance"
   },
   "slice_boundary_refinement": {
     "counterexamples": [

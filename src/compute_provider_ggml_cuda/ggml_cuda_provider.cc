@@ -437,8 +437,17 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
   }
   return detail::EnqueueResult::accepted_command(std::move(terminal));
 }
-AliasSupport alias_support(void *, std::size_t, std::size_t) noexcept {
-  return {};
+AliasSupport alias_support(void *opaque, std::size_t input,
+                           std::size_t output) noexcept {
+  const auto &recipe = static_cast<Program *>(opaque)->recipe;
+  if (input != 0 || output != 0 || recipe.nodes.size() != 1 ||
+      !recipe.nodes[0].operation.get_if<Softmax>())
+    return {};
+  // Native row softmax is safe at the same address. Nontrailing axes and
+  // half storage first materialize their native input before writing back.
+  const auto &source = recipe.values[recipe.inputs[0]];
+  return {.supported =
+              source.is_dense() && source == recipe.values[recipe.outputs[0]]};
 }
 const detail::ProviderPreparedVTable kPrepared{
     .destroy_prepared = &destroy_program,

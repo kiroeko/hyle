@@ -1,0 +1,155 @@
+{
+  "kind": "M2-B1 CUDA second development batch; incomplete B1 card and no complete model coverage",
+  "baseline": "62d1654c861991e98f8854e22199ba83a19c7191",
+  "audited_checkpoint": "e44226dc8896f233d7f9e8147bbdfabda8be6020",
+  "candidate": "WORKTREE; exact changed product/test hashes below; not immutable P1 candidate",
+  "selector_candidate_tree": "80eb8b8e0ead9ea71c0fac1cefadbcc2c7c2a153",
+  "machine": "Windows x64; RTX4070 SM89; MSVC19.50.35728; CUDA Toolkit13.3.73; Ninja Release shared",
+  "settings": {
+    "cuda_architectures": "89-real",
+    "cpu": false,
+    "cuda": true,
+    "werror": true,
+    "sanitizer": "off",
+    "parallel_build": 2,
+    "parallel_test": 1,
+    "dlls_next_to_executables": true,
+    "error_mode": "0x8003",
+    "uac_or_power_changes": false
+  },
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "binding": {
+    "audited_checkpoint": "e44226dc8896f233d7f9e8147bbdfabda8be6020",
+    "operation": "Softmax only; arbitrary logical axis, F32 accumulation, F32/F16/BF16, none or same-type broadcast additive mask; same nonempty/capacity/layout domain as first batch",
+    "lowering": "Original reshape/permute/cont, FP32 conversion, optional broadcast repeat, fused ggml_soft_max_ext scale plus mask, inverse layout and final cast",
+    "alias": "Direct single Softmax input0/output0 exact alias for identical dense descriptions; no partial overlap or mask/output alias; Graph region alias remains forbidden",
+    "numeric": "Independent FP64 reference for every axis, rank6/8, strided, special/all-masked rows and 32769-column native long rows; 78 provider parameter cases across three types plus ordinary consumers. Native launch strategy is selected by the original backend, not separately traced.",
+    "l2": "Original CUDA l2_norm uses max(sum,epsilon^2), incompatible with F04.3; retain already-bound original multiply/sum/add/sqrt/div composition",
+    "execution_evidence": "softmax-windows.json",
+    "card_verdict": "INCONCLUSIVE; Windows development pass does not close 21-row B1 or cross-platform/delivery/performance acceptance"
+  },
+  "windows_development": {
+    "verdict": "PASS",
+    "ctest_targets": 8,
+    "header_targets": 4,
+    "gtest_executions": 47,
+    "ordinary_direct": 7,
+    "ordinary_graph": 22,
+    "compute_provider": 13,
+    "graph_provider": 5,
+    "softmax_provider_parameter_cases": 78
+  },
+  "preserved_failures": [
+    {
+      "log": "softmax-build.log",
+      "cause": "New test header omitted algorithm include for ranges::fill",
+      "correction": "Added explicit standard include; softmax-build-c1.log"
+    },
+    {
+      "log": "softmax-test.log",
+      "ctest_log": "softmax-ctest.log",
+      "cause": "One old TopK consumer required bitwise float equality between now-different ordinary ggml and prepared capture Softmax",
+      "correction": "Each path checked against the same existing FP64 oracle and unchanged 4e-6 relative plus 2e-7 absolute tolerance; indices stay exact, original capture/lifetime gates remain",
+      "root_cause_corrections": 1,
+      "final_log": "softmax-test-c1.log"
+    }
+  ],
+  "selector": {
+    "selection_verdict": "READY",
+    "selected_ids": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_ggml_cuda",
+      "factor:compute_route_cuda",
+      "factor:graph_provider_ggml_cuda",
+      "factor:graph_route_cuda"
+    ],
+    "skipped_count": 125,
+    "skipped_reasons": "Full plan in raw archive",
+    "scope": "Windows affected factors/headers and configure only; full card acceptance remains incomplete"
+  },
+  "governance": {
+    "docs": "PASS",
+    "closure": "PASS",
+    "registry_changed": false
+  },
+  "unrun_applicable_acceptance": [
+    "WSL new-code native CUDA",
+    "Air/Mini CUDA-OFF",
+    "new-code host sanitizers",
+    "complete B1 source/static/shared journeys",
+    "full 21-row independent candidate review",
+    "immutable-candidate P1"
+  ],
+  "remaining": [
+    "empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
+    "other storage types and checked index cast",
+    "dynamic Gather/Scatter, checked Scan and stable TopK",
+    "Select/min/max, stable activation/gates, Boolean Softmax mask and LogSoftmax qualification",
+    "cross-environment delivery, sanitizer and immutable-candidate performance gates"
+  ],
+  "complete_requirement_cells": 0,
+  "performance_samples": 0,
+  "new_math_kernels": 0,
+  "frozen_hyle_math_changes": 0,
+  "source_design_budget_minutes": {
+    "used": 72,
+    "remaining": 48,
+    "total": 120
+  },
+  "loc": {
+    "implementation_lines": 55510,
+    "files": 241,
+    "tests_and_vendors_excluded": true
+  },
+  "build_directory": {
+    "path": "C:\\hv\\m2b1-cuda",
+    "bytes": 359938947,
+    "retained_reason": "Same single current CUDA development build; no new build tree"
+  },
+  "archive": {
+    "path": "softmax-windows-raw.zip",
+    "sha256": "9d759e3e0a83d7439b9b366c3f904e379b355af3cc1428bfd2e4c693aa8b57ac",
+    "bytes": 78866,
+    "files": 17
+  },
+  "source_hashes": [
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "sha256": "bc7118f69ca453c55b430bf88788f4e33e873320219c8bfa678e62ab5b47bc48"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "sha256": "d202115b8011fb599f9fce564ae4b1e07d53dac6f3b921ecd1c003ce35174e19"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/softmax_test_support.h",
+      "sha256": "0705a244628f69559f10215acbd36ceb527ecbb9f3f70383975359cc443eb8b1"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/tensor_test.cc",
+      "sha256": "876a50270d2e84b6e087b5a718fc06bb1007d00094d1c41672030f8795103a49"
+    },
+    {
+      "path": "tests/compute_route_cuda/ggml_test.cc",
+      "sha256": "8cbc4abd9d8e8f1e26d7754900bb0ba3c890402a19e97788029ae38b1c505e9c"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/region_test.cc",
+      "sha256": "8191cce87533c16b35b97e6bd4cbcce10c424e8edb5f28c710c7ee21f76fe9f9"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/softmax_test_support.h",
+      "sha256": "570ae669a9e2a755e119573b7dde99637bdac815d14fec517b95a1856d836646"
+    },
+    {
+      "path": "tests/graph_route_cuda/ggml_test.cc",
+      "sha256": "cedc98b4e1ee93bc47f0ab225cc0fcff33721d01f6270f22d0fca38d44114102"
+    },
+    {
+      "path": "tests/graph_route_cuda/topk_test.cc",
+      "sha256": "222043ca08fa574280466c28679ade816009e51d8afc93102caf4828bc441d83"
+    }
+  ]
+}

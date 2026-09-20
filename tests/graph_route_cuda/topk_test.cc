@@ -181,6 +181,7 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
               const auto actual_values = values[lane].read<float>();
               const auto actual_indices = indices[lane].read<std::int32_t>();
               const auto actual_weights = weights[lane].read<float>();
+              std::vector<double> expected_values(actual_values.size());
               for (std::size_t row = 0; row < static_cast<std::size_t>(rows);
                    ++row) {
                 std::vector<std::int32_t> order(
@@ -204,6 +205,7 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
                   EXPECT_EQ(actual_indices[index], order[col]);
                   const auto exponent = std::exp(static_cast<double>(
                       data[lane][row * experts + order[col]]));
+                  expected_values[index] = exponent / all_exp;
                   EXPECT_NEAR(actual_values[index], exponent / all_exp,
                               exponent / all_exp * 4e-6 + 2e-7);
                   EXPECT_NEAR(actual_weights[index], exponent / selected_exp,
@@ -221,7 +223,13 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
                     direct_values.view, direct_indices.view);
                 ASSERT_TRUE(direct_done.has_value());
                 ASSERT_TRUE(direct_done->wait().ok());
-                EXPECT_EQ(direct_values.read<float>(), actual_values);
+                // Ordinary Direct can bind managed ggml while this graph
+                // requires a prepared capture program. Check both against
+                // the same independent oracle and its existing tolerance.
+                const auto direct_actual = direct_values.read<float>();
+                for (std::size_t i = 0; i < direct_actual.size(); ++i)
+                  EXPECT_NEAR(direct_actual[i], expected_values[i],
+                              expected_values[i] * 4e-6 + 2e-7);
                 EXPECT_EQ(direct_indices.read<std::int32_t>(), actual_indices);
                 retained_values = actual_values;
                 retained_indices = actual_indices;

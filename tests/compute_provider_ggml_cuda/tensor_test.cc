@@ -1,3 +1,4 @@
+#include "softmax_test_support.h"
 #include "tensor_test_support.h"
 
 namespace {
@@ -113,5 +114,34 @@ TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
                                              std::array<std::int64_t, 1>{5})
                        .value();
   EXPECT_FALSE(prepare(ctx, Copy{}, odd));
+  EXPECT_FALSE(
+      prepare(ctx, Softmax{.kind = SoftmaxKind::kLogSoftmax}, description));
+}
+
+TEST(GgmlCudaTensor, SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias) {
+  auto ctx = context();
+  softmax_batch<float>(ctx);
+  softmax_batch<hyle::simd::float16_t>(ctx);
+  softmax_batch<hyle::simd::bfloat16_t>(ctx);
+}
+
+TEST(GgmlCudaTensor, SoftmaxRejectsPartialOverlapAndMaskAlias) {
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto description = dense(DataType::kFloat32, {256});
+  auto storage = Buffer::create(memory.ref(), 1280, 256).value();
+  const auto first = storage.view().subview(0, 1024).value();
+  const auto second = storage.view().subview(256, 1024).value();
+  const auto input = ConstTensorView::create(description, first).value();
+  EXPECT_FALSE(execute(ctx, Softmax{}, std::span(&input, 1),
+                       TensorView::create(description, second).value())
+                   .ok());
+  auto other = output_buffer(memory.ref(), description);
+  const std::array inputs{
+      ConstTensorView::create(description, other.view()).value(), input};
+  EXPECT_FALSE(execute(ctx, Softmax{.mask = MaskKind::kAdditive}, inputs,
+                       TensorView::create(description, first).value())
+                   .ok());
 }
 } // namespace

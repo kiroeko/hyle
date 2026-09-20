@@ -7,6 +7,9 @@
 - [development-windows.json](development-windows.json)：Windows SM89 首批开发检查点，
   8/8 CTest、42次 GoogleTest 执行和实现 hashes。原始配置、失败、修正、测试、selector 及
   LOC 保存在同目录 `development-windows-raw.zip`。
+- [softmax-windows.json](softmax-windows.json)：第二批原版 Softmax 任意轴、浮点mask、精确原位及
+  Graph 多slot发布/重放；8/8 CTest、47次 GoogleTest 执行。原始失败及修正保存于
+  `softmax-windows-raw.zip`；旧开发 archive 不改写。
 
 本目录不签整卡完成或完整模型覆盖。未绑定域及其它适用平台、交付、插桩、不可变候选性能仍待验；
 完整需求覆盖维持0/256。新程序只组合原版 ggml CUDA，所有旧自研数学保持冻结。

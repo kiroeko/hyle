@@ -1,6 +1,28 @@
 #include "hyle/graph/providers/ggml_cuda.h"
 #include "region_test_support.h"
+#include "softmax_test_support.h"
 #include "tensor_test_support.h"
+
+TEST(GgmlCudaGraph, SoftmaxRegionPublishesLogicalAxesAndRetainsOldResults) {
+  using namespace ggml_cuda_graph_test;
+  auto context = compute::Context::create(cuda::device(0).value(),
+                                          graph::ggml_cuda::provider())
+                     .value();
+  const auto compile = [&](const graph::Graph &logical,
+                           mem::MemoryResourceRef resource) {
+    const std::array storage{graph::StorageDomain{.resource = resource}};
+    const std::array targets{graph::ExecutionTarget{
+        .context = &context, .default_storage = graph::StorageDomainId{0}}};
+    const std::array lanes{
+        graph::ExecutionLane{.target = graph::ExecutionTargetId{0}}};
+    return graph::compile(
+        logical,
+        {.storage_domains = storage, .targets = targets, .lanes = lanes});
+  };
+  exercise_softmax_graph<float>(context, compile);
+  exercise_softmax_graph<hyle::simd::float16_t>(context, compile);
+  exercise_softmax_graph<hyle::simd::bfloat16_t>(context, compile);
+}
 
 TEST(GgmlCudaGraph, WholeOriginalRegionUsesIndependentInvocations) {
   using namespace ggml_cuda_graph_test;

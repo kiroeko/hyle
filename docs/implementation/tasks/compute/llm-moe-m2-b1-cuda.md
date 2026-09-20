@@ -164,3 +164,19 @@ Add→Sqrt→Divide 组合继续承载 L2，不能替换成同名原子。
 
 本次合同/源码核对计10分钟，累计 **66/120分钟、余54分钟**。本次只推进有限成熟接入；完整
 21行、跨平台、交付、插桩与不可变候选性能仍未验收，状态保持 AUDITED。
+
+### Softmax 开发结果
+
+[第二批 receipt](../../../../evidence/correctness/compute-llm-moe-m2-b1-cuda/softmax-windows.json)
+保存原始 configure/build/test、两项失败及修正、selector 和实现 hashes。Windows 原配置通过
+**8/8 CTest、47次 GoogleTest 执行**；Softmax 独立参数表在三dtype下执行78组，含32769列
+原版长行路径，普通 Direct/Graph、精确原位和发布中间结果的两slot重放均通过。
+
+第一次构建缺少测试头的 `<algorithm>` 已补齐。首轮运行唯一失败是旧 TopK 消费者要求 Direct
+默认 managed ggml 与 prepared capture Graph 的 Softmax 数值逐位相等；原来两边共用实现。
+两边现分别对照同一个既有 FP64 公式和原有 `4e-6 relative + 2e-7 absolute` 容差，TopK 索引
+仍严格相等，capture/资源验收未放宽。没有改动或比较旧数学的性能。
+
+补充接缝/别名与失败归因计6分钟，源码/设计累计 **72/120分钟、余48分钟**。完整 B1 验收和
+剩余成熟域继续未完成；没有新增完整需求 PASS。统一 Compute + Graph 实现 LOC 为
+**55,510行 / 241文件**（排除测试/vendor），仍只保留当前CPU/CUDA开发构建。
