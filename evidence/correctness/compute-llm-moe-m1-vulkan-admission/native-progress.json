@@ -1,0 +1,379 @@
+{
+  "kind": "M1-V progress; native qualification and product recurrent slice, not closure",
+  "product_candidate": "db770b6fc1e46aa8d8aa86c1102d50acf26eb49f",
+  "product_coverage_cells": 0,
+  "overall_admission": "INCONCLUSIVE: ordinary IREE integration and declared product acceptance pending",
+  "pins": {
+    "iree": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+    "ggml": "456172ec733a135778adcd32d00e576a58232e45"
+  },
+  "passed": {
+    "windows_selected_recurrent_slice": "Original selector FAIL retained; fixture-only corrections and the original selected commands PASS on immutable db770b6f",
+    "air_recurrent_slice": "Six factor/header CTest gates PASS on forward copy of db770b6f",
+    "original_ggml_mxfp4": "Both frozen variants, repeat3, immutable imported inputs and independent oracle PASS on RTX4070 and Air; native qualification only",
+    "iree_fixed_numeric": "Original eight assigned IREE cases PASS on RTX4070 and Air; original packed-FP4 rejection remains unchanged",
+    "parameterized_numeric": {
+      "windows": [
+        {
+          "label": "scan_inclusive-0",
+          "pass": true,
+          "actual_sha256": "86c0a89025af27c2953947eca2d2fe717afb9aa926b42d75fcd2500ed7529544",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-0",
+          "pass": true,
+          "actual_sha256": "65a2561ff2913724578357d7b35089813b8c7fe6e59e16799a5cf2df6e7aa2b9",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "fp8_f32_scale-0",
+          "pass": true,
+          "actual_sha256": "7d0c298d1569720877f7d17535f07480d68f355061ea274fffb8770bc7b390e0",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-0",
+          "pass": true,
+          "actual_sha256": "9ac65588ed524b6a1f9251ab87b97d432a0de4c405becf0f214d1a74868116c5",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "scan_inclusive-1",
+          "pass": true,
+          "actual_sha256": "7bcf1e1ed8c7894637349b3d36d41e12ff8561528656f381edcf3d10f3317ccc",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-1",
+          "pass": true,
+          "actual_sha256": "d00cc60325d16300d12a81d75abf35268a146049b5775c6e7a55c926abc9a9cb",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "fp8_f32_scale-1",
+          "pass": true,
+          "actual_sha256": "2cd58ac3ffd01e490c98dd430a8924e21a31ff84de972ddd2575e3efcc9e7484",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-1",
+          "pass": true,
+          "actual_sha256": "a65ac27bbaf011411e777b75b27095cf7f8107d9e9fbe67fcb275ed5e0fe5cce",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "scan_inclusive-2",
+          "pass": true,
+          "actual_sha256": "d2053cb9b40005bf32affe80eb5658667f3d8e093516ac2dff3fcfc57bb5021f",
+          "shape": [
+            1,
+            1
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_inclusive-3",
+          "pass": true,
+          "actual_sha256": "591a39e85ac18ae8fcb1af6fedb1e9d3f941ea20a8c08c4e16f6a06964f2d13a",
+          "shape": [
+            3,
+            33
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-2",
+          "pass": true,
+          "actual_sha256": "5511aa4b1f26cc79ab28d9f55327e24fd30494bc04e12ea3b677a686b1308b48",
+          "shape": [
+            1,
+            1
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-3",
+          "pass": true,
+          "actual_sha256": "4953651cadb9e38aa00bb6b1b3d0af1e55073d34872530b464f9bdfb3cc658da",
+          "shape": [
+            3,
+            33
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "fp8_f32_scale-2",
+          "pass": true,
+          "actual_sha256": "af170d9b5c29c2e22a8c7e4b3dd3bc53ca115246b02f59a9e79c71709dd6ca81",
+          "shape": [
+            1,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_f32_scale-3",
+          "pass": true,
+          "actual_sha256": "21bf254ad0d492d3b06e7c99943368a0f4e693255c1b36f31ef1841b0aa6d08e",
+          "shape": [
+            3,
+            256
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-2",
+          "pass": true,
+          "actual_sha256": "f79632de2b0cef34b0b036c56fadad57c59bad2675e62e3686e16455808c65f9",
+          "shape": [
+            1,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-3",
+          "pass": true,
+          "actual_sha256": "6f4933143eecf25b0f809d4eb069e31b4b719d3c767b08db7324bd21728b8055",
+          "shape": [
+            3,
+            256
+          ],
+          "dtype": "<f4"
+        }
+      ],
+      "air": [
+        {
+          "label": "scan_inclusive-0",
+          "pass": true,
+          "actual_sha256": "86c0a89025af27c2953947eca2d2fe717afb9aa926b42d75fcd2500ed7529544",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-0",
+          "pass": true,
+          "actual_sha256": "65a2561ff2913724578357d7b35089813b8c7fe6e59e16799a5cf2df6e7aa2b9",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "fp8_f32_scale-0",
+          "pass": true,
+          "actual_sha256": "7d0c298d1569720877f7d17535f07480d68f355061ea274fffb8770bc7b390e0",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-0",
+          "pass": true,
+          "actual_sha256": "9ac65588ed524b6a1f9251ab87b97d432a0de4c405becf0f214d1a74868116c5",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "scan_inclusive-1",
+          "pass": true,
+          "actual_sha256": "7bcf1e1ed8c7894637349b3d36d41e12ff8561528656f381edcf3d10f3317ccc",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-1",
+          "pass": true,
+          "actual_sha256": "d00cc60325d16300d12a81d75abf35268a146049b5775c6e7a55c926abc9a9cb",
+          "shape": [
+            2,
+            17
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "fp8_f32_scale-1",
+          "pass": true,
+          "actual_sha256": "2cd58ac3ffd01e490c98dd430a8924e21a31ff84de972ddd2575e3efcc9e7484",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-1",
+          "pass": true,
+          "actual_sha256": "a65ac27bbaf011411e777b75b27095cf7f8107d9e9fbe67fcb275ed5e0fe5cce",
+          "shape": [
+            2,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "scan_inclusive-2",
+          "pass": true,
+          "actual_sha256": "d2053cb9b40005bf32affe80eb5658667f3d8e093516ac2dff3fcfc57bb5021f",
+          "shape": [
+            1,
+            1
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_inclusive-3",
+          "pass": true,
+          "actual_sha256": "591a39e85ac18ae8fcb1af6fedb1e9d3f941ea20a8c08c4e16f6a06964f2d13a",
+          "shape": [
+            3,
+            33
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-2",
+          "pass": true,
+          "actual_sha256": "5511aa4b1f26cc79ab28d9f55327e24fd30494bc04e12ea3b677a686b1308b48",
+          "shape": [
+            1,
+            1
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "scan_exclusive-3",
+          "pass": true,
+          "actual_sha256": "4953651cadb9e38aa00bb6b1b3d0af1e55073d34872530b464f9bdfb3cc658da",
+          "shape": [
+            3,
+            33
+          ],
+          "dtype": "<i4"
+        },
+        {
+          "label": "fp8_f32_scale-2",
+          "pass": true,
+          "actual_sha256": "af170d9b5c29c2e22a8c7e4b3dd3bc53ca115246b02f59a9e79c71709dd6ca81",
+          "shape": [
+            1,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_f32_scale-3",
+          "pass": true,
+          "actual_sha256": "21bf254ad0d492d3b06e7c99943368a0f4e693255c1b36f31ef1841b0aa6d08e",
+          "shape": [
+            3,
+            256
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-2",
+          "pass": true,
+          "actual_sha256": "f79632de2b0cef34b0b036c56fadad57c59bad2675e62e3686e16455808c65f9",
+          "shape": [
+            1,
+            128
+          ],
+          "dtype": "<f4"
+        },
+        {
+          "label": "fp8_ue8_scale-3",
+          "pass": true,
+          "actual_sha256": "6f4933143eecf25b0f809d4eb069e31b4b719d3c767b08db7324bd21728b8055",
+          "shape": [
+            3,
+            256
+          ],
+          "dtype": "<f4"
+        }
+      ],
+      "tolerance": "exact equality; original eight frozen cases preserved; eight shape cases added"
+    },
+    "cpp_static_shared_native": "Both machines PASS: external VkDevice/queue, bounded GPU copy, async ready/done, two simultaneously pending isolated VM contexts repeat3, accepted dependency failure propagation, unchanged inputs, retained outputs after VM-context release, external device survives runtime release"
+  },
+  "cost_and_limits": [
+    "Parameterized FP8 uses original conversion/scaling/MatMul with explicit dispatch boundaries and shape ties after two bounded compiler corrections; workspace includes F32 activation and one F32 weight matrix for the region; compressed inputs stay resident",
+    "Only original runtime sources/submodules used; Windows needs original C-header compatibility scope and standard preprocessor; compiler/Python absent at C++ execution",
+    "Original direct-session construction for the same device failed queue frontier assignment; one original HAL device group/module plus separate VM contexts is verified",
+    "Original public dense-buffer helper does not resolve transient outputs; pinned original Vulkan buffer backing/offset helpers are used privately",
+    "Air offers one compute queue. External raw queue commands in the qualification run only after all IREE completions; concurrent mixed HYLE/ggml/IREE submissions require a shared host-synchronization adapter before product admission",
+    "Native integer fixtures do not prove the public checked-overflow Scan contract; including exclusive final total remains a required ordinary-entry acceptance item",
+    "No P1, SOTA verdict, self-written operator change, or new complete coverage cell"
+  ],
+  "remaining": [
+    "Register/audit the qualified native-provider boundary and finite resource glue before product edits",
+    "Ordinary Direct/Graph integration and strict public semantics",
+    "Actual same-device mixed-provider synchronization/accepted-prefix lifecycle",
+    "Windows/Air source/static/shared relocated product consumers, applicable host instrumentation/OFF gates and final P0 review"
+  ],
+  "budget": {
+    "start_utc": "2026-09-20 08:02:33 UTC",
+    "source_qualification_deadline_utc": "2026-09-20 12:02:33 UTC",
+    "reset": false
+  },
+  "archive": {
+    "path": "native-progress-raw.zip",
+    "bytes": 1033397,
+    "sha256": "4155683545527ae93154f9f081325ce43cb6a6f89623578fbd1dbb4cb7dde9fe"
+  },
+  "loc": {
+    "implementation_lines": 51953,
+    "files": 222,
+    "excludes": [
+      "tests",
+      "bench",
+      "third_party"
+    ],
+    "record": "native-progress-loc.json"
+  }
+}

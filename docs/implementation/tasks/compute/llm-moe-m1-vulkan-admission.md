@@ -120,3 +120,37 @@ offset 适配器可导致六个边界 GPU copy，输出拆成两个公开 owning
 
 资格探针只使用第三方原版运算；MXFP4 探针同样只证明候选，不能代签普通产品或 256 格。
 当前公开 GatedDeltaNet 的 shape/错误推导已在 M1-A 收口，因此不重开 `compute_ops`。
+
+## 进行中取证：普通 recurrent 与参数化原生程序
+
+[进度收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/native-progress.json)
+和同目录 raw archive 保留首次失败、逐次纠正、机器/输入/制品身份与原始结果。
+产品候选 `db770b6fc1e46aa8d8aa86c1102d50acf26eb49f` 已实现 V1-G/V3-G/V4-G 的
+普通 Direct/Graph 原版 GatedDeltaNet；Windows selected 命令和 Air 三 factor/头测试通过。
+MXFP4 两组原始逻辑样例在两台机器各 repeat3 通过；测试输入改用独立持久 buffer，避免被
+原版 gallocr 的临时区复用。产品数学未改变，也未放宽 oracle。
+
+IREE 的 scan/FP8 固定八例和增加形状变化后的十六例均在 RTX4070、Air 逐值相等通过。
+参数化 FP8 的半仿射分块缩放不能直接融合进本 pin 的动态 MatMul；两次有限纠正采用上游
+`util.optimization_barrier` 与 `flow.tensor.tie_shape`，没有修改数学或编译器源码。
+代价是该 region 的 F32 activation/weight workspace 与明确分派边界，不能冒称原生 FP8 GEMM
+或整模型压缩格式已验收；原压缩输入保持驻留，不展开全部模型。
+
+同一组离线制品也由真实 C++ static/shared 消费者在两台机器通过：外来 VkDevice/queue、
+有界 GPU copy、异步 ready/done、两请求同时在途 repeat3、已接受请求的依赖失败传播、
+输入不变、VM context 释放后旧结果保留、runtime 不销毁外来设备。运行消费者无需
+Python/编译器。一个原版 HAL device group/module 配两个 VM context；不能为同一设备各建
+独立 runtime session，否则本 pin 拒绝重复 queue frontier。
+
+这些是**基础数值/资源可行性证据**，当前聚合接入仍为 INCONCLUSIVE，M1-V 不关闭：
+
+- Air 只有一个 compute queue。探针的外来队列访问发生在全部 IREE completion 之后；普通
+  HYLE/ggml/IREE 混合提交必须补齐共享 host 同步，不能把两个互不相关的 mutex 当成保护。
+- I32 正常样例尚未证明公开 `Scan` 的 checked-overflow 合同，exclusive 的最终总和同样
+  必须检查；不能用 wrapping I32 代替。普通低精度入口与 Graph 接线也尚未完成。
+- IREE factor 及必要原生桥修改先完成自身登记/审计与有限 FIX，再写产品代码；既有冻结
+  shader/算子不得借接入扩张。产品三交付搬移、适用 host 插桩/OFF 与最终 P0 尚未签字。
+
+调查截止仍为 **12:02:33 UTC**，不因新证据重置预算。统一脚本当前统计 Compute+Graph
+**51,953 行 / 222 文件**，排除测试/vendor；相对本包启动增加 61 行接线实现。
+新增完整模型覆盖仍为 **0/256**；M5 开始前的用户停止点不变。

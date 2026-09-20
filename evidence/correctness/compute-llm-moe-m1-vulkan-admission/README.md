@@ -11,7 +11,14 @@ IREE/LLVM 工具按其原版标准操作生成程序；没有新写 HYLE 数学�
 `6ef606b6fa3e12bd2c12d36a07463069eb71185f`（Apache-2.0 WITH LLVM-exception），
 独立 LLVM 工具为官方 apt.llvm.org 的 23.1.2 `4b1925210476` 构建，包 hash 在 raw 中。
 ggml `456172ec`（MIT）、ncnn `70e7bfd6`（BSD-3-Clause）、MNN `397f8533`（Apache-2.0）
-的接缝审计不代替实际资格。下一项同设备组合仍未通过，未签 P1/SOTA。
+的接缝审计不代替实际资格。首次 packed-FP4 失格结论保持，不签 P1/SOTA。
+
+- `native-progress.json` / `native-progress-raw.zip`：普通 recurrent 产品纵切、两台机器的
+  原版 ggml MXFP4，以及 IREE 参数化数值/C++ static/shared 原生资源资格；十六数值样例和
+  两请求在途/失败/旧结果通过。仍不代签普通 IREE 产品、checked-overflow Scan、混合队列
+  同步和产品三交付；聚合接入 INCONCLUSIVE。
+- `native-progress-loc.json`：统一脚本的全部 Compute+Graph 实现统计，51,953 行 / 222 文件，
+  排除测试与 vendor。资格程序没有计入产品实现或覆盖。
 
 源码与工具都在本卡具名 scratch 内；产品只以 Windows checkout 为真相。资格结束后归档并
 清理下载/展开的工具及验证副本，保留项目共享依赖 cache 与模型。

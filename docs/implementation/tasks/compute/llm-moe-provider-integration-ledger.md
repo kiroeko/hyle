@@ -87,7 +87,7 @@ MLX、cuBLASLt、Marlin、SGLang、FlashInfer计6；IREE Vulkan是条件单元�
 Q-VK 是一个窄候选的可行性门，不把通用编译器重构纳入 HYLE。拟采用标准 cast/quantization/
 scan/matmul 操作及上游类型合法化，编译器只作构建工具；source/static/shared 交付同一组参数化
 程序与原生 runtime，普通消费者不安装 Python、不提供 MLIR、不运行编译器。若该交付形状不可行，
-必须明确裁决该候选，不能偷偷增加 SDK 使用负担。首次 Q-VK 的 IREE packed-FP4 路径已失格，日志和部分通过项见 M1-V 卡；原版 LLVM UE8 预转换已消除观察到的 NaN。下一项限定为 IREE scan/FP8 + 原版 ggml MXFP4 同设备组合，仍未通过，沿用原四小时预算。
+必须明确裁决该候选，不能偷偷增加 SDK 使用负担。首次 Q-VK 的 IREE packed-FP4 路径已失格，日志和部分通过项见 M1-V 卡；原版 LLVM UE8 预转换已消除观察到的 NaN。限定组合 IREE scan/FP8 + 原版 ggml MXFP4 已取得两台机器的数值与 C++ 原生资源证据，见[进度收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/native-progress.json)。普通入口、checked-overflow、混合单队列同步和产品三交付尚未通过；沿用原四小时调查预算，不计覆盖。
 
 ## 3. M1 有限接入工作包
 
