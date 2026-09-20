@@ -393,9 +393,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
+      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
     },
     {
       "module": "compute_backend_cpu",
@@ -510,15 +510,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
+      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
+      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
     },
     {
       "module": "compute_route_vulkan",
@@ -555,9 +555,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
+      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -594,9 +594,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
+      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
     }
   ]
 }

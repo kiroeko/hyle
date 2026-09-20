@@ -3,7 +3,7 @@
 ## Closure card
 
 - owner：`/root`；baseline：`6217e5663acb6825a72cc8a1a2e3d82735d8ceee`，Windows main。
-- 当前阶段：SCOPED；`compute_provider_ggml_metal` 在 `cee2f293` 登记 QUEUED，
+- 当前阶段：AUDITED；五 owner 在 `450809ba` 完成 SCOPED；新身份在 `cee2f293` 登记 QUEUED，
   只有身份，没有空 target 或产品实现。
 - 本轮 owner：新 `compute_provider_ggml_metal`；既有 `compute_ggml_runtime`、
   `compute_route_apple`、`graph_route_apple`、`compute_ops`。
@@ -47,7 +47,7 @@
 - 三交付复用现有 dependency lock/cache、module-owned target、资源/许可证安装与路径定位。
   Apple OFF 不探测、获取或链接 Metal/MLX。只对本轮必要资源补丁负责，不顺手扩 vendor portability。
 
-## 有限审计清单（SCOPED，尚未授权产品修改）
+## 有限 FIX（审计已冻结）
 
 | ID | 能力族/承载 | 必须固定的结果 |
 |---|---|---|
@@ -74,3 +74,46 @@
    实现 LOC，不含测试/vendor。归档后删除本卡临时构建与验证副本，保留共享缓存/本地模型。
 
 上述门当前均未新执行；已有 terminal 只在身份/合同匹配时复用，不签本轮新增接入。
+
+## 审计结论与实现合同
+
+源码输入为本机 locked ggml，以及 Air 共享缓存中的 MLX `1f8e74e3f12f`；
+本地 2B config 确认 key/value head dimension 均 128、各 16 heads、FP32 recurrent state。
+本段审计保守追加 15 分钟，总 35/120 分钟。未运行 probe 或性能测试。
+
+1. `ggml.c::ggml_gated_delta_net` 与 `ggml-metal/kernels/gated_delta_net.metal`
+   提供完整 token 循环和末态；不在 HYLE 重写此数学。原版首域为 F32、相同 Q/K/V heads、
+   square state、D=32/64/128、正 token 数；本卡主验 D128/H16，正交验无模型标签的 D32。
+   默认按合法能力域冷绑定此成熟实现；模型身份不充当普通功能开关。
+2. 新 `GatedDeltaNet` 是纯、多输出语义：Q/K `[B,T,Hk,Dk]`，V `[B,T,Hv,Dv]`，
+   log-decay 与 beta `[B,T,Hv,1]`，初态 `[B,Hv,Dv,Dk]`；输出 V 同形及新 FP32 状态。
+   Q/K 已经由调用方选定是否归一化；先对 state 乘 exp(log-decay)，以 beta 更新 delta，
+   再计算 Q 投影并乘 `1/sqrt(Dk)`。不隐含 L2 norm、sigmoid、外部状态写回或模型加载。
+   公共语义允许 grouped query/key heads 与浮点 Q/K/V，原版首域不支持的条件冷拒绝；
+   M2 才批量接原版 cast/repeat 等组合，不能把 descriptor 接受当成后端覆盖。
+3. MLX `metal/allocator.cpp` 小数组可来自 Metal heap。普通 host-pointer remap 不能据此
+   声称合格；私有 bridge 直接 retain 原 `MTLBuffer`，检查同 device、storage mode、offset/size，
+   建立 ggml 非 owning wrapper。输入 owner 由 Invocation 保留；wrapper 只 release 自己的 native
+   引用，绝不 free MLX payload。输出由 MLX allocator 正常分配，ggml 写入同一原生 buffer；
+   packed scores/state 用两个有 owner 的 array view 返回，无 CPU 数学与 shadow payload copy。
+4. Apple 专用内部 plan 按合法依赖划分 MLX compiled region 和 ggml whole region。
+   Graph 只做边界翻译，Compute 不含 Graph 类型；现有纯 MLX 编译路径保留。
+   每个 HYLE Invocation 独立持有 ggml metadata/backend/绑定，native program 不放入共同 Queue。
+   复用原 submission thread、状态机、result lease。每个跨库边界完成前一 runtime 的 GPU 工作，
+   再交给后一 runtime；此 managed 接法明确有 host wait，不能宣称 event-only 或 recorded replay。
+   冷准备可在隔离的零输入/初态上触发原版 pipeline 编译，绝不执行用户 mutable state。
+5. ggml `metal-context.m::ggml_metal_synchronize` 把失败保存在私有 `has_error`，
+   public void synchronize 不能直接给本次 HYLE Completion verdict。有限资源 patch 导出
+   checked 同步状态，保留原生错误数值，失败先 drain 再发布；失败实例不得复用。
+   `metal-device.m` 的 buffer/encoder 部分构造与 nil pipeline 也纳入同一资源修复，
+   不改 pipeline 选择、数学、融合启发式或 kernel。运行失败不转成成功空结果。
+6. 构建只条件启用 ggml Metal；vendor C 符号保持私有，资源/锁/许可证沿单份声明导出。
+   嵌入原版 Metal 源或已有 metallib 的最终选择按锁定 CMake 的真实行为固定；
+   允许 cold runtime compilation，但不得在普通 hot replay 重编。无独立 HYLE shader。
+7. P0 账单：每 invocation 的 ggml 元数据/原生 backend、每次必要 output allocation/绑定，
+   每个跨库边界的 GPU completion wait；MLX 内部 fusion 不因 ggml region 被拆成逐 kernel。
+   每个固定 region 的派发允许，禁止热路径搜索 Provider、计时或重新裁决规则。
+
+能力裁决：A1/A2/A3 为 BORROW+必要资源 FIX（MISSING）；A4 为语义/Graph seam FIX（PARTIAL）；
+A5 KEEP（已存在、须验证新 consumer）；A6 FIX。批量全覆盖 DEFER M2/M3，全部自研 REJECT 本轮。
+上述公开形状、owner、lifetime、错误与常态成本已固定；若原生事实要求改变这些合同，先重新定界。
