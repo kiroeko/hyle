@@ -108,7 +108,7 @@ ggml 同 pin 已有原版 Vulkan MXFP4，因此下一项限定为 **IREE scan/FP
 
 | FIX | 裁决与正常使用路径 | 资源、失败和成本合同 |
 |---|---|---|
-| V1-G | BORROW `ggml_gated_delta_net`，`vulkan::prepare(context, GatedDeltaNet{}, arguments)` 和普通 `graph::vulkan::compile` 均直接可达；无模型标签同样可用 | 沿既有六输入/两输出公共语义；dense F32、等头、D16/32/64/128；固定初态与独立新状态，不原位修改输入 |
+| V1-G | BORROW `ggml_gated_delta_net`，`vulkan::prepare(context, GatedDeltaNet{}, q, k, v, g, beta, state)` 和普通 `graph::vulkan::compile` 均直接可达；无模型标签同样可用 | 沿既有六输入/两输出公共语义；dense F32、等头、D16/32/64/128；固定初态与独立新状态，不原位修改输入 |
 | V3-G | FIX managed region 的六输入边界、原版 fused 输出/状态的 view + cont，以及 metadata 容量；KEEP NativeDevice/NativeGraph/NativeWork 和路线 Completion | 准备期校验原版索引、合并输出大小、descriptor/dispatch/device 限制；沿既有 binding owner、两 invocation、accepted-prefix drain、失败后退休与结果 lease |
 | V4-G | FIX 冷期原版 recurrent 支持规则和 Graph 报告；KEEP M1-R workload/environment identity | prepare 只按 dtype/shape/硬件限制绑定；submit 不搜索、不计时、不重建数学图；不扩大公共对象或万能 Queue |
 | V5-G | FIX 本纵切的独立 double oracle、Direct/Graph、repeat/旧结果/非法域/资源失败、Windows/Air 三交付和使用文档 | 适用 selector、host 插桩/OFF 门按实际改动选择；P0 必须计入已有输入对齐 GPU copy、原版编码、fused 输出发布复制，不冒称零边界成本或 P1 |

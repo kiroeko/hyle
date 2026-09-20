@@ -71,9 +71,9 @@ bool scan_limits(const ProgramState &program,
 
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
-  if (step.custom || step.inputs.size() > 3 || step.outputs.size() > 2)
+  if (step.custom || step.inputs.size() > 6 || step.outputs.size() > 2)
     return false;
-  std::array<TensorDesc, 3> inputs;
+  std::array<TensorDesc, 6> inputs;
   for (std::size_t i = 0; i < step.inputs.size(); ++i)
     inputs[i] = program.values[step.inputs[i]].description;
   std::array<TensorDesc, 2> outputs;
@@ -83,6 +83,26 @@ bool managed_operation(const ProgramState &program,
                                  std::span(inputs).first(step.inputs.size()),
                                  std::span(outputs).first(step.outputs.size())))
     return false;
+  if (step.operation.get_if<GatedDeltaNet>()) {
+    const auto dimensions = inputs[2].dimensions();
+    const auto &limits = program.runtime->device->properties.limits;
+    const auto packed_elements =
+        *outputs[0].element_count() + *outputs[1].element_count();
+    if (static_cast<std::uint64_t>(dimensions[2]) >
+            limits.maxComputeWorkGroupCount[0] ||
+        static_cast<std::uint64_t>(dimensions[0]) >
+            limits.maxComputeWorkGroupCount[1] ||
+        static_cast<std::uint64_t>(dimensions[3]) >
+            limits.maxComputeWorkGroupCount[2] ||
+        limits.maxPerStageDescriptorStorageBuffers < 7 ||
+        limits.maxDescriptorSetStorageBuffers < 7 ||
+        packed_elements > limits.maxStorageBufferRange / sizeof(float))
+      return false;
+    for (const auto &input : inputs)
+      if (*input.element_count() >
+          limits.maxStorageBufferRange / sizeof(float))
+        return false;
+  }
   if ((step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
        step.operation.get_if<GatedActivation>()) &&
       !managed_elementwise_limits(program, step))
@@ -157,6 +177,9 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
           step.operation.get_if<LayerNorm>())
         uses[local(step.inputs[0])].descriptor_aligned = true;
       if (step.operation.get_if<Softmax>())
+        for (const auto input : step.inputs)
+          uses[local(input)].descriptor_aligned = true;
+      if (step.operation.get_if<GatedDeltaNet>())
         for (const auto input : step.inputs)
           uses[local(input)].descriptor_aligned = true;
       for (const auto output : step.outputs) {

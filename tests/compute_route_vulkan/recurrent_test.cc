@@ -1,0 +1,94 @@
+#include "recurrent_test_support.h"
+#include "vulkan_program_internal.h"
+
+namespace {
+using namespace vulkan_recurrent_test;
+
+TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 64 * 1024 * 1024);
+  auto context = vulkan_test::context(&quota).value();
+  for (const auto depth : {16, 32, 64, 128}) {
+    for (const auto tokens : {1, 5}) {
+      SCOPED_TRACE(depth);
+      SCOPED_TRACE(tokens);
+      Fixture original(tokens, 2, depth);
+      Fixture changed(tokens, 2, depth, 13);
+      const auto reference = original.oracle();
+      const auto changed_reference = changed.oracle();
+      const auto &d = original.descriptions;
+      auto program = v::prepare(context, c::GatedDeltaNet{},
+                                d[0], d[1], d[2], d[3], d[4], d[5]);
+      ASSERT_TRUE(program) << program.error().message();
+      const auto &plan = v::detail::Access::program(*program);
+      ASSERT_TRUE(plan->dispatches.back().region);
+      auto first = program->create_invocation().value();
+      auto second = program->create_invocation().value();
+      auto inputs = original.upload(context);
+      auto next_inputs = changed.upload(context);
+      ASSERT_TRUE(first.bind(inputs).ok());
+      ASSERT_TRUE(second.bind(next_inputs).ok());
+      std::array<v::Tensor, 2> retained;
+      std::size_t warmed_bytes = 0;
+      for (int repeat = 0; repeat < 3; ++repeat) {
+        auto &slot = repeat == 0 ? first : second;
+        const auto &expected = repeat == 0 ? reference : changed_reference;
+        auto work = slot.submit();
+        ASSERT_TRUE(work) << work.error().message();
+        auto result = work->wait();
+        ASSERT_TRUE(result) << result.error().message();
+        const auto outputs = result->get()->tensors();
+        ASSERT_EQ(outputs.size(), 2U);
+        for (std::size_t port = 0; port < outputs.size(); ++port) {
+          expect(context, outputs[port], expected[port]);
+          if (repeat == 0)
+            retained[port] = outputs[port];
+          else
+            expect(context, retained[port], reference[port]);
+        }
+        if (repeat == 1)
+          warmed_bytes = quota.used();
+        else if (repeat == 2)
+          EXPECT_EQ(quota.used(), warmed_bytes);
+      }
+      EXPECT_EQ(vulkan_test::read(context, inputs[5]).value(), original.data[5]);
+      EXPECT_FALSE(first.submit());
+      retained[0] = {};
+      EXPECT_FALSE(first.submit()); // State alone retains the same execution slot.
+      retained[1] = {};
+      auto replay = first.submit();
+      ASSERT_TRUE(replay);
+      ASSERT_TRUE(replay->wait());
+    }
+  }
+  EXPECT_TRUE(context.close().ok());
+  context = {};
+  EXPECT_EQ(quota.used(), 0U);
+}
+
+TEST(VulkanRecurrent, RejectsUnsupportedDomainAndPreservesSuccessfulBinding) {
+  auto context = vulkan_test::context().value();
+  Fixture supported(3, 2, 32);
+  Fixture unsupported(3, 2, 24);
+  auto rejected = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
+                             unsupported.arguments());
+  ASSERT_FALSE(rejected);
+  EXPECT_EQ(rejected.error().code(), hyle::StatusCode::Unimplemented);
+  auto arguments = supported.arguments();
+  arguments.pop_back();
+  EXPECT_FALSE(v::prepare(context, c::Operation(c::GatedDeltaNet{}), arguments));
+  auto program = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
+                            supported.arguments()).value();
+  auto slot = program.create_invocation().value();
+  auto inputs = supported.upload(context);
+  ASSERT_TRUE(slot.bind(inputs).ok());
+  auto invalid = inputs;
+  invalid[5] = inputs[0];
+  EXPECT_FALSE(slot.bind(invalid).ok());
+  auto work = slot.submit().value();
+  auto result = work.wait();
+  ASSERT_TRUE(result);
+  const auto expected = supported.oracle();
+  expect(context, result->get()->tensors()[0], expected[0]);
+  expect(context, result->get()->tensors()[1], expected[1]);
+}
+} // namespace

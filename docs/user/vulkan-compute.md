@@ -21,8 +21,8 @@ ggml 片段复用其图和存储，但仍执行原厂编码及内部资源管理
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
-当前 C1 正接入普通 Direct/Graph 的受管片段；本轮完整交付与性能资格仍待
-[C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md) 验收。
+当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 正接入原版递归片段；
+该新增纵切的完整交付与资源资格仍在验收，不代表全模型算子覆盖。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
 Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算成功。
 
@@ -191,6 +191,34 @@ TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score
 目前通过 Windows static/shared 与 Air/Mini 正确性，以及 Windows/Air 三种 C++ 交付；
 完整 C1 与性能资格仍待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)
 验收，尚不称为性能优选。
+
+### 显式递归状态（M1-V 验收中）
+
+`GatedDeltaNet` 使用原版 ggml fused recurrence，输入依次是 Q、K、V、log decay、beta、初始状态。
+当前 Vulkan 接入域为 dense F32、相同 Q/V 头数和深度，深度为 16、32、64 或 128。
+Q/K/V 为 `[B,T,H,D]`，两个门为 `[B,T,H,1]`，状态为 `[B,H,Dv,Dk]`。准备时校验
+原版索引、合并输出大小和设备 descriptor/dispatch 限制；不匹配返回错误，不转 CPU。
+
+已有同设备 ready Tensor 时，普通 Direct 使用相同的 owning 结果与 Completion：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto program, c::vulkan::prepare(
+    context, c::GatedDeltaNet{}, q.description(), k.description(), value.description(),
+    log_decay.description(), beta.description(), initial_state.description()));
+HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
+const std::array inputs{q, k, value, log_decay, beta, initial_state};
+HYLE_RETURN_IF_ERROR(slot.bind(inputs));
+HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+auto output = result->tensors()[0];
+auto next_state = result->tensors()[1];
+```
+
+Graph 使用 `builder.add_node(c::Operation(c::GatedDeltaNet{}), inputs)`，通过
+`builder.result(node, 0/1)` 取得输出/新状态并连接下游；普通 Vulkan compile 自动绑定原版 region。
+初态不被改写。保留任一输出都会占住该 invocation 的结果槽；释放后才可覆盖，或使用另一个
+invocation。输入对齐可能需要已有的 GPU copy，原版打包输出通过 cont 发布为两个独立 owning
+port；这些成本计入本路线 P0，不能视为零复制或完整模型性能资格。
 
 ## 零拷贝 View
 

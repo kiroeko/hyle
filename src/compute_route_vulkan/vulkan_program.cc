@@ -251,6 +251,10 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         continue;
       }
       ++index;
+      if (step.operation.get_if<GatedDeltaNet>())
+        return std::unexpected(Status::Unimplemented(
+            "Vulkan GatedDeltaNet requires dense F32 equal heads, "
+            "D16/32/64/128 and legal native resource limits"));
       if (const auto *view = step.operation.get_if<View>()) {
         HYLE_ASSIGN_OR_RETURN(
             auto offset, compute::detail::view_alias_offset(

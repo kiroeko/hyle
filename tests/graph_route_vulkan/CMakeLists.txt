@@ -6,7 +6,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
       -o "${CMAKE_CURRENT_BINARY_DIR}/affine.spv"
       "${HYLE_SOURCE_DIR}/tests/compute_route_vulkan/affine.comp"
     DEPENDS "${HYLE_SOURCE_DIR}/tests/compute_route_vulkan/affine.comp" VERBATIM)
-  hyle_add_test(graph_route_vulkan SOURCES graph_test.cc tensor_test.cc view_test.cc gate_norm_test.cc concat_test.cc reduction_test.cc managed_region_test.cc topk_test.cc gather_test.cc scan_test.cc scatter_test.cc
+  hyle_add_test(graph_route_vulkan SOURCES graph_test.cc tensor_test.cc view_test.cc gate_norm_test.cc concat_test.cc reduction_test.cc managed_region_test.cc topk_test.cc gather_test.cc scan_test.cc scatter_test.cc recurrent_test.cc
     "${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
   target_compile_definitions(hyle_graph_route_vulkan_test PRIVATE
     HYLE_VULKAN_TEST_SHADER="${CMAKE_CURRENT_BINARY_DIR}/affine.spv")

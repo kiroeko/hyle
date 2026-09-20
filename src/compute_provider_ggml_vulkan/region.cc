@@ -60,6 +60,23 @@ bool region_supports(const Operation &operation,
   if (!std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  if (operation.get_if<GatedDeltaNet>()) {
+    if (inputs.size() != 6 || outputs.size() != 2 ||
+        !std::ranges::all_of(inputs, [](const auto &input) {
+          return input.rank() == 4 &&
+                 input.data_type() == DataType::kFloat32;
+        }))
+      return false;
+    const auto q = inputs[0].dimensions();
+    const auto v = inputs[2].dimensions();
+    const auto depth = q[3];
+    return q[2] == v[2] && depth == v[3] &&
+           (depth == 16 || depth == 32 || depth == 64 || depth == 128) &&
+           outputs[0].data_type() == DataType::kFloat32 &&
+           outputs[1].data_type() == DataType::kFloat32 &&
+           *outputs[0].element_count() + *outputs[1].element_count() <=
+               std::size_t{INT32_MAX};
+  }
   if (const auto *topk = operation.get_if<TopK>())
     return inputs.size() == 1 && outputs.size() == 2 && inputs[0].rank() > 0 &&
            inputs[0].data_type() == DataType::kFloat32 &&
@@ -191,6 +208,7 @@ Result<Region> Region::create(NativeDevice device,
     // TopK/Scan: at most 10/16 nodes including reshape/view/cont adapters.
     // LayerNorm: input reshape, GroupNorm, restored shape, optional Mul/Add.
     // Row reduction: up to three exact row pieces, concat and shape restore.
+    // GatedDeltaNet: fused native result, two views and two owning ports.
     // Other operations need at most three (Rsqrt: Fill, Sqrt, Div).
     auto capacity = recipe.inputs.size() + 16;
     for (const auto &node : recipe.nodes)
@@ -198,6 +216,7 @@ Result<Region> Region::create(NativeDevice device,
                   : node.operation.get_if<Reduce>()    ? 12
                   : node.operation.get_if<TopK>()      ? 10
                   : node.operation.get_if<LayerNorm>() ? 5
+                  : node.operation.get_if<GatedDeltaNet>() ? 5
                                                        : 3;
     const auto graph_bytes = ggml_graph_overhead_custom(capacity, false);
     if (capacity > (SIZE_MAX - graph_bytes) / ggml_tensor_overhead())
@@ -234,7 +253,24 @@ Result<Region> Region::create(NativeDevice device,
     for (const auto &node : recipe.nodes) {
       auto *left = tensors[node.inputs[0]];
       ggml_tensor *output = nullptr;
-      if (const auto *topk = node.operation.get_if<TopK>()) {
+      if (node.operation.get_if<GatedDeltaNet>()) {
+        auto *value = tensors[node.inputs[2]];
+        auto *initial = tensors[node.inputs[5]];
+        auto *fused = ggml_gated_delta_net(
+            context, left, tensors[node.inputs[1]], value,
+            tensors[node.inputs[3]], tensors[node.inputs[4]], initial, 1);
+        // Upstream owns the fused recurrence and concatenates scores/state.
+        // Published ports have independent storage; initial state stays read-only.
+        auto *scores = ggml_view_4d(
+            context, fused, value->ne[0], value->ne[1], value->ne[2],
+            value->ne[3], value->nb[1], value->nb[2], value->nb[3], 0);
+        auto *next = ggml_view_4d(
+            context, fused, initial->ne[0], initial->ne[1], initial->ne[2],
+            initial->ne[3], initial->nb[1], initial->nb[2], initial->nb[3],
+            ggml_nbytes(value));
+        output = ggml_cont(context, scores);
+        tensors[node.outputs[1]] = ggml_cont(context, next);
+      } else if (const auto *topk = node.operation.get_if<TopK>()) {
         const auto width = left->ne[0];
         const auto rows = ggml_nelements(left) / width;
         const auto count = static_cast<std::int64_t>(topk->count);
