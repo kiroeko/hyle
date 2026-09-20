@@ -24,7 +24,8 @@
 - tier：P0，核对完整边界同步、转换、存储与重复执行成本。成熟默认路径的适用 P1 在 M2/M3；
   不以本 seam 样例签 64×4 覆盖，也不提前比较自研。
 - 源码/设计总预算 120 分钟。登记与审计检查点累计 35 分钟；本次有限 native 资源与 region
-  接口细化保守追加 35 分钟，累计 70 分钟、余 50 分钟，不重置。实现、编译、预声明验证另记；
+  接口细化追加 35 分钟；资源故障边界与下述 UBSan 反例再保守追加 35 分钟，累计 105 分钟、
+  余 15 分钟，不重置。实现、编译、预声明验证另记；
   每根因最多两次纠正。
 - 机器：Air/Mini 原生正确性、生命周期、三交付；Windows/WSL Apple-OFF 与公共语义。
   重型工作跨机器串行、parallel2；Windows DLL 邻置，不改电源、不触发 UAC。
@@ -174,3 +175,35 @@ M1 按实际接入验收估算约 **65%**；新增模型覆盖仍为 **0/256**�
 Compute+Graph 实现 **51,892 行 / 222 文件**，不含测试/vendor，包含冻结存量。
 Air 活动 build 约 99 MiB、源码约 35 MiB，保留供本卡增量验证；一次性 patch materialization
 副本在收据归档后清理。M5 前停止点不变。
+
+## A2 资源验证中的有限补充（2026-09-20）
+
+原版 pipeline cache 的查询/插入分配失败现在由其 C++ collection 返回失败值，在 Objective-C
+锁内不抛出；native pipeline、常量、event、context、device/library 的部分构造按 owner 回滚。
+静态测试包含实际 patched upstream 源码，只替换测试进程中的 allocation/completion 边界。
+首次 C++ 故障注入范围过宽，命中 Apple 私有 Metal driver 后留下锁；该 fixture 失格，不能
+据此裁决产品。收窄到实际 collection 后，缓存失败/再入、导入回滚、编码失败、checked completion
+保留原生码及失败实例退役通过；原始失败日志保留。没有改写 driver 或数学。
+
+Air ASan 四项通过。UBSan 定位 `ggml.c::incr_ptr_aligned` 在 `ggml_graph_nbytes` 以零地址
+计算容量时使用 `((char *)ptr + size)`，触发 null-pointer-offset UB。这是本轮真实
+`MetadataArena::for_graph -> NativeProgram::create` 调用链中的资源缺陷；现有 AUDITED owner
+`compute_ggml_runtime` 的 A2 定向修复仅将该偏移改为 `uintptr_t` 加法，保持原容量、对齐、
+布局和正常成本，不另写 sizing 算法、不审查数学。补充 Windows/WSL 共同 runtime 资源门与
+Air UBSan 复验；原版 Metal/MLX、Mini 和三交付仍按原预声明门。未运行项不签 PASS。
+
+## 资源与 Air 三交付检查点（仍为 AUDITED）
+
+上述一行 sizing 修正后，Air host ASan/UBSan 各四门通过；不代签 Metal driver/device，
+macOS ASan 未启用泄漏检测，native wrapper 的失败回滚另有 live-owner 断言。
+Air 普通 Direct/Graph 的 source/static/shared 三交付均通过，样例新增原版递归及
+MLX → ggml → MLX 组合、显式非零初态和重复执行。安装消费者使用独立源码副本；搬移 prefix，
+同时隐藏原 producer build 和产品源码后仍可配置/编译/运行。Metal 源内嵌、MLX 资源、许可和
+private header / dynamic symbol 检查通过。已完成 producer build 自动清理，未累积 SDK 构建。
+
+Windows 共同 runtime 原版 CPU 资源、公共语义和 Apple-OFF 头八门通过，DLL 邻置；
+WSL 相同八门加 host UBSan 通过。Windows/Air 原始命令、失败修正和快照身份见
+[资源/交付收据](../../../../evidence/correctness/compute-llm-moe-m1-apple-admission/resource-host-air-delivery.json)。
+WSL 原始日志已收齐待最终归档；Mini 原生/三交付正在运行，候选与最后复核尚未签发。
+没有新增自研数学或 P1，新增模型覆盖仍为 0/256。M1 接入进度估算约 **70%**，不以新增测试数量
+换算覆盖；统一 LOC 仍为 **51,892 行 / 222 文件**（不含测试/vendor，含冻结存量）。

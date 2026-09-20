@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hyle/graph/apple.h>
+#include "apple_recurrent.h"
 
 #include "../../compute/cpp/apple_ffn.h"
 
@@ -48,6 +49,7 @@ inline hyle::Result<g::Graph> build(int rows) {
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, a::Context::create());
   HYLE_RETURN_IF_ERROR(sample_apple_direct::verify_base_kernel(context));
+  HYLE_RETURN_IF_ERROR(recurrent(context));
   sample_apple_direct::Weights weights;
   for (int rows : {1, 4}) {
     HYLE_ASSIGN_OR_RETURN(auto graph, build(rows));

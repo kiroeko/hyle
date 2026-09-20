@@ -4,7 +4,7 @@
     {
       "path": "src/ggml.c",
       "before_sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
-      "after_sha256": "198c15f26b81fffaea97b5a4a041c1f864f32b8304b6b2c3b2d2c55e57e4f8f0",
+      "after_sha256": "689ebbaeefa95757d12c1ebe1042853b8bb9d64e4bfe952c388e6cd92587ad22",
       "edits": [
         {
           "before": "    struct ggml_context * ctx = GGML_MALLOC(sizeof(struct ggml_context));",
@@ -13,6 +13,10 @@
         {
           "before": "    GGML_ASSERT(ctx->mem_buffer != NULL);",
           "after": "    if (ctx->mem_buffer == NULL) {\n        free(ctx);\n        return NULL;\n    }"
+        },
+        {
+          "before": "    *p = (void *) ((char *) ptr + size);",
+          "after": "    *p = (void *) ((uintptr_t) ptr + size); // also used with zero for size-only layout"
         }
       ]
     },

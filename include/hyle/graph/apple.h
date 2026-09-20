@@ -65,14 +65,16 @@ struct CompileOptions final {
   compute::WorkloadContext workload;
 };
 
-// Cold typed DAG -> one compiled MLX region. Constants are ready native owners
+// Cold typed DAG -> compiled MLX regions and admitted whole ggml Metal regions.
+// Pure MLX graphs retain one compiled region. Constants are ready native owners
 // in Graph constant order; the Program retains them. Bind inputs in Graph input
 // order, read native outputs in published order. Graph may be destroyed after
 // this call. Replays neither traverse the HYLE DAG nor call custom lowering.
 //
 // Admits fixed, dense, pure tensors; Q4 constants use apple::kAffineQ4Format.
 // Symbolic dimensions, effects, explicit control edges and other encodings
-// are rejected. Intermediates/fusion are managed by MLX; no shadow output copy.
+// are rejected. Each provider manages its own region's intermediates/fusion;
+// cross-provider boundaries use checked completion waits, no shadow output copy.
 HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::Program>
 compile(const compute::apple::Context &context, const Graph &graph,
         std::span<const mlx::core::array> constants = {},

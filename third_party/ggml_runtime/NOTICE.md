@@ -14,6 +14,8 @@ context alignment/padding and thread counts, preserve native initialization
 errors, and roll back partially created worker threads. Apple deallocation
 uses the original allocation size. A private pool-creation entry carries the
 native failure code to HYLE; it is not an installed public C API.
+Graph metadata sizing advances integer addresses, including its zero-based
+size-only cursor, without undefined null-pointer arithmetic; layout is unchanged.
 
 CPU initialization calls the original one-time time initialization without
 allocating a temporary context on every execution. The original math tables,

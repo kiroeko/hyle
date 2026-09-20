@@ -4,7 +4,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-device.h",
       "before_sha256": "b126fa48627fabd430849a7b1f35756acea8860effe75090cd171aa5dc5b9cd4",
-      "after_sha256": "fcf6bd652d57a7f07c560ae312b7ef709b1cac4d9871bccf4425d8ec4bf6c0e1",
+      "after_sha256": "2b2426b647d889fdaf26994afc920ae03296ec04b83005858e93daace1fd5b72",
       "edits": [
         {
           "before": "//\n// MTLFunctionConstantValues wrapper",
@@ -13,13 +13,25 @@
         {
           "before": "void   ggml_metal_buffer_free     (ggml_metal_buffer_t buf);",
           "after": "ggml_metal_buffer_t ggml_metal_buffer_import(ggml_metal_device_t dev, void * metal);\nsize_t ggml_metal_buffer_get_size(ggml_metal_buffer_t buf);\nvoid   ggml_metal_buffer_free     (ggml_metal_buffer_t buf);"
+        },
+        {
+          "before": "void                  ggml_metal_pipelines_add",
+          "after": "bool                  ggml_metal_pipelines_add"
+        },
+        {
+          "before": "ggml_metal_pipeline_t ggml_metal_pipelines_get(ggml_metal_pipelines_t ppls, const char * name);",
+          "after": "ggml_metal_pipeline_t ggml_metal_pipelines_get(ggml_metal_pipelines_t ppls, const char * name, bool * allocation_failed);"
+        },
+        {
+          "before": "    bool c4;\n    bool cnt;",
+          "after": "    bool c4;\n    bool cnt;\n    bool allocation_failed;"
         }
       ]
     },
     {
       "path": "src/ggml-metal/ggml-metal-device.m",
       "before_sha256": "1c129311f152c88bb455e14a720aac731196a76450e4b0da0791f1cce2bcbc47",
-      "after_sha256": "cf5d70ddf6cd3e2cd1fdd3433d7bc07e14b6bf7f3e140f894060e220c2f3d72d",
+      "after_sha256": "f14160b3082e8f1b5a6d691339f472a35df2df543f4862a234d42c9c4ab82adb",
       "edits": [
         {
           "before": "void ggml_metal_buffer_free(ggml_metal_buffer_t buf) {",
@@ -52,6 +64,94 @@
         {
           "before": "    [encoder->obj dispatchThreadgroups:",
           "after": "    if (encoder->failed) return;\n    [encoder->obj dispatchThreadgroups:"
+        },
+        {
+          "before": "struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline(ggml_metal_library_t lib, const char * name) {\n    [lib->lock lock];\n\n    struct ggml_metal_pipeline_with_params res = {\n        /*.pipeline =*/ nil,\n        /*.nsg      =*/ 0,\n        /*.nr0      =*/ 0,\n        /*.nr1      =*/ 0,\n        /*.smem     =*/ 0,\n        /*.c4       =*/ false,\n        /*.cnt      =*/ false,\n    };\n\n    res.pipeline = ggml_metal_pipelines_get(lib->pipelines, name);",
+          "after": "struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline(ggml_metal_library_t lib, const char * name) {\n    [lib->lock lock];\n\n    struct ggml_metal_pipeline_with_params res = {\n        /*.pipeline =*/ nil,\n        /*.nsg      =*/ 0,\n        /*.nr0      =*/ 0,\n        /*.nr1      =*/ 0,\n        /*.smem     =*/ 0,\n        /*.c4       =*/ false,\n        /*.cnt      =*/ false,\n        /*.allocation_failed =*/ false,\n    };\n\n    res.pipeline = ggml_metal_pipelines_get(lib->pipelines, name, &res.allocation_failed);\n    if (res.allocation_failed) { [lib->lock unlock]; return res; }"
+        },
+        {
+          "before": "struct ggml_metal_pipeline_with_params ggml_metal_library_compile_pipeline(ggml_metal_library_t lib, const char * base, const char * name, ggml_metal_cv_t cv) {\n    struct ggml_metal_pipeline_with_params res = {\n        /*.pipeline =*/ nil,\n        /*.nsg      =*/ 0,\n        /*.nr0      =*/ 0,\n        /*.nr1      =*/ 0,\n        /*.smem     =*/ 0,\n        /*.c4       =*/ false,\n        /*.cnt      =*/ false,\n    };\n\n    [lib->lock lock];\n\n    res.pipeline = ggml_metal_pipelines_get(lib->pipelines, name);",
+          "after": "struct ggml_metal_pipeline_with_params ggml_metal_library_compile_pipeline(ggml_metal_library_t lib, const char * base, const char * name, ggml_metal_cv_t cv) {\n    struct ggml_metal_pipeline_with_params res = {\n        /*.pipeline =*/ nil,\n        /*.nsg      =*/ 0,\n        /*.nr0      =*/ 0,\n        /*.nr1      =*/ 0,\n        /*.smem     =*/ 0,\n        /*.c4       =*/ false,\n        /*.cnt      =*/ false,\n        /*.allocation_failed =*/ false,\n    };\n\n    [lib->lock lock];\n\n    res.pipeline = ggml_metal_pipelines_get(lib->pipelines, name, &res.allocation_failed);\n    if (res.allocation_failed) { [lib->lock unlock]; return res; }"
+        },
+        {
+          "before": "    ggml_metal_pipeline_t res = calloc(1, sizeof(struct ggml_metal_pipeline));",
+          "after": "    ggml_metal_pipeline_t res = calloc(1, sizeof(struct ggml_metal_pipeline));\n    if (!res) return NULL;"
+        },
+        {
+          "before": "        res.pipeline = ggml_metal_pipeline_init();\n        res.pipeline->obj = obj;\n\n        ggml_metal_pipelines_add(lib->pipelines, name, res.pipeline);",
+          "after": "        res.pipeline = ggml_metal_pipeline_init();\n        if (!res.pipeline) {\n            [obj release]; [lib->lock unlock];\n            res.allocation_failed = true;\n            return res;\n        }\n        res.pipeline->obj = obj;\n        if (!ggml_metal_pipelines_add(lib->pipelines, name, res.pipeline)) {\n            ggml_metal_pipeline_free(res.pipeline);\n            res.pipeline = NULL;\n            res.allocation_failed = true;\n        }"
+        },
+        {
+          "before": "    ggml_metal_cv_t res = calloc(1, sizeof(struct ggml_metal_cv));",
+          "after": "    ggml_metal_cv_t res = calloc(1, sizeof(struct ggml_metal_cv));\n    if (!res) return NULL;"
+        },
+        {
+          "before": "    res->obj = [[MTLFunctionConstantValues alloc] init];",
+          "after": "    res->obj = [[MTLFunctionConstantValues alloc] init];\n    if (!res->obj) { free(res); return NULL; }"
+        },
+        {
+          "before": "    ggml_metal_event_t ev = calloc(1, sizeof(struct ggml_metal_event));",
+          "after": "    ggml_metal_event_t ev = calloc(1, sizeof(struct ggml_metal_event));\n    if (!ev || !event) { [event release]; free(ev); return NULL; }"
+        },
+        {
+          "before": "void ggml_metal_device_event_free(ggml_metal_device_t dev, ggml_metal_event_t ev) {",
+          "after": "void ggml_metal_device_event_free(ggml_metal_device_t dev, ggml_metal_event_t ev) {\n    if (!ev) return;"
+        },
+        {
+          "before": "    NSError ** err_per_lib = calloc(GGML_METAL_LIB_COUNT, sizeof(NSError *));",
+          "after": "    NSError ** err_per_lib = calloc(GGML_METAL_LIB_COUNT, sizeof(NSError *));\n    if (!t_per_lib || !err_per_lib) { free(t_per_lib); free(err_per_lib); return false; }"
+        },
+        {
+          "before": "    dispatch_group_t group = dispatch_group_create();",
+          "after": "    dispatch_group_t group = dispatch_group_create();\n    if (!group) { free(t_per_lib); free(err_per_lib); return false; }"
+        },
+        {
+          "before": "    ggml_metal_library_t res = calloc(1, sizeof(struct ggml_metal_library));\n    res->dev",
+          "after": "    ggml_metal_library_t res = calloc(1, sizeof(struct ggml_metal_library));\n    if (!res) return NULL;\n    res->dev"
+        },
+        {
+          "before": "    res->lock      = [NSLock new];",
+          "after": "    res->lock      = [NSLock new];\n    if (!res->pipelines || !res->lock) { ggml_metal_library_free(res); return NULL; }"
+        },
+        {
+          "before": "        GGML_LOG_ERROR(\"%s: calloc failed\\n\", __func__);\n        return NULL;",
+          "after": "        GGML_LOG_ERROR(\"%s: calloc failed\\n\", __func__);\n        [library release];\n        return NULL;"
+        },
+        {
+          "before": "    res->lock           = [NSLock new];",
+          "after": "    res->lock           = [NSLock new];\n    if (!res->pipelines || !res->lock) { ggml_metal_library_free(res); return NULL; }"
+        },
+        {
+          "before": "    ggml_metal_device_t dev = calloc(1, sizeof(struct ggml_metal_device));\n\n    assert(dev != NULL);",
+          "after": "    ggml_metal_device_t dev = calloc(1, sizeof(struct ggml_metal_device));\n    if (!dev) return NULL;"
+        },
+        {
+          "before": "                    GGML_LOG_ERROR(\"%s: error: failed to create command queue\\n\", __func__);",
+          "after": "                    GGML_LOG_ERROR(\"%s: error: failed to create command queue\\n\", __func__);\n                    ggml_metal_device_free(dev); return NULL;"
+        },
+        {
+          "before": "                            val ? atoi(val) : 0);\n                }",
+          "after": "                            val ? atoi(val) : 0);\n                    if (!dev->finfo) { ggml_metal_device_free(dev); return NULL; }\n                }"
+        },
+        {
+          "before": "                    GGML_LOG_ERROR(\"%s: error: failed to create library\\n\", __func__);",
+          "after": "                    GGML_LOG_ERROR(\"%s: error: failed to create library\\n\", __func__);\n                    ggml_metal_device_free(dev); return NULL;"
+        },
+        {
+          "before": "                    dev->rsets = ggml_metal_rsets_init(dev);",
+          "after": "                    dev->rsets = ggml_metal_rsets_init(dev);\n                    if (!dev->rsets) { ggml_metal_device_free(dev); return NULL; }"
+        },
+        {
+          "before": "    ggml_metal_rsets_t res = calloc(1, sizeof(struct ggml_metal_rsets));",
+          "after": "    ggml_metal_rsets_t res = calloc(1, sizeof(struct ggml_metal_rsets));\n    if (!res) return NULL;"
+        },
+        {
+          "before": "    res->data = [[NSMutableArray alloc] init];",
+          "after": "    res->data = [[NSMutableArray alloc] init];\n    if (!res->lock || !res->data) { [res->lock release]; [res->data release]; free(res); return NULL; }"
+        },
+        {
+          "before": "    res->d_group = dispatch_group_create();",
+          "after": "    res->d_group = dispatch_group_create();\n    if (!res->d_group) { [res->lock release]; [res->data release]; free(res); return NULL; }"
         }
       ]
     },
@@ -92,7 +192,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-context.m",
       "before_sha256": "2be28299672d17fbbe1ba13eff773f69cbe5e7604885d59fc82d57bb889e5c61",
-      "after_sha256": "7a7bd9012a8513739f75bef774cdbd645badd9d3c245871b1c058a9caddb9ee6",
+      "after_sha256": "7014a1c9e590673d6e5a05fa3ebb318fe0a9ca5990c42ea9e446cab933c179c2",
       "edits": [
         {
           "before": "struct ggml_metal_command_buffer {\n    id<MTLCommandBuffer> obj;\n};",
@@ -121,6 +221,22 @@
         {
           "before": "void ggml_metal_graph_optimize(ggml_metal_t ctx, struct ggml_cgraph * gf) {",
           "after": "\nint64_t ggml_metal_checked_sync(ggml_metal_t ctx) {\n    ggml_metal_synchronize(ctx);\n    for (int i = 0; i <= ctx->n_cb; ++i) {\n        id<MTLCommandBuffer> cb = ctx->cmd_bufs[i].obj;\n        if (cb && cb.status == MTLCommandBufferStatusError) {\n            const int64_t code = cb.error.code;\n            return code ? code : -1;\n        }\n    }\n    return ctx->has_error ? -1 : 0;\n}\n\nvoid ggml_metal_graph_optimize(ggml_metal_t ctx, struct ggml_cgraph * gf) {"
+        },
+        {
+          "before": "        res->ev_cpy = ggml_metal_device_event_init(dev);",
+          "after": "        res->ev_cpy = ggml_metal_device_event_init(dev);\n        if (!res->ev_cpy) { free(res); return NULL; }"
+        },
+        {
+          "before": "        res->d_queue = dispatch_queue_create(\"ggml-metal\", DISPATCH_QUEUE_CONCURRENT);",
+          "after": "        res->d_queue = dispatch_queue_create(\"ggml-metal\", DISPATCH_QUEUE_CONCURRENT);\n        if (!res->d_queue) { ggml_metal_device_event_free(dev, res->ev_cpy); free(res); return NULL; }"
+        },
+        {
+          "before": "        res->pipelines_ext = ggml_metal_pipelines_init();",
+          "after": "        res->pipelines_ext = ggml_metal_pipelines_init();\n        if (!res->cmd_bufs_ext || !res->buf_refs || !res->pipelines_ext) { ggml_metal_free(res); return NULL; }"
+        },
+        {
+          "before": "    ctx->encode_async = Block_copy(^(size_t iter) {\n        const int cb_idx = iter;\n        const int n_cb_l = ctx->n_cb;\n\n        const int n_nodes_0 = ctx->n_nodes_0;\n        const int n_nodes_1 = ctx->n_nodes_1;\n\n        const int n_nodes_per_cb = ctx->n_nodes_per_cb;\n\n        int idx_start = 0;\n        int idx_end   = n_nodes_0;\n\n        if (cb_idx < n_cb_l) {\n            idx_start = n_nodes_0 + (                                         (cb_idx + 0) * n_nodes_per_cb);\n            idx_end   = n_nodes_0 + (MIN((cb_idx == n_cb_l - 1) ? n_nodes_1 : (cb_idx + 1) * n_nodes_per_cb, n_nodes_1));\n        }\n\n        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n\n        ctx->cmd_bufs[cb_idx].encode_status = ggml_metal_op_try_encode(\n            ctx->dev, cmd_buf, ctx->gf, ctx->finfo, idx_start, idx_end,\n            ctx->use_concurrency, ctx->capture_compute, ctx->debug_graph);\n\n        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            [cmd_buf commit];\n        }\n    });",
+          "after": "    ctx->encode_async = Block_copy(^(size_t iter) {\n        const int cb_idx = iter;\n        const int n_cb_l = ctx->n_cb;\n\n        const int n_nodes_0 = ctx->n_nodes_0;\n        const int n_nodes_1 = ctx->n_nodes_1;\n\n        const int n_nodes_per_cb = ctx->n_nodes_per_cb;\n\n        int idx_start = 0;\n        int idx_end   = n_nodes_0;\n\n        if (cb_idx < n_cb_l) {\n            idx_start = n_nodes_0 + (                                         (cb_idx + 0) * n_nodes_per_cb);\n            idx_end   = n_nodes_0 + (MIN((cb_idx == n_cb_l - 1) ? n_nodes_1 : (cb_idx + 1) * n_nodes_per_cb, n_nodes_1));\n        }\n\n        id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs[cb_idx].obj;\n\n        ctx->cmd_bufs[cb_idx].encode_status = ggml_metal_op_try_encode(\n            ctx->dev, cmd_buf, ctx->gf, ctx->finfo, idx_start, idx_end,\n            ctx->use_concurrency, ctx->capture_compute, ctx->debug_graph);\n\n        if (cb_idx < 2 || ctx->abort_callback == NULL) {\n            [cmd_buf commit];\n        }\n    });\n    if (!ctx->encode_async) ctx->has_error = true;"
         }
       ]
     },
@@ -138,7 +254,7 @@
     {
       "path": "src/ggml-metal/ggml-metal.cpp",
       "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
-      "after_sha256": "f79504d068a63bb127907454a423002dec04ec718a24372f5026b18a360bcdaf",
+      "after_sha256": "35abc3dc925b5a4800594ecb8fc3bcea07c2b7f89bba3587efa50e4374c8ef98",
       "edits": [
         {
           "before": "// backend\n",
@@ -155,6 +271,60 @@
         {
           "before": "// backend registry\n",
           "after": "\nextern \"C\" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {\n    auto dev = (ggml_metal_device_t)backend->device->context;\n    auto buffer = ggml_metal_buffer_import(dev, raw);\n    if (!buffer) return nullptr;\n    try {\n        auto result = ggml_backend_buffer_init(\n            ggml_backend_metal_buffer_type_shared(ggml_metal_device_get_props(dev)->device),\n            ggml_backend_metal_buffer_shared_i, buffer, ggml_metal_buffer_get_size(buffer));\n        if (!result) ggml_metal_buffer_free(buffer);\n        return result;\n    } catch (...) { ggml_metal_buffer_free(buffer); throw; }\n}\nextern \"C\" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {\n    return ggml_metal_checked_sync((ggml_metal_t)backend->context);\n}\nextern \"C\" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {\n    auto dev = (ggml_metal_device_t)backend->device->context;\n    auto lib = ggml_metal_device_get_library(dev);\n    ggml_backend_metal_set_n_cb(backend, 0);\n    return lib && ggml_metal_library_get_pipeline_gated_delta_net(lib, tensor).pipeline;\n}\n\n// backend registry\n"
+        },
+        {
+          "before": "    return lib && ggml_metal_library_get_pipeline_gated_delta_net(lib, tensor).pipeline;",
+          "after": "    return lib && !ggml_metal_checked_sync((ggml_metal_t)backend->context) &&\n           ggml_metal_library_get_pipeline_gated_delta_net(lib, tensor).pipeline;"
+        },
+        {
+          "before": "            for (int i = 0; i < g_devices; ++i) {\n                auto * dev = ggml_backend_metal_device_init(&reg, i);",
+          "after": "            devs.reserve(g_devices);\n            reg_ctx->devices.reserve(g_devices);\n            for (int i = 0; i < g_devices; ++i) {\n                auto * dev = ggml_backend_metal_device_init(&reg, i);"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-device.cpp",
+      "before_sha256": "20df24211057951de7657e5d4dfbc42b6fdd5016d471e64631dbef7f175a43c5",
+      "after_sha256": "58d9aabbf7f81ec601f219dcb44b212e7624b103bd2b2a43cb8cbfee8e5f9cec",
+      "edits": [
+        {
+          "before": "#include <memory>",
+          "after": "#include <memory>\n#include <new>"
+        },
+        {
+          "before": "    ggml_metal_pipelines_t res = new ggml_metal_pipelines();",
+          "after": "    ggml_metal_pipelines_t res = new (std::nothrow) ggml_metal_pipelines();"
+        },
+        {
+          "before": "void ggml_metal_pipelines_add(ggml_metal_pipelines_t ppls, const char * name, ggml_metal_pipeline_t pipeline) {\n    ppls->data[name] = pipeline;\n}",
+          "after": "bool ggml_metal_pipelines_add(ggml_metal_pipelines_t ppls, const char * name, ggml_metal_pipeline_t pipeline) {\n    try { return ppls->data.emplace(name, pipeline).second; }\n    catch (const std::bad_alloc &) { return false; }\n}"
+        },
+        {
+          "before": "ggml_metal_pipeline_t ggml_metal_pipelines_get(ggml_metal_pipelines_t ppls, const char * name) {\n    if (ppls->data.find(name) == ppls->data.end()) {\n        return nullptr;\n    }\n\n    return ppls->data[name];\n}",
+          "after": "ggml_metal_pipeline_t ggml_metal_pipelines_get(ggml_metal_pipelines_t ppls, const char * name, bool * allocation_failed) {\n    try {\n        const auto it = ppls->data.find(name);\n        return it == ppls->data.end() ? nullptr : it->second;\n    } catch (const std::bad_alloc &) { *allocation_failed = true; return nullptr; }\n}"
+        },
+        {
+          "before": "ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_gated_delta_net(ggml_metal_library_t lib, const ggml_tensor * op) {\n    char base[256];\n    char name[256];\n\n    // v is src[2], dimensions: S_v = ne[0], H = ne[1]\n    const int ne20 = op->src[2]->ne[0]; // S_v\n    const int ne21 = op->src[2]->ne[1]; // H\n    const int ne30 = op->src[3]->ne[0]; // G\n    // state is src[5], 4D [S_v, S_v, H_v, n_seqs] (s0 only); K is op param 0.\n    const int K = ggml_get_op_params_i32(op, 0);\n\n    const int nsg = op->src[2]->ne[0]/32;\n\n    GGML_ASSERT(op->src[5]->type == GGML_TYPE_F32);\n    GGML_ASSERT(op->ne[0] == ne20 * ne21);\n    GGML_ASSERT(ne20 % 32 == 0);\n\n    snprintf(base, 256, \"kernel_gated_delta_net_%s_%d\", ggml_type_name(op->src[0]->type), nsg);\n    snprintf(name, 256, \"%s_ne20=%d_ne30=%d_K=%d\", base, ne20, ne30, K);\n\n    ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, name);\n    if (!res.pipeline) {\n        ggml_metal_cv_t cv = ggml_metal_cv_init();\n\n        ggml_metal_cv_set_int16(cv, ne20, FC_GATED_DELTA_NET + 0);\n        ggml_metal_cv_set_int16(cv, ne30, FC_GATED_DELTA_NET + 1);\n        ggml_metal_cv_set_int16(cv, K,    FC_GATED_DELTA_NET + 2);\n\n        res = ggml_metal_library_compile_pipeline(lib, base, name, cv);\n\n        ggml_metal_cv_free(cv);\n    }\n\n    res.nsg = nsg;\n\n    return res;\n}\n",
+          "after": "ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_gated_delta_net(ggml_metal_library_t lib, const ggml_tensor * op) {\n    char base[256];\n    char name[256];\n\n    // v is src[2], dimensions: S_v = ne[0], H = ne[1]\n    const int ne20 = op->src[2]->ne[0]; // S_v\n    const int ne21 = op->src[2]->ne[1]; // H\n    const int ne30 = op->src[3]->ne[0]; // G\n    // state is src[5], 4D [S_v, S_v, H_v, n_seqs] (s0 only); K is op param 0.\n    const int K = ggml_get_op_params_i32(op, 0);\n\n    const int nsg = op->src[2]->ne[0]/32;\n\n    GGML_ASSERT(op->src[5]->type == GGML_TYPE_F32);\n    GGML_ASSERT(op->ne[0] == ne20 * ne21);\n    GGML_ASSERT(ne20 % 32 == 0);\n\n    snprintf(base, 256, \"kernel_gated_delta_net_%s_%d\", ggml_type_name(op->src[0]->type), nsg);\n    snprintf(name, 256, \"%s_ne20=%d_ne30=%d_K=%d\", base, ne20, ne30, K);\n\n    ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, name);\n    if (res.allocation_failed) throw std::bad_alloc();\n    if (!res.pipeline) {\n        ggml_metal_cv_t cv = ggml_metal_cv_init();\n        if (!cv) throw std::bad_alloc();\n\n        ggml_metal_cv_set_int16(cv, ne20, FC_GATED_DELTA_NET + 0);\n        ggml_metal_cv_set_int16(cv, ne30, FC_GATED_DELTA_NET + 1);\n        ggml_metal_cv_set_int16(cv, K,    FC_GATED_DELTA_NET + 2);\n\n        res = ggml_metal_library_compile_pipeline(lib, base, name, cv);\n\n        ggml_metal_cv_free(cv);\n        if (res.allocation_failed) throw std::bad_alloc();\n    }\n\n    res.nsg = nsg;\n\n    return res;\n}\n"
+        },
+        {
+          "before": "    devs.emplace_back(ggml_metal_device_init(device, n_devices));",
+          "after": "    devs.reserve(devs.size() + 1);\n    ggml_metal_device_ptr owner(ggml_metal_device_init(device, n_devices));\n    if (!owner) throw std::bad_alloc();\n    devs.push_back(std::move(owner));"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-fusion.cpp",
+      "before_sha256": "eec588dca0f86f85748ccee4761de24e26355c19adedda7daa5754f2841e15c5",
+      "after_sha256": "884c55fb423d1c52b39ffca75e3ee9f57ae7e9cef85c4b3a026bb96cc7b47290",
+      "edits": [
+        {
+          "before": "struct ggml_metal_fusion_info * ggml_metal_fusion_info_init(bool enabled, int debug) {\n    ggml_metal_fusion_info * finfo = new ggml_metal_fusion_info;\n    finfo->enabled    = enabled;\n    finfo->stats      = debug > 0;\n    finfo->labels_set = false;\n    finfo->debug      = debug;\n\n    if (finfo->stats) {\n        ggml_metal_fusion_info_labels_init(finfo);\n    }\n\n    return finfo;\n}\n",
+          "after": "struct ggml_metal_fusion_info * ggml_metal_fusion_info_init(bool enabled, int debug) {\n    ggml_metal_fusion_info * finfo = nullptr;\n    try {\n    finfo = new ggml_metal_fusion_info;\n    finfo->enabled    = enabled;\n    finfo->stats      = debug > 0;\n    finfo->labels_set = false;\n    finfo->debug      = debug;\n\n    if (finfo->stats) {\n        ggml_metal_fusion_info_labels_init(finfo);\n    }\n\n    return finfo;\n    } catch (const std::bad_alloc &) { delete finfo; return nullptr; }\n}\n"
+        },
+        {
+          "before": "#include \"ggml-metal-fusion.h\"",
+          "after": "#include <new>\n#include \"ggml-metal-fusion.h\""
         }
       ]
     }

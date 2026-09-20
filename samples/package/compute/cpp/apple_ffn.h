@@ -1,6 +1,7 @@
 #pragma once
 
 #include "workload.h"
+#include "apple_recurrent.h"
 
 #include <hyle/compute/apple.h>
 #include <mlx/fast.h>
@@ -158,6 +159,7 @@ inline hyle::Status replay(const a::Program &program, const Weights &weights,
 inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, a::Context::create());
   HYLE_RETURN_IF_ERROR(verify_base_kernel(context));
+  HYLE_RETURN_IF_ERROR(sample_apple_recurrent::direct(context));
   Weights weights;
   for (int rows : {1, 4}) {
     HYLE_ASSIGN_OR_RETURN(auto program, prepare(context, weights, rows));
