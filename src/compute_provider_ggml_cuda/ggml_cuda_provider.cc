@@ -15,6 +15,7 @@
 #include "metadata_arena.h"
 #include "native_bridge.h"
 #include "native_context.h"
+#include "tensor_program.h"
 
 namespace hyle::compute::ggml_cuda {
 namespace {
@@ -44,6 +45,7 @@ struct Program final {
   CUcontext primary = nullptr;
   int device = -1;
   internal::Recipe recipe;
+  std::vector<std::size_t> alignments;
 };
 
 // Called only from catch blocks; native namespaces and numbers survive the
@@ -82,9 +84,11 @@ struct Invocation final {
   cudaEvent_t exit = nullptr;
   ggml_cgraph *graph = nullptr;
   std::vector<ggml_tensor *> tensors;
+  std::vector<ggml_tensor *> roots;
   std::vector<ggml_backend_buffer *> buffers;
   std::vector<ggml_backend_buffer *> scratch;
   std::vector<ggml_tensor *> masks;
+  std::vector<internal::ScalarConstant> constants;
   std::vector<ggml_tensor *> views;
   std::vector<void *> pointers;
   bool failed = false;
@@ -186,15 +190,26 @@ struct Invocation final {
     const auto &recipe = program.recipe;
     const auto count = recipe.values.size();
     constexpr auto maximum = static_cast<std::size_t>(INT32_MAX) - 16;
-    if (count > maximum / 4 || recipe.nodes.size() > (maximum - count * 4) / 24)
+    if (count > maximum / 4 || recipe.nodes.size() > (maximum - count * 4) / 64)
       return Status::OutOfRange("ggml CUDA metadata count overflows");
-    const auto capacity = count * 4 + recipe.nodes.size() * 24 + 16;
+    auto capacity = count * 4 + recipe.nodes.size() * 64;
+    for (const auto &node : recipe.nodes) {
+      if (!node.operation.get_if<Concat>())
+        continue;
+      // A region can concatenate the same value many times. Count ports,
+      // not just unique recipe values, before reserving the fixed arena.
+      if (node.inputs.size() > (maximum - capacity) / 4)
+        return Status::OutOfRange("ggml CUDA concat metadata count overflows");
+      capacity += node.inputs.size() * 4;
+    }
+    capacity += 16;
     auto metadata =
         ggml_runtime::MetadataArena::for_graph(capacity, capacity, allocator);
     if (!metadata)
       return std::move(metadata).error();
     arena = std::move(*metadata);
     tensors.resize(count, nullptr);
+    roots.resize(count, nullptr);
     buffers.resize(count, nullptr);
     pointers.resize(recipe.inputs.size() + recipe.outputs.size());
     backend = ggml_backend_cuda_init(program.device);
@@ -207,40 +222,39 @@ struct Invocation final {
         cuda::status(cudaEventCreateWithFlags(&exit, cudaEventDisableTiming)));
     for (const auto id : recipe.inputs) {
       const auto &description = recipe.values[id];
-      const auto dimensions = description.dimensions();
-      std::array<std::int64_t, 4> shape{1, 1, 1, 1};
-      std::reverse_copy(dimensions.begin(), dimensions.end(), shape.begin());
-      const auto type =
-          description.data_type() == DataType::kFloat16    ? GGML_TYPE_F16
-          : description.data_type() == DataType::kBFloat16 ? GGML_TYPE_BF16
-                                                           : GGML_TYPE_F32;
-      tensors[id] =
-          ggml_new_tensor(arena.get(), type,
-                          static_cast<int>(description.rank()), shape.data());
+      tensors[id] = internal::create_tensor_input(arena.get(), description);
       ggml_set_input(tensors[id]);
     }
     for (const auto &node : recipe.nodes) {
-      auto *a = tensors[node.inputs[0]];
       ggml_tensor *result = nullptr;
-      if (const auto *norm = node.operation.get_if<RmsNorm>())
-        result = ggml_rms_norm(arena.get(), a, norm->epsilon);
-      else if (node.operation.get_if<ScaledDotProductAttention>())
+      if (node.operation.get_if<ScaledDotProductAttention>())
         result = attention(node);
       else
-        result = ggml_add(arena.get(), a, tensors[node.inputs[1]]);
+        result = internal::lower_tensor_operation(arena.get(), recipe, node,
+                                                  tensors, constants);
+      if (!result)
+        return Status::Unimplemented("ggml CUDA tensor lowering declined");
       if (!ggml_backend_supports_op(backend, result))
         return Status::Unimplemented("ggml CUDA native operation declined");
       tensors[node.output] = result;
     }
+    for (std::size_t id = 0; id < count; ++id) {
+      roots[id] = tensors[id];
+      while (roots[id] && roots[id]->view_src)
+        roots[id] = roots[id]->view_src;
+    }
     graph = ggml_new_graph_custom(arena.get(), capacity, false);
     for (const auto id : recipe.outputs) {
       ggml_set_output(tensors[id]);
+      // Reshape is a view: bind and protect the actual producer as well.
+      // Native fusion must not consume a separately published intermediate.
+      ggml_set_output(roots[id]);
       ggml_build_forward_expand(graph, tensors[id]);
     }
     for (std::size_t id = 0; id < count; ++id) {
       if (!tensors[id])
         return Status::InvalidArgument("ggml CUDA recipe has an unused value");
-      const auto bytes = ggml_nbytes(tensors[id]);
+      const auto bytes = ggml_nbytes(roots[id]);
       const bool external =
           std::ranges::find(recipe.inputs, id) != recipe.inputs.end() ||
           std::ranges::find(recipe.outputs, id) != recipe.outputs.end();
@@ -248,7 +262,7 @@ struct Invocation final {
         buffers[id] = bridge::binding_buffer(program.device, bytes);
         // An idle external binding has no payload. Submission installs both
         // the buffer base and tensor address after provenance/size admission.
-        tensors[id]->buffer = buffers[id];
+        roots[id]->buffer = buffers[id];
       }
     }
     const auto nodes = ggml_graph_n_nodes(graph);
@@ -268,6 +282,9 @@ struct Invocation final {
         return Status::Unimplemented("ggml CUDA native graph node declined");
     }
     bind_views();
+    for (const auto &constant : constants)
+      ggml_backend_tensor_set(constant.tensor, &constant.value, 0,
+                              sizeof(constant.value));
     for (auto *mask : masks) {
       const auto columns = static_cast<std::size_t>(mask->ne[0]);
       const auto rows = static_cast<std::size_t>(mask->ne[1]);
@@ -369,13 +386,15 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   for (std::size_t i = 0; i < inputs.size(); ++i) {
-    auto pointer = cuda::detail::const_pointer(inputs[i].storage(), 256, 1);
+    auto pointer = cuda::detail::const_pointer(
+        inputs[i].storage(), program.alignments[recipe.inputs[i]], 1);
     if (!pointer)
       return detail::EnqueueResult::rejected(std::move(pointer).error());
     invocation.pointers[i] = const_cast<void *>(*pointer);
   }
   for (std::size_t i = 0; i < outputs.size(); ++i) {
-    auto pointer = cuda::detail::mutable_pointer(outputs[i].storage(), 256, 1);
+    auto pointer = cuda::detail::mutable_pointer(
+        outputs[i].storage(), program.alignments[recipe.outputs[i]], 1);
     if (!pointer)
       return detail::EnqueueResult::rejected(std::move(pointer).error());
     invocation.pointers[inputs.size() + i] = *pointer;
@@ -385,7 +404,7 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
     return detail::EnqueueResult::rejected(scope.status());
   const auto bind = [&](std::uint32_t id, void *pointer) {
     bridge::bind_buffer(invocation.buffers[id], pointer);
-    invocation.tensors[id]->data = pointer;
+    invocation.roots[id]->data = pointer;
   };
   for (std::size_t i = 0; i < inputs.size(); ++i)
     bind(recipe.inputs[i], invocation.pointers[i]);
@@ -439,19 +458,19 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
     return Status::Unimplemented("ggml CUDA operation domain is not admitted");
   std::ranges::fill(inputs, internal::kBinding);
   std::ranges::fill(outputs, internal::kBinding);
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    inputs[i].minimum_alignment = internal::boundary_alignment(
+        request.operation, request.inputs[i].data_type());
+  for (std::size_t i = 0; i < outputs.size(); ++i)
+    outputs[i].minimum_alignment = internal::boundary_alignment(
+        request.operation, request.outputs[i].data_type());
   *output = {.route = 1,
              .runtime = internal::kRuntime,
              .workspace_resource = internal::kBinding,
              .cost = {.workspace = WorkspaceRequirement{},
                       .persistent_bytes = std::nullopt,
-                      .copy_bytes =
-                          request.operation.get_if<ScaledDotProductAttention>()
-                              ? std::nullopt
-                              : std::optional<std::size_t>{0},
-                      .repack_bytes =
-                          request.operation.get_if<ScaledDotProductAttention>()
-                              ? std::nullopt
-                              : std::optional<std::size_t>{0},
+                      .copy_bytes = std::nullopt,
+                      .repack_bytes = std::nullopt,
                       .synchronization_count = 2,
                       .dispatch_count = std::nullopt},
              .profile_key = ProviderRouteKey{1}};
@@ -537,24 +556,7 @@ bool supports(void *value, Operation operation,
     // upstream API asserts or buffer-size arithmetic can be reached.
     return k[1] <= INT32_MAX / q[1] / q[2] / q[0];
   }
-  const auto domain = [](const TensorDesc &description) {
-    return description.valid() && description.is_plain() &&
-           description.is_dense() &&
-           description.data_type() == DataType::kFloat32 &&
-           description.rank() == 2 && description.dimensions()[0] > 0 &&
-           description.dimensions()[0] <= 65535 &&
-           description.dimensions()[1] > 0 && description.element_count() &&
-           *description.element_count() <= INT32_MAX;
-  };
-  if (!std::ranges::all_of(inputs, domain) || !domain(outputs[0]))
-    return false;
-  if (const auto *norm = operation.get_if<RmsNorm>())
-    return inputs.size() == 1 && inputs[0] == outputs[0] &&
-           norm->accumulation_type == DataType::kFloat32 &&
-           std::isfinite(norm->epsilon) && norm->epsilon >= 0;
-  const auto *binary = operation.get_if<Binary>();
-  return binary && binary->kind == BinaryKind::kAdd && inputs.size() == 2 &&
-         inputs[0] == inputs[1] && inputs[0] == outputs[0];
+  return tensor_operation_supports(operation, inputs, outputs);
 }
 
 ProviderPrepareOutcome compile(void *value, Recipe recipe,
@@ -562,13 +564,30 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
                                detail::ProviderPrepared *output) noexcept {
   *output = {};
   const auto &context = *static_cast<Context *>(value);
+  std::vector<std::size_t> alignments;
+  try {
+    alignments.resize(recipe.values.size(), 1);
+    for (const auto &node : recipe.nodes) {
+      const auto require = [&](std::uint32_t id) {
+        alignments[id] = std::max(
+            alignments[id],
+            boundary_alignment(node.operation, recipe.values[id].data_type()));
+      };
+      for (const auto id : node.inputs)
+        require(id);
+      require(node.output);
+    }
+  } catch (...) {
+    return ProviderPrepareOutcome::error(failure());
+  }
   void *storage = allocator.allocate(sizeof(Program), alignof(Program));
   if (!storage)
     return ProviderPrepareOutcome::resource_declined(
         Status::ResourceExhausted("ggml CUDA program allocation failed"));
   *output = {.vtable = &kPrepared,
              .state = ::new (storage)
-                 Program{context.primary, context.device, std::move(recipe)},
+                 Program{context.primary, context.device, std::move(recipe),
+                         std::move(alignments)},
              .workspace = {},
              .runtime = kRuntime,
              .persistent_bytes = std::nullopt,

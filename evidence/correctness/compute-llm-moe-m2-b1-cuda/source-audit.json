@@ -80,6 +80,11 @@
   "performance_samples": 0,
   "frozen_hyle_math_changes": 0,
   "new_complete_requirement_cells": 0,
+  "execution_evidence": {
+    "path": "development-windows.json",
+    "scope": "Windows SM89 development only; 8/8 CTest and 42 GoogleTest executions pass",
+    "card_verdict": "INCONCLUSIVE; remaining exact domains and applicable acceptance unrun, owner remains AUDITED"
+  },
   "slice_boundary_refinement": {
     "counterexamples": [
       "tests/graph_route_cuda/concat_test.cc: Direct Concat of BF16 slices",

@@ -115,3 +115,28 @@ scalar load/store，转置tile只对shared tile要求更高对齐；无需256字
   保留原生指针/offset检查。新增两个slice Direct回归及一张slice→Copy→Unary的原版region。
 - 这是一项具名资源根因的第一次修正；不降低数值/capture门，不解冻任何旧数学。源码/设计
   累计56分钟、余64分钟；普通编译和正确性单列。全部21行与后续平台/交付/P1仍未完成。
+
+## Windows 首批开发检查点（AUDITED，非整卡验收）
+
+[开发 receipt](../../../../evidence/correctness/compute-llm-moe-m2-b1-cuda/development-windows.json)
+与压缩原始日志保存本批实现、所有失败及修正。Windows RTX4070 SM89、MSVC Release shared，
+parallel2 构建、串行测试；最终 **8/8 CTest、42 次 GoogleTest 执行**通过，含4项逐头检查、
+两个 Provider factor、普通 Direct/Graph 及既有 capture 消费者。DLL 均邻置，无 UAC/电源策略改动。
+
+- 已实现：本卡首批 F32/F16/BF16 Copy/Cast/Concat、双向广播、7种 Unary、affine RMSNorm、
+  原版两遍组合 LayerNorm、任意选轴 Sum/Mean；普通入口和共享原版 region 程序已接通。
+- 已验证：rank6/8 广播、scalar/strided 及非相邻轴归约、半精度转换、LayerNorm 偏移/低方差，
+  发布 reshape 中间值、两 slot/旧结果/重放、70端口 Concat 与 slice 对齐拒绝。
+- 保留原失败：一次 `copy_bytes` 非 optional 字段的编译错误；旧 capture 消费者缺少既有
+  prepared-only 编译约束；Copy/Concat 的真实 slice 对齐缺陷及旧 Direct Provider 名称断言。
+  后者按 C2 冻结方案修复，capture 门没有放宽；不同成熟归约次序采用既有数值容差，独立 oracle 保留。
+- 成本：proposal 不虚报原版内部 copy/repack 为0。Graph artifact 的 `copy_bytes=0` 只表示
+  adapter 未额外插入 boundary copy；原版 cont/cast/repeat 和 managed 维护仍有实际成本。
+- 尚未完成：本卡已列的其它 dtype/空值/布局及 indexed、stable gate、完整 masked Softmax 域；
+  新代码的 WSL、Air/Mini OFF、适用插桩、source/static/shared、最终复核与 P1 均未运行。
+  selector 的 delivery 门保留待验，不能把这次开发测试当作整卡 PASS，完整需求覆盖仍0/256。
+- 统一 LOC：Compute + Graph 实现 **55,462行 / 241文件**，排除测试和 vendor。只保留当前
+  CUDA 开发构建（358,862,831 bytes）供后续接线复用，没有新增复制的构建树。
+
+源码/设计预算仍累计56/120分钟；当前保持 AUDITED，继续同一有限改动集。没有展开、调查、
+优化、比较或删除冻结的自研数学；oneDNN 旧 Q2 条件和用户的 M5 前暂停要求均保持。

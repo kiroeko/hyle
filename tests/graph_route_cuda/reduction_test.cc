@@ -9,6 +9,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/cuda.h"
+#include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/mem/stats.h"
 
@@ -99,14 +100,16 @@ TEST(CudaDefaultGraph,
       ASSERT_TRUE(builder.publish(normalized_id).ok());
       ASSERT_TRUE(builder.publish(probability_id).ok());
       auto logical = std::move(builder).finish().value();
-      auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+      auto compiled = graph::cuda::compile(
+          logical, owner, resource.ref(),
+          {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
       ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
       auto direct_sum =
           compute::prepare(owner, sum_op, wide_desc, resource.ref()).value();
       auto direct_probability = compute::prepare(owner, probability_op, desc,
                                                  mask_desc, resource.ref())
                                     .value();
-      EXPECT_EQ(direct_sum.provider().id, compute::cuda_native::kProviderId);
+      EXPECT_EQ(direct_sum.provider().id, compute::ggml_cuda::kProviderId);
       EXPECT_EQ(direct_probability.provider().id,
                 compute::cuda_native::kProviderId);
       auto sum_slot = direct_sum.create_invocation().value();

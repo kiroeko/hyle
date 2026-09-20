@@ -9,6 +9,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/cuda.h"
+#include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/mem/stats.h"
 
@@ -33,7 +34,7 @@ struct Tensor {
 };
 
 TEST(CudaDefaultGraph,
-     SglangNormUnaryDirectAndCaptureKeepTwoIndependentStates) {
+     PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -74,7 +75,10 @@ TEST(CudaDefaultGraph,
     ASSERT_TRUE(builder.publish(result_id).ok());
     auto logical = std::move(builder).finish().value();
     auto compiled =
-        graph::cuda::compile(logical, owner, resource.ref()).value();
+        graph::cuda::compile(
+            logical, owner, resource.ref(),
+            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared})
+            .value();
     EXPECT_EQ(compiled.report.step(0)->provider.id,
               compute::cuda_native::kSglangProviderId);
     EXPECT_EQ(compiled.report.step(1)->provider.id,
@@ -90,8 +94,7 @@ TEST(CudaDefaultGraph,
             std::array{inputs[0].view.as_const(), weight.view.as_const()},
             std::array{direct.view})
             .value();
-    EXPECT_EQ(direct_program.provider().id,
-              compute::cuda_native::kSglangProviderId);
+    EXPECT_EQ(direct_program.provider().id, compute::ggml_cuda::kProviderId);
     auto direct_slot = direct_program.create_invocation().value();
     for (std::size_t lane = 0; lane < lanes.size(); ++lane) {
       ASSERT_TRUE(
@@ -155,7 +158,8 @@ TEST(CudaDefaultGraph,
           ASSERT_TRUE(done_direct.wait().ok());
           const auto direct_values = half_test::read<Value>(direct.buffer);
           for (std::size_t i = 0; i < normal.size(); ++i)
-            EXPECT_EQ(normal[i].bits, direct_values[i].bits);
+            half_test::expect_near(direct_values[i],
+                                   half_test::decode(normal[i]));
           retained = actual;
         }
       }

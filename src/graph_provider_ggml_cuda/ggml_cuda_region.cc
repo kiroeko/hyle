@@ -19,7 +19,7 @@ Result<bool> supported_node(void *context, const Graph &graph,
   if (!operation)
     return false; // Symbolic metadata views are not this exact native domain.
   // Attention already lowers to a complete native program through Compute.
-  // This seam's multi-operation region remains the qualified F32 norm/add set.
+  // Keep its independent native program while batching the pure tensor set.
   if (operation->get_if<compute::ScaledDotProductAttention>())
     return false;
   auto input_count = graph.node_input_count(node);
@@ -28,9 +28,15 @@ Result<bool> supported_node(void *context, const Graph &graph,
   if (!input_count || !output_count || !effects)
     return std::unexpected(
         Status::InvalidArgument("ggml CUDA region node is invalid"));
-  if (*input_count > 3 || *output_count != 1 || *effects != 0)
+  if (*output_count != 1 || *effects != 0)
     return false;
-  std::array<compute::TensorDesc, 3> inputs;
+  std::vector<compute::TensorDesc> inputs;
+  try {
+    inputs.resize(*input_count);
+  } catch (const std::bad_alloc &) {
+    return std::unexpected(Status::ResourceExhausted(
+        "ggml CUDA region descriptor allocation failed"));
+  }
   for (std::size_t i = 0; i < *input_count; ++i) {
     auto id = graph.node_input(node, i);
     if (!id)
@@ -46,9 +52,7 @@ Result<bool> supported_node(void *context, const Graph &graph,
   auto output = graph.value_description(*id);
   if (!output)
     return false;
-  return native::supports(context, *operation,
-                          std::span(inputs).first(*input_count),
-                          std::span(&*output, 1));
+  return native::supports(context, *operation, inputs, std::span(&*output, 1));
 }
 
 Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
@@ -79,8 +83,8 @@ Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
         {.nodes = nodes,
          .cost = {.workspace = compute::WorkspaceRequirement{},
                   .persistent_bytes = std::nullopt,
-                  .copy_bytes = 0,
-                  .repack_bytes = 0,
+                  .copy_bytes = std::nullopt,
+                  .repack_bytes = std::nullopt,
                   .synchronization_count = 2,
                   .dispatch_count = 1},
          .route = 1,
@@ -131,6 +135,31 @@ Status resources(void *context, const RegionCompileRequest &request,
   HYLE_RETURN_IF_ERROR(qualify(context, request));
   std::ranges::fill(inputs, native::kBinding);
   std::ranges::fill(outputs, native::kBinding);
+  for (auto &binding : inputs)
+    binding.minimum_alignment = 1;
+  for (auto &binding : outputs)
+    binding.minimum_alignment = 1;
+  for (const auto node : request.nodes) {
+    const auto operation = request.graph->operation(node).value();
+    const auto require = [&](ValueId id) {
+      const auto type = request.graph->value_description(id)->data_type();
+      const auto alignment = native::boundary_alignment(operation, type);
+      // Published values may also be read by another native node. Its input
+      // requirement is part of the external output's binding contract too.
+      for (std::size_t i = 0; i < request.inputs.size(); ++i)
+        if (request.inputs[i] == id)
+          inputs[i].minimum_alignment =
+              std::max(inputs[i].minimum_alignment, alignment);
+      for (std::size_t i = 0; i < request.outputs.size(); ++i)
+        if (request.outputs[i] == id)
+          outputs[i].minimum_alignment =
+              std::max(outputs[i].minimum_alignment, alignment);
+    };
+    for (std::size_t i = 0; i < request.graph->node_input_count(node).value();
+         ++i)
+      require(request.graph->node_input(node, i).value());
+    require(request.graph->result(node).value());
+  }
   *proposal = {.runtime = native::kRuntime,
                .workspace_resource = native::kBinding};
   return Status::Ok();
@@ -253,6 +282,9 @@ compile(void *context, const RegionCompileRequest &request,
                .state = artifact,
                .properties = {.workspace = {},
                               .persistent_bytes = std::nullopt,
+                              // Existing device buffers bind directly at the
+                              // boundary. Native materialization cost remains
+                              // unknown in the proposal, not a free replay.
                               .copy_bytes = 0,
                               .synchronization_count = 2,
                               .dispatch_count = 1,

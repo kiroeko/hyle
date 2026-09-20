@@ -8,6 +8,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/cuda.h"
+#include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/mem/stats.h"
 
@@ -83,7 +84,9 @@ TEST(CudaDefaultGraph,
         ASSERT_TRUE(builder.publish(joined_id).ok());
         ASSERT_TRUE(builder.publish(window_id).ok());
         auto logical = std::move(builder).finish().value();
-        auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+        auto compiled = graph::cuda::compile(
+            logical, owner, resource.ref(),
+            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
         ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
         std::array<compute::TensorDesc, 1> slice_desc;
         ASSERT_TRUE(
@@ -95,7 +98,7 @@ TEST(CudaDefaultGraph,
         auto direct = compute::prepare(owner, compute::Concat{.axis = -1},
                                        descriptions, resource.ref());
         ASSERT_TRUE(direct.has_value()) << direct.error().message();
-        EXPECT_EQ(direct->provider().id, compute::cuda_native::kProviderId);
+        EXPECT_EQ(direct->provider().id, compute::ggml_cuda::kProviderId);
         auto direct_slot = direct->create_invocation().value();
         Tensor direct_output(joined_desc, resource.ref());
         std::array inputs{Tensor(desc, resource.ref()),

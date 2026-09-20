@@ -117,7 +117,7 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | 默认规则 | 支持域 |
 |---|---|
 | FlashInfer causal GQA | Linux CUDA SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、Q/K/V depth=256，正 batch/sequence、KV length≥Q length，无额外 mask，FP32 累加；head256 prefill/decode 使用锁定原版实现 |
-| ggml CUDA F32 片段 | Windows/Linux SM89；无额外scale的RMSNorm与同形状Add，dense rank-2 F32、正维度、行数≤65535、元素数≤INT32_MAX、端口256字节对齐；RMSNorm声明FP32累加 |
+| ggml CUDA 张量片段 | SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
 | ggml CUDA causal GQA | Windows默认、Linux可显式组合；SM89，dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
@@ -134,6 +134,18 @@ Graph 自动规划同一资源。输入、输出和 workspace 必须活到实际
 原版派发包含 capability、occupancy 和 kernel attribute 查询，属于 managed 执行，当前不支持
 外部 capture；普通 Graph 的 prefer-capture 会报告 commands 路线。失败后重建 invocation，
 不在执行时改选其它实现。Windows 未准入此 FlashInfer pin，普通入口在上述域使用ggml。
+
+M2 新增 ggml CUDA 张量映射仍在逐平台验收，具体门见
+[M2-B1 CUDA 当前卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda.md)。普通入口会在符合上述域时
+绑定原版 ggml；这不是全21行或所有平台验证已完成的声明。其元素数上限为
+`(INT32_MAX-1024)/sizeof(float)`，plain storage 的跨度和单stride不超过INT32_MAX；空张量、
+高rank不可折叠stride、奇数字节stride、Select/min/max、稳定激活/gate与索引域尚不由这份映射承载。
+Copy/Cast/Concat接受按storage类型对齐的subview；数学节点仍要求256字节。Graph对边界值的
+所有读写者合并要求，发布的复制结果若被数学节点继续使用也须256字节，准备/提交不会跳过检查。
+LayerNorm 用原版mean/sub/sqr/mean/epsilon/sqrt/div实现两遍中心化方差；gamma/beta遵守公共舍入点。
+必要cast/repeat/cont和每slot冷常量上传属于完整成本，managed重放仍可能在原版pool中分配。
+原版内部copy/repack在提案中仍为未知；Graph报告的copy_bytes=0仅表示适配边界没有额外搬运，
+不能用它推断原版程序没有materialization成本。
 
 ggml attention采用相同bottom-right causal合同。FP16保留原版融合attention；该版本的
 SM89融合路径会缩窄BF16 K/V，因此BF16使用原版F32 MatMul/softmax组合与原版cast，

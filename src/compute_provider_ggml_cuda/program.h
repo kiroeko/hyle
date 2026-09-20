@@ -20,6 +20,16 @@ inline constexpr detail::ResourceBindingRequirement kBinding{
     .required_properties = mem::MemoryProperty::kDeviceAccessible,
     .minimum_alignment = 256};
 
+inline std::size_t boundary_alignment(Operation operation,
+                                      DataType type) noexcept {
+  // Original scalar copy/conversion kernels accept typed subviews. Other
+  // native programs keep the alignment of their qualified vectorized paths.
+  return operation.get_if<Copy>() || operation.get_if<Cast>() ||
+                 operation.get_if<Concat>()
+             ? data_type_size(type)
+             : kBinding.minimum_alignment;
+}
+
 // Private value identities are recipe-local. No Graph types, borrowed graph
 // spans or caller tensor addresses are retained by the immutable program.
 struct Node final {

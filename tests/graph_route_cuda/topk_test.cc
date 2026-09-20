@@ -102,7 +102,10 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
           ASSERT_TRUE(builder.publish(indices_id).ok());
           ASSERT_TRUE(builder.publish(weights_id).ok());
           auto logical = std::move(builder).finish().value();
-          auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+          auto compiled = graph::cuda::compile(
+              logical, owner, resource.ref(),
+              {.provider_replay =
+                   graph::ProviderReplayPolicy::kRequirePrepared});
           ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
           // Ordinary preparation must skip providers of other families. A
           // multi-output TopK must not be treated as a malformed gated op.

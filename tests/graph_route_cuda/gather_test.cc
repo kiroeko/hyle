@@ -88,7 +88,9 @@ TEST(CudaDefaultGraph,
         ASSERT_TRUE(builder.publish(norm_id).ok());
         ASSERT_TRUE(builder.publish(output_id).ok());
         auto logical = std::move(builder).finish().value();
-        auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+        auto compiled = graph::cuda::compile(
+            logical, owner, resource.ref(),
+            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
         ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
         Tensor table(table_desc, resource.ref()),
             weights(weight_desc, resource.ref());

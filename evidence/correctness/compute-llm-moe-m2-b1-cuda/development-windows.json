@@ -1,0 +1,745 @@
+{
+  "kind": "M2-B1 CUDA development checkpoint; not complete card, immutable P1 candidate or model coverage",
+  "baseline": "c9744a45b9f6aa2fab27d857af70410f04685518",
+  "scoped_checkpoint": "be44efa574a1fef506acf79baba487e4377101be",
+  "audited_checkpoint": "4d46d4d0dcfcb8b269d5e48aa48a756c10109edc",
+  "slice_audited_checkpoint": "3911a3c1e6aefd95db5a614fd184e9d41b4e3e1d",
+  "candidate": "WORKTREE; exact product/test hashes below",
+  "selector_candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+  "machine": "Windows x64; RTX4070 SM89; MSVC 19.50.35728.0; CUDA Toolkit 13.3.73; Ninja Release shared",
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "settings": {
+    "cpu": false,
+    "cuda": true,
+    "onednn": false,
+    "apple": false,
+    "vulkan": false,
+    "cuda_architectures": "89-real",
+    "werror": true,
+    "parallel_build": 2,
+    "parallel_test": 1,
+    "sanitizer": "off",
+    "dlls_next_to_executables": true,
+    "error_mode": "0x8003",
+    "uac_or_power_changes": false
+  },
+  "selected_development_targets": {
+    "verdict": "PASS",
+    "ctest_targets": 8,
+    "self_contained_headers": 4,
+    "ordinary_direct_cases": 6,
+    "ordinary_graph_cases": 21,
+    "compute_provider_cases": 11,
+    "graph_provider_cases": 4,
+    "gtest_executions": 42,
+    "note": "Includes unchanged fallback/capture regressions; those are not new mature coverage"
+  },
+  "first_binding": {
+    "storage": "plain F32/F16/BF16; nonempty dense rank0..8 or element-aligned rank<=4 strides",
+    "operations": [
+      "Copy",
+      "Cast",
+      "Concat",
+      "Add/Subtract/Multiply/Divide broadcasting",
+      "Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh",
+      "RmsNorm with affine",
+      "LayerNorm centered two-pass with affine",
+      "Sum/Mean selected axes"
+    ],
+    "native_execution": "Original ggml CUDA kernels and graph backend; no new kernel, CPU model fallback, pin or resource-patch change",
+    "lifetime": "existing independent backend/streams/buffers/events per invocation; bind producer roots through reshape views, mark published roots and views; cold scalar uploads; account variadic ports in metadata capacity",
+    "numeric_note": "Original CUDA LayerNorm uses E[x*x]-E[x]*E[x]. Adapter composes original mean/sub/sqr/mean/add/sqrt/div to express centered variance; shifted-input oracle declared. No timing or old-HYLE comparison."
+  },
+  "preserved_failures_and_corrections": [
+    {
+      "logs": [
+        "build.log",
+        "build-c1.log"
+      ],
+      "cause": "Tried optional unknown on Graph artifact copy_bytes, whose existing type is size_t",
+      "correction": "Keep artifact 0 for known extra adapter boundary copies; proposal native internal copy/repack remains unknown and guides explain this distinction"
+    },
+    {
+      "logs": [
+        "test.log",
+        "ctest-initial.log"
+      ],
+      "cause": "New mature default is managed; nine old external-capture consumers did not declare existing prepared-only compile requirement, and Direct provider assertions named old defaults",
+      "correction": "Use existing ProviderReplayPolicy::kRequirePrepared only for actual capture graph; keep RequireCapture, failure/lifetime checks and unrestricted ordinary default tests"
+    },
+    {
+      "logs": [
+        "test-c1.log",
+        "ctest-capture-c1.log",
+        "build-c2.log",
+        "build-c3.log",
+        "test-c2.log",
+        "ctest-final.log"
+      ],
+      "cause": "Real typed Direct Copy/Concat slices rejected by inherited 256-byte boundary requirement, plus remaining old provider ID assertions",
+      "correction": "Pre-audited element alignment for Copy/Cast/Concat, max across all readers/writers of each boundary value; math remains 256; final all eight CTests pass",
+      "root_cause_corrections": 1
+    }
+  ],
+  "selector": {
+    "plan": "final-plan.json in raw archive",
+    "selection_verdict": "READY",
+    "selected_gates": [
+      {
+        "id": "docs",
+        "kind": "maintenance",
+        "status": "SELECTED",
+        "reason": "mandatory documentation contract",
+        "factors": [],
+        "commands": [
+          [
+            "{python}",
+            "scripts/check-docs.py"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "639c3ba0732406cba396cef8cf9b5e160fa5c9dea8424d419c99639a9464e879",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "b2b687c04a86757dccc42cd1b04f3c942fe88eb21a7be796a2fda35d846f639b"
+      },
+      {
+        "id": "closure",
+        "kind": "maintenance",
+        "status": "SELECTED",
+        "reason": "mandatory registry contract",
+        "factors": [],
+        "commands": [
+          [
+            "{python}",
+            "scripts/check-module-closure.py"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "998f405245c02b7f959575ccbf9b57437b8302664e836fe55d777ce42412add0",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "8938ad647654f78d71256f1b4b4dbe727401b7098cd70b762d0fed2042a40cca"
+      },
+      {
+        "id": "configure",
+        "kind": "build",
+        "status": "SELECTED",
+        "reason": "configure exact factor roots; dependency artifacts are prerequisites, not additional test roots",
+        "factors": [
+          "compute_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_provider_ggml_cuda",
+          "graph_route_cuda"
+        ],
+        "commands": [
+          [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "{build}",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DHYLE_DEV_FACTORS=compute_provider_ggml_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda",
+            "-DHYLE_BUILD_TESTS=ON",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_INSTALL=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DHYLE_WERROR=ON",
+            "-DHYLE_COMPUTE_CUDA=ON"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "01a9687cb4f4c880f8ba0404982d8d2acc71dbc1e0a4ee36aab3afd2f92c0827",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "ec5ca8056ddcec4b7ab3c9ee19a800d14307e2519401898d52c23420394b32dc"
+      },
+      {
+        "id": "factor:compute_provider_ggml_cuda",
+        "kind": "correctness",
+        "status": "SELECTED",
+        "reason": "owning factor: src/compute_provider_ggml_cuda/CMakeLists.txt, src/compute_provider_ggml_cuda/ggml_cuda_provider.cc, src/compute_provider_ggml_cuda/program.h, src/compute_provider_ggml_cuda/tensor_program.cc, src/compute_provider_ggml_cuda/tensor_program.h, tests/compute_provider_ggml_cuda/CMakeLists.txt, tests/compute_provider_ggml_cuda/tensor_test.cc, tests/compute_provider_ggml_cuda/tensor_test_support.h",
+        "factors": [
+          "compute_provider_ggml_cuda"
+        ],
+        "commands": [
+          [
+            "cmake",
+            "--build",
+            "{build}",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_compute_provider_ggml_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          [
+            "ctest",
+            "--test-dir",
+            "{build}",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_provider_ggml_cuda$",
+            "-LE",
+            "headers"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "087dd749310b13c136532dcde97c559a0385577e5e1a511f3b1e5c1218e3f15e",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "ec66001df97bfb80d1b39b914ba86f81f62555bdb08f6a68f6146b788ab54aaa"
+      },
+      {
+        "id": "headers:compute_provider_ggml_cuda",
+        "kind": "headers",
+        "status": "SELECTED",
+        "reason": "public header or delivery seam changed",
+        "factors": [
+          "compute_provider_ggml_cuda"
+        ],
+        "commands": [
+          [
+            "ctest",
+            "--test-dir",
+            "{build}",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_provider_ggml_cuda$",
+            "-R",
+            "_header_self_contained_test$"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "91b9086b4497acf753ad3615cd67aaa49e063c944e1964cd6a72329a74ff438d",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "8a9144aaf1889241244435dcdf4ed09a714249ad496f5a9e3b2d441500a8b240"
+      },
+      {
+        "id": "factor:compute_route_cuda",
+        "kind": "correctness",
+        "status": "SELECTED",
+        "reason": "owning factor: tests/compute_route_cuda/ggml_test.cc",
+        "factors": [
+          "compute_route_cuda"
+        ],
+        "commands": [
+          [
+            "cmake",
+            "--build",
+            "{build}",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_compute_route_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          [
+            "ctest",
+            "--test-dir",
+            "{build}",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^compute_route_cuda$",
+            "-LE",
+            "headers"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "033c8da909f587cfc15fd85b046e3ff09c3d8c5641e5c7cca349e7a4e8f7451f",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "f3a0d8226ea7b9d2069e256d93fa91fc0748a2f4f88ea3d91083b5e271c12517"
+      },
+      {
+        "id": "factor:graph_provider_ggml_cuda",
+        "kind": "correctness",
+        "status": "SELECTED",
+        "reason": "owning factor: src/graph_provider_ggml_cuda/ggml_cuda_region.cc, tests/graph_provider_ggml_cuda/region_test.cc, tests/graph_provider_ggml_cuda/tensor_test_support.h",
+        "factors": [
+          "graph_provider_ggml_cuda"
+        ],
+        "commands": [
+          [
+            "cmake",
+            "--build",
+            "{build}",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_graph_provider_ggml_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          [
+            "ctest",
+            "--test-dir",
+            "{build}",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^graph_provider_ggml_cuda$",
+            "-LE",
+            "headers"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "af3b40762db3186e0c1522c466ee50161f56fc3381ccc5acf41a3f01965b35ac",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "f2f3857500a7aac121e6d4fb211319fb408f86e8cd69b8feb421077e5816801e"
+      },
+      {
+        "id": "factor:graph_route_cuda",
+        "kind": "correctness",
+        "status": "SELECTED",
+        "reason": "owning factor: tests/graph_route_cuda/concat_test.cc, tests/graph_route_cuda/gather_test.cc, tests/graph_route_cuda/ggml_test.cc, tests/graph_route_cuda/norm_test.cc, tests/graph_route_cuda/reduction_test.cc, tests/graph_route_cuda/scan_test.cc, tests/graph_route_cuda/scatter_test.cc, tests/graph_route_cuda/sglang_primitives_test.cc, tests/graph_route_cuda/tensor_test.cc, tests/graph_route_cuda/topk_test.cc",
+        "factors": [
+          "graph_route_cuda"
+        ],
+        "commands": [
+          [
+            "cmake",
+            "--build",
+            "{build}",
+            "--config",
+            "Release",
+            "--target",
+            "hyle_graph_route_cuda_tests",
+            "--parallel",
+            "2"
+          ],
+          [
+            "ctest",
+            "--test-dir",
+            "{build}",
+            "-C",
+            "Release",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-L",
+            "^graph_route_cuda$",
+            "-LE",
+            "headers"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "8e961770337af51e76d128753976524c02dbc7d09feae52604fafe9f48a376c7",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "3f03f21c7c0338327db6e511e85230508e4b6b6be437a92c3676e4390585f013"
+      },
+      {
+        "id": "delivery:compute",
+        "kind": "delivery",
+        "status": "SELECTED",
+        "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+        "factors": [],
+        "commands": [
+          [
+            "cmake",
+            "-DHYLE_SOURCE_DIR={root}",
+            "-DHYLE_SMOKE_ROOT={scratch}/delivery-compute",
+            "-DHYLE_SMOKE_COMPONENT=compute",
+            "-P",
+            "cmake/HyleCiSelectedComponentSmoke.cmake"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "b462753e557c1c79ee0de902c9e395fe4ed4ad7bd879f6db5d05f9b329da19a4",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "377069a07921f7419c11577d4186e1f47df1fc8ba8aa91d5228ca531ac5d9d77"
+      },
+      {
+        "id": "delivery:graph",
+        "kind": "delivery",
+        "status": "SELECTED",
+        "reason": "public boundary or real package consumer changed; reuse existing applicable source/static/shared smoke",
+        "factors": [],
+        "commands": [
+          [
+            "cmake",
+            "-DHYLE_SOURCE_DIR={root}",
+            "-DHYLE_SMOKE_ROOT={scratch}/delivery-graph",
+            "-DHYLE_SMOKE_COMPONENT=graph",
+            "-P",
+            "cmake/HyleCiSelectedComponentSmoke.cmake"
+          ]
+        ],
+        "identity": {
+          "candidate_tree": "a24bdbd597d0deb0c9c67c3d4b4c24ad65e13a3b",
+          "contract_hash": "b8b0ebb998ff7f0105463ff08abfd30b0c94b6235c244071a7c9d0e26b0866c9",
+          "toolchain": {
+            "id": "python-maintenance",
+            "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+          },
+          "machine_profile": {
+            "system": "Windows",
+            "release": "11",
+            "machine": "AMD64",
+            "node": "kiro-workstation",
+            "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+            "python_executable": "C:\\Program Files\\Python312\\python.exe"
+          },
+          "observed_host": null,
+          "selector_hash": "df7177f9f8c18c10806074c9e6211fcb0b40528602c76ab39d523b54cee560b0"
+        },
+        "cache_key": "88d33e83a5cc91a8e0e0c22bf097451565c8bb9458262dd19bdb395da215bcab"
+      }
+    ],
+    "skipped_gate_count": 122,
+    "execution_aggregate": "INCONCLUSIVE",
+    "pending_selected": [
+      "delivery:compute",
+      "delivery:graph"
+    ],
+    "note": "Affected Windows development factors and headers passed; full delivery deferred to stable complete B1 candidate. Every skipped reason retained in raw plan."
+  },
+  "governance": {
+    "docs": "PASS",
+    "closure": "PASS",
+    "registry_changed_in_this_product_checkpoint": false
+  },
+  "remaining": [
+    "empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
+    "other storage types and checked index cast",
+    "dynamic Gather/Scatter, checked Scan and stable TopK",
+    "Select/min/max, stable activation/gates, full masked Softmax/LogSoftmax qualification",
+    "cross-environment delivery, sanitizer and immutable-candidate performance gates"
+  ],
+  "unrun_applicable_acceptance": [
+    "WSL native CUDA on this new code",
+    "Air/Mini CUDA-OFF selected gates",
+    "host sanitizers for new code",
+    "Windows/WSL source/static/shared relocated consumer journeys",
+    "complete 21-row requirements and final independent candidate review",
+    "immutable-candidate P1"
+  ],
+  "complete_requirement_cells": 0,
+  "source_design_budget_minutes": {
+    "used": 56,
+    "remaining": 64,
+    "total": 120
+  },
+  "performance_samples": 0,
+  "new_math_kernels": 0,
+  "frozen_hyle_math_changes": 0,
+  "loc": {
+    "implementation_lines": 55462,
+    "files": 241,
+    "tests_and_vendors_excluded": true
+  },
+  "build_directory": {
+    "path": "C:\\hv\\m2b1-cuda",
+    "bytes": 358864159,
+    "retained_reason": "Single active CUDA development build; reused for remaining M2-B1 integration. CPU current build separately retained. No cloned build trees."
+  },
+  "archive": {
+    "path": "development-windows-raw.zip",
+    "sha256": "e99c4bfbcd7e886ae30dc59c97a66a9e103fdd2ab3944cf98229a55ed70702ca",
+    "files": 23,
+    "bytes": 122980
+  },
+  "source_hashes": [
+    {
+      "path": "include/hyle/compute/providers/ggml_cuda.h",
+      "sha256": "8e4c1534b50ef979b70311f547ebde3400079b1c0a92856af60f917edfc23f3e"
+    },
+    {
+      "path": "include/hyle/graph/providers/ggml_cuda.h",
+      "sha256": "9e809a554d9958445c74ac60fd063a6ceb4b35f9efcb603ed4374b0e9db24890"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/CMakeLists.txt",
+      "sha256": "8d496babc9e483479588a365625183c0066e6d7f9f5739ce43d45c479b08d036"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "sha256": "2b03a79d1c8ae138825bcefe1ef8e65e10ba7d46faee09994c913aa50af15f52"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/native_bridge.h",
+      "sha256": "ef4396085c72729326314637c9511968bdaf9d3eab7a7781bfc9d8230fd7f9d2"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+      "sha256": "cd7b0f7fa934b5018ecedd33d221da4900eddc00970b636246d6232a42817edc"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/program.h",
+      "sha256": "a3045cd49b8f82b0efc45fb5b3af168e2e0a8be64b359f2aaa0f3f31959fb5f5"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "sha256": "d3696ae2762d64daa113a6397da77c67cd6602026876531c1ac3e8a854b93b85"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+      "sha256": "e11579efadb2428f9765fb0b89e57c4d752ed9258ddb36836d352742ff770f25"
+    },
+    {
+      "path": "src/graph_provider_ggml_cuda/CMakeLists.txt",
+      "sha256": "e9efbd1ce1dbb5712cb9b646194572a047080d0adbfb7f0aeabde1e372addc24"
+    },
+    {
+      "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "sha256": "3fcc8d1c02549bde2f70f94d8f57add68460ca03fd5fe74ff2a1508fbb868c06"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/CMakeLists.txt",
+      "sha256": "907b25622997cb68b85a023c7d9baffa9edfa876e607954a5999e554bb7882af"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/allocation_test.cc",
+      "sha256": "552c4a5d3f5c3732da0d173790af5e6cc8bd25deab0ae57be13c90e3d5aa0a6d"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/attention_test.cc",
+      "sha256": "0d602ab8a618bf3b9c415efd22bc7e91d3128f46d48edd4c6024174dcde1ed60"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/provider_test.cc",
+      "sha256": "e3c9177f0164aab385aeae13204729fadfb624cf4b830f0f3f5cfe86fbcade5b"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/tensor_test.cc",
+      "sha256": "ecc131172b00f03cc88f44f7de621de7a12c47188e0c0edf9c33cf40d0782f29"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/tensor_test_support.h",
+      "sha256": "43f7e37c658dc03440a80464769a1fb48675cb6f0c5717687c8dc4277ca89f54"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/test_support.h",
+      "sha256": "d7a652e36b7453a1fd5c39763d3030804b04d0da1ea2c6f9034f51bd7b8cdbee"
+    },
+    {
+      "path": "tests/compute_route_cuda/CMakeLists.txt",
+      "sha256": "e0b1e639db11af9b99786a123bfefee3638fd1f9b9de2095757434410a5eec92"
+    },
+    {
+      "path": "tests/compute_route_cuda/context_test.cc",
+      "sha256": "bd6fca9f9ca33444873e107fa10e4f39c2f6b999a458d75de2901fb420c532a2"
+    },
+    {
+      "path": "tests/compute_route_cuda/ffn_support.h",
+      "sha256": "ccf5a626cf71cb0a42a95611ebcddecb37660114b13cf0803ab14fce9758a09d"
+    },
+    {
+      "path": "tests/compute_route_cuda/ggml_test.cc",
+      "sha256": "20d35b6db64383ad3e8a3e0cea1178a492915aaec922d17b9240ba4e06a36824"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/CMakeLists.txt",
+      "sha256": "6e074a11d14508f3ae6da97575667665dc41e0a373d594c0b575a709569231f5"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/region_test.cc",
+      "sha256": "1fdeb2500face666ae8b1241a5cd5571c022ac6480875464d58dabed4375c4d1"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/region_test_support.h",
+      "sha256": "752e079943f64708d1bfad563a8db0f5f937b0fb438d7f865d81beb408c844b7"
+    },
+    {
+      "path": "tests/graph_provider_ggml_cuda/tensor_test_support.h",
+      "sha256": "4d2ab7ba40e6e2e5039c0599e7c435ce377ae26943de41291e3e40a93a5c9f41"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "sha256": "207a764e0cf554998e6d9e57b134a5f7d3c2ce6a33fc31c48bb5dadfd1b5bd0e"
+    },
+    {
+      "path": "tests/graph_route_cuda/attention_test.cc",
+      "sha256": "e27d52ace659d3c94b4d18056f62a4d6c12a9c9cbdafec000e9b70be9937d2bb"
+    },
+    {
+      "path": "tests/graph_route_cuda/concat_test.cc",
+      "sha256": "5cb451a4204d0f9b07e228678b0a547cf02b95636ac04d6960fdac4fa3e81ce8"
+    },
+    {
+      "path": "tests/graph_route_cuda/gather_test.cc",
+      "sha256": "1ef1627345fe7c9ebed199f0cd8e6ef3f0b6e35436651e289c464c6cddd8dd42"
+    },
+    {
+      "path": "tests/graph_route_cuda/ggml_test.cc",
+      "sha256": "b682171a70edb58fbbb30b2313370cc584a7aedc8d24eecb7bb2c566f090c72b"
+    },
+    {
+      "path": "tests/graph_route_cuda/graph_test.cc",
+      "sha256": "69728a1ab5f23b991fb1e79e2c4f9a62fa686d71855e273520c7b848dcae43b6"
+    },
+    {
+      "path": "tests/graph_route_cuda/norm_test.cc",
+      "sha256": "21caf34911f7c8e3954a031fc42c67aabf15198695d14b13b6d616f1a78ce9fb"
+    },
+    {
+      "path": "tests/graph_route_cuda/reduction_test.cc",
+      "sha256": "6fbf87d6ce7e2cae2f8e87ffd8e00f42e08f3471e91e439b3a4ac56322d27864"
+    },
+    {
+      "path": "tests/graph_route_cuda/scan_test.cc",
+      "sha256": "379c464f01046548a966f7cd3131c08442caf34f8639ce849e4251d46a58d488"
+    },
+    {
+      "path": "tests/graph_route_cuda/scatter_test.cc",
+      "sha256": "855a73c14f8cc8bfcc2aed5a4113d4978c6b5e6f3cd20c8478cab4c7b5454790"
+    },
+    {
+      "path": "tests/graph_route_cuda/sglang_primitives_test.cc",
+      "sha256": "389be4270278c55b8493dfa3fe004fdc82921f95dafaa42e19e6c9e1aa50b768"
+    },
+    {
+      "path": "tests/graph_route_cuda/tensor_test.cc",
+      "sha256": "119349356819f445d8354e4cc508e6d7ffcdcd49e78f3a110cce065f6e8a9364"
+    },
+    {
+      "path": "tests/graph_route_cuda/topk_test.cc",
+      "sha256": "9ac3c5bf5b69a76f7619dee68f7ab329356ef874aa268abbac53b8c969cf752c"
+    }
+  ]
+}

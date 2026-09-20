@@ -159,14 +159,21 @@ Provider-private layout 只能留在一个 region 内，公开 region boundary �
 HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
 保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
 安装且通过当前 backend/storage/completion 审计的 Provider 才能提案。
-当前普通CUDA Graph入口已组装`graph::ggml_cuda::provider()`：在Compute指南限定的F32域，
-把可合法收缩的RMSNorm/Add节点集合交给同一原版ggml程序；无关节点的插入位置不拆散片段，
+当前普通CUDA Graph入口已组装`graph::ggml_cuda::provider()`：在Compute指南限定的浮点张量域，
+把可合法收缩的Copy/Cast/Concat、广播/Unary、norm/归约节点集合交给同一原版ggml程序；无关节点的插入位置不拆散片段，
 离开再进入集合的路径不强行融合。它可与同设备cuBLAS片段串接，共用真实Completion。
 每个invocation持有独立原生资源，旧结果不被其他槽覆盖；prefer-capture对该managed程序使用
 commands，ggml保留自己的内部capture。它不是全算子覆盖或其他平台接入完成的声明。
 普通SDPA节点亦复用Compute的完整原版attention程序；Windows选择ggml，Linux优先
-FlashInfer，具体类型/head/数值域见Compute指南。多节点ggml region在当前接入阶段仍限定
-为上述F32集合；attention不由这项region规则抢占Linux已准入的FlashInfer路线。
+FlashInfer，具体类型/head/数值域见Compute指南。M2新增的多节点张量region会保留逐节点的半精度舍入和发布中间值，适用平台/交付仍按
+[M2-B1 CUDA当前卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda.md)逐项验收；attention不由
+这项region规则抢占Linux已准入的FlashInfer路线。
+需要外部 CUDA capture 的消费者，应在编译时用
+`CompileOptions{.provider_replay = ProviderReplayPolicy::kRequirePrepared}` 排除 managed 程序，
+再由 `prepare_replay(..., {.mode = ReplayMode::kRequireCapture})` 验证实际 capture 支持。
+prepared 本身不是 capture 保证；编译完的 managed artifact 不会在 replay 时临时改选 Provider。
+普通允许 managed 的入口继续保留原版 ggml 内部融合/capture 和真实 commands 完成边界。
+
 第三方的 `compile` 不必然意味着每次调用零分配：Provider 分别声明 prepared/managed/unknown 成本，
 严格使用者可在 compile 要求 prepared-only；它与 `ReplayMode` 的 command/capture 选择互相独立。
 

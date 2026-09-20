@@ -1,5 +1,15 @@
 #include "../graph_provider_ggml_cuda/region_test_support.h"
+#include "../graph_provider_ggml_cuda/tensor_test_support.h"
 #include "hyle/graph/cuda.h"
+
+TEST(CudaDefaultGraph, OriginalTensorRegionThroughOrdinaryEntry) {
+  using namespace ggml_cuda_graph_test;
+  auto context = graph::cuda::create_context().value();
+  exercise_tensor_graph<float>(context, [&](const graph::Graph &logical,
+                                            mem::MemoryResourceRef resource) {
+    return graph::cuda::compile(logical, context, resource);
+  });
+}
 
 TEST(CudaDefaultGraph, OriginalGgmlRegionComposesWithCublas) {
   using namespace ggml_cuda_graph_test;

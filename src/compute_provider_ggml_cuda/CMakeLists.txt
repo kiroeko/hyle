@@ -3,7 +3,7 @@ if(NOT HYLE_COMPUTE_CUDA_ENABLED)
   set_property(TARGET hyle_compute_provider_ggml_cuda PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
 endif()
-hyle_add_module(compute_provider_ggml_cuda SOURCES ggml_cuda_provider.cc)
+hyle_add_module(compute_provider_ggml_cuda SOURCES ggml_cuda_provider.cc tensor_program.cc)
 target_include_directories(hyle_compute_provider_ggml_cuda PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute"
   "${HYLE_SOURCE_DIR}/src/compute_backend_cuda"

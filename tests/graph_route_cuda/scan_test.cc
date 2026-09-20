@@ -101,7 +101,9 @@ TEST(CudaDefaultGraph,
         for (auto value : {offset, gathered, gate, prefix})
           ASSERT_TRUE(builder.publish(value).ok());
         auto logical = std::move(builder).finish().value();
-        auto compiled = graph::cuda::compile(logical, owner, resource.ref());
+        auto compiled = graph::cuda::compile(
+            logical, owner, resource.ref(),
+            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
         ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
         auto direct_counts =
             compute::prepare(owner, compute::Scan{.exclusive = true},
