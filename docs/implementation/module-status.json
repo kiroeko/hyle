@@ -393,9 +393,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
+      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
     },
     {
       "module": "compute_backend_cpu",
@@ -510,15 +511,17 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
+      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
+      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
     },
     {
       "module": "compute_route_vulkan",
@@ -555,9 +558,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
+      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -594,9 +598,10 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A AUDITED：A1–A6 固定；原版 Metal recurrent、MLX native buffer/completion 边界、公共语义与普通 Graph；无自研数学改动/比较。"
+      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
     }
   ]
 }

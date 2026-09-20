@@ -1,0 +1,1588 @@
+{
+  "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+  "verdict": "PASS",
+  "scope": "M1-A selected Windows regression; route-specific Apple acceptance is in the prior native/resource/cross receipts",
+  "proof_policy": "Original PASS evidence retains its original candidate. Product sources are identical; only three CUDA/Graph fixture inputs changed, narrowly reselected and rerun. No selector cache identity was forged.",
+  "failures": [
+    {
+      "record": "selected-windows-result.json",
+      "cause": "Existing Vulkan SDK was not in the launcher environment; no native gate had run."
+    },
+    {
+      "record": "continued-result.json",
+      "cause": "CUDA fixture omitted its direct mem/error PRIVATE links in the shared build."
+    },
+    {
+      "record": "resumed-result.json",
+      "cause": "CUDA fixture initialized the metadata DLL ggml timer but not its separately embedded upstream copy; debug-event/map proved ggml_time_us divide by zero. Ordinary provider already initializes it."
+    },
+    {
+      "record": "corrected-result.json",
+      "cause": "Standalone Graph CUDA provider fixture omitted direct hyle_graph link; ordinary provider/product unchanged."
+    }
+  ],
+  "gates": {
+    "docs": {
+      "verdict": "PASS",
+      "record": "selected-windows-result.json"
+    },
+    "closure": {
+      "verdict": "PASS",
+      "record": "selected-windows-result.json"
+    },
+    "tool:tests/tooling/validation_selector_test.py": {
+      "verdict": "PASS",
+      "record": "selected-windows-result.json"
+    },
+    "configure": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:compute": {
+      "verdict": "PASS",
+      "record": "continued-result.json"
+    },
+    "headers:compute": {
+      "verdict": "PASS",
+      "record": "continued-result.json"
+    },
+    "factor:compute_backend_cpu": {
+      "verdict": "PASS",
+      "record": "continued-result.json"
+    },
+    "headers:compute_backend_cpu": {
+      "verdict": "PASS",
+      "record": "continued-result.json"
+    },
+    "factor:compute_backend_cuda": {
+      "verdict": "PASS",
+      "record": "continued-result.json"
+    },
+    "headers:compute_backend_cuda": {
+      "verdict": "PASS",
+      "record": "continued-result.json"
+    },
+    "factor:compute_ggml_runtime": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_ops": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_ops": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_cublas": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_cublas": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_cuda": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_cuda": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_flashinfer": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_ggml_cuda": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_ggml_cuda": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_ggml_vulkan": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_marlin": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_marlin": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_native": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_native": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_provider_onednn": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_provider_onednn": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_route_apple": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_route_cpu": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_route_cpu": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_route_cuda": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_route_cuda": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:compute_route_vulkan": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:compute_route_vulkan": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:container": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:container": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:container_concurrent": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:container_concurrent": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:container_intrusive": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:container_intrusive": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:container_queue": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:container_queue": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:container_text": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:container_text": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:core": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:core": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:error": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:error": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:graph": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "headers:graph": {
+      "verdict": "PASS",
+      "record": "corrected-result.json"
+    },
+    "factor:graph_provider_ggml_cuda": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:graph_provider_ggml_cuda": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:graph_provider_onednn": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:graph_provider_onednn": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:graph_route_apple": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:graph_route_cpu": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:graph_route_cpu": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:graph_route_cuda": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:graph_route_cuda": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:graph_route_vulkan": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:graph_route_vulkan": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_core": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_http": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:io_http": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_http2": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:io_http2": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_tls": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:io_tls": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_transfer": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:io_transfer": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_watch": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:io_watch": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:io_websocket": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:io_websocket": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:math": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:math": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:mem": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:mem": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:mem_reclaim": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:mem_reclaim": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:mem_vm": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:mem_vm": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:obs": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:obs": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:platform": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:platform": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:platform_fs": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:platform_fs": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:platform_thread": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:platform_thread": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:process": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:process": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:sched": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:sched": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:simd": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:time": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:time": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:timer_queue": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:timer_queue": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:util_core": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:util_core": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "factor:util_runtime": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "headers:util_runtime": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "component-contract": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:compute": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:container": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:core": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:error": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:graph": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:io": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:math": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:mem": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:obs": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:platform": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:process": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:sched": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:simd": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:time": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    },
+    "delivery:util": {
+      "verdict": "PASS",
+      "record": "remaining-result.json"
+    }
+  },
+  "skipped_gates": [
+    {
+      "id": "headers:compute_ggml_runtime",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "compute_ggml_runtime"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_ggml_runtime$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "4c55cb06f7b37527a52310c771f307e7f7c0842e2e477b047cebd0fe03dd1a42",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "195fea158c31b216e3e362581fb84ec306b2b2c496bf38c55deab1431a7fc539"
+    },
+    {
+      "id": "factor:compute_provider_flashinfer",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Linux; platform-excluded headers remain independently selected",
+      "factors": [
+        "compute_provider_flashinfer"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_flashinfer_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_flashinfer$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "40ac90bb1f062c49c0164cd8c34ad769a3b1e42be44428423d141c133caeb2ee",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "a892f82a6b9a213e444aa837bc52150fe1bd3291bbeaadaed50cc51a5b16eeb5"
+    },
+    {
+      "id": "factor:compute_provider_ggml",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "34e174aa122bfc2ab24c309f7a82d48f2843265f64e006b536df84fc3dc17465",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "ece14d79caeeb80f540b43bddf1c5b2b0e9fafc32f2383a1776c3b0f12d6d718"
+    },
+    {
+      "id": "headers:compute_provider_ggml",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no public-header seam change for this factor",
+      "factors": [
+        "compute_provider_ggml"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "e720be6b8a9001ba8985cb2998071f49da110e9b2ba068fa91eed8df87b7ca6a",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "fa58e3b451007139b13bf5de338395a4fd71a030ea23cb961997eddaa923ab5a"
+    },
+    {
+      "id": "factor:compute_provider_ggml_metal",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; platform-excluded headers remain independently selected",
+      "factors": [
+        "compute_provider_ggml_metal"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_provider_ggml_metal_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml_metal$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "75b587a5d4d238467e0f1c23b1419b0071cab90ca6c166e6e11f72f6e9992545",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "e0e73325c68908455ddce248563c2c7f81e450dc979e05257570288e9a5cccbd"
+    },
+    {
+      "id": "headers:compute_provider_ggml_metal",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "compute_provider_ggml_metal"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml_metal$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "afd1c7768b6f5978d6164f0d053ef8521466e96aefa25fa2271e2220ea04f481",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "71c751d7c997713303c98a7aef11d944846c0852f8971081df49659bac7e990f"
+    },
+    {
+      "id": "headers:compute_provider_ggml_vulkan",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "compute_provider_ggml_vulkan"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_provider_ggml_vulkan$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "63a72f272bb6f93965f4c8080ff53769c9bc1ecd1e4f6aa4bfec55f72b602915",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "bc1a7f7125fc95a6dcbda9c740caf6d5d5b8b6e7960437796d6bf5ecd1ff7a1e"
+    },
+    {
+      "id": "factor:compute_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; platform-excluded headers remain independently selected",
+      "factors": [
+        "compute_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_compute_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^compute_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "bbf67ba2ec8586dd8717473d22720f2168a61a1b8204cc634b8a6d8f148de76a",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "890f9bafc6ca2bfb30934c98db28a45954f9c1c630703ab4dbaf4552240595f8"
+    },
+    {
+      "id": "factor:graph_route_apple",
+      "kind": "correctness",
+      "status": "SKIPPED",
+      "reason": "native route is not supported on Windows; correctness requires Darwin; platform-excluded headers remain independently selected",
+      "factors": [
+        "graph_route_apple"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_graph_route_apple_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^graph_route_apple$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "abc3b8c06e1a6ee0ea16b07daa9062ae4f454cb395445c89816ec1d5fb37edfd",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "b1bbaab7ee3dedd4a7a31ef2774607dac75c607dd32f390ef2cd8235fa5900fe"
+    },
+    {
+      "id": "headers:io_core",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "io_core"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^io_core$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "2e9df0cb11726f79b368b467cc1928bee63a47471209dfb90e2d98a81fff4782",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "c5225a580a9265f86246ee1adbd4ed325230b8f06f27ae37bf86e9ad5201d0d5"
+    },
+    {
+      "id": "headers:simd",
+      "kind": "headers",
+      "status": "SKIPPED",
+      "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment",
+      "factors": [
+        "simd"
+      ],
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^simd$",
+          "-R",
+          "_header_self_contained_test$"
+        ]
+      ],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "f1e213db2ce549dfc09d6d83c633e0a3bfc24b9a5b62ae66bce1182aed249147",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "2a7af76486212c886e105acefe27190a2675b5f228350cf16b3f99222861012c"
+    },
+    {
+      "id": "p1",
+      "kind": "performance",
+      "status": "SKIPPED",
+      "reason": "no explicit frozen P1 card; sampling is never automatic",
+      "factors": [],
+      "commands": [],
+      "identity": {
+        "candidate_tree": "78fb4df2b2e12228361195a3ae28344eb84f1ac7",
+        "contract_hash": "5413c09b7fd75e25288160daa29eb4f7b18e4ed2604088e802f8e30456c55669",
+        "toolchain": {
+          "id": "msvc-19.50.35728-x64",
+          "compiler_path": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "compiler_id": "MSVC",
+          "compiler_version": "19.50.35728",
+          "stdlib": {
+            "id": "msvc-stl-14.50.35717"
+          },
+          "flags": {
+            "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+            "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG"
+          }
+        },
+        "machine_profile": {
+          "id": "W1-WIN",
+          "system": "Windows 11",
+          "architecture": "x86_64",
+          "role": "engineering-correctness-delivery"
+        },
+        "observed_host": {
+          "system": "Windows",
+          "release": "11",
+          "machine": "AMD64",
+          "node": "kiro-workstation",
+          "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+          "python_executable": "C:\\Program Files\\Python312\\python.exe",
+          "native_environment": {
+            "CC": null,
+            "CXX": null,
+            "CFLAGS": null,
+            "CXXFLAGS": null,
+            "CPPFLAGS": null,
+            "LDFLAGS": null,
+            "CL": null,
+            "_CL_": null,
+            "INCLUDE": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\include;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.26100.0\\\\cppwinrt;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\include\\um",
+            "LIB": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\NETFXSDK\\4.8\\lib\\um\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.26100.0\\\\um\\x64",
+            "LIBPATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\ATLMFC\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\lib\\x86\\store\\references;C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.26100.0;C:\\Program Files (x86)\\Windows Kits\\10\\References\\10.0.26100.0;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319",
+            "SDKROOT": null,
+            "MACOSX_DEPLOYMENT_TARGET": null,
+            "CPATH": null,
+            "CPLUS_INCLUDE_PATH": null,
+            "LIBRARY_PATH": null,
+            "CMAKE_TOOLCHAIN_FILE": null,
+            "PATH": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0\\codex-arg0txdtu8;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.155.1-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\PowerShell\\7;C:\\Program Files\\ShadowBot;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0;C:\\WINDOWS\\System32\\OpenSSH;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\Program Files\\PowerShell\\7;C:\\public\\tools\\axiomate;C:\\Program Files\\dotnet;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\ShadowBot;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg"
+          }
+        },
+        "selector_hash": "06d766d334dd3933672366af1d38c68093eba6f21fe8eb624bfc6301c0100f19"
+      },
+      "cache_key": "5a62bd4b3f0fac0966082155f0ec463315dc57b4bca1b4d78731fb3678cc3bfa"
+    }
+  ],
+  "review": {
+    "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+    "archive_integrity": [
+      {
+        "name": "schema-windows",
+        "members": 5,
+        "sha256": "7e041d06df0bc4011280bb5b4b0afc6208f7da23cb7390825a3f7fdc8de58fc6",
+        "record_keys": [
+          "stage",
+          "baseline",
+          "source_sha256",
+          "windows",
+          "remaining",
+          "coverage_cells_signed",
+          "self_written_math_changes",
+          "p1_executed",
+          "raw",
+          "implementation_loc",
+          "metrics"
+        ]
+      },
+      {
+        "name": "native-air-checkpoint",
+        "members": 11,
+        "sha256": "52342a5a958bb6052baa165427e8c94a76ac1077213d5aec7dbef855ecc76ea0",
+        "record_keys": [
+          "stage",
+          "baseline",
+          "source_manifest",
+          "product_sha256",
+          "air",
+          "windows",
+          "tool",
+          "remaining",
+          "coverage_cells_signed",
+          "self_written_math_changes",
+          "p1_executed",
+          "metrics",
+          "raw"
+        ]
+      },
+      {
+        "name": "resource-host-air-delivery",
+        "members": 79,
+        "sha256": "9ee843aaa4897daaa98b24b99c31712fdc6ac50a95386e6a8962beeb18535d22",
+        "record_keys": [
+          "stage",
+          "baseline",
+          "source_manifest_sha256",
+          "source",
+          "product_sha256",
+          "air",
+          "windows",
+          "corrections",
+          "pending",
+          "p1",
+          "new_coverage_cells",
+          "loc",
+          "raw_archive",
+          "raw_sha256"
+        ]
+      },
+      {
+        "name": "cross-native-delivery",
+        "members": 40,
+        "sha256": "4b76d76118b8f3077ed4bae99cbb720d39739e3d2c8765fd4869c5ff7d4a194e",
+        "record_keys": [
+          "candidate",
+          "product_inputs_match_canonical_candidate",
+          "verified_non_document_file_count",
+          "source_identity",
+          "mini",
+          "wsl",
+          "performance",
+          "new_coverage_cells",
+          "frozen_math",
+          "remaining",
+          "archive",
+          "archive_sha256",
+          "unchanged_non_document_inputs"
+        ]
+      }
+    ],
+    "snapshot_unchanged_inputs": 1719,
+    "test_only_changes": {
+      "tests/compute_ggml_runtime/CMakeLists.txt": {
+        "snapshot": "1748ce808d960f402d7831c8ac40d5051ae373f262c48415be967143654309ae",
+        "current": "ce63bef8c48481cd1feda1eb214dd621c3f360bd995e1cebc320b0badfbfb620"
+      },
+      "tests/compute_ggml_runtime/cuda_resource_test.cc": {
+        "snapshot": "92f05d3ff347d9324bdb8a01ee1753d6d0c4d38cbfcb8465c3e138fb1d64f4c8",
+        "current": "2ffebdeceaf5b3c9c3a6fc3c84a4f232729c5d13b3f33b56ce64dd8cac36b17b"
+      },
+      "tests/graph_provider_ggml_cuda/CMakeLists.txt": {
+        "snapshot": "547888b42a7ccc2b0441b599429ed3c32e2ab4072ec079011b25535a6d9ff1dd",
+        "current": "6e074a11d14508f3ae6da97575667665dc41e0a373d594c0b575a709569231f5"
+      }
+    },
+    "resource_checkpoint_product_files_match": 286,
+    "review": {
+      "owner": "/root",
+      "scope": "one separate bounded final pass over Apple public entry, native buffer lifetime/failure/drain, region ownership/fusion, native build/install and documented managed costs",
+      "anchors": [
+        "src/compute_provider_ggml_metal/native_program.cc",
+        "src/compute_route_apple/apple_context.cc",
+        "src/compute_route_apple/apple_recurrent.cc",
+        "src/graph_route_apple/apple_lowering.cc",
+        "src/compute_provider_ggml_metal/CMakeLists.txt",
+        "docs/user/apple-compute.md"
+      ],
+      "finding": "No new product defect found within A1-A6; actual Windows regression exposed two test-fixture defects, corrected and runtime factor now PASS. Final selected regression bundle remains running.",
+      "performance": "P0 only: per-invocation native graph/backend/import wrappers; per-run output allocation; explicit checked host waits at native boundaries and MLX contiguous GPU copy when required. No hot provider search or benchmarking. No self-written mathematics inspected or compared.",
+      "revalidation": "All 286 recorded product inputs still match; one further Graph fixture direct link correction needs its selected factor only. Prior red-team product review remains applicable."
+    },
+    "reviewed_product_candidate": "eb69893bad3c8f26fb39c3c95b38ad78375b80ed"
+  },
+  "new_coverage_cells": 0,
+  "p1": "NOT_APPLICABLE to the finite P0 integration seam; mature-path performance/coverage remains M2/M3",
+  "archive": "selected-final-raw.zip",
+  "archive_sha256": "f1f3601e34d20e2af7343da9476701c377813c5b44dc27bd6300d83802a75053",
+  "retained_file_count": 253
+}

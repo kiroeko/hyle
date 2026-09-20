@@ -3,7 +3,7 @@
 ## Closure card
 
 - owner：`/root`；baseline：`6217e5663acb6825a72cc8a1a2e3d82735d8ceee`，Windows main。
-- 当前阶段：AUDITED；五 owner 在 `450809ba` 完成 SCOPED；新身份在 `cee2f293` 登记 QUEUED，
+- 当前阶段：CANDIDATE；五 owner 在 `450809ba` 完成 SCOPED；新身份在 `cee2f293` 登记 QUEUED，
   只有身份，没有空 target 或产品实现。
 - 本轮 owner：新 `compute_provider_ggml_metal`；既有 `compute_ggml_runtime`、
   `compute_route_apple`、`graph_route_apple`、`compute_ops`。
@@ -25,7 +25,7 @@
   不以本 seam 样例签 64×4 覆盖，也不提前比较自研。
 - 源码/设计总预算 120 分钟。登记与审计检查点累计 35 分钟；本次有限 native 资源与 region
   接口细化追加 35 分钟；资源故障边界与下述 UBSan 反例再保守追加 35 分钟，累计 105 分钟、
-  余 15 分钟，不重置。实现、编译、预声明验证另记；
+  最后一次独立候选复核和测试根因定位使用余下 15 分钟，累计 120/120 分钟，调查停止。实现、编译、预声明验证另记；
   每根因最多两次纠正。
 - 机器：Air/Mini 原生正确性、生命周期、三交付；Windows/WSL Apple-OFF 与公共语义。
   重型工作跨机器串行、parallel2；Windows DLL 邻置，不改电源、不触发 UAC。
@@ -234,3 +234,25 @@ map 定位到 exe 内的 `ggml_time_us + 0x24`：测试静态嵌入的 ggml time
 及 Graph 本体；`graph_provider_ggml_cuda` 的独立测试同样漏写直接使用的 `hyle_graph` 链接
 依赖（25 个未解析符号均来自 GraphBuilder/Graph/Invocation/compile）。仅补该测试的 DEPS，
 不改已关闭 Provider 的产品依赖；保留 41 个已通过门的精确候选结果，从失败门继续。
+
+## 不可变候选与最终 selected 验证
+
+候选为 `140054b13ce2515a05bc6eedac7e03e56bbc3662`；A1–A6 实现固定，五 owner 进入
+CANDIDATE。之前各检查点的“尚未完成”保留为历史，以下最终收据给出实际裁决。
+
+Windows 原 selector 的 **119 个 selected gates 全部通过**：配置、50 个模块正确性门、
+49 个公开头门、2 个维护门、1 个 selector 工具门，以及组件合同与 15 组 source/static/shared
+产品交付。交付包含独立安装消费者与 prefix 搬移；header-only 部分只签其头文件/package 消费，
+不声称存在对应二进制。原始四次环境/fixture 失败均保留，已通过项
+不反复运行；三个测试文件纠正各按 selector 只重跑受影响 factor，产品源码没有改变。
+汇总见[最终 selected 收据](../../../../evidence/correctness/compute-llm-moe-m1-apple-admission/selected-final.json)。
+
+证据按实际身份复用：Air/Mini/WSL 的完整前向快照中 1,719 个非文档输入仍相同，差异仅上述
+三个 Windows CUDA 测试文件；资源/交付收据记录的 286 个产品输入逐一仍相同。四个既有日志
+归档的 SHA-256 与 ZIP 完整性已核对。无更换 candidate 身份、伪造 selector cache 或跨机器性能外推。
+
+与实现分离的一次有限候选复核检查普通入口、native buffer/失败/drain、Invocation/结果所有权、
+Graph region/fusion、安装与公开文档；范围内未发现新的产品缺陷。结构成本账单包括每 invocation
+的 ggml metadata/backend/import、每次输出分配、原生边界 checked host wait、必要 MLX contiguous
+GPU copy；保留 MLX 原生融合。无 hot Provider 搜索/计时，无 recorded/零分配声明。源码/设计总预算
+120/120 分钟已停止；不再扩大审计。未执行 P1 或任何冻结自研研究/性能比较，新增覆盖仍为 0/256。
