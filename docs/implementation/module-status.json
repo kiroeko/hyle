@@ -567,25 +567,15 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda.md",
+      "summary": "M2-B1 CUDA SCOPED：按新批量片段需求重开两个ggml CUDA owner；先审21行成熟原版域、资源与普通入口，产品FIX待AUDITED。M1资源证据保留，自研冻结，旧oneDNN阻塞不变。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda.md",
+      "summary": "M2-B1 CUDA SCOPED：按新批量片段需求重开两个ggml CUDA owner；先审21行成熟原版域、资源与普通入口，产品FIX待AUDITED。M1资源证据保留，自研冻结，旧oneDNN阻塞不变。"
     },
     {
       "module": "compute_provider_flashinfer",
