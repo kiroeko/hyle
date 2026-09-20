@@ -66,7 +66,8 @@ auto program = hyle::compute::prepare(
 
 固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
 或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
-运行期不读取模型字符串、查询设备版本或重选实现。
+HYLE 的规则匹配在运行期不读取模型字符串、查询设备版本或重选实现；成熟 Provider 自身的
+managed 派发成本另外声明。
 
 CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名、UUID、SM major/minor、
 驱动支持的 CUDA API 版本、runtime 版本与编译 Toolkit 版本。`driver_cuda_version` 对应
@@ -115,6 +116,7 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 
 | 默认规则 | 支持域 |
 |---|---|
+| FlashInfer causal GQA | Linux CUDA SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、Q/K/V depth=256，正 batch/sequence、KV length≥Q length，无额外 mask，FP32 累加；head256 prefill/decode 使用锁定原版实现 |
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
@@ -123,6 +125,13 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
 | HYLE 基本 tensor | plain View、Copy、Fill、Select；F32/F16/BF16 Cast、全部既有 Unary/Binary 模式；rank≤8，rank0/broadcast/非负及奇数 byte stride，非 View 输出 dense、元素数≤INT32_MAX |
 | HYLE CUDA norms | dense F32/F16/BF16 RMSNorm、LayerNorm，最后一轴、FP32 accumulation；scale/bias 各自为输入类型或 half 输入的 F32 参数，元素数≤INT32_MAX；LayerNorm 使用先均值再 centered variance |
+
+上述 FlashInfer 域复用普通 `ScaledDotProductAttention`，采用 bottom-right causal 对齐。
+Direct 调用者按 `workspace_requirement()` 为每个并发 invocation 分配独立 CUDA workspace；
+Graph 自动规划同一资源。输入、输出和 workspace 必须活到实际 Completion 结束。
+原版派发包含 capability、occupancy 和 kernel attribute 查询，属于 managed 执行，当前不支持
+外部 capture；普通 Graph 的 prefer-capture 会报告 commands 路线。失败后重建 invocation，
+不在执行时改选其它实现。Windows 未准入此 FlashInfer pin，不能据此推断该平台已支持 attention。
 
 基本 tensor 使用同一普通 `prepare()` 和 CUDA Graph 入口，程序准备后无需 workspace 或槽私有
 device storage。View 按共同 byte offset 必须别名原 storage；其余逐元素操作仅在输入与输出描述符
@@ -212,6 +221,10 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 概率归一化 | `Softmax` | f32/f16/bf16 任意 axis、scale、LogSoftmax，以及可广播 Bool/同类型 additive mask；F32 accumulation，半精度使用显式 F32 行工作区；允许精确 input/output in-place；无有效值的 row 产生 NaN |
 | 候选筛选 | `TopK` | f32/f16/bf16 任意 axis，largest/smallest、sorted/stable 语义，返回同类型 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
 | 注意力 | `ScaledDotProductAttention` | f32 rank-4 BSHD/BHSD，Q/K depth 与 V/output depth 可不同；可选 bottom-right causal、Bool/additive 广播 mask，分块 online softmax 与显式 caller-owned workspace |
+
+公共 SDPA 描述也接受 GQA/MQA：Q head 数必须是正 KV head 数的整数倍，K/V head 数相同；
+Q head `h` 使用 KV head `h / (Qheads / KVheads)`，输出与 mask 的 head 轴仍按 Q。
+Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 GQA/MQA 返回 unsupported。
 | 自定义 CPU 工作 | `cpu::submit_host(queue, callable, args...)` | `noexcept` callable，返回 `void` 或 `Status`，返回前完成 |
 | 可准备、可进入 Graph 的用户 kernel | `make_custom_provider` + `make_custom_kernel` | owning typed factory；shared HYLE Queue，逐 Invocation 状态；见下文完整例子 |
 | CUDA runtime | `cuda::backend/device/MemoryResource/submit` | 显式 device/pinned/managed storage、stream borrow/adopt、typed command、真实 async Completion；不冒充 CUDA 算子目录 |

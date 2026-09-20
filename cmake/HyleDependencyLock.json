@@ -487,6 +487,29 @@
           }
         ]
       }
+    },
+    {
+      "name": "flashinfer",
+      "class": "fetchcontent",
+      "repository": "https://github.com/flashinfer-ai/flashinfer.git",
+      "version": "v0.6.18",
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "git_tree": "f5804ee37b4780d8e1a8b6019f9d4619230987d1",
+      "archive": {
+        "url": "https://codeload.github.com/flashinfer-ai/flashinfer/tar.gz/69ff11fc4954396d98326656dc85debd2223f637",
+        "sha256": "4fc85abaa6210d6a1773e6011ff572aa0c04b7030644b74f75a2db2dbda472a9"
+      },
+      "expanded_tree_sha256": "dda66e35e3485f5f986f92d9eb0edd06a6f46c5b3a94cd9267dd8eea9f909d78",
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "dependency",
+            "path": "LICENSE",
+            "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7"
+          }
+        ]
+      }
     }
   ]
 }

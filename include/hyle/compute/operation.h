@@ -392,6 +392,10 @@ struct TopK final {
 };
 
 struct ScaledDotProductAttention final {
+  // Q heads must be a positive integer multiple of the positive K/V heads.
+  // Query head h consumes KV head h / (Q heads / KV heads); the output and
+  // any broadcast mask use the query head axis. Providers qualify this domain
+  // independently; accepting the schema does not imply a native GQA route.
   AttentionLayout layout = AttentionLayout::kBatchSequenceHeadDepth;
   MaskKind mask = MaskKind::kNone;
   float scale = 1.0F;

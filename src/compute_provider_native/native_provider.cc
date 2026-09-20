@@ -968,6 +968,15 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kScaledDotProductAttention: {
+    const auto *attention = operation.get_if<ScaledDotProductAttention>();
+    const std::size_t head_axis =
+        attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 2 : 1;
+    if (inputs.size() < 3 || inputs[0].rank() != 4 ||
+        inputs[1].rank() != 4 || inputs[2].rank() != 4 ||
+        inputs[0].dimensions()[head_axis] != inputs[1].dimensions()[head_axis] ||
+        inputs[0].dimensions()[head_axis] != inputs[2].dimensions()[head_axis]) {
+      return Status::Unimplemented("native SDPA requires equal Q/K/V heads");
+    }
     Status status =
         internal::prepare_attention(operation, inputs, outputs, plan);
     if (!status.ok())

@@ -857,6 +857,29 @@ TEST(NativeTransformer, SdpaDefinesAnEmptyKeyRowAsInvalid) {
     EXPECT_TRUE(std::isnan(result));
 }
 
+TEST(NativeTransformer, SdpaDeclinesGroupedHeadsBeforeAnyExecution) {
+  auto context = hyle::compute::test::native_context().value();
+  for (const auto layout : {AttentionLayout::kBatchSequenceHeadDepth,
+                            AttentionLayout::kBatchHeadSequenceDepth}) {
+    const bool bshd = layout == AttentionLayout::kBatchSequenceHeadDepth;
+    const std::array<std::int64_t, 4> query_shape =
+        bshd ? std::array<std::int64_t, 4>{1, 1, 8, 256}
+             : std::array<std::int64_t, 4>{1, 8, 1, 256};
+    const std::array<std::int64_t, 4> key_shape =
+        bshd ? std::array<std::int64_t, 4>{1, 17, 2, 256}
+             : std::array<std::int64_t, 4>{1, 2, 17, 256};
+    const auto query = TensorDesc::dense(DataType::kFloat32, query_shape).value();
+    const auto key = TensorDesc::dense(DataType::kFloat32, key_shape).value();
+    const std::array inputs{query, key, key};
+    const std::array outputs{query};
+    auto prepared = hyle::compute::prepare(
+        context, Operation(ScaledDotProductAttention{.layout = layout}),
+        inputs, outputs, hyle::mem::system_resource());
+    ASSERT_FALSE(prepared);
+    EXPECT_TRUE(prepared.error().IsUnimplemented()) << prepared.error().message();
+  }
+}
+
 TEST(NativeTransformer, SdpaRejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 4> shape{1, 1, 1, 2};
   const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();

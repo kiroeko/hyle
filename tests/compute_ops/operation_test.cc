@@ -264,7 +264,7 @@ TEST(OperationReductionAndNorm, HalfInputPreservesFloat32LearnedParameters) {
               input);
     EXPECT_EQ(infer_one(Operation(LayerNorm{}), std::array{input, bias, scale}),
               input);
-    for (const auto invalid :
+    for (const auto &invalid :
          {tensor(DataType::kFloat64, 2048), tensor(DataType::kInt32, 2048),
           tensor(DataType::kFloat32, 2047),
           tensor(DataType::kFloat32, 1, 2048)}) {
@@ -479,6 +479,49 @@ TEST(OperationTransformer, CoversRoPESoftmaxTopKAndAttentionShapes) {
   EXPECT_EQ(infer_one(Operation(attention),
                       std::array{query, key, value, attention_mask}),
             tensor(DataType::kFloat16, 2, 7, 4, 48));
+}
+
+TEST(OperationTransformer, GroupedAttentionPreservesQueryHeadsAndMaskDomain) {
+  for (const auto layout : {AttentionLayout::kBatchSequenceHeadDepth,
+                            AttentionLayout::kBatchHeadSequenceDepth}) {
+    const bool bshd = layout == AttentionLayout::kBatchSequenceHeadDepth;
+    const auto query = bshd ? tensor(DataType::kBFloat16, 2, 17, 8, 256)
+                            : tensor(DataType::kBFloat16, 2, 8, 17, 256);
+    for (const auto heads : {1, 2, 8}) {
+      const auto key = bshd ? tensor(DataType::kBFloat16, 2, 31, heads, 256)
+                            : tensor(DataType::kBFloat16, 2, heads, 31, 256);
+      const auto value = bshd ? tensor(DataType::kBFloat16, 2, 31, heads, 128)
+                              : tensor(DataType::kBFloat16, 2, heads, 31, 128);
+      const auto expected = bshd ? tensor(DataType::kBFloat16, 2, 17, 8, 128)
+                                 : tensor(DataType::kBFloat16, 2, 8, 17, 128);
+      const auto operation = Operation(ScaledDotProductAttention{
+          .layout = layout, .mask = MaskKind::kBoolean, .causal = true});
+      const auto mask = tensor(DataType::kBool, 1, 8, 17, 31);
+      EXPECT_EQ(infer_one(operation, std::array{query, key, value, mask}), expected);
+      const auto wrong_mask = tensor(DataType::kBool, 1, 3, 17, 31);
+      EXPECT_FALSE(infer_single_output(
+          operation, std::array{query, key, value, wrong_mask}));
+    }
+    for (const auto heads : {0, 3, 16}) {
+      const auto key = bshd ? tensor(DataType::kBFloat16, 2, 31, heads, 256)
+                            : tensor(DataType::kBFloat16, 2, heads, 31, 256);
+      EXPECT_FALSE(infer_single_output(
+          Operation(ScaledDotProductAttention{.layout = layout}),
+          std::array{query, key, key}));
+    }
+    const auto key = bshd ? tensor(DataType::kBFloat16, 2, 31, 2, 256)
+                          : tensor(DataType::kBFloat16, 2, 2, 31, 256);
+    const auto value = bshd ? tensor(DataType::kBFloat16, 2, 31, 1, 256)
+                            : tensor(DataType::kBFloat16, 2, 1, 31, 256);
+    EXPECT_FALSE(infer_single_output(
+        Operation(ScaledDotProductAttention{.layout = layout}),
+        std::array{query, key, value}));
+    const auto empty_heads = bshd ? tensor(DataType::kBFloat16, 2, 17, 0, 256)
+                                  : tensor(DataType::kBFloat16, 2, 0, 17, 256);
+    EXPECT_FALSE(infer_single_output(
+        Operation(ScaledDotProductAttention{.layout = layout}),
+        std::array{empty_heads, key, key}));
+  }
 }
 
 struct CustomIdentity final {

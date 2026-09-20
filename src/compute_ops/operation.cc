@@ -640,10 +640,12 @@ infer_attention(const ScaledDotProductAttention &attention,
     sequence_axis = 2;
     head_axis = 1;
   }
-  if (query.dimensions()[0] != key.dimensions()[0] ||
+  const auto query_heads = query.dimensions()[head_axis];
+  const auto kv_heads = key.dimensions()[head_axis];
+  if (query_heads <= 0 || kv_heads <= 0 || query_heads % kv_heads != 0 ||
+      query.dimensions()[0] != key.dimensions()[0] ||
       query.dimensions()[0] != value.dimensions()[0] ||
-      query.dimensions()[head_axis] != key.dimensions()[head_axis] ||
-      query.dimensions()[head_axis] != value.dimensions()[head_axis] ||
+      kv_heads != value.dimensions()[head_axis] ||
       key.dimensions()[sequence_axis] != value.dimensions()[sequence_axis] ||
       query.dimensions()[3] != key.dimensions()[3]) {
     return std::unexpected(Status::InvalidArgument(
