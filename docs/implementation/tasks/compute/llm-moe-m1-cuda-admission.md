@@ -166,5 +166,5 @@ HYLE只补外来buffer、原生错误、部分构造与capture失败回收。独
 原日志保留，不记验证通过。C3完整region、C4 Windows attention、其余平台与收口门尚未完成。
 
 新增vendor目录的selector归属与新Provider平台事实由
-[独立映射卡](../build/ggml-cuda-selector-owner-v1.md)登记；不改治理算法或门命令。
+[独立映射卡](../build/ggml-cuda-selector-owner-v1.md)登记并修正复现的共享CUDA开关冲突；不改门命令、授权或P1规则。
 本检查点源码/设计保守追加15分钟，累计100分钟，余20分钟；编译/预声明验证不计成研究。

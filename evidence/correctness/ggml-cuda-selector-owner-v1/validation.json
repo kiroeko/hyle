@@ -1,0 +1,28 @@
+{
+  "baseline": "6ef8884d",
+  "scope": "T1-T3 and re-audited T2b shared route flag merge",
+  "tool_inputs_sha256": {
+    "scripts/validation-select.py": "f8091fa29c307c06c4b5a562da93c2f50ef17c66a7c0b972c7a1d622fd638188",
+    "scripts/validation-policy.json": "d6db0cd8189846e94479ea19c5987e3a831d321231ef191606fd2e05dcec1086",
+    "tests/tooling/validation_selector_test.py": "c4110c9c66bdf19a227ed9a0d3c7dddd85c96d63171c63d67ad5ac0de6d6e4a5"
+  },
+  "tests": {
+    "original": "57 tests, 10 errors: unsupported FlashInfer OFF conflicts with supported CUDA ON",
+    "final": "59 tests PASS, 101.843 seconds"
+  },
+  "plan_verdict": "READY",
+  "unknown_paths": [],
+  "product_authorization": {
+    "owners": [
+      "compute_ggml_runtime",
+      "compute_provider_ggml_cuda"
+    ],
+    "states": {
+      "compute_ggml_runtime": "AUDITED",
+      "compute_provider_ggml_cuda": "AUDITED"
+    },
+    "issues": []
+  },
+  "limits": "READY is selection only. Product native/SDK gates remain with M1-C. No C++ build or P1 attributed to tool card.",
+  "bundle_sha256": "6862667523e0a95f17700009043b715c34b6cd96c58144f2d2a5c95b807b4b69"
+}

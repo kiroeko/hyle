@@ -161,7 +161,8 @@ class ImpactTest(unittest.TestCase):
         self.assertNotIn("-DHYLE_COMPUTE_CPU=OFF", configure)
 
     def test_native_platforms_keep_off_headers_without_false_correctness(self):
-        for factor in ("compute_route_apple", "graph_route_apple", "compute_route_cuda"):
+        for factor in ("compute_route_apple", "graph_route_apple", "compute_route_cuda",
+                       "compute_provider_flashinfer", "compute_provider_ggml_cuda"):
             self.write(f"tests/{factor}/CMakeLists.txt",
                        f"hyle_add_header_self_contained_test({factor})\n")
         self.base = self.commit()
@@ -177,13 +178,39 @@ class ImpactTest(unittest.TestCase):
                 self.assertIn("-DHYLE_COMPUTE_ONEDNN=ON", configure)
                 for factor, supported in (("compute_route_apple", apple),
                                           ("graph_route_apple", apple),
-                                          ("compute_route_cuda", not apple)):
+                                          ("compute_route_cuda", not apple),
+                                          ("compute_provider_ggml_cuda", not apple),
+                                          ("compute_provider_flashinfer", system == "Linux")):
                     row = self.row(plan, "factor:" + factor)
                     self.assertEqual(row["status"], "SELECTED" if supported else "SKIPPED")
                     self.assertIn("headers:" + factor, self.selected(plan))
                     if not supported:
                         self.assertIn("not supported on " + system, row["reason"])
                         self.assertNotIn("receipt", row)
+
+    @patch.object(selector.platform, "system", return_value="Linux")
+    def test_supported_providers_still_reject_conflicting_cache_values(self, _system):
+        self.write("CMakeLists.txt", "# shared package seam\n")
+        self.commit()
+        read_json = selector.read_json
+        policy = read_json(ROOT / "scripts/validation-policy.json")
+        policy["factor_configure_cache"]["compute_provider_flashinfer"]["HYLE_COMPUTE_CUDA"] = "OFF"
+        with patch.object(selector, "read_json", side_effect=lambda path:
+                          policy if Path(path).name == "validation-policy.json" else read_json(path)):
+            with self.assertRaisesRegex(selector.SelectionError, "conflicting validation cache"):
+                self.plan()
+
+    def test_ggml_cuda_resource_patch_requires_runtime_owner(self):
+        self.write("third_party/ggml_cuda_runtime/patches.json", '{"patches": []}\n')
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["unknown_paths"], [])
+        self.assertEqual(plan["product_authorization"]["owners"], ["compute_ggml_runtime"])
+        self.set_state("compute_ggml_runtime", "CLOSED")
+        self.base = self.commit()
+        self.write("third_party/ggml_cuda_runtime/patches.json", '{"patches": [1]}\n')
+        self.commit()
+        self.assertEqual(self.plan()["verdict"], "BLOCKED")
 
     @patch.object(selector.platform, "system", return_value="Darwin")
     def test_apple_implementation_requires_on_without_sdk_availability_probe(self, _system):

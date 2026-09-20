@@ -637,6 +637,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     if not isinstance(factor_cache, dict):
         raise SelectionError("validation policy factor_configure_cache must be an object")
     selected_cache = {}
+    unsupported_cache = {}
     for factor in sorted(selected_factors):
         entries = factor_cache.get(factor, {})
         if not isinstance(entries, dict):
@@ -649,13 +650,18 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
             if factor in unsupported:
                 if value != "ON":
                     raise SelectionError(f"unsupported native factor {factor}/{key} must declare an ON feature")
-                value = "OFF"
+                # Several providers may share a route feature. An unavailable
+                # provider cannot disable a supported provider's requirement.
+                unsupported_cache[key] = "OFF"
+                continue
             previous = selected_cache.setdefault(key, value)
             if previous != value:
                 raise SelectionError(
                     f"selected factors require conflicting validation cache values for {key}: "
                     f"{previous!r} and {value!r}"
                 )
+    for key, value in unsupported_cache.items():
+        selected_cache.setdefault(key, value)
     configure += ["-D" + key + "=" + value for key, value in sorted(selected_cache.items())]
     if context and selected_factors and not native_issue:
         configure += ["-DCMAKE_CXX_COMPILER=" + identity["toolchain"]["compiler_path"]]
@@ -673,7 +679,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
             why = "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
         if factor in unsupported:
             why = (f"native route is not supported on {host_system}; correctness requires " +
-                   ", ".join(supported_systems[factor]) + "; OFF headers remain independently selected")
+                   ", ".join(supported_systems[factor]) + "; platform-excluded headers remain independently selected")
         gate("factor:" + factor, "correctness", factor in correctness_factors, why,
              [["cmake", "--build", "{build}", "--config", "Release", "--target", f"hyle_{factor}_tests", "--parallel", "2"],
               ["ctest", "--test-dir", "{build}", "-C", "Release", "--output-on-failure", "--no-tests=error",
