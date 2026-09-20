@@ -394,8 +394,8 @@
     {
       "module": "compute_ops",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
+      "summary": "M1-C7 SCOPED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
     },
     {
       "module": "compute_backend_cpu",
@@ -422,8 +422,8 @@
     {
       "module": "compute_provider_native",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m0-provider-scope.md",
-      "summary": "新 goal M0 SCOPED：旧 C1 授权已在4de4ddbd撤回；仅模型需求→成熟 Provider→成批接入方式审计，产品 FIX 为空。全体自研冻结至最后速裁；第三方接入前禁止自研扩张、调研与性能比较。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
+      "summary": "M1-C7 SCOPED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
     },
     {
       "module": "compute_sched",
