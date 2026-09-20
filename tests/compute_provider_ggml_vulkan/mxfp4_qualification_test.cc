@@ -43,7 +43,7 @@ TEST(GgmlVulkanQualification, Mxfp4PreservesFrozenQvkValues) {
     auto *weights = ggml_new_tensor_2d(context, GGML_TYPE_MXFP4, 128, 16);
     auto *activation = ggml_new_tensor_2d(context, GGML_TYPE_F16, 128, 2);
     auto *product = ggml_mul_mat(context, weights, activation);
-    ggml_mul_mat_set_prec(product, GGML_PREC_F32);
+    ASSERT_TRUE(ggml_prec_set_acc(product, GGML_PREC_F32));
     auto *output = ggml_cast(context, product, GGML_TYPE_F16);
     ggml_set_input(weights);
     ggml_set_input(activation);
