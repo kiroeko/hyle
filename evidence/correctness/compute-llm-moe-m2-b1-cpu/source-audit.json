@@ -42,6 +42,14 @@
   ],
   "action": "Implement original ggml admitted domains; qualify mature companion for remaining exact domains. No self-written math; no P1 started.",
   "complete_requirement_cells": 0,
+  "layout_followup": {
+    "baseline": "4776264a09d69e89cff6ade945f8124bcdb1abd3",
+    "decision": "Original ggml arbitrary-axis get_rows with I32 repeat; column-broadcast binary enables FP32 L2 graph composition. No new mathematical kernel.",
+    "sources": ["src/ggml.c:3954-3977", "src/ggml-cpu/ops.cpp:1789-1811", "src/ggml-cpu/ops.cpp:5105-5216", "src/ggml-cpu/binary-ops.cpp:49-112"],
+    "non_equivalence": "get_rows_back followed by base addition changes Scatter add order and per-update half rounding; duplicate set_rows cannot sign last-update-wins",
+    "source_design_budget_minutes": {"used": 90, "remaining": 30, "total": 120},
+    "execution_verdict": "UNRUN"
+  },
   "cpu_i_followup": {
     "baseline": "69351e26",
     "source": "M0 provider-map CPU-I",

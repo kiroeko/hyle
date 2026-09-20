@@ -192,3 +192,25 @@ CPU-only、oneDNN-OFF、shared 下7个定向目标通过（Provider 11、Direct 
 另有3个头自足检查及实际 executor consumer）。覆盖非末轴/奇数字节 stride、I32 中途与
 最终总和溢出而输出不变、F16/BF16/NaN/±0位保留、稳定 ties、大 I32 比较、两请求重放和配额失败。
 该记录只签开发检查点；全21行、所有环境/交付、完整 selector与P1仍未完成，不关闭 owner。
+
+## C1-L 有限接线审计（4776264a 后）
+
+保持原 C1–C6、三个 AUDITED owner 和21行验收范围。此次只补已定位的原版承载，不扩张数学内核：
+
+| FIX | 原版来源与接法 | 必须验证的域 |
+|---|---|---|
+| C1-L1 | `ggml_get_rows` 接 `[inner, extent, outer]`；`ggml_repeat_4d` 复制 I32 索引到各 outer 行，CPU `ops.cpp:1796–1811` 明确支持 I32 repeat；源和索引的非连续布局先沿原版 cont | Gather 任意合法轴、标量/矩阵索引、重复/首尾/越界、rank6 dense、已准入 aligned stride、空输出；所有当前索引先检查再发布 |
+| C1-L2 | `binary-ops.cpp:49–112` 支持逐行标量；将公共列广播正确折为 `[1, rows]`，由原版 binary 或 lhs repeat 执行。L2 直接复用 Cast、乘法、Sum、epsilon、Sqrt、除法组成 Graph region | FP32 累积与末尾显式低精度舍入；零/极小行与 epsilon 在根号内；两 slot、变输入重放和无热 HYLE allocation；单 region 的普通入口 |
+
+CPU `ops.cpp:5105–5216` 的 get_rows 分派支持 F32/F16/BF16/I32；I32 使用原版同宽复制，
+不经过浮点数值转换。Gather 仍保留 checked leaf 边界，不能把动态 payload 检查吞进无检查 region。
+索引 repeat 的 `outer * index_count * sizeof(I32)` 中间存储、cont 和低精度 cast 均是实际成本；
+不能宣称所有索引布局零拷贝。公共 shape/alias/bounds 合同不变。
+
+另确认本卡早先所列 `get_rows_back` **不能直接覆盖 Scatter add**：它先归约更新再合并 base，
+而公共合同要求按逻辑顺序更新，F16/BF16 每次相加后立即舍入。即使最终 dtype 相同也不等价。
+`ggml_set_rows` 对重复目标的并发写也不能代签 last-update-wins。Scatter 保留为具名成熟承载
+缺口，本增量不接、不计覆盖，不以自己实现数学补洞。
+
+本次及前一检查点尚未入账的定向源码核对合计保守扣12分钟；源码/设计累计90分钟，剩余30分钟，
+总预算仍为120分钟。实现和预声明验证沿原预算/仪器；不触及冻结自研，也不重开旧 oneDNN Q2。
