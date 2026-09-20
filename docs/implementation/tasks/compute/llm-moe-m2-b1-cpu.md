@@ -92,8 +92,8 @@
   checked I32，也不能从 `ggml_backend_supports_op` 的 default-true 推导可运行。
 - 稳定 TopK：`ops.cpp:8480` 的 argsort comparator 只比较值，未建立 ties/NaN 全序；
   `ops.cpp:8585` 的 TopK 还主动交换前两个结果。不能签本需求的 stable/sorted 两输出。
-- all-masked Softmax：`ops.cpp:5674` 在指数和后要求 `sum > 0`，直接全负无穷不满足所需结果；
-  不能把无 mask 的普通样例推成全域资格。
+- all-masked Softmax：`ops.cpp:5676` 的标准 `assert(sum > 0)` 在 Debug 是运营输入风险；
+  Release 的全负无穷 NaN 与公共结果一致，不能误写成要求全零。完整 mask/类型/LogSoftmax 尚待资格。
 - 数组 min/max、Select、任意不可折叠 rank6 stride、受检查的浮点→索引转换，还需要具名成熟
   组合/后备接线。现有 oneDNN adapter 只接 MatMul/norm，不能假称已经接了整个 oneDNN 目录。
 - 首轮接线的特殊值核对进一步固定：原版 ReLU 将 NaN 变为0，SiLU/GELU及相应 gate 在
@@ -280,7 +280,7 @@ soft_relu 使用 log1p/exp；logistic 会截断部分负尾，swish 在负无穷
 
 Windows Release 直接链接本轮已构建的原版 ggml 静态库，仅运行无计时的独立语义探针：
 
-- 全负无穷 mask 的 Softmax 返回三个 NaN，不能代签公共的全零结果。
+- 全负无穷输入的 Softmax 返回三个 NaN；原先“公共要求全零”的解释已由下面合同复核撤回。
 - get_rows_back 后加 base 的 Scatter-add 组合，在 F32 base=2^24、F16 base=2048、BF16
   base=256，重复更新 `[1, -base]` 时均返回1；公共逐次更新/舍入合同均要求0。
 - 原版 SiLU 在负无穷返回 NaN，ReLU 在 NaN 返回0；Sigmoid(-100/-90) 与 Softplus(-20)
@@ -294,3 +294,12 @@ Windows Release 直接链接本轮已构建的原版 ggml 静态库，仅运行�
 
 本轮只读源码/方案核对记14分钟，累计116分钟，仍余4分钟；独立数值验证与构建单列，不进行
 无预算的来源扩张。现有21行完成门不变，未运行的全包验收不写 PASS。
+
+
+### 公共 Softmax 合同复核（2026-09-20）
+
+CUDA 接入核对共同语义时发现：当前[Compute 指南](../../../user/compute.md)明确规定无有效值行
+返回 NaN，F04.5/C0 没有改成全零。此前将原版 Release 的三个 NaN 判作数值不兼容是记录错误，
+已纠正 `remaining-numeric.json` 并保留原解释、原探针/库身份与原 archive，不重跑取有利结果。
+原版 Debug 的标准 assert、尚未接线及其它 dtype/mask/LogSoftmax 域仍未资格化；这不构成完整
+Softmax PASS，也不解除 oneDNN Q2。合同核对另计2分钟，CPU本卡累计118分钟、余2分钟。

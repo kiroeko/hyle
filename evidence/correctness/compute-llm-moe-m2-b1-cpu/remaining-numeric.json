@@ -8,7 +8,7 @@
     "initial_link_failure": "Missing Windows Advapi32 in standalone probe; fixed link input only; original log retained"
   },
   "qualification": {
-    "all_masked_softmax": "INCOMPATIBLE: original Release output NaN/NaN/NaN; required zeros",
+    "all_masked_softmax": "CORRECTED: original Release NaN/NaN/NaN matches the current public empty-valid-row NaN contract. Debug assert(sum > 0) and the full dtype/mask/LogSoftmax domain remain unqualified; not a zero-output contract.",
     "scatter_add_get_rows_back_then_base": "INCOMPATIBLE: actual 1 vs required 0 for bases 2^24 (F32), 2048 (F16), 256 (BF16), duplicate updates [1,-base]",
     "silu_negative_infinity": "INCOMPATIBLE: NaN vs registered limiting zero",
     "relu_nan": "INCOMPATIBLE: zero vs propagated NaN",
@@ -100,5 +100,16 @@
     "sha256": "ff7a457edc74b745105c25c3f70ccc384787bb742043a4d2d146e4cf07d4157c",
     "bytes": 27213,
     "files": 9
+  },
+  "contract_correction": {
+    "review_baseline": "4d46d4d0",
+    "previous_interpretation": "INCOMPATIBLE: original Release output NaN/NaN/NaN; required zeros",
+    "authority": [
+      "docs/user/compute.md: probability-normalization row; CUDA reduction/Softmax paragraph",
+      "docs/implementation/tasks/compute/llm-moe-coverage-matrix.json:F04.5 (no zero override)",
+      "tests/compute_provider_native/transformer_test.cc: empty-valid-row NaN semantic oracle"
+    ],
+    "raw_probe_and_archive": "unchanged",
+    "effect": "Remove this numerical incompatibility claim; retain Debug operational assertion and missing binding/qualification. No oneDNN Q2 recovery, no product pass."
   }
 }

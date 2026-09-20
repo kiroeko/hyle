@@ -36,7 +36,7 @@
   "confirmed_non_equivalence": [
     "CPU cumsum dispatches only F32, not checked I32",
     "argsort lacks stable tie/NaN ordering; top_k swaps first two outputs",
-    "softmax requires positive exponential sum, no all-masked qualification",
+    "CPU softmax Debug assert(sum > 0) remains an operational hazard; Release all-masked NaNs match the public contract, corrected in remaining-numeric.json",
     "ReLU maps NaN to zero; GELU/SiLU and split gates have incompatible negative-infinity limits",
     "Sigmoid overflows exp(-x) for negative tails; softplus log(1+exp(x)) loses small tails"
   ],
@@ -45,22 +45,44 @@
   "remaining_followup": {
     "baseline": "8fd4cb20b90d56255288e8c5a86b7d7cbdd5cb00",
     "decision": "No new Q2 recovery fact; user decision pending on independent oneDNN capability scope. Original ggml numerical counterexamples recorded separately; no frozen HYLE comparison.",
-    "source_design_budget_minutes": {"used": 116, "remaining": 4, "total": 120},
-    "execution_evidence": "remaining-numeric.json"
+    "source_design_budget_minutes": {
+      "used": 118,
+      "remaining": 2,
+      "total": 120
+    },
+    "execution_evidence": "remaining-numeric.json",
+    "contract_correction": "Two additional minutes to verify the registered Softmax NaN contract; removed the unsupported required-zeros assumption without rerunning any probe or performance."
   },
   "broadcast_reduce_followup": {
     "baseline": "b4094ca7cd3a385916ca1f7ca849542e3ff0751a",
     "decision": "Original repeat for general broadcast; grouped view_4d/cont followed by original Sum/Mean for selected axes; original repeat publishes empty identities. Only cold descriptor/program glue.",
-    "sources": ["src/ggml.c:2489-2534", "src/ggml.c:2584-2607", "src/ggml.c:3854-3873"],
-    "source_design_budget_minutes": {"used": 102, "remaining": 18, "total": 120},
+    "sources": [
+      "src/ggml.c:2489-2534",
+      "src/ggml.c:2584-2607",
+      "src/ggml.c:3854-3873"
+    ],
+    "source_design_budget_minutes": {
+      "used": 102,
+      "remaining": 18,
+      "total": 120
+    },
     "execution_verdict": "UNRUN"
   },
   "layout_followup": {
     "baseline": "4776264a09d69e89cff6ade945f8124bcdb1abd3",
     "decision": "Original ggml arbitrary-axis get_rows with I32 repeat; column-broadcast binary enables FP32 L2 graph composition. No new mathematical kernel.",
-    "sources": ["src/ggml.c:3954-3977", "src/ggml-cpu/ops.cpp:1789-1811", "src/ggml-cpu/ops.cpp:5105-5216", "src/ggml-cpu/binary-ops.cpp:49-112"],
+    "sources": [
+      "src/ggml.c:3954-3977",
+      "src/ggml-cpu/ops.cpp:1789-1811",
+      "src/ggml-cpu/ops.cpp:5105-5216",
+      "src/ggml-cpu/binary-ops.cpp:49-112"
+    ],
     "non_equivalence": "get_rows_back followed by base addition changes Scatter add order and per-update half rounding; duplicate set_rows cannot sign last-update-wins",
-    "source_design_budget_minutes": {"used": 90, "remaining": 30, "total": 120},
+    "source_design_budget_minutes": {
+      "used": 90,
+      "remaining": 30,
+      "total": 120
+    },
     "execution_verdict": "UNRUN"
   },
   "cpu_i_followup": {
