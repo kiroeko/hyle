@@ -143,7 +143,8 @@ owner 终止并取消其余请求，重建 owner 后恢复；数值 overflow 由
 adapter 与原版 IREE runtime，确认 `async/platform/posix/proactor.c` 的
 `iree_async_proactor_posix_drain_pending_semaphore_waits` 在 final callback 之后写
 `wait_op->base.next`，而原版 `async/operation.h` 明确允许 final callback 释放该操作。
-Windows 的 IOCP 路径不包含这次非法访问；其既有 PASS 不代签 POSIX。
+当时 Windows 原生门通过，但尚未证明 IOCP 的对应完成路径安全；其既有 PASS 不代签 POSIX，
+也不能排除普通混合链复用该操作内存时的缺陷。
 
 本项属于已审 I3/I6 的 callback 存储归还接缝，owner 与数学/普通接口范围不变。固定唯一 FIX：
 在调用 final callback **之前**清理操作上的 tracker 引用，callback 返回后不再访问操作；
@@ -151,6 +152,21 @@ Windows 的 IOCP 路径不包含这次非法访问；其既有 PASS 不代签 PO
 纠正；重用已经复现的 Scan/repeat/自动推进/尾回调测试和一次 ASan 纠正验证，随后执行普通
 Release 回归。登记本 FIX 时尚未修、未签 PASS；后续纠正结果见原生检查点。
 不以该具体缺陷重启 Q-VK 调查或冻结算子研究。
+
+### I3/I6 普通混合链发现的 IOCP 对应修复
+
+普通入口候选 `9deedc43` 在 Windows 的 IREE → ggml 混合 Graph 中出现读零地址；一次局部异常
+诊断把调用栈定位到 `ggml_vk_graph_cleanup` 释放 context 的 shared_ptr。原版
+`async/platform/iocp/proactor.c:iree_async_proactor_iocp_drain_pending_semaphore_waits`
+也在 final callback 后写 `wait_op->base.next = NULL`，违反同一原版操作归还合同。HYLE 的
+callback 已释放 operation，并可立即创建 ggml region 的执行资源；回调之后的写因此可能破坏
+刚复用该地址的对象。此前对 Windows 路径安全性的判断撤回。
+
+有限 FIX 与 POSIX 相同：只在精确 hash overlay 中把 tracker 清理移至 final callback 前；
+不改上游数学、调度器或 ggml 算子。仍属已审 I3/I6，不重开调查，最多两次同根因纠正。
+Windows 首次 HYLE ASan 配置没有插桩原版 IREE C runtime，未检出不能当作反证。I7 同时固定
+本 provider 在 HYLE ASan 配置下启用原版 IREE ASan，确认真实编译参数；不改公共插桩系统。
+登记本项时尚未修复/验收，原失败及源码事实必须保留，普通产品仍未关闭。
 
 ## 实施检查点：共同格式与 MXFP4 普通入口
 
