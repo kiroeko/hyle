@@ -1,0 +1,104 @@
+{
+  "kind": "Bounded original-library numerical qualification evidence; not HYLE product coverage",
+  "head_before_record": "8f9157eb077caaeede602b1a4aa0332f50e9d764",
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "machine": "Windows x64 MSVC 19.50 Release, existing CPU-only static ggml libraries; one native thread; CRT DLLs adjacent to probe EXE; no timing",
+  "build_and_execution": {
+    "final_exit_code": 0,
+    "initial_link_failure": "Missing Windows Advapi32 in standalone probe; fixed link input only; original log retained"
+  },
+  "qualification": {
+    "all_masked_softmax": "INCOMPATIBLE: original Release output NaN/NaN/NaN; required zeros",
+    "scatter_add_get_rows_back_then_base": "INCOMPATIBLE: actual 1 vs required 0 for bases 2^24 (F32), 2048 (F16), 256 (BF16), duplicate updates [1,-base]",
+    "silu_negative_infinity": "INCOMPATIBLE: NaN vs registered limiting zero",
+    "relu_nan": "INCOMPATIBLE: zero vs propagated NaN",
+    "sigmoid_and_softplus_small_tails": "OBSERVED DIFFERENCE; applicable error tolerance still must determine final eligibility, not a whole-model verdict",
+    "exp_small_tails": "Original exp(-100/-90) remains nonzero; possible input to a future qualified mature composition, not implementation authorization"
+  },
+  "scatter_probe_limit": "All counterexample inputs are exactly representable in the named storage. The proposed composition uses F32 get_rows_back and base addition, then final storage cast; it does not claim native BF16 get_rows_back support.",
+  "onednn": {
+    "scope_decision": "Pending user reply; owners remain BLOCKED",
+    "q2": "No new recovery fact; both A/A arms use the same DirectRoute/run and oneDNN factory. No Q2 native process or timing started.",
+    "candidate_interfaces": [
+      "binary_select/comparisons",
+      "reorder",
+      "soft_relu and necessary qualified mature combinations"
+    ],
+    "source_limits": "oneDNN reference logistic truncates negative tails; swish still has negative-infinity mismatch. Interface presence is not acceptance."
+  },
+  "source_design_budget_minutes": {
+    "used": 116,
+    "remaining": 4,
+    "total": 120
+  },
+  "frozen_hyle_operator_calls": 0,
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "sources": [
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-cpu\\vec.h",
+      "sha256": "926330bae1c5d003bd654035426e31381fafcdca23ffcc23201d219dbb97cbeb",
+      "bytes": 66060
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-cpu\\ops.cpp",
+      "sha256": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136",
+      "bytes": 417140
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\onednn-71094df45190-7ee703ecda81\\src\\common\\math_utils.hpp",
+      "sha256": "1fd2db3ef3780810aede2b9b6821f3be41e0cdfc84691ffd6b5626b340220ca7",
+      "bytes": 19856
+    },
+    {
+      "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sources\\onednn-71094df45190-7ee703ecda81\\include\\oneapi\\dnnl\\dnnl.hpp",
+      "sha256": "a5137e4f6e68a29ff38d5ba7ad471a8a6a9912ca02847d4a9087bca1c37bb7c5",
+      "bytes": 665616
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\bench\\graph_provider_onednn\\normalization_p1_bench.cc",
+      "sha256": "e07321f7edc455996b919059e3d8e44620d4d0f277bb517d0e79a842f132d6a3",
+      "bytes": 20438
+    }
+  ],
+  "libraries": [
+    {
+      "path": "C:\\hv\\m2b1-cpu\\bin\\ggml-base.lib",
+      "sha256": "2f6a0082d32c60d4c46c77252268b918d98f90da3d01420bc6f59c82696e4860",
+      "bytes": 5568914
+    },
+    {
+      "path": "C:\\hv\\m2b1-cpu\\bin\\ggml-cpu.lib",
+      "sha256": "9e8b42445f7b2196e771501fa7257ab2c4a21a94320fe46eb327ad5ba9f8e603",
+      "bytes": 3007176
+    },
+    {
+      "path": "C:\\hv\\m2b1-cpu\\bin\\ggml.lib",
+      "sha256": "1a23aa939c1fc33bb1ba59cc4469995e46e0bb328c61d052031b9b0fd6b71191",
+      "bytes": 650106
+    }
+  ],
+  "probe_executable_at_execution": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-cpu\\remaining-probe\\probe.exe",
+    "sha256": "b938fe5209d6943252017109bd09e99f9511cf9cd712609bd14be2cec36aba95",
+    "bytes": 1135104
+  },
+  "cleanup": {
+    "completed": true,
+    "files_removed": 12,
+    "bytes_removed": 2976272,
+    "scope": "Task-created probe EXE/OBJ/CRT DLLs in the exact owned remaining-probe directory; resolved paths checked before literal deletion",
+    "retained": "Probe source/scripts/logs, original archive and the active CPU development build"
+  },
+  "loc": {
+    "implementation_lines": 55066,
+    "files": 239,
+    "tests_and_vendors_excluded": true
+  },
+  "archive": {
+    "path": "remaining-numeric-raw.zip",
+    "sha256": "ff7a457edc74b745105c25c3f70ccc384787bb742043a4d2d146e4cf07d4157c",
+    "bytes": 27213,
+    "files": 9
+  }
+}

@@ -275,3 +275,22 @@ soft_relu 使用 log1p/exp；logistic 会截断部分负尾，swish 在负无穷
 若保持现有恢复限制，则 oneDNN 原样 BLOCKED，继续其他成熟接入及其他路线，B1 仍未完成。
 需要决定的原因是[现有 Q2 恢复条款](llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)
 和 registry 明确限制重新开启，而不是算子库存在权限或安全问题。
+
+### 有限原版数值核对
+
+Windows Release 直接链接本轮已构建的原版 ggml 静态库，仅运行无计时的独立语义探针：
+
+- 全负无穷 mask 的 Softmax 返回三个 NaN，不能代签公共的全零结果。
+- get_rows_back 后加 base 的 Scatter-add 组合，在 F32 base=2^24、F16 base=2048、BF16
+  base=256，重复更新 `[1, -base]` 时均返回1；公共逐次更新/舍入合同均要求0。
+- 原版 SiLU 在负无穷返回 NaN，ReLU 在 NaN 返回0；Sigmoid(-100/-90) 与 Softplus(-20)
+  另观察到小尾值截断。尾值的最终资格还须按适用误差门裁决，不能把“有数值差异”直接等同
+  于所有消费者不合格。原版 exp(-100/-90) 能返回非零值，保留为后续成熟组合的源码事实。
+
+该探针不调用冻结 HYLE 算子、不计模型覆盖，也不执行旧 Q2 或任何性能采样。初次独立链接
+缺少 Windows Advapi32，补齐系统库后同一探针正常结束；没有产品或 vendor 修改。
+源码、命令、库身份与完整输出见 `remaining-numeric.json` 和原始 archive。oneDNN 范围决定
+仍待用户回复，当前两 owner 保持原 BLOCKED；此处没有自动恢复或更改统计门。
+
+本轮只读源码/方案核对记14分钟，累计116分钟，仍余4分钟；独立数值验证与构建单列，不进行
+无预算的来源扩张。现有21行完成门不变，未运行的全包验收不写 PASS。

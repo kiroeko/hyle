@@ -24,3 +24,8 @@ MSVC Release shared、CPU-only、oneDNN-OFF，7个定向测试目标通过，含
 756组差分），另含非连续输入、空归约/空输出与scalar。普通 Graph 分组均值/广播/方差是
 单个原版 region，保留两请求和重放验证。计算仍使用原版 ggml，没有新增数学内核或性能采样。
 范围与前述开发检查点相同，完整B1和其它适用验收仍未完成。
+
+`remaining-numeric.json` 与 `remaining-numeric-raw.zip` 是直接调用锁定 ggml 的数值资格
+反例，不是新增产品能力：确认 all-masked Softmax、ordered Scatter-add 组合与特殊值差异；
+小尾值截断只记录事实，未代替适用误差门。该探针没有调用冻结 HYLE 算子或启动性能采样。
+oneDNN 新能力范围方案仍待用户决定，原 Q2 状态和失败记录未改。
