@@ -393,9 +393,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 SCOPED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
+      "summary": "M1-C7 AUDITED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
     },
     {
       "module": "compute_backend_cpu",
@@ -421,9 +421,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 SCOPED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
+      "summary": "M1-C7 AUDITED：成熟attention接入所需GQA公共形状语义与旧CPU不支持域隔离；仅S1–S3冷准入/说明/回归，既有自研attention数学冻结，不扩大旧算子。"
     },
     {
       "module": "compute_sched",

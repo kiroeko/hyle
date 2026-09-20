@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；component：`compute_ops`与`compute_provider_native`；阶段SCOPED。
+- owner：`/root`；component：`compute_ops`与`compute_provider_native`；阶段AUDITED。
 - baseline：`fb2be1c2`（完整身份由Git解析）；两个owner从M0的SCOPED移交，旧自研数学冻结不变。
 - trigger：M1-C实际接入的Qwen head256、Q/KV heads=8/2被
   `src/compute_ops/operation.cc::infer_attention`的同head检查拒绝；FlashInfer原版入口已经实际通过。
@@ -12,7 +12,7 @@
 - 依赖：已有TensorDesc/Operation、旧CPU Provider冷prepare；直接消费者为Compute/Graph与新CUDA Provider。
 - stop：下列有限改动和适用回归完成，不扩大为旧算法研究或其它语义目录。
 
-## 拟定审计与有限FIX
+## 审计与有限FIX（冻结）
 
 | ID | 能力与当前事实 | 允许改动 | 验收 |
 |---|---|---|---|
@@ -23,6 +23,10 @@
 原子拆分：S1只确定形状与含义，实际计算仍由准入成熟Provider承担；S2是缺失能力隔离，
 不扩旧算子、不研究其性能或改变数学。其它Provider冷注册未声明SDPA，不需要修改其算法。
 ownership、concurrency、completion、allocator、输出与mask生命周期均沿既有合同；无新增热路径字段。
+分组含义固定为Q head `h`使用KV head `h / (Qheads / KVheads)`；head数必须为正，空sequence
+不因此改为非法。BSHD/BHSD按既有layout确定head轴；mask仍面向Qhead的逻辑score shape。
+API/usability没有新增对象或重载，默认描述不变。S2只在`native_provider.cc`的冷分支拒绝
+非同head，`attention.cc`与实际kernel保持原blob，不引入运行期退回自研的路由。
 
 七问：无新第三方依赖；GQA需求来自已固定模型与原版接口；复用现有schema/错误；P0仅冷检查；
 无C/FFI；公开头/普通消费者三交付随M1-C验；guide明确同一SDPA的分组映射。
