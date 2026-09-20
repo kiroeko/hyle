@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；当前阶段 AUDITED；baseline `31be591067ea9a1a6773cb640bc138a00cf35c39`；
+- owner：`/root`；当前阶段 CANDIDATE；baseline `31be591067ea9a1a6773cb640bc138a00cf35c39`；
   SCOPED 检查点 `c0e65357`。实现必须在本次 AUDITED commit 之后。
 - 本卡 owner：`compute_provider_iree_vulkan`（已在 baseline 登记 QUEUED）、`compute_ops`。
   后者因具名压缩格式尚无自然 descriptor factory 的新消费者需求从 CLOSED 重开；不重审旧数学。
@@ -246,3 +246,26 @@ region F32 workspace。它们不是零开销承诺，也没有运行P1或比较�
 checked Scan/FP8、混合链、cancel/close/失败不发布输出、产品三交付、剩余host/OFF与全selected
 仍未决。本卡/父包保持AUDITED、聚合INCONCLUSIVE，新增完整覆盖仍 **0/256**。
 统一Compute+Graph **53,003行 / 230文件**，不含测试/vendor；M5前用户停止点保持。
+
+
+## 不可变候选与 I1–I7 完成
+
+候选 `0e5b276ae0894b9fc2cb88452c7ed468c4a8addc`；两个owner进入CANDIDATE。
+[最终收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/final-acceptance.json)
+与[父卡最终验收/七问](llm-moe-m1-vulkan-admission.md#不可变候选与最终验收)绑定本卡完整验收。
+
+| FIX | 最终实现与验证 |
+|---|---|
+| I1 | 具名FP8/MXFP4自然描述与普通MatMul；Windows/Air及WSL/Mini公共格式、边界/溢出和头测试通过 |
+| I2 | 原版C runtime、固定参数化制品、hash/许可和资源overlay；普通消费者六格三交付、搬移/隐藏producer通过 |
+| I3 | 实际enabled feature、共用native queue锁、原版proactor续执行；POSIX/IOCP callback释放后写分别纠正并通过实际原版C host ASan |
+| I4 | 真实VkDeviceMemory配额、分配失败回滚和释放归零；默认无quota表，私有driver/pipeline分配限制明示 |
+| I5 | 原版checked Scan/FP8与ggml MXFP4；Scan中间/最终overflow不发布输出、不运行下段，flag visibility错误保留caller output |
+| I6 | Direct/Graph自动混合链、两请求、旧结果、取消/放弃/close与accepted-prefix drain；callback尾部退休后才释放或重用 |
+| I7 | Windows/Air六格真实普通SDK、适用host插桩与三环境OFF，最终120selected/13skipped、P0与有限候选复核完成 |
+
+先前普通/native检查点的pending只描述当时状态。首次失格、真实ASan失败、fixture/环境纠正和
+主动中断七架构编译均保留；最终selector用显式SM89的独立上下文执行相同门，公共工具和发布
+默认值不变。原validation-layer opt-in用例保持SKIPPED，host插桩不签driver，Air无leak检测。
+FP8是原版转换+MatMul的片段级F32 workspace，非原生FP8 GEMM；实际feature/grid/buffer域和
+owner故障隔离仍有明确限制。七问/P0与LOC见父卡；无P1、自研比较或新增256格完整覆盖。

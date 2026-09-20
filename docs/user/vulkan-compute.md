@@ -22,7 +22,8 @@ HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph �
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
 当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 已接入原版递归片段、
-MXFP4/FP8 MatMul 和 checked I32 Scan；新增纵切的整包交付验收仍未完成，不代表全模型算子覆盖。
+MXFP4/FP8 MatMul 和 checked I32 Scan；新增纵切已通过 Windows/Air 普通 Direct/Graph、资源/失败
+与 source/static/shared 交付。验收限下述适用域，完整模型覆盖按 M2/M3 推进。
 IREE C runtime 与锁定的参数化程序由同一个 factor 交付；使用二进制 SDK 不需要 Python、MLIR
 或运行编译器。源码构建中的 Python 只用于核对和准备锁定资源。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
@@ -100,7 +101,7 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
   Graph使用同一描述和MatMul。初始域要求正尺寸、设备buffer/grid限制及保守split-K暂存上限。
   原版ggml承担计算和输出Cast；动态activation的对齐Copy、F32暂存及原厂编码计入实际成本。
   压缩权重不经逻辑F16 Copy；借用端口起点必须满足设备descriptor对齐，非法View在绑定时拒绝。
-  Windows/Air普通入口与重复消费已实测，完整三交付与性能验收尚未签字。
+  Windows/Air普通入口、重复消费和三交付已通过；本轮为P0成本验证，尚无新P1性能结论。
 - F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
 - 同三浮点类型的 Reduce Sum/Mean/Min/Max（任意合法轴集合/keepdim）和 Softmax/LogSoftmax
@@ -136,7 +137,7 @@ IREE 路径要求实际启用 synchronization2、timeline semaphore、scalar blo
 shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。当前锁定程序保守要求每个矩阵的
 元素数不超过 `min(maxComputeWorkGroupCount[0..2], maxStorageBufferRange/8)`，并满足64线程
 workgroup 限制。准备期拒绝超出域的 FP8；不会下载 payload 到 CPU 计算或在执行时改选实现。
-普通 Direct/Graph、变化输入、两个槽和混合片段已经在 Windows/Air 通过正确性验证；三交付仍待验收。
+普通 Direct/Graph、变化输入、两个槽和混合片段已在 Windows/Air 通过正确性与三交付验证。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
@@ -211,10 +212,10 @@ TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score
 长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。dense View 仍可有非对齐字节
 起点；准备时按排序核的设备对齐要求固定必要复制，计入根起点与累计别名偏移。
 目前通过 Windows static/shared 与 Air/Mini 正确性，以及 Windows/Air 三种 C++ 交付；
-完整 C1 与性能资格仍待 [C1-Y](../implementation/tasks/compute/llm-moe-c1-ggml-vulkan-region.md)
-验收，尚不称为性能优选。
+完整模型需求域与成熟路径性能资格按[当前 M2/M3 计划](../implementation/tasks/compute/llm-moe-coverage-completion-plan.md)
+推进，尚不称为性能优选。
 
-### 显式递归状态（M1-V 验收中）
+### 显式递归状态
 
 `GatedDeltaNet` 使用原版 ggml fused recurrence，输入依次是 Q、K、V、log decay、beta、初始状态。
 当前 Vulkan 接入域为 dense F32、相同 Q/V 头数和深度，深度为 16、32、64 或 128。

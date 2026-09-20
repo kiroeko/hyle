@@ -1,6 +1,6 @@
-# M1-V 进行中证据
+# M1-V 原版 ggml/IREE 接入验收
 
-当前不是 terminal record，新增模型完整覆盖仍为 **0/256**。
+当前候选为 `0e5b276a`，本包有限接入的实际验证已完成；五owner处于CANDIDATE。新增模型完整覆盖仍为 **0/256**。此前检查点的pending仅指当时状态。
 
 - `qvk-first-candidate.json`：IREE 单独 packed-FP4 候选失格、部分数值结果、未运行项及具名后续。
 - `qvk-first-candidate-raw.zip`：原样保留编译/运行日志、原输入/oracle、失败 VMFB、工具版本与
@@ -26,3 +26,18 @@ ggml `456172ec`（MIT）、ncnn `70e7bfd6`（BSD-3-Clause）、MNN `397f8533`（
 
 源码与工具都在本卡具名 scratch 内；产品只以 Windows checkout 为真相。资格结束后归档并
 清理下载/展开的工具及验证副本，保留项目共享依赖 cache 与模型。
+
+
+## 最终证据导航
+
+- `mxfp4-product.json`：普通具名MXFP4描述、Direct/Graph与两机资源/数值检查点。
+- `iree-native-checkpoint.json`：独立原版runtime、实际queue/feature/quota与原版异步程序；POSIX修复。
+- `iree-ordinary-checkpoint.json`：普通Scan/FP8、混合链与取消/失败/寿命；IOCP修复及真正原版C ASan。
+- `final-prerequisites.json` / `final-prerequisites-raw.zip`：Windows/Air六格普通source/static/shared，
+  WSL/Mini/Windows OFF、实际UBSan与flag visibility反例；所有首次fixture/环境失败保留。
+- `final-acceptance.json` / `final-selected-raw.zip`：120个selected PASS、13个skipped原因、SM89
+  硬件上下文与实际编译配置、原七架构中断记录、P0/有限复核、身份复用及清理收据。
+- `final-loc.json`：统一脚本53484行/232个Compute+Graph实现文件，排除测试/vendor。
+
+原版参数化recipe与资源overlay没有新增HYLE数学。此包P0不签P1/SOTA或全部模型支持；
+所有冻结自研保持原样，旧ggml CPU/oneDNN阻塞不由此解除。进入M5前停下等待用户。

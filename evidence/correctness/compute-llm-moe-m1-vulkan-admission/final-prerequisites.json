@@ -1,0 +1,44 @@
+{
+  "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+  "delivery_candidate": "27c6664c9186d89f31468e32de91596a8de3673c",
+  "product_equivalent_to": "c638662831712129f28ea8b3f956b7935a91aad3",
+  "ordinary_deliveries": {
+    "Windows": [
+      "source",
+      "static",
+      "shared"
+    ],
+    "Air": [
+      "source",
+      "static",
+      "shared"
+    ],
+    "status": "PASS"
+  },
+  "off": {
+    "Windows": "5/5 PASS",
+    "WSL": "5/5 PASS; public format UBSan",
+    "Mini": "5/5 PASS"
+  },
+  "flag_visibility": {
+    "Windows": "PASS / Release",
+    "Air": "PASS / original IREE C + HYLE host ASan"
+  },
+  "limits": [
+    "No physical noncoherent device claimed; actual PFN invalidation/error branch exercised",
+    "No P1 or GPU-driver sanitizer claim",
+    "New full model coverage remains 0/256"
+  ],
+  "archive": {
+    "path": "final-prerequisites-raw.zip",
+    "bytes": 524689,
+    "sha256": "4f330ff2d64739e91c4a1cba35eb74e117c2a9112c033408462aca5f4ee333e9",
+    "files": 52
+  },
+  "first_failures": [
+    "Windows delivery runner specified conflicting component/factor selectors; invocation only corrected",
+    "Air system Python stripped DYLD_LIBRARY_PATH; set inside Python, unchanged SDK bytes",
+    "Mini Python 3.9 lacks tarfile data filter; checked regular members then extracted",
+    "Mini private CMake tools were absent from PATH; resumed same workspace with registered tools"
+  ]
+}

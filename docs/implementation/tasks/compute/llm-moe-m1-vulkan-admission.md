@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；阶段：AUDITED；baseline：`0e9cf67dbb233132c081f711402ec9c2529d1c07`，
+- owner：`/root`；阶段：CANDIDATE；baseline：`0e9cf67dbb233132c081f711402ec9c2529d1c07`，
   Windows main，工作树干净。M1-G/R/C/A 已关闭各自有限范围。
 - 当前 owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、`graph_route_vulkan`。
   M1-G 只验 ggml 资源，M1-R 只验冷身份；本轮新的完整成熟 region / 外来原生程序消费者构成
@@ -214,3 +214,56 @@ Windows Release、Air Release/host ASan各10项CTest通过。Windows原版C runt
 及[子卡](llm-moe-m1-vulkan-iree-product.md)。IOCP与POSIX均修正final callback后访问操作内存的
 资源缺陷，没有扩张原版或冻结数学。三交付和剩余selected/host/OFF仍待验收，M1-V保持AUDITED。
 统一Compute+Graph **53,484行 / 232文件**，新增完整覆盖仍0/256。
+
+
+## 不可变候选与最终验收
+
+候选为 `0e5b276ae0894b9fc2cb88452c7ed468c4a8addc`；V1–V5 与子卡 I1–I7 已实现固定。
+产品输入与 `c6386628` 相同，后续只增加真实 SDK 样例和失败可见性测试。此前章节的未完成项
+保留为历史；当前结论见[最终收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/final-acceptance.json)。
+
+- Windows/Air 普通 Direct 与 Graph 的 source/static/shared 六格全部 PASS：显式非零递归状态、
+  checked I32 Scan、两种 FP8 scale、MXFP4、IREE→ggml→native Copy、重复/两槽与旧结果。
+  安装 prefix 搬移且 producer build 隐藏，许可/资源/私有导出检查通过；二进制消费者不安装
+  Python、不提供 MLIR、不运行编译器。Windows DLL 邻置，无 UAC。
+- Windows/WSL/Mini 的 Vulkan OFF/公共语义各5项通过，WSL 对具名格式实际启用 UBSan。
+  新增 flag invalidate 的成功/失败分支在 Windows Release、Air 原版 C runtime+HYLE host ASan
+  通过；失败不发布 caller output。测试拦截真实 PFN，不冒称已在物理 noncoherent heap 验收。
+- 最终 selector 的120个 selected gates 全部 PASS，13个 skipped reasons 原样保留，无P1。
+  默认七架构 CUDA 构建在2036秒时主动中断，原10个PASS、一个中断构建FAIL、109个未运行项
+  均保留。重新使用已有 CMake `CMAKE_CUDA_ARCHITECTURES=89-real`，在独立 toolchain identity
+  绑定 seed configure/实际 cache，运行相同120门。实际143个 ggml CUDA 编译单元只生成SM89；
+  该硬件回归不签其它CUDA架构，产品发布默认配置与公共selector均未改变。
+- Windows真实原版C ASan的取消fixture配额失败、Air loader环境丢失、Windows交付选择器冲突、
+  Mini Python/PATH准备失败均保留；只纠正具名调用/fixture后通过，不把首次失败改写为PASS。
+  普通 Release/ASan其余已通过项按身份复用。原有 opt-in validation-layer 测试仍为SKIPPED，
+  host插桩不签GPU driver，Air未启用leak检测。
+- 1001个Air交付产品/样例/构建输入与本候选逐一相同；6个先前ZIP的哈希和完整性核对通过。
+  单次与实现分离的有限复核检查 native_program、vulkan_iree、vulkan_run、普通consumer、
+  失败/寿命及公开文档，未发现新增产品缺陷；补齐上述 flag visibility 反例。没有新增子agent
+  审查或重开资格调查。源码研究预算已停止，所有冻结数学保持原样。
+
+### 七问与 P0 成本
+
+1. **第三方**：ggml `456172ec`/MIT 与 IREE `6ef606b6`/Apache-2.0 WITH LLVM-exception；
+   精确资源overlay、离线程序、flatcc/Vulkan headers与许可由factor锁定和交付，升级hash不匹配
+   明确失败。IREE单独packed-FP4失格保留；成熟分工是IREE Scan/FP8加ggml MXFP4。
+2. **完整性**：本卡主递归纵切与无模型标签的整数/压缩线性纵切，普通Direct/Graph、跨库组合、
+   状态/两请求/旧结果/失败/关闭和三交付已完成；全部模型数值域仍由M2/M3验收，新增覆盖0/256。
+3. **内部复用**：沿Mem/Error、既有NativeDevice的queue锁/feature/显存配额和路线Completion；
+   Graph只管理片段边界，原厂保持其融合、池、VM/proactor；没有通用执行器或新HYLE轮询线程。
+4. **性能/P0**：冷期固定规则与规划，每槽独立VM/元数据；热期计原版分配/编码、原生completion/
+   proactor线程、边界GPU copy、4字节Scan flag读回、FP8片段F32 workspace、ggml输出cont。
+   显式quota表按live allocation有成本；driver/pipeline私有内存不计入配额。无热搜索、计时、
+   编译器、整模型F32展开或零分配承诺；M1不签P1、SOTA或冻结自研输赢。
+5. **边界**：IREE C与ggml原生头只在私有第三方边界；公开仍是路线C++、具名格式、普通操作。
+   不增加模型loader、量化器或公共C产品。
+6. **交付**：新六格普通SDK加最终组件合同/15组产品三交付；source/static/shared同锁同资源，
+   OFF不取得IREE源码或探测Vulkan/CUDA SDK。原始命令、搬移/隐藏producer与导出证据均归档。
+7. **易用性**：[Vulkan指南](../../../user/vulkan-compute.md)、普通Compute/Graph package样例
+   给出支持域、原生资源、结果lease、取消与终止owner的区别，不要求用户管理Provider/VM/MLIR。
+
+统一脚本+self-check：Compute+Graph **53,484行/232文件**，全库1,070,104行，自实现不含测试
+148,669行；模块数字排除测试/vendor且包含冻结存量。归档后已清理结束的SDK/OFF/资格工具与
+中断构建副本及旧普通Vulkan构建，共约5.6GB；共享缓存、本地模型及活动构建保留。五owner先进入CANDIDATE，
+随后依法单独迁移CLOSED；本候选不因文档/状态提交改变，不重建或跑P1。M5前用户停止点保持。

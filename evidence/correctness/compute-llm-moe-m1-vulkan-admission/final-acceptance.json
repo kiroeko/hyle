@@ -1,0 +1,736 @@
+{
+  "scope": "M1-V finite original ggml/IREE admission; not M2/M3 full model coverage",
+  "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+  "candidate_tree": "ed71947211b4cdcf62c8cbdd947e3b853f1bb71b",
+  "baseline": "31be591067ea9a1a6773cb640bc138a00cf35c39",
+  "native_build_scope": {
+    "cmake_cuda_architectures": "89-real",
+    "machine": "W1-WIN RTX4070",
+    "method": "explicit seed configure using existing CMake variable; setting bound in separate selector toolchain identity and real CMakeCache; stock selector and 120 gates unchanged",
+    "previous_attempt": "seven-architecture native build intentionally interrupted after 2036s; 10 gates PASS, interrupted build FAIL, 109 downstream unrun; all original receipts retained",
+    "limits": "this factor run certifies SM89 hardware correctness, not new validation of other CUDA architectures; prior delivered Vulkan SDK evidence remains separately bound"
+  },
+  "selected": {
+    "verdict": "PASS",
+    "passed": 120,
+    "skipped": 13,
+    "gates": [
+      {
+        "id": "docs",
+        "status": "PASS"
+      },
+      {
+        "id": "closure",
+        "status": "PASS"
+      },
+      {
+        "id": "tool:tests/tooling/validation_selector_test.py",
+        "status": "PASS"
+      },
+      {
+        "id": "configure",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_backend_cpu",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_backend_cpu",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_backend_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_backend_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_ggml_runtime",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_ops",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_ops",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_cublas",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_cublas",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_flashinfer",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_ggml_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_ggml_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_ggml_vulkan",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_iree_vulkan",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_marlin",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_marlin",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_native",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_native",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_provider_onednn",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_provider_onednn",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_route_apple",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_route_cpu",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_route_cpu",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_route_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_route_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:compute_route_vulkan",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:compute_route_vulkan",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:container",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:container",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:container_concurrent",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:container_concurrent",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:container_intrusive",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:container_intrusive",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:container_queue",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:container_queue",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:container_text",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:container_text",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:core",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:core",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:error",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:error",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph_provider_ggml_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph_provider_ggml_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph_provider_onednn",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph_provider_onednn",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph_route_apple",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph_route_cpu",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph_route_cpu",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph_route_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph_route_cuda",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:graph_route_vulkan",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:graph_route_vulkan",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_core",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_http",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:io_http",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_http2",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:io_http2",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_tls",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:io_tls",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_transfer",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:io_transfer",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_watch",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:io_watch",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:io_websocket",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:io_websocket",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:math",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:math",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:mem",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:mem",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:mem_reclaim",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:mem_reclaim",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:mem_vm",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:mem_vm",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:obs",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:obs",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:platform",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:platform",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:platform_fs",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:platform_fs",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:platform_thread",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:platform_thread",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:process",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:process",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:sched",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:sched",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:simd",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:time",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:time",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:timer_queue",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:timer_queue",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:util_core",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:util_core",
+        "status": "PASS"
+      },
+      {
+        "id": "factor:util_runtime",
+        "status": "PASS"
+      },
+      {
+        "id": "headers:util_runtime",
+        "status": "PASS"
+      },
+      {
+        "id": "component-contract",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:compute",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:container",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:core",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:error",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:graph",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:io",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:math",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:mem",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:obs",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:platform",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:process",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:sched",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:simd",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:time",
+        "status": "PASS"
+      },
+      {
+        "id": "delivery:util",
+        "status": "PASS"
+      }
+    ],
+    "skipped_reasons": [
+      {
+        "id": "headers:compute_ggml_runtime",
+        "status": "SKIPPED",
+        "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+      },
+      {
+        "id": "factor:compute_provider_flashinfer",
+        "status": "SKIPPED",
+        "reason": "native route is not supported on Windows; correctness requires Linux; platform-excluded headers remain independently selected"
+      },
+      {
+        "id": "factor:compute_provider_ggml",
+        "status": "SKIPPED",
+        "reason": "audit-only SCOPED identity (or BLOCKED from SCOPED); no product implementation, headers or tests"
+      },
+      {
+        "id": "headers:compute_provider_ggml",
+        "status": "SKIPPED",
+        "reason": "no public-header seam change for this factor"
+      },
+      {
+        "id": "factor:compute_provider_ggml_metal",
+        "status": "SKIPPED",
+        "reason": "native route is not supported on Windows; correctness requires Darwin; platform-excluded headers remain independently selected"
+      },
+      {
+        "id": "headers:compute_provider_ggml_metal",
+        "status": "SKIPPED",
+        "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+      },
+      {
+        "id": "headers:compute_provider_ggml_vulkan",
+        "status": "SKIPPED",
+        "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+      },
+      {
+        "id": "headers:compute_provider_iree_vulkan",
+        "status": "SKIPPED",
+        "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+      },
+      {
+        "id": "factor:compute_route_apple",
+        "status": "SKIPPED",
+        "reason": "native route is not supported on Windows; correctness requires Darwin; platform-excluded headers remain independently selected"
+      },
+      {
+        "id": "factor:graph_route_apple",
+        "status": "SKIPPED",
+        "reason": "native route is not supported on Windows; correctness requires Darwin; platform-excluded headers remain independently selected"
+      },
+      {
+        "id": "headers:io_core",
+        "status": "SKIPPED",
+        "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+      },
+      {
+        "id": "headers:simd",
+        "status": "SKIPPED",
+        "reason": "no independently registered header suite; selected consumer/delivery gates cover the boundary, not header self-containment"
+      },
+      {
+        "id": "p1",
+        "status": "SKIPPED",
+        "reason": "no explicit frozen P1 card; sampling is never automatic"
+      }
+    ]
+  },
+  "reuse": {
+    "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+    "tree": "ed71947211b4cdcf62c8cbdd947e3b853f1bb71b",
+    "product_equivalent_to": "c638662831712129f28ea8b3f956b7935a91aad3",
+    "delivery_input_files": 1001,
+    "delivery_input_mismatches": [],
+    "existing_archives": {
+      "checked-queue-qualification-raw.zip": {
+        "bytes": 331007,
+        "sha256": "98e618bfe2972deb45cf1eb16c922e821e16aac74f8e57ef09a086fa4a5ecf1f"
+      },
+      "iree-native-checkpoint-raw.zip": {
+        "bytes": 2877637,
+        "sha256": "e61a59892de81b6f213b817ec3f14c14fb4f45ab13ee8a5a5cbafe03ab0aa7ba"
+      },
+      "iree-ordinary-checkpoint-raw.zip": {
+        "bytes": 189988,
+        "sha256": "baac74839e82c2a2212de2d8892180f14d01f723efc68f0e2c5ba6ea1dd16741"
+      },
+      "mxfp4-product-raw.zip": {
+        "bytes": 1439912,
+        "sha256": "b80f76e4328dc165110b6a653ef97222c22754a504c7ab7029ae19b2e4eac9f1"
+      },
+      "native-progress-raw.zip": {
+        "bytes": 1033397,
+        "sha256": "4155683545527ae93154f9f081325ce43cb6a6f89623578fbd1dbb4cb7dde9fe"
+      },
+      "qvk-first-candidate-raw.zip": {
+        "bytes": 206473,
+        "sha256": "4fd02aa83606b05f7ec1d53af3d5f51b7c172b90ab9debf75ba2060140911836"
+      }
+    }
+  },
+  "prerequisites": {
+    "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+    "delivery_candidate": "27c6664c9186d89f31468e32de91596a8de3673c",
+    "product_equivalent_to": "c638662831712129f28ea8b3f956b7935a91aad3",
+    "ordinary_deliveries": {
+      "Windows": [
+        "source",
+        "static",
+        "shared"
+      ],
+      "Air": [
+        "source",
+        "static",
+        "shared"
+      ],
+      "status": "PASS"
+    },
+    "off": {
+      "Windows": "5/5 PASS",
+      "WSL": "5/5 PASS; public format UBSan",
+      "Mini": "5/5 PASS"
+    },
+    "flag_visibility": {
+      "Windows": "PASS / Release",
+      "Air": "PASS / original IREE C + HYLE host ASan"
+    },
+    "limits": [
+      "No physical noncoherent device claimed; actual PFN invalidation/error branch exercised",
+      "No P1 or GPU-driver sanitizer claim",
+      "New full model coverage remains 0/256"
+    ],
+    "archive": {
+      "path": "final-prerequisites-raw.zip",
+      "bytes": 524689,
+      "sha256": "4f330ff2d64739e91c4a1cba35eb74e117c2a9112c033408462aca5f4ee333e9",
+      "files": 52
+    },
+    "first_failures": [
+      "Windows delivery runner specified conflicting component/factor selectors; invocation only corrected",
+      "Air system Python stripped DYLD_LIBRARY_PATH; set inside Python, unchanged SDK bytes",
+      "Mini Python 3.9 lacks tarfile data filter; checked regular members then extracted",
+      "Mini private CMake tools were absent from PATH; resumed same workspace with registered tools"
+    ]
+  },
+  "loc": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 1070104,
+      "files": 2998,
+      "selected_files": 5960,
+      "paths": [
+        "Git-tracked regular files (current working tree)"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 148669,
+      "files": 583,
+      "selected_files": 648,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute-graph-all)",
+      "code": 53484,
+      "files": 232,
+      "selected_files": 265,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute*",
+        "src/graph*"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "p0": [
+    "cold fixed binding; no hot provider search, timing or compiler dependency",
+    "original ggml fused recurrent output views/cont and boundary copies are charged",
+    "IREE lazy shared HAL/module, private VM per request, native completion/proactor threads",
+    "original runtime allocation/encoding and VkDeviceMemory pool are charged",
+    "bounded GPU boundary copies and checked Scan flag visibility before output publication",
+    "FP8 standard conversion uses region-sized F32 workspace; not native FP8 GEMM or whole-model expansion",
+    "optional quota token table on explicit allocation path; driver/private pipeline memory excluded"
+  ],
+  "bounded_review": {
+    "separate_phase": true,
+    "reviewer": "/root; no claim of independent sub-agent",
+    "scope": [
+      "native_program.cc",
+      "vulkan_iree.cc",
+      "vulkan_run.cc",
+      "ordinary Direct/Graph and package consumers",
+      "failure/lifetime tests and published guide"
+    ],
+    "result": "no additional concrete product defect found; added missing noncoherent-flag invalidation/error branch test",
+    "new_test": "VulkanLifetime.IreeNoncoherentFlagFailurePreservesCallerOutput; Windows Release and Air original-C+HYLE host ASan PASS"
+  },
+  "limits": [
+    "P0 only; no P1, SOTA or frozen self-written operator comparison",
+    "new model coverage 0/256; M2/M3 exact full domains remain unproven",
+    "host sanitizers do not certify Vulkan driver/device; Air leak detection disabled",
+    "native optional validation-layer test remains SKIPPED, not PASS",
+    "flag visibility test intercepts actual PFN calls; no physical noncoherent heap claim",
+    "first packed-FP4 IREE candidate remains rejected; qualified mature split is IREE Scan/FP8 plus ggml MXFP4",
+    "old ggml CPU and oneDNN BLOCKED records unchanged; all frozen math preserved"
+  ],
+  "archive": {
+    "path": "final-selected-raw.zip",
+    "sha256": "522740c7d1536324fadd806dd2e1e06c867f02eb4668e9c05309199ffa750e5e",
+    "bytes": 1346539,
+    "files": 323
+  }
+}
