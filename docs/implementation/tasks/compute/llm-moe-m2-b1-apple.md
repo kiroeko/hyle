@@ -209,3 +209,29 @@ host插桩、新域三交付、WSL OFF、最终selected门与不可变候选P1�
 本轮已清理Windows与Air各60,347,869字节的完整源码归档，以及Windows1,660,941字节的
 临时OFF构建；删除前核对绝对路径与任务owner。保留Air活动构建、依赖缓存和本地模型；
 必要日志归档为26,741字节证据包。本次记录变更仅执行docs/closure，不再构建或采样。
+
+## 待审增量：原版归约、掩码与概率归一化
+
+从`d1f6205b`继续同批B1，A-I1..3/A-S1保持。本增量先资格原版MLX Sum/Mean/Min/Max、
+Softmax以及其官方LogSoftmax组合；不读取、修改或计时冻结`apple_reduction.cc`数学。
+已有`apple_tensor.cc`的布局/Select/Unary/Binary/gate/norm均为原版调用或其组合，保持来源边界，
+复用独立测试；不因迁移重写已经合格的绑定。
+
+- 待资格域：F32/F16/BF16、F32累加、任意axis集/keep-dim、scalar/rank8/stride、空输出和空归约
+  identity、NaN/Inf/正负零；Softmax覆盖Bool/additive广播mask、scale、非末轴、全mask、长行、
+  大公共offset与两种输出形式。只用原版MLX与独立host oracle，不调用HYLE数学。
+- LogSoftmax直接采用锁定MLX `python/mlx/nn/layers/activations.py:66–75`的公开组合：先减max，
+  再减shifted输入的logsumexp；该来源明确防止大offset吞掉normalizer。C++原版ops负责计算。
+- 若原版Min/Max对NaN或signed zero与公共合同不同，只资格原版比较/any/where的有限修饰；
+  不增Metal核，不用与冻结实现比较替代独立oracle。空域由准备期shape确定。
+- P0为固定数量原版归约/逐元素调用，工作量O(input elements)，中间数组由MLX管理；临时与
+  mask/精度转换全部计费。先记录原版资格，再提交有限AUDITED接法，最后改产品分派。
+- 开发验证复用普通Direct/Graph的独立归约/概率与资源用例，新增原版primitive来源断言。
+  Mini/插桩/三交付/P1仍按整批预声明门；本scope记录只跑docs/closure。
+
+Scatter顺序问题的本轮有限需求核对：F02.2/F13.2矩阵要求重复目标求和，没有逐次storage舍入
+条款；现公开文档承诺更强。已登记且干净的llama.cpp `4c9233c0`在`llama-graph.cpp:2327–2353`
+依专家序号组合add；SGLang `06992c92`的`fused_moe_native.py:156–162`则先按top-k权重类型相乘，
+再sum后cast。两者不能证明所有模型要求统一的逐次低精度舍入，也不能仅凭此放宽现有公共合同。
+保留具名公共语义审计事项，后续在共享owner依法定界；本增量不改变Scatter API或其失败记录，
+不把成熟接入差异转成自研理由。源码/设计累计58/120分钟，余62分钟，同批预算不重置。
