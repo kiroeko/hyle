@@ -1,0 +1,39 @@
+{
+  "kind": "bounded source audit; no new execution or coverage verdict",
+  "baseline": "b2d2cfa68d1ac65483f8a2f091a9115cd0807baa",
+  "scoped_checkpoint": "e63a5d5ab0b840466116f084ba5d7df62090597b",
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "sources": [
+    {
+      "path": "include/ggml.h",
+      "sha256": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6"
+    },
+    {
+      "path": "src/ggml.c",
+      "sha256": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67"
+    },
+    {
+      "path": "src/ggml-cpu/ggml-cpu.cpp",
+      "sha256": "b620923a8966395ba9c5f2ee4acb35b8d42ea77a58943d7eb733a917c4c1cafb"
+    },
+    {
+      "path": "src/ggml-cpu/ops.cpp",
+      "sha256": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136"
+    },
+    {
+      "path": "src/ggml-cpu/unary-ops.cpp",
+      "sha256": "e63b382766f1b8c5ded1577be9704e85cb4e9cd24584f3e1474911a40146df33"
+    },
+    {
+      "path": "src/ggml-cpu/binary-ops.cpp",
+      "sha256": "2df261aadce36a20f5e3bf6961d4ca27b8c2d461afc41488361ee6ad09c1730d"
+    }
+  ],
+  "confirmed_non_equivalence": [
+    "CPU cumsum dispatches only F32, not checked I32",
+    "argsort lacks stable tie/NaN ordering; top_k swaps first two outputs",
+    "softmax requires positive exponential sum, no all-masked qualification"
+  ],
+  "action": "Implement original ggml admitted domains; qualify mature companion for remaining exact domains. No self-written math; no P1 started.",
+  "complete_requirement_cells": 0
+}

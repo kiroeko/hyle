@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU SCOPED：M1-G已满足原ggml资源恢复条件；定界21行成熟Direct/Graph批量接入、线程/资源与三交付。尚无产品FIX授权，自研冻结；oneDNN原Q2阻塞与预算保持。"
+      "summary": "M2-B1 CPU AUDITED：C1–C6原版ggml批量接线与线程/资源/Graph边界已固定；21行完整门保持，I32 Scan/稳定TopK/全mask等精确域仍需成熟补位。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
     },
     {
       "module": "graph_provider_onednn",
@@ -438,15 +438,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU SCOPED：M1-G已满足原ggml资源恢复条件；定界21行成熟Direct/Graph批量接入、线程/资源与三交付。尚无产品FIX授权，自研冻结；oneDNN原Q2阻塞与预算保持。"
+      "summary": "M2-B1 CPU AUDITED：C1–C6原版ggml批量接线与线程/资源/Graph边界已固定；21行完整门保持，I32 Scan/稳定TopK/全mask等精确域仍需成熟补位。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU SCOPED：M1-G已满足原ggml资源恢复条件；定界21行成熟Direct/Graph批量接入、线程/资源与三交付。尚无产品FIX授权，自研冻结；oneDNN原Q2阻塞与预算保持。"
+      "summary": "M2-B1 CPU AUDITED：C1–C6原版ggml批量接线与线程/资源/Graph边界已固定；21行完整门保持，I32 Scan/稳定TopK/全mask等精确域仍需成熟补位。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
     },
     {
       "module": "compute_provider_cublas",
