@@ -1,12 +1,72 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <memory>
+#include <set>
+#include <string>
 #include <string_view>
+
+#include <mlx/primitives.h>
 
 #include "reduction_test_support.h"
 
 namespace {
 using namespace apple_tensor_test;
+
+TEST(AppleIndexing, OrdinaryLoweringUsesOriginalMlxPrimitives) {
+  auto context = a::Context::create().value();
+  auto names = std::make_shared<std::set<std::string>>();
+  auto program = context.compile(
+      [names](const auto &input,
+              mx::Stream stream) -> hyle::Result<std::vector<mx::array>> {
+        HYLE_ASSIGN_OR_RETURN(
+            auto gathered, a::lower(c::Operation(c::Gather{}),
+                                    std::array{input[0], input[1]}, stream));
+        HYLE_ASSIGN_OR_RETURN(
+            auto prefix,
+            a::lower(c::Operation(c::Scan{.exclusive = true}),
+                     std::array{input[2]}, stream));
+        HYLE_ASSIGN_OR_RETURN(
+            auto top, a::lower(c::Operation(c::TopK{.count = 3}), prefix,
+                               stream));
+        std::vector outputs{gathered[0], prefix[0], top[0], top[1]};
+        auto pending = outputs;
+        std::set<std::uintptr_t> seen;
+        while (!pending.empty()) {
+          auto value = std::move(pending.back());
+          pending.pop_back();
+          if (!seen.insert(value.id()).second || !value.has_primitive())
+            continue;
+          names->insert(value.primitive().name());
+          for (const auto &argument : value.inputs())
+            pending.push_back(argument);
+        }
+        return outputs;
+      },
+      std::array{a::InputSpec{{7}, mx::float32},
+                 a::InputSpec{{3}, mx::int32}, a::InputSpec{{7}, mx::int32}});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_TRUE(names->contains("Gather"));
+  EXPECT_TRUE(names->contains("CumSum"));
+  EXPECT_TRUE(names->contains("ArgSort"));
+  for (const auto &name : *names) {
+    EXPECT_EQ(name.find("Custom"), std::string::npos) << name;
+    EXPECT_EQ(name.find("MetalKernel"), std::string::npos) << name;
+  }
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(std::array{
+      mx::array({1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F}),
+      mx::array({1, 0, 6}), mx::array({3, 1, 4, 1, 5, 9, 2})}).ok());
+  auto work = slot.submit().value();
+  auto output = work.wait();
+  ASSERT_TRUE(output) << output.error().message();
+  const auto arrays = output->get()->arrays();
+  ASSERT_EQ(arrays.size(), 4U);
+  EXPECT_EQ(values(arrays[0]), (std::vector<double>{2, 1, 7}));
+  EXPECT_EQ(values(arrays[1]), (std::vector<double>{0, 3, 4, 8, 9, 14, 23}));
+  EXPECT_EQ(values(arrays[2]), (std::vector<double>{23, 14, 9}));
+  EXPECT_EQ(values(arrays[3]), (std::vector<double>{6, 5, 4}));
+}
 
 mx::array source(mx::Dtype type) {
   if (type == mx::int64) {

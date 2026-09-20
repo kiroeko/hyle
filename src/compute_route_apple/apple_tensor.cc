@@ -14,6 +14,7 @@
 
 #include "apple_indexing.h"
 #include "apple_internal.h"
+#include "apple_mature_indexing.h"
 #include "apple_reduction.h"
 
 namespace hyle::compute::apple::detail {
@@ -235,8 +236,10 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
     if (operation.kind() == OperationKind::kGather ||
-        operation.kind() == OperationKind::kScatter ||
-        operation.kind() == OperationKind::kScan)
+        operation.kind() == OperationKind::kScan ||
+        operation.kind() == OperationKind::kTopK)
+      return lower_mature_indexing(operation, inputs, shape, stream);
+    if (operation.kind() == OperationKind::kScatter)
       return lower_indexing(operation, inputs, shape, stream);
     if (const auto *fill = operation.get_if<Fill>())
       return std::vector{
@@ -293,8 +296,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       return std::unexpected(Status::Unimplemented(
           "Apple arithmetic and Cast require F32/F16/BF16"));
     if (operation.kind() == OperationKind::kReduce ||
-        operation.kind() == OperationKind::kSoftmax ||
-        operation.kind() == OperationKind::kTopK)
+        operation.kind() == OperationKind::kSoftmax)
       return lower_reduction(operation, inputs, shape, stream);
     if (operation.kind() == OperationKind::kCast)
       return std::vector{mx::astype(inputs[0], type, stream)};

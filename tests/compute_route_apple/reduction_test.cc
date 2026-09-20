@@ -171,7 +171,7 @@ TEST(AppleReduction, SoftmaxMasksScaleAxesAndNonfiniteRows) {
                           -std::log(4.0)});
 }
 
-TEST(AppleReduction, TopKStableTiesRawStorageAndNativeMergeTiles) {
+TEST(AppleReduction, TopKStableTiesRawStorageAndLargeAxes) {
   auto context = a::Context::create().value();
   for (auto type : {mx::float32, mx::float16, mx::bfloat16}) {
     for (const auto &[width, count] : {std::pair{1, 1},
@@ -258,6 +258,49 @@ TEST(AppleReduction, TopKStableTiesRawStorageAndNativeMergeTiles) {
   }
 }
 
+TEST(AppleReduction, IntegerTopKKeepsExtremeValuesAndStableExactOrder) {
+  auto context = a::Context::create().value();
+  for (int width : {17, 129, 4097}) {
+    std::vector<std::int32_t> data(static_cast<std::size_t>(width) * 2);
+    for (std::size_t i = 0; i < data.size(); ++i)
+      data[i] = static_cast<std::int32_t>(i % 13) - 6;
+    const std::array special{(std::numeric_limits<std::int32_t>::min)(),
+                             (std::numeric_limits<std::int32_t>::max)(),
+                             16777217, 16777216, 16777217, 0, 0};
+    for (std::size_t i = 0; i < special.size(); ++i)
+      for (int row = 0; row < 2; ++row)
+        data[i * 2 + row] = special[i];
+    const auto input = ready(mx::transpose(
+        mx::array(data.data(), {width, 2}, mx::int32), {1, 0}, stream()));
+    const auto numbers = values(input);
+    const auto raw = bits(input);
+    for (bool largest : {false, true}) {
+      for (auto count : {1, 8, width}) {
+        auto output = execute_all(
+            context,
+            c::Operation(c::TopK{.count = static_cast<std::size_t>(count),
+                                 .largest = largest}),
+            std::array{input});
+        ASSERT_TRUE(output) << output.error().message();
+        ASSERT_EQ(output->size(), 2U);
+        EXPECT_EQ((*output)[0].dtype(), mx::int32);
+        EXPECT_EQ((*output)[1].dtype(), mx::int32);
+        const auto actual = bits((*output)[0]);
+        const auto indices = values((*output)[1]);
+        for (int row = 0; row < 2; ++row) {
+          const auto order = top_indices(
+              std::span(numbers).subspan(row * width, width), count, largest);
+          for (int col = 0; col < count; ++col) {
+            EXPECT_EQ(indices[row * count + col], order[col]);
+            EXPECT_EQ(actual[row * count + col], raw[row * width + order[col]]);
+          }
+        }
+      }
+    }
+    EXPECT_EQ(bits(input), raw);
+  }
+}
+
 TEST(AppleReduction, EmptyResultsAndPreparationRejections) {
   auto context = a::Context::create().value();
   const auto input = ready(mx::zeros({0, 17}, mx::bfloat16, stream()));
@@ -275,7 +318,7 @@ TEST(AppleReduction, EmptyResultsAndPreparationRejections) {
   EXPECT_FALSE(context.prepare(c::TopK{.count = 0}, spec));
   EXPECT_FALSE(context.prepare(c::TopK{.count = 18}, spec));
   EXPECT_FALSE(context.prepare(c::TopK{.axis = 2}, spec));
-  EXPECT_FALSE(
+  EXPECT_TRUE(
       context.prepare(c::TopK{}, std::array{a::InputSpec{{17}, mx::int32}}));
   EXPECT_FALSE(
       context.prepare(c::Softmax{.mask = c::MaskKind::kAdditive},

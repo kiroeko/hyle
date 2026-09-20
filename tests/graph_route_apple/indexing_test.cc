@@ -11,6 +11,78 @@ using namespace apple_tensor_test;
 namespace g = hyle::graph;
 namespace ga = g::apple;
 
+TEST(AppleGraph, IntegerSelectionFeedsGatherAcrossRepeatedNativeInvocations) {
+  auto context = a::Context::create().value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto score_desc =
+      c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{7})
+          .value();
+  const auto table_desc = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{7, 2}).value();
+  const auto scores = builder.input(score_desc).value();
+  const auto table = builder.constant(table_desc).value();
+  const auto selection =
+      builder.add_node(c::Operation(c::TopK{.count = 3}), std::array{scores})
+          .value();
+  const auto selected_values = builder.result(selection, 0).value();
+  const auto selected_indices = builder.result(selection, 1).value();
+  const auto gathered = builder.add(c::Gather{}, table, selected_indices).value();
+  ASSERT_TRUE(builder.publish(selected_values).ok());
+  ASSERT_TRUE(builder.publish(selected_indices).ok());
+  ASSERT_TRUE(builder.publish(gathered).ok());
+  auto graph = std::move(builder).finish().value();
+  const auto native_table = ready(
+      mx::reshape(mx::arange(14, mx::float32, stream()), {7, 2}, stream()));
+  auto program = ga::compile(context, graph, std::array{native_table});
+  ASSERT_TRUE(program) << program.error().message();
+  graph = {};
+  auto first = program->create_invocation().value();
+  auto next = program->create_invocation().value();
+  const std::array<std::int32_t, 7> first_scores{
+      16777216, 16777217, 16777217, 0,
+      (std::numeric_limits<std::int32_t>::max)(),
+      (std::numeric_limits<std::int32_t>::min)(), -1};
+  ASSERT_TRUE(first.bind(std::array{
+      mx::array(first_scores.data(), {7}, mx::int32)}).ok());
+  auto first_work = first.submit().value();
+  auto retained = first_work.wait();
+  ASSERT_TRUE(retained) << retained.error().message();
+  const auto retained_arrays = retained->get()->arrays();
+  const auto old_values = bits(retained_arrays[0]);
+  const auto old_table = bits(retained_arrays[2]);
+  EXPECT_EQ(values(retained_arrays[1]), (std::vector<double>{4, 1, 2}));
+  EXPECT_EQ(values(retained_arrays[2]), (std::vector<double>{8, 9, 2, 3, 4, 5}));
+  for (int phase = 0; phase < 3; ++phase) {
+    auto score_values = first_scores;
+    std::rotate(score_values.begin(), score_values.begin() + phase + 1,
+                score_values.end());
+    const auto input = mx::array(score_values.data(), {7}, mx::int32);
+    const auto raw = bits(input);
+    const auto order = top_indices(values(input), 3, true);
+    ASSERT_TRUE(next.bind(std::array{input}).ok());
+    auto work = next.submit().value();
+    auto output = work.wait();
+    ASSERT_TRUE(output) << output.error().message();
+    const auto arrays = output->get()->arrays();
+    ASSERT_EQ(arrays.size(), 3U);
+    const auto output_values = bits(arrays[0]);
+    const auto output_indices = values(arrays[1]);
+    const auto output_table = values(arrays[2]);
+    for (std::size_t i = 0; i < order.size(); ++i) {
+      EXPECT_EQ(output_values[i], raw[order[i]]);
+      EXPECT_EQ(output_indices[i], order[i]);
+      EXPECT_EQ(output_table[i * 2], order[i] * 2);
+      EXPECT_EQ(output_table[i * 2 + 1], order[i] * 2 + 1);
+    }
+    EXPECT_EQ(bits(retained_arrays[0]), old_values);
+    EXPECT_EQ(bits(retained_arrays[2]), old_table);
+  }
+  *program = {};
+  EXPECT_TRUE(context.close().ok());
+  EXPECT_EQ(bits(retained_arrays[0]), old_values);
+  EXPECT_EQ(bits(retained_arrays[2]), old_table);
+}
+
 TEST(AppleGraph, CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots) {
   for (auto type : {mx::float16, mx::bfloat16}) {
     for (const auto &[rows, width, experts] : {std::tuple{1, 129, 17},

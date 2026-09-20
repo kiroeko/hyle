@@ -71,17 +71,18 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   gate/norm 在 F32 求值，最终一次回到输入存储类型；norm 可用相同类型或 F32 scale/bias。
 - F32/F16/BF16/I32/I64/Bool 的 View、Copy、Fill、Select 和 Concat；Select 使用 Bool mask。
   支持 scalar、空维度、rank≤8、原生转置与广播，实际布局由 MLX 持有。
-- F32/F16/BF16 的 Reduce Sum/Mean/Min/Max、Softmax/LogSoftmax 与 TopK。Reduce 支持任意
+- F32/F16/BF16 的 Reduce Sum/Mean/Min/Max、Softmax/LogSoftmax。Reduce 支持任意
   axis 集/keep-dim，空集合为 0/NaN/+Inf/-Inf，Min/Max 传播 NaN 并保留 ±0 优先级；half Reduce
   和所有 Softmax 必须显式 F32 accumulation。Softmax 支持 scale、广播 Bool 或同类型 additive
   mask、任意 axis；未屏蔽的 NaN/+Inf 或全 -Inf 行产生全 NaN。
-- TopK 返回原始存储类型 values 与 I32 indices。同分含 ±0 按小索引优先，NaN 总在最后；
-  largest/smallest 均可，sorted=false 仍返回有序结果。k=1 用原生线性 ArgMin，k>1 用原生稳定
-  merge sort；MLX 内部排序空间和必要布局/精度转换仍有实际成本。Graph 用 `add_node()` 与
+- TopK 支持 F32/F16/BF16/I32，返回原始存储类型 values 与 I32 indices。同分含 ±0 按小索引
+  优先，NaN 总在最后；largest/smallest 均可，sorted=false 仍返回有序结果。使用原版 MLX
+  stable argsort 后取 k 项；完整排序、排序键和必要布局/精度转换计入成本。Graph 用 `add_node()` 与
   `result(node, 0/1)` 消费两个输出，Direct 从成功 result 的 `arrays()[0/1]` 读取。
 - Gather 接收上述六类 source 存储与 I32/I64 indices，支持任意轴、scalar/多维索引和原生布局；
   输出保留原始位。默认 checked 在 GPU 检查索引，负值和越界通过完成结果返回 OutOfRange，
-  不采用 MLX 的负索引 wrap。空输出不读取 payload；unchecked 要求调用方保证所有索引合法。
+  不采用 MLX 的负索引 wrap。原版比较/where 为 take 提供安全索引，失败结果不会发布。
+  空输出不读取 payload；unchecked 要求调用方保证所有索引合法。
 - Scatter assign 接上述六类 storage，保留原始位；add 接 F32/F16/BF16。重复目标按逻辑行主序
   更新：assign 最后项胜出，add 每次 F32 求和后舍入到 storage。返回新状态数组，输入与旧结果
   保持不变；结果可绑定为下次调用的状态输入。任意轴、scalar/多维 I32/I64 indices 和原生布局
@@ -90,7 +91,8 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   Metal 有序更新片段；单索引不排序。排序、必要布局整理、新结果及检查都计入资源和执行成本。
 - Scan 支持 I32/F32 任意轴 inclusive/exclusive 前缀。I32 检查所有数学前缀，包括 exclusive
   未写出的最终总和；溢出返回 OutOfRange。F32 允许原生并行重结合。非空 Scan、Gather output/
-  indices 的元素数≤INT32_MAX；整数 Scan 使用 I64 原生临时，成本包含转换、检查及最终状态读取。
+  indices 的元素数≤INT32_MAX；整数 Scan 使用原版 I64 cumsum 与比较/any，exclusive 由原版
+  slice/concatenate 移位，成本包含转换、检查及最终状态读取。
 - 二维 F32 MatMul、二维 unsigned affine Q4/group64/F32。其它 typed 域明确拒绝。
 
 Q4 weight 的 native dtype 是 uint32，shape
