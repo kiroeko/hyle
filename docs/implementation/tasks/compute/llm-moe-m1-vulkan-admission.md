@@ -191,5 +191,6 @@ manifest 变化选出的产品门仍是 SELECTED，留给固定后的产品候�
 closure（previous ref `2e4d8ecb`）、docs 和 diff；没有为状态/证据登记重建产品或运行 P1。
 
 IREE 普通接入与共同格式的新 owner 已转入[独立产品卡](llm-moe-m1-vulkan-iree-product.md)
-SCOPED；本卡已有三 owner 保持 AUDITED。IREE 相关产品改动等待该卡的有限合同固定，
-本卡原版 recurrent 已完成的范围与父包未决验收不变。
+AUDITED（经独立SCOPED检查点）；本卡已有三 owner 保持 AUDITED。IREE 相关产品改动严格限于
+该卡 I1–I7 已冻结的共同格式、实际native feature/queue/quota/异步片段适配和普通入口，禁止
+扩张自研数学。本卡原版 recurrent 已完成的范围与父包未决验收不变。

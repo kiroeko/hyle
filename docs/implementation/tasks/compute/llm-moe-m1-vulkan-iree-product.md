@@ -2,7 +2,8 @@
 
 ## Closure card
 
-- owner：`/root`；当前阶段 SCOPED；baseline `31be591067ea9a1a6773cb640bc138a00cf35c39`。
+- owner：`/root`；当前阶段 AUDITED；baseline `31be591067ea9a1a6773cb640bc138a00cf35c39`；
+  SCOPED 检查点 `c0e65357`。实现必须在本次 AUDITED commit 之后。
 - 本卡 owner：`compute_provider_iree_vulkan`（已在 baseline 登记 QUEUED）、`compute_ops`。
   后者因具名压缩格式尚无自然 descriptor factory 的新消费者需求从 CLOSED 重开；不重审旧数学。
 - 直接消费方：既有 AUDITED 的 `compute_route_vulkan`、`graph_route_vulkan`；同设备 native owner
@@ -68,3 +69,57 @@
    保留共享依赖缓存及本地2B模型。未运行门保持未决，不预写 PASS。
 
 本卡启动实现统计仍为 **51,953 行 / 222 文件**，排除测试和第三方。当前产品门未执行。
+
+## AUDITED：有限 FIX 与普通接口冻结
+
+资格证据来自父卡 `checked-queue-qualification.json` 与 `native-progress.json`。源码接缝为同 pin
+IREE `hal/drivers/vulkan/{logical_device,queue,allocator,buffer,sparse_buffer}.c`、`async/operations/semaphore.h`
+和原版 ggml native queue/feature 创建；只核对资源/生命周期，不研究冻结数学。
+
+| FIX | 固定裁决 | 普通形状、失败与成本 |
+|---|---|---|
+| I1 | FIX 共同 `low_precision.h` 格式描述；KEEP MatMul 逻辑推导 | `Float8ScaleMode`、`float8_activation_description(m,k,mode)`、`float8_weight_description(k,n,mode)`、`mxfp4_weight_description(k,n)`；只描述已有压缩内容，不量化、不加载模型 |
+| I2 | BORROW 原版 IREE runtime/VMFB，FIX module-owned 资源 overlay 与打包 | 参数化原版程序离线编译，运行端不调用编译器/Python。源码和两类SDK使用同一锁与程序；原版 compiler 不进入消费者依赖闭包 |
+| I3 | FIX ggml 实际启用 feature 与共享 queue 接缝；BORROW 原版异步续执行 | query/enable synchronization2；发布真正启用的 timeline/scalar/F16/storage16/Int64。IREE QueueSubmit2/BindSparse 经 NativeDevice::with_queue；完成用原版 semaphore-wait proactor，GPU payload不回落CPU |
+| I4 | FIX 可选实际显存计账 | private resource hooks 覆盖所有 IREE VkAllocateMemory/FreeMemory；调用前预留 QuotaAllocator，分配失败回滚，释放实际memory后退账。只有显式quota才维护token记录；不改原版pool/数学 |
+| I5 | BORROW 已资格化 checked Scan/FP8，FIX 私有输出发布 | I32暂存结果与标志由原版程序生成；异步完成及必要4字节读回后才复制公开输出/继续依赖片段；失败保留原输出。FP8保留region级F32 workspace，MXFP4调用原版ggml，不假称native FP8 GEMM |
+| I6 | FIX 本路线的片段接线和自动推进 | native-only原路径保持；含IREE时按实际完成继续下段，不提前向同队列提交等待尚未入队的工作。两请求VM/资源独立；最终Completion覆盖已接受前缀和晚到callback，取消/close先退休再释放 |
+| I7 | FIX 独立消费者、交付和验证 | 按本卡及父卡预声明门，不把原生probe代签产品；固定候选后执行适用selector/资源/三交付，未运行仍未决 |
+
+### 格式与选择
+
+FP8 两种模式复用既有 opaque storage 和 F32 logical dtype。activation 的物理 E4M3 字节为
+row-major `[M,K]`；weight 物理为 `[N,K]`，逻辑为 `[K,N]`。payload 后接 scale table：
+F32 block128 的 table 分别为 `[M,K/128]` 与 `[N/128,K/128]`，按4字节对齐；UE8 group32
+分别为 `[M,K/32]`、`[N,K/32]`。首个合格域要求完整块，factory 明确拒绝余块与溢出。
+公共具名格式ID描述数值编码，不表示 Provider；消费者只用普通 MatMul 与上传/绑定。
+
+MXFP4 采用原版32值/17字节块，物理 `[N,K]`、逻辑 `[K,N]`，block axis=0、stride分别为
+17 和 `K/32*17`；逻辑dtype F16，普通 F16 activation × weight，F32 accumulation后输出F16。
+其原版 `mul_mat` / cast / cont 成本明示。没有把 FP4 改叫整数 Q4，也没有修改 QuantizedMatMul。
+
+IREE Scan 首个普通域为 dense I32、末轴、正形状；其余已存在功能保持冻结，广覆盖与布局成批接线
+仍归 M2。prepare 校验实际feature、布局、容量、workspace和设备上限，只选择资格范围；热执行
+不探测、不搜索、不计时，不要求模型标签或用户排序。模型/硬件/软件 identity 继续沿 M1-R。
+
+### 原生 owner 与异步边界
+
+- `compute_provider_iree_vulkan` 私有独立 Device/Program/Invocation 持有原版 HAL/VM/池；
+  `compute_route_vulkan` 保有公共 Context/Program/Invocation/Completion，Graph 只 lowering。
+- IREE device 懒建并保留 ggml NativeDevice 的独立副本，不保留其上层 Device，消除引用环。
+  一个共享 HAL group/module，独立 VM contexts；来源VkDevice/queue不能由IREE销毁。
+- 初版采用已验证有界GPU复制：输入、输出与必要flag readback明确计费；不以未经资格的私有
+  borrowed-buffer 优化阻塞接入。保留原压缩输入，禁止展开整模型为常驻F32。
+- 每个IREE invocation预留自己的native copy命令、状态与续执行记录；原版程序仍可能分配/编码。
+  IREE proactor回调只推进片段，不能阻塞等待GPU；同一个Runtime的修改仍由本路线mutex保护。
+  completion/error路径必须覆盖回调尚未返回的保活，close不能在锁内等待需要该锁的回调。
+- IREE resource overlay只包围资源创建/释放与queue host访问。实际memory计账不包含driver/pipeline
+  内部分配，与现有ContextOptions合同一致。显式quota路径允许按live allocation数扫描token表；
+  默认无quota无该表/锁；模型数学无变化。
+- 依赖锁、patch/原版程序制品、许可、离线资源映射、policy中的具名owner/platform事实归本factor
+  的接入改动；不改变公共selector算法或引入新的治理机制。资源hash/升级必须显式失败，不能静默换pin。
+
+自然调用保持 `vulkan::prepare(context, MatMul{}, activation_desc, weight_desc)` / `Scan{}`，以及
+普通 `graph::vulkan::compile`。本卡只增加格式说明与私有适配，禁止要求用户直接管理 VM/MLIR。
+七问裁决：成熟实现承载、明确有限域、复用Mem/Error/native owner、P0完整计费、私有C边界、
+三交付同源、普通接口可达；实现及适用验收尚未签字。调查未新增预算，按上述有限FIX开始实施。

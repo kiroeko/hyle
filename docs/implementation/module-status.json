@@ -393,9 +393,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V IREE普通接入SCOPED：具名FP8/MXFP4格式、独立原版runtime/制品、native资源/配额/异步片段边界与三交付；先固定有限FIX，未授权产品修改。自研冻结，覆盖0。"
+      "summary": "M1-V IREE普通接入AUDITED：I1–I7冻结具名低精度格式、原版runtime/制品、实际显存配额、共享queue/原版proactor续执行、普通Direct/Graph及三交付；自研冻结，覆盖0。"
     },
     {
       "module": "compute_backend_cpu",
@@ -605,9 +605,9 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V IREE普通接入SCOPED：具名FP8/MXFP4格式、独立原版runtime/制品、native资源/配额/异步片段边界与三交付；先固定有限FIX，未授权产品修改。自研冻结，覆盖0。"
+      "summary": "M1-V IREE普通接入AUDITED：I1–I7冻结具名低精度格式、原版runtime/制品、实际显存配额、共享queue/原版proactor续执行、普通Direct/Graph及三交付；自研冻结，覆盖0。"
     }
   ]
 }
