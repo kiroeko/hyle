@@ -76,9 +76,10 @@ cuBLASLt/Marlin/kernel artifact；captured 热执行直接重放原生程序。�
 重复执行；bind/reset 改变绑定会使 preparation 失效，需要重新冷准备。两个并发 run 各有独立
 scratch/captured pointers，外部 input/output 不应产生未排序的冲突访问。
 
-CUDA13.3/CCCL3.3.4/SM89的普通Scan/TopK由原版CCCL承载，Graph为每个invocation规划独立workspace。
+CUDA13.3/CCCL3.3.4/SM89的普通Scan/TopK/Gather由原版CCCL承载，Graph为每个invocation规划独立workspace。
 它们属于managed commands，`kRequirePrepared`编译策略会跳过这些候选；普通prefer-capture如实
-报告commands。I32 Scan需要等待GPU的两个溢出检查标量，Provider以`blocks_host=true`如实声明。
+报告commands。I32 Scan与checked Gather需要等待GPU的两个验证标量，Provider以`blocks_host=true`
+如实声明；非法索引保留整个Gather输出并使该invocation退役，下一次请求须创建新invocation。
 `HostWaitPolicy`控制跨队列依赖的host等待，不取消Provider内部的必要检查；普通单队列入口仍可
 使用默认选项。执行期不临时改选Provider。
 

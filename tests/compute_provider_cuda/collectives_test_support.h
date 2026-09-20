@@ -249,4 +249,62 @@ void topk(Context &context, std::span<const std::int64_t> shape,
     indices.guard();
   }
 }
+template <class Bits, class Index>
+void gather(Context &context, DataType dtype,
+            std::span<const std::int64_t> shape, std::int32_t requested_axis,
+            std::span<const std::int64_t> index_shape, int source_mode,
+            int index_mode) {
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto queue = context.create_queue().value();
+  const auto axis = static_cast<std::size_t>(
+      requested_axis < 0 ? requested_axis + static_cast<int>(shape.size())
+                         : requested_axis);
+  SCOPED_TRACE(::testing::Message()
+               << static_cast<int>(dtype) << '/' << sizeof(Index) << '/'
+               << requested_axis << '/' << source_mode << '/' << index_mode);
+  const auto desc = description(dtype, shape, axis, source_mode);
+  const auto idesc = description(
+      sizeof(Index) == 8 ? DataType::kInt64 : DataType::kInt32, index_shape,
+      index_shape.empty() ? 0 : index_shape.size() - 1, index_mode);
+  Tensor source(desc, memory.ref(), true), indices(idesc, memory.ref(), true);
+  std::vector<Bits> data(desc.element_count().value());
+  for (std::size_t i = 0; i < data.size(); ++i)
+    data[i] = dtype == DataType::kBool
+                  ? static_cast<Bits>(i & 1u)
+                  : static_cast<Bits>(0x7fc000018123ULL + i * 0x9e3779b1ULL);
+  std::vector<Index> ids(idesc.element_count().value());
+  for (std::size_t i = 0; i < ids.size(); ++i)
+    ids[i] = static_cast<Index>((i * 3 + 1) % shape[axis]);
+  source.write<Bits>(data);
+  indices.write<Index>(ids);
+  data = source.read<Bits>();
+  ids = indices.read<Index>();
+  auto program = prepare(context, Gather{.axis = requested_axis}, desc, idesc,
+                         memory.ref());
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->provider().id, cuda_native::kCcclProviderId);
+  EXPECT_TRUE(program->runtime_properties().blocks_host);
+  auto scratch = workspace(*program, memory.ref());
+  auto slot = program->create_invocation(scratch.view()).value();
+  Tensor output(program->output_description(0).value(), memory.ref());
+  auto done = slot.submit(queue, source.view.as_const(),
+                          indices.view.as_const(), output.view);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  const auto actual = output.read<Bits>();
+  std::size_t outer = 1, inner = 1;
+  for (std::size_t d = 0; d < axis; ++d)
+    outer *= shape[d];
+  for (std::size_t d = axis + 1; d < shape.size(); ++d)
+    inner *= shape[d];
+  for (std::size_t group = 0; group < outer; ++group)
+    for (std::size_t selected = 0; selected < ids.size(); ++selected)
+      for (std::size_t col = 0; col < inner; ++col)
+        ASSERT_EQ(actual[(group * ids.size() + selected) * inner + col],
+                  data[(group * shape[axis] + ids[selected]) * inner + col]);
+  EXPECT_EQ(source.read<Bits>(), data);
+  EXPECT_EQ(indices.read<Index>(), ids);
+  output.guard();
+}
 } // namespace cccl_test

@@ -190,3 +190,14 @@ Add→Sqrt→Divide 组合继续承载 L2，不能替换成同名原子。
 
 该子卡与本卡共享同一120分钟源码/设计额度；当前累计 **96分钟、余24分钟**，不另开研究预算。
 统一Compute+Graph实现 **56,172行/244文件**（不含测试/vendor），完整需求覆盖仍为0/256。
+
+### 原版 Gather 开发结果
+
+同一[CUDA-I卡](llm-moe-m2-b1-cuda-collectives.md)的I5在`fa65e0dc`独立定界、`4a2b4b32`
+冻结原版资格后接入。CCCL的DeviceReduce Min/Max与Thrust Gather承载F02.1，保留全部plain
+storage位、I32/I64索引、任意轴/stride和checked输出不变。Windows10/10 CTest、105次
+GoogleTest执行通过；普通TopK→Gather两slot与失败恢复也实跑通过，不改旧自研数学。
+
+预算与所有子卡共享，累计 **110/120分钟、余10分钟**。统一Compute+Graph实现
+**56,374行/244文件**（不含测试/vendor）。Scatter等未绑定域与完整跨平台/交付/插桩/P1
+仍未完成，状态AUDITED；本检查点不签完整需求覆盖格。

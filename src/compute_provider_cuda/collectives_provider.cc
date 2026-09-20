@@ -30,8 +30,10 @@ runtime(const collectives::Program &program) noexcept {
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kCaller,
           .replay_class = ProviderReplayClass::kManaged,
-          .blocks_host = program.kind == collectives::Kind::kScan &&
-                         program.type == collectives::Type::kInt32,
+          .blocks_host =
+              (program.kind == collectives::Kind::kScan &&
+               program.type == collectives::Type::kInt32) ||
+              (program.kind == collectives::Kind::kGather && program.checked),
           .uses_private_threads = false,
           .supports_concurrent_invocations = true,
           .capture_compatible = false};
@@ -43,9 +45,10 @@ Status describe(Operation operation, std::span<const TensorDesc> inputs,
   *program = {};
   const auto *scan = operation.get_if<Scan>();
   const auto *topk = operation.get_if<TopK>();
-  if ((!scan && !topk) || inputs.size() != 1 ||
+  const auto *gather = operation.get_if<Gather>();
+  if ((!scan && !topk && !gather) || inputs.size() != (gather ? 2u : 1u) ||
       outputs.size() != (topk ? 2u : 1u))
-    return Status::Unimplemented("CCCL supports Scan and TopK");
+    return Status::Unimplemented("CCCL supports Scan, TopK and Gather");
   const auto &source = inputs[0];
   if (!source.valid() || !source.is_plain() || source.rank() == 0)
     return Status::Unimplemented("CCCL requires plain rank-positive input");
@@ -55,6 +58,45 @@ Status describe(Operation operation, std::span<const TensorDesc> inputs,
   if (!std::ranges::equal(outputs, std::span(inferred).first(outputs.size())))
     return Status::InvalidArgument(
         "CCCL output descriptions differ from inference");
+  if (gather) {
+    const auto &indices = inputs[1];
+    const auto count = outputs[0].element_count();
+    const auto index_count = indices.element_count();
+    const auto width = data_type_size(source.data_type());
+    if (!indices.is_plain() || !count || !index_count || *count > INT32_MAX ||
+        *index_count > INT32_MAX ||
+        (width != 1 && width != 2 && width != 4 && width != 8))
+      return Status::Unimplemented(
+          "CCCL Gather type or index capacity exceeded");
+    for (const auto &description : inputs) {
+      const auto bytes = description.required_bytes();
+      if (!bytes || *bytes > static_cast<std::size_t>(
+                                 std::numeric_limits<std::ptrdiff_t>::max()))
+        return Status::Unimplemented("CCCL Gather storage span exceeded");
+    }
+    program->kind = collectives::Kind::kGather;
+    program->count = *count;
+    program->element_bytes = width;
+    program->checked = gather->bounds == IndexBoundsPolicy::kChecked;
+    program->rank = static_cast<std::uint32_t>(source.rank());
+    program->dense = source.is_dense();
+    std::ranges::copy(source.dimensions(), program->dimensions);
+    std::ranges::copy(source.byte_strides(), program->strides);
+    const auto axis = static_cast<std::size_t>(
+        gather->axis < 0
+            ? gather->axis + static_cast<std::int32_t>(source.rank())
+            : gather->axis);
+    program->width = static_cast<std::size_t>(source.dimensions()[axis]);
+    program->index_count = *index_count;
+    program->index_i64 = indices.data_type() == DataType::kInt64;
+    program->index_rank = static_cast<std::uint32_t>(indices.rank());
+    std::ranges::copy(indices.dimensions(), program->index_dimensions);
+    std::ranges::copy(indices.byte_strides(), program->index_strides);
+    if (*count != 0)
+      for (std::size_t i = axis + 1; i < source.rank(); ++i)
+        program->inner *= static_cast<std::size_t>(source.dimensions()[i]);
+    return Status::Ok();
+  }
   switch (source.data_type()) {
   case DataType::kFloat32:
     program->type = collectives::Type::kFloat32;
@@ -144,8 +186,9 @@ Status propose(void *value, const detail::ProviderOperationRequest &request,
   cuda::detail::ScopedPrimaryContext scope(context.primary);
   HYLE_RETURN_IF_ERROR(scope.status());
   HYLE_RETURN_IF_ERROR(cuda::status(collectives::configure(&program)));
-  inputs[0] = {.required_properties = mem::MemoryProperty::kDeviceAccessible,
-               .minimum_alignment = 1};
+  for (auto &input : inputs)
+    input = {.required_properties = mem::MemoryProperty::kDeviceAccessible,
+             .minimum_alignment = 1};
   for (std::size_t i = 0; i < outputs.size(); ++i)
     outputs[i] = {.required_properties = mem::MemoryProperty::kDeviceAccessible,
                   .minimum_alignment =
@@ -212,6 +255,13 @@ detail::EnqueueResult submit(void *value, void *slot, Queue &queue,
   auto input = cuda::detail::const_pointer(inputs[0].storage(), 1, 1);
   if (!input)
     return detail::EnqueueResult::rejected(std::move(input).error());
+  const void *index_input = nullptr;
+  if (inputs.size() == 2) {
+    auto pointer = cuda::detail::const_pointer(inputs[1].storage(), 1, 1);
+    if (!pointer)
+      return detail::EnqueueResult::rejected(std::move(pointer).error());
+    index_input = *pointer;
+  }
   auto values = cuda::detail::mutable_pointer(outputs[0].storage(),
                                               prepared.output_alignment, 1);
   if (!values)
@@ -236,13 +286,15 @@ detail::EnqueueResult submit(void *value, void *slot, Queue &queue,
         "CCCL managed execution does not accept external capture"));
   bool overflow = false;
   status = cuda::status(collectives::submit(
-      prepared.program, *input, *values, indices,
+      prepared.program, *input, index_input, *values, indices,
       static_cast<Invocation *>(slot)->workspace, *stream, &overflow));
   if (!status.ok())
     (void)cudaStreamSynchronize(*stream);
   else if (overflow)
     status = Status::OutOfRange(
-        "CCCL integer scan prefix exceeds int32; output unchanged");
+        prepared.program.kind == collectives::Kind::kGather
+            ? "CCCL Gather index out of range; output unchanged"
+            : "CCCL integer scan prefix exceeds int32; output unchanged");
   return detail::EnqueueResult::accepted_command(std::move(status));
 }
 const detail::ProviderPreparedVTable kPrepared{

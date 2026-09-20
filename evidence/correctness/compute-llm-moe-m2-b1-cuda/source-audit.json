@@ -67,14 +67,14 @@
   "remaining": [
     "ggml empty tensor and nonrepresentable high-rank/odd-byte-stride paths",
     "other storage types and checked index cast",
-    "dynamic Gather/Scatter; CCCL Scan/TopK Windows development passed but full applicable acceptance remains",
+    "dynamic Scatter; CCCL Scan/TopK/Gather Windows development passed but full applicable acceptance remains",
     "Select/min/max, stable activation/gates, Boolean Softmax mask and LogSoftmax qualification",
     "cross-environment delivery, sanitizer and immutable-candidate performance gates"
   ],
   "softmax_contract_correction": "Public no-valid-row result is NaN, not zero; CPU Release numeric rejection corrected in fd37c586. Native Debug and full-domain qualification remain distinct. No oneDNN Q2 recovery.",
   "source_design_budget_minutes": {
-    "used": 96,
-    "remaining": 24,
+    "used": 110,
+    "remaining": 10,
     "total": 120
   },
   "performance_samples": 0,
@@ -121,5 +121,17 @@
     "resources": "Caller-owned per-slot workspace; shared native stream, managed replay; I32 Scan returns two validation scalars and blocks host; output written only after validation",
     "execution_evidence": "collectives-windows.json",
     "card_verdict": "INCONCLUSIVE; Windows development pass does not close B1 or full applicable acceptance"
+  },
+  "fourth_binding": {
+    "audited_checkpoint": "4a2b4b32178dd72f5f2262fe689d5bb2e4dc0f47",
+    "owner": [
+      "compute_provider_cuda"
+    ],
+    "operation": "Original Thrust Gather with CUB Min/Max checked I32/I64 indices; plain 1/2/4/8-byte storage preserved",
+    "domain": "CUDA13.3 toolkit/runtime, CCCL3.3.4, SM89; public rank/axis/byte strides; dense output; output/indices<=INT32_MAX, storage spans<=PTRDIFF_MAX; no output alias",
+    "projection": "Only scalar index/type/axis/byte-address projection; no custom gather loop/kernel",
+    "resources": "Caller per-slot checked workspace; 16-byte validation summary/host wait; unchecked no workspace; native stream/Completion; empty output no payload read",
+    "execution_evidence": "gather-windows.json",
+    "card_verdict": "INCONCLUSIVE; Windows development pass does not close full B1 or cross-platform/delivery/performance gates"
   }
 }

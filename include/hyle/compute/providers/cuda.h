@@ -85,15 +85,19 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
 // workspace or slot state. Other norms/layouts remain separate candidates.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 
-// Original CCCL3.3.4 device collectives, qualified with CUDA13.3 toolkit/runtime
-// on SM89. Other versions/architectures decline during cold preparation.
-// Scan accepts F32/I32; integer overflow, including the exclusive final total,
-// fails without writing output. TopK accepts F32/F16/BF16/I32, preserves source
-// bits, puts NaNs last and retains original index order for equal keys.
-// Both accept plain rank<=8 byte strides, dense outputs, count<=INT32_MAX,
-// and no aliases. Allocate workspace_requirement() bytes per invocation;
-// ordinary Graph plans that workspace. Execution is managed, and checked I32
-// Scan waits on a two-scalar GPU validation summary. No external capture.
+// Original CCCL3.3.4 device collectives, qualified with CUDA13.3
+// toolkit/runtime on SM89. Other versions/architectures decline during cold
+// preparation. Scan accepts F32/I32; integer overflow, including the exclusive
+// final total, fails without writing output. TopK accepts F32/F16/BF16/I32,
+// preserves source bits, puts NaNs last and retains original index order for
+// equal keys. Both accept plain rank<=8 byte strides, dense outputs,
+// count<=INT32_MAX, and no aliases. Allocate workspace_requirement() bytes per
+// invocation; ordinary Graph plans that workspace. Execution is managed, and
+// checked I32 Scan waits on a two-scalar GPU validation summary. No external
+// capture. Gather preserves plain 1/2/4/8-byte storage with I32/I64 indices and
+// the same rank/axis/stride/alias rules. Checked indices use original GPU
+// min/max and a two-scalar host wait before writing any output; unchecked skips
+// validation. Output and index counts <=INT32_MAX, storage spans <=PTRDIFF_MAX.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider cccl_provider() noexcept;
 #endif
 

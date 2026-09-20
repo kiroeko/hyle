@@ -14,6 +14,10 @@
 - [collectives-windows.json](collectives-windows.json)：原版CCCL Scan/TopK的Provider、普通Direct/Graph、
   workspace/失败/生命周期开发检查点；Windows10/10 CTest和100次GoogleTest执行，原始记录在
   `collectives-windows-raw.zip`。其它平台、交付、插桩及P1仍未运行。
+- [gather-qualification.json](gather-qualification.json)：原版Thrust Gather的40组位宽/索引/越界资格。
+- [gather-windows.json](gather-windows.json)：同一CCCL Provider的普通Gather接线、全部15种storage、
+  checked失败与TopK→Gather双slot；Windows10/10 CTest和105次GoogleTest执行，原始记录在
+  `gather-windows-raw.zip`。不代签尚未运行的跨平台/三交付/插桩/P1。
 
 本目录不签整卡完成或完整模型覆盖。未绑定域及其它适用平台、交付、插桩、不可变候选性能仍待验；
 完整需求覆盖维持0/256。新程序只接原版 ggml CUDA/CCCL，所有旧自研数学保持冻结。

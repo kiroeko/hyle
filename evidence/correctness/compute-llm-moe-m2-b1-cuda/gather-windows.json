@@ -1,0 +1,135 @@
+{
+  "kind": "M2-B1 CUDA-I I5 Gather Windows product development checkpoint; not a terminal/full-domain verdict",
+  "baseline": "9d65d637fcdd0090479870134876058873129585",
+  "scope_checkpoint": "fa65e0dcfeacaf2b6bfafdb2b7a1209041a87bf1",
+  "audited_checkpoint": "4a2b4b32178dd72f5f2262fe689d5bb2e4dc0f47",
+  "candidate": "WORKTREE; exact product/test hashes below; not immutable P1 candidate",
+  "selector_candidate_tree": "e8ab0e1dd11b3e1db834fa81990c628344270bf4",
+  "machine": "Windows RTX4070 SM89; MSVC19.50.35728; CUDA13.3.73 / CCCL3.3.4; Ninja Release shared",
+  "settings": {
+    "cuda_architectures": "89-real",
+    "werror": true,
+    "cpu": false,
+    "cuda": true,
+    "build_parallel": 2,
+    "test_parallel": 1,
+    "sanitizer": "off",
+    "dlls_adjacent": true,
+    "error_mode": "0x8003",
+    "uac_or_power_changes": false
+  },
+  "binding": {
+    "audited_checkpoint": "4a2b4b32178dd72f5f2262fe689d5bb2e4dc0f47",
+    "owner": [
+      "compute_provider_cuda"
+    ],
+    "operation": "Original Thrust Gather with CUB Min/Max checked I32/I64 indices; plain 1/2/4/8-byte storage preserved",
+    "domain": "CUDA13.3 toolkit/runtime, CCCL3.3.4, SM89; public rank/axis/byte strides; dense output; output/indices<=INT32_MAX, storage spans<=PTRDIFF_MAX; no output alias",
+    "projection": "Only scalar index/type/axis/byte-address projection; no custom gather loop/kernel",
+    "resources": "Caller per-slot checked workspace; 16-byte validation summary/host wait; unchecked no workspace; native stream/Completion; empty output no payload read",
+    "execution_evidence": "gather-windows.json",
+    "card_verdict": "INCONCLUSIVE; Windows development pass does not close full B1 or cross-platform/delivery/performance gates"
+  },
+  "windows_development": {
+    "verdict": "PASS",
+    "ctest_targets": 10,
+    "header_targets": 5,
+    "gtest_executions": 105,
+    "cccl_and_existing_cuda_provider": 53,
+    "ordinary_direct": 8,
+    "ordinary_graph": 26,
+    "ggml_compute": 13,
+    "ggml_graph": 5
+  },
+  "coverage": [
+    "15 plain storage types x I32/I64 indices x axis0/1/-1 x dense/odd source stride x dense/odd index stride = 360 cases; bits checked against independent host oracle",
+    "rank8, rank6/scalar index, zero source/index stride; arbitrary aligned base with odd byte strides",
+    "checked negative, axis-width, I64 max/min reject with whole output unchanged; failed slot retires and fresh slot recovers",
+    "workspace missing/short and source-output/index-output alias reject; unchecked no workspace or adapter host wait; empty outer/indices do not read invalid payload; host resource declined",
+    "ordinary Direct automatically binds CCCL; Graph TopK->Gather uses default options with two queues/slots, changing inputs and retained old results; Graph failure/fresh-slot recovery",
+    "shared CCCL metadata OOM and completion-owner regression retained; no native GPU OOM injection claim; frozen capture paths explicitly require prepared execution"
+  ],
+  "failures": [],
+  "validation_notes": "Both product builds and the first full I5 targeted test run passed. Existing tests migrated to CCCL identity/workspace and explicit prepared-only capture semantics before running; no numeric tolerance changes.",
+  "p0": [
+    "Checked path: two original GPU reductions over indices, 16-byte control summary/host wait, then original Gather over output elements; all costs included",
+    "Workspace holds two I64 summary values and original SDK temporary space; unchecked skips validation/workspace",
+    "Only scalar storage/index/address projection; same native stream and Completion; no own global kernel, runtime, queue, thread or retained tensor copy"
+  ],
+  "selector": {
+    "selection_verdict": "READY",
+    "selected_ids": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_cuda",
+      "headers:compute_provider_cuda",
+      "factor:compute_route_cuda",
+      "factor:graph_route_cuda",
+      "delivery:compute",
+      "delivery:graph"
+    ],
+    "skipped_count": 123,
+    "skipped_reasons": "Full plan in raw archive",
+    "aggregate_execution": "INCONCLUSIVE; selected delivery gates unrun; five declared native/header suites executed by bounded development driver"
+  },
+  "maintenance": {
+    "docs": "PASS",
+    "closure": "PASS",
+    "previous_registry_ref": "4a2b4b32178dd72f5f2262fe689d5bb2e4dc0f47",
+    "loc_self_check": "PASS"
+  },
+  "remaining_unrun": [
+    "WSL native GPU",
+    "Air/Mini CUDA-OFF",
+    "host sanitizers",
+    "source/static/shared relocated consumer",
+    "final immutable candidate review",
+    "immutable-candidate P1"
+  ],
+  "all_21_b1_rows": "INCONCLUSIVE; unbound exact domains and unrun applicable gates remain",
+  "new_complete_requirement_cells": 0,
+  "frozen_math_changed_paths": [],
+  "performance_samples": 0,
+  "source_design_budget_minutes": {
+    "used": 110,
+    "remaining": 10,
+    "total": 120
+  },
+  "loc": {
+    "compute_graph_implementation": 56374,
+    "files": 244,
+    "excludes": "tests/vendor",
+    "raw": "gather-loc.log"
+  },
+  "cleanup": {
+    "directory": "C:\\hv\\m2b1-gather-probe",
+    "removed_bytes": 1461941,
+    "proof": "gather-cleanup.log; original qualification archive hash verified before exact owned directory removal",
+    "build_reuse": "existing CPU/CUDA development trees; no new duplicate build tree"
+  },
+  "product_and_test_sha256": {
+    "include/hyle/compute/providers/cuda.h": "8e7c35ac6d7e176a470ab26fa65eaeb00977902bb83be3a1aefca377ef37ea86",
+    "src/compute_provider_cuda/collectives.cu": "5e5e3418d7983c8a5c1fa65fe4722bda9888bdaf01b6a359b26b8aa18d3fe88f",
+    "src/compute_provider_cuda/collectives.h": "640641b88c1a0c349654899814bd94c681e715a02c82584b736314d2774ede1d",
+    "src/compute_provider_cuda/collectives_provider.cc": "62ae3a1e162040efb7728bc6255f72225b6d54ba5679ce014b79d0c8b40e9ccd",
+    "tests/compute_provider_cuda/CMakeLists.txt": "89b7c166513d80052ee49d31d57bcd4c1fc3869b3516ce68e647ce60f02cd597",
+    "tests/compute_provider_cuda/collectives_test_support.h": "499c0b074f6e34a03e126dcdbfddb7f1e55480668e4a8e77c1efe7974f49540a",
+    "tests/compute_provider_cuda/gather_collectives_test.cc": "ea3d8d8ee485fce752059ff73a670f9ed61f7b9015891b9e20ac4f5ac818996e",
+    "tests/compute_route_cuda/ggml_test.cc": "c7bebb6b2d7b64c09f8bc3d8abeb074f4fd3c28b6e760271d6ae43b544745f44",
+    "tests/graph_route_cuda/collectives_test.cc": "cee3c6ca537371a2aa90942ad376cbd83f76d33d291bc530f4674060c3de65cc",
+    "tests/graph_route_cuda/gather_test.cc": "97ae547f31e5ba974a393bc18a1027846b339ea0d28ece2d02fd94df4dd56b1c"
+  },
+  "artifact_sha256": {
+    "hyle_compute_provider_cuda.dll": "49eb95b4d4021f757ab4cf5584d56611aa6c76af406e6852bf51581087fb2b72",
+    "hyle_compute_route_cuda.dll": "b06f2392ea2ba568182e119ee347bba5f649db7fea8cc56da39791c225aee4bf",
+    "hyle_compute_provider_cuda_test.exe": "a94027c3160500f4eb31e3518c5c0e724bcb1ff98d8e088ae14e1fc7452a6905",
+    "hyle_compute_route_cuda_test.exe": "817107ea28607317327a6a24b0417ae9b1048d5af5e357be2124ac80511bb5fb",
+    "hyle_graph_route_cuda_test.exe": "70fab8a91fc01ee377e44ee83b172d943f6160968519562c35874536b2184858"
+  },
+  "archive": {
+    "path": "gather-windows-raw.zip",
+    "sha256": "671326e00ded7773d3eda4cd0958317be01440017057675b65bc393fc700ee93",
+    "bytes": 92325
+  }
+}

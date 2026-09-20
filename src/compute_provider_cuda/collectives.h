@@ -7,7 +7,7 @@
 
 namespace hyle::compute::cuda_native::collectives {
 
-enum class Kind : std::uint8_t { kScan, kTopK };
+enum class Kind : std::uint8_t { kScan, kTopK, kGather };
 enum class Type : std::uint8_t { kFloat32, kInt32, kFloat16, kBFloat16 };
 
 // Private cold description. CUDA templates never include the public C++23 API.
@@ -24,6 +24,13 @@ struct Program final {
   bool dense = false;
   bool exclusive = false;
   bool largest = true;
+  std::uint32_t index_rank = 0;
+  std::uint64_t index_dimensions[8]{};
+  std::uint64_t index_strides[8]{};
+  std::size_t index_count = 0;
+  std::size_t element_bytes = 0;
+  bool index_i64 = false;
+  bool checked = true;
   std::size_t workspace_bytes = 0;
   std::size_t temporary_offset = 0;
   std::size_t temporary_bytes = 0;
@@ -38,8 +45,9 @@ struct Program final {
 const char *version() noexcept;
 bool qualified_version() noexcept;
 cudaError_t configure(Program *program) noexcept;
-cudaError_t submit(const Program &program, const void *input, void *values,
-                   void *indices, void *workspace, cudaStream_t stream,
-                   bool *integer_overflow) noexcept;
+cudaError_t submit(const Program &program, const void *input,
+                   const void *index_input, void *values, void *indices,
+                   void *workspace, cudaStream_t stream,
+                   bool *validation_failed) noexcept;
 
 } // namespace hyle::compute::cuda_native::collectives

@@ -10,6 +10,10 @@ TEST(CudaDefault, OriginalCcclThroughOrdinaryDirectEntry) {
                                 1, 1);
   cccl_test::topk<float>(context, std::array<std::int64_t, 2>{2, 8193}, -1, 0,
                          7);
+  cccl_test::gather<std::uint16_t, std::int64_t>(
+      context, hyle::compute::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{2, 7, 3}, 1,
+      std::array<std::int64_t, 2>{2, 3}, 1, 1);
 }
 
 TEST(CudaDefault, OriginalGgmlThroughOrdinaryDirectEntry) {

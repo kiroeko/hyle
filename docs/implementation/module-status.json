@@ -475,13 +475,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK已获Windows开发证据；I5原版Thrust Gather在40组原版资格通过后冻结有限接法，checked I32/I64与全storage位宽、普通入口和资源验证，父卡共享120分钟预算，旧自研冻结。"
+      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK/Gather已接普通Direct/Graph；Windows10/10 CTest、105次GoogleTest执行通过，Gather全storage/checked失败与双slot已验。共享源码预算110/120；完整跨平台/三交付/P1及21行仍未完成，新覆盖0，自研冻结。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK的I1–I4已冻结，原版8组扫描/12组稳定排序资格通过；接普通Direct/Graph与真实workspace/完成，尚无产品覆盖。与父卡共用预算，旧自研kernel全部冻结。"
+      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK/Gather已接普通Direct/Graph；Windows10/10 CTest、105次GoogleTest执行通过，Gather全storage/checked失败与双slot已验。共享源码预算110/120；完整跨平台/三交付/P1及21行仍未完成，新覆盖0，自研冻结。"
     },
     {
       "module": "graph_route_cuda",

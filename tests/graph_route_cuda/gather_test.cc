@@ -117,8 +117,14 @@ TEST(CudaDefaultGraph,
                              resource.ref())
                 .value();
         EXPECT_EQ(gather_program.provider().id,
-                  compute::cuda_native::kProviderId);
-        auto direct_gather_slot = gather_program.create_invocation().value();
+                  compute::cuda_native::kCcclProviderId);
+        const auto gather_need = gather_program.workspace_requirement();
+        auto gather_workspace =
+            mem::Buffer::create(resource.ref(), gather_need.size,
+                                gather_need.alignment)
+                .value();
+        auto direct_gather_slot =
+            gather_program.create_invocation(gather_workspace.view()).value();
         auto direct_norm_slot = norm_program.create_invocation().value();
         auto direct_add_slot = add_program.create_invocation().value();
         Tensor direct_gather(output_desc, resource.ref()),
@@ -277,7 +283,10 @@ void failure_case(bool abandon) {
     ASSERT_TRUE(builder.publish(o).ok());
     auto logical = std::move(builder).finish().value();
     auto compiled =
-        graph::cuda::compile(logical, owner, resource.ref()).value();
+        graph::cuda::compile(
+            logical, owner, resource.ref(),
+            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared})
+            .value();
     Tensor table(td, resource.ref()), indices(id, resource.ref());
     Tensor output(compute::TensorDesc::dense(compute::DataType::kInt32,
                                              std::array<std::int64_t, 1>{2})

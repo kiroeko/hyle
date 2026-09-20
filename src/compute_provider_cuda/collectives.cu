@@ -9,8 +9,11 @@
 #include <cuda/std/tuple>
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
+#include <thrust/gather.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/transform_iterator.h>
+#include <thrust/system/cuda/execution_policy.h>
+#include <thrust/system_error.h>
 
 #include <algorithm>
 #include <climits>
@@ -33,6 +36,10 @@ struct Layout {
     auto logical =
         (row / program.inner * program.width + column) * program.inner +
         row % program.inner;
+    return logical_offset(logical, element_bytes);
+  }
+  __device__ std::size_t logical_offset(std::size_t logical,
+                                        std::size_t element_bytes) const {
     if (program.dense)
       return logical * element_bytes;
     std::size_t offset = 0;
@@ -56,6 +63,50 @@ struct Layout {
     memcpy(&value,
            static_cast<const char *>(input) +
                input_offset(ordered_index, sizeof(T)),
+           sizeof(T));
+    return value;
+  }
+};
+
+struct GatherIndex {
+  Program program;
+  const void *indices;
+  __device__ std::int64_t operator()(std::size_t logical) const {
+    std::size_t offset = 0;
+    for (auto d = program.index_rank; d-- > 0;) {
+      offset +=
+          logical % program.index_dimensions[d] * program.index_strides[d];
+      logical /= program.index_dimensions[d];
+    }
+    if (program.index_i64) {
+      std::int64_t value;
+      memcpy(&value, static_cast<const char *>(indices) + offset,
+             sizeof(value));
+      return value;
+    }
+    std::int32_t value;
+    memcpy(&value, static_cast<const char *>(indices) + offset, sizeof(value));
+    return value;
+  }
+};
+struct GatherMap {
+  GatherIndex index;
+  __device__ std::size_t operator()(std::size_t logical) const {
+    const auto &p = index.program;
+    const auto outer = logical / p.inner / p.index_count;
+    const auto column =
+        static_cast<std::size_t>(index(logical / p.inner % p.index_count));
+    return (outer * p.width + column) * p.inner + logical % p.inner;
+  }
+};
+template <class T> struct GatherInput {
+  Layout layout;
+  const void *input;
+  __device__ T operator()(std::size_t logical) const {
+    T value;
+    memcpy(&value,
+           static_cast<const char *>(input) +
+               layout.logical_offset(logical, sizeof(T)),
            sizeof(T));
     return value;
   }
@@ -146,6 +197,73 @@ bool reserve(Program &program, std::size_t bytes, std::size_t &offset) {
   offset = program.workspace_bytes;
   program.workspace_bytes += (bytes + 255) & ~std::size_t{255};
   return true;
+}
+cudaError_t configure_gather(Program &program) {
+  if (!program.checked)
+    return cudaSuccess;
+  const auto indices = thrust::make_transform_iterator(
+      Counter(0), GatherIndex{program, nullptr});
+  std::size_t minimum_bytes = 0, maximum_bytes = 0;
+  auto status = cub::DeviceReduce::Min(nullptr, minimum_bytes, indices,
+                                       static_cast<std::int64_t *>(nullptr),
+                                       program.index_count);
+  if (status != cudaSuccess)
+    return status;
+  status = cub::DeviceReduce::Max(nullptr, maximum_bytes, indices,
+                                  static_cast<std::int64_t *>(nullptr),
+                                  program.index_count);
+  if (status != cudaSuccess)
+    return status;
+  program.temporary_bytes = std::max(minimum_bytes, maximum_bytes);
+  return reserve(program, 2 * sizeof(std::int64_t), program.bounds_offset) &&
+                 reserve(program, program.temporary_bytes,
+                         program.temporary_offset)
+             ? cudaSuccess
+             : cudaErrorInvalidValue;
+}
+cudaError_t validate_gather(const Program &program, const void *index_input,
+                            void *workspace, cudaStream_t stream,
+                            bool *invalid) {
+  if (!program.checked)
+    return cudaSuccess;
+  auto *storage = static_cast<char *>(workspace);
+  auto *temporary = storage + program.temporary_offset;
+  auto *bounds =
+      reinterpret_cast<std::int64_t *>(storage + program.bounds_offset);
+  const auto indices = thrust::make_transform_iterator(
+      Counter(0), GatherIndex{program, index_input});
+  auto bytes = program.temporary_bytes;
+  auto status = cub::DeviceReduce::Min(temporary, bytes, indices, bounds,
+                                       program.index_count, stream);
+  if (status != cudaSuccess)
+    return status;
+  bytes = program.temporary_bytes;
+  status = cub::DeviceReduce::Max(temporary, bytes, indices, bounds + 1,
+                                  program.index_count, stream);
+  if (status != cudaSuccess)
+    return status;
+  std::int64_t limits[2];
+  status = cudaMemcpyAsync(limits, bounds, sizeof(limits),
+                           cudaMemcpyDeviceToHost, stream);
+  if (status != cudaSuccess)
+    return status;
+  status = cudaStreamSynchronize(stream);
+  if (status != cudaSuccess)
+    return status;
+  *invalid =
+      limits[0] < 0 || static_cast<std::uint64_t>(limits[1]) >= program.width;
+  return cudaSuccess;
+}
+template <class T>
+cudaError_t gather(const Program &program, const void *input,
+                   const void *index_input, void *output, cudaStream_t stream) {
+  const auto mapping = thrust::make_transform_iterator(
+      Counter(0), GatherMap{{program, index_input}});
+  const auto values = thrust::make_transform_iterator(
+      Counter(0), GatherInput<T>{{program}, input});
+  thrust::gather(thrust::cuda::par_nosync.on(stream), mapping,
+                 mapping + program.count, values, static_cast<T *>(output));
+  return cudaSuccess;
 }
 template <class T> cudaError_t configure_typed(Program &program) {
   using Acc = Accumulation<T>;
@@ -295,6 +413,8 @@ bool qualified_version() noexcept { return CUB_VERSION == 300304; }
 cudaError_t configure(Program *program) noexcept try {
   if (program->count == 0)
     return cudaSuccess;
+  if (program->kind == Kind::kGather)
+    return configure_gather(*program);
   switch (program->type) {
   case Type::kFloat32:
     return configure_typed<float>(*program);
@@ -311,10 +431,29 @@ cudaError_t configure(Program *program) noexcept try {
 } catch (...) {
   return cudaErrorUnknown;
 }
-cudaError_t submit(const Program &program, const void *input, void *values,
-                   void *indices, void *workspace, cudaStream_t stream,
+cudaError_t submit(const Program &program, const void *input,
+                   const void *index_input, void *values, void *indices,
+                   void *workspace, cudaStream_t stream,
                    bool *integer_overflow) noexcept try {
   *integer_overflow = false;
+  if (program.kind == Kind::kGather) {
+    const auto status = validate_gather(program, index_input, workspace, stream,
+                                        integer_overflow);
+    if (status != cudaSuccess || *integer_overflow)
+      return status;
+    switch (program.element_bytes) {
+    case 1:
+      return gather<std::uint8_t>(program, input, index_input, values, stream);
+    case 2:
+      return gather<std::uint16_t>(program, input, index_input, values, stream);
+    case 4:
+      return gather<std::uint32_t>(program, input, index_input, values, stream);
+    case 8:
+      return gather<std::uint64_t>(program, input, index_input, values, stream);
+    default:
+      return cudaErrorInvalidValue;
+    }
+  }
   switch (program.type) {
   case Type::kFloat32:
     return submit_typed<float>(program, input, values, indices, workspace,
@@ -330,6 +469,10 @@ cudaError_t submit(const Program &program, const void *input, void *values,
                                        workspace, stream, integer_overflow);
   }
   return cudaErrorInvalidValue;
+} catch (const thrust::system_error &error) {
+  return error.code().value() == 0
+             ? cudaErrorUnknown
+             : static_cast<cudaError_t>(error.code().value());
 } catch (const std::bad_alloc &) {
   return cudaErrorMemoryAllocation;
 } catch (...) {

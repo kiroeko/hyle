@@ -124,7 +124,7 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
 | SGLang RMSNorm | dense 同类型 F16/BF16 输入和必需 scale，F32 累加、输出最终 RNE；宽度64/128/256、256倍数至8192、512倍数至16384；16字节对齐、允许精确 input0 原位；混合F32参数不先窄化，继续由下一合法候选承载 |
 | SGLang Unary | dense F32/F16/BF16 SiLU/GELU/GELU-tanh，完整16字节向量、对齐16字节、允许精确原位；普通 Unary 的稳定尾值和 -Inf 极限合同由明确数学适配保留；输出元素数<=INT32_MAX |
-| CCCL Scan / TopK | CUDA13.3 toolkit/runtime、CCCL3.3.4、SM89；Scan为F32/I32，TopK为F32/F16/BF16/I32；plain rank≤8、任意axis/byte stride、dense输出、元素数≤INT32_MAX、不重叠；每invocation独立caller workspace，managed执行 |
+| CCCL Scan / TopK / Gather | CUDA13.3 toolkit/runtime、CCCL3.3.4、SM89；Scan为F32/I32，TopK为F32/F16/BF16/I32，Gather为plain1/2/4/8字节storage与I32/I64索引；rank≤8、任意axis/byte stride、dense输出、不重叠；容量及caller workspace见下文，managed执行 |
 | HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
 | HYLE 基本 tensor | plain View、Copy、Fill、Select；F32/F16/BF16 Cast、全部既有 Unary/Binary 模式；rank≤8，rank0/broadcast/非负及奇数 byte stride，非 View 输出 dense、元素数≤INT32_MAX |
 | HYLE CUDA norms | dense F32/F16/BF16 RMSNorm、LayerNorm，最后一轴、FP32 accumulation；scale/bias 各自为输入类型或 half 输入的 F32 参数，元素数≤INT32_MAX；LayerNorm 使用先均值再 centered variance |
@@ -193,12 +193,15 @@ Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byt
 逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
 双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
 或槽私有状态。普通 Graph 可直接组合 View→Concat 和窗口 append，并使用原生 capture。
-Gather 支持 plain1/2/4/8字节 source、I32/I64 indices、任意axis/byte stride和dense output，逐位
-保留数据。默认 checked 在 GPU 验证全部索引后才写结果；越界通过真实 Completion 返回 OutOfRange，
-该 Gather 的 output 保持不变，失败的 Invocation 需重新创建。无需下载索引或模型数据到 host。
-source/indices/output 不能重叠；非空 output/indices 元素数≤INT32_MAX，source 轴与地址计算保留64位。
-连续后缀按16字节块或原标量宽度搬运，非16字节对齐的合法输入仍可执行；无 caller workspace 或
-槽私有状态。checked prefix 的状态 reset/4字节回报，以及原生 capture 的状态合并仍有实际成本。
+Gather 在上述CCCL环境通过普通入口调用原版`thrust::gather`，支持plain1/2/4/8字节source、
+I32/I64 indices、任意axis/byte stride和dense output，逐位保留数据。默认checked先在GPU用
+原版Reduce Min/Max验证全部索引，只回传两个I64控制标量并等待结果；越界通过Completion返回
+OutOfRange，整个Gather output保持不变，失败Invocation需重建。tensor计算与索引payload不下载到host。
+output不能与source或indices重叠；output/indices元素数各≤INT32_MAX，存储跨度≤PTRDIFF_MAX，
+source轴与地址计算保留64位。每个checked invocation需要独立caller workspace，按查询的大小和
+对齐分配并保活到Completion；Graph自动规划。unchecked由caller保证索引有效，省略检查及工作区。
+空output不访问payload；默认managed路径不接受外部capture。既有expert/prepared-only Gather
+保留原生capture、连续后缀搬运与无caller workspace的原范围，冻结实现未作性能裁决。
 CUDA `Scatter` 的 assign 保留1/2/4/8字节storage原始位，add支持F32/F16/BF16；重复目标按updates
 逻辑行主序处理，半精度每次加法在F32求值后舍入。支持I32/I64、任意axis/byte stride、dense输出，
 仅允许同描述input0精确原位更新；非空output/updates/indices各≤INT32_MAX。checked坏索引使整个
@@ -216,7 +219,7 @@ Reduce检查全部前缀（包括exclusive最后总和），仅两个验证标�
 Direct必须提供独立caller workspace，不接受输入/输出别名；Graph规划同一工作区。caller的
 tensor、workspace和Queue须活到Completion结束，即使PreparedOperation/Invocation句柄已释放。
 既有expert/prepared-only Scan仍保留其原生capture和精确原位范围；默认CCCL不声明这些能力。
-CCCL这两项的Windows开发验证与尚未运行的跨平台/三交付/P1见
+CCCL这些接线的Windows开发验证与尚未运行的跨平台/三交付/P1见
 [当前接入卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md)，不代表完整模型覆盖。
 整数/FP8 Cast 与算术等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；

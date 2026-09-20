@@ -167,3 +167,32 @@ checked原版归约先裁决`min>=0 && max<axis_width`，只回传16字节；unc
 常态线程/队列或张量常驻副本。两条输入的resource/alignment都要验证，caller工作区活到Completion。
 原版资格及接缝核对计3分钟，累计 **108/120、余12分钟**。本节与registry摘要提交后才能实施I5；
 全部产品/跨平台/三交付/P1仍待验证，不用原版probe填完整覆盖矩阵。
+
+### I5 Windows 开发检查点
+
+原版Gather已进入同一CCCL Provider及普通Direct/Graph；Windows Release/shared实跑
+**10/10 CTest、105次GoogleTest执行**通过，其中Provider53、普通Direct8、普通Graph26、
+ggml Compute13、ggml Graph5。原始构建、测试和精确实现身份见
+[Gather receipt](../../../../evidence/correctness/compute-llm-moe-m2-b1-cuda/gather-windows.json)。
+
+- 15种plain存储类型、I32/I64、三个axis与source/index各两种layout共360组；另有rank8、
+  rank6/scalar index、零stride。独立host索引oracle逐位检查，无浮点转换或旧数学比较。
+- checked的负数、轴宽、I64最大/最小值均使整个输出保持原值，槽退役，新槽可恢复；
+  workspace缺失/不足、source/output与index/output精确/部分重叠拒绝。unchecked无工作区，
+  空外维/空索引不读取非法payload；host resource冷拒绝。共享metadata OOM/句柄寿命回归通过，
+  不冒称注入了GPU原生OOM。
+- 普通Direct自动绑定CCCL；普通Graph使用默认prepare_replay，TopK索引直接喂给Gather，
+  两queue/slot重放变化输入并保留另一slot旧结果；独立失败Graph验证输出不变及fresh恢复。
+  旧capture测试显式要求prepared，保持既有capture和异步失败门，没有修改冻结kernel。
+- I5产品构建与首轮完整定向测试直接通过，没有新增产品根因修正或性能样本。此次容量、
+  别名与资源接缝复核计2分钟，父卡源码/设计累计 **110/120分钟、余10分钟**。
+
+P0：checked每次包含两次原版GPU归约、16字节控制摘要回传/host等待和一次原版Gather；
+workspace只含摘要及SDK临时区。unchecked省略检查，原版Gather仍按输出元素进行地址投影。
+每slot持独立caller工作区，继续使用原生stream和Completion，不新增runtime/线程或张量副本。
+原版dispatch与必要同步全部计入成本；这里不签吞吐/延迟或SOTA。
+
+统一Compute+Graph实现 **56,374行/244文件**，排除测试/vendor。资格源和日志已归档，清理
+具名Gather探针目录，复用现有CPU/CUDA开发树。状态保持AUDITED；WSL GPU、两Mac CUDA-OFF、
+host插桩、relocated三交付、最终候选复核和不可变候选P1尚未运行，聚合INCONCLUSIVE。
+父卡21行及完整覆盖矩阵仍未签；M5开始前停下。
