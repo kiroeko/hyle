@@ -1,0 +1,58 @@
+{
+  "kind": "Original MLX GPU compiled scatter qualification; not HYLE product acceptance",
+  "scope_checkpoint": "d1918255",
+  "mlx_revision": "1f8e74e3f12f",
+  "machine_and_native_library_identity": "indexed-development.json#/machine",
+  "probe_sha256": "25c46ec152339be8f73842d8f94196340e16e6fc1f4105129a178043393800c9",
+  "original_source_sha256": {
+    "mlx/backend/metal/indexing.cpp": "6592dec7e5490acbe47301b85fd1d2b9a5186952a29ecb23e7e2ff3442d0917e",
+    "mlx/backend/metal/kernels/indexing/scatter.h": "fa799c286378c59fbb3aeb973e74bf471861e3356ce2817968fe5d6872c3d9ad"
+  },
+  "assignment": {
+    "verdict": "PASS for the original composition qualified here",
+    "cases": 242,
+    "domain": "F32/F16/BF16/I32/I64/Bool; I32/I64 indices; scalar/4/2x2/129 indices; noncontiguous source/updates/indices; repeats, bad -1/extent/max signed and fresh valid data; empty source or indices; raw bits and unchanged input buffers",
+    "composition": "I32 scatter_max selects last logical update, then original take/where with bit views; original comparison/any status; no custom kernels"
+  },
+  "ordered_add": {
+    "verdict": "FAIL for matching the current ordered addition contract",
+    "cases": 4,
+    "mismatches": 3,
+    "observations": [
+      {
+        "updates": 3,
+        "sequential_f32": 0,
+        "original_scatter_add_f32": 1
+      },
+      {
+        "updates": 17,
+        "sequential_match": true
+      },
+      {
+        "updates": 129,
+        "sequential_f32": 0,
+        "original_scatter_add_f32": 16
+      },
+      {
+        "updates": 8193,
+        "sequential_f32": 0,
+        "original_scatter_add_f32": 128
+      }
+    ],
+    "cause_boundary": "Upstream parallel atomic_update does not promise logical row-major addition; non-associativity makes it unsuitable for this exact contract, not a claim that upstream is numerically broken",
+    "remaining": "Qualified mature ordered-add carrier still required; no self implementation authorized, no requirements removed"
+  },
+  "limits": [
+    "HYLE ordinary product binding not yet run",
+    "Mac mini/delivery/instrumentation not run",
+    "No frozen HYLE implementation called or compared",
+    "No performance measurement"
+  ],
+  "new_complete_requirement_cells": 0,
+  "performance_samples": 0,
+  "archive": {
+    "path": "scatter-qualification-raw.zip",
+    "sha256": "f230ec6db7e1803015598d257dc3f89826556f294494f5b0714dd28d2a2b314a",
+    "bytes": 3373
+  }
+}

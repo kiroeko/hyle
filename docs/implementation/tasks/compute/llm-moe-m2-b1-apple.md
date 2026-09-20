@@ -164,3 +164,24 @@ F02.2需求包含unique assign和duplicate add；现公开Scatter额外承诺重
 
 本次合同/原版源码与接法核对累计44/120分钟，余76分钟；资格执行单列。先归档资格、冻结
 具体有限FIX并提交AUDITED检查点，再改产品分派。其它成熟张量/归约域仍待整批来源/语义核对。
+
+## AUDITED：原版 Scatter 赋值增量
+
+`d1918255`后的原版GPU compiled资格一次完成：赋值242组通过，覆盖六storage/两index宽度、
+scalar/多维/129项、noncontiguous、重复/非法/恢复与空域，独立oracle逐位一致。
+原版`scatter_add`的四个F32非结合输入有三项不满足当前有序add合同：3/129/8193个更新的
+顺序oracle为0，原版分别得到1/16/128。这对应原版线程间atomic_update无顺序保证，
+不宣称原版算子自身错误，不调用冻结HYLE算法；原始输入/结果见
+[资格收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/scatter-qualification.json)。
+
+据此仅冻结A-S1：在既有私有成熟lowering增加上述max-map→take/where赋值组合，普通Scatter
+的assign分支冷绑定；add保持原冻结路径及成熟接入未完成记录。六storage、I32/I64、任意轴/
+rank/stride与已有checked/empty行为保持；output/index/update元素数继续限制为INT32_MAX。
+空indices原版copy保留base，空output不读payload；非法indices只送safe值给原版Scatter Max，
+隐藏I32摘要复用现有with_device_status，失败不发布结果或改变base/旧结果。
+
+仅改`apple_mature_indexing.cc`与`apple_tensor.cc`分派、来源断言/用户说明；不改公共API、
+依赖、CMake或Graph产品，不读取/修改冻结`apple_scatter.cc`等数学文件。P0为固定数量原版
+调用与O(output+axis extent+indices)临时/工作量；无逐update图展开或host payload回读。
+新增普通compiled来源断言检查`Scatter Max`；既有独立赋值/边界/Graph状态用例作为实际回归，
+相关数值/资源与三交付/P1仍按整卡完整门执行。源码/设计46/120分钟，余74分钟。
