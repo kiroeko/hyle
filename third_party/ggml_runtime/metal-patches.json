@@ -1,0 +1,162 @@
+{
+  "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+  "files": [
+    {
+      "path": "src/ggml-metal/ggml-metal-device.h",
+      "before_sha256": "b126fa48627fabd430849a7b1f35756acea8860effe75090cd171aa5dc5b9cd4",
+      "after_sha256": "fcf6bd652d57a7f07c560ae312b7ef709b1cac4d9871bccf4425d8ec4bf6c0e1",
+      "edits": [
+        {
+          "before": "//\n// MTLFunctionConstantValues wrapper",
+          "after": "struct ggml_metal_encoder;\nbool ggml_metal_encoder_failed(struct ggml_metal_encoder * encoder);\n//\n// MTLFunctionConstantValues wrapper"
+        },
+        {
+          "before": "void   ggml_metal_buffer_free     (ggml_metal_buffer_t buf);",
+          "after": "ggml_metal_buffer_t ggml_metal_buffer_import(ggml_metal_device_t dev, void * metal);\nsize_t ggml_metal_buffer_get_size(ggml_metal_buffer_t buf);\nvoid   ggml_metal_buffer_free     (ggml_metal_buffer_t buf);"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-device.m",
+      "before_sha256": "1c129311f152c88bb455e14a720aac731196a76450e4b0da0791f1cce2bcbc47",
+      "after_sha256": "cf5d70ddf6cd3e2cd1fdd3433d7bc07e14b6bf7f3e140f894060e220c2f3d72d",
+      "edits": [
+        {
+          "before": "void ggml_metal_buffer_free(ggml_metal_buffer_t buf) {",
+          "after": "\nsize_t ggml_metal_buffer_get_size(ggml_metal_buffer_t buf) { return buf->all_size; }\n\nggml_metal_buffer_t ggml_metal_buffer_import(ggml_metal_device_t dev, void * raw) {\n    id<MTLBuffer> metal = (id<MTLBuffer>)raw;\n    if (!metal || metal.device != dev->mtl_device ||\n        metal.storageMode != MTLStorageModeShared || !metal.contents || !metal.length) return NULL;\n    ggml_metal_buffer_t res = calloc(1, sizeof(struct ggml_metal_buffer));\n    if (!res) return NULL;\n    res->dev = dev;\n    res->all_data = metal.contents;\n    res->all_size = metal.length;\n    res->is_shared = true;\n    res->owned = false;\n    res->n_buffers = 1;\n    res->buffers[0].data = metal.contents;\n    res->buffers[0].size = metal.length;\n    res->buffers[0].metal = [metal retain];\n    res->use_residency_sets = ggml_metal_device_get_props(dev)->use_residency_sets;\n    if (!ggml_metal_buffer_rset_init(res)) {\n        ggml_metal_buffer_rset_free(res);\n        [res->buffers[0].metal release];\n        free(res);\n        return NULL;\n    }\n    ggml_metal_device_rsets_add(dev, res->rset);\n    return res;\n}\n\nvoid ggml_metal_buffer_free(ggml_metal_buffer_t buf) {"
+        },
+        {
+          "before": "        NSError * error;\n        buf->rset",
+          "after": "        NSError * error = nil;\n        buf->rset"
+        },
+        {
+          "before": "        if (error) {\n            GGML_LOG_ERROR(\"%s: error: %s\\n\", __func__, [[error description] UTF8String]);\n            [desc release];",
+          "after": "        if (error || !buf->rset) {\n            GGML_LOG_ERROR(\"%s: residency set allocation failed\\n\", __func__);\n            [desc release];"
+        },
+        {
+          "before": "struct ggml_metal_encoder {\n    id<MTLComputeCommandEncoder> obj;\n};",
+          "after": "struct ggml_metal_encoder {\n    id<MTLComputeCommandEncoder> obj;\n    bool failed;\n};\n\nbool ggml_metal_encoder_failed(ggml_metal_encoder_t encoder) { return !encoder || encoder->failed; }"
+        },
+        {
+          "before": "    ggml_metal_encoder_t res = calloc(1, sizeof(struct ggml_metal_encoder));",
+          "after": "    ggml_metal_encoder_t res = calloc(1, sizeof(struct ggml_metal_encoder));\n    if (!res) return NULL;"
+        },
+        {
+          "before": "    [res->obj retain];\n\n    return res;\n}\n\nvoid ggml_metal_encoder_free",
+          "after": "    if (!res->obj) { free(res); return NULL; }\n    [res->obj retain];\n\n    return res;\n}\n\nvoid ggml_metal_encoder_free"
+        },
+        {
+          "before": "        GGML_ABORT(\"%s: nil Metal pipeline (missing kernel; see compile_pipeline log above)\\n\", __func__);",
+          "after": "        encoder->failed = true;\n        return;"
+        },
+        {
+          "before": "    [encoder->obj dispatchThreadgroups:",
+          "after": "    if (encoder->failed) return;\n    [encoder->obj dispatchThreadgroups:"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-ops.cpp",
+      "before_sha256": "0e2ac569b4c443d6e94fc342d78a85204b933d82e45d4c19d3be795fc65ca2d3",
+      "after_sha256": "2a1660114d129894234d6bf21840e544d05a72217c8de55de4c99bfbe905445e",
+      "edits": [
+        {
+          "before": "#include <limits>",
+          "after": "#include <limits>\n#include <memory>\n#include <new>"
+        },
+        {
+          "before": "        this->enc             = ggml_metal_encoder_init(cmd_buf, use_concurrency);\n        this->mem_ranges      = ggml_mem_ranges_init(debug_graph);",
+          "after": ""
+        },
+        {
+          "before": "                idxs.push_back(i);\n            }\n        }\n    }",
+          "after": "                idxs.push_back(i);\n            }\n        }\n        mem_ranges = ggml_mem_ranges_init(debug_graph);\n        enc = ggml_metal_encoder_init(cmd_buf, use_concurrency);\n        if (!enc) { ggml_mem_ranges_free(mem_ranges); throw std::bad_alloc(); }\n    }"
+        },
+        {
+          "before": "void ggml_metal_op_free(ggml_metal_op_t ctx) {",
+          "after": "\nenum ggml_status ggml_metal_op_try_encode(\n    ggml_metal_device_t dev, ggml_metal_cmd_buf_t cmd_buf,\n    ggml_cgraph * gf, ggml_metal_fusion_info * finfo,\n    int idx_start, int idx_end, bool concurrency, bool capture, int debug) {\n    try {\n        std::unique_ptr<ggml_metal_op> op(ggml_metal_op_init(\n            dev, cmd_buf, gf, finfo, idx_start, idx_end, concurrency, capture, debug));\n        for (int idx = 0; idx < op->n_nodes(); ++idx) {\n            const int count = ggml_metal_op_encode(op.get(), idx);\n            if (ggml_metal_encoder_failed(op->enc)) return GGML_STATUS_FAILED;\n            if (count == 0) break;\n            idx += count - 1;\n        }\n        return GGML_STATUS_SUCCESS;\n    } catch (const std::bad_alloc &) { return GGML_STATUS_ALLOC_FAILED; }\n      catch (...) { return GGML_STATUS_FAILED; }\n}\n\nvoid ggml_metal_op_free(ggml_metal_op_t ctx) {"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-ops.h",
+      "before_sha256": "fe53c456a5bfcbb2fd6eb804b026ccb0b57f8c1d599bc5abaf78e46f65465e30",
+      "after_sha256": "b4cdb8aef076c2610bf1623eff944ffe7dacd1fddacbeb398449e3e86e913d92",
+      "edits": [
+        {
+          "before": "void ggml_metal_op_free(ggml_metal_op_t ctx);",
+          "after": "enum ggml_status ggml_metal_op_try_encode(\n    ggml_metal_device_t dev, ggml_metal_cmd_buf_t cmd_buf,\n    struct ggml_cgraph * gf, struct ggml_metal_fusion_info * finfo,\n    int idx_start, int idx_end, bool concurrency, bool capture, int debug);\nvoid ggml_metal_op_free(ggml_metal_op_t ctx);"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-context.m",
+      "before_sha256": "2be28299672d17fbbe1ba13eff773f69cbe5e7604885d59fc82d57bb889e5c61",
+      "after_sha256": "7a7bd9012a8513739f75bef774cdbd645badd9d3c245871b1c058a9caddb9ee6",
+      "edits": [
+        {
+          "before": "struct ggml_metal_command_buffer {\n    id<MTLCommandBuffer> obj;\n};",
+          "after": "struct ggml_metal_command_buffer {\n    id<MTLCommandBuffer> obj;\n    enum ggml_status encode_status;\n};"
+        },
+        {
+          "before": "        ggml_metal_op_t ctx_op = ggml_metal_op_init(\n            ctx->dev,\n            cmd_buf,\n            ctx->gf,\n            ctx->finfo,\n            idx_start,\n            idx_end,\n            ctx->use_concurrency,\n            ctx->capture_compute,\n            ctx->debug_graph);\n\n        for (int idx = 0; idx < ggml_metal_op_n_nodes(ctx_op); ++idx) {\n            const int res = ggml_metal_op_encode(ctx_op, idx);\n            if (res == 0) {\n                break;\n            }\n\n            idx += res - 1;\n        }\n\n        ggml_metal_op_free(ctx_op);",
+          "after": "        ctx->cmd_bufs[cb_idx].encode_status = ggml_metal_op_try_encode(\n            ctx->dev, cmd_buf, ctx->gf, ctx->finfo, idx_start, idx_end,\n            ctx->use_concurrency, ctx->capture_compute, ctx->debug_graph);"
+        },
+        {
+          "before": "        dispatch_apply(n_cb, ctx->d_queue, ctx->encode_async);",
+          "after": "        dispatch_apply(n_cb, ctx->d_queue, ctx->encode_async);\n        for (int i = 0; i <= n_cb; ++i) {\n            if (ctx->cmd_bufs[i].encode_status != GGML_STATUS_SUCCESS) {\n                ctx->has_error = true;\n                return ctx->cmd_bufs[i].encode_status;\n            }\n        }"
+        },
+        {
+          "before": "        ggml_metal_t res = calloc(1, sizeof(struct ggml_metal));",
+          "after": "        ggml_metal_t res = calloc(1, sizeof(struct ggml_metal));\n        if (!res) return NULL;"
+        },
+        {
+          "before": "            [cmd_buf retain];\n\n            if (ctx->cmd_bufs[n_cb].obj)",
+          "after": "            if (!cmd_buf) { ctx->has_error = true; return GGML_STATUS_ALLOC_FAILED; }\n            [cmd_buf retain];\n\n            if (ctx->cmd_bufs[n_cb].obj)"
+        },
+        {
+          "before": "            [cmd_buf retain];\n\n            if (ctx->cmd_bufs[cb_idx].obj)",
+          "after": "            if (!cmd_buf) { ctx->has_error = true; return GGML_STATUS_ALLOC_FAILED; }\n            [cmd_buf retain];\n\n            if (ctx->cmd_bufs[cb_idx].obj)"
+        },
+        {
+          "before": "void ggml_metal_graph_optimize(ggml_metal_t ctx, struct ggml_cgraph * gf) {",
+          "after": "\nint64_t ggml_metal_checked_sync(ggml_metal_t ctx) {\n    ggml_metal_synchronize(ctx);\n    for (int i = 0; i <= ctx->n_cb; ++i) {\n        id<MTLCommandBuffer> cb = ctx->cmd_bufs[i].obj;\n        if (cb && cb.status == MTLCommandBufferStatusError) {\n            const int64_t code = cb.error.code;\n            return code ? code : -1;\n        }\n    }\n    return ctx->has_error ? -1 : 0;\n}\n\nvoid ggml_metal_graph_optimize(ggml_metal_t ctx, struct ggml_cgraph * gf) {"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-context.h",
+      "before_sha256": "9f2d9d91ecc54470a6b0d19109a55871cc362212bfe79ba7ea8d4a7798068b98",
+      "after_sha256": "c0fa0998cf8cfde7b7e194132d6f1242f2038253aa595d1ecfebbb057aa82157",
+      "edits": [
+        {
+          "before": "void ggml_metal_synchronize(ggml_metal_t ctx);",
+          "after": "int64_t ggml_metal_checked_sync(ggml_metal_t ctx);\nvoid ggml_metal_synchronize(ggml_metal_t ctx);"
+        }
+      ]
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal.cpp",
+      "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
+      "after_sha256": "f79504d068a63bb127907454a423002dec04ec718a24372f5026b18a360bcdaf",
+      "edits": [
+        {
+          "before": "// backend\n",
+          "after": "#include <new>\n\n// backend\n"
+        },
+        {
+          "before": "ggml_backend_t ggml_backend_metal_init(void) {\n    ggml_backend_dev_t dev = ggml_backend_reg_dev_get(ggml_backend_metal_reg(), 0);\n    ggml_metal_device_t ctx_dev = (ggml_metal_device_t)dev->context;\n\n    ggml_metal_t ctx = ggml_metal_init(ctx_dev);\n    if (ctx == NULL) {\n        GGML_LOG_ERROR(\"%s: error: failed to allocate context\\n\", __func__);\n        return NULL;\n    }\n\n    ggml_backend_t backend = (ggml_backend_t) malloc(sizeof(ggml_backend));",
+          "after": "ggml_backend_t ggml_backend_metal_init(void) {\n    ggml_backend_dev_t dev = ggml_backend_reg_dev_get(ggml_backend_metal_reg(), 0);\n    ggml_metal_device_t ctx_dev = (ggml_metal_device_t)dev->context;\n\n    ggml_metal_t ctx = ggml_metal_init(ctx_dev);\n    if (ctx == NULL) {\n        GGML_LOG_ERROR(\"%s: error: failed to allocate context\\n\", __func__);\n        return NULL;\n    }\n\n    ggml_backend_t backend = (ggml_backend_t) malloc(sizeof(ggml_backend));\n    if (!backend) { ggml_metal_free(ctx); return nullptr; }"
+        },
+        {
+          "before": "static ggml_backend_t ggml_backend_metal_device_init_backend(ggml_backend_dev_t dev, const char * params) {\n    ggml_metal_device_t ctx_dev = (ggml_metal_device_t)dev->context;\n\n    ggml_metal_t ctx = ggml_metal_init(ctx_dev);\n    if (ctx == NULL) {\n        GGML_LOG_ERROR(\"%s: error: failed to allocate context\\n\", __func__);\n        return NULL;\n    }\n\n    ggml_backend_t backend = (ggml_backend_t) malloc(sizeof(ggml_backend));",
+          "after": "static ggml_backend_t ggml_backend_metal_device_init_backend(ggml_backend_dev_t dev, const char * params) {\n    ggml_metal_device_t ctx_dev = (ggml_metal_device_t)dev->context;\n\n    ggml_metal_t ctx = ggml_metal_init(ctx_dev);\n    if (ctx == NULL) {\n        GGML_LOG_ERROR(\"%s: error: failed to allocate context\\n\", __func__);\n        return NULL;\n    }\n\n    ggml_backend_t backend = (ggml_backend_t) malloc(sizeof(ggml_backend));\n    if (!backend) { ggml_metal_free(ctx); return nullptr; }"
+        },
+        {
+          "before": "// backend registry\n",
+          "after": "\nextern \"C\" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {\n    auto dev = (ggml_metal_device_t)backend->device->context;\n    auto buffer = ggml_metal_buffer_import(dev, raw);\n    if (!buffer) return nullptr;\n    try {\n        auto result = ggml_backend_buffer_init(\n            ggml_backend_metal_buffer_type_shared(ggml_metal_device_get_props(dev)->device),\n            ggml_backend_metal_buffer_shared_i, buffer, ggml_metal_buffer_get_size(buffer));\n        if (!result) ggml_metal_buffer_free(buffer);\n        return result;\n    } catch (...) { ggml_metal_buffer_free(buffer); throw; }\n}\nextern \"C\" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {\n    return ggml_metal_checked_sync((ggml_metal_t)backend->context);\n}\nextern \"C\" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {\n    auto dev = (ggml_metal_device_t)backend->device->context;\n    auto lib = ggml_metal_device_get_library(dev);\n    ggml_backend_metal_set_n_cb(backend, 0);\n    return lib && ggml_metal_library_get_pipeline_gated_delta_net(lib, tensor).pipeline;\n}\n\n// backend registry\n"
+        }
+      ]
+    }
+  ]
+}

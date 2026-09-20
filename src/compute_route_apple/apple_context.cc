@@ -2,6 +2,8 @@
 
 #include "hyle/obs/trace.h"
 
+#include <algorithm>
+#include <array>
 #include <atomic>
 #include <exception>
 #include <mutex>
@@ -18,7 +20,9 @@
 
 #include "apple_checks.h"
 #include "apple_internal.h"
+#include "apple_recurrent.h"
 #include "completion_internal.h"
+#include "hyle/compute/detail/apple_plan.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/container/flat_hash_set.h"
 #include "hyle/platform/thread.h"
@@ -271,10 +275,7 @@ Status run_cold(Runtime &runtime,
   return job->terminal;
 }
 
-struct ProgramState {
-  std::shared_ptr<Runtime> runtime;
-  WorkloadContext workload;
-  std::vector<InputSpec> inputs;
+struct MlxProgram {
   // Shared with the retained MLX tracing callable, never a ProgramState cycle.
   struct CheckContract {
     bool present = false;
@@ -282,6 +283,67 @@ struct ProgramState {
   std::shared_ptr<CheckContract> checks = std::make_shared<CheckContract>();
   std::function<std::vector<mx::array>(const std::vector<mx::array> &)>
       compiled;
+};
+
+// Compile each maximal MLX region once. Native region boundaries preserve its
+// private fusion and do not expose its internal node/value table to replay.
+std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
+                                  std::span<const InputSpec> inputs,
+                                  mx::Stream stream) {
+  program.compiled = mx::compile(
+      [fn = std::move(region), checks = program.checks,
+       stream](const std::vector<mx::array> &arguments) {
+        CheckTrace trace;
+        auto outputs = fn(arguments, stream);
+        if (!outputs)
+          throw RegionFailure{std::move(outputs).error()};
+        checks->present = validate_region(*outputs, stream, trace);
+        return std::move(*outputs);
+      }, false);
+  std::vector<mx::array> isolated;
+  isolated.reserve(inputs.size());
+  for (const auto &spec : inputs)
+    isolated.push_back(mx::zeros(spec.shape, spec.dtype, stream));
+  mx::async_eval(isolated);
+  mx::synchronize(stream);
+  for (auto &input : isolated)
+    input.wait();
+  auto outputs = program.compiled(isolated);
+  mx::async_eval(outputs);
+  mx::synchronize(stream);
+  for (auto &output : outputs)
+    output.wait();
+  if (program.checks->present)
+    outputs.pop_back(); // Isolated warmup data does not decide user validity.
+  return outputs;
+}
+
+Status evaluate_mlx(const MlxProgram &program,
+                    const std::vector<mx::array> &inputs,
+                    std::vector<mx::array> &outputs, mx::Stream stream) {
+  outputs = program.compiled(inputs);
+  mx::async_eval(outputs);
+  mx::synchronize(stream);
+  for (auto &output : outputs)
+    output.wait();
+  if (!program.checks->present)
+    return Status::Ok();
+  const auto code = outputs.back().data<std::int32_t>()[0];
+  outputs.pop_back();
+  return algorithm_status(code);
+}
+
+struct PreparedPlan {
+  RegionPlan description;
+  std::vector<std::optional<MlxProgram>> mlx;
+  std::vector<std::size_t> last_use;
+};
+
+struct ProgramState : MlxProgram {
+  std::shared_ptr<Runtime> runtime;
+  WorkloadContext workload;
+  std::vector<InputSpec> inputs;
+  std::unique_ptr<PreparedPlan> native;
 };
 
 struct ResultValues {
@@ -294,6 +356,10 @@ struct InvocationState : Job {
   std::shared_ptr<ResultValues> values;
   cd::ResultSlot<Results> result_slot;
   std::vector<mx::array> inputs;
+  std::vector<std::unique_ptr<Recurrent>> recurrent;
+  std::vector<std::optional<mx::array>> native_values;
+  std::vector<mx::array> arguments;
+  std::vector<mx::array> region_outputs;
   std::mutex binding_mutex;
   std::mutex completion_mutex;
   std::atomic<std::uint32_t> done{1};
@@ -310,6 +376,44 @@ struct InvocationState : Job {
     inputs.reserve(program->inputs.size());
   }
 };
+
+Status execute_plan(InvocationState &state, mx::Stream stream) {
+  const auto &prepared = *state.program->native;
+  const auto &plan = prepared.description;
+  auto &values = state.native_values;
+  for (std::size_t i = 0; i < plan.inputs.size(); ++i)
+    values[plan.inputs[i]] = state.inputs[i];
+  for (std::size_t i = 0; i < plan.constants.size(); ++i)
+    values[plan.constants[i]] = plan.constant_values[i];
+  for (std::size_t i = 0; i < plan.regions.size(); ++i) {
+    const auto &region = plan.regions[i];
+    state.arguments.clear();
+    for (auto id : region.inputs)
+      state.arguments.push_back(*values[id]);
+    if (region.kind == RegionKind::kMlx) {
+      HYLE_RETURN_IF_ERROR(evaluate_mlx(*prepared.mlx[i], state.arguments,
+                                        state.region_outputs, stream));
+    } else {
+      HYLE_ASSIGN_OR_RETURN(state.region_outputs,
+                            state.recurrent[i]->run(state.arguments, stream));
+    }
+    for (std::size_t port = 0; port < region.outputs.size(); ++port)
+      values[region.outputs[port]] = std::move(state.region_outputs[port]);
+    state.region_outputs.clear();
+    state.arguments.clear();
+    for (auto id : region.inputs)
+      if (prepared.last_use[id] == i)
+        values[id].reset();
+    for (auto id : region.outputs)
+      if (prepared.last_use[id] == i)
+        values[id].reset();
+  }
+  for (auto id : plan.outputs)
+    state.values->arrays.push_back(*values[id]);
+  for (auto &value : values)
+    value.reset();
+  return Status::Ok();
+}
 
 void retain(InvocationState *state) noexcept {
   state->refs.fetch_add(1, std::memory_order_relaxed);
@@ -350,18 +454,10 @@ void execute_invocation(Job *job) noexcept {
         Status::Cancelled("Apple submission cancelled before native execution");
   if (terminal.ok()) {
     try {
-      state.values->arrays = state.program->compiled(state.inputs);
-      mx::async_eval(state.values->arrays);
-      mx::synchronize(*runtime.stream);
-      // After checked stream completion, mark native outputs ready before
-      // publishing the release/acquire terminal word to arbitrary waiters.
-      for (auto &array : state.values->arrays)
-        array.wait();
-      if (state.program->checks->present) {
-        const auto code = state.values->arrays.back().data<std::int32_t>()[0];
-        state.values->arrays.pop_back(); // Never expose the private status.
-        terminal = algorithm_status(code);
-      }
+      terminal = state.program->native
+                     ? execute_plan(state, *runtime.stream)
+                     : evaluate_mlx(*state.program, state.inputs,
+                                    state.values->arrays, *runtime.stream);
     } catch (...) {
       terminal = native_exception();
       // Native construction/eval may already have accepted a prefix. Keep
@@ -512,30 +608,8 @@ Context::compile(RegionFunction region,
     auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
       const auto stream = *state_->stream;
       try {
-        program->compiled = mx::compile(
-            [fn = std::move(region), checks = program->checks,
-             stream](const std::vector<mx::array> &inputs) {
-              detail::CheckTrace trace;
-              auto outputs = fn(inputs, stream);
-              if (!outputs)
-                throw detail::RegionFailure{std::move(outputs).error()};
-              checks->present = validate_region(*outputs, stream, trace);
-              return std::move(*outputs);
-            },
-            false);
-        std::vector<mx::array> isolated;
-        isolated.reserve(program->inputs.size());
-        for (const auto &spec : program->inputs)
-          isolated.push_back(mx::zeros(spec.shape, spec.dtype, stream));
-        mx::async_eval(isolated);
-        mx::synchronize(stream);
-        for (auto &input : isolated)
-          input.wait();
-        auto outputs = program->compiled(isolated);
-        mx::async_eval(outputs);
-        mx::synchronize(stream);
-        for (auto &output : outputs)
-          output.wait();
+        (void)detail::prepare_mlx(*program, std::move(region),
+                                   program->inputs, stream);
         return Status::Ok();
       } catch (...) {
         const Status failure = native_exception();
@@ -560,6 +634,125 @@ WorkloadContext Program::workload() const noexcept {
   return state_ ? state_->workload : WorkloadContext{};
 }
 
+Result<Program> detail::ContextAccess::compile(const Context &context,
+                                               RegionPlan plan) noexcept {
+  if (!context.state_ || !plan.workload.valid() || plan.regions.empty() ||
+      plan.outputs.empty() || plan.constants.size() != plan.constant_values.size())
+    return std::unexpected(Status::InvalidArgument("invalid Apple native region plan"));
+  try {
+    auto program = std::make_shared<ProgramState>();
+    program->runtime = context.state_;
+    program->workload = plan.workload;
+    program->native = std::make_unique<PreparedPlan>();
+    auto &prepared = *program->native;
+    prepared.last_use.resize(plan.values.size());
+    std::vector<bool> defined(plan.values.size(), false);
+    auto define = [&](std::size_t id) -> Status {
+      if (id >= defined.size() || defined[id])
+        return Status::InvalidArgument("Apple native plan has an invalid definition");
+      defined[id] = true;
+      return Status::Ok();
+    };
+    for (auto id : plan.inputs) {
+      HYLE_RETURN_IF_ERROR(define(id));
+      program->inputs.push_back(plan.values[id]);
+    }
+    for (std::size_t i = 0; i < plan.constants.size(); ++i) {
+      const auto id = plan.constants[i];
+      HYLE_RETURN_IF_ERROR(define(id));
+      const auto &value = plan.constant_values[i];
+      if (value.status() != mx::array::available ||
+          value.shape() != plan.values[id].shape ||
+          value.dtype() != plan.values[id].dtype)
+        return std::unexpected(Status::InvalidArgument("Apple native constant is not ready or has the wrong schema"));
+    }
+    for (std::size_t i = 0; i < plan.regions.size(); ++i) {
+      const auto &region = plan.regions[i];
+      if (region.outputs.empty())
+        return std::unexpected(Status::InvalidArgument("Apple region has no outputs"));
+      for (auto id : region.inputs) {
+        if (id >= defined.size() || !defined[id])
+          return std::unexpected(Status::InvalidArgument("Apple region input precedes its definition"));
+        prepared.last_use[id] = i;
+      }
+      for (auto id : region.outputs) {
+        HYLE_RETURN_IF_ERROR(define(id));
+        prepared.last_use[id] = i;
+      }
+      if (region.kind == RegionKind::kMlx) {
+        if (!region.mlx)
+          return std::unexpected(Status::InvalidArgument("Apple MLX region has no native callable"));
+      } else if (region.kind == RegionKind::kGatedDeltaNet) {
+        if (region.inputs.size() != 6 || region.outputs.size() != 2)
+          return std::unexpected(Status::InvalidArgument("Apple recurrent region arity mismatch"));
+        HYLE_RETURN_IF_ERROR(ggml_metal::NativeProgram::validate(region.recurrent_inputs));
+        std::array<TensorDesc, 2> outputs;
+        HYLE_RETURN_IF_ERROR(infer_output_descriptions(
+            Operation(GatedDeltaNet{}), region.recurrent_inputs, outputs));
+        auto match = [&](const TensorDesc &desc, std::size_t id) {
+          const auto &spec = plan.values[id];
+          return spec.dtype == mx::float32 &&
+                 std::ranges::equal(desc.dimensions(), spec.shape);
+        };
+        for (std::size_t port = 0; port < 6; ++port)
+          if (!match(region.recurrent_inputs[port], region.inputs[port]))
+            return std::unexpected(Status::InvalidArgument("Apple recurrent input schema mismatch"));
+        for (std::size_t port = 0; port < 2; ++port)
+          if (!match(outputs[port], region.outputs[port]))
+            return std::unexpected(Status::InvalidArgument("Apple recurrent output schema mismatch"));
+      } else {
+        return std::unexpected(Status::InvalidArgument("unknown Apple native region kind"));
+      }
+    }
+    for (auto id : plan.outputs) {
+      if (id >= defined.size() || !defined[id])
+        return std::unexpected(Status::InvalidArgument("Apple native output has no definition"));
+      prepared.last_use[id] = plan.regions.size();
+    }
+    prepared.description = std::move(plan);
+    prepared.mlx.resize(prepared.description.regions.size());
+    auto prepare = std::make_shared<ColdJob>([&]() -> Status {
+      const auto stream = *context.state_->stream;
+      try {
+        for (std::size_t i = 0; i < prepared.description.regions.size(); ++i) {
+          auto &region = prepared.description.regions[i];
+          if (region.kind == RegionKind::kGatedDeltaNet) {
+            // Qualify original pipeline/resources in preparation. Each actual
+            // invocation subsequently owns an independent backend/metadata.
+            HYLE_ASSIGN_OR_RETURN(auto probe, Recurrent::create(region.recurrent_inputs));
+            continue;
+          }
+          std::vector<InputSpec> specs;
+          for (auto id : region.inputs)
+            specs.push_back(prepared.description.values[id]);
+          auto &mlx = prepared.mlx[i].emplace();
+          auto outputs = prepare_mlx(mlx, std::move(region.mlx), specs, stream);
+          if (outputs.size() != region.outputs.size())
+            return Status::InvalidArgument("Apple MLX region output count mismatch");
+          for (std::size_t port = 0; port < outputs.size(); ++port) {
+            const auto &spec = prepared.description.values[region.outputs[port]];
+            if (spec.shape != outputs[port].shape() || spec.dtype != outputs[port].dtype())
+              return Status::InvalidArgument("Apple MLX region output schema mismatch");
+          }
+        }
+        return Status::Ok();
+      } catch (...) {
+        const auto failure = native_exception();
+        try {
+          mx::synchronize(stream);
+        } catch (...) {
+          context.state_->poison(native_exception());
+        }
+        return failure;
+      }
+    });
+    HYLE_RETURN_IF_ERROR(run_cold(*context.state_, prepare));
+    return Program(std::move(program));
+  } catch (...) {
+    return std::unexpected(native_exception());
+  }
+}
+
 Result<Invocation>
 Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   if (!state_)
@@ -568,9 +761,28 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   if (!slot)
     return std::unexpected(std::move(slot).error());
   try {
-    auto *state = new detail::InvocationState(state_, std::move(*slot));
+    auto state = std::make_unique<detail::InvocationState>(state_, std::move(*slot));
     state->execute = detail::execute_invocation;
-    return Invocation(state);
+    if (state_->native) {
+      const auto &plan = state_->native->description;
+      state->native_values.resize(plan.values.size());
+      state->recurrent.resize(plan.regions.size());
+      state->values->arrays.reserve(plan.outputs.size());
+      std::size_t max_inputs = 0;
+      for (const auto &region : plan.regions)
+        max_inputs = (std::max)(max_inputs, region.inputs.size());
+      state->arguments.reserve(max_inputs);
+      auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
+        for (std::size_t i = 0; i < plan.regions.size(); ++i)
+          if (plan.regions[i].kind == detail::RegionKind::kGatedDeltaNet) {
+            HYLE_ASSIGN_OR_RETURN(state->recurrent[i],
+                detail::Recurrent::create(plan.regions[i].recurrent_inputs));
+          }
+        return Status::Ok();
+      });
+      HYLE_RETURN_IF_ERROR(detail::run_cold(*state_->runtime, prepare));
+    }
+    return Invocation(state.release());
   } catch (...) {
     return std::unexpected(native_exception());
   }

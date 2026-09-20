@@ -35,6 +35,7 @@ struct Runtime;
 struct ProgramState;
 struct InvocationState;
 struct ResultValues;
+struct ContextAccess;
 } // namespace detail
 
 // MLX types are intentional in this native route header, never in the common
@@ -61,6 +62,7 @@ struct Environment final {
   std::string os_runtime;
   std::string mlx_version;
   std::string mlx_revision;
+  std::string ggml_revision;
   std::string metal_compiler;
   std::uint32_t build_sdk = 0;
   std::uint32_t deployment_target = 0;
@@ -141,6 +143,9 @@ public:
 
   // Natural single-operation preparation; returns the same native Program
   // as a whole-region compile. Examples must already be successfully ready.
+  // GatedDeltaNet binds an original ggml Metal region (dense F32, equal heads,
+  // D32/64/128). Its strided inputs use MLX GPU contiguous copies; the native
+  // boundary waits for checked completion and preserves both output owners.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Program>
   prepare(const Operation &operation,
           std::span<const mlx::core::array> input_examples,
@@ -169,6 +174,7 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API Status close() noexcept;
 
 private:
+  friend struct detail::ContextAccess;
   explicit Context(std::shared_ptr<detail::Runtime> state) noexcept
       : state_(std::move(state)) {}
   std::shared_ptr<detail::Runtime> state_;
@@ -187,6 +193,7 @@ public:
 
 private:
   friend class Context;
+  friend struct detail::ContextAccess;
   explicit Program(std::shared_ptr<detail::ProgramState> state) noexcept
       : state_(std::move(state)) {}
   std::shared_ptr<detail::ProgramState> state_;

@@ -1,9 +1,11 @@
 {
   "schema_version": 2,
   "factor_cmake_owners": {
+    "cmake/HyleAppleDependencies.cmake": "compute_route_apple",
     "cmake/HyleAppleRuntime.cmake": "compute_route_apple"
   },
   "factor_configure_cache": {
+    "compute_provider_ggml_metal": {"HYLE_COMPUTE_APPLE": "ON"},
     "compute_provider_flashinfer": {"HYLE_COMPUTE_CUDA": "ON"},
     "compute_provider_ggml_cuda": {"HYLE_COMPUTE_CUDA": "ON"},
     "graph_provider_ggml_cuda": {"HYLE_COMPUTE_CUDA": "ON"},
@@ -48,6 +50,7 @@
     }
   },
   "factor_supported_systems": {
+    "compute_provider_ggml_metal": ["Darwin"],
     "compute_provider_flashinfer": ["Linux"],
     "compute_provider_ggml_cuda": ["Windows", "Linux"],
     "graph_provider_ggml_cuda": ["Windows", "Linux"],

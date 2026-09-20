@@ -1,4 +1,5 @@
 #include "hyle/compute/apple.h"
+#include "hyle/compute/detail/apple_plan.h"
 
 #include <array>
 #include <cstdint>
@@ -98,6 +99,16 @@ Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
                  const WorkloadContext &workload) const noexcept {
   try {
+    if (operation.kind() == OperationKind::kGatedDeltaNet) {
+      std::vector<InputSpec> specs;
+      specs.reserve(examples.size());
+      for (const auto &input : examples) {
+        if (input.status() != mx::array::available)
+          return std::unexpected(Status::FailedPrecondition("Apple examples must be ready arrays"));
+        specs.push_back({input.shape(), input.dtype()});
+      }
+      return prepare(operation, specs, workload);
+    }
     return compile(
         [operation, workload](const auto &inputs, mx::Stream stream) {
           return lower(operation, inputs, stream, workload);
@@ -113,6 +124,35 @@ Context::prepare(const Operation &operation,
                  std::span<const InputSpec> inputs,
                  const WorkloadContext &workload) const noexcept {
   try {
+    if (operation.kind() == OperationKind::kGatedDeltaNet) {
+      detail::RegionPlan plan;
+      plan.workload = workload;
+      detail::Region region;
+      region.kind = detail::RegionKind::kGatedDeltaNet;
+      for (std::size_t i = 0; i < inputs.size(); ++i) {
+        if (inputs[i].dtype != mx::float32)
+          return std::unexpected(Status::Unimplemented("Apple original recurrent region currently admits F32 inputs"));
+        std::vector<std::int64_t> shape(inputs[i].shape.begin(), inputs[i].shape.end());
+        HYLE_ASSIGN_OR_RETURN(auto desc, TensorDesc::dense(DataType::kFloat32, shape));
+        region.recurrent_inputs.push_back(desc);
+        region.inputs.push_back(i);
+        plan.inputs.push_back(i);
+        plan.values.push_back(inputs[i]);
+      }
+      std::array<TensorDesc, 2> outputs;
+      HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, region.recurrent_inputs, outputs));
+      for (const auto &output : outputs) {
+        const auto id = plan.values.size();
+        region.outputs.push_back(id);
+        plan.outputs.push_back(id);
+        InputSpec spec;
+        for (auto d : output.dimensions())
+          spec.shape.push_back(static_cast<int>(d));
+        plan.values.push_back(std::move(spec));
+      }
+      plan.regions.push_back(std::move(region));
+      return detail::ContextAccess::compile(*this, std::move(plan));
+    }
     return compile(
         [operation, workload](const auto &values, mx::Stream stream) {
           return lower(operation, values, stream, workload);

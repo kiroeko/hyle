@@ -449,9 +449,9 @@ _hyle_declare_component(graph_route_cuda
 # Native MLX region ownership is independent of the common Queue executor.
 _hyle_declare_component(compute_route_apple
   TRACE
-  PRIVATE_DEPS container platform_thread
+  PRIVATE_DEPS container platform_thread compute_provider_ggml_metal
   PUBLIC_DEPS core compute compute_ops error mem
-  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h)
+  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/detail/apple_plan.h)
 _hyle_declare_component(graph_route_apple
   TRACE
   PUBLIC_DEPS core compute_ops compute_route_apple error graph
@@ -492,8 +492,9 @@ _hyle_declare_component(compute_provider_flashinfer
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/flashinfer.h)
 
-# M1-A identity only; no native target before its finite audit.
-_hyle_declare_component(compute_provider_ggml_metal QUEUED)
+# M1-A: independent original Metal program and native resource boundary.
+_hyle_declare_component(compute_provider_ggml_metal
+  PRIVATE_DEPS core compute_ops compute_ggml_runtime error mem)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

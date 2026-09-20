@@ -1,7 +1,7 @@
 # Apple MLX/Metal：Direct Compute 与 Graph
 
-Apple 路线在同一个 MLX Metal runtime 中保留原生 arrays、编译融合与内存管理。普通 typed Direct
-和 Graph 应用固定的成熟 MLX 规则；用户不排序 Provider、不提交 timing profile。R5 已完成
+Apple 路线保留 MLX 的原生 arrays、编译融合与内存管理；原版 ggml Metal region 保有自己的
+原生程序与完成边界。普通 typed Direct 和 Graph 应用固定规则；用户不排序 Provider、不提交 timing profile。R5 已完成
 [限定环境验收](../implementation/tasks/compute/apple-v1-four-route-foundation.md)，性能资格不外推其它硬件。
 
 可选[模型与阶段信息](compute.md#可选模型与阶段信息)作为最后一个参数传给
@@ -12,7 +12,7 @@ Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 
 
 ## 构建与三种 C++ 交付
 
-只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C++ 和 Metal 编译工具；
+只支持 macOS Apple Silicon。源码构建需要可用的 Apple C++/Objective-C/Objective-C++ 和 Metal 编译工具；
 `xcrun -sdk macosx metal --version`、`xcrun -sdk macosx metallib --version` 必须成功。CLT 本身未必
 包含 Metal CLI。HYLE 不代装系统 SDK；ON 缺条件失败，AUTO 不可用时关闭，OFF 不探测或下载 MLX。
 
@@ -116,6 +116,35 @@ tracing 内调用，才能把设备状态绑定到完成结果；在外部直接
 组合 typed 算子。完整 Direct Q4 FFN 见
 [样例](../../samples/package/compute/cpp/apple_ffn.h)，没有 Graph 依赖。
 
+## 原版 Gated DeltaNet
+
+`context.prepare(GatedDeltaNet{}, inputs)` 冷绑定锁定的 ggml Metal 完整递归程序。当前接入域为
+F32、相同 Q/K/V head 数、D=32/64/128、1≤T≤32767；输入及 packed 输出元素数不超过 INT32_MAX。
+资格和未完成的交付验证见 [M1-A 当前卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
+
+六个输入按 Q、K、V、log-decay、beta、初态排列；Q/K/V 是 `[B,T,H,D]`，两种门是
+`[B,T,H,1]`，初态是 `[B,H,D,D]`（最后两轴为 value/key）。Q/K 是否归一化、beta 是否激活由
+调用方决定，操作不隐含这些变换。两个结果分别是 V 同形输出和新 FP32 状态，初态保持不变。
+
+```cpp
+const std::array<apple::InputSpec, 6> specs{{
+    {{1,17,16,128}, mx::float32}, {{1,17,16,128}, mx::float32},
+    {{1,17,16,128}, mx::float32}, {{1,17,16,1}, mx::float32},
+    {{1,17,16,1}, mx::float32}, {{1,16,128,128}, mx::float32}}};
+HYLE_ASSIGN_OR_RETURN(auto program,
+    context.prepare(hyle::compute::GatedDeltaNet{}, specs));
+// 与其它 Program 相同：create_invocation → bind(六个 ready arrays) → submit → wait。
+```
+
+Graph 使用 `add_node(GatedDeltaNet{}, inputs)` 和 `result(node, 0/1)`，自动组合递归与 MLX
+区域。纯 MLX 的 `Context::compile(callable, ...)` / `apple::lower()` 不接受外部递归程序；需要
+跨库组合时使用普通 Graph。各个 MLX 区域内部仍由 MLX 编译和融合。
+
+每个 Invocation 独立持有 ggml 资源，输入保留原生 owner；输出由 MLX 分配一个 packed buffer，
+两个 array view 共享 owner。跨库边界进行 checked host wait；非连续输入由原版 MLX 在 GPU
+整理布局并计入执行成本。没有 CPU 数学 fallback，也不声明 event-only 或无分配 replay。
+`Environment::ggml_revision` 与 MLX、设备、OS/SDK/Metal 编译器身份一起用于冷规则诊断。
+
 ## Graph 整段编译
 
 用普通 `GraphBuilder` 的 typed operation 构图，再调用：
@@ -127,8 +156,9 @@ HYLE_ASSIGN_OR_RETURN(auto program,
 
 constants 按 `Graph::constant_id()` 的顺序，bind inputs 按 `input_id()` 顺序，结果按 publish 顺序。
 其后复用同一 Apple Program/Invocation/OwnedResult 接口。可以释放 Graph 与原 constant 句柄，
-Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes，MLX 保有整段融合；热期不遍历
-HYLE DAG。完整例见 [Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)。
+Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes；纯 MLX 图保有整段融合，
+含递归的图只在原生 region 边界切分，热期按固定区域顺序执行。完整例见
+[Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)。
 
 此 Graph lowering 接受固定 F32/F16/BF16/I32/Bool 逻辑 schema、View 派生描述和上述 Q4 编码。
 native arrays 的物理 stride、View 和必要布局整理仍由 MLX 管理；布局转换可能有成本，不能从

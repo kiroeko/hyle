@@ -39,6 +39,11 @@ function(hyle_configure_apple_dependencies)
       set(HYLE_APPLE_METAL_COMPILER "${_compiler}" PARENT_SCOPE)
     endif()
   endforeach()
+  if(NOT HYLE_BUILD_COMPUTE_ROUTE_APPLE)
+    # The independent ggml Metal factor needs Metal admission, not MLX sources.
+    set(HYLE_COMPUTE_APPLE_ENABLED ON PARENT_SCOPE)
+    return()
+  endif()
   include(FetchContent)
   # Authenticate all nested sources before any vendor configure. Their later
   # FetchContent declarations reuse these names and already populated inputs.

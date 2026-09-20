@@ -23,12 +23,15 @@
   全 F01–F19 批量映射、模型读取、推理引擎、公共治理或性能仪器改造。
 - tier：P0，核对完整边界同步、转换、存储与重复执行成本。成熟默认路径的适用 P1 在 M2/M3；
   不以本 seam 样例签 64×4 覆盖，也不提前比较自研。
-- 源码/设计总预算 120 分钟。正式登记前输入已计 5 分钟；本次续查/设计保守追加 15 分钟，
-  累计 20 分钟、余 100 分钟，不重置。实现、编译、预声明验证另记；每根因最多两次纠正。
+- 源码/设计总预算 120 分钟。登记与审计检查点累计 35 分钟；本次有限 native 资源与 region
+  接口细化保守追加 35 分钟，累计 70 分钟、余 50 分钟，不重置。实现、编译、预声明验证另记；
+  每根因最多两次纠正。
 - 机器：Air/Mini 原生正确性、生命周期、三交付；Windows/WSL Apple-OFF 与公共语义。
   重型工作跨机器串行、parallel2；Windows DLL 邻置，不改电源、不触发 UAC。
 - stop：有限 FIX 与全部适用门通过后关闭；必要入口失格则写清具名成熟替代/实质阻塞，
   不以拷贝、枚举、只有 source mapping 或 expert probe 冒充完成。
+- 构建平台事实按独立[selector 登记卡](../build/ggml-metal-selector-facts-v1.md)补入既有字段，
+  不改变选择算法；独立 Metal factor 只探测 Metal 工具，不因测试该 factor 获取 MLX。
 - 用户停止点：继续 M1–M4；**M5 开始前暂停汇报，等待用户明确继续**。
 
 ## 审计输入与待固定合同
@@ -130,3 +133,44 @@ Windows 静态 `compute_ops` 与 public-header 两门通过，含非方形 state
 Metal native import / checked completion 的原版资源适配及普通入口仍待实现。新增覆盖为 0/256，
 没有 P1 或自研对比。统一脚本 `loc-report.py --self-check`：Compute+Graph 实现 **51,213 行 / 217 文件**，
 不含测试/vendor，包含冻结存量。保留本卡小型 schema build 供后续增量验证，最终归档后清理。
+
+## 普通入口实施检查点（2026-09-20，仍为 AUDITED）
+
+原版 ggml Metal 已按路线条件构建，使用同份 locked ggml 和可复现的资源补丁；独立 Metal factor
+不获取 MLX，Apple OFF 不探测 Metal 或获取 MLX。原版 Metal 的 `.m` 由 Objective-C 编译，
+不把其 C 资源代码强制当 Objective-C++ 改写。Windows OFF 的测试登记沿既有 aggregate 机制修正。
+
+普通 Direct `prepare(GatedDeltaNet{}, specs/examples)` 已接原版完整递归。普通 Graph 冷期划分
+连续 MLX compiled region 与 whole recurrent region，只发布跨区/公共输出以保留 MLX 内部融合。
+同一 submission owner 执行固定 region 顺序；各 Invocation 独立持有 ggml backend/metadata/import。
+跨库 checked host wait、MLX GPU contiguous 整理 strided 输入，以及结果分配明确计入成本。
+输出两个 MLX array view 共用一份 packed 原生 buffer，无 host 数学或 payload shadow copy。
+冷环境身份增加 locked ggml revision。没有新增、研究、比较或删除任何冻结自研数学。
+
+### 已运行
+
+- Air Release/static/Werror：七门 PASS，包括 `compute_ops`、普通 Apple Direct/Graph、
+  ggml Metal native 与对应公共头。主域 D128/H16、单步/17 token、独立 double oracle、非零初态、
+  两请求交错、旧结果、重复调用；无模型标签 D32、strided MLX 输入；
+  MLX → ggml → MLX → ggml → MLX 图及显式末态依赖；quota、放弃结果和取消/close。
+- 首轮七门中六门通过；strided 测试的原生 `eval()` 后缺显式 ready wait，违反既有 bind 合同。
+  只修正测试并重跑受影响 Direct factor PASS，其余六门复用相同产品身份。产品不放宽 ready 检查。
+- Windows Apple OFF 配置与 `compute_ops` / 两 Apple route 公共头三门 PASS。
+- selector 现有 suite 59/59 PASS，Windows 与 Darwin planning projection READY；后者只签选择事实，
+  不冒充原生运行。独立工具卡结束；docs/closure/diff 通过。
+
+完整命令、原始失败/修正记录、Windows 完整前向快照哈希及机器身份见
+[native 检查点收据](../../../../evidence/correctness/compute-llm-moe-m1-apple-admission/native-air-checkpoint.json)。
+
+### 尚未完成
+
+A2 仍须完成分配/部分构造和 native failure 资格。有限资源复核已定位原版 pipeline cache 的
+C++ map 分配异常可能越过持锁 Objective-C 函数，以及附属 owner 构造的回滚；纳入现有 A2，
+先定向修正这些资源路径，不扩大到上游数学或全库审计。现有数值、quota 与 cancel 测试不代签此项。
+随后仍有 Air host 插桩、source/static/shared 独立 consumer/搬移/导出资源门、Mini 原生与交付、
+WSL OFF/公共语义，以及最后 P0/红队和证据汇总。没有用户决策阻塞，未进入 CANDIDATE/CLOSED。
+
+M1 按实际接入验收估算约 **65%**；新增模型覆盖仍为 **0/256**，无 P1。统一脚本与 self-check：
+Compute+Graph 实现 **51,892 行 / 222 文件**，不含测试/vendor，包含冻结存量。
+Air 活动 build 约 99 MiB、源码约 35 MiB，保留供本卡增量验证；一次性 patch materialization
+副本在收据归档后清理。M5 前停止点不变。

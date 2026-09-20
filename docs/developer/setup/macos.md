@@ -99,4 +99,15 @@ scripts/fetch-bench-vendors.sh
 
 ## 六、可选依赖
 
+### Apple Compute 的 Metal 工具
+
+两台验证机已有 Apple 签名的独立 Metal 17F109 组件，位置为
+`~/hyle-verify-tools/metal-17F109/Metal.xctoolchain`。非交互验证脚本须把
+`~/hyle-verify-tools/metal-17F109/shim` 放在 PATH 最前；其中 `xcrun` 仅把
+`-sdk macosx metal/metallib` 转到此组件，其余调用仍转给 `/usr/bin/xcrun` 与当前 CLT SDK。
+2026-09-20 Air 实查版本为 `32023.883`；不能把该 compiler 版本当成驱动或部署版本。
+默认 CLT 的 `xcrun` 可能找不到 Metal，不应因此重新安装工具或更改全局 developer directory。
+
+### 其他依赖
+
 - **OpenSSL**：`brew install openssl@3`，配置时 `-DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。

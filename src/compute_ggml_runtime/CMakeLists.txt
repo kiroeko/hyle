@@ -1,5 +1,5 @@
 # Shared source ownership does not imply a shared backend executor. Only the
-# selected CPU/CUDA/Vulkan closures enable their native implementation targets.
+# selected CPU/CUDA/Metal/Vulkan closures enable their native implementation targets.
 set(_cpu OFF)
 set(_explicit_factors "${HYLE_DEV_FACTORS}")
 string(REPLACE "," ";" _explicit_factors "${_explicit_factors}")
@@ -13,7 +13,8 @@ if(DEFINED HYLE_COMPUTE_CPU AND NOT HYLE_COMPUTE_CPU)
   set(_cpu OFF)
 endif()
 set(HYLE_GGML_CPU_ENABLED "${_cpu}" PARENT_SCOPE)
-if(NOT _cpu AND NOT HYLE_COMPUTE_VULKAN_ENABLED AND NOT HYLE_COMPUTE_CUDA_ENABLED)
+if(NOT _cpu AND NOT HYLE_COMPUTE_VULKAN_ENABLED AND
+   NOT HYLE_COMPUTE_CUDA_ENABLED AND NOT HYLE_COMPUTE_APPLE_ENABLED)
   hyle_add_module(compute_ggml_runtime OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_ggml_runtime PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
@@ -38,6 +39,10 @@ set(_licenses
   "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-LICENSE"
   "${_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-LICENSE"
   "${_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-NOTICE.md")
+if(HYLE_COMPUTE_APPLE_ENABLED)
+  list(APPEND _manifests "${_patch_root}/metal-patches.json")
+  list(APPEND _patch_args --manifest "${_patch_root}/metal-patches.json")
+endif()
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   hyle_audit_in_tree_dependencies(ggml_vulkan_runtime_patches)
   set(_vk_patches "${HYLE_SOURCE_DIR}/third_party/ggml_vulkan_runtime")
@@ -102,12 +107,19 @@ block()
   set(GGML_CUDA_GRAPHS "${HYLE_COMPUTE_CUDA_ENABLED}")
   set(GGML_CUDA_NCCL OFF)
   set(GGML_VULKAN "${HYLE_COMPUTE_VULKAN_ENABLED}")
+  set(GGML_METAL "${HYLE_COMPUTE_APPLE_ENABLED}")
+  # Original embedded Metal sources survive prefix relocation in every delivery.
+  # Device libraries and shape pipelines are prepared cold by the native owner.
+  set(GGML_METAL_EMBED_LIBRARY "${HYLE_COMPUTE_APPLE_ENABLED}")
   set(GGML_BUILD_COMMIT "${HYLE_DEP_GGML_COMMIT}-hyle")
   add_subdirectory("${_patched_source}" vendor EXCLUDE_FROM_ALL)
 endblock()
 
 set(_vendor_targets ggml ggml-base)
 set(_sources metadata_arena.cc)
+if(HYLE_COMPUTE_APPLE_ENABLED)
+  list(APPEND _vendor_targets ggml-metal)
+endif()
 if(_cpu)
   list(APPEND _vendor_targets ggml-cpu)
   list(APPEND _sources cpu_execution.cc)

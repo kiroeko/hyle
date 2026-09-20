@@ -1,0 +1,180 @@
+{
+  "stage": "M1-A AUDITED implementation checkpoint; not terminal route admission",
+  "baseline": "b6aabfc2d9c4abe0d9189973fb24e340a4ae00ea",
+  "source_manifest": "product-worktree-manifest.json in raw archive; Windows full forward snapshot",
+  "product_sha256": {
+    "include/hyle/compute/apple.h": "c394d8826dd4c2ceb8efbe4fa800726ffd7f00a09efe5049cac37562655bccaf",
+    "include/hyle/compute/backends/cpu.h": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d",
+    "include/hyle/compute/backends/cuda.h": "6493d0e559f70ce37a3e7b84c18504f8c6f5d47020cf5e2de0d787229bbfe777",
+    "include/hyle/compute/completion.h": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34",
+    "include/hyle/compute/cpu.h": "9a56fc112f193c14a748e4217456aeed36671cef3a74c6e00c50064ad6e609e6",
+    "include/hyle/compute/cuda.h": "387238c7a8091a8310dd9f61f336e6d79549efc3ba2d0bf63961531e5f30e619",
+    "include/hyle/compute/custom_kernel.h": "5a4f4143bae6a1f25cb226fbcb97db686c82e1448304ac7b5ad5c22caf7cbd3d",
+    "include/hyle/compute/delegated_operation.h": "43a8c35359d39cb5db489892a5f9b79cd22a90af3b876992509353ad696ae960",
+    "include/hyle/compute/detail/apple_plan.h": "7bfabc9ecfd0b4aa4f8e088a3f0e832929ef26c5c1f2b6cfbf58c5f791395682",
+    "include/hyle/compute/detail/backend_extension.h": "0a67fcfb43e69f7106a2b4628442a74d14e9e18f0efe691109973b701d065cd4",
+    "include/hyle/compute/detail/command_capture.h": "6f40aeb2b44d2b0820e895bfb6667e0308c6dbb12ba4374571dbc076287aa6b0",
+    "include/hyle/compute/detail/completion_access.h": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34",
+    "include/hyle/compute/detail/context_ref.h": "0e44878fc04ea7b7378078e81045dcfb4760a27d44a5fc843b874ff612051ab3",
+    "include/hyle/compute/detail/generated_result.h": "a749ef701a6352f2ce5a07b5ee1edd25f3ab226a9abc022b2ee79822ed23b700",
+    "include/hyle/compute/detail/prepared_callbacks.h": "2d00a2e823af0bcdaa9fc0330aa441b18ce6932f090dc903be876f1b08e449a1",
+    "include/hyle/compute/detail/provider_extension.h": "fd2441737a83d03544fac2b63092c5d4ca880bebeb009fc65bfddbf022b8909d",
+    "include/hyle/compute/detail/queue_sequence.h": "fbb8da2ae4e99517da7483ae0e52ad5c0c0e66353696108724eec416856157ff",
+    "include/hyle/compute/detail/resource_binding.h": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5",
+    "include/hyle/compute/detail/vulkan_plan.h": "f098868634fd954fd9d18e379e2954fd8e1c5818aad5c4ae5aac8b4b32803527",
+    "include/hyle/compute/device.h": "2bfd6db2298bcdd51a3fb2faf4ce0cab27ece7493a7ec57e1b33e2330b04f256",
+    "include/hyle/compute/operation.h": "5d41150164ed71342bca5fcfedcc9ad7fb23df832f8f31c823214dcf4a70f1f8",
+    "include/hyle/compute/ops_visibility.h": "ae84b32667858fd2dd679bf2ba68e50d7405e9164ec0fd317173f20086b5fa6d",
+    "include/hyle/compute/prepared_operation.h": "1933f4cc8bfc62a507168cd3d1f2865e505e290abc6248e472ee7c65b0de8575",
+    "include/hyle/compute/provider.h": "69c840564ad4b138d6333478cfbad1e529886857a12728b4344e5a26b912bcd4",
+    "include/hyle/compute/providers/cublas.h": "5171b4a2ac639fd78a20b6390c9f47ae002842842630ff7bab2c9e05506cae6f",
+    "include/hyle/compute/providers/cuda.h": "0af9a415ba87fff5b38a9cb6162407c7fc6784e7704750f458bf7efa1fa2e33c",
+    "include/hyle/compute/providers/flashinfer.h": "a430e5cabd6b93bebef5b8c9d89b6f3bce7e6b0a081763b49362ae94f3e72984",
+    "include/hyle/compute/providers/ggml_cuda.h": "8e4c1534b50ef979b70311f547ebde3400079b1c0a92856af60f917edfc23f3e",
+    "include/hyle/compute/providers/marlin.h": "153f7feabedc696f8026ae0c4b0c7f2f0925a0fc936cf0b78ce9e88dccccbe8a",
+    "include/hyle/compute/providers/native.h": "a9769766b7d14fcec8cd1eb026533d7f60093af81219ccb5794331dc7ee9b9d0",
+    "include/hyle/compute/providers/onednn.h": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b",
+    "include/hyle/compute/resource_requirement.h": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76",
+    "include/hyle/compute/result.h": "7e4e55a4dbd1dde6deeca6630f023045ea18740867746ae1827d4f45b806d9ee",
+    "include/hyle/compute/tensor.h": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538",
+    "include/hyle/compute/tensor_desc.h": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a",
+    "include/hyle/compute/transfer.h": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c",
+    "include/hyle/compute/visibility.h": "fb05970d03d232298d57da8921c3a441cd93cd0d9dbb6cbcfcaa5b6a51964aa5",
+    "include/hyle/compute/vulkan.h": "f4d1003a58d4596962cd0d896f2720a0545c4e5081bd30a048bd3ec136837671",
+    "include/hyle/compute/workload.h": "a6d278a3160464dd869fed1b2297e8452065a5eaca4f838fae29f392ecccc7e5",
+    "src/compute_ggml_runtime/CMakeLists.txt": "fe674dd1e0dd5435ad1bb162b1542ff29084d0af34ec4aa268e8435d49f2ddcf",
+    "src/compute_ggml_runtime/cpu_execution.cc": "6037bb1424dc598d52867bf4fbfec888b2d31294877bbcae4394f0cff5cfd0fe",
+    "src/compute_ggml_runtime/cpu_execution.h": "c0dfeae8f363b3aae1e83393abdfdb9690e169dea95e486aac74a29f9ecdb951",
+    "src/compute_ggml_runtime/metadata_arena.cc": "0b1cbdc5d063593a1f780df92ed9420ba6905ec02f1f492ae486e3046fde1d09",
+    "src/compute_ggml_runtime/metadata_arena.h": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb",
+    "src/compute_ggml_runtime/prepare_source.py": "ccde3399d6a65ecb68f3ecc6886522ff559df2eb7e5da405ae71612372615c7c",
+    "src/compute_provider_ggml_metal/CMakeLists.txt": "442c2e502b96dbe8ed4966f8fa1fa0de480aa4c4c55851f15f93fca3fb8ab655",
+    "src/compute_provider_ggml_metal/native_program.cc": "8ffc32477840d1bd75fa73ad25f6da7bd47b936d3b3f5492e1126723366eb200",
+    "src/compute_provider_ggml_metal/native_program.h": "b3d7ce547f33ed4c80297883f20fd7dbbb18601bcfe26b4579f1cc7a059cd64c",
+    "src/compute_route_apple/CMakeLists.txt": "14b8c468ba20539af4c01e746122490bd642697e6680a18df4d90cf32e3fbdf4",
+    "src/compute_route_apple/apple_build.h.in": "05caf23a07d9df00934c827fd89ba16c9b7dc85c0cd658be01e4ccf89f557996",
+    "src/compute_route_apple/apple_checks.h": "28b1ff80b67177edcc2294f9ca158a47c44ffd1d9b518f9a09d874cf75b8c00a",
+    "src/compute_route_apple/apple_context.cc": "e9f09167263b295799d391ea10297394196a3e13f38e18ba296f8aa0f936e087",
+    "src/compute_route_apple/apple_environment.mm": "afea659e9df760e9b4af37b5c77cd6d9cf64c50005e08627d89ab21dd55943eb",
+    "src/compute_route_apple/apple_indexing.cc": "f93d92c4e886fdef97a739c8f89fff267ee67b0d2b3d021c3fa15e8094b824cf",
+    "src/compute_route_apple/apple_indexing.h": "06e452e202d47222b74cbef717ce1e32b2c471aa34e8be373ed1bd3479e16a13",
+    "src/compute_route_apple/apple_internal.h": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c",
+    "src/compute_route_apple/apple_operations.cc": "7300687a5b36573963c4fd1986e3d2b4bb5888b6c110c4487deddcfdd688c3b5",
+    "src/compute_route_apple/apple_recurrent.cc": "f17666f1e6978e1ecfcc358cb3a160c090c23f21f8f5083af136e0fd029ad24c",
+    "src/compute_route_apple/apple_recurrent.h": "2d0e9b723c311aec860340498362b7669b0e3c3f2e1cd2524af31dd2c070b75e",
+    "src/compute_route_apple/apple_reduction.cc": "07f865854b0f11d80acea3ed06cc1ee79424f3f6a8735f4cddb9fb14c1d77df3",
+    "src/compute_route_apple/apple_reduction.h": "d1f90b09a4067faece29324b6ced25f4db16de60dd2c8c7889c9fc29b2b8136f",
+    "src/compute_route_apple/apple_scatter.cc": "d783520235955b2bd2cc1c2c62062474ca584dc9c346b7cbb108a11bf196fe72",
+    "src/compute_route_apple/apple_tensor.cc": "db6b509df6b81fe9b21d62b6bd0ae8d32c9bc6350569f2db77f95a50c187ef69",
+    "src/compute_route_apple/apple_tensor.h": "c28c1096b66603324641c79b7096beefee6ca8d47a21637b7eec3c8474abc450",
+    "src/graph_route_apple/CMakeLists.txt": "736aeb73f0ad3cdeef1b2391ea8d1f7c591677b5d44faf96c031051476818faf",
+    "src/graph_route_apple/apple_lowering.cc": "cb9b7149c64f3a81e01dd56fd8c4e11371187214e5c02b0ed22ad58574adff6c",
+    "third_party/ggml_runtime/LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+    "third_party/ggml_runtime/NOTICE.md": "2cd21fbbc1a5879bb946b8f1572dd0f756a2042e9e5d213d9800fe8625167418",
+    "third_party/ggml_runtime/metal-patches.json": "e7976d09b4b8c56cae6dfc0ce587757f8d772543def8f6208a83a64725ac4822",
+    "third_party/ggml_runtime/patches.json": "2b97e71a05d785662b72bad7bd9c65b304b2dc44ede6ebfe10c6d8a88342d8b3"
+  },
+  "air": {
+    "machine": "Mac16,12 Apple M4; macOS 27.0 26A428; arm64",
+    "compiler": "Apple clang 21.0.0 clang-2100.3.34.2",
+    "configuration": "Release static, Werror, deployment 14.4, Apple ON, other routes OFF; parallel2",
+    "verdict": "PASS within seven named gates",
+    "gates": [
+      "compute_ops correctness",
+      "compute_ops public headers",
+      "compute_route_apple correctness",
+      "compute_route_apple public headers",
+      "graph_route_apple correctness",
+      "graph_route_apple public headers",
+      "compute_provider_ggml_metal correctness"
+    ],
+    "execution": "Six PASS in route-tests.log; failed Direct test fixture omitted ready wait; explicit wait added, only affected factor rerun PASS in route-retest.log",
+    "journeys": [
+      "original D128/H16 single/multi-token recurrence and independent double oracle",
+      "ordinary Direct, two requests, repeated input, nonzero state, old result/close",
+      "original MLX strided-input contiguous copy and output sharing",
+      "MLX -> ggml recurrent -> MLX -> ggml recurrent -> MLX ordinary Graph",
+      "metadata/result quota failure, unsupported D96, abandoned result and cancel/drain"
+    ]
+  },
+  "windows": {
+    "verdict": "PASS",
+    "gates": 3,
+    "scope": "Apple OFF configuration; compute_ops/compute_route_apple/graph_route_apple public headers",
+    "isolation": "No MLX/Metal admission/download. New private provider uses the existing test aggregate mechanism while native tests remain absent."
+  },
+  "tool": {
+    "suite": "59/59 PASS",
+    "windows_plan": "READY",
+    "darwin_plan": "READY planning-only platform projection, not native execution"
+  },
+  "remaining": [
+    "A2 complete allocator/partial-initialization and native failure qualification, including pipeline-cache exception rollback",
+    "Air host ASan/UBSan, three installed/source deliveries and export/resource isolation",
+    "Mini native and delivery portability; WSL Apple-OFF/shared semantics",
+    "final P0/red-team/selector evidence reconciliation and cleanup"
+  ],
+  "coverage_cells_signed": 0,
+  "self_written_math_changes": false,
+  "p1_executed": false,
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 1058990,
+      "files": 2944,
+      "selected_files": 5890,
+      "paths": [
+        "Git-tracked regular files (current working tree)"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 147077,
+      "files": 573,
+      "selected_files": 636,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute-graph-all)",
+      "code": 51892,
+      "files": 222,
+      "selected_files": 253,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute*",
+        "src/graph*"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "raw": {
+    "file": "native-air-checkpoint-raw.zip",
+    "bytes": 260196,
+    "sha256": "52342a5a958bb6052baa165427e8c94a76ac1077213d5aec7dbef855ecc76ea0"
+  }
+}

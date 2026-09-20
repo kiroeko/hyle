@@ -20,3 +20,12 @@ allocating a temporary context on every execution. The original math tables,
 operators, worker execution, barriers and fusion algorithms are unchanged.
 The build identity is supplied by the lock instead of probing the parent's Git
 repository. Vulkan backend-specific patches remain in its separate manifest.
+
+The conditional `metal-patches.json` owns the M1-A Apple resource seams: retained
+native MTLBuffer imports (including heap-backed buffers), checked completion,
+and failure-safe encoding. Original Metal kernels, operator semantics and
+fusion remain unchanged. C++ allocation failures are caught before crossing
+libdispatch callbacks; accepted commands are drained before owners are released.
+The bridge symbols are private. The original embedded Metal sources provide
+relocatable delivery; library/pipeline construction stays in cold preparation.
+The imported array remains owned and allocated by MLX, never freed by ggml.

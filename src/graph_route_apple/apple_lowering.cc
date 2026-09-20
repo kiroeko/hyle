@@ -1,7 +1,9 @@
 #include "hyle/graph/apple.h"
+#include "hyle/compute/detail/apple_plan.h"
 
 #include "hyle/obs/trace.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -95,17 +97,20 @@ Status match(const compute::TensorDesc &description, const mx::array &value) {
 }
 
 Result<std::vector<mx::array>> trace(const Plan &plan,
+                                     std::span<const Node> nodes,
+                                     std::span<const std::size_t> input_ids,
+                                     std::span<const std::size_t> output_ids,
                                      const std::vector<mx::array> &inputs,
                                      mx::Stream stream) {
   // This storage exists only during cold MLX tracing. Hot runs invoke its
   // compiled artifact; they never allocate or interpret this HYLE value table.
   std::vector<std::optional<mx::array>> values(plan.descriptions.size());
   for (std::size_t i = 0; i < inputs.size(); ++i)
-    values[plan.inputs[i]] = inputs[i];
+    values[input_ids[i]] = inputs[i];
   for (std::size_t i = 0; i < plan.constants.size(); ++i)
     values[plan.constants[i]] = plan.values[i];
   std::vector<mx::array> arguments;
-  for (const auto &node : plan.nodes) {
+  for (const auto &node : nodes) {
     arguments.clear();
     for (auto index : node.inputs)
       arguments.push_back(*values[index]);
@@ -125,10 +130,77 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
     }
   }
   std::vector<mx::array> result;
-  result.reserve(plan.outputs.size());
-  for (auto index : plan.outputs)
+  result.reserve(output_ids.size());
+  for (auto index : output_ids)
     result.push_back(std::move(*values[index]));
   return result;
+}
+
+Result<ca::Program> compile_regions(const ca::Context &context,
+                                     std::shared_ptr<const Plan> plan) {
+  ca::detail::RegionPlan native;
+  native.workload = plan->workload;
+  native.values.resize(plan->descriptions.size());
+  native.inputs = plan->inputs;
+  native.outputs = plan->outputs;
+  native.constants = plan->constants;
+  native.constant_values = plan->values;
+  for (std::size_t id = 0; id < plan->descriptions.size(); ++id)
+    if (plan->descriptions[id].valid()) {
+      HYLE_ASSIGN_OR_RETURN(native.values[id], native_spec(plan->descriptions[id]));
+    }
+  std::vector<std::size_t> last_use(native.values.size());
+  std::vector<bool> constant(native.values.size(), false);
+  for (auto id : plan->constants)
+    constant[id] = true;
+  for (std::size_t i = 0; i < plan->nodes.size(); ++i)
+    for (auto id : plan->nodes[i].inputs)
+      last_use[id] = i;
+  for (auto id : plan->outputs)
+    last_use[id] = plan->nodes.size();
+
+  for (std::size_t begin = 0; begin < plan->nodes.size();) {
+    ca::detail::Region region;
+    const auto &first = plan->nodes[begin];
+    if (first.operation.kind() == compute::OperationKind::kGatedDeltaNet) {
+      region.kind = ca::detail::RegionKind::kGatedDeltaNet;
+      region.inputs = first.inputs;
+      region.outputs = first.outputs;
+      for (auto id : first.inputs)
+        region.recurrent_inputs.push_back(plan->descriptions[id]);
+      native.regions.push_back(std::move(region));
+      ++begin;
+      continue;
+    }
+    auto end = begin + 1;
+    while (end < plan->nodes.size() &&
+           plan->nodes[end].operation.kind() != compute::OperationKind::kGatedDeltaNet)
+      ++end;
+    std::vector<bool> internal(native.values.size(), false);
+    std::vector<bool> argument(native.values.size(), false);
+    for (auto i = begin; i < end; ++i) {
+      for (auto id : plan->nodes[i].inputs)
+        if (!internal[id] && !constant[id] && !argument[id]) {
+          region.inputs.push_back(id);
+          argument[id] = true;
+        }
+      for (auto id : plan->nodes[i].outputs) {
+        internal[id] = true;
+        if (last_use[id] >= end)
+          region.outputs.push_back(id);
+      }
+    }
+    // Only cross-region/public values become MLX outputs. Publishing every
+    // intermediate here would prevent the original compiler's fusion.
+    region.mlx = [plan, begin, end, inputs = region.inputs,
+                  outputs = region.outputs](const auto &values, mx::Stream stream) {
+      return trace(*plan, std::span<const Node>(plan->nodes).subspan(begin, end - begin),
+                   inputs, outputs, values, stream);
+    };
+    native.regions.push_back(std::move(region));
+    begin = end;
+  }
+  return ca::detail::ContextAccess::compile(context, std::move(native));
 }
 } // namespace
 
@@ -272,9 +344,20 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       for (const auto output : plan->outputs)
         report->outputs.push_back(plan->descriptions[output]);
     }
+    const bool has_recurrent = std::ranges::any_of(plan->nodes, [](const auto &node) {
+      return node.operation.kind() == compute::OperationKind::kGatedDeltaNet;
+    });
+    if (has_recurrent) {
+      if (report != nullptr) {
+        report->implementation_policy = "Original ggml Metal GatedDeltaNet regions and maximal MLX compiled regions; fixed cold binding";
+        report->numerical_policy += "; recurrent F32 equal heads D32/64/128, explicit non-mutating initial/final state";
+        report->boundary_policy += "; checked host completion at runtime boundaries; native MTLBuffer import; strided inputs use original MLX contiguous copy";
+      }
+      return compile_regions(context, std::move(plan));
+    }
     return context.compile(
         [plan = std::move(plan)](const auto &inputs, mx::Stream stream) {
-          return trace(*plan, inputs, stream);
+          return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs, stream);
         },
         specs, options.workload);
   } catch (const std::bad_alloc &) {

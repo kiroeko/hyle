@@ -21,6 +21,7 @@ Environment read_environment() {
   }
   result.mlx_version = HYLE_APPLE_MLX_VERSION;
   result.mlx_revision = HYLE_APPLE_MLX_REVISION;
+  result.ggml_revision = HYLE_APPLE_GGML_REVISION;
   result.metal_compiler = HYLE_APPLE_METAL_COMPILER;
   result.build_sdk = __MAC_OS_X_VERSION_MAX_ALLOWED;
   result.deployment_target = __MAC_OS_X_VERSION_MIN_REQUIRED;
