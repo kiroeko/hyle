@@ -496,14 +496,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+      "summary": "M2-B1 Apple SCOPED：21行成熟MLX批量映射/精确语义、普通Direct/Graph与原生结果验收；M1资源证据保持，先审计有限FIX，所有自研冻结。源码/设计6/120分钟，暂无新增覆盖。"
     },
     {
       "module": "graph_route_apple",
