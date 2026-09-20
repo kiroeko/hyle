@@ -564,6 +564,113 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
 }
 
 #if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultGraph, SelectedGroupMeansBroadcastWithinOneMatureRegion) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto context =
+        graph::cpu::create_context({.metadata_allocator = stats.get()}).value();
+    auto queue = context.create_queue().value();
+    const auto description = compute::TensorDesc::dense(
+                                 compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 6>{2, 3, 2, 2, 2, 5})
+                                 .value();
+    auto builder = graph::GraphBuilder::create().value();
+    const auto input = builder.input(description).value();
+    const compute::Reduce reduce{
+        .kind = compute::ReductionKind::kMean,
+        .axes =
+            compute::Axes::from(std::array<std::int32_t, 3>{4, -6, 2}).value(),
+        .keep_dimensions = true,
+        .accumulation_type = compute::DataType::kFloat32};
+    const auto mean = builder.add(reduce, input).value();
+    const auto centered =
+        builder
+            .add(compute::Binary{compute::BinaryKind::kSubtract}, input, mean)
+            .value();
+    const auto squared =
+        builder
+            .add(compute::Binary{compute::BinaryKind::kMultiply}, centered,
+                 centered)
+            .value();
+    const auto variance = builder.add(reduce, squared).value();
+    ASSERT_TRUE(builder.publish(mean).ok());
+    ASSERT_TRUE(builder.publish(variance).ok());
+    auto logical = std::move(builder).finish().value();
+    const auto output_desc = logical.value_description(mean).value();
+    auto compiled = graph::compile(logical, context);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_EQ(compiled->report.region_count(), 1U);
+    ASSERT_EQ(compiled->report.step_count(), 1U);
+    EXPECT_EQ(compiled->report.step(0)->node_count, 4U);
+    EXPECT_EQ(compiled->report.step(0)->provider.id,
+              compute::ggml_cpu::kProviderId);
+    std::vector<float> values(240);
+    auto source = half_test::buffer<float>(values);
+    std::array means{half_test::buffer<float>(std::vector<float>(30)),
+                     half_test::buffer<float>(std::vector<float>(30))};
+    std::array variances{half_test::buffer<float>(std::vector<float>(30)),
+                         half_test::buffer<float>(std::vector<float>(30))};
+    std::array invocations{compiled->executable.create_invocation().value(),
+                           compiled->executable.create_invocation().value()};
+    const std::array queues{graph::QueueBinding{
+        .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+    for (std::size_t slot = 0; slot < invocations.size(); ++slot) {
+      ASSERT_TRUE(invocations[slot]
+                      .bind(input, compute::ConstTensorView::create(
+                                       description, source.view())
+                                       .value())
+                      .ok());
+      ASSERT_TRUE(invocations[slot]
+                      .bind(mean, compute::TensorView::create(
+                                      output_desc, means[slot].view())
+                                      .value())
+                      .ok());
+      ASSERT_TRUE(invocations[slot]
+                      .bind(variance, compute::TensorView::create(
+                                          output_desc, variances[slot].view())
+                                          .value())
+                      .ok());
+      ASSERT_TRUE(invocations[slot].prepare_replay(queues).ok());
+    }
+    const auto allocations = stats.snapshot().total_allocs;
+    std::array<std::vector<float>, 2> previous;
+    const auto group = [](std::size_t index) {
+      return ((index / 40) % 3) * 10 + ((index / 10) % 2) * 5 + index % 5;
+    };
+    for (std::size_t run = 0; run < 4; ++run) {
+      const auto slot = run % 2;
+      std::array<double, 30> expected_mean{}, expected_variance{};
+      for (std::size_t i = 0; i < values.size(); ++i) {
+        values[i] =
+            static_cast<float>(static_cast<int>((i + run * 5) % 31) - 15) / 16;
+        expected_mean[group(i)] += values[i] / 8.0;
+      }
+      for (std::size_t i = 0; i < values.size(); ++i) {
+        const auto difference =
+            static_cast<double>(values[i]) - expected_mean[group(i)];
+        expected_variance[group(i)] += difference * difference / 8.0;
+      }
+      ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+      auto done = invocations[slot].submit(queue);
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      const auto actual_mean = half_test::read<float>(means[slot]);
+      const auto actual_variance = half_test::read<float>(variances[slot]);
+      for (std::size_t i = 0; i < expected_mean.size(); ++i) {
+        EXPECT_NEAR(actual_mean[i], expected_mean[i], 2.e-6);
+        EXPECT_NEAR(actual_variance[i], expected_variance[i], 2.e-6);
+      }
+      previous[slot] = actual_variance;
+      if (run != 0)
+        EXPECT_EQ(half_test::read<float>(variances[1 - slot]),
+                  previous[1 - slot]);
+    }
+    EXPECT_EQ(stats.snapshot().total_allocs, allocations);
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
 template <class Value> void check_l2_region() {
   for (const std::int64_t width : {1, 7, 31}) {
     auto stats =

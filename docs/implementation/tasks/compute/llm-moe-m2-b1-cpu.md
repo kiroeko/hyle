@@ -241,3 +241,13 @@ Gather 验证四种 storage、rank6 dense/非连续源、标量/矩阵/非连续
 一般广播每轴至多一侧扩张；归约至多每组一次 cont，原 metadata 容量上界仍覆盖这些节点。
 本轮设计及定向源码核对扣12分钟，累计102分钟、剩余18分钟，总预算不重置。其它成熟补位仍待
 完成，自研冻结及旧 oneDNN Q2 条件不变。
+
+### C1-B 实现中检查点
+
+任意合法广播和指定轴 Sum/Mean 的原版组合已接入。Windows 同一开发配置的7个目标通过，
+包含 Provider 17、Direct 6、Graph目标13项用例执行。归约独立坐标 oracle 覆盖 rank6 的63种
+非空轴集、两种 keep-dim、Sum/Mean 和三个浮点类型（756组），另有非连续输入、scalar、
+空集合与空输出；交错广播覆盖 rank6/rank8、不同 rank、左右操作数顺序和源数据保留。
+普通 Graph 的分组均值→广播相减→方差在一个原版 region 内执行，双 slot 重放及无热 HYLE
+allocation 通过。原始记录为 `broadcast-windows.json` 与 archive；不签全21行、跨平台/三交付/
+插桩/P1，也不增加完整覆盖格。API/算法尚未全部稳定，未启动性能采样。

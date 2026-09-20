@@ -8,6 +8,7 @@
 #include <span>
 #include <thread>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
@@ -428,6 +429,213 @@ TEST(GgmlCpuProvider, ColumnBroadcastKeepsOperandOrder) {
       }
     }
   }
+}
+
+template <class Value> void check_general_broadcast() {
+  using Shape = std::vector<std::int64_t>;
+  const std::array<std::pair<Shape, Shape>, 3> shapes{
+      {{{2, 1, 3, 1, 2, 1}, {1, 3, 1, 2, 1, 5}},
+       {{2, 1, 2, 1, 2, 1, 2, 1}, {1, 2, 1, 2, 1, 2, 1, 3}},
+       {{3, 1, 2, 1}, {2, 1, 1, 4, 1, 5}}}};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  for (const auto &[left_shape, right_shape] : shapes) {
+    const auto left_desc =
+        TensorDesc::dense(half_test::data_type<Value>(), left_shape).value();
+    const auto right_desc =
+        TensorDesc::dense(half_test::data_type<Value>(), right_shape).value();
+    std::vector<Value> left(left_desc.element_count().value()),
+        right(right_desc.element_count().value());
+    for (std::size_t i = 0; i < left.size(); ++i)
+      left[i] = half_test::encode<Value>(0.5 + static_cast<double>(i % 11) / 8);
+    for (std::size_t i = 0; i < right.size(); ++i)
+      right[i] =
+          half_test::encode<Value>(0.75 + static_cast<double>(i % 7) / 8);
+    auto left_buffer = half_test::buffer<Value>(left);
+    auto right_buffer = half_test::buffer<Value>(right);
+    const auto left_view =
+        ConstTensorView::create(left_desc, left_buffer.view()).value();
+    const auto right_view =
+        ConstTensorView::create(right_desc, right_buffer.view()).value();
+    for (const auto kind : {BinaryKind::kAdd, BinaryKind::kSubtract,
+                            BinaryKind::kMultiply, BinaryKind::kDivide}) {
+      for (const bool reverse : {false, true}) {
+        const std::array descriptions{left_desc, right_desc};
+        const auto description =
+            infer_single_output(Operation(Binary{kind}), descriptions).value();
+        const std::array inputs{reverse ? right_view : left_view,
+                                reverse ? left_view : right_view};
+        auto output = output_buffer(description);
+        const auto status =
+            execute(context, Binary{kind}, inputs,
+                    TensorView::create(description, output.view()).value());
+        ASSERT_TRUE(status.ok()) << status.message();
+        const auto actual = half_test::read<Value>(output);
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          auto remainder = i;
+          std::array<std::size_t, kMaxTensorRank> coordinates{};
+          for (std::size_t d = description.rank(); d-- > 0;) {
+            const auto extent =
+                static_cast<std::size_t>(description.dimensions()[d]);
+            coordinates[d] = remainder % extent;
+            remainder /= extent;
+          }
+          const auto offset = [&](const TensorDesc &operand) {
+            std::size_t index = 0;
+            for (std::size_t d = 0; d < operand.rank(); ++d) {
+              const auto extent =
+                  static_cast<std::size_t>(operand.dimensions()[d]);
+              index =
+                  index * extent +
+                  (extent == 1
+                       ? 0
+                       : coordinates[description.rank() - operand.rank() + d]);
+            }
+            return index;
+          };
+          const float l =
+              static_cast<float>(half_test::decode(left[offset(left_desc)]));
+          const float r =
+              static_cast<float>(half_test::decode(right[offset(right_desc)]));
+          const float a = reverse ? r : l, b = reverse ? l : r;
+          const float expected = kind == BinaryKind::kAdd        ? a + b
+                                 : kind == BinaryKind::kSubtract ? a - b
+                                 : kind == BinaryKind::kMultiply ? a * b
+                                                                 : a / b;
+          if constexpr (std::is_same_v<Value, float>)
+            EXPECT_NEAR(actual[i], expected, 2.e-6F);
+          else
+            half_test::expect_near(actual[i], expected);
+        }
+      }
+    }
+    const auto preserved_left = half_test::read<Value>(left_buffer);
+    const auto preserved_right = half_test::read<Value>(right_buffer);
+    EXPECT_EQ(std::memcmp(left.data(), preserved_left.data(),
+                          left.size() * sizeof(Value)),
+              0);
+    EXPECT_EQ(std::memcmp(right.data(), preserved_right.data(),
+                          right.size() * sizeof(Value)),
+              0);
+  }
+}
+
+TEST(GgmlCpuProvider, GeneralBroadcastPreservesHeadBatchAndOperandAxes) {
+  check_general_broadcast<float>();
+  check_general_broadcast<hyle::simd::float16_t>();
+  check_general_broadcast<hyle::simd::bfloat16_t>();
+}
+
+template <class Value>
+void check_reduction_axes(std::initializer_list<std::int64_t> shape,
+                          bool strided = false) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto description = dense(half_test::data_type<Value>(), shape);
+  if (strided) {
+    std::vector<std::int64_t> strides(description.byte_strides().begin(),
+                                      description.byte_strides().end());
+    for (auto &stride : strides)
+      stride *= 2;
+    description = TensorDesc::strided_bytes(half_test::data_type<Value>(),
+                                            description.dimensions(), strides)
+                      .value();
+  }
+  const auto size = description.element_count().value();
+  const std::size_t spacing = strided ? 2 : 1;
+  std::vector<Value> values(size), physical(size * spacing);
+  for (std::size_t i = 0; i < size; ++i) {
+    values[i] = half_test::encode<Value>(
+        static_cast<double>(static_cast<int>(i % 23) - 11) / 32);
+    physical[i * spacing] = values[i];
+  }
+  auto source = half_test::buffer<Value>(physical);
+  const auto input =
+      ConstTensorView::create(description, source.view()).value();
+  const auto end = std::size_t{1} << description.rank();
+  for (std::size_t mask = description.rank() == 0 ? 0 : 1; mask < end; ++mask) {
+    for (const bool keep : {false, true}) {
+      std::vector<std::int32_t> requested;
+      for (std::size_t d = description.rank(); d-- > 0;)
+        if ((mask & (std::size_t{1} << d)) != 0)
+          requested.push_back(
+              static_cast<std::int32_t>(d) -
+              (keep ? 0 : static_cast<std::int32_t>(description.rank())));
+      const auto axes = requested.empty() || (mask == end - 1 && keep)
+                            ? Axes::all()
+                            : Axes::from(requested).value();
+      for (const auto kind : {ReductionKind::kSum, ReductionKind::kMean}) {
+        SCOPED_TRACE(::testing::Message()
+                     << "rank=" << description.rank() << " axes=" << mask
+                     << " keep=" << keep);
+        const Reduce operation{.kind = kind,
+                               .axes = axes,
+                               .keep_dimensions = keep,
+                               .accumulation_type = DataType::kFloat32};
+        const auto out_desc = infer_single_output(Operation(operation),
+                                                  std::span(&description, 1))
+                                  .value();
+        auto output = output_buffer(out_desc);
+        const auto status =
+            execute(context, operation, std::span(&input, 1),
+                    TensorView::create(out_desc, output.view()).value());
+        ASSERT_TRUE(status.ok()) << status.message();
+        const auto actual = half_test::read<Value>(output);
+        std::vector<double> sums(actual.size());
+        std::vector<std::size_t> counts(actual.size());
+        for (std::size_t i = 0; i < size; ++i) {
+          auto remainder = i;
+          std::array<std::size_t, kMaxTensorRank> coordinates{};
+          for (std::size_t d = description.rank(); d-- > 0;) {
+            const auto extent =
+                static_cast<std::size_t>(description.dimensions()[d]);
+            coordinates[d] = remainder % extent;
+            remainder /= extent;
+          }
+          std::size_t output_index = 0;
+          for (std::size_t d = 0; d < description.rank(); ++d)
+            if ((mask & (std::size_t{1} << d)) == 0)
+              output_index = output_index * static_cast<std::size_t>(
+                                                description.dimensions()[d]) +
+                             coordinates[d];
+          sums[output_index] += half_test::decode(values[i]);
+          ++counts[output_index];
+        }
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          const auto expected = kind == ReductionKind::kSum ? sums[i]
+                                : counts[i] == 0
+                                    ? std::numeric_limits<double>::quiet_NaN()
+                                    : sums[i] / static_cast<double>(counts[i]);
+          if (std::isnan(expected))
+            EXPECT_TRUE(std::isnan(half_test::decode(actual[i])));
+          else if constexpr (std::is_same_v<Value, float>)
+            EXPECT_NEAR(actual[i], expected, 2.e-6);
+          else
+            half_test::expect_near(actual[i], expected);
+        }
+      }
+    }
+  }
+}
+
+template <class Value> void check_all_reduction_axes() {
+  check_reduction_axes<Value>({2, 3, 2, 2, 3, 5});
+  check_reduction_axes<Value>({2, 3, 5}, true);
+}
+TEST(GgmlCpuProvider, SelectedReductionsCoverAllRankSixAxisSets) {
+  check_all_reduction_axes<float>();
+  check_all_reduction_axes<hyle::simd::float16_t>();
+  check_all_reduction_axes<hyle::simd::bfloat16_t>();
+}
+
+template <class Value> void check_empty_reductions() {
+  check_reduction_axes<Value>({});
+  check_reduction_axes<Value>({0});
+  check_reduction_axes<Value>({2, 0, 3});
+  check_reduction_axes<Value>({0, 2, 3});
+}
+TEST(GgmlCpuProvider, EmptyReductionsPublishIdentitiesAndScalarValues) {
+  check_empty_reductions<float>();
+  check_empty_reductions<hyle::simd::float16_t>();
+  check_empty_reductions<hyle::simd::bfloat16_t>();
 }
 
 TEST(GgmlCpuProvider, PersistentIndependentSlotsHonorExecutorAndClose) {

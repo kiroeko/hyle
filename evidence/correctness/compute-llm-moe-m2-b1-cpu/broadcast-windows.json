@@ -1,0 +1,61 @@
+{
+  "kind": "M2-B1 C1-B development checkpoint; not full coverage or performance acceptance",
+  "audit_commit": "79bfafc58f0a6e3a2c1583d8ff9f9e50f4b8f540",
+  "candidate": "WORKTREE product/test hashes; no product/test changes after the recorded native tests",
+  "machine": "Windows x64 MSVC 19.50.35728.0; Release shared; oneDNN OFF; CPU only; parallel2, tests serial",
+  "implementation": "Cold shape translation to original ggml repeat/view_4d/cont/Sum/Mean; FP32 computation and explicit final half casts. No new mathematical kernel.",
+  "verification": {
+    "verdict": "PASS",
+    "ctest_targets": 7,
+    "provider_cases": 17,
+    "ordinary_direct_target_cases": 6,
+    "ordinary_graph_target_cases": 13,
+    "self_contained_headers": 3,
+    "executor_consumers": 1,
+    "note": "36 GoogleTest executions; the Graph target also runs six shared default-context cases"
+  },
+  "covered_checks": [
+    "F32/F16/BF16 general rank6/rank8 broadcast and unequal ranks; both operand orders; input storage unchanged",
+    "All 63 nonempty rank6 reduction axis subsets times three dtypes, two keep-dim settings and Sum/Mean: 756 oracle comparisons",
+    "Strided reduction, negative/unordered axes, empty sets and outputs, scalar input",
+    "Ordinary Graph grouped mean/broadcast subtraction/variance in one native region; published intermediate; two invocations and unchanged old outputs",
+    "Prepared Graph replay has no hot HYLE allocator calls; owner cleanup balances"
+  ],
+  "unrun": [
+    "Full B1 selector and three deliveries",
+    "WSL/Air/Mini and applicable sanitizers",
+    "oneDNN composition",
+    "P1; no timing or frozen HYLE comparison"
+  ],
+  "complete_requirement_cells": 0,
+  "loc": {
+    "implementation_lines": 55066,
+    "files": 239,
+    "tests_and_vendors_excluded": true
+  },
+  "archive": {
+    "path": "broadcast-windows-raw.zip",
+    "sha256": "11f595d5c520f786dcdec96ee1d0184f57c2a89376c27c1cd84cdd25af4f43d5",
+    "bytes": 46456,
+    "files": 11
+  },
+  "build": {
+    "path": "C:\\hv\\m2b1-cpu",
+    "bytes": 105446424,
+    "retained_reason": "Only active small CPU M2 build, reused; no additional build directory created"
+  },
+  "source_hashes": [
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "sha256": "30e38d338daa98038989e3a5ac884c3ff5017a39e37d0f2e35db34fc884f09e4"
+    },
+    {
+      "path": "tests/compute_provider_ggml/cpu_provider_test.cc",
+      "sha256": "9bd44034d46a7ed36485652717a54211e8c4e18dc39ee4e4ddc79e3f66f63d87"
+    },
+    {
+      "path": "tests/graph_route_cpu/graph_test.cc",
+      "sha256": "09ec9d6b12b44b06e3a1adf436411e4804b995022f14142d31262e2e4194c62d"
+    }
+  ]
+}

@@ -18,3 +18,9 @@ MSVC Release shared、CPU-only、oneDNN-OFF，7个定向测试目标通过，含
 以及普通 Graph 的 F32/F16/BF16 L2 原版组合、epsilon 位置、中间输出、双 slot 和重放分配检查。
 原测试辅助函数编译错误与修正日志一并保存；没有数学内核修补、P1或冻结自研比较。
 该证据仍不签完整B1、四环境/三交付/插桩或新增模型覆盖。
+
+`broadcast-windows.json` 与 `broadcast-windows-raw.zip` 记录 C1-B 的7个开发目标、36项用例
+执行通过：原版一般广播、任意轴集 Sum/Mean（rank6 63种轴集与三类型/keep-dim/两归约组成
+756组差分），另含非连续输入、空归约/空输出与scalar。普通 Graph 分组均值/广播/方差是
+单个原版 region，保留两请求和重放验证。计算仍使用原版 ggml，没有新增数学内核或性能采样。
+范围与前述开发检查点相同，完整B1和其它适用验收仍未完成。

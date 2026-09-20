@@ -31,6 +31,8 @@ struct Program final {
   internal::Recipe recipe;
   std::vector<IndexCheck> index_checks;
   float one = 1.0F;
+  float zero = 0.0F;
+  float nan = std::numeric_limits<float>::quiet_NaN();
 };
 
 Status allocation_failure() noexcept {
@@ -149,6 +151,84 @@ ggml_tensor *as_output(ggml_context *context, ggml_tensor *value,
   return matrix(context, value, description);
 }
 
+std::int64_t extent_product(std::span<const std::int64_t> shape) noexcept {
+  std::int64_t result = 1;
+  for (const auto extent : shape)
+    result *= extent;
+  return result;
+}
+
+ggml_tensor *expand_broadcast(ggml_context *context, ggml_tensor *value,
+                              const TensorDesc &source,
+                              const TensorDesc &output) {
+  if (matrix_operand(source, output))
+    return value;
+  std::array<std::int64_t, kMaxTensorRank> dimensions;
+  dimensions.fill(1);
+  const auto padding = output.rank() - source.rank();
+  std::ranges::copy(source.dimensions(), dimensions.begin() + padding);
+  auto shape = std::span(dimensions).first(output.rank());
+  for (std::size_t i = shape.size(); i-- > 0;) {
+    if (shape[i] == output.dimensions()[i])
+      continue;
+    const auto inner = extent_product(shape.subspan(i + 1));
+    const auto outer = extent_product(shape.first(i));
+    value = ggml_reshape_3d(context, value, inner, 1, outer);
+    value =
+        ggml_repeat_4d(context, value, inner, output.dimensions()[i], outer, 1);
+    shape[i] = output.dimensions()[i];
+  }
+  return matrix(context, value, output);
+}
+
+ggml_tensor *reduction_rows(ggml_context *context, ggml_tensor *value,
+                            const TensorDesc &source, Axes axes) {
+  std::array<bool, kMaxTensorRank> selected{};
+  std::array<std::int64_t, kMaxTensorRank> dimensions{};
+  std::ranges::copy(source.dimensions(), dimensions.begin());
+  auto shape = std::span(dimensions).first(source.rank());
+  if (axes.is_all())
+    std::fill_n(selected.begin(), source.rank(), true);
+  else
+    for (const auto requested : axes.values())
+      selected[static_cast<std::size_t>(axis(requested, source.rank()))] = true;
+  std::int64_t width = 1;
+  for (std::size_t i = 0; i < shape.size(); ++i)
+    if (selected[i])
+      width *= shape[i];
+
+  // Move selected groups to the suffix without reordering either group set.
+  // This is cold layout translation; all materialization uses original cont.
+  auto target = shape.size();
+  for (std::size_t end = shape.size(); end != 0;) {
+    if (!selected[end - 1]) {
+      --end;
+      continue;
+    }
+    auto begin = end - 1;
+    while (begin != 0 && selected[begin - 1])
+      --begin;
+    if (end != target) {
+      const auto outer = extent_product(shape.first(begin));
+      const auto group = extent_product(shape.subspan(begin, end - begin));
+      const auto between = extent_product(shape.subspan(end, target - end));
+      const auto inner = extent_product(shape.subspan(target));
+      value = ggml_view_4d(
+          context, value, inner, group, between, outer,
+          static_cast<std::size_t>(inner * between) * sizeof(float),
+          static_cast<std::size_t>(inner) * sizeof(float),
+          static_cast<std::size_t>(inner * between * group) * sizeof(float), 0);
+      value = ggml_cont(context, value);
+      std::rotate(shape.begin() + begin, shape.begin() + end,
+                  shape.begin() + target);
+    }
+    target -= end - begin;
+    end = begin;
+  }
+  return ggml_reshape_2d(context, value, width,
+                         static_cast<std::int64_t>(elements(source)) / width);
+}
+
 ggml_tensor *lower(Program &program, Invocation &invocation,
                    const internal::Node &node) {
   auto *context = invocation.arena.get();
@@ -198,8 +278,10 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
       break; // Stable tails and non-finite domains need another mature carrier.
     }
   } else if (const auto *binary = node.operation.get_if<Binary>()) {
-    auto *a = fp(0);
-    auto *b = fp(1);
+    auto *a =
+        expand_broadcast(context, fp(0), recipe.values[node.inputs[0]], output);
+    auto *b =
+        expand_broadcast(context, fp(1), recipe.values[node.inputs[1]], output);
     if (a->ne[0] != columns(output) || a->ne[1] != rows(output))
       a = ggml_repeat_4d(context, a, columns(output), rows(output), 1, 1);
     switch (binary->kind) {
@@ -229,11 +311,18 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
     if (node.inputs.size() > 2)
       result = ggml_add(context, result, fp(2));
   } else if (const auto *reduce = node.operation.get_if<Reduce>()) {
-    auto *a = fp(0);
-    if (reduce->axes.is_all())
-      a = ggml_reshape_2d(context, a, ggml_nelements(a), 1);
-    result = reduce->kind == ReductionKind::kMean ? ggml_mean(context, a)
-                                                  : ggml_sum_rows(context, a);
+    const auto &source = recipe.values[node.inputs[0]];
+    if (elements(source) == 0) {
+      auto *identity = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
+      identity->data =
+          reduce->kind == ReductionKind::kMean ? &program.nan : &program.zero;
+      result = ggml_repeat_4d(context, identity, columns(output), rows(output),
+                              1, 1);
+    } else {
+      auto *a = reduction_rows(context, fp(0), source, reduce->axes);
+      result = reduce->kind == ReductionKind::kMean ? ggml_mean(context, a)
+                                                    : ggml_sum_rows(context, a);
+    }
   } else if (const auto *concat = node.operation.get_if<Concat>()) {
     const auto selected =
         static_cast<std::size_t>(axis(concat->axis, output.rank()));
@@ -655,7 +744,8 @@ bool supports(void *context, Operation operation,
   const auto &output = outputs[0];
   const auto nonempty = std::ranges::all_of(
       inputs, [](const auto &d) { return elements(d) != 0; });
-  if (!nonempty && elements(output) != 0 && !operation.get_if<Concat>())
+  if (!nonempty && elements(output) != 0 && !operation.get_if<Concat>() &&
+      !operation.get_if<Reduce>())
     return false;
   if (operation.get_if<Copy>() || operation.get_if<Concat>())
     return true;
@@ -680,9 +770,7 @@ bool supports(void *context, Operation operation,
   }
   if (const auto *binary = operation.get_if<Binary>())
     return binary->kind != BinaryKind::kMinimum &&
-           binary->kind != BinaryKind::kMaximum &&
-           matrix_operand(inputs[0], output) &&
-           matrix_operand(inputs[1], output);
+           binary->kind != BinaryKind::kMaximum;
   if (const auto *rms = operation.get_if<RmsNorm>())
     return rms->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
@@ -691,11 +779,7 @@ bool supports(void *context, Operation operation,
     return (reduce->kind == ReductionKind::kSum ||
             reduce->kind == ReductionKind::kMean) &&
            (reduce->accumulation_type == DataType::kUnknown ||
-            reduce->accumulation_type == DataType::kFloat32) &&
-           (reduce->axes.is_all() ||
-            (reduce->axes.values().size() == 1 &&
-             axis(reduce->axes.values()[0], inputs[0].rank()) ==
-                 static_cast<std::int32_t>(inputs[0].rank()) - 1));
+            reduce->accumulation_type == DataType::kFloat32);
   if (operation.get_if<Gather>())
     return inputs[1].data_type() == DataType::kInt32;
   return false;
