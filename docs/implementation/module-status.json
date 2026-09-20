@@ -373,13 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/compute-provider-ggml-v1.md",
-      "blocked_from": "SCOPED",
-      "blocker": "ggml v0.21.0 与 v0.23.0 的公开 CPU graph API 都不能提供 fallible non-aborting caller-owned context/threadpool；不传 pool 又会在每次 submit 隐藏创建 disposable threadpool。",
-      "blocker_owner": "upstream ggml CPU runtime API，或未来单独登记的 HYLE source-patch factor",
-      "resume_condition": "精确 ggml 版本提供可验证的 fallible non-aborting caller-owned context/threadpool/plan seam，或独立 source-patch factor 先完成维护、升级、OOM、并发与三交付审计。",
-      "summary": "compute_provider_ggml v1 BLOCKED：HYLE block storage 与 Graph region 前置已经解除，但锁定/当前 ggml CPU runtime 仍在 context/threadpool 创建失败时 abort，且无持久 pool 时每次 submit 隐藏创建 disposable pool；空 factor 继续不进入产品。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
+      "summary": "M2-B1 CPU SCOPED：M1-G已满足原ggml资源恢复条件；定界21行成熟Direct/Graph批量接入、线程/资源与三交付。尚无产品FIX授权，自研冻结；oneDNN原Q2阻塞与预算保持。"
     },
     {
       "module": "graph_provider_onednn",
@@ -442,25 +438,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
+      "summary": "M2-B1 CPU SCOPED：M1-G已满足原ggml资源恢复条件；定界21行成熟Direct/Graph批量接入、线程/资源与三交付。尚无产品FIX授权，自研冻结；oneDNN原Q2阻塞与预算保持。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md",
-      "summary": "R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。",
-      "candidate": "8e45b10423686a0753aaa9d461c4ef3b117412c5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-r6-product-delivery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
+      "summary": "M2-B1 CPU SCOPED：M1-G已满足原ggml资源恢复条件；定界21行成熟Direct/Graph批量接入、线程/资源与三交付。尚无产品FIX授权，自研冻结；oneDNN原Q2阻塞与预算保持。"
     },
     {
       "module": "compute_provider_cublas",
