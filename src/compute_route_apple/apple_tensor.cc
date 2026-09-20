@@ -239,6 +239,9 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
         operation.kind() == OperationKind::kScan ||
         operation.kind() == OperationKind::kTopK)
       return lower_mature_indexing(operation, inputs, shape, stream);
+    if (const auto *scatter = operation.get_if<Scatter>();
+        scatter != nullptr && scatter->kind == ScatterKind::kAssign)
+      return lower_mature_indexing(operation, inputs, shape, stream);
     if (operation.kind() == OperationKind::kScatter)
       return lower_indexing(operation, inputs, shape, stream);
     if (const auto *fill = operation.get_if<Fill>())

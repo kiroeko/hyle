@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <utility>
 
 #include <mlx/ops.h>
@@ -79,6 +80,60 @@ Result<std::vector<mx::array>> scan(const Scan &operation,
   return std::vector{std::move(checked)};
 }
 
+Result<std::vector<mx::array>> scatter_assign(
+    const Scatter &operation, std::span<const mx::array> inputs,
+    mx::Stream stream) {
+  const auto &base = inputs[0];
+  if (inputs[1].size() == 0)
+    return std::vector{mx::copy(base, stream)};
+  const auto axis = native_axis(operation.axis, base);
+  const auto extent = base.shape(axis);
+  const auto count = static_cast<int>(inputs[1].size());
+  auto indices = mx::reshape(inputs[1], {count}, stream);
+  auto safe = indices;
+  std::optional<mx::array> status;
+  if (operation.bounds == IndexBoundsPolicy::kChecked) {
+    auto invalid = mx::logical_or(
+        mx::less(indices, mx::array(0, indices.dtype()), stream),
+        mx::greater_equal(indices, mx::array(extent, indices.dtype()), stream),
+        stream);
+    safe = mx::where(invalid, mx::array(0, indices.dtype()), indices, stream);
+    status = mx::where(mx::any(invalid, stream), mx::array(kIndexOutOfRange),
+                       mx::array(0), stream);
+  }
+  // Integer max selects the last logical update independently of native
+  // scatter scheduling. The payload itself only goes through take/where.
+  auto position = mx::reshape(mx::arange(count, mx::int32, stream),
+                              {count, 1}, stream);
+  auto last = mx::scatter_max(
+      mx::full({extent}, mx::array(-1), mx::int32, stream), safe, position, 0,
+      stream);
+  auto present = mx::greater_equal(last, mx::array(0), stream);
+  auto safe_last = mx::where(present, last, mx::array(0), stream);
+  auto update_shape = base.shape();
+  update_shape[axis] = count;
+  auto selected = mx::take(mx::reshape(inputs[2], update_shape, stream),
+                           safe_last, axis, stream);
+  mx::Shape mask_shape(base.ndim(), 1);
+  mask_shape[axis] = extent;
+  const auto type = base.dtype();
+  const auto bits = type == mx::float32 ? mx::uint32
+                   : type == mx::float16 || type == mx::bfloat16 ? mx::uint16
+                                                                : type;
+  auto output = mx::view(
+      mx::where(mx::reshape(present, mask_shape, stream),
+                mx::view(selected, bits, stream), mx::view(base, bits, stream),
+                stream),
+      type, stream);
+  if (status) {
+    HYLE_ASSIGN_OR_RETURN(
+        auto checked,
+        with_device_status(std::move(output), std::move(*status), stream));
+    output = std::move(checked);
+  }
+  return std::vector{std::move(output)};
+}
+
 std::vector<mx::array> top_k(const TopK &operation, const mx::array &input,
                             mx::Stream stream) {
   const auto axis = native_axis(operation.axis, input);
@@ -118,6 +173,7 @@ Result<std::vector<mx::array>> lower_mature_indexing(
     return outputs;
   }
   if (operation.kind() == OperationKind::kGather ||
+      operation.kind() == OperationKind::kScatter ||
       operation.kind() == OperationKind::kScan) {
     constexpr auto limit =
         static_cast<std::size_t>((std::numeric_limits<std::int32_t>::max)());
@@ -128,14 +184,21 @@ Result<std::vector<mx::array>> lower_mature_indexing(
             "Apple indexed output exceeds the admitted I32 element range"));
       count *= static_cast<std::size_t>(dimension);
     }
-    if (operation.kind() == OperationKind::kGather && inputs[1].size() > limit)
+    if ((operation.kind() == OperationKind::kGather ||
+         operation.kind() == OperationKind::kScatter) && inputs[1].size() > limit)
       return std::unexpected(Status::OutOfRange(
-          "Apple Gather indices exceed the admitted I32 element range"));
+          "Apple indices exceed the admitted I32 element range"));
+    if (operation.kind() == OperationKind::kScatter && inputs[2].size() > limit)
+      return std::unexpected(Status::OutOfRange(
+          "Apple Scatter updates exceed the admitted I32 element range"));
   }
   if (const auto *value = operation.get_if<Gather>())
     return gather(*value, inputs, stream);
   if (const auto *value = operation.get_if<Scan>())
     return scan(*value, inputs[0], stream);
+  if (const auto *value = operation.get_if<Scatter>();
+      value != nullptr && value->kind == ScatterKind::kAssign)
+    return scatter_assign(*value, inputs, stream);
   if (const auto *value = operation.get_if<TopK>())
     return top_k(*value, inputs[0], stream);
   return std::unexpected(Status::Internal("Apple indexed operation not bound"));
