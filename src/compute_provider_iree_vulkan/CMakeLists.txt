@@ -41,6 +41,11 @@ block()
   set(CUDAToolkit_FOUND FALSE)
   set(Python_EXECUTABLE "${Python3_EXECUTABLE}")
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  # Upstream ARM processor waits use GNU C inline assembly. Preserve the
+  # original C dialect inside this vendor scope; HYLE's own dialect stays strict.
+  if(NOT MSVC)
+    set(CMAKE_C_EXTENSIONS ON)
+  endif()
   set(CMAKE_C_VISIBILITY_PRESET hidden)
   set(CMAKE_CXX_VISIBILITY_PRESET hidden)
   set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
