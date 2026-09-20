@@ -47,19 +47,21 @@ struct Transfer final {
     const auto &vk = owner.native();
     get = reinterpret_cast<PFN_vkGetDeviceProcAddr>(
         vk.get_instance_proc_addr(vk.instance, "vkGetDeviceProcAddr"));
-    VkCommandPoolCreateInfo p{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    VkCommandPoolCreateInfo p{};
+    p.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     p.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     p.queueFamilyIndex = vk.queue_family;
     check(function<PFN_vkCreateCommandPool>("vkCreateCommandPool")(
         device, &p, nullptr, &pool));
-    VkCommandBufferAllocateInfo a{
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    VkCommandBufferAllocateInfo a{};
+    a.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     a.commandPool = pool;
     a.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     a.commandBufferCount = 1;
     check(function<PFN_vkAllocateCommandBuffers>("vkAllocateCommandBuffers")(
         device, &a, &command));
-    VkBufferCreateInfo b{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    VkBufferCreateInfo b{};
+    b.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     b.size = 131072;
     b.usage =
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -82,7 +84,8 @@ struct Transfer final {
         break;
     if (index == properties.memoryTypeCount)
       throw std::runtime_error("test requires coherent transfer memory");
-    VkMemoryAllocateInfo m{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    VkMemoryAllocateInfo m{};
+    m.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     m.allocationSize = requirements.size;
     m.memoryTypeIndex = index;
     check(function<PFN_vkAllocateMemory>("vkAllocateMemory")(device, &m,
@@ -91,7 +94,8 @@ struct Transfer final {
                                                                  memory, 0));
     check(function<PFN_vkMapMemory>("vkMapMemory")(device, memory, 0,
                                                    VK_WHOLE_SIZE, 0, &mapped));
-    VkFenceCreateInfo f{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    VkFenceCreateInfo f{};
+    f.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     check(function<PFN_vkCreateFence>("vkCreateFence")(device, &f, nullptr,
                                                        &fence));
   }
@@ -107,10 +111,12 @@ struct Transfer final {
     check(
         function<PFN_vkResetCommandBuffer>("vkResetCommandBuffer")(command, 0));
     check(function<PFN_vkResetFences>("vkResetFences")(device, 1, &fence));
-    VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    VkCommandBufferBeginInfo begin{};
+    begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     check(function<PFN_vkBeginCommandBuffer>("vkBeginCommandBuffer")(command,
                                                                      &begin));
-    VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    VkMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
     barrier.dstAccessMask =
         VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -127,7 +133,8 @@ struct Transfer final {
              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &barrier, 0, nullptr, 0,
              nullptr);
     check(function<PFN_vkEndCommandBuffer>("vkEndCommandBuffer")(command));
-    VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit.commandBufferCount = 1;
     submit.pCommandBuffers = &command;
     auto result = owner.with_queue([&](VkQueue queue) {
@@ -298,7 +305,7 @@ TEST_F(IreeNative,
     NativeProgram *second;
     std::promise<hyle::Status> completion;
     bool output_ready = false;
-  } chain{first->get(), second->get()};
+  } chain{first->get(), second->get(), {}, false};
   auto future = chain.completion.get_future();
   auto result = (*first)->invoke(
       [](void *data, const hyle::Status &status) noexcept {
