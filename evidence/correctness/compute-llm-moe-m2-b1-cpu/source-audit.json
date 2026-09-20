@@ -41,5 +41,26 @@
     "Sigmoid overflows exp(-x) for negative tails; softplus log(1+exp(x)) loses small tails"
   ],
   "action": "Implement original ggml admitted domains; qualify mature companion for remaining exact domains. No self-written math; no P1 started.",
-  "complete_requirement_cells": 0
+  "complete_requirement_cells": 0,
+  "cpu_i_followup": {
+    "baseline": "69351e26",
+    "source": "M0 provider-map CPU-I",
+    "decision": "Borrow C++ standard inclusive_scan and partial_sort with contract comparator; no own scan/sort kernel; IREE CPU remains unimplemented backup",
+    "files": [
+      {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include\\algorithm",
+        "sha256": "5e03a68188b5327814404e1eb1f85ceb126db634bdeeccd6a137a49532ab89ba"
+      },
+      {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\include\\numeric",
+        "sha256": "73cdb7f284b55d1dfa94a9ee42b31d9f23221f64f5fa144ddfebe298a9590fb3"
+      }
+    ],
+    "source_design_budget_minutes": {
+      "used": 78,
+      "remaining": 42,
+      "total": 120
+    },
+    "execution_verdict": "UNRUN"
+  }
 }

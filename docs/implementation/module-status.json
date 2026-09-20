@@ -375,7 +375,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：C1–C6原版ggml批量接线与线程/资源/Graph边界已固定；21行完整门保持，I32 Scan/稳定TopK/全mask等精确域仍需成熟补位。无新增完整覆盖，自研冻结，旧oneDNN Q2阻塞保持。"
+      "summary": "M2-B1 CPU AUDITED：首批ggml普通Direct/Graph已通过Windows定向开发验证；C1-I已重新定界并审计M0 CPU-I标准库Scan/TopK接入，先固定有限增量再改代码。21行完整门未关闭，新覆盖0，自研冻结。"
     },
     {
       "module": "graph_provider_onednn",

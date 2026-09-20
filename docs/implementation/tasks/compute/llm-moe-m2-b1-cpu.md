@@ -102,8 +102,8 @@
   plain byte stride 还须满足原版元素对齐；奇数字节 stride 保留为后续成熟承载责任。
 
 这些是21行中的剩余接入责任，**不是缩小 B1 分母、授权自研或关闭本包的理由**。
-后备优先核对 M0 已定位的 IREE 标准 Scan/类型/选择程序的 CPU 承载；涉及新 factor/原共享
-runtime owner 时先独立 QUEUED/SCOPED/AUDITED。该后备产品不包含在本次三个 owner 的授权中。
+后备须先核对 M0 已登记的 CPU-I 标准库 scan/sort 与 IREE 标准程序；涉及新 factor/原共享
+runtime owner 时先独立 QUEUED/SCOPED/AUDITED。IREE CPU 产品不包含在本次三个 owner 的授权中。
 本卡仍负责汇总21行；当前先实施原版 ggml 成批接线，完成后再接精确域补位，M3-01 保持未完成。
 
 ### API / ownership / 成本冻结
@@ -154,3 +154,33 @@ executor consumer。覆盖归一化/舍入、rank6广播、strided copy/concat/g
 对应原始日志和产品/测试hash见[开发检查点](../../../../evidence/correctness/compute-llm-moe-m2-b1-cpu/README.md)。
 源码/设计预算累计保守记72分钟（前置40、初审17、本次实现疑问定位15），仍余48分钟；
 本次构建与用例编写不算新的调查预算，不因后备卡改名重置。
+
+## C1-I 重新定界与有限审计（69351e26 后）
+
+本包21行、三个 owner、公开 API、资源/完成合同不变，owner 保持 AUDITED；先将剩余 indexed
+承载固定为下面的有限增量，再开始产品代码。未宣称 whole B1 完成，未修改任何 CLOSED owner。
+M0 `llm-moe-provider-map.json` 的 **CPU-I** 已登记 C++ 标准 scan/sort 加 checked host-index
+边界，owner 就是 `compute_provider_ggml`。因此 F02.4/F04.6 先接这个既定成熟承载；IREE
+local-sync/embedded-ELF 的有限源码核对保留为后备，没有下载/构建新工具或新增 runtime factor。
+
+- 数学算法 BORROW：非并行 `std::inclusive_scan`（I32 先升 I64、再检查所有前缀与最终总和），
+  F32 沿原标准 scan；`std::partial_sort` 选择 value/index 全序前缀。排序比较器只绑定公共
+  largest/smallest、NaN-last、相等时原下标的语义，不实现排序/scan 内核。
+- MSVC 14.50.35717 的 `<numeric>:315–359` 和 `<algorithm>:9573–9593` 已定位原实现；
+  后者在给定数组上进行原版 heap/select，无隐藏稳定排序临时分配。其余标准库仍需随平台验证。
+- HYLE glue 只负责当前输入的 byte-stride 读取、I32 范围检查、原版算法调用、结果发布和生命周期。
+  I64 scan 的长度上限沿现有 INT32_MAX，总和可证明不会溢出 I64。溢出先于输出映射/写入返回。
+- 保留独立叶边界：Scan 及两输出 TopK 不塞入 ggml 单输出 recipe。一个不可变参数制品和
+  每 invocation 固定 scratch，经现有 CPU Queue 与借用 executor 同步执行；没有私有线程、
+  没有热期建图或标准库并行执行策略。输出不 alias，TopK 返回原 storage bits。
+- F32/I32 Scan、F32/F16/BF16/I32 TopK；rank1..8、非负 byte stride、任意合法 axis、空非选中
+  轴与尾部、ties/NaN/Inf/±0、两个输出、两请求、重复变输入和失败后安全由本卡验收。
+
+| FIX | 有限动作 | 验证 |
+|---|---|---|
+| C1-I1 | 在现有 CPU Provider 增加 private standard-index program，复用公共 Scan/TopK schema与原标准算法 | 独立宽整数前缀及稳定全排序 oracle；所有适用数据检查保留 |
+| C1-I2 | 冷 scratch/stride 参数、内存配额、无私有线程、热复用与明确终态；Graph沿已有leaf SPI | 溢出输出不变、两输出/ties/NaN、OOM、两 slot、无热 HYLE allocation |
+| C1-I3 | 普通 CPU Direct/Graph 固定绑定和既有 CMake factor 内部源文件登记 | 普通入口无用户 Provider 排序；原三交付/四环境/P1门仍须完成 |
+
+此增量不包含稳定浮点激活、Select/min/max、L2、Scatter 或新 IREE CPU 接入；它们仍属于21行
+剩余责任。本次定界扣6分钟，源码/设计累计78分钟、仍余42分钟；不重置，不启动冻结自研的比较或研究。
