@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- owner：`/root`；阶段：SCOPED；baseline：`0e9cf67dbb233132c081f711402ec9c2529d1c07`，
+- owner：`/root`；阶段：AUDITED；baseline：`0e9cf67dbb233132c081f711402ec9c2529d1c07`，
   Windows main，工作树干净。M1-G/R/C/A 已关闭各自有限范围。
 - 当前 owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、`graph_route_vulkan`。
   M1-G 只验 ggml 资源，M1-R 只验冷身份；本轮新的完整成熟 region / 外来原生程序消费者构成
@@ -47,10 +47,11 @@ ggml pin `456172ec733a135778adcd32d00e576a58232e45`，MIT。复用 M0 保存的�
 4. 编译器只作构建工具，参数化制品与 C runtime 进入 source/static/shared SDK；普通 C++
    consumer 不安装 Python、不提供 MLIR、不运行编译器。版本、资源、许可须可追溯。
 
-当前 Q-VK 尚未运行，不能签 PASS。资格通过才决定新增 IREE factor，先登记 QUEUED，再依协议
-SCOPED/AUDITED；当前没有为该候选建立空 target 或 Provider。
+首次 Q-VK 已运行，IREE 单独承担 packed FP4 的候选失格；详见下方实测记录。资格通过才决定
+新增 IREE factor，先登记 QUEUED，再依协议 SCOPED/AUDITED；当前没有为该候选建立空 target 或
+Provider。后续同设备组合资格未通过，不能把 Windows 部分数值通过写成整项 PASS。
 
-## 待审计的有限事项
+## 原 SCOPED 审计边界
 
 下表是 SCOPED 的审计边界，尚不是产品修改授权；实际 API、owner/lifetime、冷/热成本与有限
 FIX 在 AUDITED 前固定。原版 whole region 不为逐 kernel 调度而拆开。
@@ -79,3 +80,43 @@ FIX 在 AUDITED 前固定。原版 whole region 不为逐 kernel 调度而拆开
 
 启动时 Compute+Graph **51,892 行 / 222 文件**（统一 self-check，排除测试/vendor，含冻结存量），
 模型新增完整覆盖 **0/256**。M1-A 的验收与限制保留在其 terminal record，不因本卡重开而失效。
+
+## 首次资格与有限重新定界（2026-09-20）
+
+[首次资格收据](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/qvk-first-candidate.json)
+及同目录 raw archive 保留全部编译失败、数值失败、原输入与独立 oracle。Windows 首次 I32
+inclusive/exclusive scan、E4M3+F32-scale MatMul 逐值通过，UE8 出现 230 个 NaN。
+原版 LLVM `arith-expand` 的 UE8 专用转换使同一组 UE8 数据逐值通过；只使用上游工具配置，
+没有 HYLE decoder。IREE 自身没有注册该 pass，且解析错误仍返回 0；该产物未当成有效纠正运行。
+
+随后 packed FP4 数值失败（最大绝对误差 66.6875）。原版 LLVM F4 转换、再加原版 IREE
+narrow-type 预处理两次纠正均在 `vector<2xi8> -> vector<4xi4>` 合法化失败；这条路径停止。
+原有精确相等门、逻辑值与打包输入均未放宽。其余样例、Mac、外来资源和三交付未运行项
+不签 PASS，首次聚合资格为 INCONCLUSIVE，packed-FP4 候选 REJECT。
+
+按预声明出口检查 ncnn/MNN 的锁定源码：已检查的 Vulkan cast/MatMul 接缝分别是
+FP32/FP16 与整数 INT8，尚未证明能接本合同 E4M3/E2M1+UE8；不据此声称所有后端都不支持。
+ggml 同 pin 已有原版 Vulkan MXFP4，因此下一项限定为 **IREE scan/FP8 + ggml MXFP4**
+的同设备组合资格。各自承担其成熟实现；F4/UE8 原需求保留，不能靠删除失败样例关闭 M1。
+仍受原 **12:02:33 UTC** 截止约束，不另开四小时预算。新组合目前 UNPROVEN。
+
+## AUDITED：当前可实施的有限 FIX
+
+先实施与 Q-VK 独立的原版 recurrent 接入。下面只授权既有三 owner；IREE factor、其普通入口
+与量化组合产品改动仍须先完成资格并补齐自身 owner/有限 FIX。M1-V 尚未完成，不能因这一纵切
+单独通过就关闭整个包。共同语义和 ggml runtime owner 保持 CLOSED。
+
+| FIX | 裁决与正常使用路径 | 资源、失败和成本合同 |
+|---|---|---|
+| V1-G | BORROW `ggml_gated_delta_net`，`vulkan::prepare(context, GatedDeltaNet{}, arguments)` 和普通 `graph::vulkan::compile` 均直接可达；无模型标签同样可用 | 沿既有六输入/两输出公共语义；dense F32、等头、D16/32/64/128；固定初态与独立新状态，不原位修改输入 |
+| V3-G | FIX managed region 的六输入边界、原版 fused 输出/状态的 view + cont，以及 metadata 容量；KEEP NativeDevice/NativeGraph/NativeWork 和路线 Completion | 准备期校验原版索引、合并输出大小、descriptor/dispatch/device 限制；沿既有 binding owner、两 invocation、accepted-prefix drain、失败后退休与结果 lease |
+| V4-G | FIX 冷期原版 recurrent 支持规则和 Graph 报告；KEEP M1-R workload/environment identity | prepare 只按 dtype/shape/硬件限制绑定；submit 不搜索、不计时、不重建数学图；不扩大公共对象或万能 Queue |
+| V5-G | FIX 本纵切的独立 double oracle、Direct/Graph、repeat/旧结果/非法域/资源失败、Windows/Air 三交付和使用文档 | 适用 selector、host 插桩/OFF 门按实际改动选择；P0 必须计入已有输入对齐 GPU copy、原版编码、fused 输出发布复制，不冒称零边界成本或 P1 |
+
+普通输出与新状态沿现有 owning Tensor 返回；原版 fused region 内部仍由 ggml 调度。现有输入
+offset 适配器可导致六个边界 GPU copy，输出拆成两个公开 owning port 也有原版 cont 成本；
+本次不为隐瞒这笔成本而改变公共 binding/layout。资源在 invocation 冷期规划，旧结果持有时
+拒绝覆盖该 slot。异常路径复用已有 drain/close，不增加第二套执行循环。
+
+资格探针只使用第三方原版运算；MXFP4 探针同样只证明候选，不能代签普通产品或 256 格。
+当前公开 GatedDeltaNet 的 shape/错误推导已在 M1-A 收口，因此不重开 `compute_ops`。

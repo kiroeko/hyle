@@ -1,0 +1,52 @@
+{
+  "scope": "Q-VK first IREE packed-FP4 candidate; qualification only, no product coverage",
+  "baseline": "0a565baed111c415f993b5680f4b7bc349a75ba6",
+  "iree_pin": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+  "budget": {
+    "scope": "M1-V audit and Q-VK preparation/first qualification",
+    "start_utc": "2026-09-20T08:02:33Z",
+    "deadline_utc": "2026-09-20T12:02:33Z",
+    "budget_minutes": 240,
+    "reset_allowed": false,
+    "baseline": "0e9cf67dbb233132c081f711402ec9c2529d1c07"
+  },
+  "checkpoint_utc": "2026-09-20T08:57:03.259542+00:00",
+  "product_coverage_cells": 0,
+  "candidate_verdict": "REJECTED_PACKED_FP4_PATH",
+  "aggregate_gate": "INCONCLUSIVE",
+  "windows_first": {
+    "passed_cases": 3,
+    "failed_case": "fp8_ue8_scale-0",
+    "nan_count": 230
+  },
+  "windows_upstream_llvm_prepass": {
+    "passed_cases": 4,
+    "failed_case": "fp4_ue8_matmul-0",
+    "max_absolute_error": 66.6875,
+    "module_sha256": "715a206029109e602672e92fbc373791b1d7462f387be40d4d87e635b2e5dbcf"
+  },
+  "corrections": [
+    "Old named MatMul syntax replaced by the locked upstream indexing_maps form; attempt2 accidentally repeated unchanged IR after a failed fixture edit and is retained.",
+    "Original scaling_extf failed after type conversion; equivalent standard ExtF+MulF composition was used, with unchanged inputs/oracle. Explicit F16 storage features were declared.",
+    "Packed-F4 typed-vector legalization failed; integer i4 storage plus scalar bitcast compiled but did not qualify numerically.",
+    "UE8 generic emulation assumes a sign bit. IREE does not register arith-expand; attempt6 returned zero despite an error and was not run. Original LLVM23 arith-expand fixed the observed UE8 cases in attempt7.",
+    "Packed-F4 numeric failure: original LLVM F4 expansion and then original IREE narrow-type preprocessing both fail vector<2xi8> to vector<4xi4> legalization. Two corrections consumed; this path stops."
+  ],
+  "unrun_applicable": [
+    "remaining five cases after attempt7 stopped",
+    "Air/MoltenVK",
+    "external native resources",
+    "C runtime and three-delivery qualification"
+  ],
+  "next_bounded_action": "Qualify the original ggml Vulkan MXFP4 path for the same logical packed-F4/UE8 values, and IREE only for scan/FP8. The combined candidate remains UNPROVEN under the original four-hour deadline. No self-written decoder, compiler math patch, or weakened tolerance.",
+  "fallback_source_findings": {
+    "ncnn": "Inspected locked Vulkan cast creates FP32<->FP16 pipelines; GEMM INT8 shader consumes signed integer codes and float descales. These interfaces do not qualify E4M3/E2M1 with UE8.",
+    "mnn": "Inspected locked Vulkan MatMul selects F32/F16 storage; its Tensor schema has no E4M3/E2M1/UE8 enum. No qualifying replacement has been demonstrated; not a claim about every MNN backend.",
+    "ggml": "Locked original Vulkan includes MXFP4 kernels; an actual native numeric test is still required. This is an existing mature implementation, not a new HYLE algorithm."
+  },
+  "raw_archive": {
+    "file": "qvk-first-candidate-raw.zip",
+    "bytes": 206473,
+    "sha256": "4fd02aa83606b05f7ec1d53af3d5f51b7c172b90ab9debf75ba2060140911836"
+  }
+}
