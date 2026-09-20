@@ -39,6 +39,18 @@ TEST(VulkanIree, OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire) {
         ASSERT_TRUE(first.bind(std::array{a, w}).ok());
         ASSERT_TRUE(second.bind(std::array{b, z}).ok());
         v::Tensor retained;
+        {
+          auto first_work = first.submit().value();
+          auto second_work = second.submit().value();
+          auto second_result = second_work.wait();
+          auto first_result = first_work.wait();
+          ASSERT_TRUE(first_result) << first_result.error().message();
+          ASSERT_TRUE(second_result) << second_result.error().message();
+          t::expect(context, first_result->get()->tensors()[0], data.multiply(),
+                    true);
+          t::expect(context, second_result->get()->tensors()[0],
+                    changed.multiply(), true);
+        }
         for (int repeat = 0; repeat < 3; ++repeat) {
           auto work = (repeat == 0 ? first : second).submit().value();
           auto result = work.wait();

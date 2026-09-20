@@ -12,6 +12,7 @@
 
 #include "fixture.h"
 #include "hyle/compute/detail/vulkan_plan.h"
+#include "scan_test_support.h"
 #include "vulkan_internal.h"
 
 namespace {
@@ -134,6 +135,76 @@ struct NativeBoundary final {
     return active->original.InvalidateMappedMemoryRanges(device, count, ranges);
   }
 };
+
+TEST(VulkanLifetime, IreeCheckedScanCopyFailuresDrainAcceptedPrefix) {
+  for (int rejected_copy : {1, 2, 3}) {
+    SCOPED_TRACE(rejected_copy);
+    auto context = t::context().value();
+    const auto desc = vulkan_tensor_test::dense(c::DataType::kInt32, {257});
+    const auto data = vulkan_scan_test::integer_pattern(257);
+    const auto input = vulkan_scan_test::make_integer(context, desc, data);
+    auto program = v::prepare(context, c::Scan{}, desc).value();
+    auto slot = program.create_invocation().value();
+    ASSERT_TRUE(slot.bind(input).ok());
+    NativeBoundary boundary(context);
+    // Original IREE submissions use their own PFNs. These failures reject
+    // only the HYLE input copy, flag readback, or final output copy.
+    boundary.fail_submit_on = rejected_copy;
+    auto work = slot.submit();
+    if (rejected_copy == 1) {
+      ASSERT_FALSE(work);
+      EXPECT_TRUE(work.error().IsResourceExhausted());
+    } else {
+      ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait();
+      ASSERT_FALSE(result);
+      EXPECT_TRUE(result.error().IsResourceExhausted());
+    }
+    EXPECT_TRUE(slot.bind(input).IsResourceExhausted());
+    auto fresh = program.create_invocation().value();
+    ASSERT_TRUE(fresh.bind(input).ok());
+    auto retry = fresh.submit().value();
+    auto result = retry.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    vulkan_scan_test::expect_integer_prefix(
+        context, result->get()->tensors()[0], desc, data, c::Scan{});
+    EXPECT_TRUE(context.close().ok());
+  }
+}
+
+TEST(VulkanLifetime, IreeCancellationReusesSlotAndCloseDrainsAbandonment) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
+                                  128 * 1024 * 1024);
+  {
+    auto context = t::context(&quota).value();
+    const auto desc = vulkan_tensor_test::dense(c::DataType::kInt32, {257});
+    const auto data = vulkan_scan_test::integer_pattern(257);
+    const auto input = vulkan_scan_test::make_integer(context, desc, data);
+    auto program = v::prepare(context, c::Scan{}, desc).value();
+    auto first = program.create_invocation().value();
+    auto second = program.create_invocation().value();
+    ASSERT_TRUE(first.bind(input).ok());
+    ASSERT_TRUE(second.bind(input).ok());
+    for (int phase = 0; phase < 2; ++phase) {
+      {
+        auto work = first.submit().value();
+        ASSERT_TRUE(work.request_cancel().ok());
+        auto result = work.wait();
+        ASSERT_FALSE(result);
+        EXPECT_TRUE(result.error().IsCancelled());
+      }
+      ASSERT_TRUE(first.bind(input).ok());
+      auto work = first.submit().value();
+      ASSERT_TRUE(work.wait());
+    }
+    {
+      auto abandoned = second.submit().value();
+    }
+    EXPECT_TRUE(context.close().ok());
+    EXPECT_FALSE(first.submit());
+  }
+  EXPECT_EQ(quota.used(), 0U);
+}
 
 TEST(VulkanLifetime, NoncoherentTransferBranchUsesRealFlushAndInvalidate) {
   auto context = t::context();

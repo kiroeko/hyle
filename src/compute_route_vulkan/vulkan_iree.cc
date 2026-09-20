@@ -262,8 +262,6 @@ void IreeStage::completed(void *opaque, const Status &completion) noexcept {
   auto &run = *stage.parent;
   std::lock_guard lock(run.runtime->mutex);
   auto status = completion;
-  if (status.ok() && run.cancelled)
-    status = Status::Cancelled("Vulkan composed result cancelled");
   if (status.ok() && stage.flag && !stage.reading_flag) {
     status = copy_result(stage, true);
     if (status.ok()) {
@@ -291,6 +289,13 @@ void IreeStage::completed(void *opaque, const Status &completion) noexcept {
         status = Status::OutOfRange("Vulkan Scan prefix exceeds I32");
     }
   }
+  if (status.ok() && run.cancelled) {
+    // Cancellation stops publication but does not poison a reusable slot.
+    // A completed checked operation still reports its numerical error first.
+    run.needs_drain = true;
+    run.async->finished = true;
+    return;
+  }
   if (status.ok())
     status = copy_result(stage, false);
   if (!status.ok()) {
@@ -306,7 +311,8 @@ bool advance_async_locked(Run &run) noexcept {
   auto &device = *run.runtime->device;
   while (run.async->next_stage < run.stages.size()) {
     if (run.cancelled) {
-      fail_sequence(run, Status::Cancelled("Vulkan composed result cancelled"));
+      run.needs_drain = true;
+      run.async->finished = true;
       return accepted;
     }
     const auto index = run.async->next_stage;

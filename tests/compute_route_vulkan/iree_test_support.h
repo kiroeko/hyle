@@ -24,8 +24,8 @@ struct Float8Inputs final {
         columns(n) {
     const bool block = mode == c::Float8ScaleMode::kFloat32Block128;
     const auto group = block ? 128 : 32;
-    const std::array<std::uint8_t, 4> codes{0x30, 0x38, 0x40, 0xb8};
-    const std::array<double, 4> values{0.5, 1, 2, -1};
+    const std::array<std::uint8_t, 4> codes{0x30, 0x38, 0x40, 0xc0};
+    const std::array<double, 4> values{0.5, 1, 2, -2};
     for (bool weights : {false, true}) {
       auto &bytes = weights ? w : a;
       const auto height = weights ? n : m;

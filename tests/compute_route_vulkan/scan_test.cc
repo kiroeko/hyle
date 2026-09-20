@@ -421,13 +421,14 @@ TEST(VulkanIntegerScan, FrozenNonLastAxisLimitsRejectBeforeSubmission) {
   limits = saved;
 }
 
-TEST(VulkanIntegerScan, ScratchQuotaRollsBackAndCloseRetainsCompletedResult) {
+TEST(VulkanIntegerScan, FrozenNonLastAxisQuotaAndRetainedResult) {
   constexpr std::size_t limit = 64 * 1024 * 1024;
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), limit);
   {
     auto context = vulkan_test::context(&quota).value();
-    const auto desc = dense(c::DataType::kInt32, {17, 8193});
-    auto program = v::prepare(context, c::Scan{}, desc).value();
+    const auto desc = dense(c::DataType::kInt32, {8193, 17});
+    const c::Scan operation{.axis = 0};
+    auto program = v::prepare(context, operation, desc).value();
     const auto before = quota.used();
     auto reservation = quota.try_reserve_bytes(limit - before);
     ASSERT_TRUE(reservation);
@@ -450,12 +451,12 @@ TEST(VulkanIntegerScan, ScratchQuotaRollsBackAndCloseRetainsCompletedResult) {
       ASSERT_TRUE(output) << output.error().message();
       EXPECT_EQ(quota.used(), charged);
       expect_integer_prefix(context, output->get()->tensors()[0], desc, data,
-                            c::Scan{});
+                            operation);
       if (phase == 4)
         retained = output->get()->tensors()[0];
     }
     EXPECT_TRUE(context.close().ok());
-    expect_integer_prefix(context, retained, desc, data, c::Scan{});
+    expect_integer_prefix(context, retained, desc, data, operation);
   }
   EXPECT_EQ(quota.used(), 0U);
 }
