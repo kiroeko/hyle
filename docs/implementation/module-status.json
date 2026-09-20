@@ -488,9 +488,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple SCOPED：21行成熟MLX批量映射/精确语义、普通Direct/Graph与原生结果验收；M1资源证据保持，先审计有限FIX，所有自研冻结。源码/设计6/120分钟，暂无新增覆盖。"
+      "summary": "M2-B1 Apple AUDITED：原版MLX Gather/Scan/stable TopK 127组资格通过，冻结普通Direct/Graph与checked资源的有限接线；产品尚未实现/验收，全21行仍未完成。源码/设计32/120分钟，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_apple",

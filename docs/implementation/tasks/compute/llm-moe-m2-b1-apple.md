@@ -73,3 +73,43 @@ Air Mac16,12、macOS27.0/26A428上，锁定原版MLX的GPU compiled程序已执�
 这只证明所列原版组合；产品lowering、普通入口、资源/失败、Mini与三交付/P1尚未签。
 来源/组合与checked资源接缝核对累计26/120分钟，余94分钟；独立构建与资格执行单列。
 下一步提交有限AUDITED接法后方可实施，不据此填完整需求格。
+
+## AUDITED：首批原版 indexed 计算接线
+
+2026-09-21，在`54101d9c`干净检查点核对上述127组原版资格、公共Operation语义、
+`apple_tensor.cc`冷分派与`apple_context.cc`的checked资源接缝。这里只查冻结实现的调用边界，
+不调查其数学。源码/设计累计32/120分钟，余88分钟；同批额度不重置。
+
+| 能力/需求 | 当前证据与裁决 | 有限FIX与责任 |
+|---|---|---|
+| Gather / F02.1 | 原版take、比较/any/where已资格；普通接线仍PARTIAL，BORROW | A-I1：六种已准入storage、I32/I64索引、任意axis/stride；checked先用原版where产生安全索引，状态随结果依赖保留；空输出不读payload，非空输出遇空源轴报OutOfRange |
+| Scan / F02.4 | 原版cumsum的F32、I32提升I64与全部前缀检查已资格；PARTIAL，BORROW | A-I2：I32 inclusive前缀检查包含exclusive最终total；exclusive用原版slice/concatenate移位，结果cast回I32；F32用原版cumsum；空张量直接返回空结果 |
+| TopK / F04.6 | 原版stable argsort/take_along_axis已证明ties、NaN和storage bits；PARTIAL，BORROW | A-I3：F32/F16/BF16/I32，任意轴，两输出；largest只反转排序key，I32提升I64避免INT_MIN取反和浮点精度损失；原storage取值，indices为I32；保留稳定有序结果满足可放宽的flags |
+| 其余B1需求 | 原版MLX绑定已有部分能力；完整特殊值/舍入/Scatter等资格未完成 | PARTIAL；本检查点不签覆盖或授权改写冻结数学，后续仍须在同预算内明确原版接法 |
+
+三个FIX共用私有`apple_mature_indexing.h/.cc`；只写原版MLX公开操作的组合与必要元数据分派。
+在公共schema/shape检查后绑定，TopK移到浮点专用分支之前以兑现公共I32域。
+旧`apple_indexing.cc`/`apple_reduction.cc`/`apple_scatter.cc`保持原文件，M5前不比较或删除。
+新增源只进所属factor的CMake SOURCES；无新公开API、依赖、资源owner或Graph产品修改。
+
+### 冻结的普通用法、失败与成本
+
+- 普通Direct仍是`Context::prepare(Operation, InputSpec...)`后创建/绑定/提交invocation；
+  Graph仍以`GraphBuilder::add`及`graph::apple::compile`自动使用相同冷lowering。
+  用户不手选Provider；准备绑定锁定MLX，执行不计时或搜索。
+- 复用managed MLX compiled region、独立invocation、native array结果owner与Context关闭。
+  checked状态用已有`with_device_status`形成原版depends边，完成后只读已有I32隐藏摘要；
+  数据错误不发布成功结果、不改输入或旧结果，失败invocation不得再次提交，fresh slot可恢复。
+- 全部计算/检查在GPU。元数据遍历O(rank)只在准备期；Gather按原版gather和检查成本，
+  Scan为原版线性扫描与检查，TopK采用原版稳定全排序再取k，完整排序及key/materialization计费。
+  MLX管理其分配/融合/执行；本次不声称prepared零分配或TopK具备选择算法的复杂度。
+- shape维度受MLX int范围限制，I32最大轴长下提升后的有符号I64前缀不溢出。
+  未checked索引保持调用方有效索引前提；没有CPU模型fallback或新自有Metal检查kernel。
+
+### 本增量验证
+
+复用既有独立oracle用例，实际重跑Apple Direct/Graph的索引、TopK、失败/资源与直接消费者；
+新增I32 TopK极值/精确排序及原版primitive来源检查，覆盖compiled调用而非仅直接MLX探针。
+保留空域、rank8、非连续、非法动态索引、exclusive末项溢出、两slot/旧结果及close验证。
+Air先开发验证，Mini/适用host插桩、三交付与P1仍按父卡在整批稳定后完成，不将开发检查点签为
+全包PASS。selector按私有实现与factor SOURCES选择；本AUDITED元数据提交只跑docs/closure。
