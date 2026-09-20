@@ -113,3 +113,32 @@ Air Mac16,12、macOS27.0/26A428上，锁定原版MLX的GPU compiled程序已执�
 保留空域、rank8、非连续、非法动态索引、exclusive末项溢出、两slot/旧结果及close验证。
 Air先开发验证，Mini/适用host插桩、三交付与P1仍按父卡在整批稳定后完成，不将开发检查点签为
 全包PASS。selector按私有实现与factor SOURCES选择；本AUDITED元数据提交只跑docs/closure。
+
+## indexed 接线开发检查点
+
+产品检查点`d6fb456e`已把上述原版Gather、Scan、stable TopK接入普通Direct/Graph；I32 TopK
+不再被浮点专用分派拒绝。MLX原生资源、checked完成与Graph产品源码复用；三个冻结数学文件
+相对`b00b6d03`逐字节不变，未做旧算子性能比较。完整Windows source tree归档到Air，双方
+Git tree核对一致；Mac结果和源码均未反向覆盖Windows。
+
+Air完成34个Direct与11个Graph用例的开发验证，含原始storage bits、I32极值/稳定顺序、
+任意轴/非连续/rank8/空域、坏索引、exclusive末项溢出、失败恢复、两slot/旧结果和关闭。
+首轮44个通过；唯一来源断言误把MLX的`CumSum`节点名写成类名`Scan`，核对锁定源码后仅改
+测试并单项复验通过，复用其余已通过项。原全组CTest的3/4记录保留，不改写成一次4/4。
+开发汇总为45个不同用例已验证，46次执行包含该历史失败。Graph测试首次编译的Result清空
+歧义也已修正并保留原日志，没有数值/产品实现修正。
+
+Air两个公开头门通过；Windows Apple-OFF配置及两个公开头门通过。Windows首个命令误用
+PowerShell5，现有helper所需Path API不可用，改用PowerShell7成功，共享工具未修改。
+原始日志、源/产物hash、完整snapshot tree及未运行项见
+[开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/indexed-development.json)。
+
+源码/设计累计35/120分钟，余85分钟；正常实现、构建与预声明验证单列。统一脚本确认全
+Compute+Graph **56,510实现行 / 246文件**，不含测试/vendor；全库代码1,081,132行，
+自实现不含测试151,695行（均绑定该产品检查点）。其余B1成熟域、Mini、host插桩、新域三交付、
+WSL OFF、最终selected门与P1尚未完成，整卡仍AUDITED/验收INCONCLUSIVE，完整覆盖格仍0。
+后续继续本卡成熟覆盖；不能因局部测试通过提前结束M2或启动M5。
+
+本检查点已清理Windows与Air各60,298,074字节的完整源码归档，以及Windows
+1,660,940字节的临时OFF构建；先核对绝对路径与任务owner后删除。Air原生开发构建保留复用，
+缓存/本地模型未改，原始必要日志已压入37,337字节证据包。

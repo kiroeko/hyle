@@ -1,0 +1,95 @@
+{
+  "kind": "M2-B1 Apple original indexed binding development checkpoint; not whole-batch acceptance",
+  "candidate_commit": "d6fb456e11cdc9344e6c70ab68e3d347678b63b6",
+  "candidate_tree": "9c5783fec214360f75ee92fa882cbe2c3635fe62",
+  "scope_audit": "b00b6d0377216de1c32d75c03c2259fbc5843ca0",
+  "machine": {
+    "machine_model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "source_checkout_commit": "b00b6d0377216de1c32d75c03c2259fbc5843ca0",
+    "canonical_validation_tree": "9c5783fec214360f75ee92fa882cbe2c3635fe62",
+    "unstaged_changes": "",
+    "source_sha256": {
+      "src/compute_route_apple/apple_mature_indexing.cc": "7511f2b90b9c6d3502580238542393f47a5e09deccec944c4e49ac1e5f9eee57",
+      "src/compute_route_apple/apple_mature_indexing.h": "e6536bcb3c31f26c1952a8f0ea5e52d1dc8f1ef0ee5d1ce29409da22d988585a",
+      "src/compute_route_apple/apple_tensor.cc": "c5fbd20b155dddb6872f04ae1c968f637c32303a4f51762be6985f38df7fb62a",
+      "src/compute_route_apple/CMakeLists.txt": "e1f02fcc38d269eebcf592acc2b7d8c6a79621a6cb7b31384ebc93b011b5d2ee",
+      "tests/compute_route_apple/indexing_test.cc": "8e06c3c6a3c369674964aa3aae50d53370c368d36088d15610b411dbf5c1c1f1",
+      "tests/compute_route_apple/reduction_test.cc": "a9aa835192311c589494d27b38243710834c5c0d8d65ad9a58e64548602a28f3",
+      "tests/graph_route_apple/indexing_test.cc": "48ca2a04da6102268fc665661f77961f7421dd76e805bbca4ebeaf0057031bc5",
+      "docs/user/apple-compute.md": "35999cbe7eaf635796a4bda3a2ab2f10862f4a290727183c7c136967da1c7cc3"
+    },
+    "mlx_api_sha256": "8d41b1955d681949b0526f9a7ca1051add0fd1ec21ca5cd853ac8e78671eb73e",
+    "artifact_sha256": {
+      "libhyle_compute_route_apple.dylib": "eb5b122da365220858d7400fdf5a427aaa8c5869a7532dd4de7a186df662772c",
+      "libhyle_graph_route_apple.dylib": "50b8a02c6517d9b3bc4a8adb65b8d785aa2a07384b9594f1b5de48626558a59e",
+      "libmlx.dylib": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93",
+      "hyle_compute_route_apple_test": "ee32159fe2451edd04cc74644a419b9802f076a7b054cb2755e610b9bec96664",
+      "hyle_graph_route_apple_test": "9a260065346c3477eb7f1d3f89399374acbbc7c99050f6173c63254744057251"
+    },
+    "configuration": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:STRING=/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "CMAKE_OSX_DEPLOYMENT_TARGET:STRING=14.4",
+      "HYLE_COMPUTE_APPLE:STRING=ON",
+      "HYLE_STATIC:BOOL=OFF",
+      "HYLE_WERROR:BOOL=ON",
+      "MLX_BUILD_CPU:BOOL=OFF",
+      "MLX_BUILD_CUDA:BOOL=OFF",
+      "MLX_BUILD_METAL:BOOL=ON",
+      "MLX_METAL_JIT:BOOL=ON"
+    ]
+  },
+  "original_qualification": "indexed-qualification.json",
+  "verdict": "PASS for the development checks listed below; full B1 INCONCLUSIVE",
+  "checks": {
+    "air_build": "PASS, parallel 2, Release/shared/WERROR; original MLX CPU backend OFF",
+    "air_first_ctest": "3/4 PASS; 33/34 Direct cases and 11/11 Graph cases passed; the single failed provenance assertion used Scan instead of MLX public name CumSum",
+    "air_targeted_correction": "1/1 provenance case PASS after test-only name correction; product bytes unchanged; other passing tests reused",
+    "air_distinct_gtest_cases_verified": 45,
+    "air_gtest_executions_including_preserved_failure": 46,
+    "air_public_headers": "2/2 PASS",
+    "windows_apple_off": "configure and 2/2 public-header cases PASS using PowerShell 7; no native Apple execution"
+  },
+  "implementation": [
+    "Original MLX take with original safe-index and checked status composition; six storage types and I32/I64 indices",
+    "Original cumsum; I32->I64 inclusive prefix checks include exclusive final total; original slice/concatenate exclusive output",
+    "Original stable argsort and take_along_axis for F32/F16/BF16/I32; widened keys preserve extreme integer ordering and original storage bits",
+    "Ordinary Direct and Graph; native status/lifetime/close reused, two slots and old results tested; primitive provenance checked before original compiled execution"
+  ],
+  "preserved_failures": [
+    "First Graph test compilation used ambiguous Result<Program> assignment {}; corrected the test to clear the contained Program",
+    "First provenance assertion expected class name Scan; locked MLX primitives.h:1892-1895 returns CumSum for the sum variant; corrected only the assertion and reran that case",
+    "Initial Windows OFF invocation accidentally used Windows PowerShell 5 lacking Path.IsPathFullyQualified; reran the existing helper under PowerShell 7 without changing shared tooling"
+  ],
+  "pending": [
+    "remaining B1 mature domains",
+    "Mac mini",
+    "host instrumentation",
+    "new-domain source/static/shared consumers and relocation",
+    "WSL OFF",
+    "full final selected gates",
+    "immutable full-batch P1"
+  ],
+  "source_design_budget_minutes": {
+    "used": 35,
+    "remaining": 85,
+    "total": 120
+  },
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "frozen_math_files_unchanged": true,
+  "loc": {
+    "compute_graph_implementation": 56510,
+    "implementation_files": 246,
+    "all_repository_code": 1081132,
+    "self_written_excluding_tests": 151695,
+    "policy": "canonical loc-report.py --self-check; excludes tests and third-party source"
+  },
+  "archive": {
+    "path": "indexed-development-raw.zip",
+    "sha256": "b886db3558d53b181632be788b5b6fcc656ebb75372d05ba89495632b15b464b",
+    "bytes": 37337
+  }
+}

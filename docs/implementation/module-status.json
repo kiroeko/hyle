@@ -490,7 +490,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple AUDITED：原版MLX Gather/Scan/stable TopK 127组资格通过，冻结普通Direct/Graph与checked资源的有限接线；产品尚未实现/验收，全21行仍未完成。源码/设计32/120分钟，自研冻结，覆盖0。"
+      "summary": "M2-B1 Apple AUDITED：原版MLX Gather/Scan/stable TopK已接普通Direct/Graph；Air45个不同用例、两头门及Windows OFF两头门开发验证通过，保留初次测试失败与单项纠正。全21行、Mini/插桩/三交付/P1未完成；源码/设计35/120分钟，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_apple",
