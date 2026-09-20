@@ -41,3 +41,14 @@ ggml `456172ec`（MIT）、ncnn `70e7bfd6`（BSD-3-Clause）、MNN `397f8533`（
 
 原版参数化recipe与资源overlay没有新增HYLE数学。此包P0不签P1/SOTA或全部模型支持；
 所有冻结自研保持原样，旧ggml CPU/oneDNN阻塞不由此解除。进入M5前停下等待用户。
+
+## 收口后的构建清理
+
+M1在`9c5cb5ff`收口并推送后，归档最终selector及三交付的227份配置/日志，
+确认原验收120个selected PASS、归档SHA/CRC和无在用进程后，删除固定验证目录
+`C:\hv\s\e296f3e0ea9a05ac56a4`，释放19,363,057,379字节。
+
+- `final-build-configurations.json` / `final-build-configurations.zip`：配置清单、原文件SHA和归档身份。
+- `final-build-cleanup.json`：实际删除收据；产品源码、已提交验收证据、共享依赖缓存与本地模型保留。
+
+此记录只补充已结束产物的保留与清理，不是新验收，不启动构建或P1。

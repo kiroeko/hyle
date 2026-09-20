@@ -1,0 +1,14 @@
+{
+  "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
+  "closure_commit": "9c5cb5ff3232545fcd35d1de47a32ce0b5ae99f5",
+  "target": "C:\\hv\\s\\e296f3e0ea9a05ac56a4",
+  "scope": "retired final selector build/SDK configuration retention; no new validation",
+  "selected_verdict": "120 PASS; 13 skipped reasons retained",
+  "retained_test_archive_sha256": "522740c7d1536324fadd806dd2e1e06c867f02eb4668e9c05309199ffa750e5e",
+  "archive": {
+    "path": "final-build-configurations.zip",
+    "sha256": "594c8d0b66623bb55e5039781b016cca62b64e90d229719e95810e219b254620",
+    "bytes": 715291,
+    "files": 227
+  }
+}
