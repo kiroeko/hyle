@@ -235,3 +235,22 @@ Scatter顺序问题的本轮有限需求核对：F02.2/F13.2矩阵要求重复�
 再sum后cast。两者不能证明所有模型要求统一的逐次低精度舍入，也不能仅凭此放宽现有公共合同。
 保留具名公共语义审计事项，后续在共享owner依法定界；本增量不改变Scatter API或其失败记录，
 不把成熟接入差异转成自研理由。源码/设计累计58/120分钟，余62分钟，同批预算不重置。
+
+## AUDITED：原版归约与概率归一化增量
+
+`7fdc3c6b`之后，Air锁定MLX GPU compiled组合已通过409组资格：174组归约、235组
+Softmax/LogSoftmax。范围、独立oracle容差、原始探针及其一次局部命名编译修正见
+[资格收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/reduction-qualification.json)。
+这些不代签普通产品或整批验收；普通测试采用原有更严格的独立oracle，不改其容差。
+
+| FIX | 原版承载与冻结接法 | 必需语义/成本 |
+|---|---|---|
+| A-R1 / F04.5 | 原版Sum/Mean/Min/Max；在私有`apple_mature_reduction.h/.cc`接受已验证schema、shape和dtype，冷分派替换旧归约路径 | F32或half显式F32累加，F32默认Unknown仍合法；axes/all/keep、scalar/rank8/stride/empty；Min/Max用原版bit view/equal/any/where修饰零符号；原版自身传播NaN，源码`kernels/reduction/ops.h:175–285`与探针已核对，不再加重复NaN全量扫描 |
+| A-R2 / F02.3、F04.5 | 原版precise Softmax；LogSoftmax按上游nn官方shift→logsumexp组合；原版F32 multiply/where/add处理scale与mask | 原任意axis/广播mask、NaN/+Inf/全负Inf语义及大offset精度；空output由shape直接构造；最终一次cast回storage，原生临时/转换和全部归约计费 |
+
+两项只改Apple私有lowering及factor SOURCES；无新公开API/资源owner、依赖或Graph产品改动。
+外来异常仍在既有adapter边界转Status，Context/Program/Invocation/结果lease/close合同复用。
+不得读取或修改冻结归约、索引、Scatter数学；不在该增量裁决Scatter公共语义。
+普通来源测试要求原版Sum/Min/Max/Or/Softmax/Log节点，无自有MetalKernel；现有Direct与Graph
+独立oracle及slot/旧结果/失败用例实际回归。开发验证后继续整批其余域，不因局部通过标CLOSED。
+源码/设计累计65/120分钟，余55分钟；资格运行和正常开发验证单列。

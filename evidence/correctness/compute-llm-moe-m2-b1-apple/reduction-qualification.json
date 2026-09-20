@@ -1,0 +1,44 @@
+{
+  "kind": "Original MLX GPU compiled reduction qualification; not HYLE product acceptance",
+  "scope_checkpoint": "7fdc3c6b",
+  "mlx_revision": "1f8e74e3f12f",
+  "machine_and_native_library_identity": "scatter-development.json#/machine",
+  "probe_sha256": "202b0b6b5a2f44b059257d274992a90360c126838ddd97a2b7fa82ed3a85eb6f",
+  "source_sha256": {
+    "mlx/ops.cpp": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2",
+    "python/mlx/nn/layers/activations.py": "153660ac19d4fe93d6ca15f67ad8527ed03b0e860e36192f3815e1d3daf73ed1"
+  },
+  "reduction": {
+    "verdict": "PASS for the original composition qualified here",
+    "cases": 174,
+    "domain": "F32/F16/BF16, F32 accumulation; selected axes and keepdims, scalar/rank8, noncontiguous, empty output and reduction identity, NaN/Inf/signed zeros",
+    "primitive_semantic_difference": "Native Min of mixed signed zeros returned +0; native view/equal/any/where selects the required zero sign. Raw native Min/Max NaN propagation also observed; source reduction/ops.h:175-285 explicitly propagates NaN."
+  },
+  "probability": {
+    "verdict": "PASS for the original composition qualified here",
+    "cases": 235,
+    "domain": "F32/F16/BF16; widths 0/1/17/129/2048/8193, last and non-last axes, strided input, negative scale, broadcast boolean/additive masks, unmasked NaN/+Inf/all -Inf and all-masked rows, common F32 1e8 offset",
+    "composition": "Original precise softmax; official MLX nn log_softmax sequence: subtract max then subtract shifted logsumexp; F32 scale/mask and final storage cast"
+  },
+  "oracle": "Independent scalar FP64 reductions/probabilities over already-stored inputs with specified F32 scale/mask; exact classes and min/max zero signs; qualification tolerance F32 3e-5 relative +3e-6 absolute, F16 .002 and BF16 .012 relative +3e-6 absolute; existing stricter product tests still required",
+  "corrections": [
+    "Probe-only global nan constant collided with Darwin math function; renamed qnan. Initial compiler failure retained; no numerical or product correction."
+  ],
+  "limits": [
+    "No HYLE product called; ordinary Direct/Graph not yet validated for this binding",
+    "Mac mini, host instrumentation, three deliveries and P1 not run",
+    "Frozen HYLE math not read or compared"
+  ],
+  "source_design_budget_minutes": {
+    "used": 65,
+    "remaining": 55,
+    "total": 120
+  },
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "archive": {
+    "path": "reduction-qualification-raw.zip",
+    "sha256": "efdc02e1808bddd57c256deb0e2dbd8f2bab03f89eebcba432fdf60a61875170",
+    "bytes": 7508
+  }
+}
