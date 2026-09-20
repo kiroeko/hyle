@@ -206,3 +206,11 @@ IREE 原生产品候选 `dee6ad64` 已完成独立 runtime/制品、共享queue/
 Windows shared、Air static Release及Air host ASan各通过7项native与6项source验证；ASan发现的
 原版POSIX callback释放后写经有限资源overlay纠正。普通Scan/FP8、混合链和整包交付/剩余门仍待
 验收，不能以native factor代签普通产品。当前统一LOC为 **53,003行 / 230文件**，完整覆盖仍0/256。
+
+普通产品候选 `c6386628` 已完成 IREE Scan/FP8 Direct/Graph、自动混合续执行和取消/失败寿命；
+Windows Release、Air Release/host ASan各10项CTest通过。Windows原版C runtime实际插桩后，
+取消测试的配额纠正已单独通过，其余用例复用同产品证据；原失败/skip保留，见
+[普通产品检查点](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/iree-ordinary-checkpoint.json)
+及[子卡](llm-moe-m1-vulkan-iree-product.md)。IOCP与POSIX均修正final callback后访问操作内存的
+资源缺陷，没有扩张原版或冻结数学。三交付和剩余selected/host/OFF仍待验收，M1-V保持AUDITED。
+统一Compute+Graph **53,484行 / 232文件**，新增完整覆盖仍0/256。

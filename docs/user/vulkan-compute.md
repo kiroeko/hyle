@@ -1,8 +1,8 @@
 # Vulkan：Direct Compute 与 Graph
 
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
-HYLE 在准备期绑定 ggml region 或 HYLE shader，Graph 冷期规划边界资源；原生片段复用录制命令，
-ggml 片段复用其图和存储，但仍执行原厂编码及内部资源管理。
+HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph 冷期规划边界资源；原生片段
+复用录制命令，成熟 Provider 保留自己的图/程序、编码和内部资源管理。
 普通用户只选路线，不排序 Provider 或提供 timing profile。既有 F32 基础支持域已完成 Windows RTX 4070
 与 Air M4/MoltenVK 的真实计算、资源寿命、三交付和
 [有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
@@ -21,8 +21,10 @@ ggml 片段复用其图和存储，但仍执行原厂编码及内部资源管理
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
-当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 已接入原版递归片段和
-MXFP4 MatMul；新增纵切的整包交付与资源验收仍未完成，不代表全模型算子覆盖。
+当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 已接入原版递归片段、
+MXFP4/FP8 MatMul 和 checked I32 Scan；新增纵切的整包交付验收仍未完成，不代表全模型算子覆盖。
+IREE C runtime 与锁定的参数化程序由同一个 factor 交付；使用二进制 SDK 不需要 Python、MLIR
+或运行编译器。源码构建中的 Python 只用于核对和准备锁定资源。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
 Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算成功。
 
@@ -124,9 +126,17 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 必须覆盖同样的 native padding，offset 同时满足四字节和设备 storage-buffer 对齐要求；
 不能把仅有两个物理字节的外部 buffer 当作四字节容量。quota 与 Graph 容量报告计入实际分配。
 
-同一公共头的 `float8_activation_description` / `float8_weight_description` 描述已有 E4M3FN
-数据及 F32 block128 / UE8M0 group32 scale 表；它们不量化或加载模型。当前 Vulkan 普通 FP8
-执行尚在 M1-V 接入中，不能把格式描述可构造当作该路线已支持计算。
+同一公共头的 `float8_activation_description(m,k,mode)` / `float8_weight_description(k,n,mode)`
+描述已有 E4M3FN 数据及 F32 block128 / UE8M0 group32 scale 表；它们不量化或加载模型。
+activation 物理 `[M,K]`、weight 物理 `[N,K]`，payload 后紧接公共头定义的 scale 表；逻辑仍是
+普通 `[M,K]*[K,N]` MatMul，输出 F32。上传压缩 bytes 后使用同一个 `vk::prepare` 或 Graph MatMul，
+由原版 IREE 执行标准转换与乘法。必要 GPU copy 和片段级 F32 workspace 都有成本，不是原生 FP8 GEMM。
+
+IREE 路径要求实际启用 synchronization2、timeline semaphore、scalar block layout；FP8 还要求
+shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。当前锁定程序保守要求每个矩阵的
+元素数不超过 `min(maxComputeWorkGroupCount[0..2], maxStorageBufferRange/8)`，并满足64线程
+workgroup 限制。准备期拒绝超出域的 FP8；不会下载 payload 到 CPU 计算或在执行时改选实现。
+普通 Direct/Graph、变化输入、两个槽和混合片段已经在 Windows/Air 通过正确性验证；三交付仍待验收。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
@@ -298,12 +308,17 @@ I32使用精确宽前缀并检查所有inclusive前缀，exclusive也检查最�
 局部block的和超出I32但所有全局前缀合法时仍成功。Recorder沿原合同拒绝输入/输出重叠，
 不承诺整个Recorder事务回滚。
 
-整数程序使用两个U32字表达I64，无shaderInt64/subgroup依赖；设备需支持256线程和2048字节
+在上述 IREE 设备限制内的正尺寸 dense I32 末轴输入，准备期绑定原版 I64 Scan、比较和归约。
+结果先写私有 buffer，原版异步完成通知推进4字节错误标志读回；检查成功才发布输出并运行下游。
+用户只等待最终 Completion，不需要反复 poll 来推进片段。原版 VM、线程、显存池、编码及边界
+复制属于实际成本；资源配额包含实际 VkDeviceMemory，不能仅按输入和输出 bytes 估算。
+
+其余已支持 I32 域保留冻结的整数程序：使用两个U32字表达I64，无shaderInt64/subgroup依赖；设备需支持256线程和2048字节
 workgroup共享内存。分层scan、carry传播、最终检查和条件发布最多9次dispatch，另计必要布局
 Copy；主要临时量为每元素8字节宽前缀与4字节结果，加各层递减的总和/前缀和一个4字节status。
 全部资源在Invocation准备期规划并计入quota；执行不分配payload scratch，不下载payload检查。
 元素总数超过INT32_MAX、宽scratch超过设备buffer范围或grid不足时冷拒绝。宽1使用Copy/Fill。
-当前接线和局部正确性不代表完整C1三交付或性能验收已完成。
+该路径的成本合同不代表 IREE 的分配形状；完整成熟库覆盖与存量裁决按当前 M0–M6 计划推进。
 
 ### 有序 Scatter
 
@@ -368,13 +383,20 @@ Kernel 的 storage bindings 按输入顺序再接输出，使用一个 set 和�
   的 Completion；poll 不阻塞，wait/close 异常排空，保留首次失败且不发布成功结果。失败的
   托管/组合槽不复用。观察失败不等于 GPU 已停止。未确认终态的资源继续保留，
   close/collect 可重试；设备丢失返回 DataLoss，失败不发布成功结果。
+- IREE 的 VM/执行基础设施错误使该 IREE owner 终止并排空/取消其请求，需要新 Context 恢复；
+  数值 overflow 不终止 owner，同设备 ggml owner 不因此停止。取消在已接受前缀和回调退休后才
+  允许复用槽，不提前释放 GPU 资源，也不把取消伪装成底层提交失败。
 - close 停止接纳并 drain；Context 析构有相同成本。原生结果可长于 Context 句柄，成功结果关闭
-  后仍可下载。可选 quota 计 HYLE 和 ggml 显式分配的 VkDeviceMemory（含 staging、适配、边界
+  后仍可下载。可选 quota 计 HYLE、ggml 和 IREE 显式分配的 VkDeviceMemory（含 staging、适配、边界
   scratch 和原厂辅助 buffer）；driver/pipeline 私有内存不在该配额中，
   quota 本身须活过所有依赖资源。
 - 冷期承担 packing、pipeline、边界内存规划、原生命令录制及每槽 ggml 图/存储。热期按固定
   片段次序提交同一 queue，等待最后实际 batch 的 fence；正常等待不阻止其他槽的 producer。
   原厂 region 的编码/私有分配仍有成本，不承诺整个 submit 零分配或只执行一次 QueueSubmit。
+- IREE 在首次准备该 Provider 时懒建，一个原版 HAL group/module 配独立请求 VM；原版每队列
+  completion thread 与 proactor runner 自动续执行。HYLE 没有为此增加轮询线程；native-only
+  程序不承担这份运行时成本。一次 Windows 准备样例实际占用134,218,768字节 VkDeviceMemory，
+  包括原版池，数值只说明该样例的配额下限，不是所有设备/形状的固定内存需求。
 
 `context.environment()` 保存型号、vendor/device/driver ID、driver/API/loader 版本、subgroup、
 shared memory、header/compiler 和 shader pin。默认规则在冷期匹配，执行不重新探测。未资格化

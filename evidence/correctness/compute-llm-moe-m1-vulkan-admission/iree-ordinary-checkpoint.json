@@ -1,0 +1,429 @@
+{
+  "scope": "M1-V ordinary original IREE/ggml Vulkan product checkpoint; not whole M1-V closure or model coverage",
+  "product_candidate": "c638662831712129f28ea8b3f956b7935a91aad3",
+  "implementation_commits": [
+    "9deedc43dbcc8897738122cb118978eebffe125e",
+    "d91676bf",
+    "2b490ed536c9db2a3c98e3a2e6ade49626317332"
+  ],
+  "admitted_paths": [
+    "ordinary Direct/Graph checked last-axis I32 Scan",
+    "ordinary E4M3FN MatMul with F32 block128 or UE8M0 group32 scales",
+    "IREE to original ggml and native copy; two IREE programs",
+    "cancellation slot reuse, accepted native-prefix errors, abandoned completion and close"
+  ],
+  "validation": {
+    "windows_release": {
+      "receipt": "iree-ordinary-final-release.json",
+      "ctest": "10/10 PASS",
+      "direct_gtests": "104/104 PASS",
+      "graph_gtests": "30/30 PASS"
+    },
+    "windows_asan": {
+      "full_receipt": "iree-ordinary-iocp-c1-asan.json",
+      "full_result": "10/11 CTest PASS; cancellation test rejected preparation at 128 MiB quota",
+      "correction_receipt": "iree-ordinary-cancel-asan-c1.json",
+      "correction_result": "same product bytes; cancellation test alone PASS at 256 MiB; actual initial VkDeviceMemory 134218768 bytes",
+      "instrumentation": "original IREE C including IOCP proactor, HYLE adapter and ggml C++; compile commands archived",
+      "reuse": "all other cases passed in full receipt; no claim that its aggregate was PASS"
+    },
+    "air_static": {
+      "receipt": "iree-ordinary-air-final-result.json",
+      "forward_candidate": "c638662831712129f28ea8b3f956b7935a91aad3",
+      "asan_ctest": "10/10 PASS",
+      "release_ctest": "10/10 PASS",
+      "raw": "iree-ordinary-air-final-results.tar.gz",
+      "limits": "host ASan only, detect_leaks=0; not GPU driver instrumentation"
+    },
+    "preserved_skips": "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance requires separately declared validation-layer environment and was skipped; not PASS",
+    "masm_reuse": "original ggml MASM composition PASS in iocp-c1-asan full bundle; same source/toolchain; excluded final Release repeat"
+  },
+  "failure_history": [
+    "Initial Windows Release mixed graphs crashed in ggml context cleanup after IREE callback; original IOCP writes wait_op->base.next after final callback may release/reuse it.",
+    "IOCP resource overlay moves link clearing before final callback. Exact before/after hashes are in the fix receipt. Original math and scheduling unchanged.",
+    "First Windows HYLE-only ASan did not instrument original C runtime; lack of a diagnostic did not rule out the lifetime defect.",
+    "Initial Air ASan failed a legacy 64 MiB test whose fixed scratch expectation belongs to frozen non-last-axis path. Its test now explicitly uses that path; ordinary IREE quota verified separately.",
+    "Cancellation correction changes only test quota 128 to 256 MiB, not the product memory contract."
+  ],
+  "p0": {
+    "actual_prepared_vk_memory_bytes": 134218768,
+    "costs": [
+      "original per-queue completion thread and proactor runner",
+      "per-invocation VM/resource ownership",
+      "native allocation/slab quota charged",
+      "GPU input/output boundary copies",
+      "FP8 region F32 workspace",
+      "checked Scan 4-byte asynchronous flag readback before publishing outputs",
+      "original encoding/allocation/notifications"
+    ],
+    "performance_comparison": "NOT_RUN; M1 P0 only, frozen self-written math untouched"
+  },
+  "limitations": [
+    "Conservative device grid and buffer bound; Scan dense I32 last axis only for IREE",
+    "FP8 requires native F16/storage16 features; F32 workspace, not native FP8 GEMM",
+    "VM/infrastructure errors stop this IREE owner; numeric overflow does not",
+    "ordinary package journeys, remaining selected gates and host/OFF applicability still UNPROVEN"
+  ],
+  "coverage": {
+    "new_fully_accepted": 0,
+    "total": 256
+  },
+  "loc": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 1069385,
+      "files": 2995,
+      "selected_files": 5956,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 148669,
+      "files": 583,
+      "selected_files": 648,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute-graph-all)",
+      "code": 53484,
+      "files": 232,
+      "selected_files": 265,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute*",
+        "src/graph*"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "archive": {
+    "path": "iree-ordinary-checkpoint-raw.zip",
+    "sha256": "baac74839e82c2a2212de2d8892180f14d01f723efc68f0e2c5ba6ea1dd16741",
+    "bytes": 189988,
+    "files": [
+      {
+        "path": "iree-cancel.ps1",
+        "bytes": 2238,
+        "sha256": "c16c808f039158fc5670118eee4860fc628200517e857906d6ff49cfa2d745a1"
+      },
+      {
+        "path": "iree-final-release.ps1",
+        "bytes": 2245,
+        "sha256": "80512301774a0c77ae20690a7e0b1a6aa84332b78e8aa773f2c4ba8f307b5281"
+      },
+      {
+        "path": "iree-iocp-lifetime-fix.json",
+        "bytes": 1086,
+        "sha256": "995d77c55c25f6a4ad3ce9981e8c73995cd75e3c13c7292e65b44c058416e806"
+      },
+      {
+        "path": "iree-ordinary-air-final-apply.py",
+        "bytes": 1068,
+        "sha256": "967ba3503111233b97875917df5e718f56b48c13ac43cb4b177c6f18a9c0f8eb"
+      },
+      {
+        "path": "iree-ordinary-air-final-launch.log",
+        "bytes": 4054,
+        "sha256": "de3fd05c186a37e39744eadd75299ac46f13f885953a2ff51b9eb6d6d7bf1265"
+      },
+      {
+        "path": "iree-ordinary-air-final-result.json",
+        "bytes": 206,
+        "sha256": "a1731d828ea3c7ad2c882eeb2c1e87dec15c27376c6db3f903795a1e338544c5"
+      },
+      {
+        "path": "iree-ordinary-air-final-results.tar.gz",
+        "bytes": 22169,
+        "sha256": "63919f94cba5d3ee7713b2e5a883f64bbd606d84812b70c21ea46b6576ce6a35"
+      },
+      {
+        "path": "iree-ordinary-air-final.json",
+        "bytes": 2418,
+        "sha256": "0ee87efe623ec8a9014d16d820a0204dce276141a7d5c0e125837499c9cb11c2"
+      },
+      {
+        "path": "iree-ordinary-air-final.sh",
+        "bytes": 1571,
+        "sha256": "6908705e4da84958f367006e38d809afd500d94b39e19aaf83729cc9d2e235bc"
+      },
+      {
+        "path": "iree-ordinary-air-initial-apply.py",
+        "bytes": 1070,
+        "sha256": "506770c8c89149f17e71213473cb2516e1273cf74042bfde760e3bbdc6660769"
+      },
+      {
+        "path": "iree-ordinary-air-initial-launch.log",
+        "bytes": 68,
+        "sha256": "1bc340c1b30ec917566772fc1bc7c30d8194e0d0f49d0fe7bbe60169b8128e68"
+      },
+      {
+        "path": "iree-ordinary-air-initial-result.json",
+        "bytes": 206,
+        "sha256": "e471f6ce019d0461a586f2581d894679e7b97fb54062817b4ae8404b81ea7a85"
+      },
+      {
+        "path": "iree-ordinary-air-initial-results.tar.gz",
+        "bytes": 9404,
+        "sha256": "ff43436198df0083aeb070b855f600fbd1d7b5e6fb542f153aa661b41e717a3b"
+      },
+      {
+        "path": "iree-ordinary-air-initial.json",
+        "bytes": 4539,
+        "sha256": "3c759e9dce69d0b994c4a56536a18b1c2ab144d6476a9e2bed7b09f17ff259f9"
+      },
+      {
+        "path": "iree-ordinary-air-initial.sh",
+        "bytes": 1573,
+        "sha256": "530fbe4d9abc69da8c854974ed00bb0d609de12debac1a839d09e439d1a941a0"
+      },
+      {
+        "path": "iree-ordinary-air.py",
+        "bytes": 5339,
+        "sha256": "90ebdf1c9ca234c45f5d1d9bf9658ef417158b8d967c1cf7348a0e50ee1f644e"
+      },
+      {
+        "path": "iree-ordinary-asan-reproduction-build.log",
+        "bytes": 44643,
+        "sha256": "0fe9d9af31f37959f738891107900a12e766ab208e2b01754bcc130444c9614a"
+      },
+      {
+        "path": "iree-ordinary-asan-reproduction-configure.log",
+        "bytes": 2250,
+        "sha256": "06f9a2aba414803caf54ba2f0952f12e3d4bc1dc4836b8baa70dd800acf37215"
+      },
+      {
+        "path": "iree-ordinary-asan-reproduction-tests.log",
+        "bytes": 549,
+        "sha256": "465e920ba38dcb84c10d46c2a04d1c7bc797503e912d01c6349f4a118a89d7d3"
+      },
+      {
+        "path": "iree-ordinary-asan-reproduction.json",
+        "bytes": 1974,
+        "sha256": "43c4a0a198fd8c35c21375409ee69b6d4bc6c6360d411482d787625947f4528b"
+      },
+      {
+        "path": "iree-ordinary-asan.ps1",
+        "bytes": 2236,
+        "sha256": "3cee476165120964a160d75b4982393fea5103f00c02e270316f7ddaa0c27a64"
+      },
+      {
+        "path": "iree-ordinary-cancel-asan-c1-build.log",
+        "bytes": 921,
+        "sha256": "f86021764f2c5c640f569b0f926368e54ccd710cff2cf94225da842dbb8dc61e"
+      },
+      {
+        "path": "iree-ordinary-cancel-asan-c1-LastTest.log",
+        "bytes": 1724,
+        "sha256": "c8ac303c9d6b9b47544f27829c398a6c4f2ef158325dd405f90d6759e4609954"
+      },
+      {
+        "path": "iree-ordinary-cancel-asan-c1-tests.log",
+        "bytes": 328,
+        "sha256": "d686dc26917ebd13c056421a7f1fcf318cef7e5deee4c25db31144f077b79e21"
+      },
+      {
+        "path": "iree-ordinary-cancel-asan-c1.json",
+        "bytes": 1449,
+        "sha256": "f1ff80b7a3a6f0e8e11c64d9b2b7baee95a6131b2b6b76ff5bddc2d7724a82af"
+      },
+      {
+        "path": "iree-ordinary-debug.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "iree-ordinary-debug.py",
+        "bytes": 1012,
+        "sha256": "fbcd5a6382959c61f48d658939e72fff464cca2dfc21933800acd62b7b9860f4"
+      },
+      {
+        "path": "iree-ordinary-diagnostic-build.log",
+        "bytes": 935,
+        "sha256": "18cc3f2d0442d4c03c45899ad8c29a6363e4f5a99178fd99f15fcefa6e8d8487"
+      },
+      {
+        "path": "iree-ordinary-diagnostic-configure.log",
+        "bytes": 2248,
+        "sha256": "02182d264d8e67a48482a669fdc187d40c68a4544ad1c83cad212ce139b7506e"
+      },
+      {
+        "path": "iree-ordinary-diagnostic-tests.log",
+        "bytes": 4881,
+        "sha256": "37fa933cf1c40c94d48c3f7bab85147fd4d1edc36e18b38d6dae17df306a2239"
+      },
+      {
+        "path": "iree-ordinary-diagnostic.json",
+        "bytes": 1864,
+        "sha256": "72e63b98d1faff0d3ca3298414d7b5ffbfe1269a3883789fa8f51e37b5101639"
+      },
+      {
+        "path": "iree-ordinary-diagnostic.ps1",
+        "bytes": 2242,
+        "sha256": "992cbb696aba434b75b501665d78e395671848377209aa82e8c117a6a8165d11"
+      },
+      {
+        "path": "iree-ordinary-final-release-build.log",
+        "bytes": 79875,
+        "sha256": "8c4e2beefc1e8787c6422375f1115df801b7996001660d3dd1267adf4a08d83e"
+      },
+      {
+        "path": "iree-ordinary-final-release-configure.log",
+        "bytes": 2248,
+        "sha256": "e80dae0e1e9de1de522638a21430f2c39266c5a4cdb8b54fac3f4080735f1598"
+      },
+      {
+        "path": "iree-ordinary-final-release-LastTest.log",
+        "bytes": 51049,
+        "sha256": "6ed48a4ca87e87e42f5b6a76791ff74856d85ab1246b068ceefe329637c6c8e7"
+      },
+      {
+        "path": "iree-ordinary-final-release-tests.log",
+        "bytes": 2000,
+        "sha256": "efc98fe6d37f045f72e2b227fd0e9b172a8a32de68b19476b2ec189a07b83fcc"
+      },
+      {
+        "path": "iree-ordinary-final-release.json",
+        "bytes": 2283,
+        "sha256": "3c425dd716ed2f92d6bd753f6ecc12216e9ea082cb78a8c04a7374c18fad649f"
+      },
+      {
+        "path": "iree-ordinary-initial-build.log",
+        "bytes": 7064,
+        "sha256": "967f511c79644f27d3ebbba9b5335ba300eb91c5dc8156b32dddad6187311707"
+      },
+      {
+        "path": "iree-ordinary-initial-configure.log",
+        "bytes": 2248,
+        "sha256": "760a4af98163651978f78ea240635e61eeac4da823aebf1d13039c3f7e3a65ba"
+      },
+      {
+        "path": "iree-ordinary-initial-LastTest.log",
+        "bytes": 113845,
+        "sha256": "5b3701889ce5d85d1859c89ab84f56faba19a223f634f773e228ba17e6ddb411"
+      },
+      {
+        "path": "iree-ordinary-initial-tests.log",
+        "bytes": 8274,
+        "sha256": "24a2e7b430254d3ae03cd0bd07e104f3f014964d67ccfaaa3e5c7f4836c42829"
+      },
+      {
+        "path": "iree-ordinary-initial.json",
+        "bytes": 2126,
+        "sha256": "e1f0b32c8d83c861d3fcaeae8cf372a278d9107422cb1cabef4085631c6dafc4"
+      },
+      {
+        "path": "iree-ordinary-iocp-c1-asan-build.log",
+        "bytes": 33146,
+        "sha256": "f98cb1d4d0c84a29e91f005c1eff782d04e6e17f32858d057f8f4d808087e82d"
+      },
+      {
+        "path": "iree-ordinary-iocp-c1-asan-compile_commands.json",
+        "bytes": 1372388,
+        "sha256": "4ae9e407bbff47f775eb5996062f08a72a2bdee6997cca38ee3913c373c1691c"
+      },
+      {
+        "path": "iree-ordinary-iocp-c1-asan-configure.log",
+        "bytes": 2250,
+        "sha256": "decca695969e214031530477499deb256f8cac5997172a474edfa215a9ab6132"
+      },
+      {
+        "path": "iree-ordinary-iocp-c1-asan-LastTest.log",
+        "bytes": 113518,
+        "sha256": "731f953ec58680706fb5b25e6ffc244ef5bce1f672aa4b25ebcc6dcbd926756a"
+      },
+      {
+        "path": "iree-ordinary-iocp-c1-asan-tests.log",
+        "bytes": 21877,
+        "sha256": "d4fd2edae535bf7277c08d04e4be8ab3dd641e75045fe8a93571824a4f7de980"
+      },
+      {
+        "path": "iree-ordinary-iocp-c1-asan.json",
+        "bytes": 2145,
+        "sha256": "17a9f1c90047615e2776324c7bb2b003a9054e4c253e7f1021b4bf11be152a66"
+      },
+      {
+        "path": "iree-ordinary-loc.json",
+        "bytes": 2293,
+        "sha256": "73da0068eaa15d63c33e2a6ffbb6b67ec5777e1ae1c2e23233c19f5ede8e4dee"
+      },
+      {
+        "path": "iree-ordinary-plan.json",
+        "bytes": 221493,
+        "sha256": "b1f9aea084cd23aaf1e59123e07d5795e1d2bfd28d3b14f92636ae3a498089c0"
+      },
+      {
+        "path": "iree-ordinary-windows-asan-build.log",
+        "bytes": 5648,
+        "sha256": "47af28cd84ac76702e480ed780027e4f7fcbf2be4a3b10082f92303497149f80"
+      },
+      {
+        "path": "iree-ordinary-windows-asan-tests.log",
+        "bytes": 21711,
+        "sha256": "5b914d90778f866d886bc2fb8bdcba998bcc6eb68945cab4d7c4612c0d2c0166"
+      },
+      {
+        "path": "iree-ordinary-windows-asan.json",
+        "bytes": 1635,
+        "sha256": "e9e9224318596396f287a9710d0fae8da717e25a8c55d6507ad369c112364eb8"
+      },
+      {
+        "path": "iree-ordinary.ps1",
+        "bytes": 2240,
+        "sha256": "cf5727f1eaf6476f89b33f3c4478fb2bd2859a9f063c752c5531d045bc31a994"
+      },
+      {
+        "path": "ordinary-exception.cc",
+        "bytes": 1391,
+        "sha256": "d5dff9eec2f35a7f86ccf98c9565cfec583df427d58141c465a2fe102db6e77f"
+      },
+      {
+        "path": "patch-iocp-lifetime.py",
+        "bytes": 2618,
+        "sha256": "c2acd760f8740aec8c780c565b3930ed7c03e80a5299194789e4af6393ca3956"
+      },
+      {
+        "path": "run-iree-cancel.py",
+        "bytes": 2168,
+        "sha256": "ebf570993ecdee01b3502f503775ae637be37197f3712b1f3769393896446936"
+      },
+      {
+        "path": "run-iree-final-release.py",
+        "bytes": 2332,
+        "sha256": "9cb10ee7779f1a108c3d885d5359331a901f80bf27f0ea496076d9478b586bd0"
+      },
+      {
+        "path": "run-iree-ordinary.py",
+        "bytes": 2236,
+        "sha256": "74ededf4fafc5220af11f07198a7221163ae33d87fc540532d67a4477e4fd00d"
+      }
+    ]
+  },
+  "aggregate": "INCONCLUSIVE; owners remain AUDITED; stop before M5 unchanged"
+}

@@ -168,6 +168,32 @@ Windows 首次 HYLE ASan 配置没有插桩原版 IREE C runtime，未检出不�
 本 provider 在 HYLE ASan 配置下启用原版 IREE ASan，确认真实编译参数；不改公共插桩系统。
 登记本项时尚未修复/验收，原失败及源码事实必须保留，普通产品仍未关闭。
 
+## 普通产品检查点：原版 Scan / FP8 与混合链
+
+产品候选 `c638662831712129f28ea8b3f956b7935a91aad3` 的
+[收据与原始归档](../../../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/iree-ordinary-checkpoint.json)
+保存首次失败、有限纠正、真实插桩参数及 Windows→Air 前向身份。
+
+- 普通 `prepare` / Graph 已接 checked Scan、两种 scale 的 FP8 MatMul、IREE→ggml→native Copy、
+  两个 IREE 程序、重复与两请求、旧结果、取消/放弃/close。Scan 数值失败不发布输出且不运行后段。
+  输入、flag、输出三处实际 native 提交失败均验证已接受前缀排空；没有 mock Provider。
+- Windows Release 10/10 CTest PASS（Direct 104、Graph 30 个用例全部通过）；Air 原版 runtime+
+  HYLE host ASan 与 Release 各10/10 CTest PASS。需要独立 validation-layer 环境的原有测试仍
+  SKIPPED，未代签；host ASan 不签 GPU driver，Air 未启用 leak 检测。
+- IOCP 一次资源修复将操作链清理移到 final callback 前，消除回调释放/复用后的写。真正插桩原版
+  C runtime 的 Windows bundle 为10/11 CTest PASS；唯一失败发生在取消测试准备期的128MiB配额。
+  实际分配134,218,768字节，因此只把测试配额改成256MiB后定向用例 PASS，产品字节不变；不把
+  原失败聚合改写成 PASS。其余用例按相同产品身份复用，未再跑一遍无关 ASan。
+- 初次 Air 的固定scratch测试属于冻结的非末轴实现；测试改为明确非末轴输入，保留原大小/配额。
+  IREE 的池、独立 VM、原版线程/分配/编码、GPU copy、FP8 F32 workspace 和4字节flag读回全部
+  列入P0；没有P1、自研比较或零成本承诺。
+- IREE 初始域受实际feature与保守grid/buffer上限约束；域外FP8明确拒绝，其它既有Scan功能冻结。
+  数值overflow不终止IREE owner；VM/执行基础设施失败才终止该owner，不停止独立ggml owner。
+
+统一 Compute+Graph **53,484行 / 232文件**，排除测试/vendor；新增完整覆盖 **0/256**。
+普通三交付消费者现进入验收；剩余selected、host/OFF与交付仍UNPROVEN，两个owner及父卡保持
+AUDITED，聚合INCONCLUSIVE。M5前的用户停止点不变。
+
 ## 实施检查点：共同格式与 MXFP4 普通入口
 
 AUDITED 检查点为 `8b3c5c30`，随后产品候选 `d5cd5568c179d0f9bbff1cd528b306f3a9bde558`
