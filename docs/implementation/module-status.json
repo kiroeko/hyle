@@ -611,6 +611,11 @@
         "tier": "P0",
         "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
       }
+    },
+    {
+      "module": "compute_provider_ggml_metal",
+      "state": "QUEUED",
+      "summary": "M1-A 原版 ggml Metal program/resource 身份登记；无 target、依赖或产品实现。先审计 MLX 互操作和完整递归片段；全部自研数学继续冻结。"
     }
   ]
 }

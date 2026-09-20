@@ -492,6 +492,9 @@ _hyle_declare_component(compute_provider_flashinfer
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/flashinfer.h)
 
+# M1-A identity only; no native target before its finite audit.
+_hyle_declare_component(compute_provider_ggml_metal QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

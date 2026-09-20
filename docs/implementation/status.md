@@ -67,6 +67,7 @@
 | compute_provider_ggml_cuda | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-admission.md) | M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。 |
 | graph_provider_ggml_cuda | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-admission.md) | M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。 |
 | compute_provider_flashinfer | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-admission.md) | M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。 |
+| compute_provider_ggml_metal | QUEUED | — | — | M1-A 原版 ggml Metal program/resource 身份登记；无 target、依赖或产品实现。先审计 MLX 互操作和完整递归片段；全部自研数学继续冻结。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
