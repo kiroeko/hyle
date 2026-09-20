@@ -58,5 +58,18 @@
 - selector选中门、docs/closure（registry带明确previous-ref）、一次最终候选复核与必要P1；
   文档/状态不构建、不采样。统一Compute+Graph实现LOC，不包含测试/vendor。
 
-当前仅SCOPED；未冻结产品FIX，无新增完整覆盖PASS。CPU/CUDA原卡、预算、未决域与验收保持，
-oneDNN仍按原恢复条款BLOCKED，不因本卡重开。
+当前仅SCOPED；未冻结产品FIX，无新增完整覆盖PASS。CPU/CUDA原卡、预算、未决域与验收保持。
+oneDNN新能力按用户2026-09-21决定进入[独立scope](llm-moe-m2-b1-onednn.md)，旧Q2资格FAIL保留。
+
+## 首组原版资格检查点
+
+Air Mac16,12、macOS27.0/26A428上，锁定原版MLX的GPU compiled程序已执行127组资格：
+19组F32/I64提升Scan及溢出摘要、48组stable argsort→take（F32/F16/BF16/I32、17/129/4097列、
+两方向/变化输入）、60组原版take（六种storage、I32/I64、重复/负数/轴宽/最大索引）。
+原版算子组合及独立host oracle通过，未调用冻结HYLE计算或计时。
+
+原始源、构建、API调用首轮编译错误与修正、库与源码hash见
+[资格收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/indexed-qualification.json)。
+这只证明所列原版组合；产品lowering、普通入口、资源/失败、Mini与三交付/P1尚未签。
+来源/组合与checked资源接缝核对累计26/120分钟，余94分钟；独立构建与资格执行单列。
+下一步提交有限AUDITED接法后方可实施，不据此填完整需求格。

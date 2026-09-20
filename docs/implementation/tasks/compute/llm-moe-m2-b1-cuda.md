@@ -65,7 +65,8 @@
 - 当前 scope/architecture/correctness/delivery/usability_docs/red_team/engineering_performance
   均未最终裁决；不存在新增完整覆盖 PASS，矩阵仍0/256。
 
-本轮沿用已有公开 CUDA 工厂；pending oneDNN 决策不影响本卡独立工作，也不由本卡代为批准。
+本轮沿用已有公开 CUDA 工厂；oneDNN新能力已按用户2026-09-21决定进入独立scope，
+旧Q2资格FAIL保留，不由本卡代签其资格或验收。
 
 ## AUDITED：批量承载与精确域
 

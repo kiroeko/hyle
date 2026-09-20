@@ -1,0 +1,63 @@
+{
+  "kind": "Original MLX GPU compiled indexed-operation qualification; not HYLE product acceptance",
+  "scope_checkpoint": "625ae14c3c25fcf9cb7b84193aedfe042fc5a1d7",
+  "mlx_revision": "1f8e74e3f12f",
+  "machine": {
+    "machine_model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "source_sha256": {
+      "mlx/ops.h": "7c10ea9c9e223e393903ff27285aa4939cb3ca53aa3ec5a78aa9c4a6d7113813",
+      "mlx/ops.cpp": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2",
+      "mlx/backend/metal/scan.cpp": "0c8692994838698fc400990978e0d8998660034105352ae439833ad704633c6e",
+      "mlx/backend/metal/sort.cpp": "4f5b55d2b753900bdeb7eeeb5652aaea3cb24fabd1297500c83514eebc1532d7",
+      "LICENSE": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+    },
+    "artifact_sha256": {
+      "indexed-probe": "0628406fa2ff5967e6c84afaf98801ba5b3f862f666874d15c45435ac774c324",
+      "build/bin/libmlx.dylib": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93"
+    },
+    "configuration": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:STRING=/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "HYLE_COMPUTE_APPLE:STRING=ON",
+      "HYLE_STATIC:BOOL=OFF",
+      "MLX_BUILD_CPU:BOOL=OFF",
+      "MLX_BUILD_CUDA:BOOL=OFF",
+      "MLX_BUILD_METAL:BOOL=ON",
+      "MLX_METAL_JIT:BOOL=ON"
+    ],
+    "source_checkout_commit": "625ae14c3c25fcf9cb7b84193aedfe042fc5a1d7"
+  },
+  "verdict": "PASS",
+  "cases": {
+    "scan": 19,
+    "stable_sort": 48,
+    "gather": 60,
+    "total": 127
+  },
+  "coverage": [
+    "Original cumsum with I32->I64 and original comparisons/any status; all prefixes including exclusive final total; strided 3/17/8193 columns",
+    "Original stable argsort plus take_along_axis; F32/F16/BF16/I32, both directions, 17/129/4097 columns, changed inputs, NaNs/Inf/signed zero/stable ties and large exact I32; raw bits retained",
+    "Original take plus where/any bounds summary; six native storage types, I32/I64, middle axis, noncontiguous source, repeated/negative/axis-width/max signed indices and recovery"
+  ],
+  "preserved_failure": "Initial qualification-only C++ build lacked transforms.h and omitted contiguous allow_col_major argument; corrected public API use, then the full original GPU qualification passed",
+  "limits": [
+    "Not HYLE ordinary Direct/Graph/resource acceptance",
+    "No Mini, delivery or instrumentation verdict",
+    "No frozen HYLE math called/inspected/compared",
+    "No timing or full model coverage"
+  ],
+  "source_design_budget_minutes": {
+    "used": 26,
+    "remaining": 94,
+    "total": 120
+  },
+  "new_complete_requirement_cells": 0,
+  "performance_samples": 0,
+  "archive": {
+    "path": "indexed-qualification-raw.zip",
+    "sha256": "6809c789ca5241c1ca3089f38f354bbec44bc300ce72e743e15624406f0acdb7",
+    "bytes": 9423
+  }
+}
