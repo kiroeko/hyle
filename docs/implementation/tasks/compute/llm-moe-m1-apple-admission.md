@@ -207,3 +207,19 @@ WSL 相同八门加 host UBSan 通过。Windows/Air 原始命令、失败修正�
 WSL 原始日志已收齐待最终归档；Mini 原生/三交付正在运行，候选与最后复核尚未签发。
 没有新增自研数学或 P1，新增模型覆盖仍为 0/256。M1 接入进度估算约 **70%**，不以新增测试数量
 换算覆盖；统一 LOC 仍为 **51,892 行 / 222 文件**（不含测试/vendor，含冻结存量）。
+
+## Mini 与共享构建检查点（仍为 AUDITED）
+
+Mini 原生七门和 source/static/shared 三交付全部通过，安装消费者同样搬移 prefix、隐藏
+producer build 与产品源码。WSL 八门及 UBSan 的日志已归档；两个验证副本的 1,722 个
+非文档输入与 Windows `b5ddc5ea25e058243f7b7093c26bf4ca2d23b02c` 相同。
+见[跨环境收据](../../../../evidence/correctness/compute-llm-moe-m1-apple-admission/cross-native-delivery.json)。
+两台 Mac 和 WSL 已完成的源码、build 与 SDK 副本已清理，保留原始日志、共享缓存和模型。
+
+Windows selector 的共享构建先因未传入已安装 Vulkan SDK 环境失败；补齐环境后继续原有
+selected gates。共同 compute、CPU/CUDA backend 及各自公共头通过；共同 runtime 的
+CUDA 测试链接失败，原因是测试直接使用 `system_allocator` / `Status` 却未声明
+`hyle_mem` / `hyle_error` 链接依赖，静态链接曾遮蔽该问题。只补测试 target 的两项依赖，
+不修改产品依赖或计算实现。原始失败保留，仅重跑受影响测试并继续尚未执行的门。
+最后 selected gates 与候选复核仍待通过，未进入 CANDIDATE/CLOSED，无 P1 或自研对比。
+M1 接入进度约 **75%**；M1-V 尚未开始，新增模型覆盖仍为 0/256。M5 前暂停约定不变。

@@ -9,7 +9,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   target_include_directories(hyle_compute_ggml_runtime_cuda_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda"
     "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
-  target_link_libraries(hyle_compute_ggml_runtime_cuda_test PRIVATE ggml CUDA::cudart)
+  target_link_libraries(hyle_compute_ggml_runtime_cuda_test PRIVATE
+    ggml CUDA::cudart hyle_mem hyle_error)
   if(HYLE_STATIC AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_compile_definitions(hyle_compute_ggml_runtime_cuda_test PRIVATE
       HYLE_GGML_CUDA_FAULT_INJECTION=1)
