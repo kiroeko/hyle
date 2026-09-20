@@ -393,14 +393,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 CLOSED：S1–S3 GQA/MQA公共语义与旧CPU不支持域隔离完成；四环境语义/回归、适用host插桩及M1-C普通attention三交付通过；未改变旧attention数学。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
+      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",
@@ -515,25 +510,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
+      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
+      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
     },
     {
       "module": "compute_route_vulkan",
@@ -570,14 +555,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
+      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -614,8 +594,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "QUEUED",
-      "summary": "M1-A 原版 ggml Metal program/resource 身份登记；无 target、依赖或产品实现。先审计 MLX 互操作和完整递归片段；全部自研数学继续冻结。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
+      "summary": "M1-A SCOPED：原版 ggml Metal/MLX 资源边界、完整递归片段与必要公共语义；先审计有限 FIX，未修改产品，自研数学保持冻结。"
     }
   ]
 }
