@@ -16,7 +16,7 @@
 M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路由卡](llm-moe-m1-route-binding.md)
 关闭冷模型条件/原生环境接缝；四环境原生、三交付及适用插桩通过，新增模型覆盖0。
 [M1-C](llm-moe-m1-cuda-admission.md)已CLOSED：Windows/WSL普通入口与三交付、原生失败/资源、
-host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新增模型覆盖仍为0。当前M1-A实施中；
+host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新增模型覆盖仍为0。[M1-A](llm-moe-m1-apple-admission.md)也已CLOSED，原版Metal/MLX普通组合、两台Mac三交付、资源/host插桩与最终selected门通过；下一包M1-V；
 其余未审范围不授权产品改动。
 旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
 
@@ -30,7 +30,7 @@ host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新�
 |---|---|---|---|
 | ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；拟统一到 `456172ec`，MIT | M1-G已统一lock到`456172ec`并验收资源补丁；普通Provider/lowering仍未完成 |
 | ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | M1-C已接原生stream/device-buffer与有限F32/attention片段，完整批量覆盖仍待M2；不以既有 HYLE CUDA 核代签 |
-| ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | 独立于 MLX runtime；保留上游融合，原生资源/完成需接通 |
+| ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | M1-A 已接 F32 whole recurrent 与 MLX 普通 Direct/Graph 组合、原生资源/完成及三交付；批量覆盖待 M2 |
 | ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | 既有少量原子不代替完整片段；原生类型/head/subgroup 条件逐域验证 |
 | oneDNN | 已有复用并扩接；CPU F01/F04–F06/F18 | primitive/Graph partition、reorder + MatMul；3.13.2 `71094df4`，Apache-2.0 | locked pin 已有 FP8/E2M1/UE8 reorder 源码；格式组合与设备资格待验证；Q2 原阻塞仍在 |
 | MLX | 已有复用并扩接；Apple F01–F08/F18 | C++ typed/compiled array region；0.32.2 `1f8e74e3`，MIT | locked pin 的 `from_fp8/to_fp8/quantized_matmul/gather_qmm/qqmm` 已定位；默认 nvfp4 不等于所有 F18 档位 |
@@ -96,7 +96,7 @@ scan/matmul 操作及上游类型合法化，编译器只作构建工具；sourc
 | M1-G | `compute_ggml_runtime`与`compute_provider_ggml_vulkan`已按[资源卡](llm-moe-m1-ggml-runtime.md)CLOSED；原CPU owner仍BLOCKED | 一个共同 ggml vendor 源与按路线启用的原生后端；复用现有 context 失败 patch 的已审资源部分；CPU persistent pool/plan、OOM/线程创建失败回滚；解决 ggml target 重名/旧新 pin 混用 | 真实 norm→MatMul→状态片段，重复执行不重建 pool；allocation/thread failure、两个 invocation、close；对应源码/静态/动态和 route-OFF；不改原版数学 |
 | M1-R | compute / graph 与四路线具名owner；以registry实际状态绑定，CPU/CUDA既有CLOSED须按模型条件新需求重定界 | 批量 lowering 的共用语义检查、capability/诊断、模型/配置/phase 与软件/硬件规则 identity；常量、状态、多输出、effect/lease；每路线独立资源程序 | Direct 与 Graph 一组正交片段；未知模型/版本不匹配、缓存失效；热执行无探测、搜索或计时；不造万能执行器 |
 | M1-C | 六owner已按[接入卡](llm-moe-m1-cuda-admission.md)CLOSED，GQA两owner按独立卡CLOSED | 原版ggml CUDA/Linux FlashInfer、外来buffer与两event边界、每invocation资源/失败/完成；managed成本明确，不冒称prepared零查询 | Windows/WSL普通Direct/Graph、同GPU cuBLAS组合、三交付及host插桩，Air/Mini OFF与公共语义；源码/设计调查已停止 |
-| M1-A | 五 owner 按[接入卡](llm-moe-m1-apple-admission.md) CANDIDATE，待 terminal 裁决 | 原版 ggml Metal whole recurrent 已接普通 Direct/Graph；MLX native buffer/region 边界、独立 invocation、共同 GatedDeltaNet 语义已实现；自研冻结 | Air/Mini 普通入口、原生及三交付、Air host ASan/UBSan、Windows/WSL 共享资源与 OFF 门通过；最终 119 个 selected 门及独立候选复核通过；P0，新增模型覆盖0 |
+| M1-A | 五 owner 按[接入卡](llm-moe-m1-apple-admission.md) CLOSED，有限接入域/P0 | 原版 ggml Metal whole recurrent 已接普通 Direct/Graph；MLX native buffer/region 边界、独立 invocation、共同 GatedDeltaNet 语义已实现；自研冻结 | Air/Mini 普通入口、原生及三交付、Air host ASan/UBSan、Windows/WSL 共享资源与 OFF 门通过；最终 119 个 selected 门及独立候选复核通过；P0，新增模型覆盖0 |
 | M1-V | 现有 ggml Vulkan/两 route owner；Q-VK 后才决定新增 IREE factor | 扩现有 managed region schema；需要时接独立 IREE 原生 Vulkan region/parameter buffer/完成；共享设备互操作受限时明确有界 GPU copy | RTX4070 和 Air/MoltenVK；所需 feature 诊断、同设备链路、失效/teardown 与三交付；无 CPU 模型 fallback |
 | M1-B | 以上每包所属 build owner 的有限范围 | 复用 lock/features/vendor targets/private patch/resources/license/install；同份 CMake 声明贯通三交付；短 build 根与共享只读缓存 | 开关隔离、单/组合 Provider、源码父工程、静态/动态干净 consumer；关闭路线零下载/链接；不重写构建系统或治理工具 |
 

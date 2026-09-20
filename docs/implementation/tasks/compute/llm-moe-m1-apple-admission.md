@@ -3,7 +3,7 @@
 ## Closure card
 
 - owner：`/root`；baseline：`6217e5663acb6825a72cc8a1a2e3d82735d8ceee`，Windows main。
-- 当前阶段：CANDIDATE；五 owner 在 `450809ba` 完成 SCOPED；新身份在 `cee2f293` 登记 QUEUED，
+- 当前阶段：CLOSED；五 owner 在 `450809ba` 完成 SCOPED；新身份在 `cee2f293` 登记 QUEUED，
   只有身份，没有空 target 或产品实现。
 - 本轮 owner：新 `compute_provider_ggml_metal`；既有 `compute_ggml_runtime`、
   `compute_route_apple`、`graph_route_apple`、`compute_ops`。
@@ -256,3 +256,33 @@ Graph region/fusion、安装与公开文档；范围内未发现新的产品缺�
 的 ggml metadata/backend/import、每次输出分配、原生边界 checked host wait、必要 MLX contiguous
 GPU copy；保留 MLX 原生融合。无 hot Provider 搜索/计时，无 recorded/零分配声明。源码/设计总预算
 120/120 分钟已停止；不再扩大审计。未执行 P1 或任何冻结自研研究/性能比较，新增覆盖仍为 0/256。
+
+## Terminal：CLOSED（有限 M1-A 接入范围）
+
+候选保持 `140054b13ce2515a05bc6eedac7e03e56bbc3662`。状态按 AUDITED → CANDIDATE → CLOSED
+分两次提交迁移；仅文档、状态和证据改变，不重建、不重跑 P1。下列七门均为本卡 A1–A6 的 PASS，
+不代表 M2/M3 全模型覆盖完成。
+
+| 门 | 裁决与证据 |
+|---|---|
+| scope | PASS：原版 whole Gated DeltaNet 与 MLX 组合、普通 Direct/Graph、资源/失败和三交付；A1–A6 无未完成 MUST；批量覆盖仍归 M2/M3 |
+| architecture | PASS：原版 Metal 独立 backend/Invocation、MLX buffer owner、checked 完成与失败退役；保留 native fusion、既有 FIFO/Completion，不写数学或万能执行器 |
+| correctness | PASS：Air/Mini 原生与普通入口、独立 double oracle、显式非零初态/重复/两请求/旧结果；故障回滚与 checked native failure；Air host ASan/UBSan，Windows/WSL 资源/OFF/公共语义及最终 selected 回归 |
+| delivery | PASS：Air/Mini source/static/shared 普通 Direct/Graph，prefix 搬移且 producer source/build 隐藏；许可证/metallib/private header/symbol 检查；Windows selected 组件合同和 15 组产品三交付 |
+| usability_docs | PASS：`docs/user/apple-compute.md` 与 Compute/Graph package recurrent 样例给出普通入口、支持域、输入 ready、状态/结果 lease、同步和实际成本 |
+| red_team | PASS：一次独立有界复核，286 产品输入与四个归档完整性核对；fixture 缺陷已精确修复并通过，无新产品问题；不把历史 pending 或未运行性能写成 PASS |
+| engineering_performance | PASS / P0：每 invocation 原生资源、每次输出分配、边界 checked host wait 和必要 contiguous GPU copy 已记账；无热搜索/计时或额外 HYLE 数学；不签 P1、SOTA 或零分配 replay |
+
+证据导航与实际命令见[验收记录](../../../../evidence/correctness/compute-llm-moe-m1-apple-admission/README.md)。
+host sanitizer 不签 Metal driver/device；macOS ASan 无 leak detection，native rollback 另有 live-owner
+断言。已验 Apple 域为 F32、equal heads、square state、D32/64/128、T≤32767 及 INT32 索引上限；
+公共 descriptor 的 grouped heads/F16/BF16 不等于本 native 域已经接通。跨库 host wait 是明确限制。
+
+重开条件：可复现数值/资源/失败/UB 缺陷；M2 真实 consumer 需要的新数值、shape 或 region；已采用
+上游版本相关变更；具备公平合同的 material 回归。不得用旧 CLOSED 或 benchmark 行自动重开。
+所有 CPU/CUDA/Metal/Vulkan 自研数学继续冻结，SIMD 基础保留；旧 CPU ggml/oneDNN BLOCKED 不变。
+
+统一 `loc-report.py --module compute-graph-all --module-path include/hyle/compute --module-path
+include/hyle/graph --module-path 'src/compute*' --module-path 'src/graph*' --self-check --json`：
+**51,892 行 / 222 文件**，不含测试/vendor，包含冻结存量。模型新增覆盖 **0/256**。
+M1-G/R/C/A 已完成各自接入范围，下一包 M1-V；整个 M0–M6 goal 未完成。M5 开始前暂停通知用户。

@@ -214,7 +214,9 @@ C1–C6 在上述表格与 JSON 的 `first_package` / case ID 中仅保留为验
 不表示产品覆盖。实施已进入M1，当前状态以registry及其绑定的有限卡为准；
 [M1-G资源卡](llm-moe-m1-ggml-runtime.md)与[M1-R路由卡](llm-moe-m1-route-binding.md)
 已关闭各自有限资源/冷条件范围；[M1-C CUDA接入](llm-moe-m1-cuda-admission.md)及其GQA语义卡也已
-CLOSED，Windows/WSL普通入口/三交付/适用插桩与Mac适用门通过。新增256格覆盖仍为0；下一包M1-A。
+CLOSED，Windows/WSL普通入口/三交付/适用插桩与Mac适用门通过。
+[M1-A Apple接入](llm-moe-m1-apple-admission.md)也已CLOSED：原版Metal与MLX组合、普通入口、
+两台Mac三交付、host插桩及最终selected回归通过。新增256格覆盖仍为0；下一包M1-V。
 尚未审计的包仍须逐owner
 固定有限FIX，不继承旧卡的产品授权。
 

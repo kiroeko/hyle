@@ -100,8 +100,8 @@ Graph 描述用 `apple::affine_q4_description(N,K)`，不把 Marlin/GGUF/其它�
 typed 准备也可以只给元数据，例如
 `context.prepare(RmsNorm{}, std::array{apple::InputSpec{{1,2048}, mx::bfloat16},
 apple::InputSpec{{2048}, mx::float32}})`；不需要制造用户 payload。精度或形状不合格时准备返回
-具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 typed 域的完整性能资格待 C1 验收，不能继承
-R5 FFN 的性能结论。
+具体拒绝。MLX 仍在冷期用隔离输入编译暖机。新增 typed 域的完整性能尚未验证，不能从既有
+FFN 的性能结果外推。
 
 checked Gather/Scatter 与整数 Scan 的低层 `apple::lower()` 必须在 `Context::prepare/compile` 的 managed
 tracing 内调用，才能把设备状态绑定到完成结果；在外部直接调用会明确拒绝。准备不以隔离暖机
@@ -120,7 +120,8 @@ tracing 内调用，才能把设备状态绑定到完成结果；在外部直接
 
 `context.prepare(GatedDeltaNet{}, inputs)` 冷绑定锁定的 ggml Metal 完整递归程序。当前接入域为
 F32、相同 Q/K/V head 数、D=32/64/128、1≤T≤32767；输入及 packed 输出元素数不超过 INT32_MAX。
-资格和未完成的交付验证见 [M1-A 当前卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
+该有限域的原生/资源验证和源码、静态、动态三交付已通过，机器与限制见
+[M1-A 验收卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)。
 
 六个输入按 Q、K、V、log-decay、beta、初态排列；Q/K/V 是 `[B,T,H,D]`，两种门是
 `[B,T,H,1]`，初态是 `[B,H,D,D]`（最后两轴为 value/key）。Q/K 是否归一化、beta 是否激活由

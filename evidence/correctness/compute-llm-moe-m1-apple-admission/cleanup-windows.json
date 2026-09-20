@@ -1,0 +1,141 @@
+{
+  "scope": "M1-A Windows completed validation artifacts only",
+  "completed": true,
+  "paths": [
+    {
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8",
+      "bytes": 2907282829.0
+    },
+    {
+      "path": "C:\\hyle-scratch\\m1a-schema",
+      "bytes": 68816889.0
+    },
+    {
+      "verdict": "PASS",
+      "gate": "delivery:compute",
+      "archive_sha256": "ae4a2fe199701a7655388c1a8633fd3e893df76eb32d172f5c44548ab6c813fd",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-compute",
+      "log_archive": "cleanup-delivery-compute-logs.zip",
+      "bytes": 7860921241.0
+    },
+    {
+      "verdict": "PASS",
+      "gate": "delivery:container",
+      "archive_sha256": "4b24f22cb0adb62fd49d4fc808a29706b1324748363ebc12d07b10f72645354b",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-container",
+      "log_archive": "cleanup-delivery-container-logs.zip",
+      "bytes": 47264569.0
+    },
+    {
+      "verdict": "PASS",
+      "gate": "delivery:core",
+      "archive_sha256": "dcee83591fb026162dd60e3e0209da34fa4385d37489643fd06f289eac7cc2df",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-core",
+      "log_archive": "cleanup-delivery-core-logs.zip",
+      "bytes": 3123345.0
+    },
+    {
+      "verdict": "PASS",
+      "gate": "delivery:error",
+      "archive_sha256": "737237d96e156e64ed32f489a4a00106945bf75455587d54e6fe91b322b2a9a2",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-error",
+      "log_archive": "cleanup-delivery-error-logs.zip",
+      "bytes": 6862891.0
+    },
+    {
+      "log_archive": "cleanup-delivery-graph-logs.zip",
+      "archive_sha256": "bd37b9407aec6875d699cbd0b1741b9db513028f47a0363702f12b34bd7c1437",
+      "verdict": "PASS",
+      "bytes": 7889970137.0,
+      "gate": "delivery:graph",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-graph"
+    },
+    {
+      "archive_sha256": "29335e0d42591b9d44cc1c4ac95bf0b50a89958a739966a64122c8868e5ebb17",
+      "gate": "delivery:io",
+      "bytes": 98692147.0,
+      "log_archive": "cleanup-delivery-io-logs.zip",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-io",
+      "verdict": "PASS"
+    },
+    {
+      "archive_sha256": "e2f2756f36cb14b03dc1c3aaa5c712904babcde9cb98d491135a4c24dc4da38c",
+      "gate": "delivery:math",
+      "bytes": 2939545.0,
+      "log_archive": "cleanup-delivery-math-logs.zip",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-math",
+      "verdict": "PASS"
+    },
+    {
+      "archive_sha256": "aef270142f6694f5d1d0a9af3643a4e1e1d7e671981ad63b26f4f44206fdf18a",
+      "log_archive": "cleanup-delivery-mem-logs.zip",
+      "gate": "delivery:mem",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-mem",
+      "verdict": "PASS",
+      "bytes": 33776761.0
+    },
+    {
+      "archive_sha256": "d48541bc61fcb301fd18a4d61a7ca416ce4d455466ee5b002d6a47f75560804c",
+      "log_archive": "cleanup-delivery-obs-logs.zip",
+      "gate": "delivery:obs",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-obs",
+      "verdict": "PASS",
+      "bytes": 11212950.0
+    },
+    {
+      "gate": "delivery:platform",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-platform",
+      "verdict": "PASS",
+      "archive_sha256": "9578d98bf564a0aa70532a4048fb202e6c298210c239eb04dc788cd8551321aa",
+      "bytes": 15680658.0,
+      "log_archive": "cleanup-delivery-platform-logs.zip"
+    },
+    {
+      "gate": "delivery:process",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-process",
+      "verdict": "PASS",
+      "archive_sha256": "961f067c56b19a5edee06074606ce8556334f259145a50ad72d59669533d52b3",
+      "bytes": 65662890.0,
+      "log_archive": "cleanup-delivery-process-logs.zip"
+    },
+    {
+      "bytes": 45027141.0,
+      "log_archive": "cleanup-delivery-sched-logs.zip",
+      "gate": "delivery:sched",
+      "verdict": "PASS",
+      "archive_sha256": "9c67d6ac65c1c8a2f014ce8205b092a0bb1b35bf5d69dca872ec4aaa40b95dc4",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-sched"
+    },
+    {
+      "bytes": 167683701.0,
+      "verdict": "PASS",
+      "log_archive": "cleanup-delivery-simd-logs.zip",
+      "archive_sha256": "90c978ef987bd800b8f86a9a4c999ed673fe0fdab903558ecd0b3b676f43fb61",
+      "gate": "delivery:simd",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-simd"
+    },
+    {
+      "bytes": 4580183.0,
+      "verdict": "PASS",
+      "log_archive": "cleanup-delivery-time-logs.zip",
+      "archive_sha256": "61b26db900d7bd8d808d6f0e00dcff5ceeb8c74c0cb963d4789c53266a96281a",
+      "gate": "delivery:time",
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-time"
+    },
+    {
+      "log_archive": "cleanup-delivery-util-logs.zip",
+      "gate": "delivery:util",
+      "bytes": 45828634.0,
+      "path": "C:\\ha\\e8e0c0e99c7b4f69d7a8\\delivery-util",
+      "archive_sha256": "e07d5993214405692ceb13d55c929614317b7bf04126424fc61c04ffefc89afb",
+      "verdict": "PASS"
+    }
+  ],
+  "total_removed_bytes": 19275326511.0,
+  "preserved": [
+    "canonical product source",
+    "raw evidence/logs",
+    "shared dependency caches",
+    "local and synchronized model assets"
+  ]
+}

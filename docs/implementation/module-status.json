@@ -393,10 +393,14 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
+      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
+      }
     },
     {
       "module": "compute_backend_cpu",
@@ -511,17 +515,25 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
+      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
+      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
@@ -558,10 +570,14 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
+      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -598,10 +614,14 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CANDIDATE：A1–A6固定，Air/Mini原生与三交付、host插桩、Windows/WSL OFF/资源及最终119 selected门通过；P0，自研冻结，模型覆盖0。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662"
+      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
+      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
+      }
     }
   ]
 }
