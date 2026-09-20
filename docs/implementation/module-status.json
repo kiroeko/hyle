@@ -393,14 +393,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
+      "summary": "M1-V IREE普通接入SCOPED：具名FP8/MXFP4格式、独立原版runtime/制品、native资源/配额/异步片段边界与三交付；先固定有限FIX，未授权产品修改。自研冻结，覆盖0。"
     },
     {
       "module": "compute_backend_cpu",
@@ -610,8 +605,9 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "QUEUED",
-      "summary": "M1-V 条件资格已通过，登记独立IREE Vulkan runtime/制品/资源owner身份；尚无产品target、普通入口或依赖，先SCOPED/AUDITED。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
+      "summary": "M1-V IREE普通接入SCOPED：具名FP8/MXFP4格式、独立原版runtime/制品、native资源/配额/异步片段边界与三交付；先固定有限FIX，未授权产品修改。自研冻结，覆盖0。"
     }
   ]
 }

@@ -46,7 +46,7 @@
 | compute_provider_onednn | BLOCKED | — | [record](tasks/compute/llm-moe-c1-onednn-normalization.md) | C1-AA-Q2 BLOCKED：16个A/A进程与完整实例原记录保留，原门FAIL且产品采样0；Q2-D目录接线修复及12项Python回归通过，无native/build/P1重试。F1正确性/三交付不变，默认规则/淘汰未裁决，其他C1独立验收继续。 |
 | compute_provider_ggml | BLOCKED | — | [record](tasks/compute/compute-provider-ggml-v1.md) | compute_provider_ggml v1 BLOCKED：HYLE block storage 与 Graph region 前置已经解除，但锁定/当前 ggml CPU runtime 仍在 context/threadpool 创建失败时 abort，且无持久 pool 时每次 submit 隐藏创建 disposable pool；空 factor 继续不进入产品。 |
 | graph_provider_onednn | BLOCKED | — | [record](tasks/compute/llm-moe-c1-onednn-normalization.md) | C1-AA-Q2 BLOCKED：16个A/A进程与完整实例原记录保留，原门FAIL且产品采样0；Q2-D目录接线修复及12项Python回归通过，无native/build/P1重试。F1正确性/三交付不变，默认规则/淘汰未裁决，其他C1独立验收继续。 |
-| compute_ops | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-apple-admission/README.md) | [record](tasks/compute/llm-moe-m1-apple-admission.md) | M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。 |
+| compute_ops | SCOPED | — | [record](tasks/compute/llm-moe-m1-vulkan-iree-product.md) | M1-V IREE普通接入SCOPED：具名FP8/MXFP4格式、独立原版runtime/制品、native资源/配额/异步片段边界与三交付；先固定有限FIX，未授权产品修改。自研冻结，覆盖0。 |
 | compute_backend_cpu | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
 | compute_backend_cuda | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-route-binding/README.md) | [record](tasks/compute/llm-moe-m1-route-binding.md) | M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。 |
 | compute_provider_native | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-gqa-semantics.md) | M1-C7 CLOSED：S1–S3 GQA/MQA公共语义与旧CPU不支持域隔离完成；四环境语义/回归、适用host插桩及M1-C普通attention三交付通过；未改变旧attention数学。 |
@@ -68,7 +68,7 @@
 | graph_provider_ggml_cuda | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-admission.md) | M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。 |
 | compute_provider_flashinfer | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-admission.md) | M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。 |
 | compute_provider_ggml_metal | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-apple-admission/README.md) | [record](tasks/compute/llm-moe-m1-apple-admission.md) | M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。 |
-| compute_provider_iree_vulkan | QUEUED | — | — | M1-V 条件资格已通过，登记独立IREE Vulkan runtime/制品/资源owner身份；尚无产品target、普通入口或依赖，先SCOPED/AUDITED。 |
+| compute_provider_iree_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m1-vulkan-iree-product.md) | M1-V IREE普通接入SCOPED：具名FP8/MXFP4格式、独立原版runtime/制品、native资源/配额/异步片段边界与三交付；先固定有限FIX，未授权产品修改。自研冻结，覆盖0。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

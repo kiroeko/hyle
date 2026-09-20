@@ -189,3 +189,7 @@ Python/编译器。一个原版 HAL device group/module 配两个 VM context；�
 本次 QUEUED 登记只增加身份，不改变已实现 target/依赖/头。selector 的完整计划保留；其因中央
 manifest 变化选出的产品门仍是 SELECTED，留给固定后的产品候选，未写 PASS。本阶段执行
 closure（previous ref `2e4d8ecb`）、docs 和 diff；没有为状态/证据登记重建产品或运行 P1。
+
+IREE 普通接入与共同格式的新 owner 已转入[独立产品卡](llm-moe-m1-vulkan-iree-product.md)
+SCOPED；本卡已有三 owner 保持 AUDITED。IREE 相关产品改动等待该卡的有限合同固定，
+本卡原版 recurrent 已完成的范围与父包未决验收不变。
