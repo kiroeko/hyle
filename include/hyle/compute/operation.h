@@ -40,6 +40,7 @@ enum class OperationKind : std::uint8_t {
   kScaledDotProductAttention,
   kQuantizedMatMul,
   kScan,
+  kGatedDeltaNet,
   kCustom,
 };
 
@@ -403,6 +404,19 @@ struct ScaledDotProductAttention final {
   DataType accumulation_type = DataType::kFloat32;
 };
 
+// Pure recurrent region, with explicit initial and final state. Inputs in order:
+// Q/K [B,T,Hk,Dk], V [B,T,Hv,Dv], log-decay/beta [B,T,Hv,1], and FP32
+// state [B,Hv,Dv,Dk]. Q/K/V share F16, BF16 or F32; gates/beta are FP32.
+// Hv is a positive multiple of Hk; value head h uses key head h/(Hv/Hk).
+// For each token and head, with rows of S indexed by value channel:
+//   S *= exp(log_decay); d = beta * (v - S*k); S += outer(d,k);
+//   y = S*q / sqrt(Dk).
+// Accumulation/state stay FP32; y has V's type and shape. Outputs are y and
+// final state, both materialized. Inputs are unchanged. Q/K normalization,
+// gate activation and external state writes are separate caller operations.
+// Backend support is qualified separately from this logical schema.
+struct GatedDeltaNet final {};
+
 struct OperationId final {
   std::uint64_t namespace_id = 0;
   std::uint64_t operation_id = 0;
@@ -522,6 +536,7 @@ public:
   constexpr explicit Operation(TopK value) noexcept : value_(value) {}
   constexpr explicit Operation(ScaledDotProductAttention value) noexcept
       : value_(value) {}
+  constexpr explicit Operation(GatedDeltaNet value) noexcept : value_(value) {}
 
   template <detail::InlineCustomOperationDescriptor Descriptor>
   static Operation custom(Descriptor descriptor) noexcept {
@@ -575,7 +590,7 @@ private:
       std::variant<std::monostate, View, Copy, Fill, Cast, Unary, Binary,
                    Select, Reduce, RmsNorm, LayerNorm, MatMul, GatedActivation,
                    Gather, Scatter, Concat, RoPE, Softmax, TopK,
-                   ScaledDotProductAttention, QuantizedMatMul, Scan,
+                   ScaledDotProductAttention, QuantizedMatMul, Scan, GatedDeltaNet,
                    detail::CustomOperationValue>;
   static_assert(std::variant_size_v<Value> ==
                 static_cast<std::size_t>(OperationKind::kCustom) + 1);
@@ -618,7 +633,7 @@ HYLE_COMPUTE_OPS_API Result<TensorDesc>
 infer_single_output(const Operation &operation,
                     std::span<const TensorDesc> inputs) noexcept;
 
-static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 23);
+static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 24);
 static_assert(std::is_trivially_copyable_v<Operation>);
 static_assert(sizeof(Operation) <= 256);
 

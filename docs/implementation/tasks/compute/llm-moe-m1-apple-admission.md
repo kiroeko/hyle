@@ -117,3 +117,16 @@
 能力裁决：A1/A2/A3 为 BORROW+必要资源 FIX（MISSING）；A4 为语义/Graph seam FIX（PARTIAL）；
 A5 KEEP（已存在、须验证新 consumer）；A6 FIX。批量全覆盖 DEFER M2/M3，全部自研 REJECT 本轮。
 上述公开形状、owner、lifetime、错误与常态成本已固定；若原生事实要求改变这些合同，先重新定界。
+
+## 语义实施检查点（仍为 AUDITED）
+
+公共 `GatedDeltaNet` 已有纯描述、六输入/两输出 traits、F16/BF16/F32 QKV 与 FP32 gates/state
+的形状和类型检查；输入不变、状态轴向及 grouped heads 合同明确。没有新增数学实现。
+Windows 静态 `compute_ops` 与 public-header 两门通过，含非方形 state、非整除 heads、错误 gate
+宽度、零维度、类型与 arity、失败不部分修改输出。原始日志、运行脚本、selector 计划与源码 hash
+见[语义收据](../../../../evidence/correctness/compute-llm-moe-m1-apple-admission/schema-windows.json)。
+
+该收据只签公共语义，未签 Apple native、完整 Graph、host 插桩或三交付；其余 selector 门保持待执行。
+Metal native import / checked completion 的原版资源适配及普通入口仍待实现。新增覆盖为 0/256，
+没有 P1 或自研对比。统一脚本 `loc-report.py --self-check`：Compute+Graph 实现 **51,213 行 / 217 文件**，
+不含测试/vendor，包含冻结存量。保留本卡小型 schema build 供后续增量验证，最终归档后清理。

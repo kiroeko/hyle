@@ -811,6 +811,80 @@ TEST(OperationResources, UsesProducerAccessCallbackAcrossSharedFactorBoundary) {
 }
 #endif
 
+TEST(OperationGatedDeltaNet, PreservesExplicitStateAndGroupedHeadContract) {
+  const Operation operation(GatedDeltaNet{});
+  EXPECT_EQ(operation.kind(), OperationKind::kGatedDeltaNet);
+  EXPECT_EQ(operation_name(operation), "gated-delta-net");
+  const auto traits = operation_traits(operation);
+  EXPECT_EQ(traits.outputs, 2);
+  EXPECT_EQ(traits.effect, EffectKind::kPure);
+  EXPECT_EQ(traits.alias, AliasPolicy::kNone);
+  EXPECT_EQ(traits.accumulation_type, DataType::kFloat32);
+  for (auto type : {DataType::kFloat16, DataType::kBFloat16,
+                    DataType::kFloat32}) {
+    // Non-square state and grouped heads are schema capabilities; no backend
+    // qualification is implied by shape inference.
+    const std::array inputs{
+        tensor(type, 2, 17, 4, 64), tensor(type, 2, 17, 4, 64),
+        tensor(type, 2, 17, 12, 128),
+        tensor(DataType::kFloat32, 2, 17, 12, 1),
+        tensor(DataType::kFloat32, 2, 17, 12, 1),
+        tensor(DataType::kFloat32, 2, 12, 128, 64)};
+    std::array<TensorDesc, 2> outputs;
+    ASSERT_TRUE(infer_output_descriptions(operation, inputs, outputs).ok());
+    EXPECT_EQ(outputs[0], inputs[2]);
+    EXPECT_EQ(outputs[1], inputs[5]);
+    EXPECT_FALSE(infer_single_output(operation, inputs));
+  }
+}
+
+TEST(OperationGatedDeltaNet, RejectsWrongGatesStateTypesAndArityAtomically) {
+  const Operation operation(GatedDeltaNet{});
+  const auto f32 = DataType::kFloat32;
+  const std::array valid{
+      tensor(f32, 2, 17, 4, 64), tensor(f32, 2, 17, 4, 64),
+      tensor(f32, 2, 17, 12, 128), tensor(f32, 2, 17, 12, 1),
+      tensor(f32, 2, 17, 12, 1), tensor(f32, 2, 12, 128, 64)};
+  const auto sentinel = tensor(f32, 7);
+  const auto reject = [&](std::span<const TensorDesc> inputs) {
+    std::array outputs{sentinel, sentinel};
+    EXPECT_TRUE(infer_output_descriptions(operation, inputs, outputs)
+                    .IsInvalidArgument());
+    EXPECT_EQ(outputs[0], sentinel);
+    EXPECT_EQ(outputs[1], sentinel);
+  };
+  for (std::size_t port = 0; port < valid.size(); ++port) {
+    auto inputs = valid;
+    for (std::size_t axis = 0; axis < 4; ++axis) {
+      std::array<std::int64_t, 4> shape{};
+      std::ranges::copy(valid[port].dimensions(), shape.begin());
+      shape[axis] = 0;
+      inputs[port] = TensorDesc::dense(f32, shape).value();
+      reject(inputs);
+    }
+    inputs[port] = tensor(DataType::kInt32, 2, 17, 12, 1);
+    reject(inputs);
+    inputs[port] = tensor(f32, 2, 17, 12);
+    reject(inputs);
+  }
+  auto inputs = valid;
+  inputs[5] = tensor(f32, 2, 12, 64, 128); // State orientation matters.
+  reject(inputs);
+  inputs = valid;
+  inputs[0] = inputs[1] = tensor(f32, 2, 17, 5, 64);
+  reject(inputs); // Value heads must divide into complete key-head groups.
+  inputs = valid;
+  inputs[3] = inputs[4] = tensor(f32, 2, 17, 12, 64);
+  reject(inputs); // Per-channel KDA decay is a different schema.
+  inputs = valid;
+  inputs[5] = tensor(DataType::kBFloat16, 2, 12, 128, 64);
+  reject(inputs);
+  reject(std::span(valid).first(5));
+  std::array<TensorDesc, 1> output;
+  EXPECT_TRUE(infer_output_descriptions(operation, valid, output)
+                  .IsInvalidArgument());
+}
+
 TEST(OperationValidation, RequiresExactInputAndOutputSpans) {
   const Operation operation(Binary{});
   const TensorDesc input = tensor(DataType::kFloat32, 4);

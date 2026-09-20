@@ -158,10 +158,47 @@ Status validate_operation_modes(const Operation &operation) noexcept {
   case OperationKind::kConcat:
   case OperationKind::kScan:
   case OperationKind::kTopK:
+  case OperationKind::kGatedDeltaNet:
   case OperationKind::kCustom:
     break;
   }
   return Status::Ok();
+}
+
+Result<TensorDesc>
+infer_gated_delta_net(std::span<const TensorDesc> inputs) noexcept {
+  for (const auto &input : inputs) {
+    if (input.rank() != 4 || !input.is_plain() ||
+        std::ranges::any_of(input.dimensions(), [](auto d) { return d <= 0; })) {
+      return std::unexpected(Status::InvalidArgument(
+          "GatedDeltaNet requires nonempty plain rank-4 inputs"));
+    }
+  }
+  const auto type = inputs[0].data_type();
+  if ((type != DataType::kFloat16 && type != DataType::kBFloat16 &&
+       type != DataType::kFloat32) ||
+      inputs[1].data_type() != type || inputs[2].data_type() != type ||
+      inputs[3].data_type() != DataType::kFloat32 ||
+      inputs[4].data_type() != DataType::kFloat32 ||
+      inputs[5].data_type() != DataType::kFloat32) {
+    return std::unexpected(Status::InvalidArgument(
+        "GatedDeltaNet requires matching F16/BF16/F32 QKV and FP32 gates/state"));
+  }
+  const auto q = inputs[0].dimensions();
+  const auto k = inputs[1].dimensions();
+  const auto v = inputs[2].dimensions();
+  const auto g = inputs[3].dimensions();
+  const auto beta = inputs[4].dimensions();
+  const auto state = inputs[5].dimensions();
+  if (!std::ranges::equal(q, k) || q[0] != v[0] || q[1] != v[1] ||
+      v[2] % q[2] != 0 || !std::ranges::equal(g, beta) ||
+      g[0] != v[0] || g[1] != v[1] || g[2] != v[2] || g[3] != 1 ||
+      state[0] != v[0] || state[1] != v[2] || state[2] != v[3] ||
+      state[3] != q[3]) {
+    return std::unexpected(Status::InvalidArgument(
+        "GatedDeltaNet QKV, scalar gates or [B,Hv,Dv,Dk] state shape mismatch"));
+  }
+  return TensorDesc::dense(type, v);
 }
 
 Status validate_description(const TensorDesc &description) noexcept {
@@ -793,6 +830,8 @@ std::string_view operation_name(OperationKind operation) noexcept {
     return "top-k";
   case OperationKind::kScaledDotProductAttention:
     return "scaled-dot-product-attention";
+  case OperationKind::kGatedDeltaNet:
+    return "gated-delta-net";
   case OperationKind::kCustom:
     return "custom";
   case OperationKind::kUnknown:
@@ -1013,6 +1052,9 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
                                  : DataType::kUnknown,
             true};
   }
+  case OperationKind::kGatedDeltaNet:
+    return {{6, 6}, 2, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
   case OperationKind::kCustom: {
     const auto *value =
         std::get_if<detail::CustomOperationValue>(&operation.value_);
@@ -1522,6 +1564,14 @@ Status infer_output_descriptions(const Operation &operation,
   case OperationKind::kScaledDotProductAttention:
     first =
         infer_attention(*operation.get_if<ScaledDotProductAttention>(), inputs);
+    break;
+  case OperationKind::kGatedDeltaNet:
+    first = infer_gated_delta_net(inputs);
+    if (first) {
+      HYLE_ASSIGN_OR_RETURN(inferred[1],
+                            TensorDesc::dense(DataType::kFloat32,
+                                              inputs[5].dimensions()));
+    }
     break;
   case OperationKind::kUnknown:
   case OperationKind::kCustom:

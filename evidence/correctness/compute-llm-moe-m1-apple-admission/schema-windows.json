@@ -1,0 +1,139 @@
+{
+  "stage": "M1-A AUDITED implementation checkpoint; not route admission",
+  "baseline": "6217e5663acb6825a72cc8a1a2e3d82735d8ceee",
+  "source_sha256": {
+    "include/hyle/compute/operation.h": "5d41150164ed71342bca5fcfedcc9ad7fb23df832f8f31c823214dcf4a70f1f8",
+    "src/compute_ops/operation.cc": "2dee80381ca936c25d9fc974894bf6aca0955be4e043b8443126c84bcf7aea7d",
+    "tests/compute_ops/operation_test.cc": "ca2cf40b6abcae96b901521c9d3e4729b9858be8d14b3344be5506d031d195e4"
+  },
+  "windows": {
+    "verdict": "PASS",
+    "gates": 2,
+    "scope": "compute_ops native test and self-contained public headers",
+    "routes": "CPU/CUDA/Apple/Vulkan OFF; no GPU execution claim"
+  },
+  "remaining": [
+    "Apple original native programs and ordinary entry",
+    "resource lifecycle, mixed Graph, cross-platform and delivery gates"
+  ],
+  "coverage_cells_signed": 0,
+  "self_written_math_changes": false,
+  "p1_executed": false,
+  "raw": {
+    "file": "schema-windows-raw.zip",
+    "bytes": 19285,
+    "sha256": "7e041d06df0bc4011280bb5b4b0afc6208f7da23cb7390825a3f7fdc8de58fc6"
+  },
+  "implementation_loc": {
+    "name": "compute-graph-all",
+    "boundary": "explicit",
+    "paths": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute",
+      "src/compute_backend_cpu",
+      "src/compute_backend_cuda",
+      "src/compute_ggml_runtime",
+      "src/compute_ops",
+      "src/compute_provider_cublas",
+      "src/compute_provider_cuda",
+      "src/compute_provider_flashinfer",
+      "src/compute_provider_ggml",
+      "src/compute_provider_ggml_cuda",
+      "src/compute_provider_ggml_vulkan",
+      "src/compute_provider_marlin",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn",
+      "src/compute_route_apple",
+      "src/compute_route_cpu",
+      "src/compute_route_cuda",
+      "src/compute_route_vulkan",
+      "src/graph",
+      "src/graph_provider_ggml_cuda",
+      "src/graph_provider_onednn",
+      "src/graph_route_apple",
+      "src/graph_route_cpu",
+      "src/graph_route_cuda",
+      "src/graph_route_vulkan"
+    ],
+    "modules": null
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 1057526,
+      "files": 2931,
+      "selected_files": 5876,
+      "paths": [
+        "Git-tracked regular files (current working tree)"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 146398,
+      "files": 568,
+      "selected_files": 630,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute-graph-all)",
+      "code": 51213,
+      "files": 217,
+      "selected_files": 247,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute",
+        "src/compute_backend_cpu",
+        "src/compute_backend_cuda",
+        "src/compute_ggml_runtime",
+        "src/compute_ops",
+        "src/compute_provider_cublas",
+        "src/compute_provider_cuda",
+        "src/compute_provider_flashinfer",
+        "src/compute_provider_ggml",
+        "src/compute_provider_ggml_cuda",
+        "src/compute_provider_ggml_vulkan",
+        "src/compute_provider_marlin",
+        "src/compute_provider_native",
+        "src/compute_provider_onednn",
+        "src/compute_route_apple",
+        "src/compute_route_cpu",
+        "src/compute_route_cuda",
+        "src/compute_route_vulkan",
+        "src/graph",
+        "src/graph_provider_ggml_cuda",
+        "src/graph_provider_onednn",
+        "src/graph_route_apple",
+        "src/graph_route_cpu",
+        "src/graph_route_cuda",
+        "src/graph_route_vulkan"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ]
+}

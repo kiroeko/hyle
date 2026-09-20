@@ -253,10 +253,16 @@ Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 G
 | provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、replay 成本类别、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
-公共 schema 包括上表的普通张量运算、Scan 和 QuantizedMatMul，共 21 个 family，并能做纯描述推导。
+公共 schema 包括上表的普通张量运算、Scan、QuantizedMatMul 和 GatedDeltaNet，共 22 个 family，并能做纯描述推导。
 Native 承载其中除 QuantizedMatMul 外的 20 个 family，具体 dtype/layout 域见上表。这不表示每种 dtype、
 layout 或 encoding 都由同一个 provider 执行：当前 SDPA 是 f32 reference/optimized fallback；block/opaque
 storage、量化 kernel 与窄 storage attention 仍应由理解相应格式的 provider 接管，不会被隐藏 materialize。
+
+`GatedDeltaNet{}` 描述六个显式输入与两个输出：Q/K `[B,T,Hk,Dk]`、V `[B,T,Hv,Dv]`、
+FP32 log-decay/beta `[B,T,Hv,1]`、FP32 初态 `[B,Hv,Dv,Dk]`；输出为 V 同形结果与新 FP32 状态。
+Q/K/V 使用同一 F16/BF16/F32 类型，Hv 是 Hk 的正整数倍。它不修改初态，也不隐含 Q/K 归一化、
+gate 激活或状态写回。目前只完成公共描述与推导；原版后端的实际准入由
+[M1-A 接入卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)记录，不能据此认为四路线已可执行。
 
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
