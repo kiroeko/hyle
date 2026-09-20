@@ -180,25 +180,36 @@ TEST(VulkanLifetime, IreeCancellationReusesSlotAndCloseDrainsAbandonment) {
     const auto desc = vulkan_tensor_test::dense(c::DataType::kInt32, {257});
     const auto data = vulkan_scan_test::integer_pattern(257);
     const auto input = vulkan_scan_test::make_integer(context, desc, data);
-    auto program = v::prepare(context, c::Scan{}, desc).value();
-    auto first = program.create_invocation().value();
-    auto second = program.create_invocation().value();
+    auto prepared = v::prepare(context, c::Scan{}, desc);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto program = std::move(*prepared);
+    auto first_slot = program.create_invocation();
+    ASSERT_TRUE(first_slot) << first_slot.error().message();
+    auto second_slot = program.create_invocation();
+    ASSERT_TRUE(second_slot) << second_slot.error().message();
+    auto first = std::move(*first_slot);
+    auto second = std::move(*second_slot);
     ASSERT_TRUE(first.bind(input).ok());
     ASSERT_TRUE(second.bind(input).ok());
     for (int phase = 0; phase < 2; ++phase) {
       {
-        auto work = first.submit().value();
+        auto submitted = first.submit();
+        ASSERT_TRUE(submitted) << submitted.error().message();
+        auto work = std::move(*submitted);
         ASSERT_TRUE(work.request_cancel().ok());
         auto result = work.wait();
         ASSERT_FALSE(result);
         EXPECT_TRUE(result.error().IsCancelled());
       }
       ASSERT_TRUE(first.bind(input).ok());
-      auto work = first.submit().value();
+      auto submitted = first.submit();
+      ASSERT_TRUE(submitted) << submitted.error().message();
+      auto work = std::move(*submitted);
       ASSERT_TRUE(work.wait());
     }
     {
-      auto abandoned = second.submit().value();
+      auto abandoned = second.submit();
+      ASSERT_TRUE(abandoned) << abandoned.error().message();
     }
     EXPECT_TRUE(context.close().ok());
     EXPECT_FALSE(first.submit());

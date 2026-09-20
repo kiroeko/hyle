@@ -226,6 +226,17 @@
           "after": "    // Final callbacks own the operation storage and may free it immediately.\n    // Clear the tracker reference before returning that ownership.\n    wait_op->base.next = NULL;\n    iree_async_proactor_complete_operation(&wait_op->base, status,\n                                           IREE_ASYNC_COMPLETION_FLAG_NONE);\n    ++drained_count;\n\n    iree_allocator_free(tracker->allocator, tracker);\n"
         }
       ]
+    },
+    {
+      "path": "runtime/src/iree/async/platform/iocp/proactor.c",
+      "before_sha256": "6a119f4b1bb317d9b9c94ab9f16ca3a3140dadebdedcced626f99e53e8bd6344",
+      "after_sha256": "9e31e1366e1f5af15cf16a3cb202a83dc1f447979cfa10947c7c83a45c600acf",
+      "edits": [
+        {
+          "before": "    // Invoke the operation's callback and release to pool.\n    iree_async_proactor_complete_operation(&wait_op->base, status,\n                                           IREE_ASYNC_COMPLETION_FLAG_NONE);\n    ++drained_count;\n\n    // Clear tracker reference and free.\n    wait_op->base.next = NULL;\n    iree_allocator_free(tracker->allocator, tracker);",
+          "after": "    // Final callback owns the operation and may free/reuse it immediately.\n    // Drop its tracker reference before returning that storage to the caller.\n    wait_op->base.next = NULL;\n    iree_async_proactor_complete_operation(&wait_op->base, status,\n                                           IREE_ASYNC_COMPLETION_FLAG_NONE);\n    ++drained_count;\n\n    iree_allocator_free(tracker->allocator, tracker);"
+        }
+      ]
     }
   ]
 }
