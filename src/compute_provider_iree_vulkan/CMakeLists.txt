@@ -85,6 +85,13 @@ endforeach()
 hyle_add_module(compute_provider_iree_vulkan
   SOURCES native_device.cc native_program.cc "${_generated}/programs.cc")
 target_include_directories(hyle_compute_provider_iree_vulkan PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+if(NOT MSVC)
+  # Original C headers use C99/GNU extensions when consumed from C++. Keep
+  # their diagnostics separate from the strict warnings on this adapter.
+  target_include_directories(hyle_compute_provider_iree_vulkan SYSTEM PRIVATE
+    "${_source}" "${_source}/runtime/src"
+    "${HYLE_DEP_BUILD_DIR}/iv/build" "${HYLE_DEP_BUILD_DIR}/iv/build/runtime/src")
+endif()
 target_link_libraries(hyle_compute_provider_iree_vulkan PRIVATE iree_runtime_unified)
 if(MSVC)
   target_compile_options(hyle_compute_provider_iree_vulkan PRIVATE /utf-8 /Zc:preprocessor)
