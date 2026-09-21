@@ -269,6 +269,7 @@ TEST(VulkanMatureTensor, EverySixteenBitPatternCopiesAndConvertsWithOddTail) {
 TEST(VulkanMatureTensor, NarrowingPreservesNanClassAndNearestEvenBoundaries) {
   auto context = vulkan_test::context().value();
   for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    SCOPED_TRACE(::testing::Message() << "narrow target=" << int(type));
     // Independent decoded adjacent representable values and their midpoints;
     // keep raw signaling NaN inputs instead of converting them through double.
     std::vector<std::uint64_t> raw{

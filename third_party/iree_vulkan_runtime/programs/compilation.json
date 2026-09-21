@@ -155,5 +155,43 @@
       }
     ],
     "kind": "Original arith floating conversion and bitcast; asynchronous descriptor program; no HYLE rounding algorithm"
+  },
+  "precision_preserve": {
+    "commands": [
+      [
+        "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+        "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\precision.mlir",
+        "--iree-hal-target-device=vulkan",
+        "--iree-vulkan-target=vp_android_baseline_2022",
+        "--iree-vulkan-dispatch-abi=descriptors",
+        "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+        "--iree-execution-model=async-external",
+        "--compile-to=executable-configurations",
+        "-o",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\preserve-final\\configured.mlir"
+      ],
+      [
+        "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\preserve-final\\annotated.mlir",
+        "--iree-hal-target-device=vulkan",
+        "--iree-vulkan-target=vp_android_baseline_2022",
+        "--iree-vulkan-dispatch-abi=descriptors",
+        "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+        "--iree-execution-model=async-external",
+        "--compile-from=executable-configurations",
+        "-o",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\preserve-final\\precision.vmfb",
+        "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\preserve-final\\spirv"
+      ]
+    ],
+    "files": {
+      "precision.mlir": "e4250b8bb859df68c4d49379c590be5986ee98aa122ba36e1568e6ae95169dbb",
+      "compile_precision.py": "6bf96155e5c0394d95e950ef9b18512707f7badfe842e2003a34ca5a3428a94a",
+      "configured.mlir": "a23e31a9e5b3059406a9b1b1cdd10bd5817c7def5f90dd5d65956b201c2a4df5",
+      "annotated.mlir": "d9f2f4da2e070a2d296a204dbdacfc9b72bc93c401422761be0b0cce6cde5ff8",
+      "precision.vmfb": "2f74c9a248775dfe3a47a3ff01c945daffcfb5c2dcf4f901ae94758e1c130ac1",
+      "module_f16_to_bf16_dispatch_0_f16_to_bf16_dispatch_0_elementwise_D_f16xi16.spirv.mlir": "9d3fff399704ee39281cc05d2673d7a8c122a21e19fabd44668c778e2fb8d6f3",
+      "module_f32_to_bf16_dispatch_0_f32_to_bf16_dispatch_0_elementwise_D_f32xi16.spirv.mlir": "624a7ba0222437f540af94ce38744ecfc9642b08f31074611c34975f678a5af8"
+    }
   }
 }

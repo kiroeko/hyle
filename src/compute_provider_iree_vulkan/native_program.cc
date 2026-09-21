@@ -318,6 +318,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     return std::unexpected(
         Status::Unimplemented("checked Scan requires enabled shaderInt64"));
   if (precision && (!features.shader_int16 || !features.storage_buffer16 ||
+                    !features.preserve_float32_specials ||
                     (spec.kind == ProgramKind::Float16ToBFloat16 &&
                      !features.shader_float16)))
     return std::unexpected(Status::Unimplemented(

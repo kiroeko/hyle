@@ -128,6 +128,7 @@ bool iree_precision_supported(const Device &device,
          *input.element_count() > 0 &&
          *input.element_count() <= precision_elements(device) &&
          features.shader_int16 && features.storage_buffer16 &&
+         features.preserve_float32_specials &&
          (input.data_type() != DataType::kFloat16 || features.shader_float16) &&
          device.properties.limits.maxComputeWorkGroupInvocations >= 64 &&
          device.properties.limits.maxComputeWorkGroupSize[0] >= 64;
@@ -192,6 +193,7 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     const auto &features = device.provider.native();
     if ((scan && !features.shader_int64) ||
         (precision && (!features.shader_int16 || !features.storage_buffer16 ||
+                       !features.preserve_float32_specials ||
                        (input.data_type() == DataType::kFloat16 &&
                         !features.shader_float16))) ||
         (!scan && !precision &&

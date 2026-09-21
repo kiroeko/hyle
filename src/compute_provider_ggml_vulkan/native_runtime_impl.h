@@ -84,6 +84,11 @@ Failure create(const Options &options, Runtime **result,
       throw vk::InitializationFailedError("incomplete Vulkan loader");
     ggml_vk_instance_init();
     auto device = ggml_vk_get_device(0);
+    const auto float_controls =
+        device->physical_device
+            .getProperties2<vk::PhysicalDeviceProperties2,
+                            vk::PhysicalDeviceFloatControlsProperties>()
+            .get<vk::PhysicalDeviceFloatControlsProperties>();
     *native = {
         runtime->instance.instance, device->physical_device, device->device,
         device->compute_queue->handle->queue,
@@ -99,7 +104,8 @@ Failure create(const Options &options, Runtime **result,
             : 0u,
         // This pin forwards all supported core features unchanged to
         // DeviceCreateInfo. Capture the enabled Int16 fact cold.
-        device->physical_device.getFeatures().shaderInt16 != VK_FALSE};
+        device->physical_device.getFeatures().shaderInt16 != VK_FALSE,
+        float_controls.shaderSignedZeroInfNanPreserveFloat32 != VK_FALSE};
     *result = runtime;
     return {};
   } catch (...) {
