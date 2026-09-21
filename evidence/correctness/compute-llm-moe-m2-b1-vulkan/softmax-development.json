@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "card": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+  "checkpoint": "V1-A original Softmax axes and broadcast masks",
+  "candidate": "c74b9b69e5a7c121c44a6df55abd6cd066a176d7",
+  "tree": "daa07676669d17f43805f0a21e4b4e596c1b2e81",
+  "baseline": "f74daa30",
+  "owners": [
+    "compute_provider_ggml_vulkan",
+    "compute_provider_iree_vulkan",
+    "compute_route_vulkan",
+    "graph_route_vulkan"
+  ],
+  "state": "AUDITED",
+  "implementation": [
+    "original ggml dense nonempty F32/F16/BF16 Softmax at any axis, rank1..8",
+    "same-type additive masks expanded using original repeat, then original axis folding and cont",
+    "separate original Scale with additive mask when scale is not one, preserving public F32 rounding",
+    "cold layout/grid and original mask dtype validation; established per-public-node half rounding retained"
+  ],
+  "machines": [
+    {
+      "machine": "Windows RTX4070",
+      "candidate": "c74b9b69e5a7c121c44a6df55abd6cd066a176d7",
+      "ctest_pass": 8,
+      "cpp_pass": 177,
+      "optional_validation_layer": "SKIPPED: VK_LAYER_KHRONOS_validation unavailable",
+      "log": "windows-LastTest.log",
+      "log_sha256": "9f5cdacefde1eb65d809306860341eeaa0e2336c74e3bc2d6a7780a0db5274e6"
+    },
+    {
+      "machine": "MacBook Air Mac16,12 MoltenVK",
+      "candidate": "c74b9b69e5a7c121c44a6df55abd6cd066a176d7",
+      "ctest_pass": 8,
+      "cpp_pass": 178,
+      "optional_validation_layer": "SKIPPED: VK_LAYER_KHRONOS_validation unavailable",
+      "log": "air/LastTest.log",
+      "log_sha256": "6e6b7bf2b915ad2e7b8b8e94d00329c383b6bdbc58fe608300de3024c600e77d"
+    }
+  ],
+  "ordinary_tests": {
+    "parameter_cases": 96,
+    "changed_payload_runs_per_case": 2,
+    "dimensions": "3 storage types x 8 shape/axis cases x 4 mask cases",
+    "behavior": [
+      "six axes, rank8, 16385-column original long-row path",
+      "none/scalar/row/column/cross-broadcast masks, all-masked rows",
+      "exact F32 scale-before-mask rounding counterexample, NaN and infinities",
+      "published axis-restored Softmax and residual outputs in all three storage types",
+      "two invocation slots, changed payload replay, retained results, owner close and quota zero",
+      "original mixed-dtype mask refusal retained before BF16 promotion"
+    ]
+  },
+  "corrections": [
+    {
+      "candidate": "0c707d5b",
+      "cause": "Binary broadcast helper retained short row mask, invalid for Softmax full-axis reshape",
+      "change": "original repeat expands scalar/row/column masks before axis folding",
+      "log": "windows-LastTest-first.log"
+    },
+    {
+      "candidate": "e54205e0",
+      "cause": "BF16 promotion erased original dtype mismatch before semantic admission",
+      "change": "check original same-type mask domain before F32 promotion; existing refusal test retained",
+      "log": "windows-LastTest-mixed-mask.log"
+    }
+  ],
+  "selected_gate_count": 7,
+  "skipped_gate_count": 125,
+  "incremental_selected": "PASS; configure, four factors, docs and closure",
+  "cost_contract": [
+    "Scale intermediates and dispatch, original repeat/permute/cont materialization charged",
+    "original managed encoding/allocation and established half-provider copy/sync charged",
+    "no new shader/math, runtime search, timing, zero-copy or SOTA claim"
+  ],
+  "pending": [
+    "complete 21-row B1 mature domains including remaining masks/index/state/stride and stable transforms",
+    "applicable WSL/Mini/OFF, host instrumentation and new-domain three-delivery consumers",
+    "full selected set from the precision dependency identity change",
+    "qualified P1 on an immutable stable full-batch candidate"
+  ],
+  "full_B1_aggregate": "INCONCLUSIVE",
+  "new_complete_matrix_cells": 0,
+  "p1": "NOT_RUN",
+  "source_design_budget_minutes": {
+    "used_conservative": 118,
+    "limit": 120,
+    "build_and_predeclared_validation": "separate; no reset for sub-batch"
+  },
+  "loc": {
+    "id": "module",
+    "label": "module implementation (compute-graph)",
+    "code": 57379,
+    "files": 249,
+    "selected_files": 283,
+    "paths": [
+      "include/hyle/compute*",
+      "include/hyle/graph*",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ]
+  },
+  "loc_self_check": "pass",
+  "disk": {
+    "windows_build_bytes": 782414890,
+    "windows_tools_bytes": 239313498,
+    "c_free_bytes": 698085265408,
+    "cleanup": "Reused active Windows/Air builds; no new build or model copy; text logs only."
+  },
+  "raw_archive": {
+    "path": "softmax-development-raw.zip",
+    "files": 32,
+    "bytes": 111174,
+    "sha256": "11dd795e64d34dea94401192fe1bec3cbff9c29927a499a0cd4e9d58b8c9a9a6",
+    "integrity": "CRC and every manifest SHA256 verified"
+  }
+}

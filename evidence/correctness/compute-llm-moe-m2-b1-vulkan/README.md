@@ -83,3 +83,29 @@ Windows shared/WERROR与Air/MoltenVK static/WERROR各8/8 CTest通过，分别174
 
 统一Compute+Graph为**57,343实现行/249文件**，排除tests/vendor，self-check通过。仅复用
 Windows约0.73GiB和Air原有活动build，没有新增构建树或模型副本；本批证据只包含日志/文本。
+
+## V1-A：attention Softmax 布局与掩码
+
+候选`c74b9b69e5a7c121c44a6df55abd6cd066a176d7`将原版ggml Softmax接至dense非空
+F32/F16/BF16、任意axis/rank1..8和同类型广播additive mask。原版reshape/permute/cont/repeat
+翻译布局；带mask且scale不为1时以原版Scale保留公开F32乘法中间舍入，原版Softmax执行后再
+恢复轴。未改变原厂shader/数学，BF16公开结果仍通过已接IREE标准转换保留。
+
+- [Softmax开发收据](softmax-development.json)：候选、两机结果、两项纠正、成本和未完成门。
+- [原始记录](softmax-development-raw.zip)：所有失败/成功日志、候选与制品hash、selector、
+  统一LOC和复现脚本；包含逐文件SHA256 manifest，CRC/hash核验通过。
+
+Windows shared/WERROR与Air/MoltenVK static/WERROR均8/8 CTest通过，分别177/178项C++通过；
+同一个可选validation-layer用例跳过。Direct的96组参数各更换payload执行两次，包括三dtype、
+六axis/rank8、16385列、无mask及scalar/row/column/交错广播；另验NaN/Inf/全mask和精确乘法
+中间舍入反例。Graph masked Softmax→残差在三dtype下发布两个结果，两slot、重放、旧结果、
+owner关闭后下载及quota归零通过。
+
+首轮原版reshape断言源于Binary的广播快捷形状被直接用于Softmax；补原版repeat完整展开。
+后续唯一拒绝回归源于BF16提升抹掉原始mask dtype；把同类型检查放在冷提升前修复。没有放宽
+数值oracle或删除拒绝测试。源码/设计118/120分钟、余2分钟；正常实施/验证单列，预算未重置。
+
+本增量七个selected门通过，125项skip/reuse。原桥/依赖不变；完整B1、新域三交付/插桩、前精度
+依赖身份变更触发的最终综合门和P1仍未完成，聚合INCONCLUSIVE、完整矩阵新增0。成本包含
+Scale中间存储、layout物化、managed编码/分配及half Provider边界；未做冻结自研比较。
+统一Compute+Graph为**57,379实现行/249文件**，排除tests/vendor，self-check通过；两机build复用。

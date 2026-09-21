@@ -281,8 +281,9 @@ CPU/CUDA/Apple当前未决项保留；按需求批次推进四路线，不等前
 
 Vulkan当前开发检查点已接dense F32高rank张量族及F16/BF16的成熟Copy/Cast/既有算术族，
 ggml与IREE在同设备组合并保留公开精度边界；Air NaN问题由标准浮点执行元数据纠正。
-存储增量另接I32 Copy、F16/BF16/I32 Concat和空输入冷翻译，同一候选Windows/Air各8/8开发门
-通过。完整B1的21行覆盖、适用三交付/插桩/最终selected与P1仍待完成，不计新的完整矩阵PASS。
+存储增量另接I32 Copy、F16/BF16/I32 Concat和空输入冷翻译；Softmax增量接任意轴/rank1..8、
+同类型广播additive mask及必要的独立Scale。最新同一候选Windows/Air各8/8开发门通过。
+完整B1的21行覆盖、适用三交付/插桩/最终selected与P1仍待完成，不计新的完整矩阵PASS。
 具体实现、失败和剩余预算以[本卡](llm-moe-m2-b1-vulkan.md)为准。
 
 | 批次 | Provider 与接法 | 一批要接的需求 | owner 与停止点 |

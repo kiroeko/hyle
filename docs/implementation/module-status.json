@@ -502,19 +502,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-S开发检查点：原版ggml I32 Copy、F16/BF16/I32 Concat与空输入冷翻译已接普通Direct/Graph；Windows/Air各8/8通过。前精度混合Provider检查点保留；21行完整成熟覆盖、新域三交付/插桩/最终综合门/P1仍待完成。源码/设计110/120分钟，自研冻结，完整矩阵未新增。"
+      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-S开发检查点：原版ggml I32 Copy、F16/BF16/I32 Concat与空输入冷翻译已接普通Direct/Graph；Windows/Air各8/8通过。前精度混合Provider检查点保留；21行完整成熟覆盖、新域三交付/插桩/最终综合门/P1仍待完成。源码/设计110/120分钟，自研冻结，完整矩阵未新增。"
+      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-S开发检查点：原版ggml I32 Copy、F16/BF16/I32 Concat与空输入冷翻译已接普通Direct/Graph；Windows/Air各8/8通过。前精度混合Provider检查点保留；21行完整成熟覆盖、新域三交付/插桩/最终综合门/P1仍待完成。源码/设计110/120分钟，自研冻结，完整矩阵未新增。"
+      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -565,7 +565,7 @@
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-S开发检查点：原版ggml I32 Copy、F16/BF16/I32 Concat与空输入冷翻译已接普通Direct/Graph；Windows/Air各8/8通过。前精度混合Provider检查点保留；21行完整成熟覆盖、新域三交付/插桩/最终综合门/P1仍待完成。源码/设计110/120分钟，自研冻结，完整矩阵未新增。"
+      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
     }
   ]
 }

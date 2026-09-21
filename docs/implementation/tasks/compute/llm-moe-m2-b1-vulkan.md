@@ -283,3 +283,28 @@ A1首轮Windows普通测试在单行广播mask处触发原版reshape元素数断
 纠正后新Softmax全部数值/布局用例通过；现有拒绝用例发现BF16升F32前未核对mask同类型，
 提升后类型信息丢失会接纳本卡未准入的F32 mask。固定在冷提升前检查原始dtype，保留原拒绝
 合同和测试；不通过放宽旧用例接纳混合mask。具名边界检查计1分钟，累计118/120分钟，余2分钟。
+
+### V1-A：两机开发检查点
+
+候选`c74b9b69e5a7c121c44a6df55abd6cd066a176d7`，tree
+`daa07676669d17f43805f0a21e4b4e596c1b2e81`。A1–A4已落地：原版ggml承载dense非空
+F32/F16/BF16的任意轴/rank1..8 Softmax、同类型广播additive mask及必要独立Scale；
+原版repeat/permute/cont承担布局，F16/BF16的公开舍入边界保持。普通Direct/Graph自动绑定，
+冷资源域/原始mask dtype先检查，未新增数学、shader或运行时Provider搜索。
+
+Windows Release/shared/WERROR与Air/MoltenVK Release/static/WERROR各8/8 CTest通过，
+分别177/178项C++通过，均跳过同一可选validation-layer用例。Direct参数表为三dtype×八种
+shape/axis×四种mask形状，共96组、各两次变化payload执行；覆盖六轴、rank8、16385列长行、
+scalar/row/column/交错广播、全mask及无mask。单独精确检查F32 scale/mask舍入反例和NaN/Inf。
+Graph的非末轴masked Softmax→残差发布两个结果，三dtype、两slot/重放/旧结果、close/quota通过。
+
+两项真实接线失败及纠正全部保留：未完整展开的行mask触发原版reshape断言；BF16提升前
+遗漏原始mask dtype检查。数值oracle和既有拒绝门均保留；见
+[Softmax证据](../../../../evidence/correctness/compute-llm-moe-m2-b1-vulkan/README.md#v1-aattention-softmax-布局与掩码)。
+本增量selector七门通过，125项保留skip/reuse原因；原桥与依赖身份未变，未重跑MASM组合。
+F32 Scale中间量、布局物化、managed编码/分配和half边界全部计入成本，未运行P1或自研比较。
+
+本次源码/设计仍118/120分钟，余2分钟；没有另开研究预算。完整21行的剩余成熟域、新域三交付/
+适用插桩/前依赖身份变更的最终综合门及P1仍未完成，聚合INCONCLUSIVE，四owner保持AUDITED，
+完整矩阵新增0。统一Compute+Graph为**57,379实现行/249文件**，排除tests/vendor、self-check通过。
+继续复用两机唯一活动build，Windows约0.73GiB，无新模型或构建副本。
