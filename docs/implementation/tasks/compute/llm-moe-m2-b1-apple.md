@@ -401,3 +401,28 @@ BORROW来源：MLX v0.20.0 `726dbd926770b7c78cd23480e71f1a21c07a9bc0`的
 本增量将父卡的“不得新增Metal核”落实为复用原版转换内核和上游函数；只允许上述具名窄补丁，
 不开放自研计算。两轮原因调查与接法审计合计计入本B1，源码/设计累计106/120分钟，余14分钟。
 完整B1仍AUDITED/INCONCLUSIVE，新增完整覆盖0；oneDNN旧FAIL和独立新能力scope保持。
+
+### A-C3 第二次有限接法：整数存储端口
+
+首个接法的tree `5007b7b7811042df51000c3440b8bd2018a4943e`已构建。原版同一探针从每种
+模式七项FAIL减为五项：现在能够把最大F32次正规数舍入到BF16正常数，但BF16次正规结果仍
+清零；普通全payload用例也在0x0001回转处失败。不能把部分修复签为PASS。
+
+原版jit_kernels.cpp为每个dtype pair单独实例化copy核；copy模板的输出类型可取UInt16，
+保留BF16物理宽度。第二次修正仍复用原版float_to_bfloat_bits和原版所有copy循环：只对
+F32→BF16这个pair，以UInt16实例化原copy核并绑定该原始转换函数，array的BF16公开dtype
+及buffer owner不变。普通UInt16数值转换使用不同pair/library身份，不受该特化影响。
+取消首版返回原生bfloat的特化，避免再次经过已失败的环节。
+
+原compiled融合在这一个F32→BF16 AsType边界停止，调用上述copy primitive；其它操作仍由
+MLX融合。这个已证明的数值差异要求保留实际storage边界，不能为融合接受错误结果。P0补账：
+该边界可能增加一次原版GPU dispatch及storage materialization，仍O(n)，无host payload搬运；
+完整成本须纳入本批P1，不宣称融合成本不变。补丁只涉及bf16.h、jit_kernels.cpp、compile.cpp，
+不新增HYLE kernel或转换数学。此为该根因第二次源码驱动接法，失败后停止更换实现姿势。
+
+selector工具用例的独立fixture维护：新增资产owner映射触发59项工具测试，其中58项通过；
+唯一失败用例仍把ggml作为无依赖/无公开头的休眠identity，但M1/M2已给它真实依赖和公开头。
+只让该测试在临时repo内显式构造休眠compute_sched identity，再验证原有跳过/恢复条件；
+不修改selector算法、当前产品registry或中央组件图。工具测试记录独立于Apple正确性。
+
+原因/接法审计累计116/120分钟，余4分钟；实现和预声明验证单列，不追加第三次数值修正。
