@@ -141,3 +141,23 @@ wall和线程cycle观测。不能把这次未复现当已解释，也不恢复�
 API依据为Microsoft [QueryThreadCycleTime](https://learn.microsoft.com/en-us/windows/win32/api/realtimeapiset/nf-realtimeapiset-querythreadcycletime)：
 线程cycle含user/kernel执行，时钟实现由CPU决定，不能转换成elapsed time。只查询自身线程，
 不申请额外权限、不启用系统级trace、不弹UAC。
+
+### 第二段 AUDITED：固定布局前缀和批量窗口观测
+
+已有公开调用、SDK及第一段collector接缝已核对；本段源码/接法累计6/20分钟，余14分钟。
+冻结D-B1..3，只新增独立scratch诊断consumer，产品和统一统计核心保持不变：
+
+1. D-B1：四进程前缀顺序为无、有、有、无；A/B创建顺序为AB、BA、AB、BA。前缀的14个
+   oneDNN region各实例执行64次及原独立oracle，不采样；随后只计时17×257 Direct。
+   每进程仍六组A/A、B/B、A/B、B/A、A/A、B/B（奇数进程交换中间两组），12round/8ms。
+2. D-B2：统一WindowOp每次执行256个原Direct run，双臂只差绑定对象；预分配观测空间，
+   批量边界读取QPC、QueryThreadCycleTime、RDTSCP及CPU/AUX，不改内层调用。通过原
+   CompareResult共同迭代数重建末尾24个实测epoch，明确剔除校准窗口，不丢弃慢样本。
+   RDTSCP先检查CPUID支持；额外固定一次5ms busy与20ms Sleep观测两计数器关系，只作
+   当前机器的可解释性控制，不转换cycle为秒，不据此调功耗。AUX不当作跨系统通用CPU ID。
+3. D-B3：独立build和不可变输入hash；复用已审计静态SDK、DLL邻置/CPU2/无UAC设置。JIT按
+   第一段已证明的唯一绝对mask地址检查，保留原始dump；前缀进程只取最后两个对应内核做
+   同形状身份核对。所有源、二进制身份、原始逐批窗口/round、地址和失败原样归档。
+
+RDTSCP语义按Microsoft [intrinsic文档](https://learn.microsoft.com/en-us/cpp/intrinsics/rdtscp?view=msvc-170)
+核对。计时observer自身成本对称但非零，本段只用于因果诊断，不代签Q2或任何算子性能PASS。
