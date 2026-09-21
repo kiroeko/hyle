@@ -397,7 +397,8 @@ void float_description(dnnl_memory_desc_t *output, const TensorDesc &input) {
   std::array<dnnl_dim_t, kMaxTensorRank> strides{1};
   for (std::size_t axis = 0; axis < input.rank(); ++axis) {
     dimensions[axis] = input.dimensions()[axis];
-    strides[axis] = input.byte_strides()[axis] / static_cast<std::int64_t>(sizeof(float));
+    strides[axis] =
+        input.byte_strides()[axis] / static_cast<std::int64_t>(sizeof(float));
   }
   check(dnnl_memory_desc_create_with_strides(
       output, static_cast<int>(std::max<std::size_t>(input.rank(), 1)),
@@ -633,6 +634,9 @@ Status validate_tensor(const TensorRequest &request,
     if (softplus) {
       if (input.rank() != request.output.rank())
         return Status::InvalidArgument("oneDNN softplus rank is inconsistent");
+      if (!input.is_dense())
+        return Status::Unimplemented(
+            "oneDNN stable softplus requires dense input");
       for (auto stride : input.byte_strides())
         if (stride % static_cast<std::int64_t>(sizeof(float)) != 0)
           return Status::Unimplemented(

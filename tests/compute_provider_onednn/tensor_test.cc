@@ -113,7 +113,7 @@ TEST(OneDnnTensor, StableSoftplusPreservesTailsAndSpecialValues) {
   expect_softplus(actual, values);
 }
 
-TEST(OneDnnTensor, SoftplusUsesOriginalScalarStridedAndEmptyDescriptors) {
+TEST(OneDnnTensor, SoftplusUsesDenseScalarAndEmptyDescriptors) {
   auto context = Context::create(cpu::device(), onednn::provider()).value();
   auto queue = context.create_queue().value();
   for (std::size_t rank = 0; rank <= 8; ++rank) {
@@ -150,6 +150,11 @@ TEST(OneDnnTensor, SoftplusUsesOriginalScalarStridedAndEmptyDescriptors) {
             input.buffer.view().write(std::as_bytes(std::span(source))).ok());
         auto program =
             prepare(context, Unary{UnaryKind::kSoftplus}, description);
+        if (!description.is_dense()) {
+          ASSERT_FALSE(program);
+          EXPECT_TRUE(program.error().IsUnimplemented());
+          continue;
+        }
         ASSERT_TRUE(program) << program.error().message();
         EXPECT_EQ(program->provider().id, onednn::kProviderId);
         auto workspace = scratch(*program);
@@ -398,14 +403,19 @@ TEST(OneDnnTensor, OverlapIsRejectedBeforeOutputChanges) {
   const std::array<std::uint32_t, 4> bits{0x7fa12345, 0xff800000, 0x80000000,
                                           0x01234567};
   ASSERT_TRUE(value.buffer.view().write(std::as_bytes(std::span(bits))).ok());
-  auto copy = prepare(context, Copy{}, description).value();
-  auto workspace = scratch(copy);
-  auto invocation = copy.create_invocation(workspace.view()).value();
-  auto rejected = invocation.submit(queue, value.view.as_const(), value.view);
-  ASSERT_FALSE(rejected);
-  std::array<std::uint32_t, 4> after{};
-  ASSERT_TRUE(
-      value.buffer.view().read(std::as_writable_bytes(std::span(after))).ok());
-  EXPECT_EQ(after, bits);
+  for (bool softplus : {false, true}) {
+    auto program =
+        (softplus ? prepare(context, Unary{UnaryKind::kSoftplus}, description)
+                  : prepare(context, Copy{}, description))
+            .value();
+    auto workspace = scratch(program);
+    auto invocation = program.create_invocation(workspace.view()).value();
+    auto rejected = invocation.submit(queue, value.view.as_const(), value.view);
+    ASSERT_FALSE(rejected);
+    std::array<std::uint32_t, 4> after{};
+    ASSERT_TRUE(
+        value.buffer.view().read(std::as_writable_bytes(std::span(after))).ok());
+    EXPECT_EQ(after, bits);
+  }
 }
 } // namespace
