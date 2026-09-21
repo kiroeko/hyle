@@ -884,6 +884,111 @@ TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
 
 #if defined(HYLE_COMPUTE_ONEDNN)
 namespace {
+TEST(CpuGraph, StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto context =
+        graph::cpu::create_context({.metadata_allocator = stats.get()}).value();
+    auto queue = context.create_queue().value();
+    const auto shape = std::array<std::int64_t, 2>{2, 4};
+    const auto data =
+        compute::TensorDesc::dense(compute::DataType::kFloat32, shape).value();
+    const auto condition =
+        compute::TensorDesc::dense(compute::DataType::kBool, shape).value();
+    auto builder = graph::GraphBuilder::create().value();
+    const auto input = builder.input(data).value();
+    const auto mask = builder.input(condition).value();
+    const auto stable =
+        builder.add(compute::Unary{compute::UnaryKind::kSoftplus}, input)
+            .value();
+    const auto selected =
+        builder.add(compute::Select{}, mask, stable, input).value();
+    ASSERT_TRUE(builder.publish(stable).ok());
+    ASSERT_TRUE(builder.publish(selected).ok());
+    auto logical = std::move(builder).finish().value();
+    auto compiled = graph::compile(logical, context);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_EQ(compiled->report.step_count(), 2U);
+    for (std::size_t i = 0; i < 2; ++i)
+      EXPECT_EQ(compiled->report.step(i)->provider.id,
+                compute::onednn::kProviderId);
+    std::array<float, 8> values{-90, -40, -20, -1, -0.F, 1, 20, 100};
+    std::array<std::uint8_t, 8> masks{0, 1, 0, 1, 0, 1, 0, 1};
+    auto source = half_test::buffer<float>(values);
+    auto condition_buffer = half_test::buffer<std::uint8_t>(masks);
+    std::array stable_outputs{half_test::buffer<float>(values),
+                              half_test::buffer<float>(values)};
+    std::array selected_outputs{half_test::buffer<float>(values),
+                                half_test::buffer<float>(values)};
+    std::array invocations{compiled->executable.create_invocation().value(),
+                           compiled->executable.create_invocation().value()};
+    const std::array queues{graph::QueueBinding{
+        .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+    for (std::size_t slot = 0; slot < 2; ++slot) {
+      auto &invocation = invocations[slot];
+      ASSERT_TRUE(
+          invocation
+              .bind(
+                  input,
+                  compute::ConstTensorView::create(data, source.view()).value())
+              .ok());
+      ASSERT_TRUE(invocation
+                      .bind(mask, compute::ConstTensorView::create(
+                                      condition, condition_buffer.view())
+                                      .value())
+                      .ok());
+      ASSERT_TRUE(invocation
+                      .bind(stable, compute::TensorView::create(
+                                        data, stable_outputs[slot].view())
+                                        .value())
+                      .ok());
+      ASSERT_TRUE(invocation
+                      .bind(selected, compute::TensorView::create(
+                                          data, selected_outputs[slot].view())
+                                          .value())
+                      .ok());
+      ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    }
+    const auto before = stats.snapshot();
+    std::array<std::vector<float>, 2> previous_stable, previous_selected;
+    for (std::size_t run = 0; run < 4; ++run) {
+      const auto slot = run % 2;
+      for (std::size_t i = 0; i < masks.size(); ++i)
+        masks[i] = static_cast<std::uint8_t>((i + run) % 2);
+      ASSERT_TRUE(source.view().write(std::as_bytes(std::span(values))).ok());
+      ASSERT_TRUE(
+          condition_buffer.view().write(std::as_bytes(std::span(masks))).ok());
+      auto done = invocations[slot].submit(queue);
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      const auto actual = half_test::read<float>(stable_outputs[slot]);
+      const auto chosen = half_test::read<float>(selected_outputs[slot]);
+      for (std::size_t i = 0; i < values.size(); ++i) {
+        const double x = values[i];
+        const double expected =
+            x > 0 ? x + std::log1p(std::exp(-x)) : std::log1p(std::exp(x));
+        EXPECT_NEAR(actual[i], expected, 5e-6 * std::abs(expected) + 1e-43);
+        EXPECT_EQ(chosen[i], masks[i] ? actual[i] : values[i]);
+        values[i] += 0.25F;
+      }
+      previous_stable[slot] = actual;
+      previous_selected[slot] = chosen;
+      if (run != 0) {
+        EXPECT_EQ(half_test::read<float>(stable_outputs[1 - slot]),
+                  previous_stable[1 - slot]);
+        EXPECT_EQ(half_test::read<float>(selected_outputs[1 - slot]),
+                  previous_selected[1 - slot]);
+      }
+    }
+    EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+    EXPECT_EQ(stats.snapshot().reallocs, before.reallocs);
+    ASSERT_TRUE(context.close().ok());
+    EXPECT_FALSE(invocations[0].submit(queue));
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
 TEST(CpuGraph, SelectRetainsBitsAndResultsAcrossTwoInvocations) {
   auto context = graph::cpu::create_context().value();
   auto queue = context.create_queue().value();

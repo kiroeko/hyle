@@ -392,6 +392,34 @@ void byte_description(dnnl_memory_desc_t *output, const TensorDesc &input,
       condition ? dnnl_s8 : dnnl_u8, strides.data()));
 }
 
+void float_description(dnnl_memory_desc_t *output, const TensorDesc &input) {
+  std::array<dnnl_dim_t, kMaxTensorRank> dimensions{1};
+  std::array<dnnl_dim_t, kMaxTensorRank> strides{1};
+  for (std::size_t axis = 0; axis < input.rank(); ++axis) {
+    dimensions[axis] = input.dimensions()[axis];
+    strides[axis] = input.byte_strides()[axis] / static_cast<std::int64_t>(sizeof(float));
+  }
+  check(dnnl_memory_desc_create_with_strides(
+      output, static_cast<int>(std::max<std::size_t>(input.rank(), 1)),
+      dimensions.data(), dnnl_f32, strides.data()));
+}
+
+void bind_stable_softplus(dnnl_primitive_desc_t descriptor) {
+  // The pinned JIT implementations flush small negative tails. Qualification
+  // admits only ref:any for the stable contract; this is a cold fixed match,
+  // never a timing search or a choice made by the executing request.
+  for (;;) {
+    const char *implementation = nullptr;
+    check(dnnl_primitive_desc_query(descriptor, dnnl_query_impl_info_str, 0,
+                                    &implementation));
+    if (implementation != nullptr &&
+        std::string_view(implementation) == "ref:any")
+      return;
+    const auto next = dnnl_primitive_desc_next_impl(descriptor);
+    check(next == dnnl_iterator_ends ? dnnl_unimplemented : next);
+  }
+}
+
 } // namespace
 
 Status validate_normalization(const NormRequest &request,
@@ -577,7 +605,9 @@ prepare_normalization(const NormRequest &request, ParallelExecutorRef executor,
 Status validate_tensor(const TensorRequest &request,
                        ParallelExecutorRef executor) noexcept {
   const bool select = request.operation.kind() == OperationKind::kSelect;
-  if (!select && request.operation.kind() != OperationKind::kCopy)
+  const auto *unary = request.operation.get_if<Unary>();
+  const bool softplus = unary != nullptr && unary->kind == UnaryKind::kSoftplus;
+  if (!select && !softplus && request.operation.kind() != OperationKind::kCopy)
     return Status::Unimplemented("oneDNN tensor operation is not mapped");
   if (request.inputs.size() != (select ? 3U : 1U))
     return Status::InvalidArgument("oneDNN tensor input count is invalid");
@@ -588,6 +618,8 @@ Status validate_tensor(const TensorRequest &request,
       !request.output.is_dense() ||
       data_type_size(request.output.data_type()) == 0)
     return Status::Unimplemented("oneDNN tensor requires plain dense output");
+  if (softplus && request.output.data_type() != DataType::kFloat32)
+    return Status::Unimplemented("oneDNN stable softplus requires float32");
   const auto output_bytes = request.output.required_bytes();
   if (!output_bytes ||
       *output_bytes >
@@ -598,6 +630,14 @@ Status validate_tensor(const TensorRequest &request,
     if (!input.valid() || !input.is_plain() ||
         input.rank() > request.output.rank())
       return Status::Unimplemented("oneDNN tensor layout is unsupported");
+    if (softplus) {
+      if (input.rank() != request.output.rank())
+        return Status::InvalidArgument("oneDNN softplus rank is inconsistent");
+      for (auto stride : input.byte_strides())
+        if (stride % static_cast<std::int64_t>(sizeof(float)) != 0)
+          return Status::Unimplemented(
+              "oneDNN softplus requires element-aligned strides");
+    }
     if (input.data_type() !=
         (select && index == 0 ? DataType::kBool : request.output.data_type()))
       return Status::InvalidArgument(
@@ -644,10 +684,24 @@ prepare_tensor(const TensorRequest &request, ParallelExecutorRef executor,
     check(dnnl_primitive_attr_set_scratchpad_mode(temporary.attributes,
                                                   dnnl_scratchpad_mode_user));
     const bool select = request.operation.kind() == OperationKind::kSelect;
-    for (std::size_t index = 0; index < request.inputs.size(); ++index)
-      byte_description(&temporary.rhs[index], request.inputs[index],
-                       request.output, select && index == 0);
-    byte_description(&temporary.data, request.output, request.output, false);
+    const bool softplus = request.operation.kind() == OperationKind::kUnary;
+    if (softplus) {
+      float_description(&temporary.rhs[0], request.inputs[0]);
+      float_description(&temporary.data, request.output);
+      check(dnnl_primitive_attr_set_fpmath_mode(temporary.attributes,
+                                                dnnl_fpmath_mode_strict));
+      check(dnnl_eltwise_forward_primitive_desc_create(
+          &plan->descriptor, plan->engine, dnnl_forward_inference,
+          dnnl_eltwise_soft_relu, temporary.rhs[0], temporary.data, 1, 0,
+          temporary.attributes));
+      bind_stable_softplus(plan->descriptor);
+      plan->input_args[0] = DNNL_ARG_SRC;
+    } else {
+      for (std::size_t index = 0; index < request.inputs.size(); ++index)
+        byte_description(&temporary.rhs[index], request.inputs[index],
+                         request.output, select && index == 0);
+      byte_description(&temporary.data, request.output, request.output, false);
+    }
     if (select) {
       check(dnnl_binary_primitive_desc_create_v2(
           &plan->descriptor, plan->engine, dnnl_binary_select, temporary.rhs[1],
@@ -656,7 +710,7 @@ prepare_tensor(const TensorRequest &request, ParallelExecutorRef executor,
       plan->input_args[0] = DNNL_ARG_SRC_2;
       plan->input_args[1] = DNNL_ARG_SRC_0;
       plan->input_args[2] = DNNL_ARG_SRC_1;
-    } else {
+    } else if (!softplus) {
       check(dnnl_reorder_primitive_desc_create(
           &plan->descriptor, temporary.rhs[0], plan->engine, temporary.data,
           plan->engine, temporary.attributes));

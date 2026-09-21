@@ -275,6 +275,59 @@ TEST(CpuDefaultContext, InvalidAndUnsupportedInputsRemainErrors) {
 
 #if defined(HYLE_COMPUTE_ONEDNN)
 namespace {
+TEST(CpuDefaultContext, StableSoftplusUsesMatureBindingAcrossReplay) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto context = create_context(stats.get()).value();
+    auto queue = context.create_queue().value();
+    const auto description = matrix(2, 4);
+    auto input =
+        hyle::mem::Buffer::create(hyle::mem::system_resource(), 32, 64).value();
+    auto output =
+        hyle::mem::Buffer::create(hyle::mem::system_resource(), 32, 64).value();
+    auto program = prepare(context, Unary{UnaryKind::kSoftplus}, description);
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(program->provider().id, onednn::kProviderId);
+    const auto requirement = program->workspace_requirement();
+    auto workspace =
+        requirement.size == 0
+            ? hyle::mem::Buffer{}
+            : hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                        requirement.size, requirement.alignment)
+                  .value();
+    auto invocation = program->create_invocation(workspace.view()).value();
+    const auto source =
+        ConstTensorView::create(description, input.view()).value();
+    const auto result = TensorView::create(description, output.view()).value();
+    const auto before = stats.snapshot();
+    std::array<float, 8> values{-90, -40, -20, -1, -0.F, 1, 20, 100};
+    for (int run = 0; run < 2; ++run) {
+      ASSERT_TRUE(input.view().write(std::as_bytes(std::span(values))).ok());
+      auto done = invocation.submit(queue, source, result);
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      std::array<float, 8> actual{};
+      ASSERT_TRUE(
+          output.view().read(std::as_writable_bytes(std::span(actual))).ok());
+      for (std::size_t i = 0; i < actual.size(); ++i) {
+        const double x = values[i];
+        const double expected =
+            x > 0 ? x + std::log1p(std::exp(-x)) : std::log1p(std::exp(x));
+        EXPECT_NEAR(actual[i], expected, 5e-6 * std::abs(expected) + 1e-43);
+        values[i] += 0.25F;
+      }
+    }
+    EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+    EXPECT_EQ(stats.snapshot().reallocs, before.reallocs);
+    ASSERT_TRUE(context.close().ok());
+    auto closed = invocation.submit(queue, source, result);
+    ASSERT_FALSE(closed);
+    EXPECT_TRUE(closed.error().IsFailedPrecondition());
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
 TEST(CpuDefaultContext, SelectUsesMatureProviderWithoutManualOrdering) {
   auto context = create_context().value();
   auto queue = context.create_queue().value();

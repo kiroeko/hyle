@@ -2,9 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <span>
 #include <vector>
 
@@ -37,6 +40,151 @@ Buffer scratch(const PreparedOperation &program) {
              : Buffer::create(hyle::mem::system_resource(), requirement.size,
                               requirement.alignment)
                    .value();
+}
+
+void expect_softplus(std::span<const float> actual,
+                     std::span<const float> input) {
+  ASSERT_EQ(actual.size(), input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const double x = input[i];
+    const double expected =
+        x > 0 ? x + std::log1p(std::exp(-x)) : std::log1p(std::exp(x));
+    if (std::isnan(expected))
+      EXPECT_TRUE(std::isnan(actual[i])) << i;
+    else if (std::isinf(expected))
+      EXPECT_EQ(actual[i], expected) << i;
+    else
+      EXPECT_NEAR(actual[i], expected, 5e-6 * std::abs(expected) + 1e-43)
+          << "input=" << x;
+    if (expected == 0)
+      EXPECT_FALSE(std::signbit(actual[i]));
+  }
+}
+
+TEST(OneDnnTensor, StableSoftplusPreservesTailsAndSpecialValues) {
+  const auto inf = std::numeric_limits<float>::infinity();
+  std::vector<float> values{-inf,
+                            -100,
+                            -90,
+                            -30,
+                            -20,
+                            -2,
+                            -1,
+                            -0.F,
+                            0,
+                            1,
+                            2,
+                            20,
+                            80,
+                            100,
+                            inf,
+                            std::numeric_limits<float>::quiet_NaN(),
+                            std::numeric_limits<float>::lowest(),
+                            std::numeric_limits<float>::max()};
+  for (int i = -7680; i <= 7680; ++i)
+    values.push_back(static_cast<float>(i) / 64);
+  std::uint32_t state = 0x9e3779b9;
+  for (std::size_t i = 0; i < 100003; ++i) {
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
+    values.push_back(std::bit_cast<float>(state));
+  }
+  auto context = Context::create(cpu::device(), onednn::provider()).value();
+  auto queue = context.create_queue().value();
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array{static_cast<std::int64_t>(values.size())})
+          .value();
+  auto input = tensor(description), output = tensor(description);
+  ASSERT_TRUE(input.buffer.view().write(std::as_bytes(std::span(values))).ok());
+  auto program = prepare(context, Unary{UnaryKind::kSoftplus}, description);
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->provider().id, onednn::kProviderId);
+  auto workspace = scratch(*program);
+  auto invocation = program->create_invocation(workspace.view()).value();
+  auto done = invocation.submit(queue, input.view.as_const(), output.view);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::vector<float> actual(values.size());
+  ASSERT_TRUE(output.buffer.view()
+                  .read(std::as_writable_bytes(std::span(actual)))
+                  .ok());
+  expect_softplus(actual, values);
+}
+
+TEST(OneDnnTensor, SoftplusUsesOriginalScalarStridedAndEmptyDescriptors) {
+  auto context = Context::create(cpu::device(), onednn::provider()).value();
+  auto queue = context.create_queue().value();
+  for (std::size_t rank = 0; rank <= 8; ++rank) {
+    for (bool empty : {false, true}) {
+      if (rank == 0 && empty)
+        continue;
+      for (bool padded : {false, true}) {
+        SCOPED_TRACE(rank);
+        SCOPED_TRACE(empty);
+        SCOPED_TRACE(padded);
+        std::vector<std::int64_t> shape(rank, 2), strides(rank);
+        if (empty)
+          shape.back() = 0;
+        std::int64_t stride = padded ? 8 : 4;
+        for (std::size_t axis = rank; axis > 0; --axis) {
+          strides[axis - 1] = stride;
+          stride *= std::max<std::int64_t>(shape[axis - 1], 1);
+        }
+        const auto description =
+            TensorDesc::strided_bytes(DataType::kFloat32, shape, strides)
+                .value();
+        const auto result =
+            TensorDesc::dense(DataType::kFloat32, shape).value();
+        const auto count = result.required_bytes().value() / sizeof(float);
+        auto input = tensor(description), output = tensor(result);
+        std::vector<float> values(count);
+        std::vector<float> source(
+            description.required_bytes().value() / sizeof(float), -999);
+        for (std::size_t i = 0; i < count; ++i) {
+          values[i] = static_cast<float>(static_cast<int>(i % 201) - 100);
+          source[i * (padded && rank != 0 ? 2 : 1)] = values[i];
+        }
+        ASSERT_TRUE(
+            input.buffer.view().write(std::as_bytes(std::span(source))).ok());
+        auto program =
+            prepare(context, Unary{UnaryKind::kSoftplus}, description);
+        ASSERT_TRUE(program) << program.error().message();
+        EXPECT_EQ(program->provider().id, onednn::kProviderId);
+        auto workspace = scratch(*program);
+        auto invocation = program->create_invocation(workspace.view()).value();
+        auto done =
+            invocation.submit(queue, input.view.as_const(), output.view);
+        ASSERT_TRUE(done) << done.error().message();
+        ASSERT_TRUE(done->wait().ok());
+        std::vector<float> actual(count);
+        ASSERT_TRUE(output.buffer.view()
+                        .read(std::as_writable_bytes(std::span(actual)))
+                        .ok());
+        expect_softplus(actual, values);
+      }
+    }
+  }
+}
+
+TEST(OneDnnTensor, SoftplusRejectsUnqualifiedStorageAndByteStrides) {
+  auto context = Context::create(cpu::device(), onednn::provider()).value();
+  for (auto type : {DataType::kFloat16, DataType::kBFloat16}) {
+    const auto description =
+        TensorDesc::dense(type, std::array<std::int64_t, 1>{4}).value();
+    auto program = prepare(context, Unary{UnaryKind::kSoftplus}, description);
+    ASSERT_FALSE(program);
+    EXPECT_TRUE(program.error().IsUnimplemented());
+  }
+  const auto description =
+      TensorDesc::strided_bytes(DataType::kFloat32,
+                                std::array<std::int64_t, 1>{4},
+                                std::array<std::int64_t, 1>{7})
+          .value();
+  auto program = prepare(context, Unary{UnaryKind::kSoftplus}, description);
+  ASSERT_FALSE(program);
+  EXPECT_TRUE(program.error().IsUnimplemented());
 }
 
 TEST(OneDnnTensor, CopyPreservesEveryStorageBitWithOddByteStrides) {

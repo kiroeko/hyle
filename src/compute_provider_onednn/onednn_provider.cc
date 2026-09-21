@@ -340,8 +340,10 @@ Status propose(
   OneDnnRoute route{};
   const bool normalization = operation.kind() == OperationKind::kRmsNorm ||
                              operation.kind() == OperationKind::kLayerNorm;
+  const auto *unary = operation.get_if<Unary>();
   const bool tensor = operation.kind() == OperationKind::kCopy ||
-                      operation.kind() == OperationKind::kSelect;
+                      operation.kind() == OperationKind::kSelect ||
+                      (unary != nullptr && unary->kind == UnaryKind::kSoftplus);
   Status status =
       tensor && context_value != nullptr && outputs.size() == 1
           ? internal::validate_tensor(
