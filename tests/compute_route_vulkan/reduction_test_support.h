@@ -128,4 +128,31 @@ probability_reference(std::span<const double> input,
   return output;
 }
 
+inline std::vector<double> broadcast_probability_reference(
+    std::span<const double> input, const c::TensorDesc &description,
+    c::Softmax operation, const c::TensorDesc &mask_description,
+    std::span<const double> mask) {
+  std::vector<double> combined(input.size());
+  for (std::size_t index = 0; index != input.size(); ++index) {
+    std::array<std::size_t, c::kMaxTensorRank> coordinates{};
+    auto remainder = index;
+    for (std::size_t axis = description.rank(); axis-- > 0;) {
+      coordinates[axis] = remainder % description.dimensions()[axis];
+      remainder /= description.dimensions()[axis];
+    }
+    std::size_t mask_index = 0;
+    for (std::size_t axis = 0; axis < mask_description.rank(); ++axis) {
+      mask_index *= mask_description.dimensions()[axis];
+      if (mask_description.dimensions()[axis] != 1)
+        mask_index +=
+            coordinates[description.rank() - mask_description.rank() + axis];
+    }
+    const float scaled = static_cast<float>(input[index]) * operation.scale;
+    combined[index] = scaled + static_cast<float>(mask[mask_index]);
+  }
+  operation.scale = 1.0F;
+  operation.mask = c::MaskKind::kNone;
+  return probability_reference(combined, description, operation);
+}
+
 } // namespace vulkan_reduction_test

@@ -274,15 +274,12 @@ bool region_supports(const Operation &operation,
             reduce->accumulation_type == DataType::kUnknown);
   }
   if (const auto *softmax = operation.get_if<Softmax>())
-    return inputs[0].rank() > 0 && inputs[0].rank() <= GGML_MAX_DIMS &&
-           softmax->kind == SoftmaxKind::kSoftmax &&
+    return inputs[0].rank() > 0 && softmax->kind == SoftmaxKind::kSoftmax &&
            (softmax->accumulation_type == DataType::kFloat32 ||
             softmax->accumulation_type == DataType::kUnknown) &&
-           (softmax->axis == -1 ||
-            softmax->axis == static_cast<int>(inputs[0].rank()) - 1) &&
            ((softmax->mask == MaskKind::kNone && inputs.size() == 1) ||
             (softmax->mask == MaskKind::kAdditive && inputs.size() == 2 &&
-             softmax->scale == 1.0F && same_shape(inputs[0], inputs[1])));
+             inputs[0].data_type() == inputs[1].data_type()));
   if (const auto *scan = operation.get_if<Scan>())
     return inputs.size() == 1 && inputs[0].data_type() == DataType::kFloat32 &&
            outputs[0].data_type() == DataType::kFloat32 &&
@@ -589,9 +586,41 @@ Result<Region> Region::create(NativeDevice device,
           output = row_reduce(left);
         }
       } else if (const auto *softmax = node.operation.get_if<Softmax>()) {
-        output = ggml_soft_max_ext(
-            context, left, node.inputs.size() == 2 ? arguments[1] : nullptr,
-            softmax->scale, 0.0F);
+        const auto &description = recipe.values[node.inputs[0]];
+        const auto axis = static_cast<std::size_t>(
+            softmax->axis < 0
+                ? softmax->axis + static_cast<int>(description.rank())
+                : softmax->axis);
+        const auto width = description.dimensions()[axis];
+        const auto inner =
+            extent_product(description.dimensions().subspan(axis + 1));
+        const auto outer = extent_product(description.dimensions().first(axis));
+        const auto rows = [&](ggml_tensor *value) {
+          if (inner != 1) {
+            value = ggml_reshape_3d(context, value, inner, width, outer);
+            value =
+                ggml_cont(context, ggml_permute(context, value, 1, 0, 2, 3));
+          }
+          return ggml_reshape_2d(context, value, width, inner * outer);
+        };
+        left = rows(left);
+        ggml_tensor *mask = nullptr;
+        if (node.inputs.size() == 2) {
+          mask = rows(expand_broadcast(context, arguments[1],
+                                       recipe.values[node.inputs[1]],
+                                       description));
+          // The public contract rounds the scale multiplication before mask
+          // addition. A separate original Scale prevents fused-multiply-add.
+          if (softmax->scale != 1.0F)
+            left = ggml_scale(context, left, softmax->scale);
+        }
+        output = ggml_soft_max_ext(context, left, mask,
+                                   mask ? 1.0F : softmax->scale, 0.0F);
+        if (inner != 1) {
+          output = ggml_reshape_3d(context, output, width, inner, outer);
+          output =
+              ggml_cont(context, ggml_permute(context, output, 1, 0, 2, 3));
+        }
       } else if (const auto *norm = node.operation.get_if<RmsNorm>()) {
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)

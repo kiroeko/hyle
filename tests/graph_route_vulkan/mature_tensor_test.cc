@@ -10,6 +10,82 @@ using namespace vulkan_reduction_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
 
+TEST(VulkanGraph, MatureMaskedSoftmaxPublishesAxisRestoredResultsAcrossSlots) {
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    SCOPED_TRACE(int(type));
+    hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
+                                    256 * 1024 * 1024);
+    auto context = vulkan_test::context(&quota).value();
+    const auto description = dense(type, {2, 1, 3, 7, 1, 5});
+    const auto mask_description = dense(type, {1, 1, 1, 7, 1, 5});
+    auto mask = pattern(*mask_description.element_count(), 7);
+    for (std::size_t i = 0; i != mask.size(); ++i)
+      mask[i] = i % 3 ? rounded(mask[i], type) : -INFINITY;
+    auto mask_tensor = make(context, mask_description, mask);
+    auto builder = g::GraphBuilder::create().value();
+    const auto x = builder.input(description).value();
+    const auto constant = builder.constant(mask_description).value();
+    const c::Softmax operation{.axis = 3,
+                               .scale = 0.375F,
+                               .mask = c::MaskKind::kAdditive,
+                               .accumulation_type = c::DataType::kFloat32};
+    const auto probabilities = builder.add(operation, x, constant).value();
+    const auto residual = builder.add(c::Binary{}, x, probabilities).value();
+    ASSERT_TRUE(builder.publish(probabilities).ok());
+    ASSERT_TRUE(builder.publish(residual).ok());
+    auto graph = std::move(builder).finish().value();
+    gv::CompileReport report;
+    auto program = gv::compile(context, graph, std::array{mask_tensor},
+                               {.report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_GE(report.managed_region_count, 1U);
+    auto first = program->create_invocation().value();
+    auto second = program->create_invocation().value();
+    graph = {};
+    mask_tensor = {};
+    std::array<v::Tensor, 2> retained;
+    std::array<std::vector<double>, 2> saved;
+    for (int phase = 0; phase != 3; ++phase) {
+      auto data = pattern(*description.element_count(), phase);
+      for (auto &value : data)
+        value = rounded(value, type);
+      const auto input = make(context, description, data);
+      auto &slot = phase == 0 ? first : second;
+      ASSERT_TRUE(slot.bind(input).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      auto probability = broadcast_probability_reference(
+          data, description, operation, mask_description, mask);
+      for (auto &value : probability)
+        value = rounded(value, type);
+      auto expected_output = data;
+      for (std::size_t i = 0; i != data.size(); ++i)
+        expected_output[i] += probability[i];
+      const std::array expected{probability, expected_output};
+      for (std::size_t port = 0; port != expected.size(); ++port) {
+        expect(context, result->get()->tensors()[port], expected[port]);
+        if (phase == 0) {
+          retained[port] = result->get()->tensors()[port];
+          saved[port] = expected[port];
+        } else
+          expect(context, retained[port], saved[port]);
+      }
+    }
+    first = {};
+    second = {};
+    *program = {};
+    ASSERT_TRUE(context.close().ok());
+    for (std::size_t port = 0; port != retained.size(); ++port) {
+      expect(context, retained[port], saved[port]);
+      retained[port] = {};
+    }
+    context = {};
+    EXPECT_EQ(quota.used(), 0U);
+  }
+}
+
 TEST(VulkanGraph, MatureStorageConcatKeepsEmptyBindingsAndPublishedResults) {
   for (auto type : {c::DataType::kBFloat16, c::DataType::kInt32}) {
     SCOPED_TRACE(int(type));

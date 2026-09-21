@@ -251,6 +251,100 @@ TEST(VulkanMatureTensor, IntegerCopyPreservesBitsInIndependentStorage) {
   EXPECT_NE(output->native_buffer(), input.native_buffer());
 }
 
+TEST(VulkanMatureTensor, SoftmaxAxesAndBroadcastMasksUseOriginalRegions) {
+  auto context = vulkan_test::context().value();
+  for (auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    for (int shape_case = 0; shape_case != 8; ++shape_case) {
+      const std::vector<std::int64_t> shape =
+          shape_case < 6    ? std::vector<std::int64_t>{2, 3, 2, 2, 3, 7}
+          : shape_case == 6 ? std::vector<std::int64_t>{2, 1, 3, 1, 2, 1, 1, 7}
+                            : std::vector<std::int64_t>{3, 16385};
+      const int axis = shape_case < 6 ? shape_case : -1;
+      const auto description = c::TensorDesc::dense(type, shape).value();
+      auto mask_shape = shape;
+      for (std::size_t i = 0; i + 1 < shape.size(); ++i)
+        if (i % 2 == 0 && int(i) != axis)
+          mask_shape[i] = 1;
+      const auto mask_description =
+          c::TensorDesc::dense(type, mask_shape).value();
+      for (bool masked : {false, true}) {
+        SCOPED_TRACE(::testing::Message()
+                     << int(type) << '/' << shape_case << '/' << masked);
+        const c::Softmax operation{.axis = axis,
+                                   .scale = -0.625F,
+                                   .mask = masked ? c::MaskKind::kAdditive
+                                                  : c::MaskKind::kNone,
+                                   .accumulation_type = c::DataType::kFloat32};
+        std::vector<v::Argument> arguments{description};
+        if (masked)
+          arguments.emplace_back(mask_description);
+        auto program = v::prepare(context, c::Operation(operation),
+                                  std::span<const v::Argument>(arguments));
+        ASSERT_TRUE(program) << program.error().message();
+        const auto &dispatches = d::Access::program(*program)->dispatches;
+        EXPECT_EQ(std::ranges::count_if(dispatches,
+                                        [](const auto &dispatch) {
+                                          return dispatch.region != nullptr;
+                                        }),
+                  1);
+        EXPECT_EQ(dispatches.back().iree.has_value(),
+                  type == c::DataType::kBFloat16);
+        auto slot = program->create_invocation().value();
+        for (int phase = 0; phase != 2; ++phase) {
+          auto data = vulkan_reduction_test::pattern(
+              *description.element_count(), phase);
+          auto mask = vulkan_reduction_test::pattern(
+              *mask_description.element_count(), phase + 2);
+          for (auto &value : data)
+            value = rounded(value, type);
+          for (std::size_t i = 0; i != mask.size(); ++i)
+            mask[i] = i % 7 ? rounded(mask[i], type) : -INFINITY;
+          std::vector<v::Tensor> inputs{make(context, description, data)};
+          if (masked)
+            inputs.push_back(make(context, mask_description, mask));
+          ASSERT_TRUE(slot.bind(inputs).ok());
+          auto work = slot.submit().value();
+          auto result = work.wait();
+          ASSERT_TRUE(result) << result.error().message();
+          const auto expected =
+              masked ? vulkan_reduction_test::broadcast_probability_reference(
+                           data, description, operation, mask_description, mask)
+                     : vulkan_reduction_test::probability_reference(
+                           data, description, operation);
+          expect(context, result->get()->tensors()[0], expected);
+        }
+      }
+    }
+  }
+}
+
+TEST(VulkanMatureTensor, SoftmaxMaskKeepsScaleRoundingAndExceptionalRows) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kFloat32, {1, 2});
+  const c::Softmax operation{.scale = 10000.0009765625F,
+                             .mask = c::MaskKind::kAdditive};
+  auto program = v::prepare(context, operation, description, description);
+  ASSERT_TRUE(program) << program.error().message();
+  expect_mature(*program);
+  auto input =
+      make(context, description, std::array{10000.0009765625, 10000.0});
+  auto mask =
+      make(context, description, std::array{-100000016.0, -100000008.0});
+  auto output = run_prepared(*program, std::array{input, mask});
+  ASSERT_TRUE(output) << output.error().message();
+  expect(context, *output, std::array{0.5, 0.5}, true);
+  for (const auto &data : {std::array{NAN, 1.0F}, std::array{INFINITY, 1.0F},
+                           std::array{-INFINITY, -INFINITY}}) {
+    const std::vector<double> values(data.begin(), data.end());
+    input = make(context, description, values);
+    mask = make(context, description, std::array{0.0, 0.0});
+    output = run_prepared(*program, std::array{input, mask});
+    ASSERT_TRUE(output) << output.error().message();
+    expect(context, *output, std::array<double, 2>{NAN, NAN}, true);
+  }
+}
+
 TEST(VulkanMatureTensor, StorageConcatPreservesBitsAcrossEmptyPortsAndAllAxes) {
   auto context = vulkan_test::context().value();
   const std::array<std::uint64_t, 12> edges16{0,      0x8000, 1,      0x7c00,

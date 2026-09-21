@@ -128,6 +128,9 @@ IREE转换要求已启用Int16/storage16及F32特殊值保留支持，F16输入�
 F16结果在同一region舍入；BF16结果经同GPU的IREE转换，在每个公开节点保留存储舍入边界。
 这会增加F32暂存、Provider边界复制/同步及IREE运行时成本，未宣称为半精度原生融合或性能最优。
 高rank只在冷期折叠描述；广播或归约所需的数据重排使用原版repeat/cont，保留真实暂存和分派成本。
+上述dense浮点Softmax也支持rank1..8的任意axis，以及同类型可广播的additive mask。
+非末轴使用原版permute/cont变为行矩阵再恢复；带mask且scale不为1时先用原版Scale，
+保留公开F32乘法中间舍入，再调用原版Softmax。额外物化和dispatch计入实际成本。
 Graph发布的中间值会保护其实际producer storage；两个Invocation独立持有运行状态。
 此项是[M2-B1成熟接入](../implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)的首批域，
 完整半精度/stride/empty/索引/掩码覆盖和本批跨平台、三交付及性能资格仍按该卡推进。

@@ -171,6 +171,7 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   if ((promote_bfloat || step.operation.get_if<Copy>() ||
        step.operation.get_if<Cast>() || step.operation.get_if<Concat>() ||
        step.operation.get_if<Binary>() || step.operation.get_if<Reduce>() ||
+       step.operation.get_if<Softmax>() ||
        std::ranges::any_of(std::span(inputs).first(input_count),
                            low_precision) ||
        low_precision(outputs[0])) &&
