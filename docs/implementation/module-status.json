@@ -383,7 +383,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-scatter-numerical-semantics.md",
-      "summary": "M2-S AUDITED：Scatter算术traits/说明已修正，Windows和Air公开头及各42项schema门通过；原版MLX add首个普通消费者已过开发验证。WSL/Mini、其余selected/三交付闭包未完成，覆盖0；旧有序FAIL与自研冻结保持，共享语义16/30分钟。"
+      "summary": "M2-S AUDITED：Scatter既有语义增量保持；具名Select标量branch/rank8条件反例固定S4，只修三输入广播推导及schema/成熟消费者。共享语义20/30分钟；四环境/交付总门未齐，冻结数学不改，覆盖0。"
     },
     {
       "module": "compute_backend_cpu",

@@ -1,10 +1,10 @@
-# M2-S：Scatter 加法的模型需求与公共数值语义
+# M2-S：Scatter 加法与 Select 广播的公共语义
 
 ## Closure card
 
 - component / owner：`compute_ops`；`/root`。Apple B1是首个成熟消费者，其实现仍归原B1卡；
   CPU/CUDA/Vulkan的旧数学保持冻结，不因本卡重开或重测旧自研性能。
-- baseline：`86a6a37b`，Windows canonical，工作树干净。当前SCOPED，先审计、后固定有限FIX。
+- baseline：`86a6a37b`，Windows canonical，工作树干净。初始SCOPED基线；当前已按下述有限FIX进入AUDITED。
 - reopen trigger：F02.2/F13.2真实模型需求是重复目标求和；公共Scatter add却被描述为逐次storage
   舍入的行主序fold，`operation_traits`还把其标为`kExact`。已记录的原版MLX反例和成熟MoE组合
   证明接入受到这项额外承诺约束；需要按真实需求裁决公共语义，不能反过来要求重写成熟归约。
@@ -91,3 +91,23 @@ Graph状态/旧结果开发用例通过；来源和首轮测试构造失败及�
 其中Air的compute_ops公开头及42项schema测试通过，补足本卡该环境开发门。Windows已有
 同组42项通过；WSL/Mini、其余selected消费者与实际新域三交付闭包仍待完成，不签CLOSED。
 共享源码/设计仍16/30分钟，Apple原卡计78/120；旧有序FAIL与自研冻结保持。
+
+## S4 AUDITED 增量：Select 的条件参与输出形状
+
+2026-09-21，基线`45c3ee76`，oneDNN B1接入的具名反例：Bool条件为rank8的2×3逻辑张量，
+两个分支都是UInt64标量，普通typed prepare在到达Provider之前返回“tensor is not
+broadcast-compatible with target shape”。现有公共指南承诺Select的NumPy式广播；模型mask
+选择两个常量及普通无模型标签张量都需要三输入共同确定输出形状。
+
+[NumPy where](https://numpy.org/doc/stable/reference/generated/numpy.where.html)明确condition、
+x、y共同广播；公共schema当前只合并两个branch，再要求condition适配该形状，是漏合并
+condition的准备期缺陷，和oneDNN数学、运行期调度、旧Q2无关。
+
+本轮将当前AUDITED范围定向增加一项S4：只在`compute_ops/operation.cc`的Select输出推导
+中用已有`broadcast_shape`合并condition与branch shape，保持Bool条件、同branch dtype、
+rank上限、非法广播拒绝和所有执行期语义。增加标量branch/rank8/空shape/非法形状的schema
+回归及本次成熟oneDNN普通Direct/Graph消费；无新增API/ABI、常态字段、数学或通用工具。
+
+共享源码/语义核对另计4分钟，累计20/30分钟，余10分钟；CPU/Apple的B1额度不重置。P0只
+增加一次有界rank≤8的准备期形状合并，无执行期成本。本卡原四环境schema及受影响消费者/
+三交付门保持，先做Windows开发门，未运行项不代签；所有冻结算子继续冻结。
