@@ -350,7 +350,7 @@ TEST(VulkanMatureTensor,
                                         return dispatch.region != nullptr;
                                       }),
                 1);
-      EXPECT_EQ(dispatches.back().iree != nullptr,
+      EXPECT_EQ(dispatches.back().iree.has_value(),
                 type == c::DataType::kBFloat16);
       auto slot = program->create_invocation().value();
       for (int phase = 0; phase != 2; ++phase) {
