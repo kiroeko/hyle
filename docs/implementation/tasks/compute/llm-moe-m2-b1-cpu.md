@@ -56,8 +56,10 @@
 本卡覆盖 F01.1–3、F02.1–4、F03.1–4、F04.1–6、F19.1–4，共21行；先审成熟调用的确切域，
 再冻结有限 FIX。此处未产生新的 BOUND、correctness 或完整覆盖 verdict。
 
-`compute_provider_onednn` / `graph_provider_onednn` 的旧 Q2 BLOCKED、恢复条件与预算保持；
-仅可消费不变的已有能力。`compute_ggml_runtime` 继续 CLOSED，只有具名新资源缺陷才定向重开。
+`compute_provider_onednn` / `graph_provider_onednn` 已按[独立新能力卡](llm-moe-m2-b1-onednn.md)
+进入SCOPED。用户2026-09-21接受原因机制与历史限制并授权工程翻案：旧Q2按无效测量处理，
+不再构成产品FAIL或接入阻塞，原始日志保留且不代签性能PASS；新能力按独立卡完成验收。
+`compute_ggml_runtime` 继续 CLOSED，只有具名新资源缺陷才定向重开。
 所有 CPU/CUDA/Metal/Vulkan 自研算子保持冻结；SIMD 基础与通用能力保留。
 
 ## 预声明验证

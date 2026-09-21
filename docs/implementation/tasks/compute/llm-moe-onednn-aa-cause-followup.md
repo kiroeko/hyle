@@ -2,7 +2,9 @@
 
 - owner：`/root`；2026-09-21用户明确要求“后面还是要查清楚为什么差距这么大”。
 - 当前安排：2026-09-21用户追问后已启动现有证据/源码的有界复核；首次复核结果如下。
-  未修改产品、benchmark或公共仪器，未启动新的性能进程；oneDNN新能力仍按独立卡推进。
+  随后完成两组固定诊断共八进程，已复现10%量级的运行时计时污染；历史唯一归因仍未证明。
+  产品、正式benchmark和公共仪器未改。用户已接受已证实机制与历史限制，批准恢复M2；
+  随后明确允许按工程证据翻案，当前裁决见末节，旧Q2不再是产品FAIL或接入阻塞。
 - 输入：[Q2原终局](llm-moe-c1-normalization-aa-qualification.md#q2-终局blocked)与
   [原始证据](../../../../evidence/performance/onednn-normalization-aa-q2/README.md)。17×257 Direct
   LayerNorm两个角色实际均调用相同oneDNN/HYLE DirectRoute；吞吐比0.906388/倒数1.103281
@@ -161,3 +163,43 @@ API依据为Microsoft [QueryThreadCycleTime](https://learn.microsoft.com/en-us/w
 
 RDTSCP语义按Microsoft [intrinsic文档](https://learn.microsoft.com/en-us/cpp/intrinsics/rdtscp?view=msvc-170)
 核对。计时observer自身成本对称但非零，本段只用于因果诊断，不代签Q2或任何算子性能PASS。
+
+## 第二段终局：污染机制已证实，旧样本唯一归因未决
+
+四进程、24组、288对实测round已完成，独立正确性与不可变输入通过，所有实测窗口在CPU2。
+前缀恢复了原失败input/output/workspace的低22位相对布局，仍没有固定10%实例中位差。
+观测脚本有一次具名修正：前置Graph沿用`onednn-prefix`标签，初稿误要求全部为`onednn`；
+修正仅接受前置Graph该标签，并修正空AssertionError被当作假值的退出接线。首两个进程只
+重解析，剩余两个进程只运行一次，原始失败与脚本保留；EXE/库/调用源均未改。
+
+已捕获可解释的反例：`run-1/post-AA/round-5`比较**同一个实例**，wall每次约2177.57ns和
+1971.99ns，差10.425%；线程运行tick只差0.0454%，运行tick/总TSC分别83.77%和92.46%。
+相同对象的主要差值来自未记账为该线程运行的时间。全288对中有17对wall相差超过9%而线程
+运行tick差不足1.5%。这是实际发生的计时污染，并非注入Sleep到算子或仅凭“可能有噪声”猜测。
+
+指标解释已核对Microsoft [x64计数器说明](https://devblogs.microsoft.com/oldnewthing/20160429-00/?p=93385)：
+QueryThreadCycleTime采用RDTSC；当前机器invariant TSC与busy/Sleep控制相符。它不是PMU
+指令/核心cycle计数，不把差0.0454%误称为“指令数一样”，也不把线程tick替换正式wall性能。
+完整来源、逐批/逐轮记录、地址、校准与实测分界见
+[窗口诊断收据](../../../../evidence/performance/onednn-aa-cause-followup/window-diagnostic.json)。
+
+**本次不能证明旧Q2的0.906388聚合值唯一由这个机制引起**。旧记录没有逐轮线程计数，原始
+EXE未保留；物理页/cache映射和实例metadata地址也不能回到历史进程。再次采样不能补回当时
+丢失的观测。不能点名某个后台任务/驱动，不能据此判oneDNN慢或HYLE Sched有错。
+
+第一段源码/设计30/30分钟及四进程预算已用完；第二段源码/接法累计12/20分钟，但固定四
+进程bundle已到正常停止点，不追加第三轮取绿。结论为机制CONFIRMED、历史唯一归因
+INCONCLUSIVE；旧资格FAIL、正式产品性能INCONCLUSIVE/样本0均保持。
+以上是提交用户裁决前的诊断边界；当时先停止其它M2接入，没有把唯一历史原因写成已证明。
+
+## 当前工程裁决：旧样本无效，恢复 M2
+
+2026-09-21用户先接受“已证实机制与历史限制，继续M2”，随后明确：若大概率是测试环境问题、
+没有复现，可以翻案，不能继续视为工程FAIL。本轮据此裁决：**旧Q2样本不具备性能裁决资格，
+按环境干扰最可能的无效测量处理；撤销其产品失败含义及后续接入阻塞。**
+
+依据为相同Provider/相同JIT、七个其它原配置正常、两组固定诊断未复现稳定10%聚合差，以及
+同一个物理实例实际出现10.425%墙钟差而线程运行tick只差0.0454%。这是有证据的工程判断，
+不是对历史进程的唯一归因证明。原始FAIL日志保持不变，当前结论不写性能PASS、不新增产品
+性能样本、不放宽统计门、不启动Q3或追加原因调查。调查任务至此结束；两个oneDNN owner
+按独立M2卡继续资格化和批量接入，所有新能力仍履行正常验收，M5前停止点保持。

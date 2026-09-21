@@ -1,0 +1,1227 @@
+{
+  "kind": "Fixed allocation-prefix and per-window counter diagnosis; no product performance verdict",
+  "processes": 4,
+  "groups_per_process": 6,
+  "paired_rounds_per_group": 12,
+  "total_paired_rounds": 288,
+  "batch": 256,
+  "prefix_flags": [
+    false,
+    true,
+    true,
+    false
+  ],
+  "correctness": "PASS",
+  "immutable_input_changes": [],
+  "observations": {
+    "same_core": 2,
+    "rdtscp_supported": true,
+    "invariant_tsc": true,
+    "qpc_frequency": 10000000,
+    "clock_controls": [
+      {
+        "process": 0,
+        "controls": [
+          {
+            "kind": "busy5ms",
+            "qpc": "50000",
+            "cycles": "14945949",
+            "tsc": "14975898",
+            "cpu0": "2",
+            "cpu1": "2"
+          },
+          {
+            "kind": "sleep20ms",
+            "qpc": "256375",
+            "cycles": "48519",
+            "tsc": "76789488",
+            "cpu0": "2",
+            "cpu1": "2"
+          }
+        ]
+      },
+      {
+        "process": 1,
+        "controls": [
+          {
+            "kind": "busy5ms",
+            "qpc": "50000",
+            "cycles": "14254406",
+            "tsc": "14975920",
+            "cpu0": "2",
+            "cpu1": "2"
+          },
+          {
+            "kind": "sleep20ms",
+            "qpc": "261812",
+            "cycles": "25158",
+            "tsc": "78418170",
+            "cpu0": "2",
+            "cpu1": "2"
+          }
+        ]
+      },
+      {
+        "process": 2,
+        "controls": [
+          {
+            "kind": "busy5ms",
+            "qpc": "50000",
+            "cycles": "14946547",
+            "tsc": "14976054",
+            "cpu0": "2",
+            "cpu1": "2"
+          },
+          {
+            "kind": "sleep20ms",
+            "qpc": "217115",
+            "cycles": "21863",
+            "tsc": "65030408",
+            "cpu0": "2",
+            "cpu1": "2"
+          }
+        ]
+      },
+      {
+        "process": 3,
+        "controls": [
+          {
+            "kind": "busy5ms",
+            "qpc": "50002",
+            "cycles": "14203187",
+            "tsc": "14976474",
+            "cpu0": "2",
+            "cpu1": "2"
+          },
+          {
+            "kind": "sleep20ms",
+            "qpc": "293567",
+            "cycles": "19467",
+            "tsc": "87928996",
+            "cpu0": "2",
+            "cpu1": "2"
+          }
+        ]
+      }
+    ]
+  },
+  "measured_epochs": "Last 24 epochs reconstructed with CompareResult common iteration count. Calibration recorded but excluded from reported paired epochs. No slow sample trimming.",
+  "group_summaries": [
+    {
+      "process": 0,
+      "prefix": false,
+      "group": "pre-AA",
+      "wall_ratio": 1.0025956203663469,
+      "cycle_ratio": 0.9990209489015851,
+      "tsc_ratio": 1.0026279670300795,
+      "active_fraction_range": [
+        0.8994335476887413,
+        0.9988866112034553
+      ]
+    },
+    {
+      "process": 0,
+      "prefix": false,
+      "group": "pre-BB",
+      "wall_ratio": 1.0033662321081143,
+      "cycle_ratio": 1.0002988014821648,
+      "tsc_ratio": 1.003372569402736,
+      "active_fraction_range": [
+        0.8848490747878346,
+        0.9763944879717781
+      ]
+    },
+    {
+      "process": 0,
+      "prefix": false,
+      "group": "AB",
+      "wall_ratio": 0.9950957943260506,
+      "cycle_ratio": 0.9979760548874557,
+      "tsc_ratio": 0.9950773815051562,
+      "active_fraction_range": [
+        0.6061784704447638,
+        0.9761290672370262
+      ]
+    },
+    {
+      "process": 0,
+      "prefix": false,
+      "group": "BA",
+      "wall_ratio": 1.0025601082113293,
+      "cycle_ratio": 1.0023678345056046,
+      "tsc_ratio": 1.0025528378394086,
+      "active_fraction_range": [
+        0.8851227341253322,
+        0.9740917075338223
+      ]
+    },
+    {
+      "process": 0,
+      "prefix": false,
+      "group": "post-AA",
+      "wall_ratio": 0.9988640276957621,
+      "cycle_ratio": 1.0000602425397958,
+      "tsc_ratio": 0.9988429032047742,
+      "active_fraction_range": [
+        0.96294484207478,
+        0.9780425950345535
+      ]
+    },
+    {
+      "process": 0,
+      "prefix": false,
+      "group": "post-BB",
+      "wall_ratio": 0.9948702396680752,
+      "cycle_ratio": 0.9962110338712304,
+      "tsc_ratio": 0.9948600612206934,
+      "active_fraction_range": [
+        0.931410605719909,
+        0.9766889559330177
+      ]
+    },
+    {
+      "process": 1,
+      "prefix": true,
+      "group": "pre-AA",
+      "wall_ratio": 0.997894219952491,
+      "cycle_ratio": 0.9999681501319483,
+      "tsc_ratio": 0.9978954412664793,
+      "active_fraction_range": [
+        0.9125678889657495,
+        0.9740746999595569
+      ]
+    },
+    {
+      "process": 1,
+      "prefix": true,
+      "group": "pre-BB",
+      "wall_ratio": 0.9931917058172635,
+      "cycle_ratio": 0.9972443280731396,
+      "tsc_ratio": 0.9932049917996544,
+      "active_fraction_range": [
+        0.8524369370493275,
+        0.9743519903363693
+      ]
+    },
+    {
+      "process": 1,
+      "prefix": true,
+      "group": "AB",
+      "wall_ratio": 1.0000020419280595,
+      "cycle_ratio": 1.0020470093060552,
+      "tsc_ratio": 0.9999981002838072,
+      "active_fraction_range": [
+        0.9407865409061292,
+        0.9995299915520603
+      ]
+    },
+    {
+      "process": 1,
+      "prefix": true,
+      "group": "BA",
+      "wall_ratio": 0.9947896179011214,
+      "cycle_ratio": 0.997590361699439,
+      "tsc_ratio": 0.9948217940212396,
+      "active_fraction_range": [
+        0.8332925003145577,
+        0.9738098774394497
+      ]
+    },
+    {
+      "process": 1,
+      "prefix": true,
+      "group": "post-AA",
+      "wall_ratio": 1.0099106602307706,
+      "cycle_ratio": 0.9998600963570002,
+      "tsc_ratio": 1.009920093254041,
+      "active_fraction_range": [
+        0.5986913435976433,
+        0.9992393306643357
+      ]
+    },
+    {
+      "process": 1,
+      "prefix": true,
+      "group": "post-BB",
+      "wall_ratio": 0.9899432647046758,
+      "cycle_ratio": 0.9965705560972251,
+      "tsc_ratio": 0.9899415931151404,
+      "active_fraction_range": [
+        0.7873782673606494,
+        0.9970855881614382
+      ]
+    },
+    {
+      "process": 2,
+      "prefix": true,
+      "group": "pre-AA",
+      "wall_ratio": 1.0067024990476316,
+      "cycle_ratio": 1.0016186109944827,
+      "tsc_ratio": 1.0067157422303026,
+      "active_fraction_range": [
+        0.87303611150506,
+        0.9982286971822971
+      ]
+    },
+    {
+      "process": 2,
+      "prefix": true,
+      "group": "pre-BB",
+      "wall_ratio": 0.9990255103083566,
+      "cycle_ratio": 1.0006552866920737,
+      "tsc_ratio": 0.9989904795292215,
+      "active_fraction_range": [
+        0.7587633744490961,
+        0.9743690766133865
+      ]
+    },
+    {
+      "process": 2,
+      "prefix": true,
+      "group": "AB",
+      "wall_ratio": 1.012826572363545,
+      "cycle_ratio": 0.9960093837111952,
+      "tsc_ratio": 1.0128492719928597,
+      "active_fraction_range": [
+        0.5847563888542843,
+        0.9717908577047968
+      ]
+    },
+    {
+      "process": 2,
+      "prefix": true,
+      "group": "BA",
+      "wall_ratio": 1.0028032764580592,
+      "cycle_ratio": 1.0025838036184604,
+      "tsc_ratio": 1.002828460072207,
+      "active_fraction_range": [
+        0.8971444729088555,
+        0.999418910618235
+      ]
+    },
+    {
+      "process": 2,
+      "prefix": true,
+      "group": "post-AA",
+      "wall_ratio": 1.008494712205609,
+      "cycle_ratio": 1.0007152452180472,
+      "tsc_ratio": 1.0085050812819454,
+      "active_fraction_range": [
+        0.8987348945495923,
+        0.9763168412008342
+      ]
+    },
+    {
+      "process": 2,
+      "prefix": true,
+      "group": "post-BB",
+      "wall_ratio": 1.009725825690995,
+      "cycle_ratio": 1.0001752486652937,
+      "tsc_ratio": 1.0097421964791475,
+      "active_fraction_range": [
+        0.9114528467002129,
+        0.9705741016372528
+      ]
+    },
+    {
+      "process": 3,
+      "prefix": false,
+      "group": "pre-AA",
+      "wall_ratio": 0.9936935210206876,
+      "cycle_ratio": 0.9986948666324128,
+      "tsc_ratio": 0.9937021792400492,
+      "active_fraction_range": [
+        0.6036801438853394,
+        0.9639136156006896
+      ]
+    },
+    {
+      "process": 3,
+      "prefix": false,
+      "group": "pre-BB",
+      "wall_ratio": 0.9970428392075918,
+      "cycle_ratio": 1.0002933056910313,
+      "tsc_ratio": 0.9970703212571295,
+      "active_fraction_range": [
+        0.9203342889900998,
+        0.999488193735704
+      ]
+    },
+    {
+      "process": 3,
+      "prefix": false,
+      "group": "AB",
+      "wall_ratio": 0.9986647214865317,
+      "cycle_ratio": 1.0028921637493895,
+      "tsc_ratio": 0.9986295651948219,
+      "active_fraction_range": [
+        0.8128087001986335,
+        0.9767085116972194
+      ]
+    },
+    {
+      "process": 3,
+      "prefix": false,
+      "group": "BA",
+      "wall_ratio": 0.9773550229003394,
+      "cycle_ratio": 0.9929589968226554,
+      "tsc_ratio": 0.977352461811127,
+      "active_fraction_range": [
+        0.8356533061758149,
+        0.971646852595919
+      ]
+    },
+    {
+      "process": 3,
+      "prefix": false,
+      "group": "post-AA",
+      "wall_ratio": 1.0170050573032616,
+      "cycle_ratio": 1.0001208223177087,
+      "tsc_ratio": 1.016970768550432,
+      "active_fraction_range": [
+        0.588095650837848,
+        0.9671912222816933
+      ]
+    },
+    {
+      "process": 3,
+      "prefix": false,
+      "group": "post-BB",
+      "wall_ratio": 1.0020720706495012,
+      "cycle_ratio": 0.9987660355956228,
+      "tsc_ratio": 1.002070094172184,
+      "active_fraction_range": [
+        0.8741581560015289,
+        0.999533953016678
+      ]
+    }
+  ],
+  "layout_mod_4mib": {
+    "input_handle": {
+      "old": "0x1a8000",
+      "new": "0x1a8000"
+    },
+    "A_output": {
+      "old": "0x180000",
+      "new": "0x180000"
+    },
+    "B_output": {
+      "old": "0x18f000",
+      "new": "0x18f000"
+    },
+    "A_workspace": {
+      "old": "0x211580",
+      "new": "0x211580"
+    },
+    "B_workspace": {
+      "old": "0x211740",
+      "new": "0x211740"
+    }
+  },
+  "runtime_interference_examples": [
+    {
+      "process": 0,
+      "group": "AB",
+      "round": 0,
+      "wall_ratio": 0.6185302904625232,
+      "cycle_ratio": 0.9927593997583354,
+      "tsc_ratio": 0.6185069148167335,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 84263,
+          "cycles_sum": 24556007,
+          "tsc_sum": 25238166,
+          "qpc_begin": 28214719679388,
+          "qpc_end": 28214719763708,
+          "wall_ns_per_call": 1936.1902573529412,
+          "cycles_per_call": 5642.46484375,
+          "thread_cycles_over_tsc": 0.9729711342733858
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 136231,
+          "cycles_sum": 24735104,
+          "tsc_sum": 40804986,
+          "qpc_begin": 28214719763719,
+          "qpc_end": 28214719900010,
+          "wall_ns_per_call": 3130.307904411765,
+          "cycles_per_call": 5683.617647058823,
+          "thread_cycles_over_tsc": 0.6061784704447638
+        }
+      ]
+    },
+    {
+      "process": 1,
+      "group": "BA",
+      "round": 2,
+      "wall_ratio": 0.8808912457947745,
+      "cycle_ratio": 0.9903288396896068,
+      "tsc_ratio": 0.8808694052990972,
+      "epochs": [
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 95417,
+          "cycles_sum": 23815343,
+          "tsc_sum": 28579812,
+          "qpc_begin": 28214735915378,
+          "qpc_end": 28214736010860,
+          "wall_ns_per_call": 2192.486213235294,
+          "cycles_per_call": 5472.275505514706,
+          "thread_cycles_over_tsc": 0.8332925003145577
+        },
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 84052,
+          "cycles_sum": 23585021,
+          "tsc_sum": 25175082,
+          "qpc_begin": 28214736010874,
+          "qpc_end": 28214736094981,
+          "wall_ns_per_call": 1931.3419117647059,
+          "cycles_per_call": 5419.352251838235,
+          "thread_cycles_over_tsc": 0.9368398879495209
+        }
+      ]
+    },
+    {
+      "process": 1,
+      "group": "post-AA",
+      "round": 0,
+      "wall_ratio": 0.5977133018169736,
+      "cycle_ratio": 0.9890389801423982,
+      "tsc_ratio": 0.5977059533034629,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 79148,
+          "cycles_sum": 23484693,
+          "tsc_sum": 23705880,
+          "qpc_begin": 28214740229015,
+          "qpc_end": 28214740308220,
+          "wall_ns_per_call": 1818.6580882352941,
+          "cycles_per_call": 5396.298943014706,
+          "thread_cycles_over_tsc": 0.9906695300912685
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 132418,
+          "cycles_sum": 23744962,
+          "tsc_sum": 39661442,
+          "qpc_begin": 28214740308232,
+          "qpc_end": 28214740440713,
+          "wall_ns_per_call": 3042.6930147058824,
+          "cycles_per_call": 5456.103400735294,
+          "thread_cycles_over_tsc": 0.5986913435976433
+        }
+      ]
+    },
+    {
+      "process": 1,
+      "group": "post-AA",
+      "round": 5,
+      "wall_ratio": 1.1042518730846762,
+      "cycle_ratio": 1.0004535734158855,
+      "tsc_ratio": 1.1042867268948657,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 94768,
+          "cycles_sum": 23777605,
+          "tsc_sum": 28385094,
+          "qpc_begin": 28214741107118,
+          "qpc_end": 28214741201949,
+          "wall_ns_per_call": 2177.573529411765,
+          "cycles_per_call": 5463.60409007353,
+          "thread_cycles_over_tsc": 0.8376792763131241
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 85821,
+          "cycles_sum": 23766825,
+          "tsc_sum": 25704460,
+          "qpc_begin": 28214741201963,
+          "qpc_end": 28214741287844,
+          "wall_ns_per_call": 1971.9898897058824,
+          "cycles_per_call": 5461.127068014706,
+          "thread_cycles_over_tsc": 0.9246187237545547
+        }
+      ]
+    },
+    {
+      "process": 1,
+      "group": "post-AA",
+      "round": 7,
+      "wall_ratio": 1.1138799241211106,
+      "cycle_ratio": 1.0068887458610682,
+      "tsc_ratio": 1.11388932070937,
+      "epochs": [
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 81182,
+          "cycles_sum": 23564957,
+          "tsc_sum": 24315660,
+          "qpc_begin": 28214741452534,
+          "qpc_end": 28214741533767,
+          "wall_ns_per_call": 1865.3952205882354,
+          "cycles_per_call": 5414.741957720588,
+          "thread_cycles_over_tsc": 0.969126768510499
+        },
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 90427,
+          "cycles_sum": 23727290,
+          "tsc_sum": 27084954,
+          "qpc_begin": 28214741533776,
+          "qpc_end": 28214741624266,
+          "wall_ns_per_call": 2077.826286764706,
+          "cycles_per_call": 5452.042738970588,
+          "thread_cycles_over_tsc": 0.8760321320833699
+        }
+      ]
+    },
+    {
+      "process": 1,
+      "group": "post-BB",
+      "round": 7,
+      "wall_ratio": 0.8125,
+      "cycle_ratio": 0.9898570805409049,
+      "tsc_ratio": 0.8125232268314484,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 18,
+          "qpc_sum": 86879,
+          "cycles_sum": 24961226,
+          "tsc_sum": 26022306,
+          "qpc_begin": 28214743787845,
+          "qpc_end": 28214743874784,
+          "wall_ns_per_call": 1885.3949652777778,
+          "cycles_per_call": 5416.932725694444,
+          "thread_cycles_over_tsc": 0.9592242132576567
+        },
+        {
+          "arm": 1,
+          "batches": 18,
+          "qpc_sum": 106928,
+          "cycles_sum": 25217000,
+          "tsc_sum": 32026538,
+          "qpc_begin": 28214743874793,
+          "qpc_end": 28214743981790,
+          "wall_ns_per_call": 2320.4861111111113,
+          "cycles_per_call": 5472.439236111111,
+          "thread_cycles_over_tsc": 0.7873782673606494
+        }
+      ]
+    },
+    {
+      "process": 1,
+      "group": "post-BB",
+      "round": 8,
+      "wall_ratio": 0.8956490507952797,
+      "cycle_ratio": 0.9913753826414465,
+      "tsc_ratio": 0.8956100600523645,
+      "epochs": [
+        {
+          "arm": 1,
+          "batches": 18,
+          "qpc_sum": 97450,
+          "cycles_sum": 25280194,
+          "tsc_sum": 29189192,
+          "qpc_begin": 28214743981808,
+          "qpc_end": 28214744079335,
+          "wall_ns_per_call": 2114.800347222222,
+          "cycles_per_call": 5486.153211805556,
+          "thread_cycles_over_tsc": 0.8660806369700127
+        },
+        {
+          "arm": 0,
+          "batches": 18,
+          "qpc_sum": 87281,
+          "cycles_sum": 25062162,
+          "tsc_sum": 26142134,
+          "qpc_begin": 28214744079347,
+          "qpc_end": 28214744166695,
+          "wall_ns_per_call": 1894.118923611111,
+          "cycles_per_call": 5438.837239583333,
+          "thread_cycles_over_tsc": 0.9586884529013584
+        }
+      ]
+    },
+    {
+      "process": 2,
+      "group": "pre-BB",
+      "round": 4,
+      "wall_ratio": 1.2624185424772636,
+      "cycle_ratio": 1.0081900517107711,
+      "tsc_ratio": 1.2623741774535815,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 105773,
+          "cycles_sum": 24038472,
+          "tsc_sum": 31681118,
+          "qpc_begin": 28216046086422,
+          "qpc_end": 28216046192271,
+          "wall_ns_per_call": 2430.4457720588234,
+          "cycles_per_call": 5523.545955882353,
+          "thread_cycles_over_tsc": 0.7587633744490961
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 83786,
+          "cycles_sum": 23843195,
+          "tsc_sum": 25096456,
+          "qpc_begin": 28216046192292,
+          "qpc_end": 28216046276136,
+          "wall_ns_per_call": 1925.2297794117646,
+          "cycles_per_call": 5478.675321691177,
+          "thread_cycles_over_tsc": 0.9500622318944157
+        }
+      ]
+    },
+    {
+      "process": 2,
+      "group": "AB",
+      "round": 0,
+      "wall_ratio": 1.6335843569342807,
+      "cycle_ratio": 1.0103526716403641,
+      "tsc_ratio": 1.6336094606545604,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 138180,
+          "cycles_sum": 24201998,
+          "tsc_sum": 41388172,
+          "qpc_begin": 28216047735408,
+          "qpc_end": 28216047873663,
+          "wall_ns_per_call": 3175.091911764706,
+          "cycles_per_call": 5561.120863970588,
+          "thread_cycles_over_tsc": 0.5847563888542843
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 84587,
+          "cycles_sum": 23954010,
+          "tsc_sum": 25335414,
+          "qpc_begin": 28216047873687,
+          "qpc_end": 28216047958339,
+          "wall_ns_per_call": 1943.6351102941176,
+          "cycles_per_call": 5504.138327205882,
+          "thread_cycles_over_tsc": 0.9454753729305548
+        }
+      ]
+    },
+    {
+      "process": 2,
+      "group": "AB",
+      "round": 8,
+      "wall_ratio": 0.9095244993703824,
+      "cycle_ratio": 0.9907447435940531,
+      "tsc_ratio": 0.9095293280211472,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 81618,
+          "cycles_sum": 23756341,
+          "tsc_sum": 24445940,
+          "qpc_begin": 28216049154013,
+          "qpc_end": 28216049235689,
+          "wall_ns_per_call": 1875.4136029411766,
+          "cycles_per_call": 5458.718060661765,
+          "thread_cycles_over_tsc": 0.9717908577047968
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 89737,
+          "cycles_sum": 23978266,
+          "tsc_sum": 26877572,
+          "qpc_begin": 28216049235694,
+          "qpc_end": 28216049325498,
+          "wall_ns_per_call": 2061.971507352941,
+          "cycles_per_call": 5509.711856617647,
+          "thread_cycles_over_tsc": 0.8921291700009212
+        }
+      ]
+    },
+    {
+      "process": 2,
+      "group": "BA",
+      "round": 3,
+      "wall_ratio": 1.1114611310524862,
+      "cycle_ratio": 1.003993032855723,
+      "tsc_ratio": 1.111424491845527,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 88559,
+          "cycles_sum": 23796174,
+          "tsc_sum": 26524350,
+          "qpc_begin": 28216050618980,
+          "qpc_end": 28216050707602,
+          "wall_ns_per_call": 2034.9034926470588,
+          "cycles_per_call": 5467.870863970588,
+          "thread_cycles_over_tsc": 0.8971444729088555
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 79678,
+          "cycles_sum": 23701533,
+          "tsc_sum": 23865184,
+          "qpc_begin": 28216050707625,
+          "qpc_end": 28216050787362,
+          "wall_ns_per_call": 1830.8363970588234,
+          "cycles_per_call": 5446.124310661765,
+          "thread_cycles_over_tsc": 0.9931426885290304
+        }
+      ]
+    },
+    {
+      "process": 3,
+      "group": "pre-AA",
+      "round": 2,
+      "wall_ratio": 1.564569555269718,
+      "cycle_ratio": 1.0041387758387128,
+      "tsc_ratio": 1.5645595197394815,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 137449,
+          "cycles_sum": 24852507,
+          "tsc_sum": 41168336,
+          "qpc_begin": 28216058105086,
+          "qpc_end": 28216058242596,
+          "wall_ns_per_call": 3158.295036764706,
+          "cycles_per_call": 5710.594439338235,
+          "thread_cycles_over_tsc": 0.6036801438853394
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 87851,
+          "cycles_sum": 24750072,
+          "tsc_sum": 26313052,
+          "qpc_begin": 28216058242607,
+          "qpc_end": 28216058330518,
+          "wall_ns_per_call": 2018.6351102941176,
+          "cycles_per_call": 5687.056985294118,
+          "thread_cycles_over_tsc": 0.9406005810348416
+        }
+      ]
+    },
+    {
+      "process": 3,
+      "group": "AB",
+      "round": 3,
+      "wall_ratio": 0.8539272217243932,
+      "cycle_ratio": 0.9938291497986399,
+      "tsc_ratio": 0.8538999920458166,
+      "epochs": [
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 102668,
+          "cycles_sum": 24994773,
+          "tsc_sum": 30751114,
+          "qpc_begin": 28216065610057,
+          "qpc_end": 28216065712800,
+          "wall_ns_per_call": 2359.0992647058824,
+          "cycles_per_call": 5743.284237132353,
+          "thread_cycles_over_tsc": 0.8128087001986335
+        },
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 87671,
+          "cycles_sum": 24840534,
+          "tsc_sum": 26258376,
+          "qpc_begin": 28216065712815,
+          "qpc_end": 28216065800539,
+          "wall_ns_per_call": 2014.499080882353,
+          "cycles_per_call": 5707.843290441177,
+          "thread_cycles_over_tsc": 0.9460042007167542
+        }
+      ]
+    },
+    {
+      "process": 3,
+      "group": "BA",
+      "round": 3,
+      "wall_ratio": 0.8885908273287793,
+      "cycle_ratio": 0.9854149790290527,
+      "tsc_ratio": 0.8885739568700346,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 85462,
+          "cycles_sum": 24686890,
+          "tsc_sum": 25597708,
+          "qpc_begin": 28216063121606,
+          "qpc_end": 28216063207123,
+          "wall_ns_per_call": 1963.7408088235295,
+          "cycles_per_call": 5672.5390625,
+          "thread_cycles_over_tsc": 0.9644179861728245
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 96177,
+          "cycles_sum": 25052278,
+          "tsc_sum": 28807628,
+          "qpc_begin": 28216063207135,
+          "qpc_end": 28216063303383,
+          "wall_ns_per_call": 2209.9494485294117,
+          "cycles_per_call": 5756.497702205882,
+          "thread_cycles_over_tsc": 0.869640429958343
+        }
+      ]
+    },
+    {
+      "process": 3,
+      "group": "BA",
+      "round": 4,
+      "wall_ratio": 1.1246573316801838,
+      "cycle_ratio": 1.0073555287453275,
+      "tsc_ratio": 1.124617319482576,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 98872,
+          "cycles_sum": 25061560,
+          "tsc_sum": 29612708,
+          "qpc_begin": 28216063303404,
+          "qpc_end": 28216063402340,
+          "wall_ns_per_call": 2271.875,
+          "cycles_per_call": 5758.630514705882,
+          "thread_cycles_over_tsc": 0.8463109824336228
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 87913,
+          "cycles_sum": 24878565,
+          "tsc_sum": 26331364,
+          "qpc_begin": 28216063402360,
+          "qpc_end": 28216063490332,
+          "wall_ns_per_call": 2020.0597426470588,
+          "cycles_per_call": 5716.58203125,
+          "thread_cycles_over_tsc": 0.9448262915662098
+        }
+      ]
+    },
+    {
+      "process": 3,
+      "group": "post-AA",
+      "round": 4,
+      "wall_ratio": 1.6559932981174226,
+      "cycle_ratio": 1.011039528403703,
+      "tsc_ratio": 1.6560234041710142,
+      "epochs": [
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 85946,
+          "cycles_sum": 24796802,
+          "tsc_sum": 25742420,
+          "qpc_begin": 28216068211313,
+          "qpc_end": 28216068297319,
+          "wall_ns_per_call": 1974.8621323529412,
+          "cycles_per_call": 5697.794577205882,
+          "thread_cycles_over_tsc": 0.9632661575718211
+        },
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 142326,
+          "cycles_sum": 25070547,
+          "tsc_sum": 42630050,
+          "qpc_begin": 28216068297330,
+          "qpc_end": 28216068439720,
+          "wall_ns_per_call": 3270.358455882353,
+          "cycles_per_call": 5760.695542279412,
+          "thread_cycles_over_tsc": 0.588095650837848
+        }
+      ]
+    },
+    {
+      "process": 3,
+      "group": "post-BB",
+      "round": 1,
+      "wall_ratio": 0.907412055046639,
+      "cycle_ratio": 0.9856945714014596,
+      "tsc_ratio": 0.9073887464412728,
+      "epochs": [
+        {
+          "arm": 0,
+          "batches": 17,
+          "qpc_sum": 86774,
+          "cycles_sum": 24680901,
+          "tsc_sum": 25990942,
+          "qpc_begin": 28216070188304,
+          "qpc_end": 28216070275136,
+          "wall_ns_per_call": 1993.8878676470588,
+          "cycles_per_call": 5671.162913602941,
+          "thread_cycles_over_tsc": 0.9495962478004837
+        },
+        {
+          "arm": 1,
+          "batches": 17,
+          "qpc_sum": 95628,
+          "cycles_sum": 25039096,
+          "tsc_sum": 28643668,
+          "qpc_begin": 28216070275145,
+          "qpc_end": 28216070370846,
+          "wall_ns_per_call": 2197.3345588235293,
+          "cycles_per_call": 5753.46875,
+          "thread_cycles_over_tsc": 0.8741581560015289
+        }
+      ]
+    }
+  ],
+  "representative_same_instance": {
+    "process": 1,
+    "group": "post-AA",
+    "round": 5,
+    "wall_ratio": 1.1042518730846762,
+    "cycle_ratio": 1.0004535734158855,
+    "tsc_ratio": 1.1042867268948657,
+    "epochs": [
+      {
+        "arm": 0,
+        "batches": 17,
+        "qpc_sum": 94768,
+        "cycles_sum": 23777605,
+        "tsc_sum": 28385094,
+        "qpc_begin": 28214741107118,
+        "qpc_end": 28214741201949,
+        "wall_ns_per_call": 2177.573529411765,
+        "cycles_per_call": 5463.60409007353,
+        "thread_cycles_over_tsc": 0.8376792763131241
+      },
+      {
+        "arm": 1,
+        "batches": 17,
+        "qpc_sum": 85821,
+        "cycles_sum": 23766825,
+        "tsc_sum": 25704460,
+        "qpc_begin": 28214741201963,
+        "qpc_end": 28214741287844,
+        "wall_ns_per_call": 1971.9898897058824,
+        "cycles_per_call": 5461.127068014706,
+        "thread_cycles_over_tsc": 0.9246187237545547
+      }
+    ]
+  },
+  "counter_semantics": "On this x64 invariant-TSC machine, QueryThreadCycleTime accounts per-thread RDTSC ticks. It is not an instruction/core-cycle PMU counter. QPC and RDTSCP remain paired clock observations; no generic cycles-to-seconds conversion.",
+  "primary_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/realtimeapiset/nf-realtimeapiset-querythreadcycletime",
+    "https://learn.microsoft.com/en-us/cpp/intrinsics/rdtscp?view=msvc-170",
+    "https://devblogs.microsoft.com/oldnewthing/20160429-00/?p=93385"
+  ],
+  "proven_mechanism": "The same physical oneDNN instance can show a 10.425% wall-time difference with a 0.0454% difference in accounted running-thread ticks. The larger wall time is explained by time not accounted as running this thread, rather than a 10% increase in its compute time.",
+  "historical_cause": "INCONCLUSIVE: Q2 did not preserve per-round/thread-cycle observations. This proves a live mechanism of the right magnitude, not a unique reconstruction of that historical process.",
+  "remaining_limits": [
+    "SDK binary is not the original Q2 executable",
+    "Input/output/workspace low 22 address bits match after prefix; object addresses and physical page mapping do not",
+    "The historical 12-round 0.906388 aggregate was not reproduced",
+    "No trace identifies a particular competing thread, interrupt or driver"
+  ],
+  "validator_correction": "The first prefix process used the existing Graph tag onednn-prefix. Initial validator expected onednn everywhere and stopped with an empty AssertionError string. Resume accepts onednn-prefix only for untimed prefix Graph, treats empty failures as failures, reuses processes 0/1 and runs only 2/3. No diagnostic EXE/source/SDK modification and no repeated timing process.",
+  "source_design_budget_minutes": {
+    "phase_one": {
+      "used": 30,
+      "total": 30
+    },
+    "phase_two": {
+      "used": 12,
+      "total": 20
+    }
+  },
+  "old_q2_qualification": "FAIL",
+  "product_performance": "INCONCLUSIVE",
+  "product_samples": 0,
+  "uac_or_power_changes": false,
+  "archive": {
+    "path": "window-diagnostic-raw.zip",
+    "bytes": 1774328,
+    "sha256": "3811dc166585256b348b8750be0d80ed9f95a0dd460887cedc712dedbbd6142f"
+  },
+  "cleanup": [
+    {
+      "removed": "C:\\hv\\odaa",
+      "removed_bytes": 16824657.0,
+      "retained": [
+        {
+          "source": "C:\\hv\\odaa\\onednn_instance_diag.exe",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\onednn_instance_diag.exe",
+          "bytes": 15979520,
+          "sha256": "bd6dca90f4f41fb8be78b1a1a31ec11eb9eb6cb7406836259b1146d4ffb4c91b"
+        },
+        {
+          "source": "C:\\hv\\odaa\\concrt140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\concrt140.dll",
+          "bytes": 321696,
+          "sha256": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e"
+        },
+        {
+          "source": "C:\\hv\\odaa\\msvcp140_1.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\msvcp140_1.dll",
+          "bytes": 35488,
+          "sha256": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380"
+        },
+        {
+          "source": "C:\\hv\\odaa\\msvcp140_2.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\msvcp140_2.dll",
+          "bytes": 278608,
+          "sha256": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c"
+        },
+        {
+          "source": "C:\\hv\\odaa\\msvcp140_atomic_wait.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\msvcp140_atomic_wait.dll",
+          "bytes": 48800,
+          "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241"
+        },
+        {
+          "source": "C:\\hv\\odaa\\msvcp140_codecvt_ids.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\msvcp140_codecvt_ids.dll",
+          "bytes": 31392,
+          "sha256": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3"
+        },
+        {
+          "source": "C:\\hv\\odaa\\msvcp140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\msvcp140.dll",
+          "bytes": 553552,
+          "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb"
+        },
+        {
+          "source": "C:\\hv\\odaa\\vccorlib140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\vccorlib140.dll",
+          "bytes": 350880,
+          "sha256": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f"
+        },
+        {
+          "source": "C:\\hv\\odaa\\vcruntime140_1.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\vcruntime140_1.dll",
+          "bytes": 47264,
+          "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605"
+        },
+        {
+          "source": "C:\\hv\\odaa\\vcruntime140_threads.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\vcruntime140_threads.dll",
+          "bytes": 37456,
+          "sha256": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b"
+        },
+        {
+          "source": "C:\\hv\\odaa\\vcruntime140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause\\retained-diagnostic\\vcruntime140.dll",
+          "bytes": 123472,
+          "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2"
+        }
+      ]
+    },
+    {
+      "removed": "C:\\hv\\odaab",
+      "removed_bytes": 20880769.0,
+      "retained": [
+        {
+          "source": "C:\\hv\\odaab\\onednn_window_diag.exe",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\onednn_window_diag.exe",
+          "bytes": 16443392,
+          "sha256": "c9b1518b03587a3d5fea81a19f50d1fde4949f8c0078fb003abee242fd3fa7fe"
+        },
+        {
+          "source": "C:\\hv\\odaab\\concrt140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\concrt140.dll",
+          "bytes": 321696,
+          "sha256": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e"
+        },
+        {
+          "source": "C:\\hv\\odaab\\msvcp140_1.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\msvcp140_1.dll",
+          "bytes": 35488,
+          "sha256": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380"
+        },
+        {
+          "source": "C:\\hv\\odaab\\msvcp140_2.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\msvcp140_2.dll",
+          "bytes": 278608,
+          "sha256": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c"
+        },
+        {
+          "source": "C:\\hv\\odaab\\msvcp140_atomic_wait.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\msvcp140_atomic_wait.dll",
+          "bytes": 48800,
+          "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241"
+        },
+        {
+          "source": "C:\\hv\\odaab\\msvcp140_codecvt_ids.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\msvcp140_codecvt_ids.dll",
+          "bytes": 31392,
+          "sha256": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3"
+        },
+        {
+          "source": "C:\\hv\\odaab\\msvcp140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\msvcp140.dll",
+          "bytes": 553552,
+          "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb"
+        },
+        {
+          "source": "C:\\hv\\odaab\\vccorlib140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\vccorlib140.dll",
+          "bytes": 350880,
+          "sha256": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f"
+        },
+        {
+          "source": "C:\\hv\\odaab\\vcruntime140_1.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\vcruntime140_1.dll",
+          "bytes": 47264,
+          "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605"
+        },
+        {
+          "source": "C:\\hv\\odaab\\vcruntime140_threads.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\vcruntime140_threads.dll",
+          "bytes": 37456,
+          "sha256": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b"
+        },
+        {
+          "source": "C:\\hv\\odaab\\vcruntime140.dll",
+          "destination": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\onednn-aa-cause-b\\retained-diagnostic\\vcruntime140.dll",
+          "bytes": 123472,
+          "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2"
+        }
+      ]
+    }
+  ],
+  "engineering_disposition": {
+    "date": "2026-09-21",
+    "user_decision": "Accept demonstrated interference mechanism and historical limits; authorize engineering reversal and resume M2.",
+    "current_verdict": "INVALID_MEASUREMENT",
+    "most_likely_cause": "runtime environment interference",
+    "historical_unique_cause": "INCONCLUSIVE",
+    "original_raw_verdict_preserved": true,
+    "product_failure": false,
+    "blocks_m2": false,
+    "performance_pass": false,
+    "additional_q2_trials": 0
+  }
+}

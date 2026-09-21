@@ -270,6 +270,11 @@ SCOPED卡恢复，不能直接清除BLOCKED；oneDNN原性能阻塞也不由M1�
 
 ### M2：四路线接入成熟库的实际计算覆盖
 
+当前执行顺序：2026-09-21用户已接受oneDNN原因调查的机制证据与历史限制，批准恢复M2，
+并授权按工程证据翻案。[当前裁决](llm-moe-onednn-aa-cause-followup.md#当前工程裁决旧样本无效恢复-m2)
+将旧Q2视为环境干扰最可能的无效测量，撤销产品FAIL含义与接入阻塞；原始日志保留，
+不改成性能PASS，不重跑Q2。继续成熟库新能力资格与批量接入，M5前停止点保持。
+
 | 批次 | Provider 与接法 | 一批要接的需求 | owner 与停止点 |
 |---|---|---|---|
 | M2-CPU | ggml CPU backend/完整 region；oneDNN primitive/partition 按准入表组合 | F01–F19 的 CPU 必需域，优先现成模型图中的 tensor、线性、attention、递归与 MoE 路径 | 现有 ggml/oneDNN/CPU route owner，新增 factor 先 QUEUED；普通 Direct/Graph 与持久资源可用 |
@@ -340,8 +345,9 @@ Scatter浮点add按[M2-S公共数值裁决](llm-moe-m2-scatter-numerical-semanti
 
 ### M6：终审与停止
 
-- [ ] 完成并报告用户2026-09-21要求的[oneDNN同实现A/A原因调查](llm-moe-onednn-aa-cause-followup.md)；
-  旧Q2 FAIL保留，新能力独立接入不代签旧资格恢复，不以假说冒充已查清。
+- [x] 完成并报告用户2026-09-21要求的[oneDNN同实现A/A原因调查](llm-moe-onednn-aa-cause-followup.md)；
+  用户接受机制与历史限制，授权旧Q2工程改判为无效测量并恢复M2；原始FAIL日志保留，
+  当前不再视为产品失败/接入阻塞，也不虚构性能PASS。
 - [ ] 四路线64需求域、普通 Direct/Graph、状态/失败/资源、三交付及适用性能证据闭合。
 - [ ] 本地2B B16/Q4/Q8/FP8 四路线完整语言主干通过；七个大模型的必需机制映射无遗漏。
 - [ ] 条件路由、能力查询、当前用户文档、默认支持表与实际实现一致，旧自实现无未裁决尾项。
