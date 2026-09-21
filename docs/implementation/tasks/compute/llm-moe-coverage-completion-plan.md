@@ -275,6 +275,10 @@ SCOPED卡恢复，不能直接清除BLOCKED；oneDNN原性能阻塞也不由M1�
 将旧Q2视为环境干扰最可能的无效测量，撤销产品FAIL含义与接入阻塞；原始日志保留，
 不改成性能PASS，不重跑Q2。继续成熟库新能力资格与批量接入，M5前停止点保持。
 
+2026-09-21启动[M2-B1 Vulkan](llm-moe-m2-b1-vulkan.md)，补同一基础需求批次的第四路线。
+CPU/CUDA/Apple当前未决项保留；按需求批次推进四路线，不等前三路线全域完成才启动Vulkan。
+重型构建与验证仍串行，符合身份和合同条件的M1证据复用，不重新调查已收口接入。
+
 | 批次 | Provider 与接法 | 一批要接的需求 | owner 与停止点 |
 |---|---|---|---|
 | M2-CPU | ggml CPU backend/完整 region；oneDNN primitive/partition 按准入表组合 | F01–F19 的 CPU 必需域，优先现成模型图中的 tensor、线性、attention、递归与 MoE 路径 | 现有 ggml/oneDNN/CPU route owner，新增 factor 先 QUEUED；普通 Direct/Graph 与持久资源可用 |

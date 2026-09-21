@@ -500,36 +500,21 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+      "summary": "M2-B1 Vulkan SCOPED：21行新消费域启动成熟批量接入审计，复用M1 ggml/IREE资源事实；首批schema/布局/归约与普通Direct/Graph定界中。源码/设计总120分钟，自研全冻结，完整覆盖未新增。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+      "summary": "M2-B1 Vulkan SCOPED：21行新消费域启动成熟批量接入审计，复用M1 ggml/IREE资源事实；首批schema/布局/归约与普通Direct/Graph定界中。源码/设计总120分钟，自研全冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-admission.md",
-      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+      "summary": "M2-B1 Vulkan SCOPED：21行新消费域启动成熟批量接入审计，复用M1 ggml/IREE资源事实；首批schema/布局/归约与普通Direct/Graph定界中。源码/设计总120分钟，自研全冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_ggml_runtime",
