@@ -200,7 +200,7 @@ TEST(VulkanMatureTensor, HighRankNormAndUnaryStayInMatureRegion) {
   const auto data =
       vulkan_reduction_test::pattern(*description.element_count());
   const auto input = make(context, description, data);
-  for (const auto operation :
+  for (const auto &operation :
        {c::Operation(c::RmsNorm{}), c::Operation(c::LayerNorm{}),
         c::Operation(c::Unary{c::UnaryKind::kTanh})}) {
     auto program = v::prepare(context, operation, description);
