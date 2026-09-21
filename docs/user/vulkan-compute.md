@@ -115,7 +115,14 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
   可选择别名的共同操作使用独立结果；View 保留真正的输入别名。
   非空元素数≤INT32_MAX，物理 byte span 和 stride 必须落在设备 buffer range/U32 地址域内。
 
-新张量域使用 U32 storage 和固定 specialization 的原生 SPIR-V，128-lane workgroup；
+其中非空dense F32的Copy、最多六输入Concat、rank≤8广播Add/Subtract/Multiply/Divide、
+已接Unary/SiLU门控和norm，以及任意轴Sum/Mean，普通入口优先组成原版ggml region。
+高rank只在冷期折叠描述；广播或归约所需的数据重排使用原版repeat/cont，保留真实暂存和分派成本。
+Graph发布的中间值会保护其实际producer storage；两个Invocation独立持有运行状态。
+此项是[M2-B1成熟接入](../implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)的首批域，
+完整半精度/stride/empty/索引/掩码覆盖和本批跨平台、三交付及性能资格仍按该卡推进。
+
+其它已接张量域包含使用 U32 storage 和固定 specialization 的原生 SPIR-V，128-lane workgroup；
 不要求可选的 shaderFloat16/Int8/Int16/Int64。每个输出 word 单 writer，半精度和 Bool 尾块
 没有并发位覆盖。必要转换、结果/scratch、pipeline 和 descriptor 有实际成本；性能和完整
 三交付资格随 C1 验收，不能继承旧 F32 FFN 结论。其它域明确拒绝，普通 prepare 无 Graph 依赖。

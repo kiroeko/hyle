@@ -10,6 +10,22 @@
 namespace hyle::compute::vulkan::detail {
 namespace provider = ggml_vulkan::detail;
 namespace {
+bool layout_limits(const ProgramState &program, const PlanStep &step) noexcept {
+  const auto &limits = program.runtime->device->properties.limits;
+  const auto fits = [&](std::uint32_t value) {
+    const auto count = *program.values[value].description.element_count();
+    return count <= limits.maxStorageBufferRange / sizeof(float) &&
+           (count + 262143) / 262144 <= limits.maxComputeWorkGroupCount[2];
+  };
+  // The original cont/repeat/concat adapters use 512-lane flattened dispatches.
+  // Check the intermediate F32 materialization as well as the public output.
+  return limits.maxComputeWorkGroupInvocations >= 512 &&
+         limits.maxComputeWorkGroupSize[0] >= 512 &&
+         limits.maxComputeWorkGroupCount[0] >= 512 &&
+         limits.maxComputeWorkGroupCount[1] >= 512 &&
+         std::ranges::all_of(step.inputs, fits) &&
+         std::ranges::all_of(step.outputs, fits);
+}
 bool topk_limits(const ProgramState &program, const TensorDesc &input,
                  const TopK &selection) noexcept {
   const auto axis = static_cast<std::size_t>(
@@ -119,15 +135,26 @@ bool managed_operation(const ProgramState &program,
        step.operation.get_if<GatedActivation>()) &&
       !managed_elementwise_limits(program, step))
     return false;
+  if ((step.operation.get_if<Copy>() || step.operation.get_if<Concat>() ||
+       step.operation.get_if<Binary>() || step.operation.get_if<Reduce>()) &&
+      !layout_limits(program, step))
+    return false;
   // Original RMSNorm uses ne1/ne2/ne3 as workgroup counts. Other admitted
   // elementwise kernels split their flattened domain into bounded XYZ tiles.
   if (step.operation.get_if<RmsNorm>()) {
     const auto dimensions = outputs[0].dimensions();
-    for (std::size_t axis = 1; axis < dimensions.size(); ++axis)
-      if (static_cast<std::uint64_t>(dimensions[dimensions.size() - axis - 1]) >
-          program.runtime->device->properties.limits
-              .maxComputeWorkGroupCount[axis - 1])
+    const auto &limits = program.runtime->device->properties.limits;
+    if (dimensions.size() > 4) {
+      if (*outputs[0].element_count() / dimensions.back() >
+          limits.maxComputeWorkGroupCount[0])
         return false;
+    } else {
+      for (std::size_t axis = 1; axis < dimensions.size(); ++axis)
+        if (static_cast<std::uint64_t>(
+                dimensions[dimensions.size() - axis - 1]) >
+            limits.maxComputeWorkGroupCount[axis - 1])
+          return false;
+    }
   }
   if (step.operation.get_if<Gather>()) {
     const auto &limits = program.runtime->device->properties.limits;

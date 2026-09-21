@@ -2,6 +2,7 @@
 #include "native_graph.h"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <new>
 
@@ -26,13 +27,126 @@ bool tensor_domain(const TensorDesc &description) noexcept {
            (description.data_type() == DataType::kFloat32 ||
             description.data_type() == DataType::kFloat16 ||
             description.data_type() == DataType::kInt32))) &&
-         description.rank() <= GGML_MAX_DIMS && description.element_count() &&
-         *description.element_count() > 0 &&
+         description.element_count() && *description.element_count() > 0 &&
          *description.element_count() <= INT32_MAX;
 }
 bool same_shape(const TensorDesc &a, const TensorDesc &b) noexcept {
   return a.rank() == b.rank() &&
          std::ranges::equal(a.dimensions(), b.dimensions());
+}
+
+std::int64_t columns(const TensorDesc &description) noexcept {
+  return description.rank() == 0 ? 1 : description.dimensions().back();
+}
+std::array<std::int64_t, GGML_MAX_DIMS>
+native_shape(const TensorDesc &description) noexcept {
+  std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+  if (description.rank() <= GGML_MAX_DIMS)
+    std::ranges::reverse_copy(description.dimensions(), shape.begin());
+  else {
+    shape[0] = columns(description);
+    shape[1] =
+        static_cast<std::int64_t>(*description.element_count()) / shape[0];
+  }
+  return shape;
+}
+ggml_tensor *restore_shape(ggml_context *context, ggml_tensor *value,
+                           const TensorDesc &description) {
+  const auto shape = native_shape(description);
+  if (std::ranges::equal(shape, value->ne))
+    return value;
+  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2],
+                         shape[3]);
+}
+std::int64_t extent_product(std::span<const std::int64_t> shape) noexcept {
+  std::int64_t result = 1;
+  for (const auto extent : shape)
+    result *= extent;
+  return result;
+}
+ggml_tensor *matrix(ggml_context *context, ggml_tensor *value,
+                    const TensorDesc &description) {
+  const auto width = columns(description);
+  const auto rows =
+      static_cast<std::int64_t>(*description.element_count()) / width;
+  if (value->ne[0] == width && value->ne[1] == rows && value->ne[2] == 1 &&
+      value->ne[3] == 1)
+    return value;
+  return ggml_reshape_2d(context, value, width, rows);
+}
+ggml_tensor *expand_broadcast(ggml_context *context, ggml_tensor *value,
+                              const TensorDesc &source,
+                              const TensorDesc &output) {
+  value = matrix(context, value, source);
+  const auto width = columns(output);
+  const auto rows = static_cast<std::int64_t>(*output.element_count()) / width;
+  if (same_shape(source, output) || *source.element_count() == 1 ||
+      (value->ne[0] == width && value->ne[1] == 1) ||
+      (value->ne[0] == 1 && value->ne[1] == rows))
+    return value;
+  std::array<std::int64_t, kMaxTensorRank> dimensions;
+  dimensions.fill(1);
+  std::ranges::copy(source.dimensions(),
+                    dimensions.begin() + output.rank() - source.rank());
+  auto shape = std::span(dimensions).first(output.rank());
+  for (std::size_t i = shape.size(); i-- > 0;) {
+    if (shape[i] == output.dimensions()[i])
+      continue;
+    const auto inner = extent_product(shape.subspan(i + 1));
+    const auto outer = extent_product(shape.first(i));
+    value = ggml_reshape_3d(context, value, inner, 1, outer);
+    value =
+        ggml_repeat_4d(context, value, inner, output.dimensions()[i], outer, 1);
+    shape[i] = output.dimensions()[i];
+  }
+  return matrix(context, value, output);
+}
+ggml_tensor *reduction_rows(ggml_context *context, ggml_tensor *value,
+                            const TensorDesc &source, Axes axes) {
+  std::array<bool, kMaxTensorRank> selected{};
+  std::array<std::int64_t, kMaxTensorRank> dimensions{};
+  std::ranges::copy(source.dimensions(), dimensions.begin());
+  auto shape = std::span(dimensions).first(source.rank());
+  if (axes.is_all())
+    std::fill_n(selected.begin(), source.rank(), true);
+  else
+    for (const auto axis : axes.values())
+      selected[axis < 0 ? axis + static_cast<int>(source.rank()) : axis] = true;
+  std::int64_t width = 1;
+  for (std::size_t i = 0; i < shape.size(); ++i)
+    if (selected[i])
+      width *= shape[i];
+  // Move selected dimension groups to the suffix. Shape arithmetic is cold;
+  // actual data permutation belongs to the original Vulkan cont operation.
+  auto target = shape.size();
+  for (auto end = shape.size(); end != 0;) {
+    if (!selected[end - 1]) {
+      --end;
+      continue;
+    }
+    auto begin = end - 1;
+    while (begin != 0 && selected[begin - 1])
+      --begin;
+    if (end != target) {
+      const auto outer = extent_product(shape.first(begin));
+      const auto group = extent_product(shape.subspan(begin, end - begin));
+      const auto between = extent_product(shape.subspan(end, target - end));
+      const auto inner = extent_product(shape.subspan(target));
+      value = ggml_view_4d(
+          context, value, inner, group, between, outer,
+          static_cast<std::size_t>(inner * between) * sizeof(float),
+          static_cast<std::size_t>(inner) * sizeof(float),
+          static_cast<std::size_t>(inner * between * group) * sizeof(float), 0);
+      value = ggml_cont(context, value);
+      std::rotate(shape.begin() + begin, shape.begin() + end,
+                  shape.begin() + target);
+    }
+    target -= end - begin;
+    end = begin;
+  }
+  return ggml_reshape_2d(context, value, width,
+                         static_cast<std::int64_t>(*source.element_count()) /
+                             width);
 }
 ggml_unary_op unary_operation(UnaryKind kind) noexcept {
   switch (kind) {
@@ -68,7 +182,8 @@ struct Imports final {
 bool region_supports(const Operation &operation,
                      std::span<const TensorDesc> inputs,
                      std::span<const TensorDesc> outputs) noexcept {
-  if (!std::ranges::all_of(outputs, tensor_domain) ||
+  if (inputs.empty() || outputs.empty() ||
+      !std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
   if (const auto *matmul = operation.get_if<MatMul>())
@@ -82,8 +197,7 @@ bool region_supports(const Operation &operation,
   if (operation.get_if<GatedDeltaNet>()) {
     if (inputs.size() != 6 || outputs.size() != 2 ||
         !std::ranges::all_of(inputs, [](const auto &input) {
-          return input.rank() == 4 &&
-                 input.data_type() == DataType::kFloat32;
+          return input.rank() == 4 && input.data_type() == DataType::kFloat32;
         }))
       return false;
     const auto q = inputs[0].dimensions();
@@ -98,6 +212,7 @@ bool region_supports(const Operation &operation,
   }
   if (const auto *topk = operation.get_if<TopK>())
     return inputs.size() == 1 && outputs.size() == 2 && inputs[0].rank() > 0 &&
+           inputs[0].rank() <= GGML_MAX_DIMS &&
            inputs[0].data_type() == DataType::kFloat32 &&
            outputs[0].data_type() == DataType::kFloat32 &&
            outputs[1].data_type() == DataType::kInt32 &&
@@ -115,26 +230,22 @@ bool region_supports(const Operation &operation,
         return input.data_type() == DataType::kFloat32;
       }))
     return false;
-  const auto &output = outputs[0];
+  if (operation.get_if<Copy>() || operation.get_if<Concat>())
+    return true;
   if (const auto *norm = operation.get_if<RmsNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *reduce = operation.get_if<Reduce>()) {
-    const auto axes = reduce->axes.values();
     return inputs.size() == 1 && inputs[0].rank() > 0 &&
-           reduce->keep_dimensions &&
            (reduce->kind == ReductionKind::kSum ||
             reduce->kind == ReductionKind::kMean) &&
            (reduce->accumulation_type == DataType::kFloat32 ||
-            reduce->accumulation_type == DataType::kUnknown) &&
-           ((reduce->axes.is_all() && inputs[0].rank() == 1) ||
-            (!reduce->axes.is_all() && axes.size() == 1 &&
-             (axes[0] == -1 ||
-              axes[0] == static_cast<int>(inputs[0].rank()) - 1)));
+            reduce->accumulation_type == DataType::kUnknown);
   }
   if (const auto *softmax = operation.get_if<Softmax>())
-    return inputs[0].rank() > 0 && softmax->kind == SoftmaxKind::kSoftmax &&
+    return inputs[0].rank() > 0 && inputs[0].rank() <= GGML_MAX_DIMS &&
+           softmax->kind == SoftmaxKind::kSoftmax &&
            (softmax->accumulation_type == DataType::kFloat32 ||
             softmax->accumulation_type == DataType::kUnknown) &&
            (softmax->axis == -1 ||
@@ -143,7 +254,8 @@ bool region_supports(const Operation &operation,
             (softmax->mask == MaskKind::kAdditive && inputs.size() == 2 &&
              softmax->scale == 1.0F && same_shape(inputs[0], inputs[1])));
   if (const auto *scan = operation.get_if<Scan>())
-    return inputs.size() == 1 && inputs[0].rank() > 0 && !scan->exclusive &&
+    return inputs.size() == 1 && inputs[0].rank() > 0 &&
+           inputs[0].rank() <= GGML_MAX_DIMS && !scan->exclusive &&
            (scan->axis == -1 ||
             scan->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
   if (const auto *unary = operation.get_if<Unary>())
@@ -151,12 +263,10 @@ bool region_supports(const Operation &operation,
            unary->kind == UnaryKind::kLog || unary->kind == UnaryKind::kSqrt ||
            unary->kind == UnaryKind::kRsqrt;
   if (const auto *binary = operation.get_if<Binary>())
-    return inputs.size() == 2 &&
-           (binary->kind == BinaryKind::kAdd ||
-            binary->kind == BinaryKind::kSubtract ||
-            binary->kind == BinaryKind::kMultiply ||
-            binary->kind == BinaryKind::kDivide) &&
-           (same_shape(inputs[0], output) || same_shape(inputs[1], output));
+    return inputs.size() == 2 && (binary->kind == BinaryKind::kAdd ||
+                                  binary->kind == BinaryKind::kSubtract ||
+                                  binary->kind == BinaryKind::kMultiply ||
+                                  binary->kind == BinaryKind::kDivide);
   if (const auto *gate = operation.get_if<GatedActivation>())
     return gate->activation == GatedActivationKind::kSilu;
   return false;
@@ -230,13 +340,23 @@ Result<Region> Region::create(NativeDevice device,
     // GatedDeltaNet: fused native result, two views and two owning ports.
     // Other operations need at most three (Rsqrt: Fill, Sqrt, Div).
     auto capacity = recipe.inputs.size() + 16;
-    for (const auto &node : recipe.nodes)
-      capacity += node.operation.get_if<Scan>()        ? 16
-                  : node.operation.get_if<Reduce>()    ? 12
-                  : node.operation.get_if<TopK>()      ? 10
-                  : node.operation.get_if<LayerNorm>() ? 5
+    for (const auto &node : recipe.nodes) {
+      capacity += node.operation.get_if<Scan>()            ? 16
+                  : node.operation.get_if<Reduce>()        ? 12
+                  : node.operation.get_if<TopK>()          ? 10
+                  : node.operation.get_if<LayerNorm>()     ? 5
                   : node.operation.get_if<GatedDeltaNet>() ? 5
-                                                       : 3;
+                                                           : 3;
+      // Layout translations use at most four nodes per public dimension and
+      // two per input port, in addition to the established native recipe.
+      auto rank = recipe.values[node.outputs[0]].rank();
+      for (const auto input : node.inputs)
+        rank = (std::max)(rank, recipe.values[input].rank());
+      capacity += 4 * rank + 2 * node.inputs.size() + 4;
+    }
+    if (capacity > INT32_MAX / 4)
+      return std::unexpected(
+          Status::ResourceExhausted("ggml Vulkan region node capacity"));
     const auto graph_bytes = ggml_graph_overhead_custom(capacity, false);
     if (capacity > (SIZE_MAX - graph_bytes) / ggml_tensor_overhead())
       return std::unexpected(
@@ -258,31 +378,46 @@ Result<Region> Region::create(NativeDevice device,
     auto *context = arena.get();
     std::vector<ggml_tensor *> tensors(recipe.values.size());
     for (const auto input : recipe.inputs) {
-      std::int64_t shape[GGML_MAX_DIMS]{1, 1, 1, 1};
       const auto &description = recipe.values[input];
-      const auto dimensions = description.dimensions();
+      auto shape = native_shape(description);
       const bool mxfp4 = mxfp4_domain(description);
       if (mxfp4) {
         // Public [K,N] describes physical rows [N,K]; ggml puts K first.
-        shape[0] = dimensions[0];
-        shape[1] = dimensions[1];
-      } else {
-        std::ranges::reverse_copy(dimensions, shape);
+        shape[0] = description.dimensions()[0];
+        shape[1] = description.dimensions()[1];
       }
       tensors[input] = ggml_new_tensor(
           context,
-          mxfp4 ? GGML_TYPE_MXFP4
-          : description.data_type() == DataType::kInt32 ? GGML_TYPE_I32
+          mxfp4                                           ? GGML_TYPE_MXFP4
+          : description.data_type() == DataType::kInt32   ? GGML_TYPE_I32
           : description.data_type() == DataType::kFloat16 ? GGML_TYPE_F16
-                                                         : GGML_TYPE_F32,
-          (std::max)(1, static_cast<int>(dimensions.size())), shape);
+                                                          : GGML_TYPE_F32,
+          GGML_MAX_DIMS, shape.data());
       ggml_set_input(tensors[input]);
       state.ports.push_back(tensors[input]);
     }
     for (const auto &node : recipe.nodes) {
       auto *left = tensors[node.inputs[0]];
       ggml_tensor *output = nullptr;
-      if (node.operation.get_if<MatMul>()) {
+      if (node.operation.get_if<Copy>()) {
+        output = ggml_dup(context, left);
+      } else if (const auto *concat = node.operation.get_if<Concat>()) {
+        const auto &description = recipe.values[node.outputs[0]];
+        const auto axis = static_cast<std::size_t>(
+            concat->axis < 0
+                ? concat->axis + static_cast<int>(description.rank())
+                : concat->axis);
+        const auto inner =
+            extent_product(description.dimensions().subspan(axis + 1));
+        const auto outer = extent_product(description.dimensions().first(axis));
+        for (const auto input : node.inputs) {
+          auto *part =
+              ggml_reshape_3d(context, tensors[input], inner,
+                              recipe.values[input].dimensions()[axis], outer);
+          output = output ? ggml_concat(context, output, part, 1)
+                          : ggml_dup(context, part);
+        }
+      } else if (node.operation.get_if<MatMul>()) {
         auto *product = ggml_mul_mat(context, tensors[node.inputs[1]], left);
         if (!ggml_prec_set_acc(product, GGML_PREC_F32))
           return std::unexpected(
@@ -295,14 +430,15 @@ Result<Region> Region::create(NativeDevice device,
             context, left, tensors[node.inputs[1]], value,
             tensors[node.inputs[3]], tensors[node.inputs[4]], initial, 1);
         // Upstream owns the fused recurrence and concatenates scores/state.
-        // Published ports have independent storage; initial state stays read-only.
-        auto *scores = ggml_view_4d(
-            context, fused, value->ne[0], value->ne[1], value->ne[2],
-            value->ne[3], value->nb[1], value->nb[2], value->nb[3], 0);
-        auto *next = ggml_view_4d(
-            context, fused, initial->ne[0], initial->ne[1], initial->ne[2],
-            initial->ne[3], initial->nb[1], initial->nb[2], initial->nb[3],
-            ggml_nbytes(value));
+        // Published ports have independent storage; initial state stays
+        // read-only.
+        auto *scores = ggml_view_4d(context, fused, value->ne[0], value->ne[1],
+                                    value->ne[2], value->ne[3], value->nb[1],
+                                    value->nb[2], value->nb[3], 0);
+        auto *next =
+            ggml_view_4d(context, fused, initial->ne[0], initial->ne[1],
+                         initial->ne[2], initial->ne[3], initial->nb[1],
+                         initial->nb[2], initial->nb[3], ggml_nbytes(value));
         output = ggml_cont(context, scores);
         tensors[node.outputs[1]] = ggml_cont(context, next);
       } else if (const auto *topk = node.operation.get_if<TopK>()) {
@@ -367,6 +503,8 @@ Result<Region> Region::create(NativeDevice device,
           output = ggml_cumsum(context, left);
         }
       } else if (const auto *reduce = node.operation.get_if<Reduce>()) {
+        left = reduction_rows(context, left, recipe.values[node.inputs[0]],
+                              reduce->axes);
         const auto row_reduce = [&](ggml_tensor *value) {
           return reduce->kind == ReductionKind::kMean
                      ? ggml_mean(context, value)
@@ -441,14 +579,29 @@ Result<Region> Region::create(NativeDevice device,
       } else {
         auto *right = tensors[node.inputs[1]];
         const auto kind = node.operation.get_if<Binary>()->kind;
-        if (!same_shape(recipe.values[node.inputs[0]],
-                        recipe.values[node.outputs[0]])) {
-          if (kind == BinaryKind::kAdd || kind == BinaryKind::kMultiply)
+        const auto &description = recipe.values[node.outputs[0]];
+        if (description.rank() > GGML_MAX_DIMS) {
+          left = expand_broadcast(context, left, recipe.values[node.inputs[0]],
+                                  description);
+          right = expand_broadcast(context, right,
+                                   recipe.values[node.inputs[1]], description);
+          const auto width = columns(description);
+          const auto rows =
+              static_cast<std::int64_t>(*description.element_count()) / width;
+          if (left->ne[0] != width || left->ne[1] != rows)
+            left = ggml_repeat_4d(context, left, width, rows, 1, 1);
+        } else if (!same_shape(recipe.values[node.inputs[0]],
+                               recipe.values[node.outputs[0]])) {
+          if ((kind == BinaryKind::kAdd || kind == BinaryKind::kMultiply) &&
+              same_shape(recipe.values[node.inputs[1]], description))
             std::swap(left, right);
-          else
+          else {
             // ggml broadcasts only RHS. Preserve noncommutative order by
             // materializing LHS in the vendor graph and allocator.
-            left = ggml_repeat(context, left, right);
+            const auto shape = native_shape(description);
+            left = ggml_repeat_4d(context, left, shape[0], shape[1], shape[2],
+                                  shape[3]);
+          }
         }
         switch (kind) {
         case BinaryKind::kAdd:
@@ -468,13 +621,20 @@ Result<Region> Region::create(NativeDevice device,
               Status::Internal("ggml Vulkan unqualified binary recipe"));
         }
       }
-      tensors[node.outputs[0]] = output;
+      tensors[node.outputs[0]] =
+          restore_shape(context, output, recipe.values[node.outputs[0]]);
     }
     auto *graph = ggml_new_graph_custom(context, capacity, false);
     for (const auto output : recipe.outputs) {
       ggml_set_output(tensors[output]);
+      auto *root = tensors[output];
+      while (root->view_src)
+        root = root->view_src;
+      // Shape restoration is a view. Bind the actual producer and protect a
+      // published intermediate from native fusion and allocator reuse.
+      ggml_set_output(root);
       ggml_build_forward_expand(graph, tensors[output]);
-      state.ports.push_back(tensors[output]);
+      state.ports.push_back(root);
     }
     for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
       auto *node = ggml_graph_node(graph, i);

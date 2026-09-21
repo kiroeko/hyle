@@ -35,7 +35,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed managed ggml dense F32 norm/gate/pointwise/TopK/recurrent and "
+          "Fixed managed ggml dense F32 Copy/Concat, rank0..8 broadcast/"
+          "norm/gate/pointwise and selected-axis Sum/Mean, TopK/recurrent and "
           "MXFP4 regions, "
           "original IREE checked I32 Scan/FP8 regions, and "
           "native tensor "
