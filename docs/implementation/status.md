@@ -68,7 +68,7 @@
 | graph_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/llm-moe-m2-b1-cuda.md) | M2-B1 CUDA AUDITED：C1–C4有限成熟接线固定，首批原版浮点layout/cast/broadcast/unary/norm/reduce；原生资源/输出root绑定与普通入口验证。完整21行未签，自研冻结，旧oneDNN条件不变。 |
 | compute_provider_flashinfer | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md) | [record](tasks/compute/llm-moe-m1-cuda-admission.md) | M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。 |
 | compute_provider_ggml_metal | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-apple-admission/README.md) | [record](tasks/compute/llm-moe-m1-apple-admission.md) | M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。 |
-| compute_provider_iree_vulkan | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md) | [record](tasks/compute/llm-moe-m1-vulkan-iree-product.md) | M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。 |
+| compute_provider_iree_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-m2-b1-vulkan.md) | M2-B1 V1-P精度增量SCOPED：ggml F32→BF16存在已复现NaN分类反例，原版IREE标准转换同输入资格通过；审计普通Cast和BF16输出的成熟补位，复用原资源/完成，原M1关闭事实与Scan/FP8不变。合用Vulkan源码/设计50/120分钟，自研冻结。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

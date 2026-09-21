@@ -563,14 +563,9 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-vulkan-iree-product.md",
-      "summary": "M1-V CLOSED：有限原版recurrent/MXFP4/IREE Scan/FP8接入、普通Direct/Graph、资源/失败和两机六格三交付完成；适用host/OFF、120 selected、有限复核与P0通过。原失败/skip保留，全部自研冻结，新增完整覆盖0/256；后续M2批量接入。",
-      "candidate": "0e5b276ae0894b9fc2cb88452c7ed468c4a8addc",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-vulkan-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+      "summary": "M2-B1 V1-P精度增量SCOPED：ggml F32→BF16存在已复现NaN分类反例，原版IREE标准转换同输入资格通过；审计普通Cast和BF16输出的成熟补位，复用原资源/完成，原M1关闭事实与Scan/FP8不变。合用Vulkan源码/设计50/120分钟，自研冻结。"
     }
   ]
 }

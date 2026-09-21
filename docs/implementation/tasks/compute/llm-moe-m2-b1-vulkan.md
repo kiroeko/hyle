@@ -4,6 +4,7 @@
 
 - component / owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、
   `graph_route_vulkan`；`/root`。当前阶段 AUDITED；`b9478142`已独立完成SCOPED。
+  下节精度增量另绑定`compute_provider_iree_vulkan`为SCOPED，原M1关闭事实保留。
 - baseline：`09d2cf99f1298e988ccda65ca76ec1b4907bd0e7`，Windows main，工作树干净。
 - trigger：[总计划](llm-moe-coverage-completion-plan.md) M2-Vulkan 和
   [M0 清单](llm-moe-provider-integration-ledger.md) B1 的真实新消费域，符合
@@ -19,7 +20,8 @@
   SIMD 基础；新 shader/算子算法；模型 loader/engine；公共 selector/性能仪器改写。
 - 依赖/消费者：Compute 公共 schema、既有 ggml native device/graph/work、Mem/Error；
   Graph 单向消费 Compute 的同一 region。共同 runtime、IREE 和其他 CLOSED owner 保持不变；
-  只有具名新缺陷才另行定向审计。IREE 已接 Scan 的证据按实际身份与域复用。
+  只有具名新缺陷才另行定向审计。IREE原Scan/FP8和runtime补丁不重做；本节后续的精度增量
+  按新SCOPED/AUDITED绑定，其它CLOSED owner不变。
 - 第三方：ggml `456172ec733a135778adcd32d00e576a58232e45`，MIT；沿用锁和资源 overlay。
   原始缓存只读。核对实际 Vulkan backend 与 shader 域，不从 CPU/CUDA 或同名 API 推断资格。
 - 预算：本批源码/设计合计120分钟，自2026-09-21 05:50 UTC起，前置核对计入；
@@ -116,3 +118,30 @@ static/WERROR的8/8 CTest通过（167项C++通过、同一可选项跳过）。�
 原版repeat/cont、managed分配编码和边界copy/sync完整计费；未运行P1，不比较冻结自研。
 完整聚合INCONCLUSIVE，三个owner保持AUDITED；新完整覆盖0。统一LOC为**57,086行/249实现
 文件**，不含tests/vendor，self-check通过。每机保留一个活动build复用，没有另建重复验证树。
+
+## V1-P：精度增量 SCOPED
+
+baseline `88c61331`；owner仍为`/root`，额外将`compute_provider_iree_vulkan`从CLOSED绑定
+至SCOPED。触发为F01.3和F03/F04的本地2B BF16普通计算需求，以及锁定ggml原版转换的
+具体反例，不改旧M1验收结论。源码/设计保守累计50/120分钟；本增量合用余70分钟，不另开预算。
+
+原版Windows GPU资格：F16/BF16分别65,537项原始位Copy和转F32全通过；451,837个包含全部
+相邻有限值中点/邻值、随机F32及NaN/Inf的输入中，F32→F16全通过，F32→BF16有4项NaN
+分类错误（包括`0x7f800001`）。原因对应原pin `types.glsl:fp32_to_bf16`缺少NaN分支；不得
+把原厂名字或有限模型数据当成公共Cast全域资格。相同输入交给原版IREE `arith.truncf`→
+`arith.bitcast`，451,837项全部通过。原版Vulkan标准转换需要Int16与storage16；首次遗漏Int16
+导致SPIR-V store类型不匹配，声明实际所需capability后编译和执行通过，不修改compiler数学。
+
+有限审计项：
+
+- P1：ggml合格的dense非空F16/BF16 Copy、F32/F16/BF16浮点Cast分工；BF16 narrowing交给
+  原版IREE，F16/BF16互转保留显式F32精度语义；不扩旧shader，不接未资格化整数转换。
+- P2：复用ggml F32 region计算F16/BF16输入，按公开输出精度舍入；BF16公开输出以成熟
+  Provider边界保留舍入，不绕过NaN检查或在host计算模型内容。先覆盖当前已接的dense张量族。
+- P3：IREE私有程序增加具名转换入口，复用原VM/HAL/queue/完成；单输入转换不得误走Scan的
+  overflow flag流程。只新增离线标准算子制品和in-tree身份，不改公共构建或原版runtime。
+- P4：实际启用Int16/storage16事实、原生dispatch/bytes域、暂存、metadata和独立请求；
+  ordinary Direct/Graph成批验证位模式、中点/NaN、两slot/输入更新/结果保活与混合Provider。
+
+AUDITED前固定具体程序、资源与映射；原始探针仅作来源资格，不计覆盖。Air原版/普通入口及
+既定三交付、插桩和必要P1仍按全卡完成，不能以Windows探针或本小节缩小21行分母。
