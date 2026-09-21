@@ -44,19 +44,22 @@ TEST(VulkanGraph,
       auto program =
           gv::compile(context, graph, constants, {.report = &report});
       ASSERT_TRUE(program) << program.error().message();
-      // Gate, residual Add and LayerNorm each use a managed region. Native
-      // RMSNorm and the seven storage conversions keep each half boundary.
-      EXPECT_EQ(report.native_dispatch_count, 8U);
-      EXPECT_EQ(report.managed_region_count, 3U);
-      EXPECT_EQ(report.invocation_storage_block_bytes.size(), 4U);
+      // F16 keeps its public rounding points inside one ggml region; each
+      // BF16 node has a ggml region and an IREE conversion. Both input origins
+      // still need explicit storage adapters.
+      const bool half = type == c::DataType::kFloat16;
+      EXPECT_EQ(report.native_dispatch_count, 2U);
+      EXPECT_EQ(report.managed_region_count, half ? 1U : 8U);
+      EXPECT_EQ(report.invocation_storage_block_bytes.size(), half ? 4U : 3U);
       std::size_t planned_bytes = 0;
       for (const auto bytes : report.invocation_storage_block_bytes)
         planned_bytes += bytes;
       const auto elements = static_cast<std::size_t>(rows * width);
-      // Packed gate and residual adapters require four reused storage blocks,
-      // totaling five F32 tensor capacities. Charge this larger footprint;
-      // vendor-private storage is accounted separately.
-      EXPECT_EQ(planned_bytes, 5 * elements * sizeof(float));
+      // F16: packed input and three aligned half buffers. BF16: three reused
+      // F32 boundary capacities. Vendor-private storage remains separate.
+      EXPECT_EQ(planned_bytes,
+                half ? 4 * elements + 3 * ((2 * elements + 3) / 4 * 4)
+                     : 3 * elements * sizeof(float));
       EXPECT_EQ(report.retained_constant_owner_count, 2U);
       graph = {};
       constants = {};

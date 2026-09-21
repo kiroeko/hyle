@@ -45,10 +45,10 @@ TEST(VulkanGraph, HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots) {
     auto program =
         gv::compile(context, graph, std::array{epsilon}, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    // Rsqrt now stays inside the square/Sum/Add/Multiply region; masked
-    // Softmax retains its separate region and six storage/mask adapters.
-    EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 6U);
-    EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 2U);
+    // Widening stays inside the L2 region; narrowing is an original IREE
+    // stage. Masked Softmax keeps its separate region and existing adapters.
+    EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 5U);
+    EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 3U);
     EXPECT_EQ(report.retained_constant_owner_count, rows == 0 ? 0U : 1U);
     graph = {};
     auto first = program->create_invocation().value(),

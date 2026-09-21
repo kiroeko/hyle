@@ -26,9 +26,11 @@ TEST(VulkanGraph,
     gv::CompileReport report;
     auto program = gv::compile(context, graph, {}, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    // Three half unary nodes retain six casts around three managed regions.
-    EXPECT_EQ(report.native_dispatch_count, 6U);
-    EXPECT_EQ(report.managed_region_count, 3U);
+    // The view splits F16 into two regions; BF16 retains one ggml/IREE pair
+    // per public unary rounding point. Both paths adapt the input twice.
+    EXPECT_EQ(report.native_dispatch_count, 2U);
+    EXPECT_EQ(report.managed_region_count,
+              type == c::DataType::kFloat16 ? 2U : 6U);
     EXPECT_EQ(report.invocation_storage_block_bytes.size(), 3U);
     graph = {};
     std::vector<double> data(17 * 129);
@@ -103,8 +105,8 @@ TEST(VulkanGraph, InputAliasChainsRebindOddOriginsAndKeepOldInputStorage) {
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
   auto program = gv::compile(context, graph, {}, {.report = &report}).value();
-  // Copy plus the Neg input/output casts; the views remain aliases.
-  EXPECT_EQ(report.native_dispatch_count, 3U);
+  // Copy materializes the strided view; F16 casts stay inside the Neg region.
+  EXPECT_EQ(report.native_dispatch_count, 1U);
   EXPECT_EQ(report.managed_region_count, 1U);
   EXPECT_EQ(report.invocation_storage_block_bytes.size(), 2U);
   auto first = program.create_invocation().value(),

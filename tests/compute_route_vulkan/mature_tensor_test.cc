@@ -402,11 +402,9 @@ TEST(VulkanMatureTensor, BFloatConversionAllocationFailureReleasesQuota) {
     auto context = vulkan_test::context(&quota).value();
     auto program = v::prepare(context, c::Cast{c::DataType::kBFloat16},
                               dense(c::DataType::kFloat32, {129}));
-    ASSERT_TRUE(program) << program.error().message();
-    ASSERT_TRUE(d::Access::program(*program)->dispatches.back().iree);
-    auto refused = program->create_invocation();
-    ASSERT_FALSE(refused);
-    EXPECT_TRUE(refused.error().IsResourceExhausted());
+    // The original IREE pool is acquired on first prepare, before slots exist.
+    ASSERT_FALSE(program);
+    EXPECT_TRUE(program.error().IsResourceExhausted());
     EXPECT_TRUE(context.close().ok());
   }
   EXPECT_EQ(quota.used(), 0U);

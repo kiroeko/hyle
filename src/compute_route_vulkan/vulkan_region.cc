@@ -201,7 +201,8 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
       !layer_norm_limits(program, inputs[0]))
     return false;
   if ((step.operation.get_if<Reduce>() || step.operation.get_if<Softmax>()) &&
-      !managed_reduction_limits(program, step.operation, inputs[0]))
+      !managed_reduction_limits(program, step.operation,
+                                program.values[step.inputs[0]].description))
     return false;
   if (const auto *selection = step.operation.get_if<TopK>();
       selection && !topk_limits(program, inputs[0], *selection))

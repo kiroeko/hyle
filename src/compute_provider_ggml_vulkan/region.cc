@@ -196,6 +196,12 @@ bool region_supports(const Operation &operation,
       !std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  if (!operation.get_if<MatMul>() &&
+      (!std::ranges::all_of(
+           inputs, [](const auto &input) { return input.is_plain(); }) ||
+       !std::ranges::all_of(
+           outputs, [](const auto &output) { return output.is_plain(); })))
+    return false;
   if (operation.get_if<Copy>())
     return inputs.size() == 1 && outputs.size() == 1 &&
            floating(inputs[0].data_type()) &&

@@ -40,10 +40,11 @@ TEST(VulkanGraph,
       auto program =
           gv::compile(context, graph, std::array{bias}, {.report = &report});
       ASSERT_TRUE(program) << program.error().message();
-      // Add/Softplus share a region; half residual Add has its own F32
-      // adapters. Casts and Select retain their explicit storage boundaries.
-      EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : 6U);
-      EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : 2U);
+      // F16 casts and arithmetic share one ggml region. BF16 retains two
+      // ggml/IREE pairs. Select remains a separate storage operation.
+      const bool half = type == c::DataType::kFloat16;
+      EXPECT_EQ(report.native_dispatch_count, rows == 0 ? 0U : half ? 2U : 3U);
+      EXPECT_EQ(report.managed_region_count, rows == 0 ? 0U : half ? 1U : 4U);
       ASSERT_EQ(report.outputs.size(), 2U);
       graph = {};
       // Equivalent ordinary Direct composition keeps fixed native buffers and
