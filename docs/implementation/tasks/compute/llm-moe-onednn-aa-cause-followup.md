@@ -65,3 +65,28 @@ context-switch记录，无法从汇总表唯一归因。原因结论仍INCONCLUS
 本节尚未AUDITED、未运行。用户随后明确要求“必须查明这个之后继续”：从此检查点起先停下
 其它M2接入，集中执行本项有限诊断和证据驱动定位；不再把原因调查挂到后续能力之后。
 最后必须给出证据支持的原因或具体尚缺的关键观测，不能把“调查过”勾成“已查清”。
+
+## AUDITED：复用原调用和现有静态 SDK 的单形状诊断
+
+已核对CompareResult公开接口能在compare返回后导出每轮elapsed/iterations，无需改变
+nanobench。原normalization benchmark、perf_process及nanobench相对Q2的`0e107a06`未改。
+锁定oneDNN provider/CPU backend实现也未改；公共Compute准备设施后来有变，因此不把当前
+HEAD重编译冒充历史二进制。原Q2可执行文件身份没有找到，现有同版本静态SDK可作诊断对照，
+其文件hash逐一记录；新实验只定位可复现机制，不声称逐字节重放历史进程。
+
+冻结D-A1..3，源码/设计累计28/30分钟，余2分钟；实现、构建与规定bundle执行单列：
+
+1. D-A1：独立诊断TU以原benchmark为输入，复用Problem、DirectRoute、verify和冷observe；
+   只执行`DirectRoute(problem, true)`，不调用Native或Graph。两臂用同一个BoundRoute类型。
+   宿主main明确选择17×257 LayerNorm，六组比较及12round/8ms按上节固定。
+2. D-A2：四个进程在创建A/B时分别采用AB、BA、AB、BA顺序；后两个进程将中间的A/B、B/A
+   两组顺序反转。调用对象不重新构造，前后A/A、B/B用于识别角色偏差/时段变化。每组前后独立
+   oracle验证；只在冷边界记录CPU、thread time和对象，逐轮结果由已有public accessor导出。
+3. D-A3：在任务scratch建独立CMake consumer，`find_package(Hyle)`使用既有
+   `C:/hyle-scratch/active-cpu/aa/selected-graph/static-sdk-relocated`；其Release、MSVC14.50、
+   STATIC ON、oneDNN THREADPOOL/cache OFF/concurrent ON配置已核对。静态SDK只读，不触发
+   原产品构建；诊断代码、纳入源、SDK头/库、产物与DLL全部hash绑定并在运行前固定。
+
+本诊断不新增产品target、不改正式benchmark/公共仪器或任何自研数学；scratch源及配置随
+证据归档。运行器固定进程亲和0x4/CPU2和AboveNormal、SetErrorMode(0x8003)、DLL邻置，
+串行至多四进程，每进程30秒timeout。失败或预算用尽即停止并保留原始记录。
