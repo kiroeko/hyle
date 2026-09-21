@@ -262,15 +262,22 @@ TEST(VulkanMatureTensor, SoftmaxAxesAndBroadcastMasksUseOriginalRegions) {
                             : std::vector<std::int64_t>{3, 16385};
       const int axis = shape_case < 6 ? shape_case : -1;
       const auto description = c::TensorDesc::dense(type, shape).value();
-      auto mask_shape = shape;
-      for (std::size_t i = 0; i + 1 < shape.size(); ++i)
-        if (i % 2 == 0 && int(i) != axis)
-          mask_shape[i] = 1;
-      const auto mask_description =
-          c::TensorDesc::dense(type, mask_shape).value();
-      for (bool masked : {false, true}) {
+      for (int mask_case = 0; mask_case != 4; ++mask_case) {
+        const bool masked = mask_case != 0;
+        auto mask_shape = shape;
+        for (std::size_t i = 0; i + 1 < shape.size(); ++i)
+          if (i % 2 == 0 && int(i) != axis)
+            mask_shape[i] = 1;
+        if (mask_case == 2)
+          mask_shape.clear();
+        if (mask_case == 3) {
+          mask_shape = shape;
+          mask_shape.back() = 1;
+        }
+        const auto mask_description =
+            c::TensorDesc::dense(type, mask_shape).value();
         SCOPED_TRACE(::testing::Message()
-                     << int(type) << '/' << shape_case << '/' << masked);
+                     << int(type) << '/' << shape_case << '/' << mask_case);
         const c::Softmax operation{.axis = axis,
                                    .scale = -0.625F,
                                    .mask = masked ? c::MaskKind::kAdditive
@@ -300,6 +307,8 @@ TEST(VulkanMatureTensor, SoftmaxAxesAndBroadcastMasksUseOriginalRegions) {
             value = rounded(value, type);
           for (std::size_t i = 0; i != mask.size(); ++i)
             mask[i] = i % 7 ? rounded(mask[i], type) : -INFINITY;
+          if (mask_case == 2 && phase == 1)
+            mask[0] = -0.75;
           std::vector<v::Tensor> inputs{make(context, description, data)};
           if (masked)
             inputs.push_back(make(context, mask_description, mask));

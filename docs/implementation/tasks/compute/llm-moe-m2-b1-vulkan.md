@@ -274,3 +274,8 @@ baseline `8fa45c7c`，原四owner保持AUDITED。父卡源码/设计累计114/12
 
 本增量不声明Bool mask、稳定LogSoftmax、非连续/empty等剩余域已经具备成熟覆盖，也不改变
 21行总范围；原版资格/正常实施与验证单列，任何新原因调查仍从最后6分钟扣除。
+
+A1首轮Windows普通测试在单行广播mask处触发原版reshape元素数断言；Graph组合及其它相关
+门通过。已有expand_broadcast为Binary保留scalar/row/column快捷形状，Softmax行矩阵转换
+要求完整shape。本具名根因第一次纠正：在axis变换前对尚未展开的mask调用原版repeat_4d；
+数值计算、原厂程序及API不变，增加scalar/row/column回归。源码/设计累计117/120分钟，余3分钟。

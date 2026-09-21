@@ -606,9 +606,15 @@ Result<Region> Region::create(NativeDevice device,
         left = rows(left);
         ggml_tensor *mask = nullptr;
         if (node.inputs.size() == 2) {
-          mask = rows(expand_broadcast(context, arguments[1],
-                                       recipe.values[node.inputs[1]],
-                                       description));
+          mask = expand_broadcast(context, arguments[1],
+                                   recipe.values[node.inputs[1]], description);
+          // Binary can broadcast a scalar/row/column directly. Softmax needs
+          // the complete logical mask before changing its selected axis.
+          if (ggml_nelements(mask) != ggml_nelements(left))
+            mask = ggml_repeat_4d(context, mask, columns(description),
+                                   ggml_nelements(left) / columns(description),
+                                   1, 1);
+          mask = rows(mask);
           // The public contract rounds the scale multiplication before mask
           // addition. A separate original Scale prevents fused-multiply-add.
           if (softmax->scale != 1.0F)
