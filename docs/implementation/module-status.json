@@ -363,9 +363,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN SCOPED：Select/比较/reorder/min/max/稳定函数先资格后批量绑定。用户接受诊断证据并授权旧Q2按环境干扰最可能的无效测量翻案，撤销产品FAIL与接入阻塞；保留原日志，不代签性能PASS。恢复M2，自研冻结。"
+      "summary": "M2-B1 oneDNN AUDITED：有限D1–D3固定，原版BINARY/ELTWISE/REORDER先资格后共用现有资源批量接入；CPU源码审计120/120分钟，正常实现/验收继续。旧Q2经用户决定改判无效测量并解除阻塞，不代签PASS，自研冻结。"
     },
     {
       "module": "compute_provider_ggml",
@@ -375,9 +375,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN SCOPED：Select/比较/reorder/min/max/稳定函数先资格后批量绑定。用户接受诊断证据并授权旧Q2按环境干扰最可能的无效测量翻案，撤销产品FAIL与接入阻塞；保留原日志，不代签性能PASS。恢复M2，自研冻结。"
+      "summary": "M2-B1 oneDNN AUDITED：有限D1–D3固定，原版BINARY/ELTWISE/REORDER先资格后共用现有资源批量接入；CPU源码审计120/120分钟，正常实现/验收继续。旧Q2经用户决定改判无效测量并解除阻塞，不代签PASS，自研冻结。"
     },
     {
       "module": "compute_ops",
