@@ -500,21 +500,21 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan SCOPED：21行新消费域启动成熟批量接入审计，复用M1 ggml/IREE资源事实；首批schema/布局/归约与普通Direct/Graph定界中。源码/设计总120分钟，自研全冻结，完整覆盖未新增。"
+      "summary": "M2-B1 Vulkan AUDITED：V1-F–V4-F冻结，原版F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean及输出root接线；21行其余域和验证未齐。源码/设计10/120分钟，全部自研冻结，完整覆盖未新增。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan SCOPED：21行新消费域启动成熟批量接入审计，复用M1 ggml/IREE资源事实；首批schema/布局/归约与普通Direct/Graph定界中。源码/设计总120分钟，自研全冻结，完整覆盖未新增。"
+      "summary": "M2-B1 Vulkan AUDITED：V1-F–V4-F冻结，原版F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean及输出root接线；21行其余域和验证未齐。源码/设计10/120分钟，全部自研冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan SCOPED：21行新消费域启动成熟批量接入审计，复用M1 ggml/IREE资源事实；首批schema/布局/归约与普通Direct/Graph定界中。源码/设计总120分钟，自研全冻结，完整覆盖未新增。"
+      "summary": "M2-B1 Vulkan AUDITED：V1-F–V4-F冻结，原版F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean及输出root接线；21行其余域和验证未齐。源码/设计10/120分钟，全部自研冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_ggml_runtime",

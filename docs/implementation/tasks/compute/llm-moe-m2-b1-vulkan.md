@@ -3,7 +3,7 @@
 ## Closure card
 
 - component / owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、
-  `graph_route_vulkan`；`/root`。当前阶段 SCOPED，尚不授权产品修改。
+  `graph_route_vulkan`；`/root`。当前阶段 AUDITED；`b9478142`已独立完成SCOPED。
 - baseline：`09d2cf99f1298e988ccda65ca76ec1b4907bd0e7`，Windows main，工作树干净。
 - trigger：[总计划](llm-moe-coverage-completion-plan.md) M2-Vulkan 和
   [M0 清单](llm-moe-provider-integration-ledger.md) B1 的真实新消费域，符合
@@ -44,6 +44,36 @@
 | V4 | 具名测试、真实consumer、指南、source/static/shared与最终P0/P1 | 每批复用相同接缝证据，不逐枚举重复全库或三交付；不造第二套构建机制 |
 
 AUDITED前冻结公开形状、精确首批承载域、资源/错误/成本合同与有限 FIX；本表尚非实施授权。
+
+## AUDITED：首批原版映射与资源形状冻结
+
+2026-09-21 05:56 UTC，源码/设计保守累计10/120分钟，余110分钟。以下为V1–V4的
+首批实施边界；其它需求继续留在21行账本中，不能以首批通过关闭整卡。
+
+| 能力族 | 实际源码与覆盖状态 | 有限裁决 |
+|---|---|---|
+| F01 Copy/Concat | 原pin Vulkan `supports_op` 的CONT/CPY/DUP与`ggml_vk_concat_supported`具备F32原版路径；HYLE现有region未接 | PARTIAL/BORROW：接dense非空F32、rank0..8的Copy及合法轴Concat；Concat首批沿既有最多6输入region边界。stride/empty/其它storage和精确Cast仍未完成 |
+| F03 广播/逐元素/门控 | 原版Binary只广播RHS，repeat与cont已有Vulkan实现；现有HYLE只接某个输入已等于输出shape的rank≤4 | PARTIAL/BORROW：双向广播用原版reshape/repeat，保留普通低rank已有直接路径；高rank冷折叠。Unary与SwiGLU只扩大已接原版F32的布局域，特殊值用独立oracle回归 |
+| F04 norm/归约 | 原版RMSNorm、GroupNorm中心方差、SumRows/Mean已接；原版row归约无padded-row guard，现有精确tile组合必须保留 | PARTIAL/BORROW：dense高rank折叠；任意选轴用冷stride/shape重排和原版cont，Sum/Mean仍用原版精确tile；keepdim两档恢复公开shape。全mask/其它归约和半精度仍未签 |
+| F02/F19索引/状态 | M1原版TopK/checked Scan和资源桥已有有限证据；Gather/Scatter/mask还有原生旧实现和未覆盖域 | PARTIAL；不以旧自研充当新成熟覆盖。已有IREE owner不重开；后续成熟承载须具名核对并依法绑定owner |
+
+### 有限 FIX 与公开形状
+
+- **V1-F**：仅修改ggml region的描述符/原版调用翻译；高rank公开描述保持不变，内部按
+  行/列或连续维组折叠到ggml四维，选轴归约使用原版view/cont。借鉴已接CUDA adapter的
+  冷布局翻译，不复制CUDA数学或强制共享执行器。不得改shader、上游数学、依赖pin。
+- **V2-F**：按新增布局节点数量有界预留metadata；检查native计数、buffer与实际dispatch域。
+  新恢复shape的输出可能是ggml view，必须绑定并标记真正producer root，防止allocator/fusion
+  吞掉发布中间值。原版图、work、fence、import与每slot资源仍用现有owner。
+- **V3-F**：普通Direct/Graph共用region判定；新增F32域默认走原版ggml，报告如实更新。
+  既有非适用域保持原行为，不改冻结数学；prepare不运行用户payload，submit不重新搜索。
+- **V4-F**：直接入口覆盖高rank双向广播、非相邻轴Sum/Mean、Copy/Concat；Graph用
+  L2组合和归一化/残差片段发布中间值，两个slot、变更输入和保留旧结果；加类型/容量拒绝。
+  完整卡的跨平台/三交付/P1仍按下节执行，开发测试不代签。
+
+公开API/对象layout/组件边保持；模型与硬件/driver事实仍由既有冷绑定合同拥有。
+新增原版repeat/cont可能有GPU暂存和dispatch；初始对齐copy、原版managed编码与分配完整计费，
+不承诺新零分配/零copy或SOTA。只复用现有资源适配，不扩张冻结tensor shader的支持域。
 
 ## 预声明验证
 
