@@ -19,6 +19,18 @@ std::uint64_t admitted_elements(const Device &device) noexcept {
                     std::uint64_t{limits.maxStorageBufferRange} / 8);
 }
 
+std::uint64_t precision_elements(const Device &device) noexcept {
+  const auto &limits = device.properties.limits;
+  // Both locked conversion entries have 64 lanes and one flat logical tile
+  // per workgroup. Retain the compiler target's 65535-group bound as well.
+  const auto grid = (std::min)({limits.maxComputeWorkGroupCount[0],
+                                limits.maxComputeWorkGroupCount[1],
+                                limits.maxComputeWorkGroupCount[2], 65535U});
+  return (std::min)({std::uint64_t{grid} * 64,
+                     std::uint64_t{limits.maxStorageBufferRange} / 4,
+                     std::uint64_t{INT32_MAX} / 8});
+}
+
 std::optional<Float8ScaleMode> float8_mode(const TensorDesc &description,
                                            bool weight) noexcept {
   if (description.rank() != 2 || description.is_plain())
@@ -107,11 +119,29 @@ bool named_compressed_storage(const TensorDesc &description) noexcept {
   return expected && *expected == description;
 }
 
+bool iree_precision_supported(const Device &device,
+                              const TensorDesc &input) noexcept {
+  const auto &features = device.provider.native();
+  return (input.data_type() == DataType::kFloat32 ||
+          input.data_type() == DataType::kFloat16) &&
+         input.is_plain() && input.is_dense() && input.element_count() &&
+         *input.element_count() > 0 &&
+         *input.element_count() <= precision_elements(device) &&
+         features.shader_int16 && features.storage_buffer16 &&
+         (input.data_type() != DataType::kFloat16 || features.shader_float16) &&
+         device.properties.limits.maxComputeWorkGroupInvocations >= 64 &&
+         device.properties.limits.maxComputeWorkGroupSize[0] >= 64;
+}
+
 bool iree_operation(const ProgramState &program,
                     const PlanStep &step) noexcept {
   if (step.custom || step.inputs.empty() || step.outputs.size() != 1)
     return false;
   const auto &input = program.values[step.inputs[0]].description;
+  if (const auto *cast = step.operation.get_if<Cast>())
+    return step.inputs.size() == 1 &&
+           cast->output_type == DataType::kBFloat16 &&
+           iree_precision_supported(*program.runtime->device, input);
   if (const auto *scan = step.operation.get_if<Scan>())
     return input.data_type() == DataType::kInt32 && input.is_dense() &&
            *input.element_count() != 0 &&
@@ -128,7 +158,16 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     const auto &input = program.values[step.inputs[0]].description;
     iv::ProgramSpec spec;
     const auto *scan = step.operation.get_if<Scan>();
-    if (scan) {
+    const bool precision = step.operation.get_if<Cast>() != nullptr;
+    if (precision) {
+      if (!iree_operation(program, step))
+        return Status::Unimplemented("Vulkan IREE conversion domain");
+      spec.kind = input.data_type() == DataType::kFloat16
+                      ? iv::ProgramKind::Float16ToBFloat16
+                      : iv::ProgramKind::Float32ToBFloat16;
+      spec.rows = 1;
+      spec.columns = static_cast<std::int64_t>(*input.element_count());
+    } else if (scan) {
       spec.kind = scan->exclusive ? iv::ProgramKind::ScanExclusive
                                   : iv::ProgramKind::ScanInclusive;
       spec.columns = input.dimensions().back();
@@ -152,7 +191,11 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     auto &device = *program.runtime->device;
     const auto &features = device.provider.native();
     if ((scan && !features.shader_int64) ||
-        (!scan && (!features.shader_float16 || !features.storage_buffer16)))
+        (precision && (!features.shader_int16 || !features.storage_buffer16 ||
+                       (input.data_type() == DataType::kFloat16 &&
+                        !features.shader_float16))) ||
+        (!scan && !precision &&
+         (!features.shader_float16 || !features.storage_buffer16)))
       return Status::Unimplemented(
           "Vulkan IREE program requires enabled numeric device features");
     const auto &limits = device.properties.limits;
@@ -160,7 +203,8 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     // Bound every logical domain by a one-workgroup-per-element upper bound,
     // including wide Scan and FP8 F32 workspaces, before any native allocation.
     // Larger dispatch domains require a separately proven launch bound.
-    const auto maximum = admitted_elements(device);
+    const auto maximum =
+        precision ? precision_elements(device) : admitted_elements(device);
     const auto fits = [maximum](std::int64_t a, std::int64_t b) {
       return a > 0 && b > 0 &&
              static_cast<std::uint64_t>(a) <=
@@ -169,7 +213,7 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     if (limits.maxComputeWorkGroupInvocations < 64 ||
         limits.maxComputeWorkGroupSize[0] < 64 ||
         !fits(spec.rows, spec.columns) ||
-        (!scan &&
+        (!scan && !precision &&
          (!fits(spec.rows, spec.depth) || !fits(spec.columns, spec.depth))))
       return Status::Unimplemented("Vulkan IREE program exceeds admitted "
                                    "native grid or workspace limits");
@@ -218,7 +262,8 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     }
     HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_run(run->runtime));
     HYLE_ASSIGN_OR_RETURN(stage->output_copy, create_run(run->runtime));
-    if (stage->input_count == 1) {
+    if (spec.kind == iv::ProgramKind::ScanInclusive ||
+        spec.kind == iv::ProgramKind::ScanExclusive) {
       HYLE_ASSIGN_OR_RETURN(stage->flag_copy, create_run(run->runtime));
       HYLE_ASSIGN_OR_RETURN(stage->flag,
                             allocate_buffer(run->runtime->device, 4, true));

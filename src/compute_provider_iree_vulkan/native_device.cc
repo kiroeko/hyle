@@ -201,7 +201,8 @@ NativeDevice::create(ggml_vulkan::detail::NativeDevice native,
         iree_allocator_system(), &hal)));
     state->hal.reset(hal);
     const std::array programs{detail::checked_scan_program(),
-                              detail::fp8_program()};
+                              detail::fp8_program(),
+                              detail::precision_program()};
     for (std::size_t i = 0; i < programs.size(); ++i) {
       iree_vm_module_t *module = nullptr;
       HYLE_RETURN_IF_ERROR(

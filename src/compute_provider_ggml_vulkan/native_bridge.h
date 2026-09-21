@@ -45,6 +45,7 @@ struct Native {
   bool shader_int64 = false;
   bool portability_subset = false;
   std::uint32_t queue_create_flags = 0;
+  bool shader_int16 = false;
 };
 enum class Error {
   None,

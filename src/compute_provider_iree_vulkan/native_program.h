@@ -11,7 +11,9 @@ enum class ProgramKind {
   ScanInclusive,
   ScanExclusive,
   Float8Block128,
-  Float8Group32
+  Float8Group32,
+  Float32ToBFloat16,
+  Float16ToBFloat16
 };
 struct ProgramSpec final {
   ProgramKind kind = ProgramKind::ScanInclusive;

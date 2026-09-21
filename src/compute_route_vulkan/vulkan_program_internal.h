@@ -118,6 +118,8 @@ Status lower_operation(
     ProgramState &program, const PlanStep &step,
     std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;
 bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
+bool bfloat_region_operation(const ProgramState &, const PlanStep &) noexcept;
+Status lower_bfloat_region(ProgramState &, const PlanStep &) noexcept;
 bool managed_elementwise_limits(const ProgramState &,
                                 const PlanStep &) noexcept;
 Status lower_managed_elementwise(ProgramState &, const PlanStep &) noexcept;
@@ -135,6 +137,7 @@ Status lower_region(ProgramState &, const Plan &, std::size_t first,
                     std::span<const std::size_t> last_uses) noexcept;
 bool named_compressed_storage(const TensorDesc &) noexcept;
 bool iree_operation(const ProgramState &, const PlanStep &) noexcept;
+bool iree_precision_supported(const Device &, const TensorDesc &) noexcept;
 Status lower_iree(ProgramState &, const PlanStep &) noexcept;
 Status record_regions(const std::shared_ptr<Run> &, std::span<const PlanValue>,
                       std::span<const Dispatch>,

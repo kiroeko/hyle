@@ -119,7 +119,7 @@
       },
       "vendored": {
         "path": "third_party/iree_vulkan_runtime",
-        "tree_sha256": "79aed231dbea99889e895cd7a4990a252943c4f99659e76316a033adaa75d91b"
+        "tree_sha256": "0a310d412cc85b57de9db1d34e3ab2d7c3c4030c05be760db2847cbb28de913e"
       }
     },
     {

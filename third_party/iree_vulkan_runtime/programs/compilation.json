@@ -118,5 +118,42 @@
   "fp8_legalized_sha256": "44a9e21f92c1dbc94eade7093acde876bee3afb6e5c8d8171ae1904e14059749",
   "note": "Original qualification command paths document tool identity; install consumers only use embedded bytecode.",
   "vendored_fp8_legalized_sha256": "7c3b77c2d7b7019ef8c4e9b62804754287b63489cb8d148b46ed3bff9ed05376",
-  "vendored_fp8_legalized_normalization": "Only the final empty line was removed; original compiler-input hash above and qualified VMFB bytes are preserved."
+  "vendored_fp8_legalized_normalization": "Only the final empty line was removed; original compiler-input hash above and qualified VMFB bytes are preserved.",
+  "precision": {
+    "recipe_sha256": "e4250b8bb859df68c4d49379c590be5986ee98aa122ba36e1568e6ae95169dbb",
+    "commands": [
+      {
+        "argv": [
+          "C:/hv/m2vk-tools/iree/compiler/_mlir_libs/iree-compile.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\precision.mlir",
+          "--iree-hal-target-device=vulkan",
+          "--iree-vulkan-target=vp_android_baseline_2022",
+          "--iree-vulkan-dispatch-abi=descriptors",
+          "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,ext:SPV_KHR_16bit_storage",
+          "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\spirv-sync",
+          "-o",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\precision-sync.vmfb"
+        ],
+        "exit_code": 0,
+        "vmfb_sha256": "495a84e36a7d7cf2ac423cf7418b79ed329ba7f8fd289d4b01c9f985cbf8461a"
+      },
+      {
+        "argv": [
+          "C:/hv/m2vk-tools/iree/compiler/_mlir_libs/iree-compile.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\precision.mlir",
+          "--iree-hal-target-device=vulkan",
+          "--iree-vulkan-target=vp_android_baseline_2022",
+          "--iree-vulkan-dispatch-abi=descriptors",
+          "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,ext:SPV_KHR_16bit_storage",
+          "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\spirv-async",
+          "-o",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-vulkan-precision\\precision-async.vmfb",
+          "--iree-execution-model=async-external"
+        ],
+        "exit_code": 0,
+        "vmfb_sha256": "ac770200fd96cc5a8e336384551977839fd2a25b89e21cf5dd75d3c0a583cb5d"
+      }
+    ],
+    "kind": "Original arith floating conversion and bitcast; asynchronous descriptor program; no HYLE rounding algorithm"
+  }
 }

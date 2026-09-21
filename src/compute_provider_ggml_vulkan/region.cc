@@ -12,6 +12,17 @@
 
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
+bool floating(DataType type) noexcept {
+  return type == DataType::kFloat32 || type == DataType::kFloat16 ||
+         type == DataType::kBFloat16;
+}
+ggml_type native_type(DataType type) noexcept {
+  if (type == DataType::kFloat16)
+    return GGML_TYPE_F16;
+  if (type == DataType::kBFloat16)
+    return GGML_TYPE_BF16;
+  return type == DataType::kInt32 ? GGML_TYPE_I32 : GGML_TYPE_F32;
+}
 bool mxfp4_domain(const TensorDesc &description) noexcept {
   if (description.rank() != 2 ||
       description.storage_format().id() != kMxfp4Weight)
@@ -24,8 +35,7 @@ bool tensor_domain(const TensorDesc &description) noexcept {
   return description.valid() &&
          (mxfp4_domain(description) ||
           (description.is_plain() && description.is_dense() &&
-           (description.data_type() == DataType::kFloat32 ||
-            description.data_type() == DataType::kFloat16 ||
+           (floating(description.data_type()) ||
             description.data_type() == DataType::kInt32))) &&
          description.element_count() && *description.element_count() > 0 &&
          *description.element_count() <= INT32_MAX;
@@ -186,6 +196,16 @@ bool region_supports(const Operation &operation,
       !std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  if (operation.get_if<Copy>())
+    return inputs.size() == 1 && outputs.size() == 1 &&
+           floating(inputs[0].data_type()) &&
+           outputs[0].data_type() == inputs[0].data_type();
+  if (operation.get_if<Cast>())
+    return inputs.size() == 1 && outputs.size() == 1 &&
+           floating(inputs[0].data_type()) &&
+           floating(outputs[0].data_type()) &&
+           (outputs[0].data_type() != DataType::kBFloat16 ||
+            inputs[0].data_type() == DataType::kBFloat16);
   if (const auto *matmul = operation.get_if<MatMul>())
     return inputs.size() == 2 && outputs.size() == 1 &&
            matmul->accumulation_type == DataType::kFloat32 &&
@@ -225,13 +245,18 @@ bool region_supports(const Operation &operation,
            inputs[0].data_type() == DataType::kInt32 && inputs[0].rank() == 2 &&
            inputs[1].data_type() == DataType::kInt32 && inputs[1].rank() == 1 &&
            outputs[0].data_type() == DataType::kInt32;
-  if (outputs.size() != 1 || outputs[0].data_type() != DataType::kFloat32 ||
+  if (outputs.size() != 1 ||
+      (outputs[0].data_type() != DataType::kFloat32 &&
+       outputs[0].data_type() != DataType::kFloat16) ||
       !std::ranges::all_of(inputs, [](const auto &input) {
-        return input.data_type() == DataType::kFloat32;
+        return floating(input.data_type());
       }))
     return false;
-  if (operation.get_if<Copy>() || operation.get_if<Concat>())
-    return true;
+  if (operation.get_if<Concat>())
+    return outputs[0].data_type() == DataType::kFloat32 &&
+           std::ranges::all_of(inputs, [](const auto &input) {
+             return input.data_type() == DataType::kFloat32;
+           });
   if (const auto *norm = operation.get_if<RmsNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
@@ -254,8 +279,10 @@ bool region_supports(const Operation &operation,
             (softmax->mask == MaskKind::kAdditive && inputs.size() == 2 &&
              softmax->scale == 1.0F && same_shape(inputs[0], inputs[1])));
   if (const auto *scan = operation.get_if<Scan>())
-    return inputs.size() == 1 && inputs[0].rank() > 0 &&
-           inputs[0].rank() <= GGML_MAX_DIMS && !scan->exclusive &&
+    return inputs.size() == 1 && inputs[0].data_type() == DataType::kFloat32 &&
+           outputs[0].data_type() == DataType::kFloat32 &&
+           inputs[0].rank() > 0 && inputs[0].rank() <= GGML_MAX_DIMS &&
+           !scan->exclusive &&
            (scan->axis == -1 ||
             scan->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
   if (const auto *unary = operation.get_if<Unary>())
@@ -388,19 +415,39 @@ Result<Region> Region::create(NativeDevice device,
       }
       tensors[input] = ggml_new_tensor(
           context,
-          mxfp4                                           ? GGML_TYPE_MXFP4
-          : description.data_type() == DataType::kInt32   ? GGML_TYPE_I32
-          : description.data_type() == DataType::kFloat16 ? GGML_TYPE_F16
-                                                          : GGML_TYPE_F32,
+          mxfp4 ? GGML_TYPE_MXFP4 : native_type(description.data_type()),
           GGML_MAX_DIMS, shape.data());
       ggml_set_input(tensors[input]);
       state.ports.push_back(tensors[input]);
     }
     for (const auto &node : recipe.nodes) {
-      auto *left = tensors[node.inputs[0]];
+      const bool arithmetic =
+          node.operation.get_if<Unary>() || node.operation.get_if<Binary>() ||
+          node.operation.get_if<GatedActivation>() ||
+          node.operation.get_if<RmsNorm>() ||
+          node.operation.get_if<LayerNorm>() ||
+          node.operation.get_if<Reduce>() || node.operation.get_if<Softmax>();
+      std::vector<ggml_tensor *> arguments;
+      arguments.reserve(node.inputs.size());
+      for (const auto input : node.inputs) {
+        auto *value = tensors[input];
+        arguments.push_back(arithmetic && value->type != GGML_TYPE_F32
+                                ? ggml_cast(context, value, GGML_TYPE_F32)
+                                : value);
+      }
+      auto *left = arguments[0];
       ggml_tensor *output = nullptr;
       if (node.operation.get_if<Copy>()) {
         output = ggml_dup(context, left);
+      } else if (const auto *cast = node.operation.get_if<Cast>()) {
+        const auto target = native_type(cast->output_type);
+        if (left->type == target)
+          output = ggml_dup(context, left);
+        else {
+          if (left->type != GGML_TYPE_F32 && target != GGML_TYPE_F32)
+            left = ggml_cast(context, left, GGML_TYPE_F32);
+          output = ggml_cast(context, left, target);
+        }
       } else if (const auto *concat = node.operation.get_if<Concat>()) {
         const auto &description = recipe.values[node.outputs[0]];
         const auto axis = static_cast<std::size_t>(
@@ -418,17 +465,17 @@ Result<Region> Region::create(NativeDevice device,
                           : ggml_dup(context, part);
         }
       } else if (node.operation.get_if<MatMul>()) {
-        auto *product = ggml_mul_mat(context, tensors[node.inputs[1]], left);
+        auto *product = ggml_mul_mat(context, arguments[1], left);
         if (!ggml_prec_set_acc(product, GGML_PREC_F32))
           return std::unexpected(
               Status::Unimplemented("ggml Vulkan MXFP4 F32 accumulation"));
         output = ggml_cast(context, product, GGML_TYPE_F16);
       } else if (node.operation.get_if<GatedDeltaNet>()) {
-        auto *value = tensors[node.inputs[2]];
-        auto *initial = tensors[node.inputs[5]];
-        auto *fused = ggml_gated_delta_net(
-            context, left, tensors[node.inputs[1]], value,
-            tensors[node.inputs[3]], tensors[node.inputs[4]], initial, 1);
+        auto *value = arguments[2];
+        auto *initial = arguments[5];
+        auto *fused =
+            ggml_gated_delta_net(context, left, arguments[1], value,
+                                 arguments[3], arguments[4], initial, 1);
         // Upstream owns the fused recurrence and concatenates scores/state.
         // Published ports have independent storage; initial state stays
         // read-only.
@@ -471,7 +518,7 @@ Result<Region> Region::create(NativeDevice device,
                               shape[3]);
         tensors[node.outputs[1]] = indices;
       } else if (node.operation.get_if<Gather>()) {
-        output = ggml_get_rows(context, left, tensors[node.inputs[1]]);
+        output = ggml_get_rows(context, left, arguments[1]);
       } else if (node.operation.get_if<Scan>()) {
         const auto width = left->ne[0];
         const auto rows = ggml_nelements(left) / width;
@@ -537,13 +584,12 @@ Result<Region> Region::create(NativeDevice device,
         }
       } else if (const auto *softmax = node.operation.get_if<Softmax>()) {
         output = ggml_soft_max_ext(
-            context, left,
-            node.inputs.size() == 2 ? tensors[node.inputs[1]] : nullptr,
+            context, left, node.inputs.size() == 2 ? arguments[1] : nullptr,
             softmax->scale, 0.0F);
       } else if (const auto *norm = node.operation.get_if<RmsNorm>()) {
         output = ggml_rms_norm(context, left, norm->epsilon);
         if (node.inputs.size() > 1)
-          output = ggml_mul(context, output, tensors[node.inputs[1]]);
+          output = ggml_mul(context, output, arguments[1]);
       } else if (const auto *layer = node.operation.get_if<LayerNorm>()) {
         // Original GroupNorm computes centered variance. One group per batch
         // makes each last-axis row a group without changing the shader.
@@ -557,9 +603,9 @@ Result<Region> Region::create(NativeDevice device,
         } else {
           output = ggml_reshape_4d(context, output, left->ne[0], left->ne[1],
                                    left->ne[2], left->ne[3]);
-          output = ggml_mul(context, output, tensors[node.inputs[1]]);
+          output = ggml_mul(context, output, arguments[1]);
           if (node.inputs.size() > 2)
-            output = ggml_add(context, output, tensors[node.inputs[2]]);
+            output = ggml_add(context, output, arguments[2]);
         }
       } else if (const auto *unary = node.operation.get_if<Unary>()) {
         if (unary->kind == UnaryKind::kLog)
@@ -572,12 +618,11 @@ Result<Region> Region::create(NativeDevice device,
         else
           output = ggml_unary(context, left, unary_operation(unary->kind));
       } else if (const auto *gate = node.operation.get_if<GatedActivation>()) {
-        output =
-            gate->inputs == GatedInputKind::kPackedHalves
-                ? ggml_swiglu(context, left)
-                : ggml_swiglu_split(context, left, tensors[node.inputs[1]]);
+        output = gate->inputs == GatedInputKind::kPackedHalves
+                     ? ggml_swiglu(context, left)
+                     : ggml_swiglu_split(context, left, arguments[1]);
       } else {
-        auto *right = tensors[node.inputs[1]];
+        auto *right = arguments[1];
         const auto kind = node.operation.get_if<Binary>()->kind;
         const auto &description = recipe.values[node.outputs[0]];
         if (description.rank() > GGML_MAX_DIMS) {
@@ -621,6 +666,12 @@ Result<Region> Region::create(NativeDevice device,
               Status::Internal("ggml Vulkan unqualified binary recipe"));
         }
       }
+      if (arithmetic &&
+          output->type !=
+              native_type(recipe.values[node.outputs[0]].data_type()))
+        output =
+            ggml_cast(context, output,
+                      native_type(recipe.values[node.outputs[0]].data_type()));
       tensors[node.outputs[0]] =
           restore_shape(context, output, recipe.values[node.outputs[0]]);
     }

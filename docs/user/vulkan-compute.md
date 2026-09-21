@@ -117,6 +117,13 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 
 其中非空dense F32的Copy、最多六输入Concat、rank≤8广播Add/Subtract/Multiply/Divide、
 已接Unary/SiLU门控和norm，以及任意轴Sum/Mean，普通入口优先组成原版ggml region。
+非空dense F16/BF16的Copy和浮点Cast也按合格方向绑定成熟实现；F32/F16→BF16使用原版
+IREE标准转换，保留NaN分类、正负零与nearest-even舍入，其余浮点方向使用ggml。
+IREE转换要求已启用Int16/storage16，F16输入另需Float16；元素数不超过设备各维workgroup
+计数与65535的最小值乘64，且F32暂存须落在storage buffer及32位索引域内。
+上述已接算术族的dense半精度输入先在ggml内提升至F32，norm的gamma/bias可独立使用F32。
+F16结果在同一region舍入；BF16结果经同GPU的IREE转换，在每个公开节点保留存储舍入边界。
+这会增加F32暂存、Provider边界复制/同步及IREE运行时成本，未宣称为半精度原生融合或性能最优。
 高rank只在冷期折叠描述；广播或归约所需的数据重排使用原版repeat/cont，保留真实暂存和分派成本。
 Graph发布的中间值会保护其实际producer storage；两个Invocation独立持有运行状态。
 此项是[M2-B1成熟接入](../implementation/tasks/compute/llm-moe-m2-b1-vulkan.md)的首批域，

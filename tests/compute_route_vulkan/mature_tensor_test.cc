@@ -220,4 +220,195 @@ TEST(VulkanMatureTensor, HighRankNormAndUnaryStayInMatureRegion) {
     expect(context, result->tensors()[0], expected);
   }
 }
+
+hyle::Result<v::Tensor> run_prepared(const v::Program &program,
+                                     std::span<const v::Tensor> inputs) {
+  HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
+  HYLE_RETURN_IF_ERROR(slot.bind(inputs));
+  HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+  HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+  return result->tensors()[0];
+}
+
+TEST(VulkanMatureTensor, EverySixteenBitPatternCopiesAndConvertsWithOddTail) {
+  auto context = vulkan_test::context().value();
+  std::vector<std::uint64_t> raw(65537);
+  for (std::size_t i = 0; i != raw.size(); ++i)
+    raw[i] = i & 0xffff;
+  raw.back() = 0x8000;
+  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    const auto description = dense(type, {65537});
+    const auto input =
+        context.upload(description, payload(description, raw)).value();
+    auto copy = v::prepare(context, c::Copy{}, description);
+    ASSERT_TRUE(copy) << copy.error().message();
+    expect_mature(*copy);
+    auto copied = run_prepared(*copy, std::array{input});
+    ASSERT_TRUE(copied) << copied.error().message();
+    EXPECT_EQ(bits(context, *copied), raw);
+    std::vector<double> expected;
+    for (auto value : raw)
+      expected.push_back(decode(value, type));
+    for (auto target : {c::DataType::kFloat32, type == c::DataType::kFloat16
+                                                   ? c::DataType::kBFloat16
+                                                   : c::DataType::kFloat16}) {
+      SCOPED_TRACE(::testing::Message() << int(type) << '/' << int(target));
+      auto program = v::prepare(context, c::Cast{target}, description);
+      ASSERT_TRUE(program) << program.error().message();
+      if (target == c::DataType::kBFloat16)
+        ASSERT_TRUE(d::Access::program(*program)->dispatches.back().iree);
+      else
+        expect_mature(*program);
+      auto output = run_prepared(*program, std::array{input});
+      ASSERT_TRUE(output) << output.error().message();
+      expect(context, *output, expected, true);
+    }
+  }
+}
+
+TEST(VulkanMatureTensor, NarrowingPreservesNanClassAndNearestEvenBoundaries) {
+  auto context = vulkan_test::context().value();
+  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    // Independent decoded adjacent representable values and their midpoints;
+    // keep raw signaling NaN inputs instead of converting them through double.
+    std::vector<std::uint64_t> raw{
+        0,          0x80000000, 1,          0x80000001, 0x7f800000,
+        0xff800000, 0x7f800001, 0xff800001, 0x7fffffff, 0xffffffff,
+        0x7f7fffff, 0xff7fffff, 0x477ff000, 0xc77ff000};
+    const std::uint32_t last = type == c::DataType::kFloat16 ? 0x7bff : 0x7f7f;
+    for (std::uint32_t i = 0; i < last; ++i) {
+      const auto midpoint =
+          static_cast<float>((decode(i, type) + decode(i + 1, type)) / 2);
+      for (auto value : {std::nextafter(midpoint, -INFINITY), midpoint,
+                         std::nextafter(midpoint, INFINITY)}) {
+        raw.push_back(std::bit_cast<std::uint32_t>(value));
+        raw.push_back(std::bit_cast<std::uint32_t>(-value));
+      }
+    }
+    raw.push_back(0x80000000); // Non-multiple-of-workgroup odd tail.
+    const auto description =
+        dense(c::DataType::kFloat32, {static_cast<std::int64_t>(raw.size())});
+    const auto input =
+        context.upload(description, payload(description, raw)).value();
+    auto program = v::prepare(context, c::Cast{type}, description);
+    ASSERT_TRUE(program) << program.error().message();
+    if (type == c::DataType::kBFloat16)
+      ASSERT_TRUE(d::Access::program(*program)->dispatches.back().iree);
+    else
+      expect_mature(*program);
+    auto output = run_prepared(*program, std::array{input});
+    ASSERT_TRUE(output) << output.error().message();
+    std::vector<double> expected;
+    for (auto value : raw)
+      expected.push_back(decode(value, c::DataType::kFloat32));
+    expect(context, *output, expected, true);
+  }
+}
+
+TEST(VulkanMatureTensor,
+     LowPrecisionFamiliesUseOriginalProvidersAndFloatGamma) {
+  auto context = vulkan_test::context().value();
+  const auto gamma_description = dense(c::DataType::kFloat32, {129});
+  std::vector<double> gamma(129);
+  for (std::size_t i = 0; i != gamma.size(); ++i)
+    gamma[i] = static_cast<float>(0.731 + 0.013 * (i % 19));
+  const auto gamma_tensor = make(context, gamma_description, gamma);
+  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    for (const auto &operation :
+         {c::Operation(c::RmsNorm{}), c::Operation(c::LayerNorm{}),
+          c::Operation(c::Unary{c::UnaryKind::kTanh}),
+          c::Operation(
+              c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}),
+          c::Operation(c::Binary{}),
+          c::Operation(
+              c::Reduce{.axes = c::Axes::from(std::array{0, -1}).value(),
+                        .accumulation_type = c::DataType::kFloat32}),
+          c::Operation(c::Reduce{.kind = c::ReductionKind::kMean,
+                                 .axes = c::Axes::from(std::array{-1}).value(),
+                                 .keep_dimensions = true,
+                                 .accumulation_type = c::DataType::kFloat32}),
+          c::Operation(
+              c::Softmax{.accumulation_type = c::DataType::kFloat32})}) {
+      const auto description = operation.get_if<c::Softmax>()
+                                   ? dense(type, {3, 129})
+                                   : dense(type, {3, 1, 3, 1, 1, 129});
+      const bool affine =
+          operation.get_if<c::RmsNorm>() || operation.get_if<c::LayerNorm>();
+      const bool binary = operation.get_if<c::Binary>() != nullptr;
+      const bool pair = binary || operation.get_if<c::GatedActivation>();
+      const auto second_description =
+          binary ? dense(type, {1, 2, 1, 1, 3, 1}) : description;
+      std::vector<v::Argument> arguments{description};
+      if (affine || pair)
+        arguments.emplace_back(affine ? gamma_description : second_description);
+      auto program = v::prepare(context, operation,
+                                std::span<const v::Argument>(arguments));
+      ASSERT_TRUE(program) << program.error().message();
+      const auto &dispatches = d::Access::program(*program)->dispatches;
+      ASSERT_EQ(std::ranges::count_if(dispatches,
+                                      [](const auto &dispatch) {
+                                        return dispatch.region != nullptr;
+                                      }),
+                1);
+      EXPECT_EQ(dispatches.back().iree != nullptr,
+                type == c::DataType::kBFloat16);
+      auto slot = program->create_invocation().value();
+      for (int phase = 0; phase != 2; ++phase) {
+        auto data =
+            vulkan_reduction_test::pattern(*description.element_count(), phase);
+        std::vector<v::Tensor> inputs{make(context, description, data)};
+        auto second = vulkan_reduction_test::pattern(
+            *second_description.element_count(), phase + 3);
+        if (affine)
+          inputs.push_back(gamma_tensor);
+        else if (pair)
+          inputs.push_back(make(context, second_description, second));
+        ASSERT_TRUE(slot.bind(inputs).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        const auto &output = result->get()->tensors()[0];
+        std::vector<double> expected = data;
+        if (affine)
+          expected =
+              norm(data, 129, operation.get_if<c::LayerNorm>() != nullptr,
+                   1e-5F, gamma);
+        else if (const auto *reduce = operation.get_if<c::Reduce>())
+          expected = vulkan_reduction_test::reduce_reference(data, description,
+                                                             *reduce);
+        else if (const auto *softmax = operation.get_if<c::Softmax>())
+          expected = vulkan_reduction_test::probability_reference(
+              data, description, *softmax);
+        else if (binary) {
+          expected.resize(*output.description().element_count());
+          for (std::size_t i = 0; i != expected.size(); ++i)
+            expected[i] =
+                data[broadcast_index(description, output.description(), i)] +
+                second[broadcast_index(second_description, output.description(),
+                                       i)];
+        } else
+          for (std::size_t i = 0; i != expected.size(); ++i)
+            expected[i] = pair ? unary(c::UnaryKind::kSilu, data[i]) * second[i]
+                               : std::tanh(data[i]);
+        expect(context, output, expected);
+      }
+    }
+  }
+}
+
+TEST(VulkanMatureTensor, BFloatConversionAllocationFailureReleasesQuota) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 1024 * 1024);
+  {
+    auto context = vulkan_test::context(&quota).value();
+    auto program = v::prepare(context, c::Cast{c::DataType::kBFloat16},
+                              dense(c::DataType::kFloat32, {129}));
+    ASSERT_TRUE(program) << program.error().message();
+    ASSERT_TRUE(d::Access::program(*program)->dispatches.back().iree);
+    auto refused = program->create_invocation();
+    ASSERT_FALSE(refused);
+    EXPECT_TRUE(refused.error().IsResourceExhausted());
+    EXPECT_TRUE(context.close().ok());
+  }
+  EXPECT_EQ(quota.used(), 0U);
+}
 } // namespace

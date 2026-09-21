@@ -248,6 +248,11 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         ++index;
         continue;
       }
+      if (bfloat_region_operation(*program, step)) {
+        HYLE_RETURN_IF_ERROR(lower_bfloat_region(*program, step));
+        ++index;
+        continue;
+      }
       if (managed_operation(*program, step)) {
         auto end = index;
         while (end < plan.steps.size() &&

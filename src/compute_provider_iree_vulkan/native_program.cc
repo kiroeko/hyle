@@ -311,15 +311,23 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
         Status::FailedPrecondition("IREE owner has stopped"));
   const bool scan = spec.kind == ProgramKind::ScanInclusive ||
                     spec.kind == ProgramKind::ScanExclusive;
+  const bool precision = spec.kind == ProgramKind::Float32ToBFloat16 ||
+                         spec.kind == ProgramKind::Float16ToBFloat16;
   const auto &features = device.state_->native.native();
   if (scan && !features.shader_int64)
     return std::unexpected(
         Status::Unimplemented("checked Scan requires enabled shaderInt64"));
-  if (!scan && (!features.shader_float16 || !features.storage_buffer16))
+  if (precision && (!features.shader_int16 || !features.storage_buffer16 ||
+                    (spec.kind == ProgramKind::Float16ToBFloat16 &&
+                     !features.shader_float16)))
+    return std::unexpected(Status::Unimplemented(
+        "BF16 conversion requires enabled numeric device features"));
+  if (!scan && !precision &&
+      (!features.shader_float16 || !features.storage_buffer16))
     return std::unexpected(Status::Unimplemented(
         "FP8 program requires enabled Float16 and storage16"));
   const auto block = spec.kind == ProgramKind::Float8Block128 ? 128 : 32;
-  if (!scan &&
+  if (!scan && !precision &&
       (spec.depth <= 0 || spec.depth % block ||
        (spec.kind == ProgramKind::Float8Block128 && spec.columns % block)))
     return std::unexpected(
@@ -330,8 +338,9 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   constexpr std::int64_t max_elements =
       std::numeric_limits<std::int32_t>::max() / 8;
   if (spec.rows > max_elements / spec.columns ||
-      (!scan && (spec.rows > max_elements / spec.depth ||
-                 spec.columns > max_elements / spec.depth)))
+      (!scan && !precision &&
+       (spec.rows > max_elements / spec.depth ||
+        spec.columns > max_elements / spec.depth)))
     return std::unexpected(
         Status::OutOfRange("IREE descriptor program index/workspace domain"));
   try {
@@ -345,7 +354,11 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     state->retired.reset(retired);
     HYLE_RETURN_IF_ERROR(detail::consume_status(
         iree_async_proactor_pool_get(owner.pool.get(), 0, &state->proactor)));
-    std::array modules{owner.hal.get(), owner.programs[scan ? 0 : 1].get()};
+    std::array modules{owner.hal.get(),
+                       owner.programs[scan        ? 0
+                                      : precision ? 2
+                                                  : 1]
+                           .get()};
     iree_vm_context_t *context = nullptr;
     HYLE_RETURN_IF_ERROR(
         detail::consume_status(iree_vm_context_create_with_modules(
@@ -367,6 +380,12 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::Float8Group32:
       name = "module.fp8_ue8_scale";
       break;
+    case ProgramKind::Float32ToBFloat16:
+      name = "module.f32_to_bf16";
+      break;
+    case ProgramKind::Float16ToBFloat16:
+      name = "module.f16_to_bf16";
+      break;
     default:
       return std::unexpected(Status::InvalidArgument("IREE program kind"));
     }
@@ -383,7 +402,17 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                             iree_allocator_system(), &outputs)));
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
-    if (scan) {
+    if (precision) {
+      const std::array<iree_hal_dim_t, 1> shape{
+          static_cast<iree_hal_dim_t>(spec.rows * spec.columns)};
+      HYLE_ASSIGN_OR_RETURN(
+          state->views[0],
+          allocate_view(hal, shape,
+                        spec.kind == ProgramKind::Float16ToBFloat16
+                            ? IREE_HAL_ELEMENT_TYPE_FLOAT_16
+                            : IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+      state->count = 1;
+    } else if (scan) {
       const std::array<iree_hal_dim_t, 2> shape{
           static_cast<iree_hal_dim_t>(spec.rows),
           static_cast<iree_hal_dim_t>(spec.columns)};

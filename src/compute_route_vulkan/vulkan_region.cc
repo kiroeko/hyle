@@ -84,10 +84,8 @@ bool scan_limits(const ProgramState &program,
          ((width + 127) / 128 <= limits.maxComputeWorkGroupCount[0] &&
           rows <= limits.maxComputeWorkGroupCount[1]);
 }
-} // namespace
-
-bool managed_operation(const ProgramState &program,
-                       const PlanStep &step) noexcept {
+bool region_operation(const ProgramState &program, const PlanStep &step,
+                      bool promote_bfloat) noexcept {
   if (step.custom || step.inputs.size() > 6 || step.outputs.size() > 2)
     return false;
   std::array<TensorDesc, 6> inputs;
@@ -96,6 +94,35 @@ bool managed_operation(const ProgramState &program,
   std::array<TensorDesc, 2> outputs;
   for (std::size_t i = 0; i < step.outputs.size(); ++i)
     outputs[i] = program.values[step.outputs[i]].description;
+  const auto &features = program.runtime->device->provider.native();
+  const auto low_precision = [](const TensorDesc &description) {
+    return description.data_type() == DataType::kFloat16 ||
+           description.data_type() == DataType::kBFloat16;
+  };
+  if ((std::ranges::any_of(std::span(inputs).first(step.inputs.size()),
+                           low_precision) ||
+       std::ranges::any_of(std::span(outputs).first(step.outputs.size()),
+                           low_precision)) &&
+      (!features.shader_float16 || !features.storage_buffer16))
+    return false;
+  if (promote_bfloat) {
+    for (std::size_t i = 0; i < step.inputs.size(); ++i) {
+      if (!inputs[i].is_plain() || !inputs[i].is_dense() ||
+          (inputs[i].data_type() != DataType::kFloat32 &&
+           !low_precision(inputs[i])))
+        return false;
+      const auto wide =
+          TensorDesc::dense(DataType::kFloat32, inputs[i].dimensions());
+      if (!wide)
+        return false;
+      inputs[i] = *wide;
+    }
+    const auto wide =
+        TensorDesc::dense(DataType::kFloat32, outputs[0].dimensions());
+    if (!wide)
+      return false;
+    outputs[0] = *wide;
+  }
   if (!provider::region_supports(step.operation,
                                  std::span(inputs).first(step.inputs.size()),
                                  std::span(outputs).first(step.outputs.size())))
@@ -135,8 +162,12 @@ bool managed_operation(const ProgramState &program,
        step.operation.get_if<GatedActivation>()) &&
       !managed_elementwise_limits(program, step))
     return false;
-  if ((step.operation.get_if<Copy>() || step.operation.get_if<Concat>() ||
-       step.operation.get_if<Binary>() || step.operation.get_if<Reduce>()) &&
+  if ((promote_bfloat || step.operation.get_if<Copy>() ||
+       step.operation.get_if<Cast>() || step.operation.get_if<Concat>() ||
+       step.operation.get_if<Binary>() || step.operation.get_if<Reduce>() ||
+       std::ranges::any_of(std::span(inputs).first(step.inputs.size()),
+                           low_precision) ||
+       low_precision(outputs[0])) &&
       !layout_limits(program, step))
     return false;
   // Original RMSNorm uses ne1/ne2/ne3 as workgroup counts. Other admitted
@@ -176,6 +207,80 @@ bool managed_operation(const ProgramState &program,
       selection && !topk_limits(program, inputs[0], *selection))
     return false;
   return true;
+}
+} // namespace
+
+bool managed_operation(const ProgramState &program,
+                       const PlanStep &step) noexcept {
+  return region_operation(program, step, false);
+}
+
+bool bfloat_region_operation(const ProgramState &program,
+                             const PlanStep &step) noexcept {
+  if (step.outputs.size() != 1 ||
+      program.values[step.outputs[0]].description.data_type() !=
+          DataType::kBFloat16 ||
+      !(step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
+        step.operation.get_if<GatedActivation>() ||
+        step.operation.get_if<RmsNorm>() ||
+        step.operation.get_if<LayerNorm>() || step.operation.get_if<Reduce>() ||
+        step.operation.get_if<Softmax>()))
+    return false;
+  const auto wide = TensorDesc::dense(
+      DataType::kFloat32,
+      program.values[step.outputs[0]].description.dimensions());
+  if (!wide || !iree_precision_supported(*program.runtime->device, *wide))
+    return false;
+  return region_operation(program, step, true);
+}
+
+Status lower_bfloat_region(ProgramState &program,
+                           const PlanStep &step) noexcept {
+  try {
+    const auto append =
+        [&](const TensorDesc &description) -> Result<std::uint32_t> {
+      HYLE_ASSIGN_OR_RETURN(
+          auto wide,
+          TensorDesc::dense(DataType::kFloat32, description.dimensions()));
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({wide, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    Plan local;
+    PlanStep wide = step;
+    for (auto &input : wide.inputs) {
+      if (program.values[input].description.data_type() == DataType::kFloat32)
+        continue;
+      HYLE_ASSIGN_OR_RETURN(auto converted,
+                            append(program.values[input].description));
+      local.steps.push_back({Operation(Cast{DataType::kFloat32}),
+                             {input},
+                             {converted},
+                             {},
+                             {1, 1, 1},
+                             {}});
+      input = converted;
+    }
+    HYLE_ASSIGN_OR_RETURN(auto result,
+                          append(program.values[step.outputs[0]].description));
+    wide.outputs = {result};
+    local.steps.push_back(std::move(wide));
+    local.outputs = {result};
+    const std::vector<std::size_t> last_uses(program.values.size(), 0);
+    HYLE_RETURN_IF_ERROR(
+        lower_region(program, local, 0, local.steps.size(), last_uses));
+    // The public BF16 port is a rounding boundary. Its qualified conversion
+    // belongs to the original IREE program on this same native device.
+    return lower_iree(program, {Operation(Cast{DataType::kBFloat16}),
+                                {result},
+                                step.outputs,
+                                {},
+                                {1, 1, 1},
+                                {}});
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan BF16 region metadata");
+  }
 }
 
 Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,

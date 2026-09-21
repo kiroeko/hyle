@@ -27,6 +27,19 @@
         "fp8_f32_scale",
         "fp8_ue8_scale"
       ]
+    },
+    {
+      "name": "precision",
+      "file": "precision.vmfb.b64",
+      "sha256": "ac770200fd96cc5a8e336384551977839fd2a25b89e21cf5dd75d3c0a583cb5d",
+      "bytes": 12467,
+      "recipe": "precision.mlir",
+      "recipe_sha256": "e4250b8bb859df68c4d49379c590be5986ee98aa122ba36e1568e6ae95169dbb",
+      "exports_used": [
+        "f32_to_bf16",
+        "f16_to_bf16"
+      ],
+      "qualification": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md#v1-p-audited有限-fix"
     }
   ]
 }
