@@ -40,7 +40,10 @@ hyle_stage_apple_runtime(my_app)
 MLX JIT 仍需要部分预编译基础 kernel，缺文件不是可以忽略的 warning。
 
 SDK 带锁定的 MLX v0.32.2、Metal-C++ 26 和对应许可证；其 CPU/CUDA/Python/GGUF/safetensors 功能
-关闭。Apple 专属头公开 MLX C++ 类型；共同 Compute/Graph 头不要求这些 SDK。
+关闭。MLX 的 F32→BF16 转换带一个复用上游转换函数的窄补丁，保留次正规数和最近偶数舍入；
+该转换保留一次实际存储边界，可能增加原生 dispatch 和中间数组，其余操作仍由 MLX 融合。
+源码、静态与共享构建采用同一补丁及来源声明。源码构建还需要 Python 3，用于生成带哈希检查的
+build-local 依赖源码，原始缓存保持不变。Apple 专属头公开 MLX C++ 类型；共同 Compute/Graph 头不要求这些 SDK。
 
 ## 普通 typed Direct
 

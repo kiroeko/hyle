@@ -69,6 +69,7 @@
     "compute_provider_ggml_vulkan": ["Windows", "Linux", "Darwin"]
   },
   "vendored_input_owners": {
+    "third_party/mlx_cast/": ["compute_route_apple"],
     "third_party/iree_vulkan_runtime/": ["compute_provider_iree_vulkan"],
     "third_party/ggml_cuda_runtime/": ["compute_ggml_runtime"],
     "third_party/ggml_runtime/": ["compute_ggml_runtime"],

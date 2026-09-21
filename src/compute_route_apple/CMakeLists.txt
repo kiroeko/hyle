@@ -38,11 +38,13 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
   hyle_register_package_dependency(
     NAME apple_mlx OWNER compute_route_apple FEATURES compute_apple
     EXPORT_TARGETS mlx
-    LOCKED_DEPENDENCIES mlx metal_cpp json fmt
+    LOCKED_DEPENDENCIES mlx mlx_cast_patches metal_cpp json fmt
     GENERATED_RUNTIME_FILE_SPECS
       "mlx|${_metallib}|${CMAKE_INSTALL_LIBDIR}"
     RUNTIME_FILE_SPECS
       "${HYLE_APPLE_MLX_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx-LICENSE"
+      "${HYLE_SOURCE_DIR}/third_party/mlx_cast/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx-cast-LICENSE"
+      "${HYLE_SOURCE_DIR}/third_party/mlx_cast/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx-cast-NOTICE.md"
       "${HYLE_APPLE_METAL_CPP_SOURCE_DIR}/LICENSE.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|metal-cpp-LICENSE"
       "${HYLE_APPLE_JSON_SOURCE_DIR}/LICENSE.MIT|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx-json-LICENSE"
       "${HYLE_APPLE_FMT_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx-fmt-LICENSE"

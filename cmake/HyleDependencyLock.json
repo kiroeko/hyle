@@ -424,6 +424,37 @@
       }
     },
     {
+      "name": "mlx_cast_patches",
+      "class": "in_tree",
+      "repository": "https://github.com/ml-explore/mlx.git",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "git_tree": "05433bcb7241af2b3531e7ee94f1eed07d4bf15c",
+      "archive": {
+        "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+        "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
+      },
+      "version": "hyle-mlx-upstream-bf16-conversion-v1",
+      "vendored": {
+        "path": "third_party/mlx_cast",
+        "tree_sha256": "338da189e54c074322c98046ff8a31f0fffee43948760b2371ddd9a4fb06acad"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/mlx_cast/LICENSE",
+            "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/mlx_cast/NOTICE.md",
+            "sha256": "07db2ece2c5d4de2169d3250ae31d6249a1fa0578cb2a007b459c6565eede896"
+          }
+        ]
+      }
+    },
+    {
       "name": "metal_cpp",
       "class": "fetchcontent",
       "repository": "https://github.com/apple/metal-cpp.git",

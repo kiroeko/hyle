@@ -194,6 +194,99 @@ TEST(AppleTensor, ViewsCopiesFillCastSelectionAndConcatPreserveLogicalStorage) {
   }
 }
 
+TEST(AppleTensor, FloatConversionsRespectIeeeStorageBoundaries) {
+  const float infinity = std::numeric_limits<float>::infinity();
+  std::vector<double> data{0.0, -0.0, infinity, -infinity,
+                           std::numeric_limits<double>::quiet_NaN()};
+  const std::array<float, 14> boundaries{
+      std::numeric_limits<float>::denorm_min(),
+      std::numeric_limits<float>::min(), std::numeric_limits<float>::max(),
+      std::ldexp(1.0F, -133), std::ldexp(1.0F, -25), std::ldexp(1.0F, -24),
+      std::ldexp(1.0F, -14), 1.0F, 1.0F + std::ldexp(1.0F, -11),
+      1.0F + 3 * std::ldexp(1.0F, -11), 1.0F + std::ldexp(1.0F, -8),
+      1.0F + 3 * std::ldexp(1.0F, -8), 65504.0F, 65520.0F};
+  for (float boundary : boundaries)
+    for (float value : {std::nextafter(boundary, -infinity), boundary,
+                        std::nextafter(boundary, infinity)}) {
+      data.push_back(value);
+      data.push_back(-static_cast<double>(value));
+    }
+  auto context = a::Context::create().value();
+  for (auto source : {mx::float32, mx::float16, mx::bfloat16}) {
+    const auto input = make(data, {static_cast<int>(data.size())}, source);
+    const auto before = bits(input);
+    const auto stored = values(input);
+    for (auto destination : {mx::float32, mx::float16, mx::bfloat16}) {
+      SCOPED_TRACE(::testing::Message() << static_cast<int>(logical(source))
+                                        << '/' << static_cast<int>(logical(destination)));
+      auto output = execute(context, c::Cast{logical(destination)}, std::array{input});
+      ASSERT_TRUE(output) << output.error().message();
+      const auto observed = values(*output);
+      ASSERT_EQ(observed.size(), stored.size());
+      for (std::size_t i = 0; i < stored.size(); ++i) {
+        const auto expected = rounded(stored[i], destination);
+        if (std::isnan(expected))
+          EXPECT_TRUE(std::isnan(observed[i])) << i;
+        else {
+          EXPECT_EQ(observed[i], expected) << i;
+          if (expected == 0)
+            EXPECT_EQ(std::signbit(observed[i]), std::signbit(expected)) << i;
+        }
+      }
+      EXPECT_EQ(bits(input), before);
+    }
+  }
+}
+
+TEST(AppleTensor, BFloatCastPreservesAllPayloadsAndRoundsMidpointNeighbors) {
+  auto context = a::Context::create().value();
+  std::vector<std::uint16_t> payloads(65536);
+  for (std::size_t i = 0; i < payloads.size(); ++i)
+    payloads[i] = static_cast<std::uint16_t>(i);
+  const auto input = ready(mx::transpose(
+      mx::view(mx::array(payloads.data(), {256, 256}, mx::uint16),
+               mx::bfloat16, stream()), stream()));
+  const auto before = bits(input);
+  auto wide = execute(context, c::Cast{c::DataType::kFloat32}, std::array{input});
+  ASSERT_TRUE(wide) << wide.error().message();
+  auto narrow = execute(context, c::Cast{c::DataType::kBFloat16}, std::array{*wide});
+  ASSERT_TRUE(narrow) << narrow.error().message();
+  const auto after = bits(*narrow);
+  const auto wide_bits = bits(*wide);
+  for (std::size_t i = 0; i < before.size(); ++i) {
+    if ((before[i] & 0x7f80U) == 0x7f80U && (before[i] & 0x7fU)) {
+      ASSERT_EQ(after[i] & 0x7f80U, 0x7f80U) << i;
+      ASSERT_NE(after[i] & 0x7fU, 0U) << i;
+    } else {
+      ASSERT_EQ(wide_bits[i], before[i] << 16U) << i;
+      ASSERT_EQ(after[i], before[i]) << i;
+    }
+  }
+  EXPECT_EQ(bits(input), before);
+
+  std::vector<std::uint32_t> neighbors;
+  neighbors.reserve(3 * payloads.size());
+  for (std::uint32_t high : payloads)
+    for (std::uint32_t low : {0x7fffU, 0x8000U, 0x8001U})
+      neighbors.push_back((high << 16U) | low);
+  const auto midpoints = ready(mx::view(
+      mx::array(neighbors.data(), {256, 768}, mx::uint32), mx::float32, stream()));
+  auto rounded_output = execute(context, c::Cast{c::DataType::kBFloat16},
+                                std::array{midpoints});
+  ASSERT_TRUE(rounded_output) << rounded_output.error().message();
+  const auto source = values(midpoints), observed = values(*rounded_output);
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    const auto expected = rounded(source[i], mx::bfloat16);
+    if (std::isnan(expected))
+      ASSERT_TRUE(std::isnan(observed[i])) << i;
+    else {
+      ASSERT_EQ(observed[i], expected) << i;
+      if (expected == 0)
+        ASSERT_EQ(std::signbit(observed[i]), std::signbit(expected)) << i;
+    }
+  }
+}
+
 TEST(AppleTensor, ScalarStorageBitsSurviveCompiledSelectionAndIntegerLayouts) {
   auto context = a::Context::create().value();
   const auto shape =

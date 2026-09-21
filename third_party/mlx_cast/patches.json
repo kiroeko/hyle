@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "path": "mlx/backend/metal/kernels/bf16.h",
+      "before_sha256": "abd87446a310b77ac530ef52a324feae5cb285d03ec9613e3a88ebb71410fdcb",
+      "after_sha256": "78f0871b82a1157610867e02cbcee03a37620df032e53f0c1297541d113e164a",
+      "edits": [
+        {
+          "before": "typedef bfloat bfloat16_t;\n",
+          "after": "typedef bfloat bfloat16_t;\n\n// MLX v0.20.0: preserve subnormal inputs when converting to BF16.\nconstexpr METAL_FUNC uint16_t float_to_bfloat_bits(float x) {\n  // Check for nan\n  if ((as_type<uint32_t>(x) & ~_fp_encoding_traits<float>::sign_mask) >\n      _fp_encoding_traits<float>::inf_mask) {\n    return uint16_t(as_type<uint32_t>(0x7FC0));\n  }\n  // Take bits\n  uint32_t float_bits = as_type<uint32_t>(x);\n\n  // Round to nearest even\n  float_bits += ((float_bits >> 16) & 1) + as_type<uint32_t>(0x7FFF);\n\n  // Take upper 16 bits\n  return float_bits >> 16;\n}\n"
+        }
+      ]
+    },
+    {
+      "path": "mlx/backend/metal/jit_kernels.cpp",
+      "before_sha256": "8201a166cc426cd7b1f6983e5e6f282d3ca7a1992cc4c3a80fa42cf8dd237c46",
+      "after_sha256": "5226035d4ad6dc02937f8e6a35d88c4dfc9fe627b03a3d8d2ddfa3f965f276b6",
+      "edits": [
+        {
+          "before": "MTL::ComputePipelineState* get_copy_kernel(\n    metal::Device& d,\n    const std::string& kernel_name,\n    const array& in,\n    const array& out) {\n  std::string lib_name = kernel_name.substr(kernel_name.find(\"_\") + 1);\n  auto lib = d.get_library(lib_name, [&]() {\n    std::string kernel_source = metal::utils();\n    kernel_source += metal::copy();\n    auto in_type = get_type_string(in.dtype());\n    auto out_type = get_type_string(out.dtype());\n",
+          "after": "MTL::ComputePipelineState* get_copy_kernel(\n    metal::Device& d,\n    const std::string& kernel_name,\n    const array& in,\n    const array& out) {\n  std::string lib_name = kernel_name.substr(kernel_name.find(\"_\") + 1);\n  auto lib = d.get_library(lib_name, [&]() {\n    std::string kernel_source = metal::utils();\n    auto in_type = get_type_string(in.dtype());\n    auto out_type = get_type_string(out.dtype());\n    if (in.dtype() == float32 && out.dtype() == bfloat16) {\n      // Preserve BF16 payload bits through an integer store in the original copy.\n      out_type = get_type_string(uint16);\n      kernel_source += R\"(\ntemplate <>\ninline uint16_t cast_to<uint16_t, float>(float val) {\n  return float_to_bfloat_bits(val);\n}\n)\";\n    }\n    kernel_source += metal::copy();\n"
+        },
+        {
+          "before": "MTL::ComputePipelineState* get_dynamic_copy_kernel(\n    metal::Device& d,\n    const std::string& kernel_name,\n    const array& in,\n    const array& out) {\n  std::string lib_name = kernel_name.substr(kernel_name.find(\"_\") + 1);\n  auto lib = d.get_library(lib_name, [&]() {\n    std::string kernel_source = metal::utils();\n    kernel_source += metal::copy();\n    auto in_type = get_type_string(in.dtype());\n    auto out_type = get_type_string(out.dtype());\n",
+          "after": "MTL::ComputePipelineState* get_dynamic_copy_kernel(\n    metal::Device& d,\n    const std::string& kernel_name,\n    const array& in,\n    const array& out) {\n  std::string lib_name = kernel_name.substr(kernel_name.find(\"_\") + 1);\n  auto lib = d.get_library(lib_name, [&]() {\n    std::string kernel_source = metal::utils();\n    auto in_type = get_type_string(in.dtype());\n    auto out_type = get_type_string(out.dtype());\n    if (in.dtype() == float32 && out.dtype() == bfloat16) {\n      // Preserve BF16 payload bits through an integer store in the original copy.\n      out_type = get_type_string(uint16);\n      kernel_source += R\"(\ntemplate <>\ninline uint16_t cast_to<uint16_t, float>(float val) {\n  return float_to_bfloat_bits(val);\n}\n)\";\n    }\n    kernel_source += metal::copy();\n"
+        }
+      ]
+    },
+    {
+      "path": "mlx/compile.cpp",
+      "before_sha256": "b95efbcaa0a0173d6d2184f43e49b75af43c376ab2eb970012ef344d694358f7",
+      "after_sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c",
+      "edits": [
+        {
+          "before": "          a.primitive().stream() != s || !is_fusable(a.primitive()) ||\n",
+          "after": "          a.primitive().stream() != s || !is_fusable(a.primitive()) ||\n          (typeid(a.primitive()) == typeid(AsType) &&\n           a.dtype() == bfloat16 && a.inputs()[0].dtype() == float32) ||\n"
+        }
+      ]
+    }
+  ]
+}

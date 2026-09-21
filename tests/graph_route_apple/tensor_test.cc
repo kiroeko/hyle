@@ -12,6 +12,63 @@ using namespace apple_tensor_test;
 namespace g = hyle::graph;
 namespace ga = g::apple;
 
+TEST(AppleGraph, BFloatCastBoundariesSurviveFusionAndChangedStridedInputs) {
+  auto builder = g::GraphBuilder::create().value();
+  const auto desc = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{2, 17}).value();
+  const auto x = builder.input(desc).value();
+  const auto low = builder.add(c::Cast{c::DataType::kBFloat16}, x).value();
+  const auto wide = builder.add(c::Cast{c::DataType::kFloat32}, low).value();
+  ASSERT_TRUE(builder.publish(low).ok());
+  ASSERT_TRUE(builder.publish(wide).ok());
+  auto context = a::Context::create().value();
+  auto graph = std::move(builder).finish().value();
+  auto program = ga::compile(context, graph, {});
+  ASSERT_TRUE(program) << program.error().message();
+  auto slot = program->create_invocation().value();
+  const std::array<std::uint32_t, 17> seeds{
+      0, 0x80000000U, 1, 0x8000U, 0x8001U, 0x10000U, 0x10001U,
+      0x7fffffU, 0x800000U, 0x807fffffU, 0x80010000U,
+      0x3f808000U, 0x3f818000U, 0x7f7fffffU, 0x7f800000U,
+      0xff800000U, 0x7fc00001U};
+  std::vector<mx::array> retained;
+  std::vector<std::vector<std::uint64_t>> retained_bits;
+  for (std::size_t phase = 0; phase < 3; ++phase) {
+    std::array<std::uint32_t, 34> payload{};
+    for (std::size_t i = 0; i < payload.size(); ++i)
+      payload[i] = seeds[(i + phase) % seeds.size()];
+    const auto input = ready(mx::transpose(
+        mx::view(mx::array(payload.data(), {17, 2}, mx::uint32),
+                 mx::float32, stream()), stream()));
+    const auto before = bits(input);
+    const auto source = values(input);
+    ASSERT_TRUE(slot.bind(std::array{input}).ok());
+    auto work = slot.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    for (const auto &output : result->get()->arrays()) {
+      const auto observed = values(output);
+      for (std::size_t i = 0; i < source.size(); ++i) {
+        const auto expected = rounded(source[i], mx::bfloat16);
+        if (std::isnan(expected))
+          EXPECT_TRUE(std::isnan(observed[i])) << i;
+        else {
+          EXPECT_EQ(observed[i], expected) << i;
+          if (expected == 0)
+            EXPECT_EQ(std::signbit(observed[i]), std::signbit(expected)) << i;
+        }
+      }
+      retained.push_back(output);
+      retained_bits.push_back(bits(output));
+    }
+    EXPECT_EQ(bits(input), before);
+  }
+  *program = {};
+  ASSERT_TRUE(context.close().ok());
+  for (std::size_t i = 0; i < retained.size(); ++i)
+    EXPECT_EQ(bits(retained[i]), retained_bits[i]);
+}
+
 TEST(AppleGraph, HalfNormGateResidualAndViewsRetainIndependentNativeResults) {
   for (auto type : {mx::float16, mx::bfloat16}) {
     for (int width : {129, 2048}) {

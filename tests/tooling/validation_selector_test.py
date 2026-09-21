@@ -526,7 +526,10 @@ class ImpactTest(unittest.TestCase):
             self.assertIn("sched", selector.reverse_consumers({"container_queue"}, [graph]))
 
     def test_global_change_skips_only_dormant_audit_identity(self):
-        name = "compute_provider_ggml"
+        name = "compute_sched"
+        self.write(selector.MANIFEST, self.graph_bytes.replace(
+            b"_hyle_declare_component(compute_sched QUEUED)",
+            b"_hyle_declare_component(compute_sched)"))
         registry = json.loads((self.root / selector.REGISTRY).read_text())
         row = next(row for row in registry["modules"] if row["module"] == name)
         row.update(state="BLOCKED", blocked_from="SCOPED")
