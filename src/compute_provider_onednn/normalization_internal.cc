@@ -416,7 +416,7 @@ void bind_stable_softplus(dnnl_primitive_desc_t descriptor) {
         std::string_view(implementation) == "ref:any")
       return;
     const auto next = dnnl_primitive_desc_next_impl(descriptor);
-    check(next == dnnl_iterator_ends ? dnnl_unimplemented : next);
+    check(next == dnnl_last_impl_reached ? dnnl_unimplemented : next);
   }
 }
 
