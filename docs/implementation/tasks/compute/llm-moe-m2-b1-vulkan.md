@@ -252,3 +252,25 @@ index/mask/state成熟承载、新域三交付/适用插桩及最终综合门/P1
 四owner保持AUDITED，完整矩阵新增0。未与任何冻结自研比较。统一Compute+Graph为
 **57,343实现行/249文件**，排除tests/vendor，self-check通过。两机均复用唯一活动build，
 Windows约0.73GiB，无新增build或模型副本。
+
+### V1-A：attention Softmax 布局的有限审计
+
+baseline `8fa45c7c`，原四owner保持AUDITED。父卡源码/设计累计114/120分钟，余6分钟；
+本增量仍在V1/V2，复用原版资格与已绑定资源，不重新扩张Provider调查。原pin
+`ggml-vulkan.cpp:19570`支持连续F32的Softmax及F32/F16 additive mask；`soft_max.comp:58`
+已有真实row guard。原版Scale、reshape/permute/cont/repeat足以承载冷布局翻译。
+
+- **A1**：已接dense非空F32/F16/BF16的Softmax扩展至rank1..8、任意合法axis；无mask或
+  公共合法广播的同类型additive mask。按`[outer,axis,inner]`折为原版行矩阵，mask用已有
+  原版repeat展开并作相同轴变换，输出以原版permute/cont恢复。保留half升F32及公开末端舍入。
+- **A2**：additive mask且scale不为1时，先调用原版ggml Scale，再以scale=1调用原版Softmax；
+  保留既有F32乘法中间舍入反例的结果，避免融合乘加改变公开顺序。无mask或scale=1保留
+  原版直接融合。新增中间量/dispatch完整计费，不修改shader/数学或全局fast-math。
+- **A3**：沿现有实际axis宽度/行数的Softmax冷grid检查，并补入已有layout资源限制；
+  原版临时tensor保留在每slot graph allocator中，published root规则保持。
+- **A4**：Direct独立FP64 oracle验证三dtype、六轴/rank8、跨轴广播mask、scale顺序、
+  NaN/Inf/全mask及16385列原版长行路径；Graph使用scaled masked Softmax→残差发布中间值，
+  两slot/变输入/保留结果/close/quota。Windows/Air串行复用活动build及既有所属门。
+
+本增量不声明Bool mask、稳定LogSoftmax、非连续/empty等剩余域已经具备成熟覆盖，也不改变
+21行总范围；原版资格/正常实施与验证单列，任何新原因调查仍从最后6分钟扣除。
