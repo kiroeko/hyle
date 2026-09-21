@@ -60,3 +60,26 @@ Windows通过；Air默认fast-math会消掉生成程序的`FUnordNotEqual(x,x)`�
 统一LOC为**57,333实现行/249文件**，排除tests/vendor，self-check通过。已清理本批探针EXE/
 OBJ及重复wheel包76,048,582字节；保留Windows约0.73GiB单一build和约0.22GiB活动编译工具，
 Air复用原目录。当前Windows C盘约650GiB可用。未删除其它任务或用户文件。
+
+## V1-S：存储类型与空输入拼接
+
+候选`5b45fb764d098712ec59bfd621387b1a303baee6`新增原版ggml的dense非空I32 Copy及
+F16/BF16/I32 Concat。路线准备时省略空payload，公开输入仍须完整绑定；单有效输入用原版Dup
+产生独立结果，多输入直接拼接。未改变原厂shader/数学和冻结自研。
+
+- [存储开发收据](storage-development.json)：两机身份、通过/跳过、成本和剩余验收。
+- [原始记录](storage-development-raw.zip)：构建/测试、首次测试编译失败、机器/制品hash、
+  selector、统一LOC与复现脚本；包含逐文件SHA256 manifest。
+
+Windows shared/WERROR与Air/MoltenVK static/WERROR各8/8 CTest通过，分别174/175项C++通过，
+同一可选validation-layer用例跳过。Direct逐位检查四dtype、六轴、NaN载荷/负零/整数极值、
+不等长/混合空输入/单有效输入/全空输出；Graph发布三个中间/最终结果，覆盖空动态输入和
+常量、两slot、重放/旧结果、独立存储、owner关闭和quota归零。
+
+首轮测试将Concat descriptor直接传给span重载，因缺少显式Operation包装编译失败；修正
+测试后通过，未改公共API。selector本增量七门通过、125项skip/reuse；重新configure后原缓存
+内容不变。前精度批扩大出的完整selected集合、新增域三交付/插桩与P1仍未最终裁决。
+完整21行B1聚合仍INCONCLUSIVE，完整矩阵新增0；源码/设计110/120分钟，余10分钟。
+
+统一Compute+Graph为**57,343实现行/249文件**，排除tests/vendor，self-check通过。仅复用
+Windows约0.73GiB和Air原有活动build，没有新增构建树或模型副本；本批证据只包含日志/文本。

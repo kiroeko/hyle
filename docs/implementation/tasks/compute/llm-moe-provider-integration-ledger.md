@@ -18,7 +18,9 @@ M1-G 已按[独立资源卡](llm-moe-m1-ggml-runtime.md)完成，M1-R 已按[路
 [M1-C](llm-moe-m1-cuda-admission.md)已CLOSED：Windows/WSL普通入口与三交付、原生失败/资源、
 host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新增模型覆盖仍为0。[M1-A](llm-moe-m1-apple-admission.md)也已CLOSED，原版Metal/MLX普通组合、两台Mac三交付、资源/host插桩与最终selected门通过；[M1-V](llm-moe-m1-vulkan-admission.md)也已CLOSED：两机普通原版recurrent/MXFP4/IREE Scan/FP8、资源失败/插桩/六格三交付和120个selected门完成；下一步M2；
 其余未审范围不授权产品改动。
-旧 ggml CPU、oneDNN 的 BLOCKED 不自动恢复。
+旧 BLOCKED 不因M1完成自动恢复；oneDNN Q2现已按用户确认的
+[工程裁决](llm-moe-onednn-aa-cause-followup.md#当前工程裁决旧样本无效恢复-m2)记为无效测量，
+撤销产品FAIL含义和接入阻塞，保留原始日志且不改成性能PASS。
 
 ## 1. Provider 准入处置
 
@@ -31,15 +33,15 @@ host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新�
 | ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；`456172ec`，MIT | M1-G资源补丁已验收；M2-B1已接首批普通Direct/Graph与CPU-I标准Scan/TopK，Windows开发验证通过；完整批量域/四环境/三交付/P1仍未完成 |
 | ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | M1-C已接原生stream/device-buffer与有限F32/attention片段，完整批量覆盖仍待M2；不以既有 HYLE CUDA 核代签 |
 | ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | M1-A 已接 F32 whole recurrent 与 MLX 普通 Direct/Graph 组合、原生资源/完成及三交付；批量覆盖待 M2 |
-| ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | M2-B1首批F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean已接普通Direct/Graph，Windows/Air开发验证通过；完整21行域/新增三交付/P1仍未完成，原生类型/head/subgroup条件逐域验证 |
-| oneDNN | 已有复用并扩接；CPU F01/F04–F06/F18 | primitive/Graph partition、reorder + MatMul；3.13.2 `71094df4`，Apache-2.0 | locked pin 已有 FP8/E2M1/UE8 reorder 源码；格式组合与设备资格待验证；Q2 原阻塞仍在 |
+| ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | M2-B1高rank广播/norm、任意轴Sum/Mean及F16/BF16成熟Copy/Cast/既有算术族已接普通Direct/Graph；I32 Copy、半精度/I32 Concat与空端口处理也已通过Windows/Air开发门；完整21行域/新增三交付/P1仍未完成 |
+| oneDNN | 已有复用并扩接；CPU F01/F04–F06/F18 | primitive/Graph partition、reorder + MatMul；3.13.2 `71094df4`，Apache-2.0 | locked pin 已有 FP8/E2M1/UE8 reorder 源码；格式组合与设备资格待验证；Q2现裁决为INVALID_MEASUREMENT，不再作为接入阻塞，也不宣称性能PASS |
 | MLX | 已有复用并扩接；Apple F01–F08/F18 | C++ typed/compiled array region；0.32.2 `1f8e74e3`，MIT | locked pin 的 `from_fp8/to_fp8/quantized_matmul/gather_qmm/qqmm` 已定位；默认 nvfp4 不等于所有 F18 档位 |
 | cuBLASLt | 已有复用；CUDA F05 与量化解码后的合法浮点 GEMM | CUDA Toolkit 的公开 C API，精确 toolkit/driver 由已有环境与 package receipt 绑定 | 不增加第二份 toolkit 下载器；属于 NVIDIA SDK 分发合同 |
 | Marlin | 已有复用；CUDA F06 合格 W4A16 域 | 已锁 vLLM `51918e25` 原版窄源码，Apache-2.0 | group/zero/packing 与数值档位逐一匹配，不能只匹配4bit |
 | SGLang | 已有复用并扩接；CUDA activation/norm、F18 量化/专家程序 | `06992c92` 已有 C++/CUDA 源码片段，Apache-2.0 | AB 只有 W1 static 局部收据；不把 Python/Torch 安装当 SDK 接入 |
 | FlashInfer | 必需；合格Linux CUDA的F07/F15 attention、KV 与成熟融合候选 | 0.6.18 `69ff11fc` 的 CUDA headers/固定入口，Apache-2.0 | M1-C原版WSL head256/SM89 FP16与BF16普通入口、资源与三交付通过；Windows本pin编译失格，已接ggml合格attention；完整覆盖仍待M2 |
 | CUTLASS / CuTe | 作为成熟程序的内部依赖准入；F05/F18 | 优先 SGLang/FlashInfer 已采用的固定版本；候选源 `f614dc40`，BSD-3-Clause | 不创建空 Provider，也不从模板另写 GEMM；SM89 FP8 示例不等于 block128 已满足 |
-| IREE Vulkan | 限定分工资格及M1普通接入完成；F02.4/F18精确数值补位 | `6ef606b6`；原版标准算子离线参数化region与私有C runtime，Apache-2.0 WITH LLVM-exception | checked I32 Scan和两种scale的FP8 MatMul已接普通Direct/Graph与三交付；FP4由原版ggml MXFP4承载；完整域待M2/M3，不以compiler名义写算法 |
+| IREE Vulkan | 限定分工资格及M1普通接入完成；F01.3/F02.4/F18精确数值补位 | `6ef606b6`；原版标准算子离线参数化region与私有C runtime，Apache-2.0 WITH LLVM-exception | M1 checked I32 Scan和两种scale的FP8 MatMul含三交付；M2新增原版F32/F16→BF16转换，Windows/Air普通混合入口已通过，新增域完整门仍待完成；FP4由ggml MXFP4承载，不以compiler名义写算法 |
 | cuDNN Graph | 后备；F07 的合格 attention 域 | frontend `91dbf3e9`，Apache-2.0；backend 是 NVIDIA SDK，版本在实际准入时锁定 | 已选 ggml/FlashInfer 承载；公开支持表中 Ada decode head≤128，不能代签 Qwen head256 |
 | FlashAttention | 后备；F07 的融合 attention | `1bda8f92`，BSD-3-Clause；固定原版 CUDA 程序 | 与已选 ggml/FlashInfer 重叠；Torch 包装不进入 SDK，Windows 原生接法若启用须单独资格化 |
 | MPSGraph | 后备；Apple 具名 MLX/ggml Metal 不满足的域 | Apple 系统 framework 的 graph executable；版本随 macOS/SDK receipt | 当前无必须另引入的独有域，不宣称它不支持模型；失败时按具名域启用调查 |

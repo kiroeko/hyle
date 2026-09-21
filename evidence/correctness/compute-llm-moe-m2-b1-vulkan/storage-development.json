@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "card": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+  "checkpoint": "V1-S dense storage copy and empty concat ports",
+  "candidate": "5b45fb764d098712ec59bfd621387b1a303baee6",
+  "tree": "a42ab53fb8d5a225fb3cc135e54cedc1a9520ca4",
+  "baseline": "c11c6675",
+  "owners": [
+    "compute_provider_ggml_vulkan",
+    "compute_provider_iree_vulkan",
+    "compute_route_vulkan",
+    "graph_route_vulkan"
+  ],
+  "state": "AUDITED",
+  "implementation": [
+    "original ggml dense nonempty rank0..8 I32 Copy and F16/BF16/I32 Concat",
+    "Concat drops empty native ports during cold lowering; public bind still requires all inputs",
+    "one effective input uses Dup for independent output; multiple inputs use Concat without initial Dup",
+    "all-empty output retains existing no-GPU-work semantics and does not prove mature computation"
+  ],
+  "machines": [
+    {
+      "machine": "Windows RTX4070",
+      "candidate": "5b45fb764d098712ec59bfd621387b1a303baee6",
+      "ctest_pass": 8,
+      "cpp_pass": 174,
+      "optional_validation_layer": "SKIPPED: VK_LAYER_KHRONOS_validation unavailable",
+      "log": "windows-LastTest.log",
+      "log_sha256": "45c011be1cd9b02dee417b338102d92cc3183a0fac405e879a0064a82b71ed92"
+    },
+    {
+      "machine": "MacBook Air Mac16,12 MoltenVK",
+      "candidate": "5b45fb764d098712ec59bfd621387b1a303baee6",
+      "ctest_pass": 8,
+      "cpp_pass": 175,
+      "optional_validation_layer": "SKIPPED: VK_LAYER_KHRONOS_validation unavailable",
+      "log": "air/LastTest.log",
+      "log_sha256": "38ec699da886c1658b121a4a41cae192beef99ad310b7331babb1c8a774155a0"
+    }
+  ],
+  "ordinary_tests": [
+    "four storage types, six high-rank axes, six ports, unequal lengths and odd tails",
+    "exact bits including NaN payloads, negative zero and I32 extremes",
+    "mixed-empty, single-effective-input and all-empty Concat",
+    "published Copy/Concat/Concat intermediates with dynamic and constant empty ports",
+    "two invocation slots, updated inputs, replay, independent outputs and retained results",
+    "owner close followed by download and quota returning to zero"
+  ],
+  "corrections": [
+    {
+      "candidate": "3400154d",
+      "cause": "new test omitted explicit Operation wrapper for prepare(span<Argument>)",
+      "change": "test-only correction in 5b45fb76; public API unchanged",
+      "log": "windows-build.log"
+    }
+  ],
+  "selected_gate_count": 7,
+  "skipped_gate_count": 125,
+  "incremental_selected": "PASS; configure, four factors, docs and closure",
+  "configure": "Windows cache byte-identical before and after configure; previous native bridge inputs unchanged",
+  "cost_contract": [
+    "original managed graph encoding/allocation, Concat intermediates and boundary copy/sync charged",
+    "no payload work during prepare and no provider search or timing during submit",
+    "no P1, SOTA or frozen-self comparison claim"
+  ],
+  "pending": [
+    "complete 21-row B1 mature coverage: other types, stride, index, mask and state",
+    "applicable WSL/Mini/OFF, host instrumentation and new-domain three-delivery consumers",
+    "full selected set from the precision dependency identity change",
+    "qualified P1 on an immutable stable full-batch candidate"
+  ],
+  "full_B1_aggregate": "INCONCLUSIVE",
+  "new_complete_matrix_cells": 0,
+  "p1": "NOT_RUN",
+  "source_design_budget_minutes": {
+    "used_conservative": 110,
+    "limit": 120,
+    "build_and_predeclared_validation": "separate; no reset for sub-batch"
+  },
+  "loc": {
+    "id": "module",
+    "label": "module implementation (compute-graph)",
+    "code": 57343,
+    "files": 249,
+    "selected_files": 283,
+    "paths": [
+      "include/hyle/compute*",
+      "include/hyle/graph*",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ]
+  },
+  "loc_self_check": "pass",
+  "disk": {
+    "windows_build_bytes": 782114560,
+    "windows_tools_bytes": 239313498,
+    "c_free_bytes": 698059780096,
+    "cleanup": "Reused both active builds; no new build or model copy; logs only."
+  },
+  "raw_archive": {
+    "path": "storage-development-raw.zip",
+    "files": 27,
+    "bytes": 94371,
+    "sha256": "9b31ec577d516fbaa482e7247f5ff42f3ea97f44ffbd61ad1a856761fbf6939d",
+    "integrity": "CRC and every manifest SHA256 verified"
+  }
+}

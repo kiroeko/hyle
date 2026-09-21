@@ -228,3 +228,27 @@ baseline `6bc3a439`，原四owner保持AUDITED；源码/设计累计102/120分�
 
 普通入口的新域仍须实测资格；未扩展的stride、其它storage、mask/index和完整交付/P1保留待办，
 不缩小21行分母、不扩大冻结数学。最后剩余预算耗尽时必须按本卡停止规则裁决。
+
+### V1-S：两机开发检查点
+
+产品候选`5b45fb764d098712ec59bfd621387b1a303baee6`，tree
+`a42ab53fb8d5a225fb3cc135e54cedc1a9520ca4`。S1–S3已实施并通过两机开发门：dense非空
+I32 Copy及F16/BF16/I32 Concat复用原版ggml。Concat的空输入只在路线冷翻译时省略，
+原版region仍只接受非空native端口；公开bind仍要求全部输入。单个有效输入使用Dup，
+多输入直接组成Concat链，移除不必要的首项Dup；没有新增数学或shader。
+
+Direct逐位oracle覆盖四dtype、六个高rank轴、六输入中的混合空端口/单有效输入/全空输出、
+NaN载荷/负零/I32极值与513项尾部。Graph的Copy→Concat→单有效输入Concat发布全部三个
+结果，验证空input和constant、两slot/重放、旧结果和独立输出、close后下载及quota归零。
+
+Windows Release/shared/WERROR与Air/MoltenVK Release/static/WERROR均8/8 CTest通过，
+分别174/175项C++通过；同一个可选validation-layer测试跳过。首次测试编译遗漏span入口的
+显式Operation包装，测试纠正后通过，产品候选未因该问题改变。相关selector七门已执行，
+125项保留skip/reuse原因；Windows重配前后CMakeCache一致。原生MASM桥本批未变，复用
+前检查点验证，不另跑重型组合。见[存储证据](../../../../evidence/correctness/compute-llm-moe-m2-b1-vulkan/README.md#v1-s存储类型与空输入拼接)。
+
+源码/设计保守累计110/120分钟，余10分钟；本批不另开预算。完整21行的其它dtype/stride/
+index/mask/state成熟承载、新域三交付/适用插桩及最终综合门/P1仍未完成，聚合INCONCLUSIVE，
+四owner保持AUDITED，完整矩阵新增0。未与任何冻结自研比较。统一Compute+Graph为
+**57,343实现行/249文件**，排除tests/vendor，self-check通过。两机均复用唯一活动build，
+Windows约0.73GiB，无新增build或模型副本。
