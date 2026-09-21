@@ -502,19 +502,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P开发检查点：原版ggml半精度Copy/Cast/计算与IREE BF16标准转换已接普通Direct/Graph；声明32位特殊值保留后Windows 9/9、Air 8/8通过。21行完整成熟覆盖、适用三交付/插桩/最终selected/P1仍待完成；源码/设计95/120分钟，自研冻结，完整矩阵未新增。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P开发检查点：原版ggml半精度Copy/Cast/计算与IREE BF16标准转换已接普通Direct/Graph；声明32位特殊值保留后Windows 9/9、Air 8/8通过。21行完整成熟覆盖、适用三交付/插桩/最终selected/P1仍待完成；源码/设计95/120分钟，自研冻结，完整矩阵未新增。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P开发检查点：原版ggml半精度Copy/Cast/计算与IREE BF16标准转换已接普通Direct/Graph；声明32位特殊值保留后Windows 9/9、Air 8/8通过。21行完整成熟覆盖、适用三交付/插桩/最终selected/P1仍待完成；源码/设计95/120分钟，自研冻结，完整矩阵未新增。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -565,7 +565,7 @@
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P开发检查点：原版ggml半精度Copy/Cast/计算与IREE BF16标准转换已接普通Direct/Graph；声明32位特殊值保留后Windows 9/9、Air 8/8通过。21行完整成熟覆盖、适用三交付/插桩/最终selected/P1仍待完成；源码/设计95/120分钟，自研冻结，完整矩阵未新增。"
     }
   ]
 }

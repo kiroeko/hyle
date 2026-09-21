@@ -279,6 +279,11 @@ SCOPED卡恢复，不能直接清除BLOCKED；oneDNN原性能阻塞也不由M1�
 CPU/CUDA/Apple当前未决项保留；按需求批次推进四路线，不等前三路线全域完成才启动Vulkan。
 重型构建与验证仍串行，符合身份和合同条件的M1证据复用，不重新调查已收口接入。
 
+Vulkan当前开发检查点已接dense F32高rank张量族及F16/BF16的成熟Copy/Cast/既有算术族，
+ggml与IREE在同设备组合并保留公开精度边界。Windows 9/9、Air 8/8开发门通过；Air NaN
+问题由标准浮点执行元数据纠正。完整B1的21行覆盖、适用三交付/插桩/最终selected与P1仍待
+完成，不计新的完整矩阵PASS。具体实现、失败和剩余预算以[本卡](llm-moe-m2-b1-vulkan.md)为准。
+
 | 批次 | Provider 与接法 | 一批要接的需求 | owner 与停止点 |
 |---|---|---|---|
 | M2-CPU | ggml CPU backend/完整 region；oneDNN primitive/partition 按准入表组合 | F01–F19 的 CPU 必需域，优先现成模型图中的 tensor、线性、attention、递归与 MoE 路径 | 现有 ggml/oneDNN/CPU route owner，新增 factor 先 QUEUED；普通 Direct/Graph 与持久资源可用 |

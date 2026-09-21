@@ -191,3 +191,21 @@ P3-F/P4-F内固定一次具名纠正：离线使用原版IREE的executable-confi
 [Vulkan浮点环境](https://github.khronos.org/Vulkan-Site/spec/latest/appendices/spirvenv.html)及
 [MoltenVK配置](https://github.com/KhronosGroup/MoltenVK/blob/main/Docs/MoltenVK_Configuration_Parameters.md)。
 这是同一数值合同的编译元数据纠正，不是另开算子算法或性能调查。
+
+### V1-P：两机开发检查点
+
+产品候选`2191c6160`，源码/设计保守累计95/120分钟，余25分钟。P1-F–P4-F本精度增量
+已实施：原版ggml合格Copy/Cast和F32中间计算，原版IREE BF16转换、公开节点舍入边界，
+冷期启用feature/实际FloatControls/资源域检查及既有异步完成、配额和资源回收。
+
+Windows Release/shared/WERROR 9/9 CTest通过、171项C++通过；Air/MoltenVK Release/static/
+WERROR 8/8通过、172项C++通过。两机同一可选validation-layer测试跳过。完整16位模式、
+舍入中点与特殊值、rank6/8和奇数尾部、F32 gamma、两slot/重放/中间结果与close后保活通过。
+公开压缩存储和half累加声明的拒绝边界已回归；资源失败按真实首次prepare分配点验收。
+
+Air具名NaN根因用标准执行元数据一次纠正后通过，未全局修改fast-math。首轮编译/接纳边界/
+资源预期失败全部保留，数值门没有降低；见[精度证据](../../../../evidence/correctness/compute-llm-moe-m2-b1-vulkan/README.md#v1-p半精度与同设备-provider-组合)。
+本检查点仍不关闭21行B1，不新增完整矩阵PASS。其它dtype/stride/empty/index/mask/state成熟
+承载、适用WSL/Mini/OFF与host插桩、新域三交付、最终selected综合门和一次P1仍按本卡继续。
+`HyleDependencyLock.json`变化导致selector扩展至121个门，开发子集通过不代签其余门。
+统一Compute+Graph实现为57,333行/249文件；清理本批多余资格制品约72.5MiB，活动build复用。

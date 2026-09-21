@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "card": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
+  "checkpoint": "V1-P dense floating precision development",
+  "candidate": "2191c616098a1ec484b8510358c6c684b751cf99",
+  "tree": "3851defd1a1d52e126c01c0380dd01d68dffcf87",
+  "baseline": "2d46e3b9",
+  "owners": [
+    "compute_provider_ggml_vulkan",
+    "compute_provider_iree_vulkan",
+    "compute_route_vulkan",
+    "graph_route_vulkan"
+  ],
+  "state": "AUDITED",
+  "implementation": [
+    "dense nonempty rank0..8 F16/BF16 bit-preserving Copy; qualified F32/F16/BF16 Cast directions",
+    "original ggml F32 evaluation for admitted half Unary/Binary/SiLU gate/norm/Sum/Mean/limited Softmax",
+    "F16 rounding inside ggml; BF16 public-node rounding through original same-device IREE Cast",
+    "native Int16/storage16/Float16 and F32-special-value capability guards; original completion/quota/retirement"
+  ],
+  "machines": [
+    {
+      "machine": "Windows RTX4070",
+      "candidate": "2191c616098a1ec484b8510358c6c684b751cf99",
+      "ctest_pass": 9,
+      "cpp_pass": 171,
+      "optional_validation_layer": "SKIPPED: VK_LAYER_KHRONOS_validation unavailable",
+      "log": "windows-LastTest-preserve.log",
+      "log_sha256": "a9cce25034d6f1b87f335ef42d23369457d129c36661722cac978d13dbaa7d7d"
+    },
+    {
+      "machine": "MacBook Air Mac16,12 MoltenVK",
+      "candidate": "2191c616098a1ec484b8510358c6c684b751cf99",
+      "ctest_pass": 8,
+      "cpp_pass": 172,
+      "optional_validation_layer": "SKIPPED: VK_LAYER_KHRONOS_validation unavailable",
+      "log": "air-final/LastTest.log",
+      "log_sha256": "f93656486d86a3a44ffc72b7bf1fbac2c4c305359cb6c65028b5620125945abe"
+    }
+  ],
+  "original_qualification": {
+    "ggml": "F16/BF16 all-pattern Copy/widen pass; F32-to-F16 451837 samples pass; F32-to-BF16 four NaN-class failures retained and excluded",
+    "iree": "original standard truncf/bitcast passes Windows 451837 F32 and 65536 F16 inputs",
+    "scope": "source qualification only, separate from ordinary product tests"
+  },
+  "ordinary_tests": {
+    "sixteen_bit_patterns_per_type": 65537,
+    "f32_to_f16_boundary_samples": 190473,
+    "f32_to_bf16_boundary_samples": 195849,
+    "behavior": [
+      "high rank and cross broadcasting",
+      "F32 gamma with half norm",
+      "independent scalar and mathematical half oracle",
+      "public rounding boundaries and published intermediates",
+      "two invocation slots, changed inputs and replay",
+      "retained outputs after owner close",
+      "resource exhaustion and quota release",
+      "compressed-storage and accumulation-domain refusal"
+    ]
+  },
+  "corrections": [
+    {
+      "candidate": "4bed5cc5",
+      "cause": "new test treated optional ProgramSpec as a pointer",
+      "change": "has_value; no product change"
+    },
+    {
+      "candidate": "eccbd046",
+      "cause": "half admission accepted compressed plain math and promoted BF16 before accumulation-domain validation",
+      "change": "preserve plain-storage and original public accumulation checks; update expected region/resource counts; failure allocation is first IREE prepare"
+    },
+    {
+      "candidate": "2191c616098a1ec484b8510358c6c684b751cf99",
+      "cause": "Air/MoltenVK default fast-math removed the original compiler FUnordNotEqual(x,x) NaN guard; diagnostic process-only fast-math OFF passed",
+      "change": "original IREE staged compilation with standard entry ABI target_width=32; emits SignedZeroInfNanPreserve 32 for both conversion entries; inspect physical capability cold; no global fast-math change",
+      "diagnostic_log": "air-fastmath-off-diagnostic.log"
+    }
+  ],
+  "cost_contract": [
+    "original ggml casts/repeat/cont and F32 temporary storage charged",
+    "BF16 per-public-node ggml/IREE boundaries, input/output copy, synchronization and runtime allocation charged",
+    "no zero-allocation, native-BF16-fusion or SOTA claim",
+    "no frozen self implementation performance comparison"
+  ],
+  "pending": [
+    "complete 21-row B1 mature coverage including remaining dtype/stride/empty/index/mask/state domains",
+    "applicable WSL/Mini/OFF and host sanitizers",
+    "new domains source/static/shared moved-prefix hidden-producer consumers",
+    "final selected gates expanded by vendored identity change, after batch stability",
+    "one suitable qualified P1 after immutable stable API/algorithm candidate"
+  ],
+  "full_B1_aggregate": "INCONCLUSIVE",
+  "new_complete_matrix_cells": 0,
+  "p1": "NOT_RUN",
+  "source_design_budget_minutes": {
+    "used_conservative": 95,
+    "limit": 120,
+    "build_and_predeclared_validation": "separate; no reset for sub-batch"
+  },
+  "selected_gate_count": 121,
+  "skipped_gate_count": 11,
+  "loc": {
+    "id": "module",
+    "label": "module implementation (compute-graph)",
+    "code": 57333,
+    "files": 249,
+    "selected_files": 283,
+    "paths": [
+      "include/hyle/compute*",
+      "include/hyle/graph*",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ]
+  },
+  "cleanup": {
+    "kept_active": [
+      {
+        "path": "C:/hv/m2vk",
+        "bytes": 781758851
+      },
+      {
+        "path": "C:/hv/m2vk-tools",
+        "bytes": 239313498
+      }
+    ],
+    "disk_free": 698275225600,
+    "qualification_files_removed_bytes": 76048582
+  },
+  "raw_archive": "precision-development-raw.zip"
+}
