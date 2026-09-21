@@ -15,7 +15,7 @@
 #include "apple_indexing.h"
 #include "apple_internal.h"
 #include "apple_mature_indexing.h"
-#include "apple_reduction.h"
+#include "apple_mature_reduction.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -300,7 +300,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
           "Apple arithmetic and Cast require F32/F16/BF16"));
     if (operation.kind() == OperationKind::kReduce ||
         operation.kind() == OperationKind::kSoftmax)
-      return lower_reduction(operation, inputs, shape, stream);
+      return lower_mature_reduction(operation, inputs, shape, stream);
     if (operation.kind() == OperationKind::kCast)
       return std::vector{mx::astype(inputs[0], type, stream)};
     auto first = mx::astype(inputs[0], mx::float32, stream);

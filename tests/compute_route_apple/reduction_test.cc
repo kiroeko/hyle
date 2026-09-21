@@ -1,12 +1,91 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <memory>
 #include <numeric>
+#include <set>
+#include <string>
+
+#include <mlx/primitives.h>
 
 #include "reduction_test_support.h"
 
 namespace {
 using namespace apple_tensor_test;
+
+TEST(AppleReduction, OrdinaryLoweringUsesOriginalMlxPrimitives) {
+  auto context = a::Context::create().value();
+  auto names = std::make_shared<std::set<std::string>>();
+  auto program = context.compile(
+      [names](const auto &inputs, mx::Stream stream)
+          -> hyle::Result<std::vector<mx::array>> {
+        std::vector<mx::array> outputs;
+        for (auto kind : {c::ReductionKind::kSum, c::ReductionKind::kMean,
+                           c::ReductionKind::kMinimum,
+                           c::ReductionKind::kMaximum}) {
+          HYLE_ASSIGN_OR_RETURN(
+              auto reduced,
+              a::lower(c::Operation(c::Reduce{
+                           .kind = kind,
+                           .axes = c::Axes::from(std::array{-1}).value(),
+                           .accumulation_type = c::DataType::kFloat32}),
+                       std::array{inputs[0]}, stream));
+          outputs.push_back(reduced[0]);
+        }
+        for (auto kind :
+             {c::SoftmaxKind::kSoftmax, c::SoftmaxKind::kLogSoftmax}) {
+          HYLE_ASSIGN_OR_RETURN(
+              auto normalized,
+              a::lower(c::Operation(c::Softmax{
+                           .kind = kind, .mask = c::MaskKind::kBoolean}),
+                       inputs, stream));
+          outputs.push_back(normalized[0]);
+        }
+        auto pending = outputs;
+        std::set<std::uintptr_t> seen;
+        while (!pending.empty()) {
+          auto value = std::move(pending.back());
+          pending.pop_back();
+          if (!seen.insert(value.id()).second || !value.has_primitive())
+            continue;
+          names->insert(value.primitive().name());
+          for (const auto &argument : value.inputs())
+            pending.push_back(argument);
+        }
+        return outputs;
+      },
+      std::array{a::InputSpec{{2, 3}, mx::float32},
+                 a::InputSpec{{3}, mx::bool_}});
+  ASSERT_TRUE(program) << program.error().message();
+  for (const auto *name :
+       {"Sum", "Min", "Max", "Or", "Softmax", "LogSumExp"})
+    EXPECT_TRUE(names->contains(name)) << name;
+  for (const auto &name : *names) {
+    EXPECT_EQ(name.find("Custom"), std::string::npos) << name;
+    EXPECT_EQ(name.find("MetalKernel"), std::string::npos) << name;
+  }
+  auto slot = program->create_invocation().value();
+  const std::array inputs{mx::array({1.F, 2.F, 3.F, 4.F, 5.F, 6.F}, {2, 3}),
+                          mx::array({true, false, true})};
+  ASSERT_TRUE(slot.bind(inputs).ok());
+  auto work = slot.submit().value();
+  auto result = work.wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto outputs = result->get()->arrays();
+  ASSERT_EQ(outputs.size(), 6U);
+  expect(outputs[0], std::array{6.0, 15.0});
+  expect(outputs[1], std::array{2.0, 5.0});
+  expect(outputs[2], std::array{1.0, 4.0});
+  expect(outputs[3], std::array{3.0, 6.0});
+  for (int i : {4, 5})
+    expect(outputs[i], probability_oracle(
+                           values(inputs[0]), inputs[0].shape(),
+                           c::Softmax{.kind = i == 4
+                                                 ? c::SoftmaxKind::kSoftmax
+                                                 : c::SoftmaxKind::kLogSoftmax,
+                                        .mask = c::MaskKind::kBoolean},
+                           values(inputs[1])));
+}
 
 TEST(AppleReduction, AxesLayoutsEmptyIdentitiesAndSignedZero) {
   auto context = a::Context::create().value();

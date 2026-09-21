@@ -75,6 +75,9 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   axis 集/keep-dim，空集合为 0/NaN/+Inf/-Inf，Min/Max 传播 NaN 并保留 ±0 优先级；half Reduce
   和所有 Softmax 必须显式 F32 accumulation。Softmax 支持 scale、广播 Bool 或同类型 additive
   mask、任意 axis；未屏蔽的 NaN/+Inf 或全 -Inf 行产生全 NaN。
+  计算由原版MLX Sum/Mean/Min/Max和precise Softmax承载；Min/Max另用原版布尔归约确定零符号。
+  LogSoftmax采用MLX官方的先减max、再减shifted logsumexp组合，保留大公共offset下的精度。
+  F32中间数组、mask转换及原版归约临时资源计入执行成本，由MLX管理。
 - TopK 支持 F32/F16/BF16/I32，返回原始存储类型 values 与 I32 indices。同分含 ±0 按小索引
   优先，NaN 总在最后；largest/smallest 均可，sorted=false 仍返回有序结果。使用原版 MLX
   stable argsort 后取 k 项；完整排序、排序键和必要布局/精度转换计入成本。Graph 用 `add_node()` 与
