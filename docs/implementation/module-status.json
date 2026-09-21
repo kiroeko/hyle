@@ -381,9 +381,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-scatter-numerical-semantics.md",
-      "summary": "M2-S SCOPED：按F02.2/F13.2与成熟MoE来源审计Scatter add的逐次舍入承诺及错误Exact分类；先冻结公共数值合同，不修改冻结数学、失败保护或覆盖分母。共享语义预算8/30分钟；各路线原预算保持。"
+      "summary": "M2-S AUDITED：模型/成熟源码确认add为允许重结合的浮点归约，assign仍Exact；冻结S1–S3公共traits/说明/成熟消费者。原有序FAIL保留，不放宽模型精度或失败保护；共享语义14/30分钟，各路线原预算和自研冻结保持。"
     },
     {
       "module": "compute_backend_cpu",

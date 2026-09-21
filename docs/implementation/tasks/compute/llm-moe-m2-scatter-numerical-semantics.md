@@ -42,3 +42,27 @@
   shared card闭包引用明确收据，未完成交付前不写CLOSED。selector的实际selected门保留。
 - Apple普通Direct/Graph成熟Scatter add由原B1定界、资格、接线；不要求旧冻结数学重写。
 - 每次docs/closure；registry变更明确previous-ref，文档/状态不构建、不启动P1。
+
+## AUDITED：模型加法合同与有限FIX
+
+`a3ce441c`的独立SCOPED之后完成原版来源核对；三份clean/pinned源的身份和具名证据见
+[source audit](../../../../evidence/correctness/compute-llm-moe-m2-scatter-semantics/source-audit.json)。
+SGLang的原版FusedMoE以einsum或sum聚合专家维，另一路先用top-k权重dtype相乘、sum后cast；
+llama.cpp按专家视图组合add。它们没有共同提供“低精度每步舍入、跨库逐位一致”的必需语义。
+[PyTorch官方Scatter add](https://docs.pytorch.org/docs/2.9/generated/torch.Tensor.scatter_add_.html)
+也明确CUDA调用可能不确定；这里只用于数值档佐证，不混同其shape/错误/owner合同。
+
+裁决是恢复模型实际需要的浮点归约档，不为某个性能点值或库名放宽模型精度。F02.2/F13.2与
+C0所有明确的FP32中间值、量化规则、最终误差门继续约束路由。浮点add必须把base和每条更新
+纳入归约，允许重结合与不低于存储精度的中间值；不承诺行主序fold、每项立即舍入或跨运行位
+一致。需要FP32中间值的模型图使用现有Cast/F32端口。没有新的低精度近似、丢更新或省检查授权。
+
+| FIX | 允许改动 | 约束 |
+|---|---|---|
+| S1 | `compute_ops`的Scatter traits区分assign的Exact与add的既有AccumulateInOutputType；公开头说明加法精度/顺序 | 不增字段/enum/ABI；`accumulation_type=Unknown`表示未另指定更宽类型，不限制合格实现内部提升；描述符、shape、alias/effect和bounds不变 |
+| S2 | Compute/Apple/Vulkan指南、F02.2/F13.2的数值说明与当前接入卡引用同一裁决 | 旧顺序/舍入只作冻结路径的实现特征，历史失败不回写PASS，256分母和模型误差门不变；自研不修改/比较 |
+| S3 | schema traits回归与首个原版MLX消费者按其B1卡接入并验证 | 正常范围独立高精度oracle、精确可表示的丢更新检测、非结合反例的合法数值结果；所有checked/状态/生命周期门保留 |
+
+公共改动是准备期元数据和明确数值合同，P0无新增常态工作/资源；未引入确定性选项或第二条
+公共API。原版MLX旧有序资格仍FAIL；新加法接法必须重新资格，不能直接改旧证据标签。
+本共享源码/设计累计14/30分钟，余16分钟；Apple/CPU/CUDA等原B1额度没有重置。

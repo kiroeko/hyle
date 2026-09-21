@@ -1,0 +1,65 @@
+{
+  "kind": "Bounded model/peer Scatter addition semantic audit; not a provider acceptance or performance result",
+  "baseline": "86a6a37b",
+  "scope_checkpoint": "a3ce441c",
+  "sources": [
+    {
+      "repository": "llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/llama-graph.cpp",
+      "sha256": "90f5c6f082790599124630680ba1293d702b369e9ce9088680d210b69905c8d3",
+      "lines": [
+        2327,
+        2353
+      ],
+      "observation": "MoE aggregate combines per-expert views using ggml_add in expert order; this is one implementation structure, not a universal cross-backend rounding requirement"
+    },
+    {
+      "repository": "sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/layers/moe/fused_moe_native.py",
+      "sha256": "95d53810462a2c259afe96db10296a8c93491387b4b524d6ac4b1a6eddbe22aa",
+      "lines": [
+        54,
+        57,
+        156,
+        162
+      ],
+      "observation": "Native FusedMoE uses einsum reduction over experts; alternative native path multiplies in top-k weight dtype, sums along expert axis, then casts once to output dtype"
+    },
+    {
+      "repository": "sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/layers/moe/moe_runner/triton_utils/fused_moe.py",
+      "sha256": "5f3e1a19d67aa1a0ab508fd8f7489cb9001cb84e5581c4f1d6647d02af7bd948",
+      "lines": [
+        366,
+        369,
+        901,
+        955
+      ],
+      "observation": "Compiled MoE combine dispatches to original library reductions; torch implementation sums expert dimension and then applies routed scale"
+    }
+  ],
+  "mature_public_contract": {
+    "url": "https://docs.pytorch.org/docs/2.9/generated/torch.Tensor.scatter_add_.html",
+    "accessed": "2026-09-21",
+    "observation": "All indexed updates contribute; CUDA execution may be nondeterministic. This supports reduction semantics, not identical HYLE shape/ownership/error contracts."
+  },
+  "existing_mlx_evidence": "../compute-llm-moe-m2-b1-apple/scatter-qualification.json",
+  "existing_failure_preserved": "Original MLX scatter_add fails the old ordered-F32-fold contract for 3 of 4 recorded adversarial inputs; those results are not rewritten as PASS",
+  "requirement_basis": [
+    "F02.2 duplicate indexed addition",
+    "F13.2 duplicate destination weighted combine",
+    "C0 fixed model precision profiles and end-to-end error gates remain binding"
+  ],
+  "decision": "Assignment remains storage-exact/last logical update; floating addition is a reduction of base plus every update, may reassociate and use storage precision or wider, without cross-execution bitwise or row-major-fold guarantees. Explicit F32 model intermediates use existing Cast/F32 ports. No narrowing of required model precision, skipped indices, saturation or dropped updates.",
+  "traits_fix": "Scatter assign retains kExact; Scatter add uses existing kAccumulateInOutputType with unspecified wider intermediate allowed by this operation contract; no new fields/enums/ABI or hot dispatch",
+  "verification_boundary": "Mature implementations still require independent numerical, resource, checked failure and delivery qualification; old frozen implementation is neither read, executed as a comparison, modified nor deleted",
+  "budget_minutes": {
+    "used": 14,
+    "total": 30
+  },
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0
+}
