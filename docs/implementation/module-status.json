@@ -502,19 +502,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan首批原版F32 Copy/Concat、高rank广播/norm、任意轴Sum/Mean与输出root已接普通Direct/Graph；Windows 9/9、Air 8/8开发门通过，测试const引用纠正已复验。完整21行/新增三交付/插桩/P1未齐，保持AUDITED。源码/设计30/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan首批原版F32 Copy/Concat、高rank广播/norm、任意轴Sum/Mean与输出root已接普通Direct/Graph；Windows 9/9、Air 8/8开发门通过，测试const引用纠正已复验。完整21行/新增三交付/插桩/P1未齐，保持AUDITED。源码/设计30/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan首批原版F32 Copy/Concat、高rank广播/norm、任意轴Sum/Mean与输出root已接普通Direct/Graph；Windows 9/9、Air 8/8开发门通过，测试const引用纠正已复验。完整21行/新增三交付/插桩/P1未齐，保持AUDITED。源码/设计30/120分钟，自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -563,9 +563,9 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-P精度增量SCOPED：ggml F32→BF16存在已复现NaN分类反例，原版IREE标准转换同输入资格通过；审计普通Cast和BF16输出的成熟补位，复用原资源/完成，原M1关闭事实与Scan/FP8不变。合用Vulkan源码/设计50/120分钟，自研冻结。"
+      "summary": "M2-B1 V1-P AUDITED：P1-F–P4-F冻结；ggml合格低精度Copy/Cast/F32计算，IREE标准BF16转换补已复现NaN缺口，复用原生资源完成，普通Direct/Graph与两机验证待实施。原F32批次Windows/Air开发门通过；源码/设计55/120分钟，自研冻结，完整覆盖未新增。"
     }
   ]
 }

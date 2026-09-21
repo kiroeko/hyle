@@ -4,7 +4,8 @@
 
 - component / owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、
   `graph_route_vulkan`；`/root`。当前阶段 AUDITED；`b9478142`已独立完成SCOPED。
-  下节精度增量另绑定`compute_provider_iree_vulkan`为SCOPED，原M1关闭事实保留。
+  精度增量另绑定`compute_provider_iree_vulkan`为AUDITED；`1a4ac820`已独立完成SCOPED，
+  原M1关闭事实保留。
 - baseline：`09d2cf99f1298e988ccda65ca76ec1b4907bd0e7`，Windows main，工作树干净。
 - trigger：[总计划](llm-moe-coverage-completion-plan.md) M2-Vulkan 和
   [M0 清单](llm-moe-provider-integration-ledger.md) B1 的真实新消费域，符合
@@ -19,7 +20,7 @@
 - non-goals：冻结自研 CPU/CUDA/Metal/Vulkan 数学的调查、扩张、优化、比较和删除；
   SIMD 基础；新 shader/算子算法；模型 loader/engine；公共 selector/性能仪器改写。
 - 依赖/消费者：Compute 公共 schema、既有 ggml native device/graph/work、Mem/Error；
-  Graph 单向消费 Compute 的同一 region。共同 runtime、IREE 和其他 CLOSED owner 保持不变；
+  Graph 单向消费 Compute 的同一 region。共同runtime等其他CLOSED owner保持不变；
   只有具名新缺陷才另行定向审计。IREE原Scan/FP8和runtime补丁不重做；本节后续的精度增量
   按新SCOPED/AUDITED绑定，其它CLOSED owner不变。
 - 第三方：ggml `456172ec733a135778adcd32d00e576a58232e45`，MIT；沿用锁和资源 overlay。
@@ -145,3 +146,28 @@ baseline `88c61331`；owner仍为`/root`，额外将`compute_provider_iree_vulka
 
 AUDITED前固定具体程序、资源与映射；原始探针仅作来源资格，不计覆盖。Air原版/普通入口及
 既定三交付、插桩和必要P1仍按全卡完成，不能以Windows探针或本小节缩小21行分母。
+
+### V1-P AUDITED：有限 FIX
+
+源码/设计累计55/120分钟，余65分钟；P1–P4审计完成。IREE的F32→BF16（451,837样本）与
+F16→BF16（全部65,536位模式）已通过Windows原版GPU资格；async-external制品已离线编译。
+原版输出是`arith.truncf`的BF16，经标准`arith.bitcast`以i16端口承载原始位，不写舍入算法。
+
+- **P1-F**：ggml新增dense非空rank0..8的F16/BF16 Copy；浮点Cast按合格方向接线，
+  BF16→F16显式经过F32。F32/F16→BF16固定使用IREE标准程序，禁止绑定已失格的ggml方向。
+- **P2-F**：当前ggml Unary/Binary/SwiGLU/RMSNorm/LayerNorm/Sum/Mean/已接Softmax域，
+  按公共F32中间精度用原版Cast提升F16/BF16输入。F16输出在ggml region内舍入；BF16公开
+  输出以ggml F32 region→IREE BF16转换的两Provider边界实现，保留每个公开节点的舍入点。
+  本增量不扩min/max/Select/index、stride/empty或新融合算法；既定21行需求仍保留。
+- **P3-F**：IREE私有program增加两种转换入口和第三个小型离线module，沿用独立VM/请求、
+  input/output copy、异步retirement和quota；overflow flag仅对Scan创建，不能按单输入推断。
+  不改原版runtime补丁、Provider版本、CMake机制或公共接口；只更新vendored身份与制品。
+- **P4-F**：私有ggml native事实补充实际启用的shaderInt16；该pin将查询到的完整core
+  features传入DeviceCreateInfo，冷期事实记录不改变启用策略。IREE转换要求Int16/storage16，
+  F16入口另要求Float16；已核对生成程序LocalSize64和每workgroup至多64项，按ceil(N/64)、
+  F32暂存/descriptor范围及32位索引裁决。其余ggml转换计入现有有界metadata和layout限制。
+
+预声明新增验收：普通Direct/Graph全部16位Copy/扩大精度、F32中点与NaN/Inf/溢出/负零，
+高rank低精度广播/norm/门控和混合ggml/IREE，F32 gamma，奇数尾部，两slot和改变payload重放、
+结果保活/关闭、资源失败。Windows/Air串行复用活动build；新域完整三交付/插桩/P1仍按整卡。
+原版probe通过不代签普通入口；完整矩阵覆盖仍未新增。
