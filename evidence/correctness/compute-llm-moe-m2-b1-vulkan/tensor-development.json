@@ -1,0 +1,147 @@
+{
+  "kind": "Windows/Air development checkpoint; full B1 acceptance pending",
+  "baseline": "09d2cf99f1298e988ccda65ca76ec1b4907bd0e7",
+  "scoped_commit": "b9478142",
+  "audited_commit": "561d970333005d59d5de688e1773db85bb7bea13",
+  "product_commit": "9a49fad478a1181d068a6a7ec8d924c82ca8bbf9",
+  "product_tree": "85b950623e2a60c03c14d970a1f5d7132e0b8e46",
+  "test_portability_commit": "4a7058979d1fe7593de4a8bf8eaae6421d4a6a01",
+  "test_portability_tree": "2e965884eebc92eb0d0f7615ecb1e4506d68bf85",
+  "product_inputs_unchanged_by_test_correction": true,
+  "provider": {
+    "name": "original ggml Vulkan",
+    "revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "license": "MIT",
+    "vendor_math_and_dependency_pin_changed": false,
+    "source_cache_modified": false,
+    "iree_product_changed": false
+  },
+  "implemented": [
+    "Dense nonempty F32 Copy and Concat (up to six inputs), rank0..8",
+    "Two-sided high-rank Add/Sub/Mul/Div broadcasting using original reshape/repeat",
+    "Existing unary/gating/RMSNorm/LayerNorm shape expansion using native dimension folding",
+    "Arbitrary-axis Sum/Mean and both keepdim modes using original view/cont and exact row tiles",
+    "Published reshaped outputs bind and protect their real producer root",
+    "Bounded cold metadata and device buffer/dispatch checks",
+    "Natural Direct/Graph matching; no user provider ordering or run-time selection"
+  ],
+  "cost_contract": [
+    "Original repeat/cont can allocate GPU temporary storage and add dispatches",
+    "Existing alignment and boundary copies, managed encoding/allocation and synchronization remain charged",
+    "No zero-allocation, zero-copy or SOTA claim; no self-written operator performance comparison"
+  ],
+  "validation": {
+    "windows": {
+      "configuration": "Release shared, MSVC 19.50.35728.0, WERROR, Vulkan ON, CPU/CUDA/Apple OFF, build parallel2/tests1",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "gpu": "NVIDIA GeForce RTX 4070, 610.62",
+      "candidate": "9a49fad478a1181d068a6a7ec8d924c82ca8bbf9",
+      "ctest_passed": 9,
+      "ctest_total": 9,
+      "gtest_passed": 166,
+      "gtest_skipped": 1,
+      "portability_correction": {
+        "candidate": "4a7058979d1fe7593de4a8bf8eaae6421d4a6a01",
+        "ctest_passed": 1,
+        "ctest_total": 1,
+        "gtest_passed": 109,
+        "all_original_product_artifact_hashes_equal": true,
+        "changed_artifacts": [
+          "C:\\hv\\m2vk\\bin\\hyle_compute_route_vulkan_test.exe"
+        ]
+      }
+    },
+    "air": {
+      "configuration": "Release/static/WERROR, Apple clang21, arm64, deployment14.4, MoltenVK, parallel2/tests1",
+      "identity": "4a7058979d1fe7593de4a8bf8eaae6421d4a6a01\n2e965884eebc92eb0d0f7615ecb1e4506d68bf85\nProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\nMac16,12\nApple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\nPython 3.9.6\n",
+      "candidate": "4a7058979d1fe7593de4a8bf8eaae6421d4a6a01",
+      "ctest_passed": 8,
+      "ctest_total": 8,
+      "gtest_passed": 167,
+      "gtest_skipped": 1,
+      "source_worktree_clean": true
+    },
+    "optional_skipped_on_both": "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance",
+    "new_cases": [
+      "Independent scalar indexing oracle for two-sided broadcast, ranks2/6/8 and all four arithmetic operations",
+      "Independent FP64 reduction oracle for nonadjacent axes, rank3/6/8 and 513 output rows",
+      "Bit-preserving Copy special values and rank6 Concat on every axis with three inputs",
+      "High-rank norm/Tanh and explicit assertions that original mature regions execute",
+      "Graph L2 region publishes intermediate reduction and final output; two slots, changing payloads, retained results after close, quota returns to zero"
+    ],
+    "selected_plan": "immutable-development-plan.json",
+    "selected_factors": [
+      "compute_provider_ggml_vulkan",
+      "compute_provider_iree_vulkan",
+      "compute_route_vulkan",
+      "graph_route_vulkan"
+    ],
+    "selector_skipped_reasons_retained": 125,
+    "native_execution": "Existing module wrappers/CTest; development evidence is not a formal selector run receipt",
+    "performance_samples": 0
+  },
+  "retained_failures_and_corrections": [
+    "Initial Windows configure lacked VULKAN_SDK; corrected process environment to the existing SDK, no product change",
+    "Air WERROR rejected a copied Operation range-loop variable in a new test; changed to const reference in Windows canonical checkout, committed/pushed, incrementally rebuilt both machines"
+  ],
+  "not_completed": [
+    "Full 21-row B1 coverage, including remaining precision, stride/empty, indexing/mask/stable domains",
+    "Applicable WSL/Mini/OFF and host sanitizer checks for the stable whole batch",
+    "New-domain source/static/shared delivery acceptance and relocation/hidden producer checks",
+    "Final selected verification and independent candidate review",
+    "Necessary P1 after stable whole-batch API/algorithm and immutable candidate"
+  ],
+  "aggregate_gate": "INCONCLUSIVE",
+  "owner_state": "AUDITED",
+  "new_complete_coverage_cells": 0,
+  "hyle_numerical_kernels_added": 0,
+  "source_design_budget_minutes": {
+    "used": 30,
+    "limit": 120,
+    "build_and_predeclared_validation_counted_separately": true
+  },
+  "loc": {
+    "id": "module",
+    "label": "module implementation (compute-graph)",
+    "code": 57086,
+    "files": 249,
+    "selected_files": 283,
+    "paths": [
+      "include/hyle/compute*",
+      "include/hyle/graph*",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ]
+  },
+  "archive": {
+    "path": "tensor-development-raw.zip",
+    "bytes": 297101,
+    "sha256": "99169360cbfef80abf1ca4f923102b8b334a9703a0264aa3da2217709eeb5f16",
+    "crc": "PASS",
+    "entry_hashes": "PASS",
+    "files": 36
+  },
+  "retained_active_workspaces": {
+    "windows": {
+      "path": "C:\\hv\\m2vk",
+      "bytes": 780773491,
+      "volume_free_bytes": 698732920832
+    },
+    "air": {
+      "path": "/Users/kiro/hyle-m2b1-vulkan",
+      "allocated_kib": 807560,
+      "build_allocated_kib": 672624,
+      "volume_free_kib": 48918600
+    },
+    "reason": "One build per platform reused for remaining B1 integration; no further source/model copies",
+    "cleanup_action_this_checkpoint": "No obsolete task build created; both current builds retained for reuse"
+  }
+}

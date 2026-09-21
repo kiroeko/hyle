@@ -89,3 +89,30 @@ AUDITED前冻结公开形状、精确首批承载域、资源/错误/成本合�
   closure明确previous-ref、docs和diff检查。候选后单次与实施分离的复核。
 - 当前七门均未最终裁决；没有新增完整矩阵PASS。启动LOC为56,908行/249实现文件，
   使用统一脚本，排除tests/vendor；该数字只描述规模。
+
+## V1-F–V4-F：Windows/Air 开发检查点
+
+2026-09-21，源码/设计保守累计30/120分钟；构建和预声明验证单列。首批有限FIX已落地：
+dense非空F32 Copy/Concat、rank0..8双向广播和既有norm/unary/gate布局扩展、任意选轴Sum/
+Mean及keepdim两档，均映射原版ggml操作。高rank冷折叠与必要repeat/cont不改变公开描述；
+保留归约精确tile，新增metadata有界预留与实际buffer/grid检查。输出reshape view绑定并保护
+真实producer，发布中间结果不再依赖最后一个view是否被原厂allocator保留。
+
+普通Direct/Graph共用绑定判断；测试显式确认走成熟region，独立scalar/FP64 oracle覆盖
+双侧广播、非相邻轴、rank6/8和513行尾部，Copy检查特殊值原始位，Concat覆盖六个轴。
+Graph的Copy→平方→归约→eps→Rsqrt→Mul组成一个原版region，发布中间归约和最终结果；
+两slot、变输入重放、旧结果保活、owner关闭后下载及quota归零通过。没有新增shader或自研数学。
+
+产品`9a49fad478a1181d068a6a7ec8d924c82ca8bbf9`，tree
+`85b950623e2a60c03c14d970a1f5d7132e0b8e46`。Windows RTX4070 Release/shared/WERROR
+的9/9 CTest通过（166项C++通过、1项可选validation-layer跳过）。Air首次Clang/WERROR在新
+测试的Operation按值循环处失败，已在Windows改成const引用并提交`4a7058979d1fe7593de4a8bf8eaae6421d4a6a01`；
+没有产品改动。Windows对应109项复验通过，其余原有制品hash保持；Air/MoltenVK Release/
+static/WERROR的8/8 CTest通过（167项C++通过、同一可选项跳过）。原始失败、两机身份与
+完整输出见[开发证据](../../../../evidence/correctness/compute-llm-moe-m2-b1-vulkan/README.md)。
+
+本检查点不关闭21行B1。其余dtype、非连续/empty、mask/index/state等成熟承载仍待接线；
+适用WSL/Mini/OFF、host插桩、新增域source/static/shared和最终selected复核仍待批次稳定。
+原版repeat/cont、managed分配编码和边界copy/sync完整计费；未运行P1，不比较冻结自研。
+完整聚合INCONCLUSIVE，三个owner保持AUDITED；新完整覆盖0。统一LOC为**57,086行/249实现
+文件**，不含tests/vendor，self-check通过。每机保留一个活动build复用，没有另建重复验证树。

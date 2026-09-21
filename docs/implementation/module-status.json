@@ -502,19 +502,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan AUDITED：V1-F–V4-F冻结，原版F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean及输出root接线；21行其余域和验证未齐。源码/设计10/120分钟，全部自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 Vulkan首批原版F32 Copy/Concat、高rank广播/norm、任意轴Sum/Mean与输出root已接普通Direct/Graph；Windows 9/9、Air 8/8开发门通过，测试const引用纠正已复验。完整21行/新增三交付/插桩/P1未齐，保持AUDITED。源码/设计30/120分钟，自研冻结，完整覆盖未新增。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan AUDITED：V1-F–V4-F冻结，原版F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean及输出root接线；21行其余域和验证未齐。源码/设计10/120分钟，全部自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 Vulkan首批原版F32 Copy/Concat、高rank广播/norm、任意轴Sum/Mean与输出root已接普通Direct/Graph；Windows 9/9、Air 8/8开发门通过，测试const引用纠正已复验。完整21行/新增三交付/插桩/P1未齐，保持AUDITED。源码/设计30/120分钟，自研冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 Vulkan AUDITED：V1-F–V4-F冻结，原版F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean及输出root接线；21行其余域和验证未齐。源码/设计10/120分钟，全部自研冻结，完整覆盖未新增。"
+      "summary": "M2-B1 Vulkan首批原版F32 Copy/Concat、高rank广播/norm、任意轴Sum/Mean与输出root已接普通Direct/Graph；Windows 9/9、Air 8/8开发门通过，测试const引用纠正已复验。完整21行/新增三交付/插桩/P1未齐，保持AUDITED。源码/设计30/120分钟，自研冻结，完整覆盖未新增。"
     },
     {
       "module": "compute_ggml_runtime",

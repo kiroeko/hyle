@@ -31,7 +31,7 @@ host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新�
 | ggml CPU | 必需；F01–F17 广覆盖与模型组合 | retained backend graph、persistent pool；`456172ec`，MIT | M1-G资源补丁已验收；M2-B1已接首批普通Direct/Graph与CPU-I标准Scan/TopK，Windows开发验证通过；完整批量域/四环境/三交付/P1仍未完成 |
 | ggml CUDA | 必需；F01–F17 的 CUDA 原版后端 | native backend region；`456172ec`，MIT | M1-C已接原生stream/device-buffer与有限F32/attention片段，完整批量覆盖仍待M2；不以既有 HYLE CUDA 核代签 |
 | ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | M1-A 已接 F32 whole recurrent 与 MLX 普通 Direct/Graph 组合、原生资源/完成及三交付；批量覆盖待 M2 |
-| ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | 既有少量原子不代替完整片段；原生类型/head/subgroup 条件逐域验证 |
+| ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | M2-B1首批F32 Copy/Concat、高rank广播/norm和任意轴Sum/Mean已接普通Direct/Graph，Windows/Air开发验证通过；完整21行域/新增三交付/P1仍未完成，原生类型/head/subgroup条件逐域验证 |
 | oneDNN | 已有复用并扩接；CPU F01/F04–F06/F18 | primitive/Graph partition、reorder + MatMul；3.13.2 `71094df4`，Apache-2.0 | locked pin 已有 FP8/E2M1/UE8 reorder 源码；格式组合与设备资格待验证；Q2 原阻塞仍在 |
 | MLX | 已有复用并扩接；Apple F01–F08/F18 | C++ typed/compiled array region；0.32.2 `1f8e74e3`，MIT | locked pin 的 `from_fp8/to_fp8/quantized_matmul/gather_qmm/qqmm` 已定位；默认 nvfp4 不等于所有 F18 档位 |
 | cuBLASLt | 已有复用；CUDA F05 与量化解码后的合法浮点 GEMM | CUDA Toolkit 的公开 C API，精确 toolkit/driver 由已有环境与 package receipt 绑定 | 不增加第二份 toolkit 下载器；属于 NVIDIA SDK 分发合同 |
