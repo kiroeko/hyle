@@ -1,0 +1,103 @@
+{
+  "kind": "M2-B1 Apple original reduction and masked probability binding development checkpoint; not whole-batch acceptance",
+  "candidate_commit": "877bd8699d5906979fcd085fbdaa7f94da3444d6",
+  "candidate_tree": "447aecf8313c730931d6b9a6fbacdb0fe13ac4d6",
+  "audit_commit": "a16ff8817a67cea1f3f22f0dcc52aaa6825abba5",
+  "machine": {
+    "machine_model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "source_checkout_commit": "a16ff8817a67cea1f3f22f0dcc52aaa6825abba5",
+    "canonical_validation_tree": "447aecf8313c730931d6b9a6fbacdb0fe13ac4d6",
+    "unstaged_changes": "",
+    "source_sha256": {
+      "src/compute_route_apple/apple_mature_reduction.cc": "9648c57f3050a92192f3b0ed025a9c99c41ab2816af18a8ab3d5bc6f5e04f9ec",
+      "src/compute_route_apple/apple_mature_reduction.h": "00d0c40bc483379af8470b517d518e360dca05e900505a13480e67cadd792a26",
+      "src/compute_route_apple/apple_mature_indexing.cc": "33587a1fcb9bfb597437ce524cf70c6978d822660b18b719264dffdbf1fe4b9c",
+      "src/compute_route_apple/apple_mature_indexing.h": "e6536bcb3c31f26c1952a8f0ea5e52d1dc8f1ef0ee5d1ce29409da22d988585a",
+      "src/compute_route_apple/apple_tensor.cc": "048591a0524c211dae6ad1c1581dedf88950edaa3fc3b52b4be8858af4089bca",
+      "src/compute_route_apple/CMakeLists.txt": "fcbe9bde4283d5429f44a9c3ee6b0cff574692bedab263703c8f88716961f8f3",
+      "tests/compute_route_apple/indexing_test.cc": "efa6810a467ef2ec97416c7ed4e65673b3d45bb72389ca215b86ff430a9095d3",
+      "tests/compute_route_apple/reduction_test.cc": "316c3156e3123a8808158a018df92ff6b5d194cd04dded8c48243ce49e470af3",
+      "tests/graph_route_apple/indexing_test.cc": "48ca2a04da6102268fc665661f77961f7421dd76e805bbca4ebeaf0057031bc5",
+      "docs/user/apple-compute.md": "38cef0340f85162852bac0a60d262a0a5a7b81e46bf21b0a7b01f4d402553475"
+    },
+    "mlx_api_sha256": "8d41b1955d681949b0526f9a7ca1051add0fd1ec21ca5cd853ac8e78671eb73e",
+    "artifact_sha256": {
+      "libhyle_compute_route_apple.dylib": "6f99e92a70a192a3b1acaf037a7becf30f5d2513574aaf771f7f5a4360e1e04e",
+      "libhyle_graph_route_apple.dylib": "50b8a02c6517d9b3bc4a8adb65b8d785aa2a07384b9594f1b5de48626558a59e",
+      "libmlx.dylib": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93",
+      "hyle_compute_route_apple_test": "c1ca0b43d070f7d1ab297e99ba9fb57a776aa56d25b4b0b42515ab76f8db17e6",
+      "hyle_graph_route_apple_test": "9a260065346c3477eb7f1d3f89399374acbbc7c99050f6173c63254744057251"
+    },
+    "configuration": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:STRING=/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "CMAKE_OSX_DEPLOYMENT_TARGET:STRING=14.4",
+      "HYLE_COMPUTE_APPLE:STRING=ON",
+      "HYLE_STATIC:BOOL=OFF",
+      "HYLE_WERROR:BOOL=ON",
+      "MLX_BUILD_CPU:BOOL=OFF",
+      "MLX_BUILD_CUDA:BOOL=OFF",
+      "MLX_BUILD_METAL:BOOL=ON",
+      "MLX_METAL_JIT:BOOL=ON"
+    ]
+  },
+  "qualification": "reduction-qualification.json",
+  "checks": {
+    "air_build": "PASS Release/shared/WERROR, parallel 2",
+    "air_final_ctest": "4/4 PASS including two public-header checks",
+    "air_final_gtest_cases": {
+      "direct": 35,
+      "graph": 11,
+      "total": 46
+    },
+    "windows_apple_off": "configure and 2/2 public-header checks PASS, PowerShell 7"
+  },
+  "development_history": {
+    "first_tree": "edefe2a0fc68bc0f0cc00c43d2deee0d258c5fe4",
+    "first_gtest": "44 passed / 2 failed of 46; first CTest 3/4 retained",
+    "corrections": [
+      "Product cold preparation: restored documented additive-mask same-storage rejection; no numerical change",
+      "Provenance assertion: upstream fused last-axis node is LogSumExp, not Log; fixed expected name after reading original ops.cpp"
+    ],
+    "total_gtest_executions": 92,
+    "distinct_final_cases": 46
+  },
+  "implementation": "Ordinary Direct/Graph Reduce uses original MLX Sum/Mean/Min/Max and boolean reduction for zero-sign preference; original NaN propagation retained without redundant check scan; precise Softmax and official shifted LogSoftmax use native F32 scale/mask and final storage cast",
+  "cost": "Fixed number of original calls; O(input elements), native managed temporary arrays and layout/type conversions charged; shape/accumulation/mask checks at preparation",
+  "frozen_math_files_unchanged": true,
+  "pending": [
+    "other B1 domains and ordered Scatter add semantics/carrier",
+    "Mac mini",
+    "host instrumentation",
+    "new-domain source/static/shared delivery (selected compute/graph delivery gates unrun)",
+    "WSL OFF",
+    "whole-batch final selected checks and immutable P1"
+  ],
+  "full_B1_verdict": "INCONCLUSIVE",
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "source_design_budget_minutes": {
+    "used": 68,
+    "remaining": 52,
+    "total": 120
+  },
+  "loc": {
+    "compute_graph_implementation": 56693,
+    "implementation_files": 248,
+    "all_repository_code": 1081802,
+    "self_written_excluding_tests": 151878,
+    "policy": "canonical loc-report.py --self-check; excludes tests/vendor; measured same staged product files before committing"
+  },
+  "cleanup": {
+    "windows_and_air_source_archive_bytes_each": 60385031,
+    "windows_off_build_bytes": 1661106,
+    "preserved": "active Air native build, dependency caches and model copies"
+  },
+  "archive": {
+    "path": "reduction-development-raw.zip",
+    "sha256": "c7377578f21756c15329ad7826e9a5ca7b7e0d2bab2461ba30fee3fde3b28348",
+    "bytes": 37267
+  }
+}

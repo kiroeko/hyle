@@ -254,3 +254,27 @@ Softmax/LogSoftmax。范围、独立oracle容差、原始探针及其一次局�
 普通来源测试要求原版Sum/Min/Max/Or/Softmax/Log节点，无自有MetalKernel；现有Direct与Graph
 独立oracle及slot/旧结果/失败用例实际回归。开发验证后继续整批其余域，不因局部通过标CLOSED。
 源码/设计累计65/120分钟，余55分钟；资格运行和正常开发验证单列。
+
+## 归约与概率接线开发检查点
+
+`877bd869`（tree `447aecf8313c730931d6b9a6fbacdb0fe13ac4d6`）已落实A-R1/R2。普通Direct
+和Graph现在使用原版MLX归约、precise Softmax与官方LogSoftmax组合；旧归约/索引/Scatter数学
+文件保持原样。无新公开API、依赖或Graph产品变更，MLX仍管理compiled region与临时资源。
+
+Air Release/shared/WERROR复验4/4 CTest通过，含35个Direct、11个Graph用例与两个公开头门。
+既有更严格的独立oracle确认任意轴/布局/空域、NaN/Inf/零符号、广播mask、长行和大offset；
+Graph多输出概率选择/归一化、变化输入、旧结果与生命周期用例通过。Windows Apple-OFF配置、
+两个公开头门通过。完整Windows snapshot与Air tree一致，远端没有反向修改产品。
+
+首次开发验证的44/46通过、两项失败记录保留：一项是新接线漏掉现有additive mask同storage的
+准备拒绝，已恢复该检查；另一项是来源断言把原版融合`LogSumExp`期望成`Log`，核对上游源码后
+只改断言。数值计算无需修正。最终46个不同用例通过；两轮共92次执行，不能混成92项新能力。
+原始日志、两tree身份、产物hash、selected及未运行门见
+[开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/reduction-development.json)。
+
+源码/设计累计68/120分钟，余52分钟。剩余B1域及Scatter有序add问题、Mini、host插桩、新域
+三交付（含selector选中的compute/graph delivery门）、WSL OFF、整批final selected与P1未完成；
+整卡保持AUDITED/完整验收INCONCLUSIVE，新增完整覆盖格0。未执行性能采样。
+统一LOC为**Compute+Graph 56,693实现行 / 248文件**，不含测试/vendor；全库代码1,081,802，
+自实现不含测试151,878。已清理Windows和Air各60,385,031字节源码包及Windows1,661,106字节
+OFF构建；保留活动native构建/缓存/模型，必要开发证据包37,267字节。本记录只跑docs/closure。
