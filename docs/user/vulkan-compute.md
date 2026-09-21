@@ -115,9 +115,11 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
   可选择别名的共同操作使用独立结果；View 保留真正的输入别名。
   非空元素数≤INT32_MAX，物理 byte span 和 stride 必须落在设备 buffer range/U32 地址域内。
 
-其中非空dense F32的Copy、最多六输入Concat、rank≤8广播Add/Subtract/Multiply/Divide、
+其中非空dense F32/F16/BF16/I32的Copy、最多六输入Concat、rank≤8的F32广播Add/Subtract/Multiply/Divide、
 已接Unary/SiLU门控和norm，以及任意轴Sum/Mean，普通入口优先组成原版ggml region。
-非空dense F16/BF16的Copy和浮点Cast也按合格方向绑定成熟实现；F32/F16→BF16使用原版
+上述Concat逐位保留存储，准备时省略没有payload的空输入；只有一个有效输入时调用原版Dup，
+多个有效输入直接组成原版Concat链。所有输入仍须正常绑定；全空输出沿无GPU工作的结果路径。
+浮点Cast按合格方向绑定成熟实现；F32/F16→BF16使用原版
 IREE标准转换，保留NaN分类、正负零与nearest-even舍入，其余浮点方向使用ggml。
 IREE转换要求已启用Int16/storage16及F32特殊值保留支持，F16输入另需Float16；两个程序显式
 声明`SignedZeroInfNanPreserve 32`，防止driver fast-math消掉NaN判断。元素数不超过设备各维workgroup

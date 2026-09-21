@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "concat_test_support.h"
 #include "gate_norm_test_support.h"
 #include "reduction_test_support.h"
 #include "vulkan_program_internal.h"
@@ -228,6 +229,81 @@ hyle::Result<v::Tensor> run_prepared(const v::Program &program,
   HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
   HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
   return result->tensors()[0];
+}
+
+TEST(VulkanMatureTensor, IntegerCopyPreservesBitsInIndependentStorage) {
+  auto context = vulkan_test::context().value();
+  const auto description = dense(c::DataType::kInt32, {3, 1, 1, 1, 1, 171});
+  const std::array<std::uint64_t, 8> edges{0,          1,          0x80000000,
+                                           0x7fffffff, 0xffffffff, 0x7f800001,
+                                           0xff800001, 0x12345678};
+  std::vector<std::uint64_t> raw(*description.element_count());
+  for (std::size_t i = 0; i != raw.size(); ++i)
+    raw[i] = edges[i % edges.size()];
+  const auto input =
+      context.upload(description, payload(description, raw)).value();
+  auto program = v::prepare(context, c::Copy{}, description);
+  ASSERT_TRUE(program) << program.error().message();
+  expect_mature(*program);
+  auto output = run_prepared(*program, std::array{input});
+  ASSERT_TRUE(output) << output.error().message();
+  EXPECT_EQ(bits(context, *output), raw);
+  EXPECT_NE(output->native_buffer(), input.native_buffer());
+}
+
+TEST(VulkanMatureTensor, StorageConcatPreservesBitsAcrossEmptyPortsAndAllAxes) {
+  auto context = vulkan_test::context().value();
+  const std::array<std::uint64_t, 12> edges16{0,      0x8000, 1,      0x7c00,
+                                              0xfc00, 0x7e01, 0x7d01, 0x7f80,
+                                              0xff80, 0x7f81, 0xffff, 0x7fff};
+  const std::array<std::uint64_t, 12> edges32{
+      0,          0x80000000, 1,          0x7f800000, 0xff800000, 0x7fc12345,
+      0x7f800001, 0xff800001, 0x7fffffff, 0xffffffff, 0x12345678, 0xfedcba98};
+  const std::array width_sets{std::array<std::int64_t, 6>{0, 1, 2, 0, 3, 0},
+                              std::array<std::int64_t, 6>{0, 0, 0, 3, 0, 0},
+                              std::array<std::int64_t, 6>{0, 0, 0, 0, 0, 0}};
+  for (auto type : {c::DataType::kFloat32, c::DataType::kFloat16,
+                    c::DataType::kBFloat16, c::DataType::kInt32}) {
+    const auto &edges = c::data_type_size(type) == 2 ? edges16 : edges32;
+    for (int axis = 0; axis != 6; ++axis)
+      for (const auto &widths : width_sets) {
+        SCOPED_TRACE(::testing::Message() << int(type) << '/' << axis << '/'
+                                          << widths[3] << '/' << widths[4]);
+        std::array<std::int64_t, 6> shape{2, 1, 2, 1, 3, 5};
+        std::array<v::Tensor, 6> inputs;
+        std::array<std::vector<std::uint64_t>, 6> parts;
+        std::vector<v::Argument> arguments;
+        for (std::size_t port = 0; port != inputs.size(); ++port) {
+          shape[axis] = widths[port];
+          const auto description = c::TensorDesc::dense(type, shape).value();
+          auto &raw = parts[port];
+          raw.resize(*description.element_count());
+          for (std::size_t i = 0; i != raw.size(); ++i)
+            raw[i] = i % 16 < edges.size()
+                         ? edges[(i + port) % edges.size()]
+                         : vulkan_concat_test::raw_value(i, port, type);
+          inputs[port] =
+              context.upload(description, payload(description, raw)).value();
+          arguments.emplace_back(description);
+        }
+        auto program = v::prepare(context, c::Concat{axis},
+                                  std::span<const v::Argument>(arguments));
+        ASSERT_TRUE(program) << program.error().message();
+        if (widths[3] || widths[4])
+          expect_mature(*program);
+        auto output = run_prepared(*program, inputs);
+        ASSERT_TRUE(output) << output.error().message();
+        std::size_t inner = 1, outer = 1;
+        for (int i = 0; i != axis; ++i)
+          outer *= shape[i];
+        for (int i = axis + 1; i != 6; ++i)
+          inner *= shape[i];
+        EXPECT_EQ(bits(context, *output),
+                  vulkan_concat_test::concatenate(parts, widths, outer, inner));
+        if (widths[3])
+          EXPECT_NE(output->native_buffer(), inputs[3].native_buffer());
+      }
+  }
 }
 
 TEST(VulkanMatureTensor, EverySixteenBitPatternCopiesAndConvertsWithOddTail) {

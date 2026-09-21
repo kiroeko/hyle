@@ -89,8 +89,14 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   if (step.custom || step.inputs.size() > 6 || step.outputs.size() > 2)
     return false;
   std::array<TensorDesc, 6> inputs;
-  for (std::size_t i = 0; i < step.inputs.size(); ++i)
-    inputs[i] = program.values[step.inputs[i]].description;
+  std::size_t input_count = 0;
+  for (const auto input : step.inputs) {
+    const auto &description = program.values[input].description;
+    // Empty Concat ports retain their public binding contract but have no
+    // storage to import into the original backend.
+    if (!step.operation.get_if<Concat>() || *description.element_count() != 0)
+      inputs[input_count++] = description;
+  }
   std::array<TensorDesc, 2> outputs;
   for (std::size_t i = 0; i < step.outputs.size(); ++i)
     outputs[i] = program.values[step.outputs[i]].description;
@@ -99,14 +105,14 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     return description.data_type() == DataType::kFloat16 ||
            description.data_type() == DataType::kBFloat16;
   };
-  if ((std::ranges::any_of(std::span(inputs).first(step.inputs.size()),
+  if ((std::ranges::any_of(std::span(inputs).first(input_count),
                            low_precision) ||
        std::ranges::any_of(std::span(outputs).first(step.outputs.size()),
                            low_precision)) &&
       (!features.shader_float16 || !features.storage_buffer16))
     return false;
   if (promote_bfloat) {
-    for (std::size_t i = 0; i < step.inputs.size(); ++i) {
+    for (std::size_t i = 0; i < input_count; ++i) {
       if (!inputs[i].is_plain() || !inputs[i].is_dense() ||
           (inputs[i].data_type() != DataType::kFloat32 &&
            !low_precision(inputs[i])))
@@ -124,7 +130,7 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     outputs[0] = *wide;
   }
   if (!provider::region_supports(step.operation,
-                                 std::span(inputs).first(step.inputs.size()),
+                                 std::span(inputs).first(input_count),
                                  std::span(outputs).first(step.outputs.size())))
     return false;
   if (step.operation.get_if<MatMul>()) {
@@ -165,7 +171,7 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   if ((promote_bfloat || step.operation.get_if<Copy>() ||
        step.operation.get_if<Cast>() || step.operation.get_if<Concat>() ||
        step.operation.get_if<Binary>() || step.operation.get_if<Reduce>() ||
-       std::ranges::any_of(std::span(inputs).first(step.inputs.size()),
+       std::ranges::any_of(std::span(inputs).first(input_count),
                            low_precision) ||
        low_precision(outputs[0])) &&
       !layout_limits(program, step))
@@ -289,9 +295,14 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
                     std::span<const std::size_t> last_uses) noexcept {
   try {
     std::vector<std::uint32_t> ids;
+    const auto has_payload = [&](const PlanStep &step, std::uint32_t input) {
+      return !step.operation.get_if<Concat>() ||
+             *program.values[input].description.element_count() != 0;
+    };
     for (auto i = first; i < end; ++i) {
-      ids.insert(ids.end(), plan.steps[i].inputs.begin(),
-                 plan.steps[i].inputs.end());
+      for (const auto input : plan.steps[i].inputs)
+        if (has_payload(plan.steps[i], input))
+          ids.push_back(input);
       ids.insert(ids.end(), plan.steps[i].outputs.begin(),
                  plan.steps[i].outputs.end());
     }
@@ -314,7 +325,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       const auto &step = plan.steps[i];
       provider::RegionNode node{step.operation, {}, {}};
       for (const auto input : step.inputs)
-        node.inputs.push_back(local(input));
+        if (has_payload(step, input))
+          node.inputs.push_back(local(input));
       // Argsort, GroupNorm, Softmax and multi-pass Scan need aligned
       // descriptors. Other admitted operations retain their offset-aware input
       // contract.

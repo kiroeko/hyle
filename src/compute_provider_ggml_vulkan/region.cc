@@ -204,8 +204,12 @@ bool region_supports(const Operation &operation,
     return false;
   if (operation.get_if<Copy>())
     return inputs.size() == 1 && outputs.size() == 1 &&
-           floating(inputs[0].data_type()) &&
            outputs[0].data_type() == inputs[0].data_type();
+  if (operation.get_if<Concat>())
+    return outputs.size() == 1 &&
+           std::ranges::all_of(inputs, [&](const auto &input) {
+             return input.data_type() == outputs[0].data_type();
+           });
   if (operation.get_if<Cast>())
     return inputs.size() == 1 && outputs.size() == 1 &&
            floating(inputs[0].data_type()) &&
@@ -258,11 +262,6 @@ bool region_supports(const Operation &operation,
         return floating(input.data_type());
       }))
     return false;
-  if (operation.get_if<Concat>())
-    return outputs[0].data_type() == DataType::kFloat32 &&
-           std::ranges::all_of(inputs, [](const auto &input) {
-             return input.data_type() == DataType::kFloat32;
-           });
   if (const auto *norm = operation.get_if<RmsNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
@@ -467,9 +466,10 @@ Result<Region> Region::create(NativeDevice device,
           auto *part =
               ggml_reshape_3d(context, tensors[input], inner,
                               recipe.values[input].dimensions()[axis], outer);
-          output = output ? ggml_concat(context, output, part, 1)
-                          : ggml_dup(context, part);
+          output = output ? ggml_concat(context, output, part, 1) : part;
         }
+        if (node.inputs.size() == 1)
+          output = ggml_dup(context, output);
       } else if (node.operation.get_if<MatMul>()) {
         auto *product = ggml_mul_mat(context, arguments[1], left);
         if (!ggml_prec_set_acc(product, GGML_PREC_F32))

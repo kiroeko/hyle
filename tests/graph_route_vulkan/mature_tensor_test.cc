@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "../compute_route_vulkan/concat_test_support.h"
 #include "../compute_route_vulkan/gate_norm_test_support.h"
 #include "../compute_route_vulkan/reduction_test_support.h"
 #include "hyle/graph/vulkan.h"
@@ -8,6 +9,91 @@ namespace {
 using namespace vulkan_reduction_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
+
+TEST(VulkanGraph, MatureStorageConcatKeepsEmptyBindingsAndPublishedResults) {
+  for (auto type : {c::DataType::kBFloat16, c::DataType::kInt32}) {
+    SCOPED_TRACE(int(type));
+    hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
+                                    64 * 1024 * 1024);
+    auto context = vulkan_test::context(&quota).value();
+    const auto description = dense(type, {2, 1, 1, 1, 3, 129});
+    const auto tail_description = dense(type, {2, 1, 1, 1, 3, 5});
+    const auto empty_description = dense(type, {2, 1, 1, 1, 3, 0});
+    std::vector<std::uint64_t> tail(*tail_description.element_count());
+    for (std::size_t i = 0; i != tail.size(); ++i)
+      tail[i] = vulkan_concat_test::raw_value(i, 4, type);
+    auto suffix =
+        context.upload(tail_description, payload(tail_description, tail))
+            .value();
+    auto empty = context.upload(empty_description, {}).value();
+    auto builder = g::GraphBuilder::create().value();
+    const auto x = builder.input(description).value();
+    const auto empty_input = builder.input(empty_description).value();
+    const auto empty_constant = builder.constant(empty_description).value();
+    const auto constant = builder.constant(tail_description).value();
+    const auto copied = builder.add(c::Copy{}, x).value();
+    const auto joined =
+        builder
+            .add(c::Concat{-1}, empty_input, copied, empty_constant, constant)
+            .value();
+    const auto repacked =
+        builder.add(c::Concat{-1}, empty_input, joined).value();
+    for (auto value : {copied, joined, repacked})
+      ASSERT_TRUE(builder.publish(value).ok());
+    auto graph = std::move(builder).finish().value();
+    gv::CompileReport report;
+    auto program = gv::compile(context, graph, std::array{empty, suffix},
+                               {.report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(report.managed_region_count, 1U);
+    EXPECT_EQ(report.native_dispatch_count, 1U);
+    auto first = program->create_invocation().value();
+    auto second = program->create_invocation().value();
+    graph = {};
+    suffix = {};
+    std::vector<v::Tensor> retained;
+    std::vector<std::vector<std::uint64_t>> saved;
+    for (int phase = 0; phase != 3; ++phase) {
+      std::vector<std::uint64_t> raw(*description.element_count());
+      for (std::size_t i = 0; i != raw.size(); ++i)
+        raw[i] = vulkan_concat_test::raw_value(i, phase, type);
+      const auto input =
+          context.upload(description, payload(description, raw)).value();
+      auto &slot = phase == 0 ? first : second;
+      ASSERT_FALSE(
+          slot.bind(input).ok()); // Empty ports are still public inputs.
+      ASSERT_TRUE(slot.bind(std::array{input, empty}).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto joined_bits = vulkan_concat_test::concatenate(
+          std::array{raw, tail}, std::array<std::int64_t, 2>{129, 5}, 6, 1);
+      const std::array expected{raw, joined_bits, joined_bits};
+      for (std::size_t port = 0; port != expected.size(); ++port) {
+        EXPECT_EQ(bits(context, result->get()->tensors()[port]),
+                  expected[port]);
+        if (phase == 0) {
+          retained.push_back(result->get()->tensors()[port]);
+          saved.push_back(expected[port]);
+        } else
+          EXPECT_EQ(bits(context, retained[port]), saved[port]);
+      }
+      const auto &outputs = result->get()->tensors();
+      EXPECT_TRUE(outputs[1].native_buffer() != outputs[2].native_buffer() ||
+                  outputs[1].native_offset() != outputs[2].native_offset());
+    }
+    first = {};
+    second = {};
+    *program = {};
+    empty = {};
+    ASSERT_TRUE(context.close().ok());
+    for (std::size_t port = 0; port != retained.size(); ++port)
+      EXPECT_EQ(bits(context, retained[port]), saved[port]);
+    retained.clear();
+    context = {};
+    EXPECT_EQ(quota.used(), 0U);
+  }
+}
 
 TEST(VulkanGraph,
      MatureHighRankL2RetainsPublishedReductionAndIndependentSlots) {
