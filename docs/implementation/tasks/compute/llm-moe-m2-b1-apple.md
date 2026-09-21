@@ -361,3 +361,43 @@ sigmoid与乘法保持各自声明的storage边界。不新增HYLE数学、MLX p
 不从平常数值容差推断Cast正确。原子已接通，直接用普通产品验证，不重复原版单算子探针。
 本增量只有测试、所属测试CMake和说明；发现产品缺陷仍先具名审计，再改产品。
 源码/设计累计86/120分钟，余34分钟；整批验收、三交付、P1和自研冻结不变。
+
+## AUDITED：原版 MLX BF16 转换的具名修复
+
+`eeb89e6b`加A-C1/C2测试的Windows/Air同一tree
+`546c1f2655c7730049ceeb5c69ec58e4ba5b1583`完成开发验证：两个模型组合用例通过，
+覆盖45组storage/shape及中间舍入反例；Cast用例失败，八个F32极小输入转BF16被清零。
+原版独立探针排除HYLE：同一MLX动态库的eager和compiled各20组，分别七个预期非零的
+次正规输入变为带符号零；输入原始位已校验。具体失败及原始代码见
+[转换原因收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/cast-cause.json)。
+
+根因边界已经固定：原版`kernels/bf16.h`直接typedef Metal bfloat，`utils.h`通用cast_to使用
+static_cast；compiled AsType也调用cast_to。默认CompileOptions为Safe，预编译核已用
+`-fno-fast-math`，不能通过关闭快数学解决。独立探针证明当前MLX/Metal路径的问题，不单凭
+源代码把它进一步归咎于特定驱动或硬件指令。公共Cast次正规/round-to-nearest-even合同不变。
+
+BORROW来源：MLX v0.20.0 `726dbd926770b7c78cd23480e71f1a21c07a9bc0`的
+`mlx/backend/metal/kernels/bf16.h:18–30`已有`float_to_bfloat_bits`；文件SHA256
+`a56b2cc67ad44e8faa1a20418feae0af1e00eeed76c84016de58e0c06f4f236c`。
+当前锁定MLX host BF16也使用相同整数舍入方法。复用原Metal函数正文，保留MIT来源，
+不新写转换算法，不读取、比较或修改冻结HYLE数学。
+
+冻结有限A-C3（owner仍`compute_route_apple`）：
+
+- 将上游函数原文加入锁定MLX的bf16.h，并在原版utils.h增加F32→BF16的cast_to特化，
+  调用该函数和现有uint16_to_bfloat16。只改变这一dtype转换；不降部署版本、改变全局数学
+  模式或新增执行器/Metal dispatch。原有copy与compiled融合核自然使用该特化。
+- 窄补丁在`third_party/mlx_cast`登记原始/结果hash、来源与许可证；依赖锁和selector只追加
+  该资产到既有Apple owner。Apple CMake复用已有精确manifest materializer生成build-local
+  MLX源码，缓存原件不动；原生target、安装头/资源、source/static/shared统一取此源码。
+  复用工具本身不改，不重开公共构建/治理算法，也不制造新的空factor。
+- P0：每元素固定数量整数操作替代原生转换，O(n)，原有融合/分配/同步边界保持；全部转换
+  和临时成本留在本批P1。没有host payload回读或CPU计算fallback。
+- 验证原版失败探针对修复库的相同40组、普通九组dtype转换、全部BF16 payload回转及有限
+  F32中点/特殊值集合；普通Direct与Graph包含动态输入、非连续和旧结果。新缺陷触发一次
+  Apple整组正确性回归及Windows OFF/锁和owner检查。两Mac、host插桩、三交付与P1仍在
+  整批稳定候选完成；补丁资格不代签它们。此根因最多两次源码驱动纠正。
+
+本增量将父卡的“不得新增Metal核”落实为复用原版转换内核和上游函数；只允许上述具名窄补丁，
+不开放自研计算。两轮原因调查与接法审计合计计入本B1，源码/设计累计106/120分钟，余14分钟。
+完整B1仍AUDITED/INCONCLUSIVE，新增完整覆盖0；oneDNN旧FAIL和独立新能力scope保持。

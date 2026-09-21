@@ -1,0 +1,99 @@
+{
+  "kind": "M2-B1 Apple model consumer verification and original MLX Cast cause; not full acceptance",
+  "baseline_commit": "eeb89e6b4804ac8582b131ad29939b9889d91391",
+  "tested_tree": "546c1f2655c7730049ceeb5c69ec58e4ba5b1583",
+  "native_tree_policy": "Full Windows snapshot overlay; both index trees matched before build",
+  "machine": {
+    "model": "Mac16,12",
+    "os": "macOS 27.0 26A428",
+    "architecture": "arm64"
+  },
+  "original_mlx_library_sha256": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93",
+  "model_consumers": {
+    "tests_passed": 2,
+    "storage_shape_groups": 45,
+    "paths": [
+      "ordinary Direct",
+      "ordinary Graph"
+    ],
+    "domains": [
+      "L2 RMS/scale composition",
+      "RMS before swish with storage rounding",
+      "attention sigmoid gate",
+      "strided head slices",
+      "changed inputs and retained results"
+    ]
+  },
+  "ordinary_cast": {
+    "test": "AppleTensor.FloatConversionsRespectIeeeStorageBoundaries",
+    "verdict": "FAIL",
+    "dtype_pairs": 9,
+    "failed_scalar_assertions": 8,
+    "failure": "F32 subnormal input -> BF16 flushes to signed zero"
+  },
+  "original_probe": {
+    "eager": {
+      "cases": 20,
+      "mismatches": 7
+    },
+    "compiled": {
+      "cases": 20,
+      "mismatches": 7
+    },
+    "input_bits_verified": true,
+    "output_check": "raw BF16 bits; NaN category",
+    "hyle_product_linked": false,
+    "performance_samples": 0
+  },
+  "source_findings": [
+    "Metal native bfloat typedef and generic static_cast",
+    "Compiled AsType calls cast_to",
+    "Safe math mode and fno-fast-math already enabled"
+  ],
+  "borrow_source": {
+    "upstream-bf16.h": {
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "mlx/backend/metal/kernels/bf16.h",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/kernels/bf16.h",
+      "sha256": "abd87446a310b77ac530ef52a324feae5cb285d03ec9613e3a88ebb71410fdcb"
+    },
+    "upstream-utils.h": {
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "mlx/backend/metal/kernels/utils.h",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/kernels/utils.h",
+      "sha256": "5e1568e9edde9d05dbf86f68fa0d6c6240f2c32b973c7c6a76166b9c0d91543d"
+    },
+    "upstream-mlx-LICENSE": {
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/1f8e74e3f12f31365464a6867c6579f0e9b29d85/LICENSE",
+      "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+    },
+    "upstream-legacy-bf16.h": {
+      "revision": "726dbd926770b7c78cd23480e71f1a21c07a9bc0",
+      "path": "mlx/backend/metal/kernels/bf16.h",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/726dbd926770b7c78cd23480e71f1a21c07a9bc0/mlx/backend/metal/kernels/bf16.h",
+      "sha256": "a56b2cc67ad44e8faa1a20418feae0af1e00eeed76c84016de58e0c06f4f236c"
+    }
+  },
+  "source_design_budget_minutes": {
+    "used": 106,
+    "remaining": 14,
+    "total": 120
+  },
+  "aggregate_acceptance": "INCONCLUSIVE",
+  "complete_new_requirement_cells": 0,
+  "pending": [
+    "qualified upstream conversion repair",
+    "remaining B1 domains",
+    "Mini and host instrumentation",
+    "new-domain source/static/shared deliveries",
+    "WSL OFF and final selected gates",
+    "immutable-candidate P1"
+  ],
+  "archive": {
+    "path": "cast-cause-raw.zip",
+    "bytes": 32053,
+    "sha256": "b1ad5639121a66595b6512f352d7b0b3365b5aa5930c24faf90a845e16d5a333"
+  }
+}

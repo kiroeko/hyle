@@ -485,7 +485,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple AUDITED：原版MLX Scatter add已接普通Direct/Graph；Air37项Direct、11项Graph及42项schema已验证，首轮rank9测试构造失败和定向修正保留。Windows OFF通过；剩余模型组合/整批多环境/三交付/P1未完成，源码/设计78/120分钟，自研冻结，覆盖0。"
+      "summary": "M2-B1 Apple AUDITED：成熟索引/归约/Scatter和模型L2/门控普通消费者已过开发验证；Cast次正规FAIL已在原版MLX复现，A-C3限定借用上游转换函数及窄补丁。源码/设计106/120分钟；跨环境/三交付/P1未完成，自研冻结，完整覆盖0。"
     },
     {
       "module": "graph_route_apple",
