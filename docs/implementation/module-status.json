@@ -485,7 +485,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple AUDITED：原版MLX索引/Scatter赋值/归约及masked Softmax/LogSoftmax已接普通Direct/Graph；Air最终4/4 CTest、46用例与Windows OFF开发验证通过。首轮失败/修正保留；add及整批/多环境/三交付/P1未完成，源码/设计68/120分钟，自研冻结，覆盖0。"
+      "summary": "M2-B1 Apple AUDITED：索引/赋值/归约及概率成熟接线已过Air46用例和Windows OFF开发门；新合同下原版Scatter add资格420组通过，冻结A-S2待普通接线。旧有序FAIL保留；整批/多环境/三交付/P1未完成，源码/设计75/120分钟，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_apple",

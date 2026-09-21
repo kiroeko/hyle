@@ -1,0 +1,51 @@
+{
+  "kind": "Original MLX compiled GPU Scatter add qualification under audited M2-S arithmetic semantics",
+  "scope_checkpoint": "0168276b",
+  "mlx_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+  "machine": {
+    "model": "Mac16,12",
+    "os": "macOS 27.0",
+    "build": "26A428"
+  },
+  "library_sha256": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93",
+  "source_sha256": {
+    "mlx/ops.cpp": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2",
+    "mlx/backend/metal/indexing.cpp": "6592dec7e5490acbe47301b85fd1d2b9a5186952a29ecb23e7e2ff3442d0917e",
+    "mlx/backend/metal/kernels/indexing/scatter.h": "fa799c286378c59fbb3aeb973e74bf471861e3356ce2817968fe5d6872c3d9ad"
+  },
+  "probe_sha256": "5bc4bfd7fabc2fe8a70b953fd16a93189de4bb58bcf863b2e1bfe93b05ef97a3",
+  "composition": "Original reshape/moveaxis/expand_dims bridge HYLE index-port shape to native Scatter; original F32 casts, scatter_add, final storage cast; original comparison/any/where provide safe indices and status",
+  "cases": {
+    "shape_layout_status": 396,
+    "contribution_association_special": 24,
+    "total": 420
+  },
+  "domains": [
+    "F32/F16/BF16 storage with F32 accumulation",
+    "I32/I64 indices",
+    "scalar/multidimensional/duplicate indices, ranks 1/2/3/8, positive/negative axes",
+    "transposed base/updates/indices, sizes 0/1/17/129/4097",
+    "checked invalid -1 and maximum index; unchecked valid indices; empty output skips payload",
+    "empty indices copy base; inputs unchanged; NaN and positive/negative infinity"
+  ],
+  "oracle": "Independent scalar FP64 sums of stored inputs; binary-fraction fixtures have exact F32 sums, tolerance F32 0, F16 .0005 relative, BF16 .004 relative only for final storage rounding. Counts 1/17/129 of ones must equal exact sums in every storage type, detecting dropped updates. Three-term cancellation permits F32 0 or 1; F16/BF16 F32 accumulation must produce 1.",
+  "old_failure": "scatter-qualification.json original ordered-fold failures retained; not rewritten as PASS",
+  "verdict": "PASS for this original-only composition; not HYLE ordinary product acceptance",
+  "pending": [
+    "ordinary Direct/Graph binding and independent oracle/resource regression",
+    "Mini, host instrumentation, three deliveries and B1 P1"
+  ],
+  "source_design_budget_minutes": {
+    "used": 75,
+    "remaining": 45,
+    "total": 120
+  },
+  "self_written_math": "not read, changed or compared",
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "archive": {
+    "path": "scatter-add-qualification-raw.zip",
+    "sha256": "7dae7a12ca48d5efc8a7550ebed6d04893651365c5ee5ba236e6596de20153e7",
+    "bytes": 3553
+  }
+}

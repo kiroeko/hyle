@@ -291,3 +291,24 @@ Metal核或读取冻结Scatter数学。正常输入用独立高精度归约，�
 非结合反例单列合法数值结果，保留原来的checked失败、旧结果和Graph状态寿命要求。
 原版资格完成后，仍须在本B1卡固定A-S2有限FIX，再改普通产品分派和对应oracle。
 本节没有授权未资格的新分派，源码/设计仍68/120分钟；完整21行与跨环境/交付/P1门保持。
+
+## AUDITED：原版 Scatter add 增量
+
+`0168276b`之后，Air锁定MLX原版GPU compiled组合一次通过420组资格：396组shape/layout/
+status，24组精确贡献、非结合与特殊值控制；来源、独立oracle及原始探针见
+[资格收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/scatter-add-qualification.json)。
+F32的三项非结合序列得到0，属于该输入合法F32组合；F16/BF16提升后得到精确的1。旧有序
+FAIL保持，不把本原版资格当普通产品或完整覆盖验收。
+
+冻结A-S2：在`apple_mature_indexing.cc`用原版reshape/moveaxis/expand_dims把updates转换为
+native索引前缀加base切片形状，原版F32 scatter_add后一次cast回storage；`apple_tensor.cc`
+将普通Scatter add冷绑定此接法。F32/F16/BF16之外仍在空域分支前拒绝；空indices原版copy、
+空output跳过payload、INT32_MAX元素范围及原版safe-index/隐藏状态保持。复用既有原生owner，
+无新公开API、依赖或Graph产品改动；冻结数学文件不改、不删除。
+
+成本为原版O(output+updates+indices)工作与数组，包含F32转换/临时输出和checked归约；
+不按update展开图，不读回payload或引入自有核。MLX负责原生布局整理、分配与调度。
+普通测试迁移为独立FP64求和和最终storage边界，单列精确贡献及合法非结合结果；Graph和Direct
+分别验oracle，旧结果/input的逐位不变仍严格检查。保留所有坏索引、失败恢复、状态反馈和close
+门，新增原版Scatter Sum来源断言。非确定性不授权放宽固定模型误差门。
+源码/设计累计75/120分钟，余45分钟；正常实现/预声明验证单列，完整B1验收仍未完成。
