@@ -171,3 +171,23 @@ F16→BF16（全部65,536位模式）已通过Windows原版GPU资格；async-ext
 高rank低精度广播/norm/门控和混合ggml/IREE，F32 gamma，奇数尾部，两slot和改变payload重放、
 结果保活/关闭、资源失败。Windows/Air串行复用活动build；新域完整三交付/插桩/P1仍按整卡。
 原版probe通过不代签普通入口；完整矩阵覆盖仍未新增。
+
+### V1-P Air 定向纠正：浮点执行合同
+
+2026-09-21，源码/设计保守累计85/120分钟，余35分钟。Windows候选`eccbd046`相关8门通过；
+Air同候选仅新BF16转换的4个NaN边界失败，其余普通精度/Graph/资源用例通过。生成SPIR-V的
+NaN判断为原版`FUnordNotEqual(x,x)`，却未声明`SignedZeroInfNanPreserve`。仅在诊断进程关闭
+MoltenVK fast-math后，同一个失败用例通过；该环境实验不作为产品PASS。
+
+P3-F/P4-F内固定一次具名纠正：离线使用原版IREE的executable-configurations阶段，保留原版
+64-lane调度、全部算术和VM/HAL结构，只为两个转换入口声明标准SPIR-V ABI的32位特殊值保留。
+原版IREE/MLIR已生成`SignedZeroInfNanPreserve 32`执行模式。冷期额外核对物理设备的
+`shaderSignedZeroInfNanPreserveFloat32`；不修改compiler数学、runtime补丁、ggml shader，
+不改变整进程/其它shader的fast-math设置。新增离线复现脚本及依赖身份完整留档；两机按相同
+普通入口回归，资源/交付/P1总边界不变。该根因纠正上限两次，仍合用原120分钟预算。
+
+依据为锁定IREE `ConvertToSPIRV.cpp`的既有entry-point ABI保留逻辑、
+[MLIR官方lowering](https://mlir.llvm.org/doxygen/LowerABIAttributesPass_8cpp_source.html)、
+[Vulkan浮点环境](https://github.khronos.org/Vulkan-Site/spec/latest/appendices/spirvenv.html)及
+[MoltenVK配置](https://github.com/KhronosGroup/MoltenVK/blob/main/Docs/MoltenVK_Configuration_Parameters.md)。
+这是同一数值合同的编译元数据纠正，不是另开算子算法或性能调查。
