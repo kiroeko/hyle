@@ -1,0 +1,44 @@
+# M2-S：Scatter 加法的模型需求与公共数值语义
+
+## Closure card
+
+- component / owner：`compute_ops`；`/root`。Apple B1是首个成熟消费者，其实现仍归原B1卡；
+  CPU/CUDA/Vulkan的旧数学保持冻结，不因本卡重开或重测旧自研性能。
+- baseline：`86a6a37b`，Windows canonical，工作树干净。当前SCOPED，先审计、后固定有限FIX。
+- reopen trigger：F02.2/F13.2真实模型需求是重复目标求和；公共Scatter add却被描述为逐次storage
+  舍入的行主序fold，`operation_traits`还把其标为`kExact`。已记录的原版MLX反例和成熟MoE组合
+  证明接入受到这项额外承诺约束；需要按真实需求裁决公共语义，不能反过来要求重写成熟归约。
+- 主纵切：MoE专家输出的weighted combine、重复目标及共享专家和；正交纵切：无模型标签的
+  indexed floating reduction，正常/empty/checked failure、旧结果和两次调用。
+- 来源：M0/C0已登记且clean的llama.cpp `4c9233c0`与SGLang `06992c92`；原版MLX0.32.2
+  的GPU Scatter与现有资格收据。PyTorch官方scatter_add合同作为独立成熟接口佐证。
+- scope：需求→浮点求和档位、assignment与addition的precision traits、普通公开用法和四路线
+  用户说明；必要公共schema测试及首个成熟消费者。无新增enum/字段/ABI或新runtime。
+- non-goals：弱化索引/alias/失败/资源检查；修改固定模型精度档或端到端误差门；删需求/覆盖格；
+  研究/扩张/比较/删除冻结自研；为了通过旧反例改性能仪器或重新计时。
+- 预算：共享公共语义源码/设计总30分钟，前置定位计8分钟，余22分钟。它只覆盖本次新发现的
+  shared contract问题；各路线原B1源码额度保持，不能借它续杯。每具名根因最多两次纠正。
+- 性能：本公共变更P0，只有准备期traits与说明，不增常态资源/调度；原版计算接入P0/P1仍由
+  各B1卡承担。没有资格就不签计算或性能PASS；M5前停止点不变。
+- stop：有限语义/trait/文档与适用schema门完成后收口；成熟默认仍必须逐路线实际验证，
+  本卡不自动解除旧库失败，不把公共语义修改当成256格覆盖。
+
+## 待裁决的有限范围
+
+1. `assign`仍为storage-exact，重复索引最后逻辑更新胜出；`add`应为浮点归约，所有updates必须
+   参与。明确是否允许重结合、不同累加顺序和不低于存储精度的中间值；不凭某个输出点值决定。
+2. 模型若需要F32中间值，应在固定模型计算图使用已有Cast/F32端口；不将F16/BF16最终storage
+   自动解释为每步必须舍入，也不允许静默降低模型明确要求的精度。
+3. `kExact`只用于assign，add使用既有算术precision档。无需新增运行时开关或保留双API。
+4. 旧reference逐次fold只作其实现特征，不作为新默认资格或oracle。迁移的成熟consumer用
+   独立高精度归约、正常范围误差门和具名病态序列的合法浮点界；禁止用宽容差掩盖丢更新。
+
+## 预声明验证
+
+- 先归档原版来源和现有数值反例；不执行冻结实现对照，不重跑性能。
+- 公共schema检查assign/add traits、描述符与参数不变；Windows/WSL/Air/Mini的compute_ops
+  适用头和普通测试。实现仅有元数据分支，没有新并发/设备内核，旧host插桩身份适用时复用。
+- 公共对象/导出/依赖不变；source/static/shared实际新计算消费沿受影响B1同一合同执行，
+  shared card闭包引用明确收据，未完成交付前不写CLOSED。selector的实际selected门保留。
+- Apple普通Direct/Graph成熟Scatter add由原B1定界、资格、接线；不要求旧冻结数学重写。
+- 每次docs/closure；registry变更明确previous-ref，文档/状态不构建、不启动P1。
