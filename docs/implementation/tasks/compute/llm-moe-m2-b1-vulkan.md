@@ -209,3 +209,22 @@ Air具名NaN根因用标准执行元数据一次纠正后通过，未全局修�
 承载、适用WSL/Mini/OFF与host插桩、新域三交付、最终selected综合门和一次P1仍按本卡继续。
 `HyleDependencyLock.json`变化导致selector扩展至121个门，开发子集通过不代签其余门。
 统一Compute+Graph实现为57,333行/249文件；清理本批多余资格制品约72.5MiB，活动build复用。
+
+### V1-S：存储族接线的有限审计
+
+baseline `6bc3a439`，原四owner保持AUDITED；源码/设计累计102/120分钟，余18分钟。
+本增量仍属于V1/V2的F01.2存储翻译，未增加数学、公开API或资源owner。原pin
+`ggml-vulkan.cpp:19396`明确支持同类型I32 DUP/CONT/CPY，复用原版按存储位复制；
+`ggml_vk_concat_supported:2642`明确接受1/2/4/8字节同类型非量化存储，原版Concat承担合并。
+当前HYLE只给浮点Copy和F32 Concat接了这些入口。以下FIX现已冻结：
+
+- S1：在已具备的dense非空、rank0..8和原生资源限制内接I32 Copy，以及F16/BF16/I32 Concat；
+  仍使用原版ggml调用，不以float数值Cast搬运整数或half位模式。Concat保留现有最多6输入边界。
+- S2：输出非空的Concat在冷翻译时略去轴长为0的输入，不为没有payload的端口创建原厂import。
+  输出全空沿既有无GPU工作路径；不以空路径作为成熟计算证明。单个有效输入用原版Dup保证独立
+  输出，多个有效输入直接组成Concat链，移除首项无必要的Dup。高rank折叠和producer保护复用。
+- S3：Direct四dtype逐位oracle覆盖NaN/负零/整数极值、所有六个轴、混合空输入与不等尾部；
+  Graph验证空输入、公开中间值、两slot/重放和保留结果。Windows/Air复用同一活动build串行。
+
+普通入口的新域仍须实测资格；未扩展的stride、其它storage、mask/index和完整交付/P1保留待办，
+不缩小21行分母、不扩大冻结数学。最后剩余预算耗尽时必须按本卡停止规则裁决。
