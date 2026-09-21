@@ -11,7 +11,7 @@ using namespace apple_tensor_test;
 namespace g = hyle::graph;
 namespace ga = g::apple;
 
-TEST(AppleGraph, OrderedScatterStateFeedsLaterInvocationsAndKeepsOldResults) {
+TEST(AppleGraph, ScatterStateFeedsLaterInvocationsAndKeepsOldResults) {
   for (auto type : {mx::float16, mx::bfloat16}) {
     for (const auto &[rows, width] :
          {std::pair{1, 128}, {17, 2048}, {23, 129}, {128, 2048}}) {
@@ -101,10 +101,10 @@ TEST(AppleGraph, OrderedScatterStateFeedsLaterInvocationsAndKeepsOldResults) {
       auto retained = first_work.wait().value();
       const auto old_state = bits(retained.get()->arrays()[0]);
       const auto old_result = bits(retained.get()->arrays()[1]);
-      auto expected_state =
-          scatter_reference(values(initial), values(first_updates), first_ids,
-                            initial.shape(), 0, type);
-      expect_ordered(retained.get()->arrays()[0], expected_state);
+      auto expected_state = scatter_sum_reference(
+          values(initial), values(first_updates), first_ids, initial.shape(), 0,
+          type);
+      expect(retained.get()->arrays()[0], expected_state);
       auto current = retained.get()->arrays()[0];
       auto next = program->create_invocation().value();
       auto direct_slot = direct->create_invocation().value();
@@ -124,31 +124,37 @@ TEST(AppleGraph, OrderedScatterStateFeedsLaterInvocationsAndKeepsOldResults) {
         ASSERT_TRUE(result) << result.error().message();
         ASSERT_EQ(result->get()->arrays().size(), 2U);
         expected_state =
-            scatter_reference(std::move(expected_state), values(native_updates),
-                              logical_ids, current.shape(), 0, type);
-        expect_ordered(result->get()->arrays()[0], expected_state);
+            scatter_sum_reference(values(current), values(native_updates),
+                                  logical_ids, current.shape(), 0, type);
         ASSERT_TRUE(direct_slot.bind(input).ok());
         auto direct_work = direct_slot.submit().value();
         auto direct_result = direct_work.wait().value();
-        for (int index = 0; index < 2; ++index)
-          EXPECT_EQ(bits(result->get()->arrays()[index]),
-                    bits(direct_result.get()->arrays()[index]));
-        std::vector<double> expected_residual(
-            static_cast<std::size_t>(rows * width));
-        for (int row = 0; row < rows; ++row) {
-          const auto offset = logical_ids[row] * width;
-          double square = 0;
-          for (int col = 0; col < width; ++col)
-            square +=
-                expected_state[offset + col] * expected_state[offset + col];
-          const double inverse = 1 / std::sqrt(square / width + double(1e-5F));
-          for (int col = 0; col < width; ++col) {
-            const auto x = expected_state[offset + col];
-            expected_residual[row * width + col] =
-                rounded(x * inverse * scale_values[col], type) + x;
+        const auto check_chain = [&](std::span<const mx::array> arrays) {
+          // Both public paths must satisfy the independent reduction oracle.
+          // Native parallel addition need not reproduce another invocation's
+          // bits. Downstream operations consume this invocation's stored state.
+          expect(arrays[0], expected_state);
+          const auto observed_state = values(arrays[0]);
+          std::vector<double> expected_residual(
+              static_cast<std::size_t>(rows * width));
+          for (int row = 0; row < rows; ++row) {
+            const auto offset = logical_ids[row] * width;
+            double square = 0;
+            for (int col = 0; col < width; ++col)
+              square +=
+                  observed_state[offset + col] * observed_state[offset + col];
+            const double inverse =
+                1 / std::sqrt(square / width + double(1e-5F));
+            for (int col = 0; col < width; ++col) {
+              const auto x = observed_state[offset + col];
+              expected_residual[row * width + col] =
+                  rounded(x * inverse * scale_values[col], type) + x;
+            }
           }
-        }
-        expect(result->get()->arrays()[1], expected_residual);
+          expect(arrays[1], expected_residual);
+        };
+        check_chain(result->get()->arrays());
+        check_chain(direct_result.get()->arrays());
         EXPECT_EQ(bits(current), input_bits);
         EXPECT_EQ(bits(native_updates), update_bits);
         current = result->get()->arrays()[0]; // Real native state feedback.

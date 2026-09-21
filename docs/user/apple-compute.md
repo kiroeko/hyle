@@ -92,8 +92,8 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   均可使用，默认 checked 错误通过完成结果返回；空 output 跳过 payload，空 indices 保留 source。
   非空 output/indices/updates 的元素数≤INT32_MAX。assign 用原版 MLX I32 Scatter Max 记录每个
   目标的最后更新位置，再以原版take/where选取原始存储；临时映射按目标轴长度分配。
-  add目前仍使用冻结的逐次舍入实现；原版scatter_add的新数值合同接线须另行完成资格与验收。
-  必要映射/排序、布局整理、新结果及检查都计入资源和执行成本。
+  add用原版MLX Scatter Sum，F16/BF16提升至F32累加后一次转回storage；F32使用原生F32累加。
+  必要映射、布局整理、精度转换、原生临时、新结果及检查都计入资源和执行成本。
 - Scan 支持 I32/F32 任意轴 inclusive/exclusive 前缀。I32 检查所有数学前缀，包括 exclusive
   未写出的最终总和；溢出返回 OutOfRange。F32 允许原生并行重结合。非空 Scan、Gather output/
   indices 的元素数≤INT32_MAX；整数 Scan 使用原版 I64 cumsum 与比较/any，exclusive 由原版

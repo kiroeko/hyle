@@ -33,7 +33,12 @@ TEST(AppleIndexing, OrdinaryLoweringUsesOriginalMlxPrimitives) {
             auto updated, a::lower(c::Operation(c::Scatter{}),
                                    std::array{input[0], input[1], gathered[0]},
                                    stream));
-        std::vector outputs{gathered[0], prefix[0], top[0], top[1], updated[0]};
+        HYLE_ASSIGN_OR_RETURN(
+            auto added,
+            a::lower(c::Operation(c::Scatter{.kind = c::ScatterKind::kAdd}),
+                     std::array{input[0], input[1], gathered[0]}, stream));
+        std::vector outputs{gathered[0], prefix[0], top[0], top[1], updated[0],
+                            added[0]};
         auto pending = outputs;
         std::set<std::uintptr_t> seen;
         while (!pending.empty()) {
@@ -54,6 +59,7 @@ TEST(AppleIndexing, OrdinaryLoweringUsesOriginalMlxPrimitives) {
   EXPECT_TRUE(names->contains("CumSum"));
   EXPECT_TRUE(names->contains("ArgSort"));
   EXPECT_TRUE(names->contains("Scatter Max"));
+  EXPECT_TRUE(names->contains("Scatter Sum"));
   for (const auto &name : *names) {
     EXPECT_EQ(name.find("Custom"), std::string::npos) << name;
     EXPECT_EQ(name.find("MetalKernel"), std::string::npos) << name;
@@ -66,12 +72,13 @@ TEST(AppleIndexing, OrdinaryLoweringUsesOriginalMlxPrimitives) {
   auto output = work.wait();
   ASSERT_TRUE(output) << output.error().message();
   const auto arrays = output->get()->arrays();
-  ASSERT_EQ(arrays.size(), 5U);
+  ASSERT_EQ(arrays.size(), 6U);
   EXPECT_EQ(values(arrays[0]), (std::vector<double>{2, 1, 7}));
   EXPECT_EQ(values(arrays[1]), (std::vector<double>{0, 3, 4, 8, 9, 14, 23}));
   EXPECT_EQ(values(arrays[2]), (std::vector<double>{23, 14, 9}));
   EXPECT_EQ(values(arrays[3]), (std::vector<double>{6, 5, 4}));
   EXPECT_EQ(values(arrays[4]), (std::vector<double>{1, 2, 3, 4, 5, 6, 7}));
+  EXPECT_EQ(values(arrays[5]), (std::vector<double>{2, 4, 3, 4, 5, 6, 14}));
 }
 
 mx::array source(mx::Dtype type) {

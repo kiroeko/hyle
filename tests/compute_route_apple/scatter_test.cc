@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <numeric>
 #include <tuple>
 
 #include "reduction_test_support.h"
@@ -96,16 +97,13 @@ TEST(AppleScatter, AssignKeepsRawBitsAndLastLogicalUpdateAcrossNativeLayouts) {
   }
 }
 
-TEST(AppleScatter, AddRoundsEveryDuplicateInOriginalOrderIncludingLongSorts) {
+TEST(AppleScatter, AddIncludesEveryDuplicateWithF32Accumulation) {
   auto context = a::Context::create().value();
   for (auto type : {mx::float32, mx::float16, mx::bfloat16}) {
     for (const auto &[count, width] :
          {std::pair{1, 1}, {17, 129}, {129, 128}, {4097, 3}, {17, 2048}}) {
       for (bool skew : {false, true}) {
-        const double large = type == mx::float32   ? 16777216.0
-                             : type == mx::float16 ? 2048.0
-                                                   : 256.0;
-        const std::array sequence{large, 1.0, -large, 0.125, -0.0625};
+        const std::array sequence{0.5, 1.0, -0.5, 0.125, -0.0625};
         std::vector<std::int64_t> ids(count);
         for (int index = 0; index < count; ++index)
           ids[index] = skew ? 3 : (index * 5) % 7;
@@ -121,34 +119,142 @@ TEST(AppleScatter, AddRoundsEveryDuplicateInOriginalOrderIncludingLongSorts) {
         }
         auto updates = ready(mx::transpose(make(data, {count, 2, width}, type),
                                            {1, 0, 2}, stream()));
-        auto source_values = pattern(static_cast<std::size_t>(2 * 7 * width));
+        std::vector<double> source_values(
+            static_cast<std::size_t>(2 * 7 * width));
+        for (std::size_t i = 0; i < source_values.size(); ++i)
+          source_values[i] = (static_cast<int>(i % 15) - 7) / 16.0;
         source_values[0] = -0.0;
         const auto input = make(source_values, {2, 7, width}, type);
         const auto index_type = skew ? mx::int64 : mx::int32;
         const auto indices = ready(mx::astype(
             mx::array(ids.data(), {count}, mx::int64), index_type, stream()));
         const auto input_bits = bits(input), update_bits = bits(updates);
-        const auto expected = scatter_reference(values(input), values(updates),
-                                                ids, input.shape(), 1, type);
+        const auto expected = scatter_sum_reference(
+            values(input), values(updates), ids, input.shape(), 1, type);
         auto result = execute(
             context, c::Scatter{.axis = 1, .kind = c::ScatterKind::kAdd},
             std::array{input, indices, updates});
         ASSERT_TRUE(result) << result.error().message();
-        expect_ordered(*result, expected);
+        expect_exact_sum(*result, expected);
         EXPECT_EQ(bits(input), input_bits);
         EXPECT_EQ(bits(updates), update_bits);
       }
     }
-    // A reduction in F32 followed by one storage cast would produce one.
+    for (int count : {1, 17, 129}) {
+      auto result = execute(
+          context, c::Scatter{.kind = c::ScatterKind::kAdd},
+          std::array{ready(mx::zeros({1}, type, stream())),
+                     ready(mx::zeros({count}, mx::int32, stream())),
+                     ready(mx::ones({count}, type, stream()))});
+      ASSERT_TRUE(result) << result.error().message();
+      EXPECT_EQ(values(*result), std::vector<double>{static_cast<double>(count)});
+    }
+  }
+}
+
+TEST(AppleScatter, AdditionPermitsReassociationAndKeepsF32Intermediates) {
+  auto context = a::Context::create().value();
+  for (auto type : {mx::float32, mx::float16, mx::bfloat16}) {
     const double large = type == mx::float32   ? 16777216.0
                          : type == mx::float16 ? 2048.0
                                                : 256.0;
-    auto result = execute(
-        context, c::Scatter{.kind = c::ScatterKind::kAdd},
-        std::array{make(std::array{0.0}, {1}, type), mx::array({0, 0, 0}),
-                   make(std::array{large, 1.0, -large}, {3}, type)});
-    ASSERT_TRUE(result) << result.error().message();
-    EXPECT_EQ(values(*result), std::vector<double>{0.0});
+    for (bool initial_base : {false, true}) {
+      const auto updates = initial_base ? std::vector{1.0, -large}
+                                        : std::vector{large, 1.0, -large};
+      auto result = execute(
+          context, c::Scatter{.kind = c::ScatterKind::kAdd},
+          std::array{make(std::array{initial_base ? large : 0.0}, {1}, type),
+                     ready(mx::zeros({static_cast<int>(updates.size())},
+                                     mx::int64, stream())),
+                     make(updates, {static_cast<int>(updates.size())}, type)});
+      ASSERT_TRUE(result) << result.error().message();
+      const auto actual = values(*result)[0];
+      if (type == mx::float32)
+        EXPECT_TRUE(actual == 0.0 || actual == 1.0) << actual;
+      else
+        EXPECT_EQ(actual, 1.0);
+    }
+  }
+}
+
+TEST(AppleScatter, AddCoversAxesIndexRanksAndEmptyDomains) {
+  auto context = a::Context::create().value();
+  for (auto type : {mx::float32, mx::float16, mx::bfloat16}) {
+    const auto layout = [type](mx::Shape shape, int phase) {
+      std::size_t count = 1;
+      for (int dimension : shape)
+        count *= dimension;
+      std::reverse(shape.begin(), shape.end());
+      auto data = make(pattern(count, phase), shape, type);
+      std::vector<int> axes(shape.size());
+      std::iota(axes.rbegin(), axes.rend(), 0);
+      return ready(mx::transpose(data, axes, stream()));
+    };
+    for (const auto &[shape, axis] :
+         {std::pair{mx::Shape{7, 2, 3}, 0},
+          std::pair{mx::Shape{2, 7, 3}, 1},
+          std::pair{mx::Shape{2, 3, 7}, -1},
+          std::pair{mx::Shape{1, 2, 1, 7, 1, 1, 3, 1}, 3}}) {
+      const auto input = layout(shape, 0);
+      const auto normalized = axis < 0 ? axis + static_cast<int>(shape.size())
+                                      : axis;
+      for (auto index_type : {mx::int32, mx::int64}) {
+        for (auto index_shape : {mx::Shape{}, mx::Shape{4}, mx::Shape{2, 2}}) {
+          auto ids = index_shape.empty() ? std::vector<std::int64_t>{6}
+                                        : std::vector<std::int64_t>{6, 0, 6, 3};
+          auto indices = ready(mx::astype(
+              mx::array(ids.data(), index_shape, mx::int64), index_type,
+              stream()));
+          if (index_shape.size() == 2) {
+            indices = ready(mx::transpose(indices, {1, 0}, stream()));
+            std::swap(ids[1], ids[2]);
+          }
+          auto update_shape = shape;
+          update_shape.erase(update_shape.begin() + normalized);
+          update_shape.insert(update_shape.begin() + normalized,
+                              index_shape.begin(), index_shape.end());
+          const auto updates = layout(update_shape, 1);
+          const auto input_bits = bits(input), update_bits = bits(updates);
+          const auto expected = scatter_sum_reference(
+              values(input), values(updates), ids, shape, axis, type);
+          for (auto bounds : {c::IndexBoundsPolicy::kChecked,
+                              c::IndexBoundsPolicy::kUnchecked}) {
+            auto output = execute(
+                context, c::Scatter{.axis = axis,
+                                    .kind = c::ScatterKind::kAdd,
+                                    .bounds = bounds},
+                std::array{input, indices, updates});
+            // Rank-eight base plus a two-dimensional index port produces a
+            // rank-nine update port, outside the existing public tensor cap.
+            if (update_shape.size() > c::kMaxTensorRank) {
+              ASSERT_FALSE(output);
+              EXPECT_TRUE(output.error().IsUnimplemented());
+              continue;
+            }
+            ASSERT_TRUE(output) << output.error().message();
+            expect(*output, expected);
+            EXPECT_EQ(bits(input), input_bits);
+            EXPECT_EQ(bits(updates), update_bits);
+          }
+        }
+      }
+    }
+    const auto input = layout({2, 7, 3}, 0);
+    auto unchanged = execute(
+        context, c::Scatter{.axis = 1, .kind = c::ScatterKind::kAdd},
+        std::array{input, ready(mx::zeros({0}, mx::int64, stream())),
+                   layout({2, 0, 3}, 1)});
+    ASSERT_TRUE(unchanged) << unchanged.error().message();
+    EXPECT_EQ(bits(*unchanged), bits(input));
+    for (auto shape : {mx::Shape{2, 0, 3}, mx::Shape{0, 7, 3}}) {
+      const auto empty = layout(shape, 0);
+      shape[1] = 2;
+      auto output = execute(
+          context, c::Scatter{.axis = 1, .kind = c::ScatterKind::kAdd},
+          std::array{empty, mx::array({-1, 999}), layout(shape, 1)});
+      ASSERT_TRUE(output) << output.error().message();
+      EXPECT_EQ(output->size(), 0U);
+    }
   }
 }
 
@@ -177,6 +283,10 @@ TEST(AppleScatter, CheckedFailuresDoNotPublishOrChangeRetainedState) {
         auto old_work = retained.submit().value();
         auto old = old_work.wait().value();
         const auto old_bits = bits(old.get()->arrays()[0]);
+        if (kind == c::ScatterKind::kAdd)
+          expect(old.get()->arrays()[0],
+                 scatter_sum_reference(values(source), values(updates), ids,
+                                       source.shape(), 0, source.dtype()));
         const auto minimum =
             index_type == mx::int32
                 ? std::int64_t{std::numeric_limits<std::int32_t>::min()}
@@ -204,7 +314,13 @@ TEST(AppleScatter, CheckedFailuresDoNotPublishOrChangeRetainedState) {
           auto again = fresh.submit().value();
           auto good = again.wait();
           ASSERT_TRUE(good) << good.error().message();
-          EXPECT_EQ(bits(good->get()->arrays()[0]), old_bits);
+          if (kind == c::ScatterKind::kAssign)
+            EXPECT_EQ(bits(good->get()->arrays()[0]), old_bits);
+          else
+            expect(good->get()->arrays()[0],
+                   scatter_sum_reference(values(source), values(updates), ids,
+                                         source.shape(), 0, source.dtype()));
+          EXPECT_EQ(bits(old.get()->arrays()[0]), old_bits);
         }
       }
     }

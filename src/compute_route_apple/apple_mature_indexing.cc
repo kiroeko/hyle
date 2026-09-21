@@ -134,6 +134,47 @@ Result<std::vector<mx::array>> scatter_assign(
   return std::vector{std::move(output)};
 }
 
+Result<std::vector<mx::array>> scatter_add(
+    const Scatter &operation, std::span<const mx::array> inputs,
+    mx::Stream stream) {
+  const auto &base = inputs[0];
+  if (inputs[1].size() == 0)
+    return std::vector{mx::copy(base, stream)};
+  const auto axis = native_axis(operation.axis, base);
+  const auto count = static_cast<int>(inputs[1].size());
+  auto indices = mx::reshape(inputs[1], {count}, stream);
+  auto safe = indices;
+  std::optional<mx::array> status;
+  if (operation.bounds == IndexBoundsPolicy::kChecked) {
+    auto invalid = mx::logical_or(
+        mx::less(indices, mx::array(0, indices.dtype()), stream),
+        mx::greater_equal(indices, mx::array(base.shape(axis), indices.dtype()),
+                          stream),
+        stream);
+    safe = mx::where(invalid, mx::array(0, indices.dtype()), indices, stream);
+    status = mx::where(mx::any(invalid, stream), mx::array(kIndexOutOfRange),
+                       mx::array(0), stream);
+  }
+  // Native scatter expects the index dimensions before a full-rank update
+  // slice. Collapse the logical index port, then move it ahead of that slice.
+  auto update_shape = base.shape();
+  update_shape[axis] = count;
+  auto updates = mx::expand_dims(
+      mx::moveaxis(mx::reshape(inputs[2], update_shape, stream), axis, 0, stream),
+      axis + 1, stream);
+  auto output = mx::astype(
+      mx::scatter_add(mx::astype(base, mx::float32, stream), safe,
+                      mx::astype(updates, mx::float32, stream), axis, stream),
+      base.dtype(), stream);
+  if (status) {
+    HYLE_ASSIGN_OR_RETURN(
+        auto checked,
+        with_device_status(std::move(output), std::move(*status), stream));
+    output = std::move(checked);
+  }
+  return std::vector{std::move(output)};
+}
+
 std::vector<mx::array> top_k(const TopK &operation, const mx::array &input,
                             mx::Stream stream) {
   const auto axis = native_axis(operation.axis, input);
@@ -165,6 +206,11 @@ Result<std::vector<mx::array>> lower_mature_indexing(
       type != mx::int32)
     return std::unexpected(
         Status::Unimplemented("Apple Scan requires F32/I32"));
+  if (const auto *value = operation.get_if<Scatter>();
+      value != nullptr && value->kind == ScatterKind::kAdd &&
+      type != mx::float32 && type != mx::float16 && type != mx::bfloat16)
+    return std::unexpected(
+        Status::Unimplemented("Apple Scatter add requires F32/F16/BF16"));
   if (std::find(output_shape.begin(), output_shape.end(), 0) !=
       output_shape.end()) {
     std::vector outputs{mx::zeros(output_shape, type, stream)};
@@ -196,9 +242,10 @@ Result<std::vector<mx::array>> lower_mature_indexing(
     return gather(*value, inputs, stream);
   if (const auto *value = operation.get_if<Scan>())
     return scan(*value, inputs[0], stream);
-  if (const auto *value = operation.get_if<Scatter>();
-      value != nullptr && value->kind == ScatterKind::kAssign)
-    return scatter_assign(*value, inputs, stream);
+  if (const auto *value = operation.get_if<Scatter>())
+    return value->kind == ScatterKind::kAssign
+               ? scatter_assign(*value, inputs, stream)
+               : scatter_add(*value, inputs, stream);
   if (const auto *value = operation.get_if<TopK>())
     return top_k(*value, inputs[0], stream);
   return std::unexpected(Status::Internal("Apple indexed operation not bound"));

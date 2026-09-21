@@ -3,9 +3,10 @@
 #include "tensor_test_support.h"
 
 namespace apple_tensor_test {
-// Independent scalar updates in logical row-major order. No sorting or MLX
-// arithmetic is used by the oracle; each addition rounds to storage.
-inline std::vector<double> scatter_reference(std::vector<double> state,
+// Independent FP64 reduction over stored inputs, rounded once at the result
+// boundary. Callers use well-conditioned data or exact binary-fraction sums;
+// ill-conditioned reassociation controls have their own legal-result checks.
+inline std::vector<double> scatter_sum_reference(std::vector<double> state,
                                              std::span<const double> updates,
                                              std::span<const std::int64_t> ids,
                                              const mx::Shape &shape, int axis,
@@ -23,24 +24,22 @@ inline std::vector<double> scatter_reference(std::vector<double> state,
       for (std::size_t lane = 0; lane < inner; ++lane) {
         const auto to = (outer * extent + ids[index]) * inner + lane;
         const auto from = (outer * ids.size() + index) * inner + lane;
-        const float sum =
-            static_cast<float>(state[to]) + static_cast<float>(updates[from]);
-        state[to] = rounded(sum, type);
+        state[to] += updates[from];
       }
+  for (auto &value : state)
+    value = rounded(value, type);
   return state;
 }
-inline void expect_ordered(const mx::array &actual,
+// For fixtures whose F32 sum is exactly representable in every association.
+inline void expect_exact_sum(const mx::array &actual,
                            std::span<const double> expected) {
   const auto observed = values(actual);
   ASSERT_EQ(observed.size(), expected.size());
   for (std::size_t i = 0; i < expected.size(); ++i) {
     if (std::isnan(expected[i]))
       EXPECT_TRUE(std::isnan(observed[i])) << i;
-    else {
+    else
       EXPECT_EQ(observed[i], expected[i]) << i;
-      if (expected[i] == 0)
-        EXPECT_EQ(std::signbit(observed[i]), std::signbit(expected[i])) << i;
-    }
   }
 }
 } // namespace apple_tensor_test
