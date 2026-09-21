@@ -286,7 +286,7 @@ TEST(VulkanMatureTensor, StorageConcatPreservesBitsAcrossEmptyPortsAndAllAxes) {
               context.upload(description, payload(description, raw)).value();
           arguments.emplace_back(description);
         }
-        auto program = v::prepare(context, c::Concat{axis},
+        auto program = v::prepare(context, c::Operation(c::Concat{axis}),
                                   std::span<const v::Argument>(arguments));
         ASSERT_TRUE(program) << program.error().message();
         if (widths[3] || widths[4])
