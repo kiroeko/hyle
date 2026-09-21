@@ -57,7 +57,7 @@
 再冻结有限 FIX。此处未产生新的 BOUND、correctness 或完整覆盖 verdict。
 
 `compute_provider_onednn` / `graph_provider_onednn` 已按[独立新能力卡](llm-moe-m2-b1-onednn.md)
-进入SCOPED。用户2026-09-21接受原因机制与历史限制并授权工程翻案：旧Q2按无效测量处理，
+进入AUDITED并接入原版Copy/Select。用户2026-09-21接受原因机制与历史限制并授权工程翻案：旧Q2按无效测量处理，
 不再构成产品FAIL或接入阻塞，原始日志保留且不代签性能PASS；新能力按独立卡完成验收。
 `compute_ggml_runtime` 继续 CLOSED，只有具名新资源缺陷才定向重开。
 所有 CPU/CUDA/Metal/Vulkan 自研算子保持冻结；SIMD 基础与通用能力保留。

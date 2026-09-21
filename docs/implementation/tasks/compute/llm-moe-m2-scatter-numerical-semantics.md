@@ -111,3 +111,10 @@ rank上限、非法广播拒绝和所有执行期语义。增加标量branch/ran
 共享源码/语义核对另计4分钟，累计20/30分钟，余10分钟；CPU/Apple的B1额度不重置。P0只
 增加一次有界rank≤8的准备期形状合并，无执行期成本。本卡原四环境schema及受影响消费者/
 三交付门保持，先做Windows开发门，未运行项不代签；所有冻结算子继续冻结。
+
+### S4 Windows 开发检查点
+
+Select现在先合并两branch形状，再与condition合并，复用原broadcast_shape的空维/非法维规则。
+Windows的43项schema与公开头通过；原版oneDNN的rank8条件选两个UInt64标量、空输出及
+普通Direct/Graph入口通过。只改变准备期描述符推导；其它环境与原共享交付闭包仍待验，
+状态保持AUDITED、共享源码/设计20/30分钟，性能P0且无P1采样。

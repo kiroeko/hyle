@@ -62,3 +62,30 @@ baseline `02ca7627`；两个owner SCOPED→AUDITED。复用父卡的oneDNN源码
 准备绑定及运行职责不变：非连续布局按oneDNN stride描述，不能未经资格暗中复制或变精度；
 每个请求拥有独立memory handles与scratch，共享制品只读。转换不得擅自支持不等价alias；
 空张量保持公共语义。具名不兼容只能记录并审计已有成熟组合，不扩大本轮预算或转自研。
+
+## D1/D2 Windows 开发检查点
+
+原版资格确认后，普通CPU Direct/Graph已接Copy/Select的一组共同描述映射：把plain存储的
+字节轴交给oneDNN原版u8 reorder/binary_select，Bool条件按原版要求描述为s8。没有自己写
+选择/复制kernel，不把F16/BF16原始位经过F32；支持所有已登记1/2/4/8字节类型、rank0..8、
+广播/非负及奇数字节stride、空输出，输出不alias。共享既有engine/stream/argument handles/
+executor/scratch和异常/完成销毁路径，常态无新增HYLE allocation；vendor成本仍未知且managed。
+
+三输入广播边界同时复现了shared schema遗漏condition的缺陷，已先按[M2-S S4](llm-moe-m2-scatter-numerical-semantics.md#s4-audited-增量select-的条件参与输出形状)
+独立定界再定向修复；没有改冻结数学。首次artifact检查漏了必需的拒绝alias回调，已补明确
+no-alias回调；失败日志保留，没有放宽运行时检查。
+
+Windows Release/shared/WERROR，11个定向CTest门通过，包括43项schema、26项oneDNN主
+测试、普通CPU入口/Graph、既有融合消费者和4个公开头检查。新用例覆盖15种storage、F16/
+BF16全部65,536位模式、跨轴广播、rank8张量条件选标量branch、empty、alias拒绝、两个slot、
+变输入重放、保留旧结果与HYLE allocator平衡。对应日志/原版探针与artifact身份由本轮开发收据保存。
+
+D1尚未全完：浮点reorder会改变部分signed-zero/NaN/subnormal，min/max直接primitive在
+单侧NaN的语义不符合公共fmin/fmax；本机直接half/bf16 elementwise域不被原版接受。原版
+F32 softplus的诊断有小尾值差，有限样本最大绝对误差约1.91e-6且特殊值通过；诊断相对门不是
+模型验收门，不据此宣判其通用失败。上述数值Cast/稳定函数/内部比较的完整合格组合与普通
+绑定仍待完成。本次只绑定已验真的raw-storage Copy/Select，没有声称同名primitive等价。
+
+四环境/插桩/三交付与最终selected闭包、必要P1仍待整批稳定后完成，不签CANDIDATE/CLOSED，
+不增加256格完整覆盖。中央vendor选项触发的广泛selected门如实保留未执行状态；没有为了
+缩小选择改治理工具。旧Q2继续按用户决定视为无效测量，源码审计额度仍120/120分钟。

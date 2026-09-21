@@ -10,6 +10,7 @@
 #include "brgemm_internal.h"
 #include "normalization_internal.h"
 #include "provider_internal.h"
+#include "tensor_internal.h"
 
 namespace hyle::compute::onednn {
 namespace {
@@ -339,8 +340,14 @@ Status propose(
   OneDnnRoute route{};
   const bool normalization = operation.kind() == OperationKind::kRmsNorm ||
                              operation.kind() == OperationKind::kLayerNorm;
+  const bool tensor = operation.kind() == OperationKind::kCopy ||
+                      operation.kind() == OperationKind::kSelect;
   Status status =
-      normalization && context_value != nullptr && outputs.size() == 1
+      tensor && context_value != nullptr && outputs.size() == 1
+          ? internal::validate_tensor(
+                {operation, inputs, outputs[0]},
+                static_cast<OneDnnContext *>(context_value)->executor)
+      : normalization && context_value != nullptr && outputs.size() == 1
           ? internal::validate_normalization(
                 {operation, inputs, outputs[0], inputs.size(), {}},
                 static_cast<OneDnnContext *>(context_value)->executor)
@@ -352,8 +359,11 @@ Status propose(
   for (std::size_t index = 0; index < outputs.size(); ++index)
     output_requirements[index] = host_requirement(outputs[index]);
   *proposal = detail::ProviderOperationProposal{
-      .route = normalization ? 2U : 1U,
-      .runtime = normalization ? internal::kNormRuntime : kRuntimeProperties,
+      .route = tensor          ? 3U
+               : normalization ? 2U
+                               : 1U,
+      .runtime = (normalization || tensor) ? internal::kNormRuntime
+                                           : kRuntimeProperties,
       .workspace_resource =
           detail::ResourceBindingRequirement{
               .required_properties = mem::MemoryProperty::kHostAccessible,
@@ -363,12 +373,16 @@ Status propose(
           ProviderRouteCostFacts{
               .workspace = std::nullopt,
               .persistent_bytes = std::nullopt,
-              .copy_bytes = 0,
+              .copy_bytes = operation.kind() == OperationKind::kCopy
+                                ? outputs[0].required_bytes().value()
+                                : 0,
               .repack_bytes = 0,
               .synchronization_count = 0,
               .dispatch_count = 1,
           },
-      .profile_key = ProviderRouteKey{normalization ? 2U : 1U},
+      .profile_key = ProviderRouteKey{tensor          ? 3U
+                                      : normalization ? 2U
+                                                      : 1U},
   };
   return Status::Ok();
 }
@@ -383,9 +397,18 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   *prepared_output = {};
   if (request.input_resources.size() != request.inputs.size() ||
       request.output_resources.size() != request.outputs.size() ||
-      (request.route != 1 && request.route != 2)) {
+      (request.route != 1 && request.route != 2 && request.route != 3)) {
     return ProviderPrepareOutcome::error(
         Status::InvalidArgument("oneDNN exact prepare request is invalid"));
+  }
+  if (request.route == 3) {
+    if (context_value == nullptr || request.outputs.size() != 1)
+      return ProviderPrepareOutcome::error(
+          Status::InvalidArgument("oneDNN tensor request is invalid"));
+    return internal::prepare_tensor(
+        {request.operation, request.inputs, request.outputs[0]},
+        static_cast<OneDnnContext *>(context_value)->executor, allocator,
+        prepared_output);
   }
   if (request.route == 2) {
     if (context_value == nullptr || request.outputs.size() != 1)

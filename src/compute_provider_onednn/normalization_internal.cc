@@ -1,4 +1,5 @@
 #include "normalization_internal.h"
+#include "tensor_internal.h"
 
 #include <algorithm>
 #include <array>
@@ -33,17 +34,14 @@ template <class Function> Status vendor_call(Function &&function) noexcept {
     return Status::Ok();
   } catch (const VendorFailure &failure) {
     if (failure.code == dnnl_out_of_memory)
-      return Status::ResourceExhausted(
-          "oneDNN normalization allocation failed");
+      return Status::ResourceExhausted("oneDNN primitive allocation failed");
     if (failure.code == dnnl_unimplemented)
-      return Status::Unimplemented(
-          "oneDNN normalization domain is unsupported");
-    return Status::Internal(
-        "oneDNN normalization rejected a validated request");
+      return Status::Unimplemented("oneDNN primitive domain is unsupported");
+    return Status::Internal("oneDNN primitive rejected a validated request");
   } catch (const std::bad_alloc &) {
-    return Status::ResourceExhausted("oneDNN normalization allocation threw");
+    return Status::ResourceExhausted("oneDNN primitive allocation threw");
   } catch (...) {
-    return Status::Internal("oneDNN normalization raised a foreign exception");
+    return Status::Internal("oneDNN primitive raised a foreign exception");
   }
 }
 
@@ -105,7 +103,7 @@ struct ConcurrencyScope final {
 
 // Vendor owners live only inside this adapter; their allocation sizes are not
 // represented as zero or charged to HYLE's allocator quota.
-struct NormPlan final {
+struct PrimitivePlan final {
   ParallelExecutorRef executor{};
   dnnl_engine_t engine = nullptr;
   dnnl_primitive_desc_t descriptor = nullptr;
@@ -113,22 +111,22 @@ struct NormPlan final {
   std::array<int, kNormMaxInputs> input_args{};
   std::size_t input_count = 0;
   std::size_t scratch_size = 0;
-  ~NormPlan() {
+  ~PrimitivePlan() {
     dnnl_primitive_destroy(primitive);
     dnnl_primitive_desc_destroy(descriptor);
     dnnl_engine_destroy(engine);
   }
 };
 
-struct NormInvocation final {
-  explicit NormInvocation(ParallelExecutorRef executor) noexcept
+struct PrimitiveInvocation final {
+  explicit PrimitiveInvocation(ParallelExecutorRef executor) noexcept
       : threadpool(executor) {}
   Threadpool threadpool;
   mem::HostMapping workspace{};
   dnnl_stream_t stream = nullptr;
   std::array<dnnl_exec_arg_t, kNormMaxInputs + 2> args{};
   std::size_t arg_count = 0;
-  ~NormInvocation() {
+  ~PrimitiveInvocation() {
     for (auto &arg : args)
       dnnl_memory_destroy(arg.memory);
     dnnl_stream_destroy(stream);
@@ -172,35 +170,34 @@ std::array<dnnl_dim_t, 2> matrix_shape(const TensorDesc &description) noexcept {
 }
 
 void destroy_prepared(void *value, mem::AllocatorRef allocator) noexcept {
-  auto *plan = static_cast<NormPlan *>(value);
+  auto *plan = static_cast<PrimitivePlan *>(value);
   if (plan == nullptr)
     return;
-  plan->~NormPlan();
-  allocator.deallocate(plan, sizeof(NormPlan), alignof(NormPlan));
+  plan->~PrimitivePlan();
+  allocator.deallocate(plan, sizeof(PrimitivePlan), alignof(PrimitivePlan));
 }
 
 void destroy_invocation(void *value, mem::AllocatorRef allocator) noexcept {
-  auto *invocation = static_cast<NormInvocation *>(value);
+  auto *invocation = static_cast<PrimitiveInvocation *>(value);
   if (invocation == nullptr)
     return;
-  invocation->~NormInvocation();
-  allocator.deallocate(invocation, sizeof(NormInvocation),
-                       alignof(NormInvocation));
+  invocation->~PrimitiveInvocation();
+  allocator.deallocate(invocation, sizeof(PrimitiveInvocation),
+                       alignof(PrimitiveInvocation));
 }
 
 Status create_invocation(void *value, mem::AllocatorRef allocator,
                          mem::BufferView workspace, void **output) noexcept {
   if (output == nullptr || value == nullptr)
-    return Status::InvalidArgument(
-        "oneDNN normalization invocation is invalid");
+    return Status::InvalidArgument("oneDNN primitive invocation is invalid");
   *output = nullptr;
-  const auto &plan = *static_cast<NormPlan *>(value);
-  void *storage =
-      allocator.allocate(sizeof(NormInvocation), alignof(NormInvocation));
+  const auto &plan = *static_cast<PrimitivePlan *>(value);
+  void *storage = allocator.allocate(sizeof(PrimitiveInvocation),
+                                     alignof(PrimitiveInvocation));
   if (storage == nullptr)
     return Status::ResourceExhausted(
-        "oneDNN normalization invocation allocation failed");
-  auto *invocation = ::new (storage) NormInvocation(plan.executor);
+        "oneDNN primitive invocation allocation failed");
+  auto *invocation = ::new (storage) PrimitiveInvocation(plan.executor);
   void *scratch = nullptr;
   Status status = Status::Ok();
   if (plan.scratch_size != 0) {
@@ -217,7 +214,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
                          kNormWorkspaceAlignment !=
                      0) {
         status = Status::InvalidArgument(
-            "oneDNN normalization scratchpad is insufficient or misaligned");
+            "oneDNN primitive scratchpad is insufficient or misaligned");
       } else {
         scratch = bytes->data();
       }
@@ -255,11 +252,11 @@ void preserve_first(Status &status, Status candidate) noexcept {
     status = std::move(candidate);
 }
 
-Status execute(NormPlan &plan, NormInvocation &invocation,
+Status execute(PrimitivePlan &plan, PrimitiveInvocation &invocation,
                std::span<const ConstTensorView> inputs,
                std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != plan.input_count || outputs.size() != 1)
-    return Status::Internal("oneDNN normalization binding count is invalid");
+    return Status::Internal("oneDNN primitive binding count is invalid");
   std::array<mem::HostMapping, kNormMaxInputs> mappings{};
   mem::HostMapping output;
   std::array<void *, kNormMaxInputs + 1> handles{};
@@ -341,9 +338,9 @@ Status execute(NormPlan &plan, NormInvocation &invocation,
 detail::EnqueueResult submit(void *plan, void *invocation, Queue &,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
-  return detail::EnqueueResult::accepted_command(
-      execute(*static_cast<NormPlan *>(plan),
-              *static_cast<NormInvocation *>(invocation), inputs, outputs));
+  return detail::EnqueueResult::accepted_command(execute(
+      *static_cast<PrimitivePlan *>(plan),
+      *static_cast<PrimitiveInvocation *>(invocation), inputs, outputs));
 }
 
 AliasSupport alias_support(void *, std::size_t output,
@@ -359,6 +356,42 @@ const detail::ProviderPreparedVTable kPreparedVTable{
     .shared_submit = &submit,
 };
 
+AliasSupport no_alias_support(void *, std::size_t, std::size_t) noexcept {
+  return {};
+}
+
+const detail::ProviderPreparedVTable kTensorPreparedVTable{
+    .destroy_prepared = &destroy_prepared,
+    .alias_support = &no_alias_support,
+    .create_invocation = &create_invocation,
+    .destroy_invocation = &destroy_invocation,
+    .shared_submit = &submit,
+};
+
+// The byte axis preserves storage bits. Floating reorder/select may round,
+// quiet NaNs or flush subnormals even when the public operation only moves
+// bits.
+void byte_description(dnnl_memory_desc_t *output, const TensorDesc &input,
+                      const TensorDesc &result, bool condition) {
+  std::array<dnnl_dim_t, kMaxTensorRank + 1> dimensions{};
+  std::array<dnnl_dim_t, kMaxTensorRank + 1> strides{};
+  const auto leading = result.rank() - input.rank();
+  for (std::size_t axis = 0; axis < result.rank(); ++axis) {
+    dimensions[axis] = result.dimensions()[axis];
+    // Broadcast by descriptor, retaining the original storage and byte stride.
+    strides[axis] = axis < leading || input.dimensions()[axis - leading] == 1
+                        ? 0
+                        : input.byte_strides()[axis - leading];
+  }
+  dimensions[result.rank()] =
+      condition ? 1
+                : static_cast<dnnl_dim_t>(data_type_size(input.data_type()));
+  strides[result.rank()] = 1;
+  check(dnnl_memory_desc_create_with_strides(
+      output, static_cast<int>(result.rank() + 1), dimensions.data(),
+      condition ? dnnl_s8 : dnnl_u8, strides.data()));
+}
+
 } // namespace
 
 Status validate_normalization(const NormRequest &request,
@@ -366,17 +399,16 @@ Status validate_normalization(const NormRequest &request,
   const auto *rms = request.operation.get_if<RmsNorm>();
   const auto *layer = request.operation.get_if<LayerNorm>();
   if (rms == nullptr && layer == nullptr)
-    return Status::Unimplemented(
-        "oneDNN normalization requires a norm operation");
+    return Status::Unimplemented("oneDNN primitive requires a norm operation");
   if ((rms != nullptr ? rms->accumulation_type : layer->accumulation_type) !=
       DataType::kFloat32)
     return Status::Unimplemented(
-        "oneDNN normalization supports float32 accumulation");
+        "oneDNN primitive supports float32 accumulation");
   if (request.norm_inputs == 0 ||
       request.norm_inputs > (rms != nullptr ? 2U : 3U) ||
       request.inputs.size() != request.norm_inputs + request.post_ops.size() ||
       request.post_ops.size() > kNormMaxPostOps)
-    return Status::InvalidArgument("oneDNN normalization arity is invalid");
+    return Status::InvalidArgument("oneDNN primitive arity is invalid");
   if (executor.concurrency() >
       static_cast<std::size_t>((std::numeric_limits<int>::max)()))
     return Status::Unimplemented("oneDNN executor concurrency exceeds int");
@@ -385,14 +417,14 @@ Status validate_normalization(const NormRequest &request,
       input.rank() == 0 ||
       vendor_type(input.data_type()) == dnnl_data_type_undef)
     return Status::Unimplemented(
-        "oneDNN normalization requires dense floating input");
+        "oneDNN primitive requires dense floating input");
   dnnl_dim_t elements = 1;
   for (const auto dimension : input.dimensions()) {
     if (dimension == 0)
       return Status::Unimplemented("empty normalization uses the native route");
     if (dimension < 0 ||
         dimension > (std::numeric_limits<dnnl_dim_t>::max)() / elements)
-      return Status::OutOfRange("oneDNN normalization dimensions overflow");
+      return Status::OutOfRange("oneDNN primitive dimensions overflow");
     elements *= dimension;
   }
   auto inferred = infer_single_output(
@@ -401,16 +433,16 @@ Status validate_normalization(const NormRequest &request,
     return std::move(inferred).error();
   if (*inferred != request.output)
     return Status::InvalidArgument(
-        "oneDNN normalization output does not match schema");
+        "oneDNN primitive output does not match schema");
   for (std::size_t index = 1; index < request.inputs.size(); ++index) {
     if (!request.inputs[index].is_plain() || !request.inputs[index].is_dense())
       return Status::Unimplemented(
-          "oneDNN normalization requires dense parameters");
+          "oneDNN primitive requires dense parameters");
   }
   if (request.norm_inputs == 3 &&
       request.inputs[1].data_type() != request.inputs[2].data_type())
     return Status::Unimplemented(
-        "oneDNN normalization scale and bias types must match");
+        "oneDNN primitive scale and bias types must match");
   if (!request.post_ops.empty() && input.data_type() != DataType::kFloat32)
     return Status::Unimplemented(
         "oneDNN norm post-ops preserve only float32 intermediate semantics");
@@ -451,11 +483,12 @@ prepare_normalization(const NormRequest &request, ParallelExecutorRef executor,
     return status.IsUnimplemented()
                ? ProviderPrepareOutcome::unsupported(std::move(status))
                : ProviderPrepareOutcome::error(std::move(status));
-  void *storage = allocator.allocate(sizeof(NormPlan), alignof(NormPlan));
+  void *storage =
+      allocator.allocate(sizeof(PrimitivePlan), alignof(PrimitivePlan));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted(
-        "oneDNN normalization plan allocation failed"));
-  auto *plan = ::new (storage) NormPlan{.executor = executor};
+    return ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("oneDNN primitive plan allocation failed"));
+  auto *plan = ::new (storage) PrimitivePlan{.executor = executor};
   status = vendor_call([&] {
     ConcurrencyScope concurrency(executor);
     BuildMemory temporary;
@@ -532,6 +565,118 @@ prepare_normalization(const NormRequest &request, ParallelExecutorRef executor,
                : ProviderPrepareOutcome::error(std::move(status));
   }
   *prepared = {.vtable = &kPreparedVTable,
+               .state = plan,
+               .workspace = {.size = plan->scratch_size,
+                             .alignment = kNormWorkspaceAlignment},
+               .runtime = kNormRuntime,
+               .persistent_bytes = std::nullopt,
+               .invocation_private_bytes = std::nullopt};
+  return ProviderPrepareOutcome::prepared();
+}
+
+Status validate_tensor(const TensorRequest &request,
+                       ParallelExecutorRef executor) noexcept {
+  const bool select = request.operation.kind() == OperationKind::kSelect;
+  if (!select && request.operation.kind() != OperationKind::kCopy)
+    return Status::Unimplemented("oneDNN tensor operation is not mapped");
+  if (request.inputs.size() != (select ? 3U : 1U))
+    return Status::InvalidArgument("oneDNN tensor input count is invalid");
+  if (executor.concurrency() >
+      static_cast<std::size_t>((std::numeric_limits<int>::max)()))
+    return Status::Unimplemented("oneDNN executor concurrency exceeds int");
+  if (!request.output.valid() || !request.output.is_plain() ||
+      !request.output.is_dense() ||
+      data_type_size(request.output.data_type()) == 0)
+    return Status::Unimplemented("oneDNN tensor requires plain dense output");
+  const auto output_bytes = request.output.required_bytes();
+  if (!output_bytes ||
+      *output_bytes >
+          static_cast<std::size_t>((std::numeric_limits<dnnl_dim_t>::max)()))
+    return Status::Unimplemented("oneDNN tensor output span exceeds int64");
+  for (std::size_t index = 0; index < request.inputs.size(); ++index) {
+    const auto &input = request.inputs[index];
+    if (!input.valid() || !input.is_plain() ||
+        input.rank() > request.output.rank())
+      return Status::Unimplemented("oneDNN tensor layout is unsupported");
+    if (input.data_type() !=
+        (select && index == 0 ? DataType::kBool : request.output.data_type()))
+      return Status::InvalidArgument(
+          "oneDNN tensor storage type is inconsistent");
+    const auto leading = request.output.rank() - input.rank();
+    for (std::size_t axis = 0; axis < input.rank(); ++axis) {
+      const auto extent = input.dimensions()[axis];
+      if (extent != request.output.dimensions()[leading + axis] &&
+          (!select || extent != 1))
+        return Status::InvalidArgument("oneDNN tensor shape is inconsistent");
+    }
+    const auto bytes = input.required_bytes();
+    if (!bytes || *bytes > static_cast<std::size_t>(
+                               (std::numeric_limits<dnnl_dim_t>::max)()))
+      return Status::Unimplemented("oneDNN tensor storage span exceeds int64");
+  }
+  return Status::Ok();
+}
+
+ProviderPrepareOutcome
+prepare_tensor(const TensorRequest &request, ParallelExecutorRef executor,
+               mem::AllocatorRef allocator,
+               detail::ProviderPrepared *prepared) noexcept {
+  if (prepared == nullptr)
+    return ProviderPrepareOutcome::error(
+        Status::InvalidArgument("oneDNN tensor prepared output is null"));
+  *prepared = {};
+  Status status = validate_tensor(request, executor);
+  if (!status.ok())
+    return status.IsUnimplemented()
+               ? ProviderPrepareOutcome::unsupported(std::move(status))
+               : ProviderPrepareOutcome::error(std::move(status));
+  void *storage =
+      allocator.allocate(sizeof(PrimitivePlan), alignof(PrimitivePlan));
+  if (storage == nullptr)
+    return ProviderPrepareOutcome::resource_declined(
+        Status::ResourceExhausted("oneDNN tensor plan allocation failed"));
+  auto *plan = ::new (storage) PrimitivePlan{.executor = executor};
+  status = vendor_call([&] {
+    ConcurrencyScope concurrency(executor);
+    BuildMemory temporary;
+    check(dnnl_engine_create(&plan->engine, dnnl_cpu, 0));
+    check(dnnl_primitive_attr_create(&temporary.attributes));
+    check(dnnl_primitive_attr_set_scratchpad_mode(temporary.attributes,
+                                                  dnnl_scratchpad_mode_user));
+    const bool select = request.operation.kind() == OperationKind::kSelect;
+    for (std::size_t index = 0; index < request.inputs.size(); ++index)
+      byte_description(&temporary.rhs[index], request.inputs[index],
+                       request.output, select && index == 0);
+    byte_description(&temporary.data, request.output, request.output, false);
+    if (select) {
+      check(dnnl_binary_primitive_desc_create_v2(
+          &plan->descriptor, plan->engine, dnnl_binary_select, temporary.rhs[1],
+          temporary.rhs[2], temporary.rhs[0], temporary.data,
+          temporary.attributes));
+      plan->input_args[0] = DNNL_ARG_SRC_2;
+      plan->input_args[1] = DNNL_ARG_SRC_0;
+      plan->input_args[2] = DNNL_ARG_SRC_1;
+    } else {
+      check(dnnl_reorder_primitive_desc_create(
+          &plan->descriptor, temporary.rhs[0], plan->engine, temporary.data,
+          plan->engine, temporary.attributes));
+      plan->input_args[0] = DNNL_ARG_FROM;
+    }
+    check(dnnl_primitive_create(&plan->primitive, plan->descriptor));
+    const auto scratch = dnnl_primitive_desc_query_md(
+        plan->descriptor, dnnl_query_scratchpad_md, 0);
+    plan->scratch_size = dnnl_memory_desc_get_size(scratch);
+    plan->input_count = request.inputs.size();
+  });
+  if (!status.ok()) {
+    destroy_prepared(plan, allocator);
+    if (status.IsUnimplemented())
+      return ProviderPrepareOutcome::unsupported(std::move(status));
+    return status.IsResourceExhausted()
+               ? ProviderPrepareOutcome::resource_declined(std::move(status))
+               : ProviderPrepareOutcome::error(std::move(status));
+  }
+  *prepared = {.vtable = &kTensorPreparedVTable,
                .state = plan,
                .workspace = {.size = plan->scratch_size,
                              .alignment = kNormWorkspaceAlignment},

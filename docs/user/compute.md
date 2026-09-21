@@ -2,7 +2,7 @@
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/Native 实现；
-> 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入 oneDNN MatMul。
+> 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入已支持的 oneDNN 能力。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
 > 普通 CUDA Direct/Graph 入口、真实 FFN/capture、Win/WSL 三交付与当前 SM89 工程性能验收已完成。
@@ -687,6 +687,18 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 支持精确 input0/output 原地重叠。接受后的执行失败退休当前 invocation，需创建新槽，不能重放
 到另一个 Provider。既有 BRGEMM 的 prepared replay 合同保持不变。
 
+### oneDNN 张量接入检查点
+
+[M2-B1 oneDNN](../implementation/tasks/compute/llm-moe-m2-b1-onednn.md)已接入原版`Select`与
+`Copy`：普通CPU Direct/Graph自动绑定，支持plain rank0..8、非负及奇数字节stride、空输出，
+以及已登记1/2/4/8字节scalar存储。Select将条件与两个分支共同广播，可用张量条件选择两个
+标量常量；输出dense，保留所选值的原始位，包括NaN payload、signed zero与大整数。
+
+实现用原版oneDNN字节primitive描述存储，无浮点转换、预先展开广播或HYLE数学kernel。
+每个请求复用上述stream/argument handles与caller scratch；managed replay、vendor资源
+未知项和失败退休语义保持。当前这两个映射均要求输出不与输入重叠。Windows开发验证已
+通过；完整平台/三交付/成本资格仍按任务卡验收，min/max、稳定函数及数值Cast尚未由本批绑定。
+
 ### ggml CPU 接入检查点
 
 [M2-B1](../implementation/tasks/compute/llm-moe-m2-b1-cpu.md)正在接入原版 ggml CPU 程序。
@@ -763,7 +775,7 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 64-byte-aligned scratch slice；调用方只需按 `workspace_requirement()` 分配一块总 workspace，不应自行
 推导 tile 或依赖该内部阈值。
 
-标准 CPU 配置的该选项默认 `AUTO`：支持的 x86-64 目标接入 oneDNN，AArch64 使用 Native。构建时
+标准 CPU 配置的该选项默认 `AUTO`：支持的 x86-64 目标接入 oneDNN，AArch64 使用已构建的 ggml/Native 后备。构建时
 `HYLE_COMPUTE_ONEDNN=ON` 在受支持的 x86-64 目标强制启用，在 AArch64 等不支持目标会明确配置失败；
 `AUTO` 在不支持目标关闭该实现。可复现的 x86-64 oneDNN 制品可显式选择 `ON`，不需要
 它的制品保持 `OFF`。`PreparedOperation::provider()` 与 `workspace_requirement()` 可解释实际路线。

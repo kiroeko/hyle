@@ -223,6 +223,34 @@ TEST(OperationElementwise, AppliesBroadcastAndSelectTypeRules) {
                   .IsInvalidArgument());
 }
 
+TEST(OperationElementwise, SelectIncludesConditionInBroadcastShape) {
+  const auto scalar = TensorDesc::dense(DataType::kUInt64, {}).value();
+  const Operation operation(Select{});
+  for (std::int64_t rows : {0, 2}) {
+    const std::array<std::int64_t, 8> dimensions{1, 1, 1, 1, 1, 1, rows, 3};
+    const auto condition =
+        TensorDesc::dense(DataType::kBool, dimensions).value();
+    const auto expected =
+        TensorDesc::dense(DataType::kUInt64, dimensions).value();
+    EXPECT_EQ(infer_one(operation, std::array{condition, scalar, scalar}),
+              expected);
+    EXPECT_EQ(
+        infer_one(operation,
+                  std::array{condition, tensor(DataType::kUInt64, 3), scalar}),
+        expected);
+  }
+  EXPECT_TRUE(infer_single_output(
+                  operation, std::array{tensor(DataType::kBool, 2, 4),
+                                        tensor(DataType::kUInt64, 3), scalar})
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      infer_single_output(
+          operation, std::array{tensor(DataType::kInt32, 2, 3), scalar, scalar})
+          .error()
+          .IsInvalidArgument());
+}
+
 TEST(OperationElementwise, SoftplusPreservesFloatingDomainAndRejectsInteger) {
   const Operation operation(Unary{UnaryKind::kSoftplus});
   for (DataType type :

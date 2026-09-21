@@ -272,3 +272,54 @@ TEST(CpuDefaultContext, InvalidAndUnsupportedInputsRemainErrors) {
 }
 
 } // namespace
+
+#if defined(HYLE_COMPUTE_ONEDNN)
+namespace {
+TEST(CpuDefaultContext, SelectUsesMatureProviderWithoutManualOrdering) {
+  auto context = create_context().value();
+  auto queue = context.create_queue().value();
+  const auto condition =
+      TensorDesc::dense(DataType::kBool, std::array<std::int64_t, 1>{4})
+          .value();
+  const auto values =
+      TensorDesc::dense(DataType::kInt64, std::array<std::int64_t, 1>{4})
+          .value();
+  auto mask =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 4, 64).value();
+  auto a =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 32, 64).value();
+  auto b =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 32, 64).value();
+  auto out =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), 32, 64).value();
+  const std::array<std::uint8_t, 4> conditions{0, 1, 1, 0};
+  const std::array<std::int64_t, 4> left{-1, 0x123456789abcdefLL, -7, 4};
+  const std::array<std::int64_t, 4> right{9, 8, 7, -0x123456789abcdefLL};
+  ASSERT_TRUE(mask.view().write(std::as_bytes(std::span(conditions))).ok());
+  ASSERT_TRUE(a.view().write(std::as_bytes(std::span(left))).ok());
+  ASSERT_TRUE(b.view().write(std::as_bytes(std::span(right))).ok());
+  const std::array inputs{
+      ConstTensorView::create(condition, mask.view()).value(),
+      ConstTensorView::create(values, a.view()).value(),
+      ConstTensorView::create(values, b.view()).value()};
+  const std::array outputs{TensorView::create(values, out.view()).value()};
+  auto prepared = prepare(context, Select{}, condition, values, values);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, onednn::kProviderId);
+  const auto requirement = prepared->workspace_requirement();
+  auto workspace =
+      requirement.size == 0
+          ? hyle::mem::Buffer{}
+          : hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                      requirement.size, requirement.alignment)
+                .value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  auto done = invocation.submit(queue, inputs, outputs);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::array<std::int64_t, 4> actual{};
+  ASSERT_TRUE(out.view().read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, (std::array{right[0], left[1], left[2], right[3]}));
+}
+} // namespace
+#endif

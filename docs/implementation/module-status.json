@@ -365,7 +365,7 @@
       "module": "compute_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN AUDITED：有限D1–D3固定，原版BINARY/ELTWISE/REORDER先资格后共用现有资源批量接入；CPU源码审计120/120分钟，正常实现/验收继续。旧Q2经用户决定改判无效测量并解除阻塞，不代签PASS，自研冻结。"
+      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select已通过Windows普通Direct/Graph、15种storage/广播/stride/资源开发门；数值Cast/min/max/稳定函数和跨平台/三交付/P1未齐。旧Q2工程改判无效测量；源码审计120/120分钟，自研冻结，完整覆盖0。"
     },
     {
       "module": "compute_provider_ggml",
@@ -377,13 +377,13 @@
       "module": "graph_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN AUDITED：有限D1–D3固定，原版BINARY/ELTWISE/REORDER先资格后共用现有资源批量接入；CPU源码审计120/120分钟，正常实现/验收继续。旧Q2经用户决定改判无效测量并解除阻塞，不代签PASS，自研冻结。"
+      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select已通过Windows普通Direct/Graph、15种storage/广播/stride/资源开发门；数值Cast/min/max/稳定函数和跨平台/三交付/P1未齐。旧Q2工程改判无效测量；源码审计120/120分钟，自研冻结，完整覆盖0。"
     },
     {
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-scatter-numerical-semantics.md",
-      "summary": "M2-S AUDITED：Scatter既有语义增量保持；具名Select标量branch/rank8条件反例固定S4，只修三输入广播推导及schema/成熟消费者。共享语义20/30分钟；四环境/交付总门未齐，冻结数学不改，覆盖0。"
+      "summary": "M2-S AUDITED：Scatter既有语义保持；S4已修Select三输入广播推导，Windows43项schema/头及oneDNN rank8/标量/空shape消费者通过。其它环境/交付总门未齐，共享语义20/30分钟，冻结数学不改，覆盖0。"
     },
     {
       "module": "compute_backend_cpu",

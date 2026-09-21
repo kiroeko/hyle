@@ -8,10 +8,11 @@
 #include <type_traits>
 #include <vector>
 
-#include "../compute_provider_native/half_test_support.h"
 #include "../compute/workload_fixture.h"
-#include "hyle/graph/cpu.h"
+#include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/onednn.h"
+#include "hyle/graph/cpu.h"
 #include "hyle/graph/providers/onednn.h"
 #include "hyle/mem/stats.h"
 
@@ -880,3 +881,86 @@ TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
 }
 #endif
 } // namespace
+
+#if defined(HYLE_COMPUTE_ONEDNN)
+namespace {
+TEST(CpuGraph, SelectRetainsBitsAndResultsAcrossTwoInvocations) {
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto condition =
+      compute::TensorDesc::dense(compute::DataType::kBool,
+                                 std::array<std::int64_t, 1>{4})
+          .value();
+  const auto data = compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                               std::array<std::int64_t, 1>{4})
+                        .value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto mask = builder.input(condition).value();
+  const auto a = builder.input(data).value(), b = builder.input(data).value();
+  const auto out = builder.add(compute::Select{}, mask, a, b).value();
+  ASSERT_TRUE(builder.publish(out).ok());
+  auto logical = std::move(builder).finish().value();
+  auto compiled = graph::compile(logical, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::onednn::kProviderId);
+  std::array<std::uint8_t, 4> masks{0, 1, 0, 1};
+  const std::array<std::uint32_t, 4> left{0x7fa12345U, 0x80000000U, 0x00000001U,
+                                          0xff800000U};
+  const std::array<std::uint32_t, 4> right{0x7fc54321U, 0, 0x807fffffU,
+                                           0x7f800000U};
+  auto mask_buffer = half_test::buffer<std::uint8_t>(masks);
+  auto a_buffer = half_test::buffer<std::uint32_t>(left);
+  auto b_buffer = half_test::buffer<std::uint32_t>(right);
+  std::array outputs{half_test::buffer<std::uint32_t>(left),
+                     half_test::buffer<std::uint32_t>(left)};
+  std::array invocations{compiled->executable.create_invocation().value(),
+                         compiled->executable.create_invocation().value()};
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  for (std::size_t slot = 0; slot < 2; ++slot) {
+    ASSERT_TRUE(invocations[slot]
+                    .bind(mask, compute::ConstTensorView::create(
+                                    condition, mask_buffer.view())
+                                    .value())
+                    .ok());
+    ASSERT_TRUE(
+        invocations[slot]
+            .bind(
+                a,
+                compute::ConstTensorView::create(data, a_buffer.view()).value())
+            .ok());
+    ASSERT_TRUE(
+        invocations[slot]
+            .bind(
+                b,
+                compute::ConstTensorView::create(data, b_buffer.view()).value())
+            .ok());
+    ASSERT_TRUE(
+        invocations[slot]
+            .bind(
+                out,
+                compute::TensorView::create(data, outputs[slot].view()).value())
+            .ok());
+    ASSERT_TRUE(invocations[slot].prepare_replay(queues).ok());
+  }
+  std::array<std::vector<std::uint32_t>, 2> previous;
+  for (std::size_t run = 0; run < 4; ++run) {
+    for (std::size_t i = 0; i < masks.size(); ++i)
+      masks[i] = static_cast<std::uint8_t>((i + run) % 2);
+    ASSERT_TRUE(mask_buffer.view().write(std::as_bytes(std::span(masks))).ok());
+    auto done = invocations[run % 2].submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<std::uint32_t>(outputs[run % 2]);
+    for (std::size_t i = 0; i < masks.size(); ++i)
+      EXPECT_EQ(actual[i], masks[i] ? left[i] : right[i]);
+    previous[run % 2] = actual;
+    if (run != 0)
+      EXPECT_EQ(half_test::read<std::uint32_t>(outputs[(run + 1) % 2]),
+                previous[(run + 1) % 2]);
+  }
+}
+} // namespace
+#endif

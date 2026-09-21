@@ -1241,14 +1241,13 @@ Status infer_output_descriptions(const Operation &operation,
       first = std::unexpected(std::move(branch_shape).error());
       break;
     }
-    Status condition = validate_broadcast_to(inputs[0].dimensions(),
-                                             branch_shape->dimensions());
-    if (!condition.ok()) {
-      first = std::unexpected(std::move(condition));
+    auto shape =
+        broadcast_shape(inputs[0].dimensions(), branch_shape->dimensions());
+    if (!shape) {
+      first = std::unexpected(std::move(shape).error());
       break;
     }
-    first =
-        TensorDesc::dense(inputs[1].data_type(), branch_shape->dimensions());
+    first = TensorDesc::dense(inputs[1].data_type(), shape->dimensions());
     break;
   }
   case OperationKind::kScan: {
