@@ -146,8 +146,9 @@ TEST(OneDnnTensor, SoftplusUsesDenseScalarAndEmptyDescriptors) {
           values[i] = static_cast<float>(static_cast<int>(i % 201) - 100);
           source[i * (padded && rank != 0 ? 2 : 1)] = values[i];
         }
-        ASSERT_TRUE(
-            input.buffer.view().write(std::as_bytes(std::span(source))).ok());
+        if (!empty)
+          ASSERT_TRUE(
+              input.buffer.view().write(std::as_bytes(std::span(source))).ok());
         auto program =
             prepare(context, Unary{UnaryKind::kSoftplus}, description);
         if (!description.is_dense()) {
@@ -164,9 +165,10 @@ TEST(OneDnnTensor, SoftplusUsesDenseScalarAndEmptyDescriptors) {
         ASSERT_TRUE(done) << done.error().message();
         ASSERT_TRUE(done->wait().ok());
         std::vector<float> actual(count);
-        ASSERT_TRUE(output.buffer.view()
-                        .read(std::as_writable_bytes(std::span(actual)))
-                        .ok());
+        if (!empty)
+          ASSERT_TRUE(output.buffer.view()
+                          .read(std::as_writable_bytes(std::span(actual)))
+                          .ok());
         expect_softplus(actual, values);
       }
     }
