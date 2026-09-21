@@ -86,13 +86,13 @@ const auto &native_output = result.get()->arrays()[0]; // 成功终态后的 lea
   输出保留原始位。默认 checked 在 GPU 检查索引，负值和越界通过完成结果返回 OutOfRange，
   不采用 MLX 的负索引 wrap。原版比较/where 为 take 提供安全索引，失败结果不会发布。
   空输出不读取 payload；unchecked 要求调用方保证所有索引合法。
-- Scatter assign 接上述六类 storage，保留原始位；add 接 F32/F16/BF16。重复目标按逻辑行主序
-  更新：assign 最后项胜出，add 每次 F32 求和后舍入到 storage。返回新状态数组，输入与旧结果
+- Scatter assign 接上述六类 storage，保留原始位，重复目标最后逻辑更新胜出；add 接F32/F16/BF16，
+  公共语义允许重结合及存储精度或更宽的累加，不承诺逐次舍入或逐位重现。返回新状态数组，输入与旧结果
   保持不变；结果可绑定为下次调用的状态输入。任意轴、scalar/多维 I32/I64 indices 和原生布局
   均可使用，默认 checked 错误通过完成结果返回；空 output 跳过 payload，空 indices 保留 source。
   非空 output/indices/updates 的元素数≤INT32_MAX。assign 用原版 MLX I32 Scatter Max 记录每个
   目标的最后更新位置，再以原版take/where选取原始存储；临时映射按目标轴长度分配。
-  add 仍使用过渡期冻结的有序更新实现，原版并行scatter_add尚不能代签其顺序语义。
+  add目前仍使用冻结的逐次舍入实现；原版scatter_add的新数值合同接线须另行完成资格与验收。
   必要映射/排序、布局整理、新结果及检查都计入资源和执行成本。
 - Scan 支持 I32/F32 任意轴 inclusive/exclusive 前缀。I32 检查所有数学前缀，包括 exclusive
   未写出的最终总和；溢出返回 OutOfRange。F32 允许原生并行重结合。非空 Scan、Gather output/

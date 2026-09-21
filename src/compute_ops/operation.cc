@@ -999,7 +999,9 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
             1,
             AliasPolicy::kMayAliasInput0,
             EffectKind::kPure,
-            PrecisionPolicy::kExact,
+            operation.get_if<Scatter>()->kind == ScatterKind::kAssign
+                ? PrecisionPolicy::kExact
+                : PrecisionPolicy::kAccumulateInOutputType,
             DataType::kUnknown,
             true};
   case OperationKind::kConcat:

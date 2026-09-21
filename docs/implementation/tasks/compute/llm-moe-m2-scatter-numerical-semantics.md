@@ -66,3 +66,19 @@ C0所有明确的FP32中间值、量化规则、最终误差门继续约束路�
 公共改动是准备期元数据和明确数值合同，P0无新增常态工作/资源；未引入确定性选项或第二条
 公共API。原版MLX旧有序资格仍FAIL；新加法接法必须重新资格，不能直接改旧证据标签。
 本共享源码/设计累计14/30分钟，余16分钟；Apple/CPU/CUDA等原B1额度没有重置。
+
+## S1/S2 开发检查点
+
+已实现公共traits区分：assign保留Exact，add使用既有AccumulateInOutputType；未新增字段、
+enum、ABI或执行期工作。公共头、三份路线/Compute指南、F02.2/F13.2及当前CPU/Apple卡同步
+上述数值合同，保留历史有序资格失败与固定模型精度。此处没有接入新的Scatter计算。
+
+Windows复用现有Release/shared/WERROR开发构建，parallel2；两个CTest门通过，包括公开头
+检查和42个Compute Ops用例。新增用例同时核对precision、arity、alias、effect及输出数量；
+全部DLL邻置EXE，SetErrorMode 0x8003，无UAC/电源策略更改。源码字节、构建产物hash、日志
+和selector计划见[开发收据](../../../../evidence/correctness/compute-llm-moe-m2-scatter-semantics/windows-development.json)。
+
+WSL/Air/Mini的schema门、selected直接消费者/三交付，以及原版MLX add资格/普通消费者仍待
+完成。本轮未采样P1，不签完整覆盖或CLOSED；共享状态保持AUDITED、聚合验收INCONCLUSIVE。
+共享源码/设计累计16/30分钟，余14分钟，各路线原额度保持。统一脚本统计全Compute+Graph为
+**56,695实现行 / 248文件**，不含测试/vendor；未新建副本或大型构建目录，复用活动开发构建。

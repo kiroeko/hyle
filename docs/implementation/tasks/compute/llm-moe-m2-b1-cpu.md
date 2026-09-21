@@ -307,3 +307,13 @@ CUDA 接入核对共同语义时发现：当前[Compute 指南](../../../user/co
 已纠正 `remaining-numeric.json` 并保留原解释、原探针/库身份与原 archive，不重跑取有利结果。
 原版 Debug 的标准 assert、尚未接线及其它 dtype/mask/LogSoftmax 域仍未资格化；这不构成完整
 Softmax PASS，也不解除 oneDNN Q2。合同核对另计2分钟，CPU本卡累计118分钟、余2分钟。
+
+### M2-S：共享 Scatter 加法合同订正
+
+共享owner在`662bb3f2`完成[模型数值语义审计](llm-moe-m2-scatter-numerical-semantics.md)：
+浮点add必须归约base与每条update，允许重结合及存储精度或更宽的中间值；模型规定的F32端口
+和最终误差门保持。assign仍是原始位、最后逻辑更新胜出；索引/alias/失败/资源要求不变。
+上面的原版ggml反例仍记录其不满足旧逐次舍入合同，不能继续解释为新数值合同下的通用不合格，
+也不能直接改成PASS。成熟Scatter组合尚需新合同下的独立资格和普通接线验收。
+此处只同步已审定的共享合同，不研究或修改CPU冻结数学，不重置本卡118/120分钟预算；
+oneDNN新任务、旧Q2资格FAIL和后续原因调查均保持原约定。

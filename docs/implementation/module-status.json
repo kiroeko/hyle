@@ -383,7 +383,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-scatter-numerical-semantics.md",
-      "summary": "M2-S AUDITED：模型/成熟源码确认add为允许重结合的浮点归约，assign仍Exact；冻结S1–S3公共traits/说明/成熟消费者。原有序FAIL保留，不放宽模型精度或失败保护；共享语义14/30分钟，各路线原预算和自研冻结保持。"
+      "summary": "M2-S AUDITED：已区分Scatter assign Exact与add浮点归约，同步公共说明和需求矩阵；Windows公开头及42项schema测试通过。原有序FAIL保留；成熟add消费者、其它环境/交付与selected门未完成，覆盖0；共享语义16/30分钟，各路线预算与自研冻结保持。"
     },
     {
       "module": "compute_backend_cpu",

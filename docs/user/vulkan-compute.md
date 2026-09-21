@@ -325,7 +325,8 @@ Copy；主要临时量为每元素8字节宽前缀与4字节结果，加各层�
 
 `Scatter{.axis = 0}`支持F32/F16/BF16/I32/I64/Bool逐位assign；`kind = ScatterKind::kAdd`
 支持F32/F16/BF16。I32/I64索引可为scalar或多维，base/updates支持普通stride和byte origin。
-重复目标按updates逻辑行主序处理：assign取最后一项，add从base开始逐次相加，half每次舍入。
+assign对重复目标取最后逻辑更新。公共浮点add允许重结合及存储精度或更宽的累加，不承诺
+逐次舍入/跨调用位一致；当前过渡路径仍从base开始按逻辑行主序相加、half每次舍入。
 默认checked检查全部索引；越界完成返回OutOfRange并保留整个Scatter输出，失败槽退役后可建新槽。
 空indices复制base；空payload仍检查非空indices。Recorder保持已有输入/输出重叠拒绝。
 

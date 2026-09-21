@@ -202,8 +202,9 @@ source轴与地址计算保留64位。每个checked invocation需要独立caller
 对齐分配并保活到Completion；Graph自动规划。unchecked由caller保证索引有效，省略检查及工作区。
 空output不访问payload；默认managed路径不接受外部capture。既有expert/prepared-only Gather
 保留原生capture、连续后缀搬运与无caller workspace的原范围，冻结实现未作性能裁决。
-CUDA `Scatter` 的 assign 保留1/2/4/8字节storage原始位，add支持F32/F16/BF16；重复目标按updates
-逻辑行主序处理，半精度每次加法在F32求值后舍入。支持I32/I64、任意axis/byte stride、dense输出，
+CUDA `Scatter` 的 assign 保留1/2/4/8字节storage原始位，add支持F32/F16/BF16。当前过渡实现按
+updates逻辑行主序处理、半精度每次F32求值后舍入；这是该实现特征，公共add合同允许重结合及
+存储精度或更宽的累加。支持I32/I64、任意axis/byte stride、dense输出，
 仅允许同描述input0精确原位更新；非空output/updates/indices各≤INT32_MAX。checked坏索引使整个
 Scatter输出保持原值，通过Completion报告；失败槽退役后可建新槽恢复。
 空indices只保留source，单索引无需workspace；多索引由CUB stable SortPairs对索引/ordinal分组，
@@ -396,10 +397,12 @@ kernel arguments 及其 resource owner 都必须活到 Completion 真正终态�
 
 `Gather`/`Scatter` 默认使用 `IndexBoundsPolicy::kChecked`，会在写 output 前先验证全部 indices，因此越界失败
 不会留下部分索引写入。`kUnchecked` 只适合调用方已由上游验证 indices 的热路径；越界值违反前置条件，
-不能把它当作另一种裁剪或环绕语义。Scatter 对重复 index 按 updates 的逻辑行主序处理：assign 后项覆盖
-前项，add 依次累加。F16/BF16 的每次加法在 F32 求值后立即舍入回 storage，不是先将全部重复更新求和再舍入。
-需要并发原子 scatter 的算法应选择具备该明确合同的 provider，不能把本 CPU reference
-路线误当原子操作。
+不能把它当作另一种裁剪或环绕语义。Scatter assign 对重复index取最后逻辑更新并保留原始位。
+浮点add是base与所有updates的归约，允许重结合、不同累加顺序及存储精度或更宽的中间值；
+不承诺逐项舍入、行主序fold或跨调用逐位一致。模型要求F32中间值时，使用已有Cast与F32端口
+明确表达，再在规定的存储边界转换。模型精度档和最终误差门仍适用，不能丢更新或静默降精度。
+当前CPU reference采用逐次storage舍入，这是实现特征。Scatter本身不提供不同invocation之间
+对同一状态的并发原子更新保证，调用方仍负责资源排序。
 
 ## View、Copy、Fill 与 Cast
 

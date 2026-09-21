@@ -360,6 +360,12 @@ struct Gather final {
   IndexBoundsPolicy bounds = IndexBoundsPolicy::kChecked;
 };
 
+// Assign preserves storage bits; the last logical update wins at repeated
+// indices. Floating add reduces the base and every update, with accumulation
+// in the storage type or wider. It permits reassociation and different update
+// orders, not a logical-order fold, per-update storage rounding or bitwise
+// reproducibility. Models requiring F32 intermediates use F32 tensor ports
+// (and the existing Cast operation at storage boundaries).
 struct Scatter final {
   std::int32_t axis = 0;
   ScatterKind kind = ScatterKind::kAssign;

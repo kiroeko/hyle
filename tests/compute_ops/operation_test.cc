@@ -418,6 +418,22 @@ TEST(OperationGatedActivation, SupportsPackedAndSeparateConsumerShapes) {
   EXPECT_EQ(infer_one(Operation(separate), std::array{gate, gate}), gate);
 }
 
+TEST(OperationIndexing, ScatterAssignmentAndAdditionHaveDistinctPrecision) {
+  for (const auto kind : {ScatterKind::kAssign, ScatterKind::kAdd}) {
+    const auto traits = operation_traits(Operation(Scatter{.kind = kind}));
+    EXPECT_EQ(traits.precision,
+              kind == ScatterKind::kAssign
+                  ? PrecisionPolicy::kExact
+                  : PrecisionPolicy::kAccumulateInOutputType);
+    EXPECT_EQ(traits.accumulation_type, DataType::kUnknown);
+    EXPECT_EQ(traits.alias, AliasPolicy::kMayAliasInput0);
+    EXPECT_EQ(traits.effect, EffectKind::kPure);
+    EXPECT_EQ(traits.outputs, 1U);
+    EXPECT_TRUE(traits.inputs.accepts(3));
+    EXPECT_FALSE(traits.inputs.accepts(2));
+  }
+}
+
 TEST(OperationIndexing, CoversGatherScatterAndVariadicConcat) {
   const TensorDesc source = tensor(DataType::kFloat32, 2, 5, 3);
   const TensorDesc indices = tensor(DataType::kInt32, 4, 2);

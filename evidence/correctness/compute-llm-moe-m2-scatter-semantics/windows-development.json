@@ -1,0 +1,75 @@
+{
+  "kind": "M2-S shared Scatter metadata development verification; not provider qualification or closure",
+  "baseline_commit": "662bb3f2c076ea85a018332f40e4ce1d5df34132",
+  "candidate": "Windows canonical working tree; relevant tested source bytes and diff archived",
+  "tested_sources": {
+    "include/hyle/compute/operation.h": "62628e46ba4a233039fab530a50f7038f05e5631325a463e7d48e7a614e1ae59",
+    "src/compute_ops/operation.cc": "236c0bb5d58ec2dd804571142a32f23af900f20c842da879d30020e541cb12e2",
+    "tests/compute_ops/operation_test.cc": "920d56415f6dd869ae4926c0b975052b4b8e035362c35d25595a5d28a13d6c32"
+  },
+  "environment": {
+    "platform": "Windows x64",
+    "build_root": "C:\\hv\\m2b1-cpu",
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+    "HYLE_STATIC": "OFF",
+    "HYLE_WERROR": "ON",
+    "build_parallelism": 2,
+    "ctest_parallelism": 1,
+    "dll_policy": "All runtime DLLs beside executables before launch; SetErrorMode 0x8003"
+  },
+  "artifacts": {
+    "hyle_compute_ops_test.exe": "6e9a8c97913cfb0bfa06418ae8ff273791f06d67986e2466004de14d3c2269ca",
+    "hyle_compute_ops.dll": "708474a4be79998cb0c7ef0b4f6ea7f9c25cc826862cf8eff119217cfdbbcfab",
+    "hyle_compute_ops_custom_fixture.dll": "ca38525a4b99ed925d484b8de34c404d1fa21f445cbd2781fa70239894d841cd"
+  },
+  "results": {
+    "public_header_ctest": "PASS",
+    "compute_ops_ctest": "PASS",
+    "ctest_passed": 2,
+    "gtest_passed": 42,
+    "new_case": "OperationIndexing.ScatterAssignmentAndAdditionHaveDistinctPrecision"
+  },
+  "scope": [
+    "assign remains Exact and last-logical-update-wins",
+    "add uses existing AccumulateInOutputType arithmetic trait; reassociation and storage or wider intermediates allowed",
+    "no new enum/field/ABI, shape, alias, bounds, failure or resource change",
+    "model F32 ports and end-to-end accuracy requirements retained"
+  ],
+  "pending": [
+    "WSL/Air/Mini schema verification",
+    "selected direct-consumer factor and source/static/shared delivery gates",
+    "original MLX add qualification, ordinary binding and B1 acceptance"
+  ],
+  "performance": "P0 metadata branch only; no new execution work; no P1 run or verdict",
+  "new_complete_coverage_cells": 0,
+  "self_written_math": "frozen; neither modified nor compared",
+  "research_budget_minutes": {
+    "used": 16,
+    "total": 30,
+    "route_budgets_reset": false
+  },
+  "loc": {
+    "tool": "scripts/loc-report.py --self-check",
+    "code": 56695,
+    "files": 248,
+    "paths": [
+      "include/hyle/compute*",
+      "include/hyle/graph*",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "excludes": [
+      "tests",
+      "third_party",
+      "docs",
+      "CMake"
+    ],
+    "self_check": "pass"
+  },
+  "raw_archive": {
+    "path": "windows-development-raw.zip",
+    "bytes": 47184,
+    "sha256": "936831765438d8104b8a4bab74198bdcfe0e8d07211af876138bc35848785489"
+  }
+}

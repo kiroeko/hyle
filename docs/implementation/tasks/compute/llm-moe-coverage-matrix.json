@@ -2195,9 +2195,9 @@
         "F32",
         "I32"
       ],
-      "domain": "unique assignment indices; duplicate add indices; zero/one/update tails; overlap rejection",
+      "domain": "unique assignment indices; duplicate add indices; floating reduction permits reassociation and storage precision or wider intermediates, with explicit model F32 ports preserved; zero/one/update tails; overlap rejection",
       "ordinary_entry": "Scatter",
-      "oracle": "scalar reduction over duplicate indices",
+      "oracle": "independent high-precision reduction over duplicate indices; exact representable update controls and condition-aware rounding bounds; fixed model error gates unchanged",
       "case_ids": {
         "direct": "F02.2.direct",
         "graph": "F02.2.graph",
@@ -3892,7 +3892,7 @@
         "F32",
         "I32"
       ],
-      "domain": "duplicate destination reduction; routing scale; shared expert sum; skew/tails",
+      "domain": "duplicate destination floating reduction with permitted reassociation; declared model accumulation precision preserved; routing scale; shared expert sum; skew/tails",
       "ordinary_entry": "ScatterAdd,MatMul,Binary",
       "oracle": "scalar weighted combine plus separate dense expert",
       "case_ids": {
