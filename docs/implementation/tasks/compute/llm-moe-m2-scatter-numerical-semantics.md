@@ -82,3 +82,12 @@ WSL/Air/Mini的schema门、selected直接消费者/三交付，以及原版MLX a
 完成。本轮未采样P1，不签完整覆盖或CLOSED；共享状态保持AUDITED、聚合验收INCONCLUSIVE。
 共享源码/设计累计16/30分钟，余14分钟，各路线原额度保持。统一脚本统计全Compute+Graph为
 **56,695实现行 / 248文件**，不含测试/vendor；未新建副本或大型构建目录，复用活动开发构建。
+
+## 首个成熟消费者检查点
+
+Apple B1的`33a6555b`已将普通Scatter add接到原版MLX，独立求和、特殊值、checked失败与
+Graph状态/旧结果开发用例通过；来源和首轮测试构造失败及修正详见
+[Apple开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/scatter-add-development.json)。
+其中Air的compute_ops公开头及42项schema测试通过，补足本卡该环境开发门。Windows已有
+同组42项通过；WSL/Mini、其余selected消费者与实际新域三交付闭包仍待完成，不签CLOSED。
+共享源码/设计仍16/30分钟，Apple原卡计78/120；旧有序FAIL与自研冻结保持。

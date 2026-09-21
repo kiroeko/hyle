@@ -312,3 +312,29 @@ native索引前缀加base切片形状，原版F32 scatter_add后一次cast回sto
 分别验oracle，旧结果/input的逐位不变仍严格检查。保留所有坏索引、失败恢复、状态反馈和close
 门，新增原版Scatter Sum来源断言。非确定性不授权放宽固定模型误差门。
 源码/设计累计75/120分钟，余45分钟；正常实现/预声明验证单列，完整B1验收仍未完成。
+
+## Scatter add 接线开发检查点
+
+`33a6555b`（tree `1ca0ac214b274dd92993072899eb7a7bc2900491`）已落实A-S2，普通Direct/Graph
+使用原版MLX Scatter Sum、F32累加和最终storage转换。checked隐藏状态、空域、整数add准备
+拒绝、资源owner和状态反馈保持。三个冻结数学文件、Graph产品、公开API/依赖/CMake未改。
+
+Windows完整源码快照与Air tree核对一致，Release/shared/WERROR低并行构建通过。首次6个
+CTest门为5过1失败：42项compute_ops、36/37项Direct、11项Graph通过；新边界用例把rank8
+base与二维indices组合成rank9 updates，超出已有公共上限。只修测试，加入合法的一维indices
+组合并明确验证超限拒绝；定向重跑该用例通过，复用其它未变通过项。最终90个不同用例已验证，
+91次执行包含原失败；不把首轮CTest记录改成6/6。全部原始记录与身份见
+[开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/scatter-add-development.json)。
+
+独立FP64 oracle、精确贡献控制、合法非结合结果和原版Scatter Sum来源断言通过；Graph/Direct
+各自验证结果，输入与旧结果仍要求逐位不变。Windows Apple-OFF配置及两个公开头门通过。
+共享Scatter语义的Air公开头与42项schema门也完成，WSL/Mini及其交付闭包尚未完成。
+源码/设计累计78/120分钟，余42分钟；未运行P1，完整B1仍AUDITED/INCONCLUSIVE、覆盖0。
+
+统一LOC为**Compute+Graph 56,734实现行 / 248文件**，不含测试/vendor；全库代码1,082,397，
+自实现不含测试151,919。已按绝对路径和owner核对清理Windows/Air各60,489,961字节源码包、
+Windows1,661,106字节OFF构建；保留活动原生构建/缓存/模型，开发证据压缩为44,388字节。
+
+接下来按本卡21行收账，补齐F04.3的L2归一化和F04.4的norm-before-swish gate等模型组合
+consumer资格，复用已有成熟原子和原生region。之后在同一整批候选执行Mini、host插桩、
+新域三交付、WSL OFF、final selected与P1；不逐算子重跑全包，不启动冻结自研比较。

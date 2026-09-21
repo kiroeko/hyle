@@ -1,0 +1,159 @@
+{
+  "kind": "M2-B1 Apple Scatter add development verification; not whole B1 acceptance",
+  "candidate_commit": "33a6555b081c605d905717628477ca33835eb04a",
+  "candidate_tree": "1ca0ac214b274dd92993072899eb7a7bc2900491",
+  "initial_tree": "3fc740fc27f032dd572ce23f95a05661dae62a30",
+  "snapshot_policy": "Complete Windows index archives; native clone trees matched before both builds; no reverse source synchronization",
+  "machine_and_artifacts": {
+    "machine_model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "source_checkout_commit": "0a4f2de0c5c827f3d60d95b6e10f44466c0e7eb3",
+    "canonical_validation_tree": "1ca0ac214b274dd92993072899eb7a7bc2900491",
+    "unstaged_changes": "",
+    "source_sha256": {
+      "src/compute_route_apple/apple_mature_indexing.cc": "b1ab46d533fde8d3ad09a25df4e3d0aa4eddd7b381c38bf18810488d13c070e4",
+      "src/compute_route_apple/apple_tensor.cc": "4463ab235041b601c2721c4f1c2a1b253d1471e61d821b972be045b873ef0cf0",
+      "tests/compute_route_apple/scatter_test.cc": "ed9b519ef6ed859ad2ff4ad1a7f0fcbdaf8bcee4156658a27b69527ae07d84ab",
+      "tests/compute_route_apple/scatter_test_support.h": "db7904f6ddf4195e0310357f72031107f4b8e2699c96ff746cdf61e2b2dd8eda",
+      "tests/compute_route_apple/indexing_test.cc": "f3ea63cf559bd0d4217625d47a35e99f6151ff7824c2d9657a857f203af5fd79",
+      "tests/graph_route_apple/scatter_test.cc": "c3c8268977b85326948b7d033a61784e4244103d1534933a69e657dda28e22fb",
+      "include/hyle/compute/operation.h": "62628e46ba4a233039fab530a50f7038f05e5631325a463e7d48e7a614e1ae59",
+      "src/compute_ops/operation.cc": "236c0bb5d58ec2dd804571142a32f23af900f20c842da879d30020e541cb12e2",
+      "tests/compute_ops/operation_test.cc": "920d56415f6dd869ae4926c0b975052b4b8e035362c35d25595a5d28a13d6c32",
+      "docs/user/apple-compute.md": "b81fcba707e4052806d369d49513253d62e463491c7261aeb76fe662d2a3f824"
+    },
+    "artifact_sha256": {
+      "libhyle_compute_ops.dylib": "685aa363381816748754316b5ff2c8946695e7a6e83aacd4b000c4804d603c08",
+      "libhyle_compute_route_apple.dylib": "2ed7942cd3cf72ff9a881a45fd86d83b1fc379a3d262a439c822c4ffb383c095",
+      "libhyle_graph_route_apple.dylib": "50b8a02c6517d9b3bc4a8adb65b8d785aa2a07384b9594f1b5de48626558a59e",
+      "libmlx.dylib": "a67e1a694c037db67085bc46588a15fb023ba567cc26b02c4208012d11cbff93",
+      "hyle_compute_ops_test": "d3bdb0df197900daf96d6b17a85bab2b0a67b62cb4723b5d6c60449cd5b97e16",
+      "hyle_compute_route_apple_test": "c5a8b5a48fd96ccc922192a1b47e8f54e525aadf1d2815ea03d21ec7fd017fbf",
+      "hyle_graph_route_apple_test": "f55464691369478de81bfc1c00f0f4206a7247e027121a59b9359b5efd9fc0be"
+    },
+    "configuration": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:STRING=/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "CMAKE_OSX_DEPLOYMENT_TARGET:STRING=14.4",
+      "HYLE_COMPUTE_APPLE:STRING=ON",
+      "HYLE_STATIC:BOOL=OFF",
+      "HYLE_WERROR:BOOL=ON",
+      "MLX_BUILD_CPU:BOOL=OFF",
+      "MLX_BUILD_CUDA:BOOL=OFF",
+      "MLX_BUILD_METAL:BOOL=ON",
+      "MLX_METAL_JIT:BOOL=ON"
+    ]
+  },
+  "implementation": "Ordinary Direct/Graph cold lowering to original MLX F32 Scatter Sum with native shape bridge, final storage cast, safe indices and existing hidden checked status",
+  "native_results": {
+    "initial_ctest": "5/6; one newly constructed test used a rank-nine update port",
+    "initial_gtest": {
+      "compute_ops_passed": 42,
+      "direct_passed": 36,
+      "direct_failed": 1,
+      "graph_passed": 11
+    },
+    "correction": "Test-only: retain legal scalar and 1D index cases at rank eight, verify 2D indices with rank-nine update port are rejected. No product numerical change.",
+    "corrected_test": "AppleScatter.AddCoversAxesIndexRanksAndEmptyDomains PASS",
+    "distinct_cases_verified": 90,
+    "total_executions_including_initial_failure": 91,
+    "public_header_gates_passed": 3,
+    "final_full_ctest_rerun": "NOT_RUN; unchanged passing cases reused"
+  },
+  "windows_off": {
+    "configure": "PASS",
+    "public_header_gates": "2/2 PASS",
+    "script": "scatter-add-off-windows.ps1; pwsh 7; no UAC or power changes"
+  },
+  "numerical_checks": [
+    "Independent FP64 oracle at storage boundaries; exact binary-fraction and all-one contribution controls",
+    "F32 cancellation permits only legal 0 or 1; half inputs accumulate in F32 and give 1",
+    "Graph and Direct independently checked; retained input/result bits remain immutable",
+    "Original Scatter Sum provenance asserted; checked failure recovery, state feedback and close exercised"
+  ],
+  "unchanged": [
+    "Frozen HYLE indexing/reduction/Scatter mathematical sources",
+    "Graph product sources",
+    "public API/dependencies/CMake",
+    "old ordered-qualification FAIL evidence"
+  ],
+  "pending": [
+    "Remaining B1 model-domain consumer qualification and complete 21-row accounting",
+    "Mini correctness, Air host instrumentation, WSL OFF",
+    "new-domain source/static/shared consumers, final selected gates and immutable-candidate P1"
+  ],
+  "shared_scatter_semantics": "Windows and Air schema tests passed; WSL/Mini, affected consumer/delivery closure still pending",
+  "source_design_budget_minutes": {
+    "used": 78,
+    "remaining": 42,
+    "total": 120
+  },
+  "performance_samples": 0,
+  "aggregate_acceptance": "INCONCLUSIVE",
+  "new_complete_requirement_cells": 0,
+  "loc": {
+    "metrics": [
+      {
+        "id": "repository",
+        "label": "full repository code",
+        "code": 1082397,
+        "files": 3062,
+        "selected_files": 6046,
+        "paths": [
+          "Git-tracked regular files (current working tree)"
+        ],
+        "languages": [
+          "all languages recognized by cloc"
+        ]
+      },
+      {
+        "id": "self_without_tests",
+        "label": "self-written excluding tests",
+        "code": 151919,
+        "files": 599,
+        "selected_files": 665,
+        "paths": [
+          "include/hyle",
+          "src"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA",
+          "Objective-C++",
+          "GLSL"
+        ]
+      },
+      {
+        "id": "module",
+        "label": "module implementation (compute-graph)",
+        "code": 56734,
+        "files": 248,
+        "selected_files": 282,
+        "paths": [
+          "include/hyle/compute*",
+          "include/hyle/graph*",
+          "src/compute*",
+          "src/graph*"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA",
+          "Objective-C++",
+          "GLSL"
+        ]
+      }
+    ],
+    "self_check": "pass"
+  },
+  "source_archive_bytes_per_machine": 60489961,
+  "archive": {
+    "path": "scatter-add-development-raw.zip",
+    "bytes": 44388,
+    "sha256": "9bf75d1ab1b81757dce4767f2aac82b8d53192f7d6565109b96e0ad305bfbe0a"
+  }
+}

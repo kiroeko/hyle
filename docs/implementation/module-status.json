@@ -383,7 +383,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-scatter-numerical-semantics.md",
-      "summary": "M2-S AUDITED：已区分Scatter assign Exact与add浮点归约，同步公共说明和需求矩阵；Windows公开头及42项schema测试通过。原有序FAIL保留；成熟add消费者、其它环境/交付与selected门未完成，覆盖0；共享语义16/30分钟，各路线预算与自研冻结保持。"
+      "summary": "M2-S AUDITED：Scatter算术traits/说明已修正，Windows和Air公开头及各42项schema门通过；原版MLX add首个普通消费者已过开发验证。WSL/Mini、其余selected/三交付闭包未完成，覆盖0；旧有序FAIL与自研冻结保持，共享语义16/30分钟。"
     },
     {
       "module": "compute_backend_cpu",
@@ -485,7 +485,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple AUDITED：索引/赋值/归约及概率成熟接线已过Air46用例和Windows OFF开发门；新合同下原版Scatter add资格420组通过，冻结A-S2待普通接线。旧有序FAIL保留；整批/多环境/三交付/P1未完成，源码/设计75/120分钟，自研冻结，覆盖0。"
+      "summary": "M2-B1 Apple AUDITED：原版MLX Scatter add已接普通Direct/Graph；Air37项Direct、11项Graph及42项schema已验证，首轮rank9测试构造失败和定向修正保留。Windows OFF通过；剩余模型组合/整批多环境/三交付/P1未完成，源码/设计78/120分钟，自研冻结，覆盖0。"
     },
     {
       "module": "graph_route_apple",
