@@ -1,0 +1,255 @@
+{
+  "kind": "Finite same-instance and swapped-instance oneDNN diagnostic; no product performance verdict",
+  "processes": 4,
+  "groups_per_process": 6,
+  "paired_rounds_per_group": 12,
+  "cross_instance_ratio_range": [
+    0.9916562748158574,
+    1.0009186677431638
+  ],
+  "same_instance_ratio_range": [
+    0.9718920183747431,
+    1.039047705705494
+  ],
+  "summaries": [
+    {
+      "process": 0,
+      "group": "pre-AA",
+      "arm": "1",
+      "ratio": "0.99493667130819063",
+      "low": "0.97470048934135678",
+      "high": "1.0332479412443787",
+      "rounds": "12"
+    },
+    {
+      "process": 0,
+      "group": "pre-BB",
+      "arm": "1",
+      "ratio": "0.99534294552685243",
+      "low": "0.9837178756412488",
+      "high": "1.0329627437895825",
+      "rounds": "12"
+    },
+    {
+      "process": 0,
+      "group": "AB",
+      "arm": "1",
+      "ratio": "0.99729265264702482",
+      "low": "0.9721069895325839",
+      "high": "1.0143871403214917",
+      "rounds": "12"
+    },
+    {
+      "process": 0,
+      "group": "BA",
+      "arm": "1",
+      "ratio": "0.99165627481585739",
+      "low": "0.97919229804464891",
+      "high": "1.0095310475431081",
+      "rounds": "12"
+    },
+    {
+      "process": 0,
+      "group": "post-AA",
+      "arm": "1",
+      "ratio": "0.98496161659122083",
+      "low": "0.96183260497814982",
+      "high": "0.99932897581827707",
+      "rounds": "12"
+    },
+    {
+      "process": 0,
+      "group": "post-BB",
+      "arm": "1",
+      "ratio": "0.99981968017280087",
+      "low": "0.97396323114538241",
+      "high": "1.0321477084067021",
+      "rounds": "12"
+    },
+    {
+      "process": 1,
+      "group": "pre-AA",
+      "arm": "1",
+      "ratio": "0.99486194121542881",
+      "low": "0.95817486975913491",
+      "high": "1.0057634900148755",
+      "rounds": "12"
+    },
+    {
+      "process": 1,
+      "group": "pre-BB",
+      "arm": "1",
+      "ratio": "1.0084187062647076",
+      "low": "0.952401238903409",
+      "high": "1.0472792577072731",
+      "rounds": "12"
+    },
+    {
+      "process": 1,
+      "group": "AB",
+      "arm": "1",
+      "ratio": "0.99958234501062937",
+      "low": "0.98024910168010171",
+      "high": "1.0782216279458459",
+      "rounds": "12"
+    },
+    {
+      "process": 1,
+      "group": "BA",
+      "arm": "1",
+      "ratio": "0.9961132274948109",
+      "low": "0.95625197181617472",
+      "high": "1.0407354494067964",
+      "rounds": "12"
+    },
+    {
+      "process": 1,
+      "group": "post-AA",
+      "arm": "1",
+      "ratio": "0.97189201837474315",
+      "low": "0.94479800288316107",
+      "high": "1.0580656705735003",
+      "rounds": "12"
+    },
+    {
+      "process": 1,
+      "group": "post-BB",
+      "arm": "1",
+      "ratio": "0.99899165422749969",
+      "low": "0.96266175006786636",
+      "high": "1.0237300616411509",
+      "rounds": "12"
+    },
+    {
+      "process": 2,
+      "group": "pre-AA",
+      "arm": "1",
+      "ratio": "1.0390477057054941",
+      "low": "0.97350547291608336",
+      "high": "1.1329039204389835",
+      "rounds": "12"
+    },
+    {
+      "process": 2,
+      "group": "pre-BB",
+      "arm": "1",
+      "ratio": "0.98953664664444352",
+      "low": "0.94880176969399033",
+      "high": "1.0166971518160439",
+      "rounds": "12"
+    },
+    {
+      "process": 2,
+      "group": "BA",
+      "arm": "1",
+      "ratio": "0.99977682153421843",
+      "low": "0.96277173913043446",
+      "high": "1.0167729847883304",
+      "rounds": "12"
+    },
+    {
+      "process": 2,
+      "group": "AB",
+      "arm": "1",
+      "ratio": "1.0003097300273702",
+      "low": "0.98846460562675043",
+      "high": "1.0200151658412835",
+      "rounds": "12"
+    },
+    {
+      "process": 2,
+      "group": "post-AA",
+      "arm": "1",
+      "ratio": "0.98846500700447271",
+      "low": "0.96261564963437096",
+      "high": "1.0168293503870749",
+      "rounds": "12"
+    },
+    {
+      "process": 2,
+      "group": "post-BB",
+      "arm": "1",
+      "ratio": "0.99740539974982156",
+      "low": "0.95285704899362755",
+      "high": "1.021595712322876",
+      "rounds": "12"
+    },
+    {
+      "process": 3,
+      "group": "pre-AA",
+      "arm": "1",
+      "ratio": "0.99030107917229859",
+      "low": "0.94405866404310601",
+      "high": "1.0061471818113521",
+      "rounds": "12"
+    },
+    {
+      "process": 3,
+      "group": "pre-BB",
+      "arm": "1",
+      "ratio": "0.98674233023216185",
+      "low": "0.96628340043392902",
+      "high": "1.014403482771397",
+      "rounds": "12"
+    },
+    {
+      "process": 3,
+      "group": "BA",
+      "arm": "1",
+      "ratio": "1.0009186677431638",
+      "low": "0.97955488125680623",
+      "high": "1.0264238133864256",
+      "rounds": "12"
+    },
+    {
+      "process": 3,
+      "group": "AB",
+      "arm": "1",
+      "ratio": "0.99667240096515974",
+      "low": "0.9721018515202513",
+      "high": "1.0226801085501673",
+      "rounds": "12"
+    },
+    {
+      "process": 3,
+      "group": "post-AA",
+      "arm": "1",
+      "ratio": "0.98567500657119755",
+      "low": "0.95939342091385293",
+      "high": "1.0338433066008643",
+      "rounds": "12"
+    },
+    {
+      "process": 3,
+      "group": "post-BB",
+      "arm": "1",
+      "ratio": "0.99943732591289969",
+      "low": "0.98430738561773734",
+      "high": "1.012877207970049",
+      "rounds": "12"
+    }
+  ],
+  "all_independent_correctness_checks": "PASS",
+  "cpu": 2,
+  "affinity_mask": "0x4",
+  "uac_or_power_changes": false,
+  "immutable_input_changes": [],
+  "jit_identity": "Original numerical instructions exactly match; only mov r11 absolute tail-mask pointer relocated. PE read-only table contents verified. Raw dumps and first strict-hash stop retained.",
+  "original_hash_guard_failure": "First process executed once, then strict cross-executable SHA check stopped. Resume re-parsed existing run 0 and ran only indices 1,2,3; no process repeated.",
+  "retained_historical_binary": {
+    "sha256": "f4c6232cc116fbd2f4b7966b1e43a36fb375dd4222428e7f57aefebbaa9c47ce",
+    "not_the_q2_binary": true,
+    "four_original_direct_lambda_thunks": "all folded to 0x140004a10 in retained map",
+    "map_sha256": "560ac134f2682fd0d754e19332a61395df3749710e6b75865a3f28c2a218bb87"
+  },
+  "conclusion": "No persistent 10 percent instance effect reproduced in this standalone layout. Same-instance point estimates fluctuate; 15/16 same-instance intervals include 1. This does not establish the cause of the old failure.",
+  "missing_observation": "Historical allocation prefix was not reproduced; no fine-grained wall-versus-thread-cycle observations were recorded.",
+  "cause_verdict": "INCONCLUSIVE",
+  "old_q2_qualification": "FAIL",
+  "product_performance": "INCONCLUSIVE",
+  "archive": {
+    "path": "instance-diagnostic-raw.zip",
+    "bytes": 1193988,
+    "sha256": "668ace6e725b3423f8d643f0953ed7293eaf934db1dd19ec6c5378f0d064a3e1"
+  }
+}
