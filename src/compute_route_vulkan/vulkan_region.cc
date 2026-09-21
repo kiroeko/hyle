@@ -100,6 +100,10 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   std::array<TensorDesc, 2> outputs;
   for (std::size_t i = 0; i < step.outputs.size(); ++i)
     outputs[i] = program.values[step.outputs[i]].description;
+  if (const auto *softmax = step.operation.get_if<Softmax>();
+      softmax && softmax->mask == MaskKind::kAdditive && input_count == 2 &&
+      inputs[0].data_type() != inputs[1].data_type())
+    return false;
   const auto &features = program.runtime->device->provider.native();
   const auto low_precision = [](const TensorDesc &description) {
     return description.data_type() == DataType::kFloat16 ||

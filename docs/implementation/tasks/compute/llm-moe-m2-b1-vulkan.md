@@ -279,3 +279,7 @@ A1首轮Windows普通测试在单行广播mask处触发原版reshape元素数断
 门通过。已有expand_broadcast为Binary保留scalar/row/column快捷形状，Softmax行矩阵转换
 要求完整shape。本具名根因第一次纠正：在axis变换前对尚未展开的mask调用原版repeat_4d；
 数值计算、原厂程序及API不变，增加scalar/row/column回归。源码/设计累计117/120分钟，余3分钟。
+
+纠正后新Softmax全部数值/布局用例通过；现有拒绝用例发现BF16升F32前未核对mask同类型，
+提升后类型信息丢失会接纳本卡未准入的F32 mask。固定在冷提升前检查原始dtype，保留原拒绝
+合同和测试；不通过放宽旧用例接纳混合mask。具名边界检查计1分钟，累计118/120分钟，余2分钟。
