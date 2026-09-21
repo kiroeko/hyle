@@ -338,3 +338,26 @@ Windows1,661,106字节OFF构建；保留活动原生构建/缓存/模型，开�
 接下来按本卡21行收账，补齐F04.3的L2归一化和F04.4的norm-before-swish gate等模型组合
 consumer资格，复用已有成熟原子和原生region。之后在同一整批候选执行Mini、host插桩、
 新域三交付、WSL OFF、final selected与P1；不逐算子重跑全包，不启动冻结自研比较。
+
+## AUDITED：B1 模型组合与转换边界消费者
+
+以`b0cc1203`为本检查点；仍在既定21行内，不增公开算子/API。锁定且clean的llama.cpp
+`4c9233c0`中，`src/models/models.h:14–18`用RMSNorm(epsilon/width)后乘1/sqrt(width)承载
+L2；`qwen35.cpp:243–251`为norm后乘silu(gate)，同文件320–325的普通Attention则乘sigmoid。
+文件SHA分别为`efe91c68c97d7217f7dc28bdc1e6c6cf8df1d03d449db09d9d40f90ea408ec9e`和
+已登记的`ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671`。
+本地2B配置的RMS epsilon为1e-6、linear head128/full-attention head256。固定F04.4的storage
+舍入边界继续由C0矩阵约束，不用其它融合实现的中间精度替代。
+
+冻结A-C1：仅增普通Direct/Graph组合consumer及对应说明，使用已经资格并接通的Cast、
+RmsNorm、Fill/Binary、View及GatedActivation/Unary；L2采用上述成熟RMS+scale组合并显式F32
+中间值。RMS swish以gate作为GatedActivation首输入、已舍入norm作为次输入；Attention的
+sigmoid与乘法保持各自声明的storage边界。不新增HYLE数学、MLX probe或产品lowering。
+独立FP64 oracle核对epsilon位置、gate顺序和中间舍入，涵盖F32/F16/BF16、head128/256及
+1/17/129尾、空/单/17token、head-interleaved gate切片、非连续输入、变化输入与旧结果寿命。
+
+冻结A-C2：补原有Cast消费者的IEEE边界用例，F32/F16/BF16两两转换，含正负零、次正规、
+舍入中点及其邻值、有限极值与NaN/Inf；独立标量encoder比较finite值/零符号，NaN按类别。
+不从平常数值容差推断Cast正确。原子已接通，直接用普通产品验证，不重复原版单算子探针。
+本增量只有测试、所属测试CMake和说明；发现产品缺陷仍先具名审计，再改产品。
+源码/设计累计86/120分钟，余34分钟；整批验收、三交付、P1和自研冻结不变。
