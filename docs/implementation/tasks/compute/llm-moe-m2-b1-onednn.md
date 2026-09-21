@@ -89,3 +89,12 @@ F32 softplus的诊断有小尾值差，有限样本最大绝对误差约1.91e-6�
 四环境/插桩/三交付与最终selected闭包、必要P1仍待整批稳定后完成，不签CANDIDATE/CLOSED，
 不增加256格完整覆盖。中央vendor选项触发的广泛selected门如实保留未执行状态；没有为了
 缩小选择改治理工具。旧Q2继续按用户决定视为无效测量，源码审计额度仍120/120分钟。
+
+本检查点产品提交`02fe54151d00b34c09de6d7a452c62097c14182f`，源码tree
+`e2db09aa625912d45f6a7004db7d2c7d8b6d381f`；[开发收据及原始日志](../../../../evidence/correctness/compute-llm-moe-m2-b1-onednn/README.md)
+包含失败与纠正、11/11最终结果及未运行门。统一脚本全Compute+Graph为**56,908实现行/
+249文件**，不含测试/vendor，self-check PASS。本轮无性能采样、无新增自研数学。
+
+复用后续工作所需的单一活动oneDNN build（约1.62GiB）；已归档的临时探针EXE/OBJ/CRT共
+18,756,425字节，删除命令被自动审批以“blocked by policy”拒绝且未执行，暂时保留。
+这不是产品/验收阻塞，不追加权限请求或改变用户机器设置。
