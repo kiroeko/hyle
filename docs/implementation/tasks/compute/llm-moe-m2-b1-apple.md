@@ -426,3 +426,29 @@ selector工具用例的独立fixture维护：新增资产owner映射触发59项�
 不修改selector算法、当前产品registry或中央组件图。工具测试记录独立于Apple正确性。
 
 原因/接法审计累计116/120分钟，余4分钟；实现和预声明验证单列，不追加第三次数值修正。
+
+## BF16 成熟修复与模型组合的开发检查点
+
+产品提交`6724165e`，Windows/Air同一tree
+`b94a091a7a577d30df5bce327b9755258220b941`：A-C3第二次接法成功。普通Direct的全部
+65,536个BF16 payload回转与196,608个F32中点邻值、九组storage转换，以及Graph变化的
+非连续输入/下游融合/旧结果均通过。原版失败探针对同一修复库的eager与compiled各20组
+全部通过。两个普通模型组合consumer也通过，包含45组shape/storage和中间舍入反例。
+
+Air Release/shared/WERROR整组4/4 CTest通过，其中Direct 39/39、Graph 14/14和两个公开
+头门。Windows Apple-OFF配置及2/2头门、selector工具59/59通过。第一次缺少独立license资产
+的配置失败、第一次数值修复剩余五项失败及payload失败均保留；没有改写为一次全程通过。
+原始日志、各次接法diff、不可变candidate、源码/产物hash和统一LOC见
+[开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/cast-development.json)。
+
+此修复复用上游整数舍入函数和原版copy核，未新增HYLE数学；冻结文件与Graph产品不变。
+BF16转换保留实际storage边界，可能增加dispatch/materialization，完整成本仍待本批P1。
+依赖锁使selector保守选中更广的factor/交付门，本记录只签上述已运行项，不声称全部完成。
+
+源码/设计仍116/120分钟，余4分钟；整卡AUDITED、聚合INCONCLUSIVE。Mini、host插桩、
+WSL OFF、新域三交付、其余selected门、完整21行记账及P1尚未完成，新完整覆盖格仍0。
+统一脚本在该不可变产品提交上统计Compute+Graph **56,734实现行 / 248文件**，不含测试/vendor；
+全库代码1,083,280行，自实现不含测试151,919行。文档/证据收口不重建或重跑P1。
+
+必要日志及失败接法压入开发证据后，核对任务owner与绝对路径，清理Windows/Air各60,581,791
+字节源码归档和Windows 1,661,106字节OFF构建；保留Air活动构建、依赖缓存和模型。

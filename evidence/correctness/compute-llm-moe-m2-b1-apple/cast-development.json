@@ -1,0 +1,190 @@
+{
+  "kind": "M2-B1 Apple upstream BF16 repair development verification; not whole B1 acceptance",
+  "candidate_commit": "6724165e7884bd78c4055f8d3aa7590dd82156d4",
+  "candidate_tree": "b94a091a7a577d30df5bce327b9755258220b941",
+  "machine_and_artifacts": {
+    "machine_model": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "source_checkout_commit": "edb0772082e29767b6a405a5d7f9e5517d6e05f6",
+    "canonical_validation_tree": "b94a091a7a577d30df5bce327b9755258220b941",
+    "unstaged_changes": "",
+    "source_sha256": {
+      "cmake/HyleAppleDependencies.cmake": "89e14839887e011ea3ce69a565b4e7ca1bf887d438fbc2de7672d7ff77c064dd",
+      "cmake/HyleDependencyLock.json": "6df9930b156597f467ba56af67032689fb9fb8587f5fe2271139c999403efbab",
+      "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md": "091aa672dc9fd9373a5c31a9b004c26263509795f8c833b0af63be2bad30cdf2",
+      "docs/user/apple-compute.md": "05779bb803f28321bb552e0f2dc7d0d2bb07b2ec34d1f7af4d3c4f2a517175ad",
+      "scripts/validation-policy.json": "67d2bda4e374437d9c32345c23e10045a27e90d2a1a9cfe11a8645c503c20ed6",
+      "src/compute_route_apple/CMakeLists.txt": "d544e149df8fdb4589dd089ed4fca1b322ef28099e071fbfee7d9798c872e590",
+      "tests/compute_route_apple/tensor_test.cc": "e956c9ad692f1c843478b4e313918ede87795eace34e4f3c027114546364427a",
+      "tests/graph_route_apple/CMakeLists.txt": "29260ea2af3766b425f58f090cf5c1749084dff929a9b650bacbe76d45fc13fc",
+      "tests/graph_route_apple/model_composition_consumer.h": "cc7457be65df066d3aec4a6bde56f71c14c5d1f2a14a2147126b3098ed125396",
+      "tests/graph_route_apple/model_composition_test.cc": "fb9d6329c1c9a50418ecfa2dc1d2e07038d9b289825d8f3e1380206c8461c8b7",
+      "tests/graph_route_apple/tensor_test.cc": "5c1309df45d3ba231a6eced73d86fe4c4a2c0f1a04c20ed6773a23c80b2ffc3f",
+      "tests/tooling/validation_selector_test.py": "35407b7c5dbc88acc8d405a167788e53230698bf7113d66aa0366a0fdd287951",
+      "third_party/mlx_cast/LICENSE": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01",
+      "third_party/mlx_cast/NOTICE.md": "07db2ece2c5d4de2169d3250ae31d6249a1fa0578cb2a007b459c6565eede896",
+      "third_party/mlx_cast/patches.json": "95af48cadc435640e1b6aa94dd72adf5d559a5f216fc7054a6b32bb68f4d01ac"
+    },
+    "artifact_sha256": {
+      "libhyle_compute_route_apple.dylib": "2ed7942cd3cf72ff9a881a45fd86d83b1fc379a3d262a439c822c4ffb383c095",
+      "libhyle_graph_route_apple.dylib": "50b8a02c6517d9b3bc4a8adb65b8d785aa2a07384b9594f1b5de48626558a59e",
+      "libmlx.dylib": "968e5deed7b21d7b463dd906bf07be834755f427fafcb219ba5d0db8dfc34e8a",
+      "hyle_compute_route_apple_test": "1596367a103b09a24cc260b03f01a2e4d8a7c7bcbc8ce4e2babff0f1df90c4c1",
+      "hyle_graph_route_apple_test": "7e98bc5d7d3a1a5dcad61e1ed60cbd7001312a2d63e33cbf29f7d829bfcee9fb"
+    },
+    "configuration": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:UNINITIALIZED=/Library/Developer/CommandLineTools/usr/bin/clang++",
+      "CMAKE_OSX_DEPLOYMENT_TARGET:STRING=14.4",
+      "HYLE_COMPUTE_APPLE:STRING=ON",
+      "HYLE_STATIC:BOOL=OFF",
+      "HYLE_WERROR:BOOL=ON",
+      "MLX_BUILD_CPU:BOOL=OFF",
+      "MLX_BUILD_CUDA:BOOL=OFF",
+      "MLX_BUILD_METAL:BOOL=ON",
+      "MLX_METAL_JIT:BOOL=ON"
+    ]
+  },
+  "snapshot_policy": "Full Windows canonical index archive; Air staged tree matched; no reverse source synchronization",
+  "implementation": "Borrow verbatim old upstream MLX float_to_bfloat_bits; instantiate original F32-to-BF16 copy loop with uint16 output and preserve AsType storage boundary in original fusion planner",
+  "patch_tree_sha256": "338da189e54c074322c98046ff8a31f0fffee43948760b2371ddd9a4fb06acad",
+  "native_results": {
+    "ctest": "4/4 PASS",
+    "direct_gtest": "39/39 PASS",
+    "graph_gtest": "14/14 PASS",
+    "header_gates": "2/2 PASS",
+    "original_probe": "eager 20/20 and compiled 20/20 PASS"
+  },
+  "coverage": [
+    "All 65536 BF16 payloads roundtrip through F32, noncontiguous input; NaN checked by category",
+    "196608 F32 midpoint neighbors with independent bit oracle",
+    "Nine float storage conversion pairs with IEEE boundaries",
+    "Graph changed strided inputs, fused downstream computation and retained results",
+    "Two ordinary model-composition consumers; 45 shape/storage groups and intermediate-storage counterexamples"
+  ],
+  "historical_failures": [
+    {
+      "tree": "c42ab5941d756138605b2390c47e1b9b37046d61",
+      "outcome": "Configure FAIL: missing distinct license runtime asset; fixed asset registration"
+    },
+    {
+      "tree": "5007b7b7811042df51000c3440b8bd2018a4943e",
+      "outcome": "Build PASS; original probe has 5 failures per mode, targeted BF16 payload test FAIL; no full native suite run"
+    },
+    {
+      "outcome": "Selector fixture 58/59 PASS: stale dormant ggml identity. Test-only fixture repair; final 59/59 PASS. Initial console output not independently archived."
+    }
+  ],
+  "windows_off": {
+    "configure": "PASS",
+    "header_gates": "2/2 PASS",
+    "power_or_uac_changes": false
+  },
+  "selector_tool_tests": "59/59 PASS",
+  "selected_plan": "READY; central dependency lock conservatively selects broader factors and delivery gates; this record does not claim they have all run",
+  "p0": "O(n) upstream integer conversion; BF16 storage boundary can add a native dispatch/materialization. No host payload fallback. Full conversion/fusion cost remains in B1 P1.",
+  "pending": [
+    "Complete B1 21-row accounting",
+    "Mini correctness and Air host instrumentation",
+    "WSL Apple OFF",
+    "Source/static/shared new-domain consumers",
+    "Remaining selected gates and immutable-candidate P1"
+  ],
+  "unchanged": [
+    "Frozen HYLE mathematical sources",
+    "Graph product sources",
+    "Shared selector/materializer algorithms",
+    "Old oneDNN Q2 FAIL"
+  ],
+  "source_design_budget_minutes": {
+    "used": 116,
+    "remaining": 4,
+    "total": 120
+  },
+  "performance_samples": 0,
+  "aggregate_acceptance": "INCONCLUSIVE",
+  "new_complete_requirement_cells": 0,
+  "loc": {
+    "metrics": [
+      {
+        "id": "repository",
+        "label": "full repository code",
+        "code": 1083280,
+        "files": 3068,
+        "selected_files": 6055,
+        "paths": [
+          "Git-tracked files at immutable commit"
+        ],
+        "languages": [
+          "all languages recognized by cloc"
+        ]
+      },
+      {
+        "id": "self_without_tests",
+        "label": "self-written excluding tests",
+        "code": 151919,
+        "files": 599,
+        "selected_files": 665,
+        "paths": [
+          "include/hyle",
+          "src"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA",
+          "Objective-C++",
+          "GLSL"
+        ]
+      },
+      {
+        "id": "module",
+        "label": "module implementation (compute-graph)",
+        "code": 56734,
+        "files": 248,
+        "selected_files": 282,
+        "paths": [
+          "include/hyle/compute*",
+          "include/hyle/graph*",
+          "src/compute*",
+          "src/graph*"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA",
+          "Objective-C++",
+          "GLSL"
+        ]
+      }
+    ],
+    "self_check": "pass"
+  },
+  "source_archive_bytes_per_machine": 60581791,
+  "archive": {
+    "path": "cast-development-raw.zip",
+    "bytes": 66568,
+    "sha256": "6f12f012b6282616088d3428083d17c1828c473515b782c6672557f3638c30d7"
+  },
+  "cleanup": {
+    "cast-cleanup-air.json": {
+      "removed": "/Users/kiro/hyle-m2b1-apple/indexed-source.tar.gz",
+      "bytes": 60581791,
+      "validation_checkout": "6724165e7884bd78c4055f8d3aa7590dd82156d4",
+      "tree": "b94a091a7a577d30df5bce327b9755258220b941"
+    },
+    "cast-cleanup-windows.json": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-b1-apple\\indexed-source.tar.gz",
+        "bytes": 60581791
+      },
+      {
+        "path": "C:\\hv\\m2b1-apple-off",
+        "bytes": 1661106.0
+      }
+    ]
+  }
+}

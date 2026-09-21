@@ -1,0 +1,1102 @@
+{
+  "kind": "Read-only analysis of original oneDNN-only Q2 A/A evidence; no new timing",
+  "date": "2026-09-21",
+  "source_archive": "evidence/performance/onednn-normalization-aa-q2/failed-experiment-raw.zip",
+  "source_archive_sha256": "ae947a9ee0cce43a68c4d52723a4402ae6dde67638a68678a7d37672404d9933",
+  "zip_crc": "PASS",
+  "source_file_sha256": {
+    "sources/bench/common/perf_process.h": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+    "sources/bench/contracts/onednn-normalization-p1-v1.json": "99c9aee9f5a87422e7af52d912f0da1f2ecf75dee48fb261f3ea943921ad1c49",
+    "sources/bench/graph_provider_onednn/normalization_p1_bench.cc": "e07321f7edc455996b919059e3d8e44620d4d0f277bb517d0e79a842f132d6a3",
+    "sources/bench/graph_provider_onednn/normalization_placement.cc": "e87172fb165f12b9e511e0484a6524014f7bd6e425ea525f3a5c018bfad193b9",
+    "sources/bench/graph_provider_onednn/normalization_preflight.py": "e57c1da4cebc7eda3ab8b96e6a50ddec584239f37d969c0179d4aafd25a2a3f3"
+  },
+  "nanobench_sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d",
+  "workload": "direct-layer-17x257",
+  "selected_processes": 8,
+  "historical_ratio": 0.906387684990405,
+  "historical_reciprocal": 1.1032806563458395,
+  "other_seven_ratio_range": [
+    0.9815234932218064,
+    1.0201305956504727
+  ],
+  "eight_process_median": 0.9959548497005679,
+  "same_case": [
+    {
+      "process": "selected-placement-candidate-first-candidate-first",
+      "ratio": 0.9927306411133175,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 0.9920440400577152,
+        "graph-rms-1x2048": 1.0028821701025565,
+        "direct-rms-17x2048": 0.987807609796828,
+        "graph-rms-17x2048": 0.9973818012492969,
+        "direct-rms-128x2048": 0.9776312274493907,
+        "graph-rms-128x2048": 1.0261869919005038,
+        "direct-rms-17x257": 1.0556434735923133,
+        "graph-rms-17x257": 0.9809528202283582,
+        "direct-layer-1x2048": 0.993358741228716,
+        "graph-layer-1x2048": 1.0028822031448519,
+        "direct-layer-17x2048": 1.0024546682659938,
+        "graph-layer-17x2048": 1.0015930204859458,
+        "direct-layer-128x2048": 0.9901828121450347,
+        "graph-layer-128x2048": 0.989294633069096,
+        "direct-layer-17x257": 0.9927306411133175,
+        "graph-layer-17x257": 0.9982913028536206
+      },
+      "telemetry": {
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-placement-candidate-first-candidate-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "00000163CF98C860",
+          "input_handle": "000004CC201A8000",
+          "output_handle": "000004CC20180000",
+          "workspace_handle": "000004CC20211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 0,
+          "workspace_mod_4096": 1408
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "00000163CFA308E0",
+          "input_handle": "000004CC201A8000",
+          "output_handle": "000004CC2018F000",
+          "workspace_handle": "000004CC20211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 61440,
+          "workspace_mod_4096": 1856
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "68244",
+          "tid": "6568",
+          "cpu": "2",
+          "executable_base": "00007FF7C74D0000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "234996100",
+          "thread_cpu_100ns": "2343750",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "00000163CF992000",
+          "allocation": "00000163CF960000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "00000163CFC51000",
+          "allocation": "00000163CFC50000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,179.81 |          458,755.75 |    2.2% |      0.10 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "|   101.5% |    100.0% .. 103.5% |            2,163.96 |          462,115.03 |    0.6% |      0.10 | `HYLE Native direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    `HYLE Native direct layer f32 R=17 W=257` ran 1.02x faster than `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "    95% CI [1.00 .. 1.04], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-placement-candidate-first-candidate-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench_placement.exe"
+      ],
+      "gross_fail": false
+    },
+    {
+      "process": "selected-placement-candidate-first-peer-first",
+      "ratio": 0.9991790582878183,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 1.0004776054762219,
+        "graph-rms-1x2048": 0.969341924091581,
+        "direct-rms-17x2048": 1.012597638579377,
+        "graph-rms-17x2048": 0.9950312663961423,
+        "direct-rms-128x2048": 0.9935430232517714,
+        "graph-rms-128x2048": 1.002185866361172,
+        "direct-rms-17x257": 0.9853734167945366,
+        "graph-rms-17x257": 0.9938513525728407,
+        "direct-layer-1x2048": 0.9979362718358974,
+        "graph-layer-1x2048": 1.0212518827714236,
+        "direct-layer-17x2048": 0.9935822050282203,
+        "graph-layer-17x2048": 1.0210822364873995,
+        "direct-layer-128x2048": 0.9907078577851333,
+        "graph-layer-128x2048": 1.0054549160887682,
+        "direct-layer-17x257": 0.9991790582878183,
+        "graph-layer-17x257": 0.9894191975938186
+      },
+      "telemetry": {
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-placement-candidate-first-peer-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "0000021A1162FEF0",
+          "input_handle": "000005CD80185000",
+          "output_handle": "000005CD801A8000",
+          "workspace_handle": "000005CD80211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 32768,
+          "workspace_mod_4096": 1856
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "0000021A11BC1CB0",
+          "input_handle": "000005CD80185000",
+          "output_handle": "000005CD8019E000",
+          "workspace_handle": "000005CD80211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 57344,
+          "workspace_mod_4096": 1408
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "10696",
+          "tid": "68380",
+          "cpu": "2",
+          "executable_base": "00007FF7C74D0000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "233823000",
+          "thread_cpu_100ns": "2343750",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "0000021A11592000",
+          "allocation": "0000021A11560000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "0000021A11B81000",
+          "allocation": "0000021A11B80000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,127.82 |          469,963.95 |    1.0% |      0.10 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "|   100.1% |     98.8% .. 102.3% |            2,126.08 |          470,350.08 |    1.8% |      0.10 | `HYLE Native direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    no difference resolved between `HYLE oneDNN direct layer f32 R=17 W=257` and `HYLE Native direct layer f32 R=17 W=257`",
+        "    ratio 1.00x, 95% CI [0.99 .. 1.02], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-placement-candidate-first-peer-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench_placement.exe"
+      ],
+      "gross_fail": false
+    },
+    {
+      "process": "selected-placement-peer-first-candidate-first",
+      "ratio": 1.0167968527037365,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 0.986430432057109,
+        "graph-rms-1x2048": 0.9938572397790225,
+        "direct-rms-17x2048": 1.017296800104076,
+        "graph-rms-17x2048": 0.9801879741009251,
+        "direct-rms-128x2048": 0.982754404526473,
+        "graph-rms-128x2048": 1.0083824537485224,
+        "direct-rms-17x257": 0.9953378713493232,
+        "graph-rms-17x257": 1.0046997995958076,
+        "direct-layer-1x2048": 0.9998521948020583,
+        "graph-layer-1x2048": 0.9937887649037304,
+        "direct-layer-17x2048": 0.9934853507201141,
+        "graph-layer-17x2048": 0.9902823987482916,
+        "direct-layer-128x2048": 0.9926085687634433,
+        "graph-layer-128x2048": 0.9868500040714994,
+        "direct-layer-17x257": 1.0167968527037365,
+        "graph-layer-17x257": 1.0003556155163547
+      },
+      "telemetry": {
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-placement-peer-first-candidate-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "000001AC3716B650",
+          "input_handle": "000003C0601A8000",
+          "output_handle": "000003C060180000",
+          "workspace_handle": "000003C060211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 0,
+          "workspace_mod_4096": 1408
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "000001AC370C67E0",
+          "input_handle": "000003C0601A8000",
+          "output_handle": "000003C06018F000",
+          "workspace_handle": "000003C060211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 61440,
+          "workspace_mod_4096": 1856
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "55336",
+          "tid": "22824",
+          "cpu": "2",
+          "executable_base": "00007FF7C74D0000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "235314800",
+          "thread_cpu_100ns": "2187500",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001AC370D2000",
+          "allocation": "000001AC370A0000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001AC37741000",
+          "allocation": "000001AC37740000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,145.81 |          466,025.40 |    3.1% |      0.10 | `HYLE Native direct layer f32 R=17 W=257`",
+        "|   100.8% |     97.5% .. 103.3% |            2,110.36 |          473,853.16 |    2.3% |      0.10 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    no difference resolved between `HYLE Native direct layer f32 R=17 W=257` and `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "    ratio 1.01x, 95% CI [0.97 .. 1.03], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-placement-peer-first-candidate-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench_placement.exe"
+      ],
+      "gross_fail": false
+    },
+    {
+      "process": "selected-placement-peer-first-peer-first",
+      "ratio": 1.0023856306618377,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 1.0376638039096515,
+        "graph-rms-1x2048": 0.974264135319302,
+        "direct-rms-17x2048": 0.9968350390210737,
+        "graph-rms-17x2048": 1.0272049997638206,
+        "direct-rms-128x2048": 1.0006930109556473,
+        "graph-rms-128x2048": 1.0323043749320797,
+        "direct-rms-17x257": 1.0025135376949843,
+        "graph-rms-17x257": 0.9788430221159617,
+        "direct-layer-1x2048": 1.004216830968658,
+        "graph-layer-1x2048": 1.0564453973413919,
+        "direct-layer-17x2048": 1.0163546411288125,
+        "graph-layer-17x2048": 1.0075821357973855,
+        "direct-layer-128x2048": 0.9818226040631317,
+        "graph-layer-128x2048": 0.9969822154155671,
+        "direct-layer-17x257": 1.0023856306618377,
+        "graph-layer-17x257": 1.0100052374769533
+      },
+      "telemetry": {
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-placement-peer-first-peer-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "000001E3B1819FE0",
+          "input_handle": "000004FA00185000",
+          "output_handle": "000004FA001A8000",
+          "workspace_handle": "000004FA00211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 32768,
+          "workspace_mod_4096": 1856
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "000001E3B1819C10",
+          "input_handle": "000004FA00185000",
+          "output_handle": "000004FA0019E000",
+          "workspace_handle": "000004FA00211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 57344,
+          "workspace_mod_4096": 1408
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "26df51df9bd815c7d37a9e39a4de49ad1b46bc70b33cdafb5fca77357942ddbd"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "32712",
+          "tid": "41128",
+          "cpu": "2",
+          "executable_base": "00007FF7C74D0000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "224664700",
+          "thread_cpu_100ns": "2187500",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001E3B17D2000",
+          "allocation": "000001E3B17A0000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001E3B1E41000",
+          "allocation": "000001E3B1E40000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,037.94 |          490,692.05 |    0.6% |      0.10 | `HYLE Native direct layer f32 R=17 W=257`",
+        "|   100.3% |     99.3% .. 101.5% |            2,033.09 |          491,862.66 |    0.4% |      0.10 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    no difference resolved between `HYLE Native direct layer f32 R=17 W=257` and `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "    ratio 1.00x, 95% CI [0.99 .. 1.01], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-placement-peer-first-peer-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench_placement.exe"
+      ],
+      "gross_fail": false
+    },
+    {
+      "process": "selected-primary-candidate-first-candidate-first",
+      "ratio": 0.9908898032785811,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 0.982695614996346,
+        "graph-rms-1x2048": 1.0002093004305492,
+        "direct-rms-17x2048": 0.9953820515466273,
+        "graph-rms-17x2048": 0.9927621677352072,
+        "direct-rms-128x2048": 1.02269887908273,
+        "graph-rms-128x2048": 1.0161378440848918,
+        "direct-rms-17x257": 1.0141054257791149,
+        "graph-rms-17x257": 0.9923018971636488,
+        "direct-layer-1x2048": 0.9946245096413198,
+        "graph-layer-1x2048": 0.9878867011969242,
+        "direct-layer-17x2048": 0.991866540378625,
+        "graph-layer-17x2048": 1.0037060003533154,
+        "direct-layer-128x2048": 1.014949546112769,
+        "graph-layer-128x2048": 1.0095465441271545,
+        "direct-layer-17x257": 0.9908898032785811,
+        "graph-layer-17x257": 0.9933586128473314
+      },
+      "telemetry": {
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-primary-candidate-first-candidate-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "000001F624F95EB0",
+          "input_handle": "00000587501A8000",
+          "output_handle": "0000058750180000",
+          "workspace_handle": "0000058750211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 0,
+          "workspace_mod_4096": 1408
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "000001F624FEBD90",
+          "input_handle": "00000587501A8000",
+          "output_handle": "000005875018F000",
+          "workspace_handle": "0000058750211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 61440,
+          "workspace_mod_4096": 1856
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "75304",
+          "tid": "68884",
+          "cpu": "2",
+          "executable_base": "00007FF646890000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "216864300",
+          "thread_cpu_100ns": "2031250",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001F624FA3000",
+          "allocation": "000001F624F70000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001F6252F1000",
+          "allocation": "000001F6252F0000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,094.07 |          477,538.75 |    0.9% |      0.10 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "|   101.0% |    100.6% .. 104.1% |            2,074.99 |          481,929.22 |    0.5% |      0.10 | `HYLE Native direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    `HYLE Native direct layer f32 R=17 W=257` ran 1.01x faster than `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "    95% CI [1.01 .. 1.04], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-primary-candidate-first-candidate-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench.exe"
+      ],
+      "gross_fail": false
+    },
+    {
+      "process": "selected-primary-candidate-first-peer-first",
+      "ratio": 0.9815234932218064,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 0.9990065694633506,
+        "graph-rms-1x2048": 1.0060431696212306,
+        "direct-rms-17x2048": 0.9931174969441326,
+        "graph-rms-17x2048": 1.024617416399972,
+        "direct-rms-128x2048": 1.007576128947974,
+        "graph-rms-128x2048": 0.9982482090654722,
+        "direct-rms-17x257": 1.0138165902486551,
+        "graph-rms-17x257": 1.012171559330423,
+        "direct-layer-1x2048": 1.011708126582391,
+        "graph-layer-1x2048": 0.9893519558873308,
+        "direct-layer-17x2048": 1.0006303934699052,
+        "graph-layer-17x2048": 1.0013931194385317,
+        "direct-layer-128x2048": 0.999907097101656,
+        "graph-layer-128x2048": 0.9962741231717072,
+        "direct-layer-17x257": 0.9815234932218064,
+        "graph-layer-17x257": 0.990672418117385
+      },
+      "telemetry": {
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-primary-candidate-first-peer-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "000001A579C32B30",
+          "input_handle": "000005A6D0185000",
+          "output_handle": "000005A6D01A8000",
+          "workspace_handle": "000005A6D0211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 32768,
+          "workspace_mod_4096": 1856
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "000001A579C6AD30",
+          "input_handle": "000005A6D0185000",
+          "output_handle": "000005A6D019E000",
+          "workspace_handle": "000005A6D0211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 57344,
+          "workspace_mod_4096": 1408
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "71496",
+          "tid": "23232",
+          "cpu": "2",
+          "executable_base": "00007FF646890000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "213693100",
+          "thread_cpu_100ns": "2187500",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001A579BD3000",
+          "allocation": "000001A579BA0000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "000001A57A241000",
+          "allocation": "000001A57A240000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,141.06 |          467,058.18 |    1.8% |      0.09 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "|   100.9% |     97.4% .. 102.6% |            2,101.50 |          475,850.23 |    1.2% |      0.09 | `HYLE Native direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    no difference resolved between `HYLE oneDNN direct layer f32 R=17 W=257` and `HYLE Native direct layer f32 R=17 W=257`",
+        "    ratio 1.01x, 95% CI [0.97 .. 1.03], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-primary-candidate-first-peer-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench.exe"
+      ],
+      "gross_fail": false
+    },
+    {
+      "process": "selected-primary-peer-first-candidate-first",
+      "ratio": 0.906387684990405,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 1.0035356055759233,
+        "graph-rms-1x2048": 1.0048440859551473,
+        "direct-rms-17x2048": 1.0106750190365883,
+        "graph-rms-17x2048": 1.0075864243336883,
+        "direct-rms-128x2048": 0.9756552908112114,
+        "graph-rms-128x2048": 1.017439052097593,
+        "direct-rms-17x257": 0.9613309137575681,
+        "graph-rms-17x257": 1.005096784558209,
+        "direct-layer-1x2048": 0.9929233189821718,
+        "graph-layer-1x2048": 0.9822022211733465,
+        "direct-layer-17x2048": 1.0164328264193616,
+        "graph-layer-17x2048": 1.0039168153248623,
+        "direct-layer-128x2048": 0.9802311578324282,
+        "graph-layer-128x2048": 0.98539435248296,
+        "direct-layer-17x257": 0.906387684990405,
+        "graph-layer-17x257": 0.9525838716962324
+      },
+      "telemetry": {
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-primary-peer-first-candidate-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "0000025BCBAA3540",
+          "input_handle": "000004CD501A8000",
+          "output_handle": "000004CD50180000",
+          "workspace_handle": "000004CD50211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 0,
+          "workspace_mod_4096": 1408
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "0000025BCBA9B120",
+          "input_handle": "000004CD501A8000",
+          "output_handle": "000004CD5018F000",
+          "workspace_handle": "000004CD50211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 61440,
+          "workspace_mod_4096": 1856
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "31724",
+          "tid": "36204",
+          "cpu": "2",
+          "executable_base": "00007FF646890000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "208862600",
+          "thread_cpu_100ns": "2187500",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "0000025BCBA03000",
+          "allocation": "0000025BCB9D0000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "0000025BCC0D1000",
+          "allocation": "0000025BCC0D0000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,051.52 |          487,444.20 |    0.3% |      0.09 | `HYLE Native direct layer f32 R=17 W=257`",
+        "|    90.4% |      88.3% .. 91.2% |            2,263.40 |          441,813.42 |    0.3% |      0.10 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    `HYLE oneDNN direct layer f32 R=17 W=257` ran 1.11x slower than `HYLE Native direct layer f32 R=17 W=257`",
+        "    95% CI [1.10 .. 1.13], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-primary-peer-first-candidate-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench.exe"
+      ],
+      "gross_fail": true
+    },
+    {
+      "process": "selected-primary-peer-first-peer-first",
+      "ratio": 1.0201305956504727,
+      "all_workload_ratios": {
+        "direct-rms-1x2048": 1.0012932479716548,
+        "graph-rms-1x2048": 0.982266318363092,
+        "direct-rms-17x2048": 1.0170835879810616,
+        "graph-rms-17x2048": 1.0048339782198568,
+        "direct-rms-128x2048": 1.0088575807310416,
+        "graph-rms-128x2048": 1.0141635704890037,
+        "direct-rms-17x257": 1.0138856580994726,
+        "graph-rms-17x257": 1.0283454706129564,
+        "direct-layer-1x2048": 0.9997475605171329,
+        "graph-layer-1x2048": 0.993968479546962,
+        "direct-layer-17x2048": 1.0090893299469226,
+        "graph-layer-17x2048": 0.9910839852900103,
+        "direct-layer-128x2048": 0.9952126002464357,
+        "graph-layer-128x2048": 1.0159438191054886,
+        "direct-layer-17x257": 1.0201305956504727,
+        "graph-layer-17x257": 0.9947599249150165
+      },
+      "telemetry": {
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first",
+        "aa_route": "selected",
+        "paired_mode": "nanobench-compare",
+        "tasks": "1",
+        "apple_qos": "not-applicable",
+        "qos_ok": "not-applicable",
+        "affinity_topology": "external",
+        "caller_cpu": "external",
+        "affinity_ok": "not-applicable",
+        "run_nonce": "d6dc777da66847e980344478761aecfc:selected-primary-peer-first-peer-first"
+      },
+      "instances": [
+        {
+          "workload": "direct-layer-17x257",
+          "role": "candidate",
+          "provider": "onednn",
+          "object": "00000206E1F7B120",
+          "input_handle": "0000059B70185000",
+          "output_handle": "0000059B701A8000",
+          "workspace_handle": "0000059B70211740",
+          "workspace_bytes": "392",
+          "output_mod_65536": 32768,
+          "workspace_mod_4096": 1856
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "role": "peer",
+          "provider": "onednn",
+          "object": "00000206E1F83530",
+          "input_handle": "0000059B70185000",
+          "output_handle": "0000059B7019E000",
+          "workspace_handle": "0000059B70211580",
+          "workspace_bytes": "392",
+          "output_mod_65536": 57344,
+          "workspace_mod_4096": 1408
+        }
+      ],
+      "jit": [
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.28.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        },
+        {
+          "filename": "dnnl_dump_cpu_jit_lnorm_stat_and_data_kernel_t.29.bin",
+          "bytes": 3039,
+          "sha256": "c739bdccc1ba774af10c8cd257b88d689382c02c2c006deed40b134e695568b0"
+        }
+      ],
+      "process_observation": [
+        {
+          "workload": "direct-layer-17x257",
+          "pid": "49664",
+          "tid": "22124",
+          "cpu": "2",
+          "executable_base": "00007FF646890000",
+          "private_executable_ranges": "2"
+        }
+      ],
+      "coarse_intervals": [
+        {
+          "workload": "direct-layer-17x257",
+          "wall_ns": "329951900",
+          "thread_cpu_100ns": "3281250",
+          "cpu_before": "2",
+          "cpu_after": "2"
+        }
+      ],
+      "private_executable_ranges": [
+        {
+          "workload": "direct-layer-17x257",
+          "base": "00000206E1EE3000",
+          "allocation": "00000206E1EB0000",
+          "bytes": "262144",
+          "protection": "64"
+        },
+        {
+          "workload": "direct-layer-17x257",
+          "base": "00000206E25B1000",
+          "allocation": "00000206E25B0000",
+          "bytes": "262144",
+          "protection": "64"
+        }
+      ],
+      "table": [
+        "| relative |              95% CI |               ns/op |                op/s |    err% |     total | normalization direct layer f32 R=17 W=257",
+        "|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------------",
+        "|   100.0% |                     |            2,148.49 |          465,442.76 |    3.0% |      0.14 | `HYLE Native direct layer f32 R=17 W=257`",
+        "|   102.1% |    100.3% .. 103.9% |            2,106.09 |          474,812.40 |    3.1% |      0.14 | `HYLE oneDNN direct layer f32 R=17 W=257`",
+        "",
+        "  Summary",
+        "    `HYLE oneDNN direct layer f32 R=17 W=257` ran 1.02x faster than `HYLE Native direct layer f32 R=17 W=257`",
+        "    95% CI [1.00 .. 1.04], 12 paired rounds, interleaved"
+      ],
+      "launcher_environment": {
+        "HYLE_BENCH_OBSERVE_INSTANCES": "1",
+        "HYLE_PERF_RUN_NONCE": "d6dc777da66847e980344478761aecfc:selected-primary-peer-first-peer-first",
+        "HYLE_PERF_PARENT_MASK": "0x4",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_AA_ROUTE": "selected",
+        "ONEDNN_JIT_DUMP": "1",
+        "HYLE_PERF_PRIORITY": "above-normal"
+      },
+      "command": [
+        "C:\\hyle-scratch\\active-cpu\\p1\\bin\\hyle_onednn_normalization_bench.exe"
+      ],
+      "gross_fail": false
+    }
+  ],
+  "new_performance_processes": 0,
+  "old_qualification": "FAIL",
+  "product_winner_verdict": "INCONCLUSIVE",
+  "proven": [
+    "Both roles use the same DirectRoute and oneDNN provider, shared problem inputs, independent output/workspace/context/invocation.",
+    "The archived Native display label is stale in selected A/A mode; it does not describe the actual provider.",
+    "Two relevant JIT dumps have identical bytes within all eight processes; this does not identify role-specific JIT entry addresses.",
+    "The instrument uses common iteration counts and paired ABBA/BAAB blocks; there is no always-A-then-B measured order.",
+    "The failing process has a within-process paired interval below unity; a single isolated slow sample has not been proved.",
+    "Candidate/peer low address offsets of the failed configuration also occur in successful configurations; these offsets alone do not explain the result.",
+    "Gross qualification uses the ratio of marginal throughput medians; paired log-ratio median is a different statistic. Both reported values fail this case."
+  ],
+  "unresolved": [
+    "Actual role-specific JIT entry addresses and physical cache placement were not recorded.",
+    "Per-round samples were discarded by the benchmark even though CompareResult retained them in memory.",
+    "CPU identity and thread CPU time were sampled around the complete comparison, not for each arm; no arm-specific cycles or context-switch trace exists.",
+    "Existing evidence cannot distinguish persistent instance/code/data placement effects from short-lived environment interference in that process."
+  ],
+  "scope_limits": [
+    "No frozen native implementation inspected or timed",
+    "No product, benchmark or shared instrument changes",
+    "No old Q2 rerun, threshold adjustment, exception or power-policy change"
+  ],
+  "analysis_bundle": {
+    "path": "existing-evidence-analysis-raw.zip",
+    "bytes": 11144,
+    "sha256": "1b0b2c9fd4f9a654cc490056e32ef217cb225a9f2a8dd0308d9862e17e33b59b"
+  }
+}
