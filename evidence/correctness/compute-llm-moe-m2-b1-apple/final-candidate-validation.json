@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "stage": "M2-B1 Apple candidate readiness",
+  "candidate": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e",
+  "windows_source_archive_sha256": "ea7ce20dc666a37d8a56803ba72c8698d3762dfb8eaa79495e0446a96c7e9781",
+  "verdict": "PASS_WITH_PENDING_FINAL_GATES",
+  "coverage": {
+    "requirements": [
+      "F01.1-F01.3",
+      "F02.1-F02.4",
+      "F03.1-F03.4",
+      "F04.1-F04.6",
+      "F19.1-F19.4"
+    ],
+    "rows": 21,
+    "provider": "MLX 0.32.2 original operations/compiled regions plus the qualified upstream BF16 cast patch",
+    "ordinary_paths": [
+      "Apple Direct Compute",
+      "Apple Graph"
+    ]
+  },
+  "validation": {
+    "air_release_shared": {
+      "machine": "Mac16,12",
+      "verdict": "PASS",
+      "ctest": "7/7",
+      "scope": [
+        "compute_ops",
+        "compute_provider_ggml_metal",
+        "compute_route_apple",
+        "graph_route_apple"
+      ]
+    },
+    "mini_release_static": {
+      "machine": "Mac16,10",
+      "verdict": "PASS",
+      "ctest": "7/7",
+      "role": "correctness and portability only"
+    },
+    "air_host_instrumentation": {
+      "asan": "PASS 4/4; leak detection unavailable; host code only",
+      "ubsan": "PASS 4/4",
+      "device_limit": "does not qualify Metal driver/device memory"
+    },
+    "delivery": {
+      "machine": "Mac16,12",
+      "verdict": "PASS",
+      "modes": [
+        "source",
+        "relocated shared",
+        "relocated static"
+      ],
+      "consumer": "ordinary Compute and Graph Apple FFN/recurrent programs",
+      "isolation": "producer build and Windows archive extraction hidden for installed consumers",
+      "checks": [
+        "prefix relocation",
+        "runtime staging",
+        "license assets",
+        "private header exclusion",
+        "no exported ggml C symbols from the shared runtime"
+      ]
+    },
+    "windows_apple_off": {
+      "verdict": "PASS",
+      "ctest": "2/2 public header gates",
+      "toolchain": "MSVC 19.50 Release static WERROR"
+    },
+    "wsl_apple_off": {
+      "verdict": "PASS",
+      "ctest": "2/2 public header gates",
+      "source": "one-way Windows worktree mirror on WSL ext4"
+    }
+  },
+  "fixture_corrections": [
+    "The ggml Metal shared test directly used Compute Ops, Mem and Error but did not link them; only the test target dependency declaration changed.",
+    "An Air automatic reconfigure omitted the registered Metal toolchain shim; rerunning through the task Configure entry passed.",
+    "The delivery archive did not expose a git get-tar-commit-id pax value; the exact Windows-produced archive SHA-256 was checked before extraction.",
+    "The first Windows OFF build named non-generated individual targets and then exposed stale CTest executables; the generated aggregate targets were built and CTest was rerun with an explicit zero exit code."
+  ],
+  "pending": [
+    "one predeclared Apple B1 P1 bundle on the immutable candidate",
+    "final selector-selected reconciliation and bounded candidate review",
+    "CLOSED state and 21 matrix verdict updates"
+  ],
+  "loc": {
+    "compute_graph_implementation_lines": 57434,
+    "compute_graph_files": 249,
+    "tests_and_vendor_excluded": true,
+    "self_check": "pass"
+  },
+  "raw_archive": "final-candidate-raw.zip",
+  "raw_archive_sha256": "b3cf5f37ddcb847404bc26a93cedba5be3708e81d846e95f0b539c138a2f54b1"
+}

@@ -483,9 +483,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple AUDITED：原版索引/归约/Scatter与模型组合已接线；上游MLX BF16窄修复通过Air Direct39/Graph14、40组原版探针与Windows OFF，历史失败保留。源码/设计116/120分钟；Mini/插桩/三交付/最终selected/P1待验，自研冻结，完整覆盖0。"
+      "summary": "M2-B1 Apple CANDIDATE：21行成熟MLX路径固定；Air/Mini集中7/7、Air ASan/UBSan、三交付及Windows/WSL OFF通过。候选fd03ba10；final selected/P1待验，自研冻结，完整覆盖0。",
+      "candidate": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e"
     },
     {
       "module": "graph_route_apple",

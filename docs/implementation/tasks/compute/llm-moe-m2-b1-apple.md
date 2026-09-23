@@ -495,3 +495,25 @@ A4范围内只为`hyle_compute_provider_ggml_metal_test`声明其直接测试依
 Compute Ops 2、ggml Metal 1、Apple Direct 2、Graph 2。两个环境/fixture失败均保留，未计为
 产品数值失败。Mini、插桩、OFF、三交付、final selected与P1仍按整批一次执行；本检查点不提前
 签21行或CLOSED。
+
+## CANDIDATE：集中跨环境与交付闭包
+
+不可变候选为`fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e`。Windows canonical工作树由该
+提交生成SHA-256为`ea7ce20d...c7e9781`的单份归档；Air和Mini只作可丢弃验证副本，没有源码
+反向进入Windows。集中结果见
+[候选收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/final-candidate-validation.json)：
+
+- Air Release/shared与Mini Release/static各7/7，通过Compute Ops、ggml Metal、Apple Direct与
+  Graph；Mini只签correctness/portability。
+- Air host ASan与UBSan各4/4；ASan不含leak detection且二者都不代签Metal driver/device。
+- 同一Windows归档的source、relocated shared、relocated static普通Compute+Graph消费通过；
+  producer build和源码隐藏，prefix搬移、运行时资源、许可证、私有头及shared ggml符号检查通过。
+- Windows与WSL Apple-OFF公开头各2/2；WSL源码只从Windows单向覆盖到ext4。
+
+候选前发现的测试直接链接缺失、Air工具链shim、压缩归档身份检查和Windows旧CTest fixture问题
+均保留原始失败并作具名纠正；只有第一个改动了测试CMake，产品计算/依赖图未改变。原始日志压缩
+包为`final-candidate-raw.zip`，SHA-256为`b3cf5f37...a2f54b1`。
+
+当前进入CANDIDATE只冻结产品树；尚未运行的单个Apple B1 P1 bundle、final selected复核、
+21行矩阵PASS与CLOSED绝不由上述结果代签。统一脚本在候选上为Compute+Graph **57,434实现行 /
+249文件**，不含tests/vendor，self-check通过。
