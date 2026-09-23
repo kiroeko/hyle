@@ -29,3 +29,8 @@ MSVC Release shared、CPU-only、oneDNN-OFF，7个定向测试目标通过，含
 反例，不是新增产品能力：确认 all-masked Softmax、ordered Scatter-add 组合与特殊值差异；
 小尾值截断只记录事实，未代替适用误差门。该探针没有调用冻结 HYLE 算子或启动性能采样。
 oneDNN 新能力范围方案仍待用户决定，原 Q2 状态和失败记录未改。
+
+`indexed-mutation-windows.json` 与对应日志记录 C1-X 的成熟 Scatter-add 开发检查点：原版
+ggml `get_rows_back`承载重复更新，公开Direct/Graph均选择`ggml-cpu`；F32/F16/BF16、任意
+中间轴、多维/空indices、动态越界及旧结果保留通过7/7定向目标。原版`set_rows`对重叠目标
+未定义，因此assign明确留作残差，F02.2不签PASS；跨环境、三交付、P1和CPU B1仍未关闭。

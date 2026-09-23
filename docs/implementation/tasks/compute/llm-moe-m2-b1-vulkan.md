@@ -4,7 +4,7 @@
 
 **2026-09-23批量执行补充**：Vulkan B1按ggml Vulkan managed region与IREE补位能力族成批
 接线，共用schema、资源、Direct/Graph和表驱动资格；不再逐算子开卡或重复三交付/P1。局部
-开发只跑受影响门，21行稳定后一次集中闭包。整个M2完成后暂停，不进入M3。
+开发只跑受影响门，成熟能力账本稳定后一次集中闭包。整个M2完成后暂停，不进入M3。
 
 - component / owner：`compute_provider_ggml_vulkan`、`compute_route_vulkan`、
   `graph_route_vulkan`；`/root`。当前阶段 AUDITED；`b9478142`已独立完成SCOPED。
@@ -38,8 +38,9 @@
 - 机器：Windows RTX4070、Air/MoltenVK；WSL/Mini 按实际公共/OFF/host风险。
   parallel2、重型串行、Windows DLL邻置、无UAC/电源改动；同一批四路线推进，
   Vulkan 不再等其它三路线全部完成后启动。
-- stop：有限 FIX、21行成熟承载及适用门完成才 CLOSED；预算到期须裁决，未运行不签 PASS。
-  M2完成后先暂停汇报；恢复后仍保留M5前停止点。旧C1/M3-01专门暂停保持取消。
+- stop：有限FIX内全部已准入Vulkan成熟能力接通并完成适用门、未接通数量为0后才CLOSED；
+  原版不支持/不相容域留精确反例和M3/M4残差owner，不写PASS、不削减21行分母、不转自研。
+  预算到期须裁决，未运行不签PASS。M2完成后先暂停汇报；恢复后仍保留M5前停止点。
 
 ## SCOPED 审计边界
 

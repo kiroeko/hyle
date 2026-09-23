@@ -4,11 +4,11 @@
 
 **2026-09-23批量执行补充**：CPU B1按ggml完整region与oneDNN能力族成批施工，共用普通
 Direct/Graph、资源和表驱动资格；不再逐算子开新卡或重复跨环境/三交付/P1。局部开发只跑
-受影响门，21行稳定后一次集中闭包。整个M2完成后暂停，不进入M3。
+受影响门，成熟能力账本稳定后一次集中闭包。整个M2完成后暂停，不进入M3。
 
 - component / owner：`compute_provider_ggml`、`compute_route_cpu`、`graph_route_cpu`；`/root`。
 - baseline：`b2d2cfa68d1ac65483f8a2f091a9115cd0807baa`；Windows canonical checkout，工作树干净。
-- 当前阶段：AUDITED。三个 owner 只实施下列 C1–C6；全部21行的完成门保持不变。
+- 当前阶段：AUDITED。三个 owner 只实施下列 C1–C6；21行需求分母保持不变。
 - trigger：M0 的 B1 真实消费要求普通 CPU Direct/Graph 承载 F01–F04/F19，共21行。
   现有两个普通 CPU 工厂只组装 oneDNN/native，`compute_provider_ggml` 仍是无产品实现的身份。
 - 原 BLOCKED 恢复事实：[M1-G](llm-moe-m1-ggml-runtime.md) 已以 `04368a39` 完成独立
@@ -33,9 +33,9 @@ Direct/Graph、资源和表驱动资格；不再逐算子开新卡或重复跨�
 - 预算：源码/设计总2小时；前置只读定位保守扣除30分钟，本轮合同与入口核对再预留10分钟，
   新增定向源码/设计审核上限80分钟；不是新的2小时。每个具名产品根因最多两次纠正。
   正常构建和适用测试不冒充调查；到预算固定结论/具名缺口，不无限扩来源或转自研。
-- stop：21行 CPU 必需域及全部适用门完成后关闭；上游不接受或数值不相容须先给出原版反例，
-  核对已准入成熟组合/后备。未接通仍未完成，不削减需求分母。M2完成后先暂停汇报；恢复后
-  仍保留M5前停止点。
+- stop：全部已准入CPU成熟能力接通并完成适用门、未接通数量为0后关闭；上游不接受或数值
+  不相容须给出原版反例和M3/M4残差owner，不写PASS、不削减21行分母，也不在M2改写冻结数学。
+  M2完成后先暂停汇报；恢复后仍保留M5前停止点。
 
 ## 必须在 AUDITED 固定的决定
 
@@ -326,3 +326,24 @@ Softmax PASS，也不解除 oneDNN Q2。合同核对另计2分钟，CPU本卡累
 也不能直接改成PASS。成熟Scatter组合尚需新合同下的独立资格和普通接线验收。
 此处只同步已审定的共享合同，不研究或修改CPU冻结数学，不重置本卡118/120分钟预算；
 oneDNN新任务、旧Q2资格FAIL和后续原因调查均保持原约定。
+
+## C1-X：原版 indexed mutation 共享审计与 CPU Scatter-add 检查点
+
+2026-09-23复用同一ggml pin的已登记源码事实，不重启Provider调查：`ggml_get_rows_back`在CPU、
+CUDA、Vulkan后端都有原版实现，能归约重复目标；`ggml_set_rows`的公开合同则明确目标行重叠时
+行为未定义，不能代签公开Scatter assign的重复索引last-writer-wins。共享M2-S已经撤销逐次低
+精度舍入要求，因此前者可按新合同资格化，后者继续是精确残差。这个裁决消耗本卡最后2分钟，
+源码/设计累计120/120；后续只允许按本表实施和预声明验证，不再扩来源或换卡续杯。
+
+| FIX | 成熟接法 | 明确边界 |
+|---|---|---|
+| C1-X1 | 将逻辑`[outer, rows, inner]`冷排布为ggml二维row table；F16/BF16 base/update转F32，原版`get_rows_back`归约重复updates，再与base原版add并最终一次转回storage | F32/F16/BF16、I32动态索引、任意合法axis和标量/多维/空indices；所有updates参与，不新增HYLE数学核 |
+| C1-X2 | 复用既有外部索引边界，在输出映射前检查当前payload；同一私有recipe供Direct单节点和Graph region | 越界不发布或改写旧输出；普通工厂报告`ggml-cpu`，执行期不重新选Provider |
+| 残差 | assign不接`set_rows`；I64索引不冒充已支持 | F02.2整行继续UNPROVEN；冻结native assign/add不修改、不比较，交M3汇总/M4裁决 |
+
+[Windows开发收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-cpu/indexed-mutation-windows.json)
+记录同一Release shared候选的7/7门：Provider三storage重复add/任意中间轴/空indices、普通Direct、
+单步普通Graph、动态越界后旧结果以及三个头/真实CPU executor均通过。首次测试只因调用通用
+`prepare`时漏包`Operation`而编译失败，修正测试后产品无需纠正；Ninja依赖库一次恢复后最终
+增量只编受影响对象。统一Compute+Graph LOC为**57,491实现行 / 249文件**，排除测试、bench、
+docs和vendor，self-check PASS。该记录是开发检查点，不签F02.2、跨环境/三交付/P1或CPU B1关闭。

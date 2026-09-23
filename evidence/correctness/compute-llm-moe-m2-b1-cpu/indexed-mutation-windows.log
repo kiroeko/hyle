@@ -1,0 +1,25 @@
+Test project C:/public/project-hyle/hyle/.scratch/build/m2cpu-indexed
+    Start 65: hyle_compute_provider_ggml_header_self_contained_test
+1/7 Test #65: hyle_compute_provider_ggml_header_self_contained_test ...   Passed    2.06 sec
+    Start 66: hyle_compute_provider_ggml_test
+2/7 Test #66: hyle_compute_provider_ggml_test .........................   Passed    0.03 sec
+    Start 74: hyle_compute_route_cpu_header_self_contained_test
+3/7 Test #74: hyle_compute_route_cpu_header_self_contained_test .......   Passed    2.23 sec
+    Start 75: hyle_compute_route_cpu_test
+4/7 Test #75: hyle_compute_route_cpu_test .............................   Passed    0.01 sec
+    Start 76: hyle_graph_route_cpu_header_self_contained_test
+5/7 Test #76: hyle_graph_route_cpu_header_self_contained_test .........   Passed    2.55 sec
+    Start 77: hyle_graph_route_cpu_test
+6/7 Test #77: hyle_graph_route_cpu_test ...............................   Passed    0.06 sec
+    Start 78: hyle_graph_route_cpu_cpu_executor_test
+7/7 Test #78: hyle_graph_route_cpu_cpu_executor_test ..................   Passed    0.04 sec
+
+100% tests passed out of 7
+
+Label Time Summary:
+compute_provider_ggml    =   2.10 sec*proc (2 tests)
+compute_route_cpu        =   2.24 sec*proc (2 tests)
+graph_route_cpu          =   2.64 sec*proc (3 tests)
+headers                  =   6.84 sec*proc (3 tests)
+
+Total Test time (real) =   7.00 sec

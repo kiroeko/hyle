@@ -393,6 +393,103 @@ TEST(GgmlCpuProvider, GatherEmptyIndicesNeedNoPayload) {
   EXPECT_TRUE(status.ok()) << status.message();
 }
 
+template <class Value> void check_scatter_add() {
+  const auto type = half_test::data_type<Value>();
+  const auto base_desc = dense(type, {2, 3, 2});
+  const auto index_desc = dense(DataType::kInt32, {2, 2});
+  const auto update_desc = dense(type, {2, 2, 2, 2});
+  std::vector<Value> base(12), updates(16);
+  for (std::size_t i = 0; i < base.size(); ++i)
+    base[i] = half_test::encode<Value>(10.0 + static_cast<double>(i));
+  for (std::size_t i = 0; i < updates.size(); ++i)
+    updates[i] = half_test::encode<Value>(1.0 + static_cast<double>(i % 4));
+  std::array<std::int32_t, 4> ids{2, 0, 2, 1};
+  auto base_buffer = half_test::buffer<Value>(base);
+  auto index_buffer = half_test::buffer<std::int32_t>(ids);
+  auto update_buffer = half_test::buffer<Value>(updates);
+  auto output = output_buffer(base_desc);
+  const std::array inputs{
+      ConstTensorView::create(base_desc, base_buffer.view()).value(),
+      ConstTensorView::create(index_desc, index_buffer.view()).value(),
+      ConstTensorView::create(update_desc, update_buffer.view()).value()};
+  auto output_view = TensorView::create(base_desc, output.view()).value();
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto prepared =
+      prepare(context, Operation(Scatter{.axis = 1, .kind = ScatterKind::kAdd}),
+              inputs, std::span(&output_view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  auto invocation = prepared->create_invocation();
+  ASSERT_TRUE(invocation) << invocation.error().message();
+  auto queue = context.create_queue().value();
+  const auto submit = [&]() -> hyle::Status {
+    auto completion =
+        invocation->submit(queue, inputs, std::span(&output_view, 1));
+    if (!completion)
+      return std::move(completion).error();
+    return completion->wait();
+  };
+  ASSERT_TRUE(submit().ok());
+  auto expected = base;
+  for (std::size_t outer = 0; outer < 2; ++outer) {
+    std::array<double, 6> sums{};
+    for (std::size_t row = 0; row < 3; ++row)
+      for (std::size_t inner = 0; inner < 2; ++inner)
+        sums[row * 2 + inner] =
+            half_test::decode(base[(outer * 3 + row) * 2 + inner]);
+    for (std::size_t update = 0; update < ids.size(); ++update)
+      for (std::size_t inner = 0; inner < 2; ++inner)
+        sums[static_cast<std::size_t>(ids[update]) * 2 + inner] +=
+            half_test::decode(
+                updates[(outer * ids.size() + update) * 2 + inner]);
+    for (std::size_t row = 0; row < 3; ++row)
+      for (std::size_t inner = 0; inner < 2; ++inner)
+        expected[(outer * 3 + row) * 2 + inner] =
+            half_test::encode<Value>(sums[row * 2 + inner]);
+  }
+  const auto actual = half_test::read<Value>(output);
+  ASSERT_EQ(actual.size(), expected.size());
+  EXPECT_EQ(std::memcmp(actual.data(), expected.data(),
+                        actual.size() * sizeof(Value)),
+            0);
+
+  ids.back() = 3;
+  ASSERT_TRUE(index_buffer.view().write(std::as_bytes(std::span(ids))).ok());
+  EXPECT_TRUE(submit().IsOutOfRange());
+  const auto unchanged = half_test::read<Value>(output);
+  EXPECT_EQ(std::memcmp(unchanged.data(), expected.data(),
+                        unchanged.size() * sizeof(Value)),
+            0);
+}
+
+TEST(GgmlCpuProvider, ScatterAddUsesMatureDuplicateReductionAndChecksIndices) {
+  check_scatter_add<float>();
+  check_scatter_add<hyle::simd::float16_t>();
+  check_scatter_add<hyle::simd::bfloat16_t>();
+}
+
+TEST(GgmlCpuProvider, ScatterAddWithEmptyIndicesCopiesTheBase) {
+  const auto base_desc = dense(DataType::kFloat32, {2, 3});
+  const auto index_desc = dense(DataType::kInt32, {0});
+  const auto update_desc = dense(DataType::kFloat32, {2, 0});
+  const std::array<float, 6> values{1, 2, 3, 4, 5, 6};
+  auto base = half_test::buffer<float>(values);
+  auto indices = output_buffer(index_desc);
+  auto updates = output_buffer(update_desc);
+  auto output = output_buffer(base_desc);
+  const std::array inputs{
+      ConstTensorView::create(base_desc, base.view()).value(),
+      ConstTensorView::create(index_desc, indices.view()).value(),
+      ConstTensorView::create(update_desc, updates.view()).value()};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto status =
+      execute(context, Scatter{.axis = -1, .kind = ScatterKind::kAdd}, inputs,
+              TensorView::create(base_desc, output.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message();
+  EXPECT_EQ(half_test::read<float>(output),
+            (std::vector<float>{1, 2, 3, 4, 5, 6}));
+}
+
 TEST(GgmlCpuProvider, ColumnBroadcastKeepsOperandOrder) {
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   const auto description = dense(DataType::kFloat32, {2, 1, 3, 2, 1, 7});

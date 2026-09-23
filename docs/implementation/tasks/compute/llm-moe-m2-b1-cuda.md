@@ -4,7 +4,7 @@
 
 **2026-09-23批量执行补充**：CUDA B1按ggml CUDA region及已准入CCCL/成熟程序能力族批量
 接线，共用Recipe、stream/capture、Direct/Graph和表驱动资格；不再逐算子开卡或重复三交付/P1。
-局部开发只跑受影响门，21行稳定后一次集中闭包。整个M2完成后暂停，不进入M3。
+局部开发只跑受影响门，成熟能力账本稳定后一次集中闭包。整个M2完成后暂停，不进入M3。
 
 - component / owner：`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`；`/root`。
 - baseline：`c9744a45b9f6aa2fab27d857af70410f04685518`；Windows canonical，工作树干净。
@@ -34,8 +34,9 @@
   不比较冻结自研；具体 workload/账单在候选前固定，不在实现阶段计时找答案。
 - 机器：Windows/WSL RTX4070 SM89，重型串行、parallel2、原生编译 `89-real`；Air/Mini CUDA-OFF。
   不声称其它架构已有资格。Windows DLL 邻置，不出现 UAC、可见 helper 或电源策略修改。
-- stop：全部21行与适用门完成后关闭；未支持/数值不相容先记录原版反例和成熟后备责任，
-  不能变为自研授权。预算耗尽须作明确裁决。M2完成后先暂停汇报；恢复后仍保留M5前停止点。
+- stop：全部已准入CUDA成熟能力接通并完成适用门、未接通数量为0后关闭；未支持/数值不相容
+  记录原版反例和M3/M4残差owner，不写PASS、不削减21行分母，也不能变为自研授权。预算耗尽
+  须作明确裁决。M2完成后先暂停汇报；恢复后仍保留M5前停止点。
 
 ## 待审有限改动集
 

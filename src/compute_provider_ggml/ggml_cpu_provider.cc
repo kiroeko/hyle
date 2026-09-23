@@ -229,6 +229,31 @@ ggml_tensor *reduction_rows(ggml_context *context, ggml_tensor *value,
                          static_cast<std::int64_t>(elements(source)) / width);
 }
 
+// Turn a logical [outer, rows, inner] tensor into the two-dimensional row
+// table used by ggml indexed operations.  Moving outer next to inner keeps a
+// single shared index vector valid for every prefix slice.
+ggml_tensor *indexed_rows(ggml_context *context, ggml_tensor *value,
+                          std::int64_t inner, std::int64_t rows,
+                          std::int64_t outer) {
+  value = ggml_reshape_3d(context, value, inner, rows, outer);
+  if (outer != 1) {
+    value = ggml_permute(context, value, 0, 2, 1, 3);
+    value = ggml_cont(context, value);
+  }
+  return ggml_reshape_2d(context, value, inner * outer, rows);
+}
+
+ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
+                                  std::int64_t inner, std::int64_t rows,
+                                  std::int64_t outer) {
+  if (outer != 1) {
+    value = ggml_reshape_3d(context, value, inner, outer, rows);
+    value = ggml_permute(context, value, 0, 2, 1, 3);
+    value = ggml_cont(context, value);
+  }
+  return value;
+}
+
 ggml_tensor *lower(Program &program, Invocation &invocation,
                    const internal::Node &node) {
   auto *context = invocation.arena.get();
@@ -359,6 +384,29 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
     if (outer != 1)
       indices = ggml_repeat_4d(context, indices, count, outer, 1, 1);
     result = ggml_get_rows(context, table, indices);
+  } else if (const auto *scatter = node.operation.get_if<Scatter>()) {
+    // SET_ROWS cannot implement the public last-writer-wins assignment when
+    // indices repeat.  GET_ROWS_BACK is, however, the original mature
+    // reduction needed by Scatter add and deliberately accepts duplicates.
+    const auto &base = recipe.values[node.inputs[0]];
+    const auto selected =
+        static_cast<std::size_t>(axis(scatter->axis, base.rank()));
+    const auto inner = extent_product(base.dimensions().subspan(selected + 1));
+    const auto outer = extent_product(base.dimensions().first(selected));
+    const auto extent = base.dimensions()[selected];
+    const auto count =
+        static_cast<std::int64_t>(elements(recipe.values[node.inputs[1]]));
+    if (count == 0) {
+      result = ggml_dup(context, input(0));
+    } else {
+      auto *base_rows = indexed_rows(context, fp(0), inner, extent, outer);
+      auto *update_rows = indexed_rows(context, fp(2), inner, count, outer);
+      auto *indices = ggml_reshape_1d(context, input(1), count);
+      auto *updates =
+          ggml_get_rows_back(context, update_rows, indices, base_rows);
+      result = restore_indexed_rows(
+          context, ggml_add(context, base_rows, updates), inner, extent, outer);
+    }
   }
   return result ? as_output(context, result, output) : nullptr;
 }
@@ -745,7 +793,7 @@ bool supports(void *context, Operation operation,
   const auto nonempty = std::ranges::all_of(
       inputs, [](const auto &d) { return elements(d) != 0; });
   if (!nonempty && elements(output) != 0 && !operation.get_if<Concat>() &&
-      !operation.get_if<Reduce>())
+      !operation.get_if<Reduce>() && !operation.get_if<Scatter>())
     return false;
   if (operation.get_if<Copy>() || operation.get_if<Concat>())
     return true;
@@ -782,13 +830,20 @@ bool supports(void *context, Operation operation,
             reduce->accumulation_type == DataType::kFloat32);
   if (operation.get_if<Gather>())
     return inputs[1].data_type() == DataType::kInt32;
+  if (const auto *scatter = operation.get_if<Scatter>())
+    return inputs.size() == 3 && scatter->kind == ScatterKind::kAdd &&
+           inputs[1].data_type() == DataType::kInt32 &&
+           floating(inputs[0].data_type()) &&
+           inputs[2].data_type() == inputs[0].data_type() &&
+           output.data_type() == inputs[0].data_type();
   return false;
 }
 bool region_operation(Operation operation) noexcept {
   return operation.get_if<Copy>() || operation.get_if<Cast>() ||
          operation.get_if<Unary>() || operation.get_if<Binary>() ||
          operation.get_if<RmsNorm>() || operation.get_if<LayerNorm>() ||
-         operation.get_if<Reduce>() || operation.get_if<Concat>();
+         operation.get_if<Reduce>() || operation.get_if<Concat>() ||
+         operation.get_if<Scatter>();
 }
 ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                mem::AllocatorRef allocator,
@@ -829,6 +884,16 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
              elements(recipe.values[node.inputs[1]]),
              inputs[0].dimensions()[static_cast<std::size_t>(
                  axis(gather->axis, inputs[0].rank()))]});
+      } else if (const auto *scatter = node.operation.get_if<Scatter>()) {
+        const auto index = std::ranges::find(recipe.inputs, node.inputs[1]);
+        if (index == recipe.inputs.end())
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+              "ggml CPU dynamic Scatter indices require a checked boundary"));
+        index_checks.push_back(
+            {static_cast<std::uint32_t>(index - recipe.inputs.begin()),
+             elements(recipe.values[node.inputs[1]]),
+             inputs[0].dimensions()[static_cast<std::size_t>(
+                 axis(scatter->axis, inputs[0].rank()))]});
       }
       available[node.output] = true;
     }

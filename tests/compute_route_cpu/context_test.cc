@@ -91,6 +91,31 @@ TEST(CpuDefaultContext, StandardIndexProgramsBindThroughOrdinaryFactory) {
   EXPECT_EQ(scan->provider().id, ggml_cpu::kProviderId);
   EXPECT_FALSE(scan->runtime_properties().uses_private_threads);
 }
+
+TEST(CpuDefaultContext, MatureScatterAddBindsThroughOrdinaryFactory) {
+  auto context = create_context().value();
+  const auto base = TensorDesc::dense(
+                        DataType::kFloat16,
+                        std::array<std::int64_t, 3>{2, 4, 8})
+                        .value();
+  const auto indices = TensorDesc::dense(
+                           DataType::kInt32,
+                           std::array<std::int64_t, 1>{3})
+                           .value();
+  const auto updates = TensorDesc::dense(
+                           DataType::kFloat16,
+                           std::array<std::int64_t, 3>{2, 3, 8})
+                           .value();
+  const std::array inputs{base, indices, updates};
+  const std::array outputs{base};
+  auto prepared = prepare(
+      context, Operation(Scatter{.axis = 1, .kind = ScatterKind::kAdd}),
+      inputs, outputs, hyle::mem::system_resource());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  EXPECT_EQ(prepared->runtime_properties().replay_class,
+            ProviderReplayClass::kPrepared);
+}
 #endif
 
 #if defined(HYLE_COMPUTE_ONEDNN)

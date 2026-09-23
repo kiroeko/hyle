@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml Direct/Graph、标准库Scan/TopK、任意轴Gather、一般广播/指定轴Sum/Mean与L2组合已通过Windows定向开发验证（36用例执行）。21行完整门、跨平台/三交付/P1未完成；新覆盖0，自研冻结。"
+      "summary": "M2-B1 CPU AUDITED：ggml Direct/Graph、标准库Scan/TopK、任意轴Gather、一般广播/指定轴Sum/Mean、L2及原版重复Scatter-add已通过Windows开发门；后者7/7定向目标通过。assign等精确残差、跨平台/三交付/P1未齐，F02.2仍UNPROVEN，自研冻结。"
     },
     {
       "module": "graph_provider_onednn",
@@ -427,13 +427,13 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml/标准库成熟路径、任意轴Gather/广播/归约及oneDNN Copy/Select/F32 dense Softplus已通过Windows开发门；Scatter/half稳定激活/全mask等域与跨平台/三交付/P1未齐。新完整覆盖0，自研冻结，旧oneDNN Q2无效测量不再阻塞。"
+      "summary": "M2-B1 CPU AUDITED：ggml/标准库成熟路径、任意轴Gather/广播/归约、重复Scatter-add及oneDNN Copy/Select/F32 dense Softplus已接普通入口；Scatter assign/half稳定激活/全mask等残差与跨平台/三交付/P1未齐。F02.2仍UNPROVEN，自研冻结。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml region、标准库叶程序、L2/分组均值组合及oneDNN稳定Softplus→Select片段已通过Windows开发门，含双发布结果/双slot/重放和无热HYLE分配；21行完整门与跨平台/三交付/P1待验。自研冻结，旧Q2无效测量不再阻塞。"
+      "summary": "M2-B1 CPU AUDITED：ggml region、标准库叶程序、L2/分组均值、原版重复Scatter-add及oneDNN稳定Softplus→Select片段已通过Windows开发门；Scatter-add单步Graph/越界旧结果已验。精确残差与跨平台/三交付/P1待验，F02.2仍UNPROVEN，自研冻结。"
     },
     {
       "module": "compute_provider_cublas",

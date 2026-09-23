@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "kind": "development-checkpoint",
+  "date": "2026-09-23",
+  "baseline_commit": "deb8b4ab803c82b0b0bcab35d2a291e4505e3ab4",
+  "candidate": "WORKTREE",
+  "scope": "M2-B1 CPU mature ggml Scatter-add indexed-mutation batch",
+  "provider": {
+    "name": "ggml-cpu",
+    "pin": "456172ec733a135778adcd32d00e576a58232e45",
+    "canonical_checkout": "C:/public/project-hyle/ggml",
+    "canonical_checkout_clean": true,
+    "configured_source_cache": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+    "configured_source_hashes": {
+      "include/ggml.h": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6",
+      "src/ggml.c": "9d0d2ccf43f7f920594e5d48053efc398f644d75783bc09ebfcf46d8ccc91f67",
+      "src/ggml-cpu/ops.cpp": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136"
+    }
+  },
+  "source_facts": [
+    "ggml_get_rows_back creates an F32 row-table reduction and the CPU backend implements duplicate-row accumulation",
+    "ggml_set_rows documents undefined behavior when destination rows overlap, so it was not admitted for public last-writer-wins Scatter assignment",
+    "the adapter uses only original ggml reshape, permute, cont, cast, get_rows_back and add nodes; it adds no HYLE math kernel"
+  ],
+  "admitted_domain": {
+    "operation": "Scatter add",
+    "storage": ["Float32", "Float16", "BFloat16"],
+    "indices": "Int32 dynamic input",
+    "shape": "arbitrary public axis with shared scalar or multidimensional index tensor, including duplicate and empty indices",
+    "numeric": "base and every update participate; F32 intermediate; one final storage conversion",
+    "failure": "current indices are checked before output mapping; out-of-range leaves the retained output unchanged",
+    "ordinary_entry": ["Direct Compute", "Graph region"]
+  },
+  "explicit_residuals": [
+    "Scatter assignment remains outside this mature provider domain because repeated destination rows are undefined in ggml_set_rows",
+    "Int64 indices remain outside the ggml CPU adapter domain",
+    "this partial mature binding does not mark F02.2 PASS and does not authorize frozen native Scatter changes"
+  ],
+  "build": {
+    "directory": ".scratch/build/m2cpu-indexed",
+    "generator": "Ninja",
+    "configuration": "Release shared",
+    "compiler": "MSVC 19.50.35728.0",
+    "factors": "graph_route_cpu,compute_provider_ggml",
+    "onednn": false,
+    "werror": true,
+    "parallelism": 2,
+    "dlls_adjacent_to_executables": true
+  },
+  "validation": {
+    "command": "ctest --test-dir .scratch/build/m2cpu-indexed -C Release --output-on-failure -j 1 -R hyle_(compute_provider_ggml|compute_route_cpu|graph_route_cpu)",
+    "result": "PASS",
+    "tests": 7,
+    "failed": 0,
+    "coverage": [
+      "provider F32/F16/BF16 duplicate add with a nonterminal axis",
+      "empty indices copy the base",
+      "ordinary Direct selects ggml-cpu",
+      "ordinary Graph is one ggml-cpu step",
+      "current out-of-range indices do not change the prior output",
+      "provider, route and graph public-header checks",
+      "existing CPU executor consumer"
+    ],
+    "log": "indexed-mutation-windows.log",
+    "log_sha256": "374f7222e941b0c1ce9b190d7dfdd2c0900ee9e706f10f90961bcec797fc4a04"
+  },
+  "candidate_hashes": {
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "a102040f5a06638e07ab6b9e02474cfcf2aac6c9c9ad6ceaa29d526f4a88e227",
+    "tests/compute_provider_ggml/cpu_provider_test.cc": "b3d0466af2bbc92146e979280273cacc208582f0143a86df1b8a9c413215fb27",
+    "tests/compute_route_cpu/context_test.cc": "359ccb486216342044509260ede6576809c854c580940fe7afbd95514b3abec9",
+    "tests/graph_route_cpu/graph_test.cc": "00987606e8e5d31305d6f189df47b4050e97c94fa08530abc8e8d0196852da1f"
+  },
+  "loc": {
+    "compute_graph_implementation_lines": 57491,
+    "compute_graph_files": 249,
+    "tests_bench_docs_vendor_excluded": true,
+    "self_check": "PASS",
+    "receipt": "indexed-mutation-loc.json",
+    "receipt_sha256": "7a3883f7ab236779404409c152a98f40fcd21fe742b9bab645b0637af431a426"
+  },
+  "verdict": "CPU mature Scatter-add development checkpoint PASS; full CPU B1 and F02.2 remain unclosed"
+}

@@ -879,6 +879,98 @@ TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
     EXPECT_EQ(half_test::read<float>(value_buffer), (std::vector<float>{9, 9, 7}));
   }
 }
+
+TEST(CpuDefaultGraph,
+     MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices) {
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto base_desc = compute::TensorDesc::dense(
+                             compute::DataType::kFloat32,
+                             std::array<std::int64_t, 3>{2, 3, 2})
+                             .value();
+  const auto index_desc = compute::TensorDesc::dense(
+                              compute::DataType::kInt32,
+                              std::array<std::int64_t, 1>{4})
+                              .value();
+  const auto update_desc = compute::TensorDesc::dense(
+                               compute::DataType::kFloat32,
+                               std::array<std::int64_t, 3>{2, 4, 2})
+                               .value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto base = builder.input(base_desc).value();
+  const auto indices = builder.input(index_desc).value();
+  const auto updates = builder.input(update_desc).value();
+  const auto result =
+      builder
+          .add(compute::Scatter{.axis = 1,
+                                .kind = compute::ScatterKind::kAdd},
+               base, indices, updates)
+          .value();
+  ASSERT_TRUE(builder.publish(result).ok());
+  auto logical = std::move(builder).finish().value();
+  auto compiled = graph::compile(logical, context).value();
+  ASSERT_EQ(compiled.report.step_count(), 1U);
+  EXPECT_EQ(compiled.report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+
+  std::array<float, 12> base_values{};
+  std::array<float, 16> update_values{};
+  for (std::size_t i = 0; i < base_values.size(); ++i)
+    base_values[i] = static_cast<float>(10 + i);
+  for (std::size_t i = 0; i < update_values.size(); ++i)
+    update_values[i] = static_cast<float>(1 + i % 4);
+  std::array<std::int32_t, 4> index_values{2, 0, 2, 1};
+  auto base_buffer = half_test::buffer<float>(base_values);
+  auto index_buffer = half_test::buffer<std::int32_t>(index_values);
+  auto update_buffer = half_test::buffer<float>(update_values);
+  auto output_buffer = half_test::buffer<float>(base_values);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(base, compute::ConstTensorView::create(
+                                  base_desc, base_buffer.view())
+                                  .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(indices, compute::ConstTensorView::create(
+                                     index_desc, index_buffer.view())
+                                     .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(updates, compute::ConstTensorView::create(
+                                     update_desc, update_buffer.view())
+                                     .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(result, compute::TensorView::create(
+                                    base_desc, output_buffer.view())
+                                    .value())
+                  .ok());
+  const std::array queues{graph::QueueBinding{
+      .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  auto done = invocation.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  auto expected = base_values;
+  for (std::size_t outer = 0; outer < 2; ++outer)
+    for (std::size_t update = 0; update < index_values.size(); ++update)
+      for (std::size_t inner = 0; inner < 2; ++inner)
+        expected[(outer * 3 + static_cast<std::size_t>(index_values[update])) *
+                     2 +
+                 inner] += update_values[(outer * 4 + update) * 2 + inner];
+  EXPECT_EQ(half_test::read<float>(output_buffer),
+            (std::vector<float>(expected.begin(), expected.end())));
+
+  index_values.back() = 3;
+  ASSERT_TRUE(index_buffer.view()
+                  .write(std::as_bytes(std::span(index_values)))
+                  .ok());
+  done = invocation.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  EXPECT_TRUE(done->wait().IsOutOfRange());
+  EXPECT_EQ(half_test::read<float>(output_buffer),
+            (std::vector<float>(expected.begin(), expected.end())));
+}
 #endif
 } // namespace
 
