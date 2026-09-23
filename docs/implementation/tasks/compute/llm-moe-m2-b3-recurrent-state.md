@@ -1,6 +1,6 @@
 # M2-B3 成熟 Provider 递归混合状态批次
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -43,3 +43,28 @@
 
 审计完成后只留下有限 `KEEP/FIX/BORROW/DEFER/REJECT` 表并把实际 owner 转为 `AUDITED`，之后才改
 产品代码。
+
+## AUDITED：原版入口与有限 FIX
+
+2026-09-24 在 SCOPED baseline 上核对锁定 ggml 的声明、backend 实现和 upstream backend-op tests，
+并核对 MLX 0.32.2 的 `conv1d` C++ API。ggml 的 CPU、CUDA、Metal、Vulkan 都登记
+`GGML_OP_SSM_CONV` 与 `GGML_OP_GATED_DELTA_NET`；上游 GDN 已明确接受 scalar gate
+`[1,Hv,T,B]` 或 KDA per-channel gate `[Dv,Hv,T,B]`，返回 scores 与 K 个 state snapshot 的 packed
+结果。HYLE 只取 K=1 并发布两个公共输出。
+
+| ID | 有限施工 | 验收 |
+|---|---|---|
+| B3-C0 | 新增 `model_ops.h` 中稳定 identity 的 `CausalConv1d` descriptor；公共布局固定为 `[B,T+K-1,C] × [C,K] → [B,T,C]`；GDN 推导接受 scalar/per-channel gate | header self-contained、错误 arity/type/shape、scalar/KDA 独立公式 |
+| B3-C1 | CPU ggml recipe 的单值 `output` 改为有限 output vector；普通 leaf 接入 `ssm_conv` 与 packed GDN 的两个 owning outputs | Direct/Graph、T=1/17/128、两次 replay、非零 state、旧结果 |
+| B3-C2 | CUDA 复用同一 recipe/output 模型，原版 graph 在 native stream 上运行；外部 output 各有独立 device binding | SM89 Direct/Graph、scalar/KDA、completion/failure，不增加 `.cu` |
+| B3-C3 | Apple causal conv 由 MLX `conv1d(groups=C)` 放入现有 compiled region；现有 ggml Metal GDN whole region 扩到 per-channel gate | Air shared、Mini static、MLX replay 与 Metal 两输出资源 |
+| B3-C4 | Vulkan managed region lower `ssm_conv`，现有 GDN 接受 KDA gate；最终资格继续调用 `ggml_backend_supports_op` | RTX 4070 与 Air MoltenVK、无 host payload fallback |
+| B3-C5 | 追加一组表驱动 B3 语义/路线测试、P0 成本与 manifest residual；M2 末尾再运行一次聚合三交付 | selected gates、docs/closure；未运行 P1 保持 SKIPPED |
+
+`DEFER`：锁定 upstream 的四个 backend 对 `ssm_conv` 资格均为 F32；GDN 本批也只对各 backend 实际
+通过的 dense F32/equal-depth 域签署。F16/BF16、更多 state snapshot、融合 bias+SiLU 与完整 24 层
+旅程如果没有同合同成熟路径，作为 B3 residual 进入 M3，不能用 host conversion 或自研 kernel 补写。
+
+以上修改不会改变组合路由维度；模型族/模型名/phase、平台、设备架构、驱动/SDK、量化档位仍由既有
+冷 matcher 决定候选，Provider 的真实 shape/dtype support 再完成准备期绑定。有限 FIX 已冻结，可以
+进入产品施工。

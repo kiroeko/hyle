@@ -370,8 +370,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "graph_provider_onednn",
@@ -382,8 +382,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_backend_cpu",
@@ -426,14 +426,14 @@
     {
       "module": "compute_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_cublas",
@@ -466,44 +466,44 @@
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -519,14 +519,14 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -541,9 +541,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b3-recurrent-state.md",
-      "summary": "M2-B3 SCOPED：只审计并接入锁定 ggml/MLX 的 causal conv 与 GDN/KDA 原版 region；四路线普通 Direct/Graph、显式 state、资源与批量验收，冻结自研数学不参与。"
+      "summary": "M2-B3 AUDITED：锁定 ggml/MLX 的 causal conv 与 scalar/KDA GDN 原版入口；B3-C0–C5 有限 FIX 已冻结，四路线批量施工，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_iree_vulkan",
