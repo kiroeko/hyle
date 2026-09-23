@@ -443,14 +443,9 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md",
-      "summary": "CUDA vendor audit CLOSED：V1/V2 正规范摘要与 enabled 消费前校验完成；Windows/Air source 正负检查和最终 selector 通过。纯配置 P0，R4 运行代码、限定 P1 资格与方向继承，无 GPU 重测。",
-      "candidate": "cbedb837791da15392019299f2652d9d3d70ec9d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/cuda-vendor-content-audit-v1.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 SCOPED：用户要求补齐全部现存静态路由；重新审计 Marlin 的 SM80+ 与 Q4-S128/物理格式资格，旧 vendor audit 事实保留。"
     },
     {
       "module": "compute_provider_cuda",
