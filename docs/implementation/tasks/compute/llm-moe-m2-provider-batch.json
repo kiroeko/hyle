@@ -28,7 +28,7 @@
         "F08.2",
         "F08.3"
       ],
-      "status": "AUDITED"
+      "status": "CLOSED"
     },
     {
       "id": "B3",
@@ -437,6 +437,320 @@
       "toolchain": "appleclang-arm64-moltenvk"
     }
   ],
-  "gate_groups": [],
-  "residuals": []
+  "gate_groups": [
+    {
+      "id": "b2-windows-cpu",
+      "batch": "B2",
+      "profile": "windows-cpu-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml",
+        "factor:compute_provider_onednn",
+        "factor:compute_route_cpu",
+        "factor:graph_route_cpu"
+      ],
+      "applicability": "required",
+      "reason": "B2 CPU Direct/Graph mature-provider correctness, replay and failure acceptance."
+    },
+    {
+      "id": "b2-windows-cuda",
+      "batch": "B2",
+      "profile": "windows-cuda-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_cuda",
+        "factor:compute_route_cuda",
+        "factor:graph_provider_ggml_cuda",
+        "factor:graph_route_cuda"
+      ],
+      "applicability": "required",
+      "reason": "B2 CUDA Direct/Graph mature-provider correctness and native resource acceptance on SM89."
+    },
+    {
+      "id": "b2-air-apple",
+      "batch": "B2",
+      "profile": "air-apple-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B2 Apple MLX shared Direct/Graph native acceptance on MacBook Air."
+    },
+    {
+      "id": "b2-mini-apple-static",
+      "batch": "B2",
+      "profile": "mini-apple-static",
+      "kind": "delivery",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B2 Apple static portability and native execution acceptance on Mac mini."
+    },
+    {
+      "id": "b2-windows-vulkan",
+      "batch": "B2",
+      "profile": "windows-vulkan-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_vulkan",
+        "factor:compute_provider_iree_vulkan",
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B2 Vulkan Direct/Graph managed-region acceptance on RTX 4070."
+    },
+    {
+      "id": "b2-air-vulkan-static",
+      "batch": "B2",
+      "profile": "air-vulkan-static",
+      "kind": "delivery",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_vulkan",
+        "factor:compute_provider_iree_vulkan",
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B2 Vulkan static portability and native MoltenVK execution acceptance on Apple M4."
+    },
+    {
+      "id": "b2-compute-graph-delivery",
+      "batch": "B2",
+      "profile": "windows-source",
+      "kind": "delivery",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "expected_selector_gates": [
+        "delivery:compute",
+        "delivery:graph"
+      ],
+      "applicability": "required",
+      "reason": "B2 source/static/shared Compute and Graph delivery smoke selected from the immutable Windows candidate."
+    },
+    {
+      "id": "b2-fragment-p1",
+      "batch": "B2",
+      "profile": "windows-cuda-shared",
+      "kind": "performance",
+      "requirements": [
+        "F05.4",
+        "F07.3"
+      ],
+      "expected_selector_gates": [],
+      "applicability": "not_applicable",
+      "reason": "No frozen whole-model-fragment P1 card exists for B2; P0 cost accounting applies and the selector explicitly skipped P1."
+    }
+  ],
+  "residuals": [
+    {
+      "id": "b2-cpu-partial-regions",
+      "batch": "B2",
+      "route": "cpu",
+      "requirements": [
+        "F05.3",
+        "F05.4",
+        "F07.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "All real checkpoint stride cases and the complete FFN/gated-attention fragment have not yet been proven as one accepted mature region.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-cuda-partial-regions",
+      "batch": "B2",
+      "route": "cuda",
+      "requirements": [
+        "F05.3",
+        "F05.4",
+        "F07.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "All real checkpoint stride cases and the complete FFN/gated-attention fragment have not yet been proven as one accepted mature region.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-apple-partial-regions",
+      "batch": "B2",
+      "route": "apple",
+      "requirements": [
+        "F05.3",
+        "F05.4",
+        "F07.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "All real checkpoint stride cases and the complete FFN/gated-attention fragment have not yet been proven as one accepted mature region.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-vulkan-partial-regions",
+      "batch": "B2",
+      "route": "vulkan",
+      "requirements": [
+        "F05.3",
+        "F05.4",
+        "F07.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "All real checkpoint stride cases and the complete FFN/gated-attention fragment have not yet been proven as one accepted mature region.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-cpu-quantized-formats",
+      "batch": "B2",
+      "route": "cpu",
+      "requirements": [
+        "F06.1",
+        "F06.2",
+        "F06.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "No admitted CPU carrier exactly matches Q4-S128, Q4-A64 or Q8-B32 W8A16; similar ggml/oneDNN formats are not substituted.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-cuda-quantized-formats",
+      "batch": "B2",
+      "route": "cuda",
+      "requirements": [
+        "F06.2",
+        "F06.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "Marlin binds Q4-S128 only; Q4-A64 and Q8-B32 do not match the admitted CUDA carriers.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-apple-quantized-formats",
+      "batch": "B2",
+      "route": "apple",
+      "requirements": [
+        "F06.1",
+        "F06.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "MLX binds Q4-A64 only; Q4-S128 and Q8-B32 do not match its native packing contract.",
+      "owner": "M3-02"
+    },
+    {
+      "id": "b2-vulkan-quantized-formats",
+      "batch": "B2",
+      "route": "vulkan",
+      "requirements": [
+        "F06.1",
+        "F06.2",
+        "F06.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "ggml Vulkan Q4_0/Q4_1/Q8_0 and current IREE artifacts do not exactly match the three public formats.",
+      "owner": "M3-02"
+    }
+  ]
 }
