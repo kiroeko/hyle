@@ -4,7 +4,8 @@
 
 ## Closure card
 
-- component / owner：`compute_backend_cuda`、`compute_provider_flashinfer`、`compute_provider_ggml_cuda`、
+- component / owner：`compute_backend_cuda`、`compute_provider_cuda`、`compute_provider_flashinfer`、
+  `compute_provider_ggml_cuda`、
   `compute_provider_marlin`、`compute_route_apple`、`compute_route_vulkan`、
   `compute_provider_ggml_vulkan`；`/root`。
 - baseline commit：`35e488a2074f22a73505bd32ed0800600f378309`。
