@@ -437,15 +437,9 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "CLOSED",
-      "summary": "R4 CLOSED：自然 CUDA Direct/Graph、cuBLASLt/Marlin/SGLang 与 HYLE 保留域、原生资源/失败终态及冷默认已交付；Win/WSL 三交付与插桩、两 Mac OFF 隔离、最终默认5% P1及原生边界成本验收完成。资格限于已测 SM89/软件组合，不签普遍 SOTA；CPU 例外保留。",
-      "record": "docs/implementation/tasks/compute/cuda-v1-four-route-foundation.md",
-      "candidate": "755fb7c76132908e15cc8e2c298c69c227af775a",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-compute-graph.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "summary": "M2-B2 SCOPED：因目标模型 F05-F08 的新成熟 Provider 线性/量化/注意力消费合法重开；当前只审计原版入口、资源接法和有限 FIX，未改产品、未声明覆盖或性能 PASS。",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md"
     },
     {
       "module": "compute_provider_marlin",
@@ -472,37 +466,21 @@
     },
     {
       "module": "graph_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 SCOPED：因目标模型 F05-F08 的新成熟 Provider 线性/量化/注意力消费合法重开；当前只审计原版入口、资源接法和有限 FIX，未改产品、未声明覆盖或性能 PASS。"
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple CLOSED：成熟MLX路径的F01–F04/F19共21格完成普通Direct/Graph、资源/失败、Air/Mini适用门、三交付和完整region P1；候选fd03ba10，自研继续冻结，矩阵21/256且完整行0/64。",
-      "candidate": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e",
-      "performance": {
-        "tier": "P1",
-        "evidence": "evidence/performance/compute-llm-moe-m2-b1-apple/README.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 SCOPED：因目标模型 F05-F08 的新成熟 Provider 线性/量化/注意力消费合法重开；当前只审计原版入口、资源接法和有限 FIX，未改产品、未声明覆盖或性能 PASS。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 SCOPED：因目标模型 F05-F08 的新成熟 Provider 线性/量化/注意力消费合法重开；当前只审计原版入口、资源接法和有限 FIX，未改产品、未声明覆盖或性能 PASS。"
     },
     {
       "module": "compute_route_vulkan",
@@ -547,14 +525,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-admission.md",
-      "summary": "M1-C CLOSED：C1–C6原版ggml CUDA/Linux FlashInfer资源、普通Direct/Graph、Windows/WSL三交付、原生失败/回收与host ASan/UBSan、Mac OFF通过；仅有限接入域/P0，模型覆盖0，自研冻结。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 SCOPED：因目标模型 F05-F08 的新成熟 Provider 线性/量化/注意力消费合法重开；当前只审计原版入口、资源接法和有限 FIX，未改产品、未声明覆盖或性能 PASS。"
     },
     {
       "module": "compute_provider_ggml_metal",
