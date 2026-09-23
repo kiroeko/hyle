@@ -1,6 +1,6 @@
 # Provider 批次治理 v1
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -59,4 +59,36 @@
   profile 与 B2--B6 feature 超集。具体 B2 gates 在 B2 AUDITED 时追加，不重新定义 profile。
 - 工具只用 Python 标准库和 Git CLI。测试在 disposable Git 仓库运行，不构建产品或访问网络。
 
-本卡现为 AUDITED；G1--G5 已固定，下一提交才允许修改脚本、测试、策略与 M2 manifest。
+## 实现与终局
+
+实现候选为 `b92d84cfe1a1df4e8a11faeaed32abbcc4a91419`，tree
+`522546b486d42aa55238eefec6e5dbe95df249a0`：
+
+- G1：`provider-batch-schema-v1.json` 与 M2 manifest 固定5个批次、43行需求、5组 Provider feature
+  超集、9个稳定交付 profile、并行度2和 CPU→CUDA→Apple→Vulkan 顺序；当前 gate/residual 为空，
+  留给 B2 AUDITED 后按实际风险追加。
+- G2：`validate` 与 `plan` 已绑定 manifest 语义 hash、immutable candidate/tree、artifact identity 和
+  确定性 argv；test 固定串行，不执行产品命令。
+- G3：真实仓库从 B1 baseline 生成21,468字节增量 bundle，SHA256
+  `6ee27d251968e5e3835bf5d89f0cb4129ba941ec72440d83d8bedf825c5fa03f`；空接收仓先 fetch baseline，
+  再 fetch bundle 的 `refs/hyle-batch/candidate`，`FETCH_HEAD` 精确等于实现候选。
+- G4：`finalize` 只接受 digest、candidate/tree、selector 总 verdict 和逐 gate 状态全部匹配的结果；
+  测试证明缺失/漂移 digest 被拒绝，具名 skip 与 `UNPROVEN` residual 不会变成 PASS。
+- G5：工具已登记 `validation-policy.json`，入口及批次层合同已写入维护脚本、change-impact 和 M2
+  合同；B2--B6 复用同一 feature/profile manifest，不再为每个算子重建治理单元。
+
+## 验证与裁决
+
+| 门 | 结果 |
+|---|---|
+| `provider_batch_test.py` | PASS，4组 disposable Git/manifest/selector 试验，约2.5秒 |
+| `validation_selector_test.py` | PASS，59项，约97.2秒 |
+| change-impact selector | PASS；仅 `docs`、`closure`、本工具测试与 selector 回归，130项 skipped/reused；没有 native/P1 |
+| docs | PASS，503个 Markdown、2409个相对链接 |
+| closure | PASS，57个 component、schema 4 |
+| JSON / `py_compile` / `git diff --check` | PASS |
+| immutable plan/bundle/fetch | PASS；9 profiles、精确 candidate、bundle prerequisite 与接收端 head 均匹配 |
+
+P0：manifest 与 gate 数线性处理；工具没有启动 CMake/CTest/P1。B2 尚未审计的产品 gate 仍未运行，
+也没有在本卡宣告覆盖；这正是下一张产品卡的输入，不是本治理任务残项。G1--G5 全部完成，本卡
+裁决为 `CLOSED`，M2 可进入 B2 的 SCOPED→AUDITED 批量接线。
