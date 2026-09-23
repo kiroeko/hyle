@@ -272,8 +272,8 @@
     {
       "module": "compute",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/m2-b2-route-identity.md",
-      "summary": "M2-B2 route identity AUDITED：冻结 family/name/revision/configuration 四字段冷身份、三级匹配和 Direct/Graph 一次迁移；原生环境及真实量化格式保持各自权威来源，submit 零新增路由工作。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification.md",
+      "summary": "M2 组合路由资格表达 AUDITED：冻结平台/四路线、原生硬件与软件栈、Provider、模型和量化条件的稀疏冷匹配；共同层只判资格，Provider 保留优先级与执行。"
     },
     {
       "module": "graph",
@@ -450,8 +450,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification.md",
+      "summary": "M2 组合路由资格表达 AUDITED：仅迁移 CCCL 既有 SM89/CUDA 13.3/上游版本冷资格到共同稀疏规则；支持域、数学和 submit 保持不变。"
     },
     {
       "module": "compute_route_cuda",
