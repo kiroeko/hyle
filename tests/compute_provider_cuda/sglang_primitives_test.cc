@@ -185,20 +185,22 @@ template <class T> void unary_cases() {
           expected = x / (1 + std::exp(-z));
         }
         if constexpr (std::is_same_v<T, float>) {
-          if (std::isnan(expected))
+          if (std::isnan(expected)) {
             EXPECT_TRUE(std::isnan(actual[i]));
-          else if (std::isinf(expected))
+          } else if (std::isinf(expected)) {
             EXPECT_EQ(actual[i], expected);
-          else
+          } else {
             EXPECT_NEAR(actual[i], expected,
                         std::abs(expected) * 6e-6 +
                             128.0 * std::numeric_limits<float>::denorm_min());
+          }
         } else {
           half_test::expect_near(actual[i], expected);
         }
-        if (x == 0)
+        if (x == 0) {
           EXPECT_EQ(std::signbit(half_test::decode(actual[i])),
                     std::signbit(x));
+        }
       }
     }
   }

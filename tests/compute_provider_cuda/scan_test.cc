@@ -253,10 +253,11 @@ TEST(CudaScan, FloatExclusiveDoesNotSubtractCurrentInfinityOrNaN) {
           const auto index = row * width + position;
           const float expected = exclusive ? carry : carry + values[index];
           carry += values[index];
-          if (std::isnan(expected))
+          if (std::isnan(expected)) {
             EXPECT_TRUE(std::isnan(actual[index])) << index;
-          else
+          } else {
             EXPECT_EQ(actual[index], expected) << index;
+          }
         }
       }
     }

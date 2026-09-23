@@ -75,12 +75,13 @@ struct Fixture final {
 template <class T> void expect_value(T actual, double expected) {
   if constexpr (std::is_same_v<T, float>) {
     const float rounded = static_cast<float>(expected);
-    if (std::isnan(rounded))
+    if (std::isnan(rounded)) {
       EXPECT_TRUE(std::isnan(actual));
-    else if (std::isinf(rounded))
+    } else if (std::isinf(rounded)) {
       EXPECT_EQ(actual, rounded);
-    else
+    } else {
       EXPECT_NEAR(actual, rounded, std::abs(rounded) * 4e-6 + 2e-7);
+    }
   } else {
     half_test::expect_near(actual, expected);
   }
@@ -292,10 +293,11 @@ template <class From, class To> void cast_case(Fixture &fixture) {
   const auto actual = output.read<To>();
   for (std::size_t i = 0; i < actual.size(); ++i) {
     const auto expected = half_test::encode<To>(half_test::decode(values[i]));
-    if (std::isnan(half_test::decode(expected)))
+    if (std::isnan(half_test::decode(expected))) {
       EXPECT_TRUE(std::isnan(half_test::decode(actual[i])));
-    else
+    } else {
       EXPECT_EQ(half_test::decode(actual[i]), half_test::decode(expected));
+    }
   }
 }
 TEST(CudaTensor, FloatStorageConversionsMatchIndependentRounding) {
@@ -580,10 +582,11 @@ TEST(CudaTensor, NormalizationHandlesSpecialValuesAndStableVariance) {
     for (std::size_t i = 0; i < 256; ++i)
       EXPECT_TRUE(std::isnan(actual[i]));
     for (std::size_t i = 256; i < 384; ++i) {
-      if (layer || i == 256)
+      if (layer || i == 256) {
         EXPECT_TRUE(std::isnan(actual[i]));
-      else
+      } else {
         EXPECT_EQ(actual[i], 0);
+      }
     }
     if (layer) {
       for (std::size_t i = 384; i < actual.size(); ++i)

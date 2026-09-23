@@ -145,11 +145,11 @@ void run_shape(compute::DataType type, bool packed, std::int64_t rows,
                       .ok());
       for (std::size_t index = 0; index < count; ++index) {
         const double value = to_float(actual[index]);
-        if (std::isnan(expected[index]))
+        if (std::isnan(expected[index])) {
           EXPECT_TRUE(std::isnan(value));
-        else if (std::isinf(expected[index]))
+        } else if (std::isinf(expected[index])) {
           EXPECT_EQ(value, expected[index]);
-        else {
+        } else {
           const auto epsilon = type == compute::DataType::kBFloat16 ? 0.008
                                : sizeof(T) == 2                     ? 0.001
                                                                     : 0.000001;

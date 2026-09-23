@@ -197,8 +197,9 @@ TEST(CudaCccl, WorkspaceAliasesAndExternalCaptureRejectBeforeWriting) {
   auto rejected = slot.submit(queue, input.view.as_const(), output.view);
   cudaGraph_t graph = nullptr;
   const auto ended = cudaStreamEndCapture(stream, &graph);
-  if (graph)
+  if (graph) {
     EXPECT_EQ(cudaGraphDestroy(graph), cudaSuccess);
+  }
   EXPECT_FALSE(rejected);
   EXPECT_EQ(ended, cudaSuccess);
   EXPECT_EQ(output.read<float>(), std::vector<float>(17, -9));
@@ -230,11 +231,13 @@ TEST(CudaCccl, FloatingSpecialPrefixesAndInvalidDescriptions) {
     const auto expected =
         exclusive ? std::array{0.F, 1.F, inf, nan, 0.F, -inf, -inf, -inf}
                   : std::array{1.F, inf, nan, nan, -inf, -inf, -inf, nan};
-    for (std::size_t i = 0; i < actual.size(); ++i)
-      if (std::isnan(expected[i]))
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+      if (std::isnan(expected[i])) {
         EXPECT_TRUE(std::isnan(actual[i]));
-      else
+      } else {
         EXPECT_EQ(actual[i], expected[i]);
+      }
+    }
   }
   EXPECT_FALSE(prepare(owner, TopK{.count = 0}, desc, memory.ref()));
   EXPECT_FALSE(prepare(owner, TopK{.count = 5}, desc, memory.ref()));

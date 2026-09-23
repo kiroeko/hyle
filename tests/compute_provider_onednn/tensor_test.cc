@@ -49,15 +49,17 @@ void expect_softplus(std::span<const float> actual,
     const double x = input[i];
     const double expected =
         x > 0 ? x + std::log1p(std::exp(-x)) : std::log1p(std::exp(x));
-    if (std::isnan(expected))
+    if (std::isnan(expected)) {
       EXPECT_TRUE(std::isnan(actual[i])) << i;
-    else if (std::isinf(expected))
+    } else if (std::isinf(expected)) {
       EXPECT_EQ(actual[i], expected) << i;
-    else
+    } else {
       EXPECT_NEAR(actual[i], expected, 5e-6 * std::abs(expected) + 1e-43)
           << "input=" << x;
-    if (expected == 0)
+    }
+    if (expected == 0) {
       EXPECT_FALSE(std::signbit(actual[i]));
+    }
   }
 }
 
@@ -146,9 +148,10 @@ TEST(OneDnnTensor, SoftplusUsesDenseScalarAndEmptyDescriptors) {
           values[i] = static_cast<float>(static_cast<int>(i % 201) - 100);
           source[i * (padded && rank != 0 ? 2 : 1)] = values[i];
         }
-        if (!empty)
+        if (!empty) {
           ASSERT_TRUE(
               input.buffer.view().write(std::as_bytes(std::span(source))).ok());
+        }
         auto program =
             prepare(context, Unary{UnaryKind::kSoftplus}, description);
         if (!description.is_dense()) {
@@ -165,10 +168,11 @@ TEST(OneDnnTensor, SoftplusUsesDenseScalarAndEmptyDescriptors) {
         ASSERT_TRUE(done) << done.error().message();
         ASSERT_TRUE(done->wait().ok());
         std::vector<float> actual(count);
-        if (!empty)
+        if (!empty) {
           ASSERT_TRUE(output.buffer.view()
                           .read(std::as_writable_bytes(std::span(actual)))
                           .ok());
+        }
         expect_softplus(actual, values);
       }
     }
@@ -361,9 +365,10 @@ TEST(OneDnnTensor, ScalarBranchesRankEightAndEmptyShapes) {
     const std::array<std::uint64_t, 1> left{0xfedcba9876543210ULL},
         right{0xabcdef0123456789ULL};
     const std::array<std::uint8_t, 6> conditions{0, 1, 1, 0, 1, 0};
-    if (!empty)
+    if (!empty) {
       ASSERT_TRUE(
           mask.buffer.view().write(std::as_bytes(std::span(conditions))).ok());
+    }
     ASSERT_TRUE(a.buffer.view().write(std::as_bytes(std::span(left))).ok());
     ASSERT_TRUE(b.buffer.view().write(std::as_bytes(std::span(right))).ok());
     auto program = prepare(context, Select{}, mask_description, scalar, scalar);

@@ -278,12 +278,13 @@ void check_reduction_axes(Context &context,
                                 : counts[i] == 0
                                     ? std::numeric_limits<double>::quiet_NaN()
                                     : sums[i] / static_cast<double>(counts[i]);
-          if (std::isnan(expected))
+          if (std::isnan(expected)) {
             EXPECT_TRUE(std::isnan(half_test::decode(actual[i])));
-          else if constexpr (std::is_same_v<Value, float>)
+          } else if constexpr (std::is_same_v<Value, float>) {
             EXPECT_NEAR(actual[i], expected, 2.e-6);
-          else
+          } else {
             half_test::expect_near(actual[i], expected);
+          }
         }
       }
     }

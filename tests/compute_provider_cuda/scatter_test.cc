@@ -253,14 +253,15 @@ void add_case(Fixture &fixture, std::int64_t count, std::int64_t width,
   ASSERT_TRUE(done.wait().ok());
   const auto actual = (in_place ? source : output).template read<Value>();
   for (std::size_t i = 0; i < expected.size(); ++i) {
-    if (std::isnan(half_test::decode(expected[i])))
+    if (std::isnan(half_test::decode(expected[i]))) {
       ASSERT_TRUE(std::isnan(half_test::decode(actual[i]))) << i;
-    else if constexpr (std::is_same_v<Value, float>)
+    } else if constexpr (std::is_same_v<Value, float>) {
       ASSERT_EQ(std::bit_cast<std::uint32_t>(actual[i]),
                 std::bit_cast<std::uint32_t>(expected[i]))
           << i;
-    else
+    } else {
       ASSERT_EQ(actual[i].bits, expected[i].bits) << i;
+    }
   }
 }
 TEST(CudaScatter, AddPreservesEveryRoundingStepAndStableSkewedUpdateOrder) {
