@@ -271,14 +271,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/m2-b2-route-identity.md",
+      "summary": "M2-B2 route identity SCOPED：确认组合路由缺少独立模型名；只审计四字段冷身份、分层匹配和 Direct/Graph 消费迁移，不增加万能规则引擎、热路径工作或数学实现。"
     },
     {
       "module": "graph",
