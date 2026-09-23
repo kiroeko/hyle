@@ -1,0 +1,26 @@
+route product candidate: f15204826ba001524b6a66b6fa2291400226a160
+route tree: 5ef86a1a2a90aad6f480515a5fdbb92b74edff76
+corrected candidate: 3d7e212972e27f8f532cb084f5eb5c4656b45016
+route product diff f1520482 -> 3d7e2129: none; only package sample/docs changed
+
+WSL2 Ubuntu 24.04 / GCC 14 FlashInfer:
+40/41 Testing: hyle_compute_provider_flashinfer_header_self_contained_test
+compute_provider_flashinfer C++ headers self-contained: 1
+Test Passed.
+41/41 Testing: hyle_compute_provider_flashinfer_test
+[ RUN      ] Flashinfer.Fp16PrefillAndDecodeThroughCompute
+[       OK ] Flashinfer.Fp16PrefillAndDecodeThroughCompute (52 ms)
+[ RUN      ] Flashinfer.Bf16PrefillAndDecodeThroughCompute
+[       OK ] Flashinfer.Bf16PrefillAndDecodeThroughCompute (26 ms)
+[  PASSED  ] 4 tests.
+Test Passed.
+
+MacBook Air Mac16,12 / Apple M4 native route:
+46/49 Testing: hyle_compute_route_apple_header_self_contained_test
+compute_route_apple C++ headers self-contained: 2
+Test Passed.
+47/49 Testing: hyle_compute_route_apple_test
+[ RUN      ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes
+[       OK ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes (83 ms)
+[  PASSED  ] 39 tests.
+Test Passed.

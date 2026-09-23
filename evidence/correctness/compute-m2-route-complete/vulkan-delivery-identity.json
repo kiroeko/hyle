@@ -1,0 +1,412 @@
+{
+  "snapshot": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
+  "product_candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
+  "state": "PASS",
+  "source_archive": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\m2-route-complete\\3d7e2129.tar",
+  "source_archive_sha256": "6090e740350a7b82d1553dfa9c2aee2770ae2bf76f196caf3b477271daacb95f",
+  "platform": "Windows",
+  "records": [
+    {
+      "label": "source-build-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\source-consumer",
+        "-B",
+        "C:\\hvv\\source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f"
+      ],
+      "exit_code": 0,
+      "seconds": 40.76600000000326
+    },
+    {
+      "label": "source-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\source-build",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 157.34299999999348
+    },
+    {
+      "label": "source-build-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hvv\\source-build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5320000000065193
+    },
+    {
+      "label": "source-build-vulkan_source_compute-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hvv\\source-build\\vulkan_source_compute.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.014999999999417923
+    },
+    {
+      "label": "source-build-vulkan_source_graph-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hvv\\source-build\\vulkan_source_graph.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.014999999999417923
+    },
+    {
+      "label": "public-static-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\complete-source",
+        "-B",
+        "C:\\hvv\\public-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f"
+      ],
+      "exit_code": 0,
+      "seconds": 40.65700000000652
+    },
+    {
+      "label": "static-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\public-static",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 159.375
+    },
+    {
+      "label": "static-install",
+      "command": [
+        "cmake",
+        "--install",
+        "C:\\hvv\\public-static",
+        "--prefix",
+        "C:\\hvv\\sdk-static"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6710000000020955
+    },
+    {
+      "label": "public-shared-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\complete-source",
+        "-B",
+        "C:\\hvv\\public-shared",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DHYLE_COMPONENTS=compute;graph",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f"
+      ],
+      "exit_code": 0,
+      "seconds": 38.61000000000058
+    },
+    {
+      "label": "shared-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\public-shared",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 158.25
+    },
+    {
+      "label": "shared-install",
+      "command": [
+        "cmake",
+        "--install",
+        "C:\\hvv\\public-shared",
+        "--prefix",
+        "C:\\hvv\\sdk-shared"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7649999999994179
+    },
+    {
+      "label": "consumer-static-compute-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\independent-consumers\\compute\\cpp",
+        "-B",
+        "C:\\hvv\\consumer-static-compute",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hvv\\relocated-sdk-static"
+      ],
+      "exit_code": 0,
+      "seconds": 1.187999999994645
+    },
+    {
+      "label": "consumer-static-compute-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\consumer-static-compute",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 1.937000000005355
+    },
+    {
+      "label": "consumer-static-compute-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hvv\\consumer-static-compute",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39100000000325963
+    },
+    {
+      "label": "consumer-static-compute-hyle_package_compute_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hvv\\consumer-static-compute\\hyle_package_compute_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.015999999988707714
+    },
+    {
+      "label": "consumer-static-graph-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\independent-consumers\\graph\\cpp",
+        "-B",
+        "C:\\hvv\\consumer-static-graph",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hvv\\relocated-sdk-static"
+      ],
+      "exit_code": 0,
+      "seconds": 1.187000000005355
+    },
+    {
+      "label": "consumer-static-graph-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\consumer-static-graph",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 2.202999999994063
+    },
+    {
+      "label": "consumer-static-graph-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hvv\\consumer-static-graph",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39100000000325963
+    },
+    {
+      "label": "consumer-static-graph-hyle_package_graph_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hvv\\consumer-static-graph\\hyle_package_graph_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01600000000325963
+    },
+    {
+      "label": "consumer-shared-compute-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\independent-consumers\\compute\\cpp",
+        "-B",
+        "C:\\hvv\\consumer-shared-compute",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hvv\\relocated-sdk-shared"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6879999999946449
+    },
+    {
+      "label": "consumer-shared-compute-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\consumer-shared-compute",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0
+    },
+    {
+      "label": "consumer-shared-compute-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hvv\\consumer-shared-compute",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4370000000053551
+    },
+    {
+      "label": "consumer-shared-compute-hyle_package_compute_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hvv\\consumer-shared-compute\\hyle_package_compute_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01600000000325963
+    },
+    {
+      "label": "consumer-shared-graph-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\hvv\\independent-consumers\\graph\\cpp",
+        "-B",
+        "C:\\hvv\\consumer-shared-graph",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hvv\\relocated-sdk-shared"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6409999999887077
+    },
+    {
+      "label": "consumer-shared-graph-build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\hvv\\consumer-shared-graph",
+        "--parallel",
+        "2"
+      ],
+      "exit_code": 0,
+      "seconds": 2.2810000000026776
+    },
+    {
+      "label": "consumer-shared-graph-test",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "C:\\hvv\\consumer-shared-graph",
+        "--output-on-failure",
+        "--no-tests=error",
+        "--timeout",
+        "120"
+      ],
+      "exit_code": 0,
+      "seconds": 0.48399999999674037
+    },
+    {
+      "label": "consumer-shared-graph-hyle_package_graph_cpp-linkage",
+      "command": [
+        "dumpbin",
+        "/dependents",
+        "C:\\hvv\\consumer-shared-graph\\hyle_package_graph_cpp.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01600000000325963
+    }
+  ],
+  "executables": {
+    "source-build/vulkan_source_compute": "c2e6ac11123eed67ab5260070ceb836b19fbf4f8d3f653483e656e4404a9035d",
+    "source-build/vulkan_source_graph": "c278643280e6a6892542406e3ea7461b68426b504f19b537004b9e39b69b36dd",
+    "consumer-static-compute/hyle_package_compute_cpp": "7e00904f1a006772cd3e684d36505f61331167dc2403ef40b96309a91bad5916",
+    "consumer-static-graph/hyle_package_graph_cpp": "144dc18f8179f6a08d9f3d9d8ee30feb7fb0605cd51d43f0bd311bdf528e6c14",
+    "consumer-shared-compute/hyle_package_compute_cpp": "e92f2f4c8292bd44be6983e2d96e902161278c00f05f25e6b216702cc9e98bc4",
+    "consumer-shared-graph/hyle_package_graph_cpp": "01e77f948315d1d4d90ecdc08030d79586e1aa6ffc30da7c052b1b00da099d6f"
+  },
+  "producer_paths_hidden_before_sdk_consumption": true,
+  "finished": 1790179841.807967
+}

@@ -1,0 +1,14 @@
+candidate: 3d7e212972e27f8f532cb084f5eb5c4656b45016
+source archive sha256: 6090e740350a7b82d1553dfa9c2aee2770ae2bf76f196caf3b477271daacb95f
+machine: MacBook Air Mac16,12 / Apple M4
+full log sha256: fef702a952aa45c978bf35ea2f96888c7944530a0a624d60b7bf16b5571f2abf
+
+-- HYLE: MLX 0.32.2 Metal-only, cold JIT, native region enabled
+1/1 Test #1: hyle_selected_source_consumer ....   Passed   20.50 sec
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-route-3d7e2129' '-B' '/Users/kiro/hyle-route-3d7e2129-apple-on-delivery/selected-compute/shared-sdk-build' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-route-3d7e2129-apple-on-delivery/selected-compute/shared-sdk-staging' '-DHYLE_COMPONENTS=compute' '-DHYLE_BUILD_TESTS=OFF' '-DHYLE_BUILD_BENCH=OFF' '-DHYLE_INSTALL=ON' '-DHYLE_STATIC=OFF' '-DHYLE_COMPUTE_CPU=OFF' '-DHYLE_COMPUTE_CUDA=OFF' '-DHYLE_COMPUTE_APPLE=ON' '-DHYLE_COMPUTE_ONEDNN=OFF'
+-- HYLE: MLX 0.32.2 Metal-only, cold JIT, native region enabled
+1/1 Test #1: hyle_package_compute_cpp .........   Passed   20.46 sec
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-route-3d7e2129' '-B' '/Users/kiro/hyle-route-3d7e2129-apple-on-delivery/selected-compute/static-sdk-build' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-route-3d7e2129-apple-on-delivery/selected-compute/static-sdk-staging' '-DHYLE_COMPONENTS=compute' '-DHYLE_BUILD_TESTS=OFF' '-DHYLE_BUILD_BENCH=OFF' '-DHYLE_INSTALL=ON' '-DHYLE_STATIC=ON' '-DHYLE_COMPUTE_CPU=OFF' '-DHYLE_COMPUTE_CUDA=OFF' '-DHYLE_COMPUTE_APPLE=ON' '-DHYLE_COMPUTE_ONEDNN=OFF'
+-- HYLE: MLX 0.32.2 Metal-only, cold JIT, native region enabled
+1/1 Test #1: hyle_package_compute_cpp .........   Passed    1.04 sec
+-- HYLE selected product smoke passed: compute (source, shared, static, relocated consumers)

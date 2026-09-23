@@ -1,0 +1,11 @@
+selector candidate: f15204826ba001524b6a66b6fa2291400226a160
+selector raw verdict: BLOCKED
+compute/graph gates 003-062: PASS
+first failure: factor:io_core
+candidate failures: IoUdp.RecvFromSendToEchoRoundTrip; IoTimeout.UdpReceiveTimesOut
+exact baseline: c810475dd0ed7e9edd33515ee5d8a3a5085dcc25
+baseline reproduced the same two failures
+Windows UDP excluded range: 54319-54418
+fixed test ports: 54355 and 54394
+classification: unrelated baseline host environment; raw selector verdict remains BLOCKED
+product difference f1520482 -> 3d7e2129: package sample zero-workspace correction; route product files unchanged

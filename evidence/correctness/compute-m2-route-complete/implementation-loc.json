@@ -1,0 +1,107 @@
+{
+  "schema": 3,
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
+    "dirty": false,
+    "tracked_regular_files": 6117,
+    "tracked_missing_files": []
+  },
+  "policy": {
+    "snapshot": "immutable Git commit tree",
+    "untracked": "not applicable to immutable commit tree",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "compute-graph-all",
+    "boundary": "explicit",
+    "paths": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "modules": null
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 1097754,
+      "files": 3115,
+      "selected_files": 6117,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 153851,
+      "files": 602,
+      "selected_files": 668,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute-graph-all)",
+      "code": 58666,
+      "files": 251,
+      "selected_files": 285,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute*",
+        "src/graph*"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "self_check": "pass"
+}

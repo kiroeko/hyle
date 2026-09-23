@@ -1,6 +1,6 @@
 # M2 组合路由资格完整迁移
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -137,3 +137,59 @@ Windows CUDA source consumer 在完整编译、链接和 DLL staging 后由 CTes
 
 八个 owner 恢复 `CANDIDATE`。原失败和诊断保留；尚待对新候选完成三交付、Apple 回放、受影响
 selector/组件合同、docs/closure。未运行项仍不写 PASS。
+
+## Terminal record
+
+八个 owner 在不可变产品候选 `3d7e212972e27f8f532cb084f5eb5c4656b45016`（tree
+`836df752e2a158f8f3b4d00bbeef9f916f1ac559`）关闭。路线产品本身冻结于 `f15204826`；其后 CM8 只修正
+普通 Compute package consumer 的零 workspace 调用，未改变路线规则、原生程序、Provider 次序、数学
+或 fallback。
+
+### 实现与七门
+
+| 门 | 结论与证据 |
+|---|---|
+| scope | PASS：全目录受管轴已分类，CM1--CM8 全部完成；shape/resource/capability/sync 与 B2 算子继续在范围外 |
+| architecture | PASS：CUDA 统一投影六项事实；Apple/Vulkan 保留原生事实与程序 owner；共同 matcher 只表达静态资格合取 |
+| correctness | PASS：Windows 六个定向真实套件 `6/6`；WSL FlashInfer 独立头与四项 FP16/BF16 provider 测试；Air Apple 独立头与 39 项 native 测试 |
+| delivery | PASS：新候选的 CUDA、Apple、Vulkan source/static/shared 均实际运行；Vulkan 同时覆盖 Compute+Graph 与隐藏 producer 后的重定位 SDK consumer |
+| usability_docs | PASS：普通用户仍只选路线；[Compute routes](../../../architecture/compute-routes.md)说明平台/硬件/软件栈/模型/量化组合与冷绑定，交付入口没有新增排序或 timing profile |
+| red_team | PASS：受管轴扫描不再发现剩余手写静态实现选择；未知事实安全 decline；submit/execute/bind/wait 无 matcher；没有把语义和资源检查伪装成路由 |
+| engineering_performance | PASS（P0）：固定大小借用 facts；冷路径有限线性匹配；无新增热路径字段、分配、锁、原子、syscall、设备查询或计时，P1 不适用 |
+
+Windows selector 在路线候选上先通过 Compute/Graph gates 003--062，随后被无关
+`factor:io_core` 的两个固定 UDP 端口测试阻断；原始 verdict 与未运行 gate 保持 `BLOCKED`，没有写成
+PASS。Windows excluded range `54319--54418` 覆盖测试端口 `54355/54394`，精确 baseline
+`c810475d` 独立复现相同失败，且 IO 源码/测试无候选差异，因此按工程证据裁决为主机环境限制，不构成
+本候选回归。新候选另行完成全部受影响三交付和组件合同。
+
+主要命令与结果：
+
+```text
+Windows targeted CUDA/Vulkan route suites                    6/6 PASS
+WSL FlashInfer header + native provider                      2/2 PASS
+Air Apple route header + native provider                     2/2 PASS (39 native cases)
+CUDA Compute source/shared/static delivery                   PASS
+Apple Compute source/shared/static delivery, APPLE=ON        PASS
+Vulkan Compute+Graph source/shared/static delivery           PASS
+cmake -D... -P cmake/HyleCiComponentContract.cmake           PASS
+python scripts/loc-report.py ... --commit 3d7e2129 --self-check --json
+                                                                58,666 / 251; pass
+```
+
+完整身份、命令摘要和原始边界保存在
+[证据目录](../../../../evidence/correctness/compute-m2-route-complete/README.md)。统一 Compute+Graph LOC 为
+**58,666 行 / 251 个实现文件**，排除 tests、bench、docs、third_party、samples 与构建脚本；这是全部
+存量，不作为本轮新增完成量。
+
+### 限制与重开
+
+本轮没有模型特例，因为现有产品中没有已验证的 model family/name/revision 静态赢家规则；共同 matcher
+已保留这些轴，后续只能由真实模型与硬件/驱动证据增加。资格限已记录的 Windows RTX 4070/SM89/CUDA
+13.3、Windows Vulkan SDK 1.4.357.0、Air Apple M4/MLX 0.32.2 和 WSL GCC 14 消费形状；未知设备或版本
+不声明 SOTA。CPU SIMD ISA dispatch、Apple Graph Q4 public storage 解码以及 Vulkan shape/device limit/
+资源计算保持原 owner。
+
+重开只接受可复现的错误命中/拒绝、UB/寿命/并发/交付缺陷；真实消费者要求现有 matcher 无法表达的
+静态资格；公开路线合同、Provider 优先级或 adopted dependency 相关升级；或合格证据显示热路径新增
+matcher/常态成本。普通 B2 算子接线、未知硬件和文档修改不重开本卡。M2-B2 可恢复，但本卡停止施工。

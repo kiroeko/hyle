@@ -1,0 +1,41 @@
+candidate: 3d7e212972e27f8f532cb084f5eb5c4656b45016
+machine: Windows 11 / NVIDIA GeForce RTX 4070 / SM89 / CUDA 13.3
+source delivery:
+Start testing: Sep 23 23:10 �й���׼ʱ��
+----------------------------------------------------------
+1/1 Testing: hyle_selected_source_consumer
+1/1 Test: hyle_selected_source_consumer
+Command: "C:/hvd/compute/selected-compute/source-build/hyle_selected_source_consumer.exe"
+Directory: C:/hvd/compute/selected-compute/source-build
+"hyle_selected_source_consumer" start time: Sep 23 23:10 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+<end of output>
+Test time =   0.38 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_selected_source_consumer" end time: Sep 23 23:10 �й���׼ʱ��
+"hyle_selected_source_consumer" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 23 23:10 �й���׼ʱ��
+
+shared relocated delivery:
+Test project C:/hvd/compute/selected-compute/shared-consumer
+    Start 1: hyle_package_compute_cpp
+1/1 Test #1: hyle_package_compute_cpp .........   Passed    0.41 sec
+
+100% tests passed out of 1
+
+Total Test time (real) =   0.43 sec
+
+static relocated delivery:
+Test project C:/hvd/compute/selected-compute/static-consumer
+    Start 1: hyle_package_compute_cpp
+1/1 Test #1: hyle_package_compute_cpp .........   Passed    0.62 sec
+
+100% tests passed out of 1
+
+Total Test time (real) =   0.93 sec
