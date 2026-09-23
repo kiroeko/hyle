@@ -1,13 +1,13 @@
-# M3 四路线真实模型计算链验收终局
+# M3 四路线真实模型计算链中间审计
 
-<!-- MODULE REVIEW: CLOSED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## 裁决
 
-2026-09-24，M3 在产品候选
-`68278c999b623edbd0c87f05d3926208ea84f6db` 上以
-`M3_COMPLETE_WITH_RECORDED_COVERAGE_GAPS` 结束。M3 没有修改产品 API、Provider、kernel、shader、
-decoder、quantizer 或冻结自实现数学；唯一新增代码是一份测试侧聚合验收器。
+2026-09-24 更正：本记录只完成 256 格的中间审计，不能作为 M3 终局。产品候选
+`68278c999b623edbd0c87f05d3926208ea84f6db` 没有修改 API、Provider、kernel、shader、decoder、
+quantizer 或冻结自实现数学；但 134 格仍为 `VALIDATION_NOT_RUN`，没有满足 M3-01--M3-06 的实际
+模型链退出条件。M3 恢复为活动 `AUDITED`，继续按六个批量消费者执行，不进入 M4。
 
 [验收收据](../../../../evidence/correctness/compute-llm-moe-m3/acceptance.json)与
 [覆盖矩阵](llm-moe-coverage-matrix.json)已经逐一裁决 64 个需求 × 四路线的 256 格：
@@ -20,8 +20,9 @@ decoder、quantizer 或冻结自实现数学；唯一新增代码是一份测试
 | `UPSTREAM_MISSING` | 4 | 四路线均没有准入的精确量化 attention/index state region |
 | `VALIDATION_NOT_RUN` | 134 | 有成熟原语或片段，但完整真实模型 Direct/Graph 链未执行，不能写 PASS |
 
-`UNPROVEN` 为 0 表示审计归类完成，不表示 256 格能力已经全部实现。非 PASS 格全部是 M4 的具名输入，
-不能由相近位宽、单原语测试、reference 运行或其它路线结果代签。
+`UNPROVEN` 为 0 只表示初次审计归类完成。89 个已有源码/准备期反例的格保留明确拒绝；134 个
+`VALIDATION_NOT_RUN` 仍是 M3 待执行项，尚不能交给 M4，也不能由相近位宽、单原语测试、reference
+运行或其它路线结果代签。
 
 ## 六组模型链结果
 
@@ -49,11 +50,9 @@ decoder、quantizer 或冻结自实现数学；唯一新增代码是一份测试
 - 统一 LOC 脚本在不可变产品候选上报告 Compute+Graph 实现 **59,749 行 / 252 文件**，排除测试、
   文档、bench、vendor、构建产物和 scratch，self-check PASS。
 
-## Provider 完成门与下一步
+## Provider 完成门与更正后的下一步
 
 M3-08 `PASS`：M0 准入的 mature Provider 在其精确适用域内未接通数量仍为 0。这个门只证明接入
-完成，不证明需求覆盖完成。M4 必须从上述 223 个非 PASS 格中先合并共同根因，继续核对成熟库、合法
-组合、版本升级或窄移植；只有仍可复现且成熟方案确实不存在的最小缺口，才能另写 SCOPED→AUDITED
-卡。冻结自实现继续不动。
-
-按用户要求，本轮在 M3 终局后停止，不进入 M4。
+完成，不证明需求覆盖完成。下一步先批量执行 36 个 M3-01、36 个 M3-02、32 个 M3-04、28 个
+M3-05 和 2 个 M3-06 未运行格；共享 fixture，不逐格施工。只有实际执行或准备期拒绝后的具名缺口
+才能交给 M4。冻结自实现继续不动。

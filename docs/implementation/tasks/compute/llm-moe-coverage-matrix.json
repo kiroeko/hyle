@@ -6269,10 +6269,10 @@
     "provider_admission_and_work_packages": "llm-moe-provider-integration-ledger.md"
   },
   "m3_adjudication": {
-    "state": "COMPLETE",
+    "state": "IN_PROGRESS",
     "date": "2026-09-24",
-    "record": "docs/implementation/tasks/compute/llm-moe-m3-terminal.md",
+    "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
     "acceptance": "evidence/correctness/compute-llm-moe-m3/acceptance.json",
-    "meaning": "Coverage accounting is complete; non-PASS cells remain M4 inputs and are not product support claims."
+    "meaning": "Initial classification is complete; 134 VALIDATION_NOT_RUN cells remain M3 execution work and are not M4 inputs or product support claims."
   }
 }

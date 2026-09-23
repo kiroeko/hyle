@@ -166,7 +166,8 @@
     "repository_contains_model_tensors": false,
     "temporary_reference_tensors_removed_after_receipt": true
   },
-  "verdict": "M3_COMPLETE_WITH_RECORDED_COVERAGE_GAPS",
+  "correction": "INTERIM_AUDIT_ONLY; 134 VALIDATION_NOT_RUN cells remain M3 work",
+  "verdict": "M3_IN_PROGRESS",
   "implementation_loc": {
     "command": "python scripts/loc-report.py --module compute-graph-all --module-path include/hyle/compute --module-path include/hyle/graph --module-path src/compute* --module-path src/graph* --commit 68278c999b623edbd0c87f05d3926208ea84f6db --self-check --json",
     "code": 59749,

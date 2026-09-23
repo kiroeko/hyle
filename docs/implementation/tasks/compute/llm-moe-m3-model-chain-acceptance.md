@@ -100,10 +100,11 @@
 本卡有限 FIX 已冻结。可以增加上述测试消费者、收据与必要的成熟接入纠正；任何产品修改仍须由
 实际失败指向 C3，不能借 M3 扩大算子目录。
 
-## 终局
+## 中间审计更正
 
-M3 已于 2026-09-24 按有限 FIX 完成，产品数学改动为 0。输入/reference 身份、四路线当前 factor、
-六组消费链的最早拒绝边界、256 格最终分类以及 Provider 完成门见
-[M3 终局](llm-moe-m3-terminal.md)与
-[聚合验收收据](../../../../evidence/correctness/compute-llm-moe-m3/acceptance.json)。覆盖矩阵没有
-`UNPROVEN`，但只有 33 格具备完整 PASS；其余具名残差必须由 M4 重新定界，本卡不授权继续修改产品。
+2026-09-24 更正：此前记录只完成输入/reference、四路线 factor、Provider 门和 256 格初次分类；
+134 格仍为 `VALIDATION_NOT_RUN`，因此 M3 未完成。本卡保持 `AUDITED`，继续授权 C2 的六组共享
+测试消费者及 C3 的实际成熟接入纠正；产品数学仍冻结。见
+[中间审计](llm-moe-m3-terminal.md)与
+[聚合收据](../../../../evidence/correctness/compute-llm-moe-m3/acceptance.json)。M3 完成这些实际运行并
+回填覆盖后才能终局，期间不进入 M4。

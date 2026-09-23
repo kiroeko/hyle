@@ -55,6 +55,7 @@ def main() -> None:
     assert dict(sorted(counts.items())) == acceptance["coverage_summary"]["states"]
     assert acceptance["coverage_summary"]["cells"] == 256
     assert acceptance["coverage_summary"]["unadjudicated"] == 0
+    assert acceptance["verdict"] == "M3_IN_PROGRESS"
     assert acceptance["provider_integration_gate"] == {
         "state": "PASS",
         "admitted_integrations_outstanding": 0,
