@@ -40,7 +40,7 @@
         "F11.1",
         "F11.2"
       ],
-      "status": "AUDITED"
+      "status": "CLOSED"
     },
     {
       "id": "B4",
@@ -647,6 +647,127 @@
       "expected_selector_gates": [],
       "applicability": "not_applicable",
       "reason": "No frozen whole-model-fragment P1 card exists for B2; P0 cost accounting applies and the selector explicitly skipped P1."
+    },
+    {
+      "id": "b3-windows-cpu",
+      "batch": "B3",
+      "profile": "windows-cpu-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_ops",
+        "factor:compute_provider_ggml",
+        "factor:compute_route_cpu",
+        "factor:graph_route_cpu"
+      ],
+      "applicability": "required",
+      "reason": "B3 CPU mature causal-conv and scalar/KDA recurrent correctness."
+    },
+    {
+      "id": "b3-windows-cuda",
+      "batch": "B3",
+      "profile": "windows-cuda-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_cuda",
+        "factor:compute_route_cuda",
+        "factor:graph_provider_ggml_cuda",
+        "factor:graph_route_cuda"
+      ],
+      "applicability": "required",
+      "reason": "B3 CUDA mature causal-conv and scalar/KDA recurrent correctness on SM89."
+    },
+    {
+      "id": "b3-air-apple",
+      "batch": "B3",
+      "profile": "air-apple-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_metal",
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B3 Apple shared MLX causal-conv and ggml Metal recurrent correctness."
+    },
+    {
+      "id": "b3-mini-apple-static",
+      "batch": "B3",
+      "profile": "mini-apple-static",
+      "kind": "correctness",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_metal",
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B3 Apple static portability and native execution on Mac mini."
+    },
+    {
+      "id": "b3-windows-vulkan",
+      "batch": "B3",
+      "profile": "windows-vulkan-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_vulkan",
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B3 Vulkan managed causal-conv and scalar/KDA recurrent correctness on RTX 4070."
+    },
+    {
+      "id": "b3-fragment-p1",
+      "batch": "B3",
+      "profile": "windows-cuda-shared",
+      "kind": "performance",
+      "requirements": [
+        "F09.2",
+        "F10.2",
+        "F11.2"
+      ],
+      "expected_selector_gates": [],
+      "applicability": "not_applicable",
+      "reason": "No frozen complete recurrent model-fragment P1 card exists for B3; retained-program P0 applies and model-chain performance remains M3-03."
     }
   ],
   "residuals": [
@@ -751,6 +872,70 @@
       "state": "UNPROVEN",
       "reason": "ggml Vulkan Q4_0/Q4_1/Q8_0 and current IREE artifacts do not exactly match the three public formats.",
       "owner": "M3-02"
+    },
+    {
+      "id": "b3-cpu-recurrent-domain",
+      "batch": "B3",
+      "route": "cpu",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "state": "UNPROVEN",
+      "reason": "F16/BF16, non-equal-depth and complete 24-layer recurrent journeys remain unproven; Direct F32 is bound while a complete multi-output ggml Graph region is not proven.",
+      "owner": "M3-03"
+    },
+    {
+      "id": "b3-cuda-recurrent-domain",
+      "batch": "B3",
+      "route": "cuda",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "state": "UNPROVEN",
+      "reason": "Locked ggml CUDA causal conv requires channel count divisible by 128; F16/BF16, non-equal-depth and complete model journeys remain unproven.",
+      "owner": "M3-03"
+    },
+    {
+      "id": "b3-apple-recurrent-domain",
+      "batch": "B3",
+      "route": "apple",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "state": "UNPROVEN",
+      "reason": "F16/BF16 ggml Metal recurrent, extra state snapshots and complete 24-layer model journeys remain unproven.",
+      "owner": "M3-03"
+    },
+    {
+      "id": "b3-vulkan-recurrent-domain",
+      "batch": "B3",
+      "route": "vulkan",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "state": "UNPROVEN",
+      "reason": "F16/BF16 recurrent, extra state snapshots and complete 24-layer model journeys remain unproven.",
+      "owner": "M3-03"
     }
   ]
 }

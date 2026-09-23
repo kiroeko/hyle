@@ -5,7 +5,7 @@
 ## Closure card
 
 - round / owner：M2-B3；`/root`。
-- baseline：`5d97716ed4b34e46491a99cb459327fab5580828`；B2 已关闭，Windows canonical
+- baseline：`5d97716ed5e74820466e36c57333099b6c0badd6`；B2 已关闭，Windows canonical
   工作树在本卡登记前干净。
 - trigger：F09.1--F11.2 的 Qwen3.5、Kimi 线性注意力真实消费。公共 `GatedDeltaNet` 已能表达
   scalar gate，Apple/Vulkan 已接部分 F32 域；但 causal depthwise conv 没有自然公共语义，CPU/CUDA
