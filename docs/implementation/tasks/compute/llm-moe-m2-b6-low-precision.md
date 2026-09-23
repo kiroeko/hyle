@@ -1,6 +1,6 @@
 # M2-B6 成熟 Provider 精确低精度格式批次
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -66,3 +66,22 @@ activation 位宽、scale dtype/group、packing、舍入或输出不同也不相
 
 本批产品数学 FIX 为 0；有限改动只有资格测试、覆盖/残差账本和用户文档。P1 在没有冻结完整 F18
 模型片段时 `NOT_APPLICABLE`。有限 FIX 已冻结，可以进入 B6 集中验收。
+
+## 终局裁决
+
+2026-09-24，B6 在最终验证候选
+`68278c999b623edbd0c87f05d3926208ea84f6db` 上以 `PASS_WITH_RECORDED_RESIDUALS` 关闭。Windows
+RTX 4070 shared selector 的 `compute_route_vulkan` 与 `graph_route_vulkan` 两个 factor 均通过；MacBook
+Air 的静态链接候选在 MoltenVK 上完成同两组原生测试。Direct 新增验收覆盖 block128 F32 scale 与
+group32 UE8M0 两种 E4M3 输入继续组合到 BF16 输出、两次 invocation、压缩输入不变与完成回收；
+Graph 在原 IREE FP8 region 后继续执行 BF16 cast 与既有 ggml/native 节点。
+
+[验收收据](../../../../evidence/correctness/compute-llm-moe-m2-b6/acceptance.json)记录候选身份、两机命令和
+结果。Air 首次运行只缺 Homebrew Vulkan loader 的动态库搜索路径；加入登记的
+`/opt/homebrew/lib` 与 MoltenVK ICD 后，同一静态构建无需修改即通过，因此不构成产品失败。
+
+CPU、CUDA 与 Apple 的精确入口拒绝/延后结论以及 Vulkan 的完整模型、grouped、W4A8 和量化 index
+残差继续保持 `UNPROVEN`，owner 为 M3-06。B6 没有新增 HYLE decoder、quantizer、kernel 或 shader，
+也没有把相近位宽实现当成精确格式支持。没有冻结完整 F18 模型片段，P1 按合同
+`NOT_APPLICABLE`；统一 LOC 为 Compute+Graph **59,749 行 / 252 文件**，不含测试、文档、样例和
+第三方源码。

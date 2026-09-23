@@ -323,6 +323,11 @@ Apple B1已经按同一集中合同CLOSED：MLX成熟路径的F01–F04/F19共21
 资源/失败、两台Mac适用门、三交付和完整region P1；矩阵为21/256路线格，跨四路线完整行仍0/64。
 产品候选为`fd03ba10`，未启动冻结自研比较；旧不可达自定义Metal链继续留到M5裁决。
 
+2026-09-24，[M2 B1--B6 已汇总关闭](llm-moe-m2-terminal.md)：所有已准入成熟入口完成批量接线与
+适用验收，未接通的已准入入口为0；具名上游、设备、精确数值和完整模型链残差保持
+`UNPROVEN`，由 M3 按真实消费逐格裁决。M2 没有新增自研数学。当前按用户停止点暂停，不自动进入
+M3。
+
 | 批次 | Provider 与接法 | 一批要接的需求 | owner 与停止点 |
 |---|---|---|---|
 | M2-CPU | ggml CPU backend/完整 region；oneDNN primitive/partition 按准入表组合 | F01–F19 的 CPU 必需域，优先现成模型图中的 tensor、线性、attention、递归与 MoE 路径 | 现有 ggml/oneDNN/CPU route owner，新增 factor 先 QUEUED；普通 Direct/Graph 与持久资源可用 |

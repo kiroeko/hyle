@@ -145,7 +145,7 @@ combine、真实投影宽度、共享状态、MTP index carry 和两个 invocati
 | B3 | [`CLOSED`](llm-moe-m2-b3-terminal.md) | F32 causal conv 与 scalar/KDA GDN 已接四路线原版成熟入口；低精度、完整模型链和具名 backend 限制已进入 M3-03 residual | 直接进入 B4 |
 | B4 | [`CLOSED`](llm-moe-m2-b4-terminal.md) | grouped expert MatMul 与 mHC 三枚 region 已接四路线 ggml 原版入口，普通 Direct/Graph、资源与两种 Apple 交付已验证 | 直接进入 B5 |
 | B5 | [`CLOSED`](llm-moe-m2-b5-terminal.md) | Lightning Indexer 已接四路线 ggml 原版入口；MLA、pool/tail 与 compression 复用已有成熟图能力并保留真实模型片段残差 | 进入 B6 精确低精度格式资格化 |
-| B6 | [`AUDITED`](llm-moe-m2-b6-low-precision.md) | 精确 payload/scale/activation 与当前硬件能力已逐项裁决；只验证已接 IREE Vulkan F18.1/2 dense 子域，其余为具名 residual | 完成集中验收与 M2 汇总并暂停，不进入 M3 |
+| B6 | [`CLOSED`](llm-moe-m2-b6-low-precision.md#终局裁决) | 已接 IREE Vulkan F18.1/2 dense+BF16 组合完成 Windows shared 与 Air static 验收；其余精确域保留具名 residual | [M2 已汇总关闭](llm-moe-m2-terminal.md)并暂停，不进入 M3 |
 
 `QUEUED_BY_PLAN` 只是工作顺序，不代替 `module-status.json` 的 component owner 状态。启动每批时只
 登记实际受影响的既有/新增 component，并在实现前完成 SCOPED→AUDITED；不得为64行复制 owner。
