@@ -1,6 +1,6 @@
 # M2-B2 组合路由模型身份补充
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -25,7 +25,7 @@
 3. 核对 family、name、revision、configuration 的层级和空字段不产生歧义。
 4. 核对所有 `ModelDescription` 直接消费者并一次迁移，避免兼容双轨。
 
-### 有限改动集（待 AUDITED 冻结）
+### 有限改动集（AUDITED）
 
 | ID | 问题与证据 | 允许改动 | 验收 |
 |---|---|---|---|
@@ -33,6 +33,16 @@
 | RQ2 | 只有四字段 exact 不足以表达宽规则 | 增加 family、family+name、完整身份三档冷谓词 | 宽规则不冒充窄规则，完全相同才命中 exact |
 | RQ3 | 现有 Direct/Graph 测试使用旧三字段聚合初始化 | 一次迁移全部直接消费者与测试 | 无旧 API 双轨，Graph/Compute 均保留 workload |
 
-## 当前裁决
+## AUDITED 决定
 
-状态为 `SCOPED`。尚未授权修改 `compute` 产品代码；完成上述审计并冻结 API 后再进入 `AUDITED`。
+2026-09-23 核对全部 `ModelDescription` 构造点、`WorkloadContext` 的 Direct/Graph 传递和四路线环境对象后，
+冻结 RQ1--RQ3。平台与四路线已经由交付因子和所选 Context 排除；CUDA、Apple、Vulkan 的环境快照已
+分别持有设备架构和软件版本，CPU 实现继续使用其原生 ISA 探测；量化语义和 packing 已由真实操作与
+`StorageFormatId` 区分。把这些事实复制进 `ModelIdentity` 会制造冲突来源，因此不做。
+
+`ModelDescription` 固定为 family/name/revision/configuration 四段；`ModelIdentity` 继续一次冷分配，
+提供 family、family+name、四字段 exact 三种字节精确谓词。字段只能从左到右逐级已知；空 family 时
+其余字段非法，空 name 时 revision/configuration 非法。此 API 足以让每个 Provider 的冷 `propose`
+将模型条件与其原生环境、真实 operation/Graph 和资源条件作任意合取，不需要中央规则 DSL。
+
+状态进入 `AUDITED`。产品改动仅限 RQ1--RQ3；P0 只核对冷分配/拷贝与 submit 零新增工作，不启动 P1。
