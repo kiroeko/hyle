@@ -2,6 +2,8 @@
 
 <!-- MODULE REVIEW: CLOSED -->
 
+施工边界见[B3 closure card](llm-moe-m2-b3-recurrent-state.md)。
+
 2026-09-24，B3 在产品候选
 `92314d71150510813eb5165e098989b74b965a81` 上关闭。实现只接入锁定 ggml/MLX 的原版能力：公共
 `CausalConv1d` descriptor 描述 `[B,T+K-1,C] × [C,K] → [B,T,C]`；CPU、CUDA、Vulkan lower 到

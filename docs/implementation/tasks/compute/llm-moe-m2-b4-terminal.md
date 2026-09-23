@@ -2,6 +2,8 @@
 
 <!-- MODULE REVIEW: CLOSED -->
 
+施工边界见[B4 closure card](llm-moe-m2-b4-moe-model-fragments.md)。
+
 2026-09-24，B4 在产品候选
 `d40aa5329ac9e6783556b1595118b28742cde7c7` 上关闭。公共层新增自然布局的 `GroupedMatMul` 与
 DeepSeek V4 `HyperConnectionCombine/Pre/Post` typed descriptor；CPU、CUDA、Apple Metal 和

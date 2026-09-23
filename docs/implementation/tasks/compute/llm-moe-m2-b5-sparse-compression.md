@@ -1,6 +1,6 @@
 # M2-B5 成熟 Provider 稀疏注意力与压缩状态批次
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -45,3 +45,25 @@
 
 完成上游四后端入口、固定限制与已有组合能力审计后，本卡须写入有限 `KEEP/FIX/BORROW/DEFER/REJECT`
 表并转为 `AUDITED`，之后才能修改产品代码。
+
+## AUDITED：原版入口与有限 FIX
+
+2026-09-24 核对锁定 ggml `456172ec` 的 public schema、CPU/CUDA/Metal/Vulkan capability 与 dispatch。
+四后端共同提供 `GGML_OP_LIGHTNING_INDEXER`；共享公共域固定为 `D=128,H=64`、dense F32
+query/key/prescaled weights、dense F16 mask 与 F32 output。CUDA 另接受 `H=32`，Metal 固定 `H=64`
+并要求 simdgroup matrix multiply，Vulkan 要求 FP16 storage、D=128 与自然对齐；这些扩展/限制由各
+backend 原版 `supports_op` 最终裁决，本批不把路线超集冒充共同域。
+
+| ID | 有限施工 | 验收 |
+|---|---|---|
+| B5-C0 | 在 `model_ops.h` 增加 `LightningIndexer` 稳定 typed descriptor；只表达自然 layout、精确 dtype/shape 和 mask stream broadcast | header self-contained、推导、非法域不发布 |
+| B5-C1 | CPU ggml retained recipe lower 原版节点，Graph 复用同一合法 leaf/region | Direct/Graph、独立 oracle、两个 replay |
+| B5-C2 | CUDA ggml recipe 复用 native stream/device buffer，资格继续由原版 backend 裁决 | SM89 Direct/Graph、完成/失败、无新 `.cu` |
+| B5-C3 | Apple 复用 B4 的有限 ggml Metal model-region seam并增加 F16 mask carrier | Air shared、Mini static、native Metal buffer/replay，无新 shader |
+| B5-C4 | Vulkan managed region lower 原版节点，Graph custom dispatch 识别 provider-owned schema | RTX 4070 Direct/Graph，原版 capability 最终裁决 |
+| B5-C5 | 一份跨路线 fixture 覆盖正/负 dot、ReLU、非零 F16 mask、多 token/key；已有 MLA/pool/state 组合只登记复用与残差 | P0 resource/dispatch；P1 不适用；完整片段归 M3-05 |
+
+`KEEP`：B2 的 MatMul/Attention/KV/View、B1/B2 的 Reduce/TopK/Gather/Pool 与 Graph 显式状态端口；
+`BORROW`：ggml 四后端原版 Lightning Indexer；`DEFER`：完整 absorbed/gated MLA、跨层 selection schedule、
+ragged pool tail 和 CSA/HCA 增量 compressor 到 M3-05；`REJECT`：host sparse loop、自研 compressor、
+逐 token 同步以及执行时 Provider 竞速。有限 FIX 已冻结，可以进入产品施工。
