@@ -82,7 +82,7 @@
         "F18.4",
         "F18.5"
       ],
-      "status": "SCOPED"
+      "status": "AUDITED"
     }
   ],
   "provider_features": [
@@ -1044,6 +1044,54 @@
       "expected_selector_gates": [],
       "applicability": "not_applicable",
       "reason": "No frozen complete sparse/compression model-fragment P1 card exists for B5; retained-region P0 applies and model-chain performance remains M3-05."
+    },
+    {
+      "id": "b6-windows-vulkan",
+      "batch": "B6",
+      "profile": "windows-vulkan-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F18.1",
+        "F18.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B6 exact IREE FP8 dense Direct/Graph BF16 composition, replay, residency and resource acceptance on RTX 4070."
+    },
+    {
+      "id": "b6-air-vulkan-static",
+      "batch": "B6",
+      "profile": "air-vulkan-static",
+      "kind": "delivery",
+      "requirements": [
+        "F18.1",
+        "F18.2"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B6 exact IREE FP8 dense static delivery and MoltenVK portability acceptance on MacBook Air."
+    },
+    {
+      "id": "b6-low-precision-p1",
+      "batch": "B6",
+      "profile": "windows-vulkan-shared",
+      "kind": "performance",
+      "requirements": [
+        "F18.1",
+        "F18.2",
+        "F18.3",
+        "F18.4",
+        "F18.5"
+      ],
+      "expected_selector_gates": [],
+      "applicability": "not_applicable",
+      "reason": "No frozen complete F18 model fragment exists in B6; provider qualification and P0 apply, while full-chain performance remains M3-06."
     }
   ],
   "residuals": [
@@ -1368,6 +1416,66 @@
       "state": "UNPROVEN",
       "reason": "The admitted Lightning Indexer region is bound and MLA, pool/tail and compression primitives exist, but complete absorbed/gated MLA, cross-layer sparse selection, ragged pool tail and incremental compression have not run as one real model fragment.",
       "owner": "M3-05"
+    },
+    {
+      "id": "b6-cpu-complete-low-precision",
+      "batch": "B6",
+      "route": "cpu",
+      "requirements": [
+        "F18.1",
+        "F18.2",
+        "F18.3",
+        "F18.4",
+        "F18.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "oneDNN 3.13.2 exposes the data types but the canonical i9-13900K rejects both exact FP8 MatMul descriptors; W4A8, grouped experts and quantized index state remain unproven.",
+      "owner": "M3-06"
+    },
+    {
+      "id": "b6-cuda-complete-low-precision",
+      "batch": "B6",
+      "route": "cuda",
+      "requirements": [
+        "F18.1",
+        "F18.2",
+        "F18.3",
+        "F18.4",
+        "F18.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "CUDA 13.3 cuBLASLt exact scale modes have no algorithm on the canonical SM89 GPU; Marlin W4A16 and the locked SGLang hardware domain do not substitute W4A8 or index state.",
+      "owner": "M3-06"
+    },
+    {
+      "id": "b6-apple-complete-low-precision",
+      "batch": "B6",
+      "route": "apple",
+      "requirements": [
+        "F18.1",
+        "F18.2",
+        "F18.3",
+        "F18.4",
+        "F18.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "MLX W4A16 and W4A4 modes do not substitute required W4A8; mxfp8 dynamic ingress and all source-specific index formats require exact M3-06 chain qualification.",
+      "owner": "M3-06"
+    },
+    {
+      "id": "b6-vulkan-complete-low-precision",
+      "batch": "B6",
+      "route": "vulkan",
+      "requirements": [
+        "F18.1",
+        "F18.2",
+        "F18.3",
+        "F18.4",
+        "F18.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "IREE exact dense F18.1/F18.2 is bound, but complete 2B/grouped paths, W4A8/DeepSeek profiles and quantized attention/index state remain unproven.",
+      "owner": "M3-06"
     }
   ]
 }

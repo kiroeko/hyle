@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "kind": "m2-b6-mature-low-precision-qualification",
+  "date": "2026-09-24",
+  "canonical_workspace": "C:/public/project-hyle/hyle",
+  "baseline_commit": "b01fadb42f11f83c70cff07a70a0e686b831827c",
+  "providers": {
+    "onednn": {
+      "version": "3.13.2",
+      "source_commit": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "machine": "13th Gen Intel(R) Core(TM) i9-13900K",
+      "probe_sha256": "88ad565d96c003b3549f8caf168e4c921f39eb06cc31f1968db8d31fd6f9230d",
+      "results": {
+        "F18.2-group32-e8m0": "primitive descriptor rejected: dnnl_unimplemented (3)",
+        "F18.1-block128-f32": "primitive descriptor rejected: dnnl_unimplemented (3)"
+      },
+      "source_limit": "CPU f8_e4m3 requires avx512_core_fp16; CPU MatMul scale groups also reject simultaneous non-unit final two weight groups",
+      "verdict": "not bound on the canonical CPU"
+    },
+    "cublaslt": {
+      "toolkit": "13.3",
+      "driver": "610.62",
+      "machine": "NVIDIA GeForce RTX 4070",
+      "compute_capability": "8.9",
+      "probe_sha256": "cddde307f5e6cc11e1e4c0a296524104c2621b72fe49b3a1dfc2a107f694f84f",
+      "results": {
+        "F18.2-vec32-e8m0": "cublasLtMatmulAlgoGetHeuristic returned CUBLAS_STATUS_NOT_SUPPORTED (15), count 0",
+        "F18.1-vec128-plus-blk128x128-f32": "cublasLtMatmulAlgoGetHeuristic returned CUBLAS_STATUS_NOT_SUPPORTED (15), count 0"
+      },
+      "verdict": "API scale modes match, but no executable algorithm exists on SM89"
+    },
+    "sglang": {
+      "source_commit": "06992c92ad44",
+      "source_hashes": {
+        "fp8_gemm_kernel.cu": "681c8afd21ddd78fb656ce9643b4988743faa64f178f48d55b87dfb8be9217ad",
+        "per_token_group_quant.cuh": "238d3d4db7a36ae36e118bed8d37aeb9893cb40d0f5c2670cb307416499e9678",
+        "mxfp4.py": "cfc807fcd854aaf279ded8b0c8b0996fc185141d00aa619cb89fbddff3215626"
+      },
+      "verdict": "exact quantizers identified; matching K3 W4A8 native GEMM is outside the canonical SM89 domain and has no admitted standalone Windows C++ bridge"
+    },
+    "mlx": {
+      "version": "0.32.2",
+      "source_commit": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "results": {
+        "mxfp4-quantized-matmul": "group32 E2M1/UE8M0 weights with floating activation (W4A16)",
+        "mxfp4-qqmm": "one mode quantizes both activation and weight as FP4 (W4A4)",
+        "mxfp8-qqmm": "candidate group32 E4M3/UE8M0 dynamic chain; public HYLE compressed-ingress equivalence remains unproven"
+      },
+      "verdict": "W4A16 and W4A4 are rejected as F18.3/F18.4 substitutes; mxfp8 remains an M3-06 exact-chain candidate"
+    },
+    "vulkan": {
+      "iree_commit": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "ggml_commit": "456172ec733a135778adcd32d00e576a58232e45",
+      "verdict": "existing IREE E4M3 block128 F32 and group32 UE8M0 dense MatMul paths are exact mature bindings; B6 qualifies BF16 composition and retains all complete-model/grouped/index residuals"
+    }
+  },
+  "self_implemented_low_precision_math_added": 0,
+  "verdict": "AUDITED"
+}

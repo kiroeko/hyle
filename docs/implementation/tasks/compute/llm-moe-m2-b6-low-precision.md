@@ -1,6 +1,6 @@
 # M2-B6 成熟 Provider 精确低精度格式批次
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -41,3 +41,28 @@
 
 审计完成后，本卡必须固定有限 `KEEP/BORROW/DEFER/REJECT` 表并转为 `AUDITED`，之后才能修改
 产品代码或新增资格测试。
+
+## AUDITED：精确成熟入口与有限 FIX
+
+2026-09-24 对锁定 oneDNN 3.13.2、CUDA 13.3 cuBLASLt、Marlin `51918e25`、SGLang
+`06992c92`、MLX 0.32.2、IREE Vulkan `6ef606b6` 与 ggml `456172ec` 完成逐字段审计。
+[资格收据](../../../../evidence/correctness/compute-llm-moe-m2-b6/qualification.json)保存源码 pin/hash、
+本机 CPU/GPU 身份和运行时拒绝码。API 中出现 FP8/FP4 类型不等于当前设备有可执行算法；位宽相同但
+activation 位宽、scale dtype/group、packing、舍入或输出不同也不相容。
+
+| ID | 裁决与有限施工 | 验收 |
+|---|---|---|
+| B6-C0 | `KEEP` 既有五个公共 format identity 与独立 bit decoder；不改变 codes/scales，也不新增量化公式 | `compute_ops` 现有 size/alignment/overflow 测试复用 |
+| B6-C1 | `REJECT` 本机 oneDNN FP8 MatMul：i9-13900K 对 group32 UE8M0 与 block128 F32 两种 primitive descriptor 均返回 `unimplemented`；block128×128 weight scale 还不满足 CPU 单 primitive 的分组限制 | 保存 descriptor 探针；不接 reorder+整权重展开回退 |
+| B6-C2 | `DEFER` CUDA 精确档位：cuBLASLt 的 `VEC32_UE8M0`、`VEC128_32F`、`BLK128x128_32F` 名义相容，但 RTX 4070/SM89 两种 heuristic 均返回 `NOT_SUPPORTED`；Marlin 是 W4A16，SGLang 原版量化器的匹配 W4A8 GEMM 只在其具名新架构域 | 保存 CUDA 13.3/driver 610.62 探针；未来按 SM/driver/toolkit 冷规则资格，不让 SM89 代签 |
+| B6-C3 | `DEFER` MLX `mxfp8` 完整动态链到 M3-06；`mxfp4 quantized_matmul` 是 W4A16，`mxfp4 qqmm` 让 activation 与 weight 同为 FP4，均 `REJECT` 为 F18.3/4 的 W4A8 代用品 | Air 源码核对 mode/group/input contract；本批不增加隐式解码或不同入口语义 |
+| B6-C4 | `BORROW/KEEP` 已接 IREE Vulkan 的 E4M3 block128 F32 与 group32 UE8M0 dense MatMul；只补 BF16 输出组合的 Direct/Graph、两 invocation、压缩输入驻留与资源回收验收 | Windows shared 与 Air static 的两个 factor 集中验证；不重写 IREE 程序 |
+| B6-C5 | `DEFER` F18.1/2 完整模型/grouped 域及 F18.3--F18.5 精确专家/index state 到 M3-06；若真实链仍缺成熟入口才按 M4 规则处理 | residual 保持 `UNPROVEN`；无 mock、无自研 decoder/kernel/shader |
+
+`KEEP`：公共格式 identity、Vulkan 原版 IREE FP8 与 BF16 conversion、ggml MXFP4 的既有 W4A16
+有限域；`BORROW`：只复用精确相容的 IREE dense 程序。`DEFER`：硬件/入口不相容但已有具名成熟候选
+的真实模型链资格。`REJECT`：把 oneDNN reorder 当 MatMul、把 MLX/ggml W4A16 或 W4A4 当 W4A8、
+把 SM100/107 能力写成 SM89 PASS、整模型浮点常驻和任何新 HYLE 数学实现。
+
+本批产品数学 FIX 为 0；有限改动只有资格测试、覆盖/残差账本和用户文档。P1 在没有冻结完整 F18
+模型片段时 `NOT_APPLICABLE`。有限 FIX 已冻结，可以进入 B6 集中验收。

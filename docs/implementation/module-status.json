@@ -364,8 +364,8 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_ggml",
@@ -382,8 +382,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "compute_backend_cpu",
@@ -426,20 +426,20 @@
     {
       "module": "compute_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_cublas",
       "state": "AUDITED",
-      "summary": "M2-B2 SCOPED：因目标模型 F05-F08 的新成熟 Provider 线性/量化/注意力消费合法重开；当前只审计原版入口、资源接法和有限 FIX，未改产品、未声明覆盖或性能 PASS。",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md"
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md"
     },
     {
       "module": "compute_provider_marlin",
@@ -466,38 +466,38 @@
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
-      "summary": "M2-B5 AUDITED：四后端只新增接入 ggml 原版 Lightning Indexer；MLA、pool/tail 与 compression 复用已有成熟图能力，B5-C0–C5 有限 FIX 已冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -548,8 +548,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+      "summary": "M2-B6 AUDITED：精确低精度 Provider/硬件边界与 B6-C0–C5 已冻结；只补验既有 IREE Vulkan F18.1/F18.2 dense+BF16 组合，其他路线和 W4A8/index 域保持具名 residual，新增自研数学为 0。"
     }
   ]
 }
