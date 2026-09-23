@@ -1,6 +1,6 @@
 # M2 组合路由资格完整迁移
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -56,4 +56,37 @@
 3. 冻结有限迁移表；现有 B2 算子接线、自研数学和性能比较继续暂停。
 4. 先以现有 matcher 表达；只有具体反例无法表达且属于受管轴时才允许修改共同 API。
 
-当前只完成范围登记，尚未签任何新增迁移或验证 PASS。
+## 受管轴完整审计
+
+| 位置 | 手写静态选择 | 归类与动作 |
+|---|---|---|
+| CUDA backend / CCCL | CCCL 已用 rule，但独立重复编码 SM/runtime/toolkit facts | FIX：backend 从 immutable `Environment` 统一投影 device/SM/driver/runtime/toolkit；CCCL 改为复用 |
+| FlashInfer | SM 8.9 硬门；attention operation 与 FP16/BF16 实现域 | FIX：硬件/Provider 与 operation/dtype 分别用冷 rule；causal/layout/shape/residency 留本地 |
+| ggml CUDA | SM 8.9 硬门 | FIX：用 backend facts 的冷 rule；`ggml_backend_supports_op` 与图语义留原生 owner |
+| Marlin | SM80+；Q4 signed/group128/dtype/weight+scale format | FIX：pack/provider 共用硬件 rule，proposal/prepare 共用量化 rule；shape、容量、resource 留本地 |
+| Apple | affine Q4 unsigned/group64/dtype/packed format | FIX：在已构造真实 public descriptions 后用 Apple rule；MLX rank/native dtype 与语义推导留本地 |
+| Vulkan native | subgroup arithmetic/size + NVIDIA 0x2786 或 Apple M4 决定 matvec shader | FIX：Vulkan Environment 投影事实，两条有序 rule 选 shader；shape 阈值和 device limits 留本地 |
+| ggml Vulkan | MatMul F16 + MXFP4 physical format 进入成熟 region | FIX：format 单 tensor 与完整 MatMul 域均用 rule；canonical layout、rank 和 ggml native support 留本地 |
+| CPU / Graph 边界 | CPU 无手写硬件 allowlist；SIMD 拥有 ISA dispatch；Apple Graph 解码 public Q4 storage | KEEP：不是实现赢家选择，不复制 ISA 探测，不把边界合法性伪装成路由 |
+
+全目录没有现存 model family/name/revision/configuration、phase 或 region 特例；共同 matcher 已能表达这些
+轴，故本轮不虚构模型规则。Vulkan descriptor indexing、IREE feature、reduction lane、CUDA occupancy/
+shared-memory 等均是原生 capability/resource 计算，不属于静态 best-of 资格。
+
+## 有限 FIX（AUDITED）
+
+| ID | 有限产品动作 | 必须证明 |
+|---|---|---|
+| CM1 | `compute_backend_cuda` 提供固定大小、借用式 route facts；CCCL 复用 | 六项事实来自同一 snapshot；无分配；原 CCCL 命中/拒绝不变 |
+| CM2 | FlashInfer 与 ggml CUDA 迁移 SM89，FlashInfer 迁移 operation/dtype | 非 SM89 安全 decline；FP16/BF16 原域命中；submit 无 matcher |
+| CM3 | Marlin 迁移 SM80+ 与 Q4-S128/weight/scale format | pack、proposal、prepare 一致；非法 shape/resource 仍由原检查裁决 |
+| CM4 | Apple affine Q4 迁移 route/operation/dtype/mode/group/format | Direct/Graph 原 Q4 正反例；MLX 程序与输出不变 |
+| CM5 | Vulkan 两个设备/subgroup shader 资格迁移为有序 rules | NVIDIA、Apple M4、未知设备三路不变；large shape 只在 NVIDIA 命中 |
+| CM6 | ggml Vulkan MXFP4 单 tensor 与 MatMul region 资格迁移 | canonical MXFP4 正例与伪格式/布局反例；Direct/Graph region 不变 |
+| CM7 | 受管轴扫描与行为测试；文档列出保留的本地检查 | 产品不再手写上述静态比较；三交付与真实路线 correctness 通过 |
+
+API 冻结为既有公开 `RouteRule`；没有具体反例要求修改 `compute`。只新增 CUDA backend 私有事实投影和
+Vulkan owner 私有 boolean attribute。所有 matcher 调用只在 Context 创建、proposal、prepare/compile；
+不进入 bind/submit/wait。P0 检查对象布局、调用位置和成本结构，P1 不适用。
+
+状态进入 `AUDITED`；允许且只允许 CM1--CM7。B2、新算子、自研数学、性能比较继续暂停。

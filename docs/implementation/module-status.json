@@ -398,9 +398,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 SCOPED：统一从既有 CUDA Environment 投影冷路由事实，供 FlashInfer、ggml CUDA、Marlin 复用；不改变 Context、设备资源或执行路径。"
+      "summary": "M2 组合路由完整迁移 AUDITED：固定复用 CUDA Environment 的六项冷 route facts；Context、资源与执行路径不变。"
     },
     {
       "module": "compute_provider_native",
@@ -438,15 +438,15 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 SCOPED：用户要求补齐全部现存静态路由；重新审计 Marlin 的 SM80+ 与 Q4-S128/物理格式资格，旧 vendor audit 事实保留。"
+      "summary": "M2 组合路由完整迁移 AUDITED：迁移 SM80+ 与 Q4-S128/weight/scale format；pack、shape、资源和执行边界不变。"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 SCOPED：既有 CCCL rule 改用 backend 的统一 CUDA Environment 事实投影；资格、支持域、数学和 submit 不变。"
+      "summary": "M2 组合路由完整迁移 AUDITED：CCCL 改用 backend 统一 facts，既有 SM89/CUDA 13.3/provider pin 与执行不变。"
     },
     {
       "module": "compute_route_cuda",
@@ -463,8 +463,8 @@
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 AUDITED：迁移 affine Q4 route/operation/dtype/mode/group/format；MLX 原生语义不变，B2 暂停。"
     },
     {
       "module": "graph_route_apple",
@@ -475,8 +475,8 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 AUDITED：迁移 NVIDIA/Apple M4 subgroup shader 资格；shape、device limit 和原生资源不变，B2 暂停。"
     },
     {
       "module": "graph_route_vulkan",
@@ -487,8 +487,8 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 AUDITED：迁移 MXFP4 format 与 MatMul region 静态资格；canonical layout 与 ggml native support 不变，B2 暂停。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -504,8 +504,8 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 AUDITED：迁移 SM89 冷资格；ggml 原生 supports、资源、region 和执行不变。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -516,8 +516,8 @@
     {
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。"
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 AUDITED：迁移 SM89、Provider、attention operation/dtype 资格；shape、residency 与原生程序不变。"
     },
     {
       "module": "compute_provider_ggml_metal",
