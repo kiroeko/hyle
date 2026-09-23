@@ -477,14 +477,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：affine Q4 route/operation/dtype/mode/group/format 统一；Apple M4 native 39 项、显式 MLX/Metal 三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
     },
     {
       "module": "graph_route_apple",
@@ -494,14 +489,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：NVIDIA/Apple M4 subgroup shader 静态资格统一；Windows Vulkan Compute+Graph 三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
     },
     {
       "module": "graph_route_vulkan",
@@ -511,14 +501,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：MXFP4 format 与 MatMul region 静态资格统一；canonical layout/native support 不变，Vulkan 三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
     },
     {
       "module": "compute_ggml_runtime",
@@ -533,14 +518,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：SM89 静态资格统一，ggml 原生 supports、资源、region 与执行不变；真实 CUDA 门、三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
+      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
     },
     {
       "module": "graph_provider_ggml_cuda",

@@ -164,3 +164,27 @@ MatMul 和四节点 gated FFN region 继续承载其合格域；本批只在 ggm
 Windows shared 增量构建和 `compute/compute_ops/oneDNN/ggml/CPU route/graph/CPU graph route` 七个定向
 测试均通过；包括 Direct/Graph、prefill/decode、两 invocation、旧结果稳定、close 失败和模型冷身份。
 当前仍是产品候选，不把尚未执行的 source/static 交付、WSL 检查或完整片段 P0/P1 写成 PASS。
+
+## 路由专题关闭后的 owner 恢复（SCOPED，2026-09-24）
+
+组合路由专题在本卡完成审计后独立修改并关闭了
+`compute_provider_ggml_cuda`、`compute_route_apple`、
+`compute_provider_ggml_vulkan` 和 `compute_route_vulkan`。其终局明确把普通 B2 算子接线留在范围外，
+并允许 M2-B2 恢复；因此当前 `7efa13c24a95ab33b192ce6400ee10a64e82fe3e` 是这四个 owner 的新
+baseline 和合法 reopen trigger。本次恢复不重开组合 matcher，不改变已关闭的路由规则、Provider 顺序、
+支持域或热路径合同。
+
+恢复后的产品修改仍限于既有 B2-C2--B2-C4：
+
+- `compute_provider_ggml_cuda` 只扩充锁定 ggml CUDA recipe 对已经审计的 dense/attention/RoPE/
+  Hadamard 成熟入口映射；精确量化格式不匹配时留 residual；
+- `compute_route_apple` 只扩充 MLX typed/compiled region 的 B2 成熟 lowering；
+- `compute_provider_ggml_vulkan` 与 `compute_route_vulkan` 只扩充 ggml Vulkan managed region 的 B2
+  成熟 lowering 和 Direct/Graph 接线；IREE 只使用已经限定资格的标准补位；
+- 公共 `Operation`/路由 matcher、冻结自研 kernel/shader/SIMD 算子以及 B3--B6 均不在本次 owner
+  恢复修改内。
+
+受影响的普通纵切仍是 Direct 与 Graph 的 M=1/17/128 linear、8Q/2KV head256 causal attention 和
+两次 replay；反偏置纵切是精确格式拒绝、设备原版 `supports` 拒绝、close/failure 与旧结果 lease。
+开发期按路线集中构建和定向正确性；候选稳定后才集中执行 manifest 的交付、跨环境、P0/P1 和 selected
+门。总调查/纠正预算继续使用本卡原 180 分钟上限，不为本次状态恢复新增研究预算。
