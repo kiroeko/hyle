@@ -71,7 +71,7 @@
         "F17.2",
         "F17.3"
       ],
-      "status": "AUDITED"
+      "status": "CLOSED"
     },
     {
       "id": "B6",
@@ -913,6 +913,137 @@
       "expected_selector_gates": [],
       "applicability": "not_applicable",
       "reason": "No frozen complete MoE or MTP model-fragment P1 card exists for B4; retained-region P0 applies and model-chain performance remains M3-04."
+    },
+    {
+      "id": "b5-windows-cpu",
+      "batch": "B5",
+      "profile": "windows-cpu-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_ops",
+        "factor:compute_provider_ggml",
+        "factor:compute_route_cpu",
+        "factor:graph_route_cpu"
+      ],
+      "applicability": "required",
+      "reason": "B5 CPU Lightning Indexer Direct/Graph mature-provider correctness, resource lifetime and replay."
+    },
+    {
+      "id": "b5-windows-cuda",
+      "batch": "B5",
+      "profile": "windows-cuda-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_cuda",
+        "factor:compute_route_cuda",
+        "factor:graph_provider_ggml_cuda",
+        "factor:graph_route_cuda"
+      ],
+      "applicability": "required",
+      "reason": "B5 CUDA Lightning Indexer native Direct/Graph acceptance on SM89."
+    },
+    {
+      "id": "b5-air-apple",
+      "batch": "B5",
+      "profile": "air-apple-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_metal",
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B5 Apple shared ggml Metal Lightning Indexer Direct/Graph native acceptance on MacBook Air."
+    },
+    {
+      "id": "b5-mini-apple-static",
+      "batch": "B5",
+      "profile": "mini-apple-static",
+      "kind": "delivery",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_metal",
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B5 Apple static portability and native Lightning Indexer acceptance on Mac mini."
+    },
+    {
+      "id": "b5-windows-vulkan",
+      "batch": "B5",
+      "profile": "windows-vulkan-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_vulkan",
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B5 Vulkan Lightning Indexer managed-region acceptance on RTX 4070."
+    },
+    {
+      "id": "b5-fragment-p1",
+      "batch": "B5",
+      "profile": "windows-cuda-shared",
+      "kind": "performance",
+      "requirements": [
+        "F15.1",
+        "F16.1",
+        "F17.1"
+      ],
+      "expected_selector_gates": [],
+      "applicability": "not_applicable",
+      "reason": "No frozen complete sparse/compression model-fragment P1 card exists for B5; retained-region P0 applies and model-chain performance remains M3-05."
     }
   ],
   "residuals": [
@@ -1165,6 +1296,78 @@
       "state": "UNPROVEN",
       "reason": "The admitted grouped expert and mHC regions are bound, but full-checkpoint routing, hash routing, shared/latent/SiTU, cross-block residual and complete MTP carry have not yet run as one real model fragment.",
       "owner": "M3-04"
+    },
+    {
+      "id": "b5-cpu-complete-model-fragments",
+      "batch": "B5",
+      "route": "cpu",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted Lightning Indexer region is bound and MLA, pool/tail and compression primitives exist, but complete absorbed/gated MLA, cross-layer sparse selection, ragged pool tail and incremental compression have not run as one real model fragment.",
+      "owner": "M3-05"
+    },
+    {
+      "id": "b5-cuda-complete-model-fragments",
+      "batch": "B5",
+      "route": "cuda",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted Lightning Indexer region is bound and MLA, pool/tail and compression primitives exist, but complete absorbed/gated MLA, cross-layer sparse selection, ragged pool tail and incremental compression have not run as one real model fragment.",
+      "owner": "M3-05"
+    },
+    {
+      "id": "b5-apple-complete-model-fragments",
+      "batch": "B5",
+      "route": "apple",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted Lightning Indexer region is bound and MLA, pool/tail and compression primitives exist, but complete absorbed/gated MLA, cross-layer sparse selection, ragged pool tail and incremental compression have not run as one real model fragment.",
+      "owner": "M3-05"
+    },
+    {
+      "id": "b5-vulkan-complete-model-fragments",
+      "batch": "B5",
+      "route": "vulkan",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted Lightning Indexer region is bound and MLA, pool/tail and compression primitives exist, but complete absorbed/gated MLA, cross-layer sparse selection, ragged pool tail and incremental compression have not run as one real model fragment.",
+      "owner": "M3-05"
     }
   ]
 }

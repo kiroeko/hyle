@@ -1,6 +1,9 @@
 # M2-B5 成熟 Provider 稀疏注意力与压缩状态批次
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
+
+本批已在产品候选 `d9d6a6ef313e60ac2912b35e950a51bf1a4ea138` 上关闭，终态与验证见
+[B5 terminal record](llm-moe-m2-b5-terminal.md)。
 
 ## Closure card
 
