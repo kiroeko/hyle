@@ -13,22 +13,25 @@ struct ModelIdentityState;
 }
 
 // Consumer-declared identity, not model contents or a request to load them.
-// Configuration must identify every model option relevant to a rule (for
-// example, the consumer's canonical configuration digest). Comparisons are
-// byte-exact; a family name alone never qualifies a model-specific rule.
+// Name identifies one model within a family. Revision and configuration must
+// identify every model option relevant to an exact rule (for example, the
+// consumer's checkpoint and canonical configuration digests). Comparisons are
+// byte-exact; a broader identity never qualifies a narrower rule.
 struct ModelDescription final {
   std::string_view family;
+  std::string_view name;
   std::string_view revision;
   std::string_view configuration;
 
   constexpr bool complete() const noexcept {
-    return !family.empty() && !revision.empty() && !configuration.empty();
+    return !family.empty() && !name.empty() && !revision.empty() &&
+           !configuration.empty();
   }
   friend constexpr bool operator==(const ModelDescription &,
                                    const ModelDescription &) noexcept = default;
 };
 
-// Optional immutable owner. create() copies the three fields into one cold
+// Optional immutable owner. create() copies the four fields into one cold
 // allocation; its input strings may expire immediately afterwards. Copies
 // share that allocation and are safe to use on independent threads. Mutating
 // one handle concurrently is not supported. The allocator backing must live
@@ -50,8 +53,14 @@ public:
   bool empty() const noexcept { return state_ == nullptr; }
   // Borrowed from this shared owner, never from create()'s input strings.
   HYLE_COMPUTE_API ModelDescription description() const noexcept;
-  // A rule must supply all three exact fields. This only checks model identity;
-  // operation/region semantics, hardware, precision and resources still apply.
+  // Hierarchical cold-rule predicates. Each narrower predicate requires every
+  // preceding field; exact matching requires all four fields. These only check
+  // model identity; operation/region semantics, hardware, precision and
+  // resources still apply.
+  HYLE_COMPUTE_API bool
+  matches_family(std::string_view required_family) const noexcept;
+  HYLE_COMPUTE_API bool matches_model(std::string_view required_family,
+                                      std::string_view required_name) const noexcept;
   HYLE_COMPUTE_API bool matches(ModelDescription required) const noexcept;
   friend HYLE_COMPUTE_API bool operator==(const ModelIdentity &left,
                                          const ModelIdentity &right) noexcept;

@@ -35,6 +35,7 @@ enum class OperationKind : std::uint8_t {
   kScatter,
   kConcat,
   kRoPE,
+  kHadamard,
   kSoftmax,
   kTopK,
   kScaledDotProductAttention,
@@ -334,13 +335,15 @@ struct MatMul final {
 enum class QuantizedWeightMode : std::uint8_t {
   kSignedSymmetric4 = 0,
   kUnsignedAffine4,
+  kSignedSymmetric8,
 };
 
-// Grouped Q4 linear projection: [..., K] * transpose([N, K]) -> [..., N].
-// Inputs are activation, packed weights, scales and (affine only) biases.
-// Scales/biases have logical shape [N, K / group_size]. Signed weights mean
-// q * scale for q in [-8, 7]; affine weights mean q * scale + bias for q in
-// [0, 15]. The weight StorageFormatId separately identifies physical packing.
+// Grouped Q4/Q8 linear projection: [..., K] * transpose([N, K]) -> [..., N].
+// Inputs are activation, packed weights, scales and (affine Q4 only) biases.
+// Scales/biases have logical shape [N, K / group_size]. Signed Q4 weights mean
+// q * scale for q in [-8, 7], affine Q4 means q * scale + bias for q in
+// [0, 15], and signed Q8 means q * scale for q in [-128, 127]. The weight
+// StorageFormatId separately identifies the physical packing.
 // All inputs share one floating logical dtype; outputs keep that dtype. The
 // declared accumulation allows normal arithmetic reassociation, not implicit
 // activation conversion or bitwise equivalence to materialized weights.
@@ -380,6 +383,15 @@ struct RoPE final {
   std::size_t rotary_dimensions = 0;
   std::int32_t sequence_axis = -2;
   RopeLayout layout = RopeLayout::kInterleaved;
+};
+
+// Orthonormal Sylvester Hadamard transform over the final dimension. That
+// dimension must be a positive power of two. The normalized transform is
+// symmetric and self-inverse; inverse remains explicit so model graphs can
+// preserve the source formula without manufacturing a different operation.
+struct Hadamard final {
+  bool inverse = false;
+  DataType accumulation_type = DataType::kFloat32;
 };
 
 struct Softmax final {
@@ -538,6 +550,7 @@ public:
   constexpr explicit Operation(Scatter value) noexcept : value_(value) {}
   constexpr explicit Operation(Concat value) noexcept : value_(value) {}
   constexpr explicit Operation(RoPE value) noexcept : value_(value) {}
+  constexpr explicit Operation(Hadamard value) noexcept : value_(value) {}
   constexpr explicit Operation(Softmax value) noexcept : value_(value) {}
   constexpr explicit Operation(TopK value) noexcept : value_(value) {}
   constexpr explicit Operation(ScaledDotProductAttention value) noexcept
@@ -595,7 +608,7 @@ private:
   using Value =
       std::variant<std::monostate, View, Copy, Fill, Cast, Unary, Binary,
                    Select, Reduce, RmsNorm, LayerNorm, MatMul, GatedActivation,
-                   Gather, Scatter, Concat, RoPE, Softmax, TopK,
+                   Gather, Scatter, Concat, RoPE, Hadamard, Softmax, TopK,
                    ScaledDotProductAttention, QuantizedMatMul, Scan, GatedDeltaNet,
                    detail::CustomOperationValue>;
   static_assert(std::variant_size_v<Value> ==
@@ -639,7 +652,7 @@ HYLE_COMPUTE_OPS_API Result<TensorDesc>
 infer_single_output(const Operation &operation,
                     std::span<const TensorDesc> inputs) noexcept;
 
-static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 24);
+static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 25);
 static_assert(std::is_trivially_copyable_v<Operation>);
 static_assert(sizeof(Operation) <= 256);
 

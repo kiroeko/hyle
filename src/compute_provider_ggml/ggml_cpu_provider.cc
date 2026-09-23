@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <climits>
 #include <cmath>
 #include <cstring>
@@ -29,6 +30,12 @@ struct Program final {
   };
   Options options;
   internal::Recipe recipe;
+  // Cold, immutable Sylvester matrices. ggml recognizes the explicit
+  // Hadamard hint and retains ownership of the mature backend execution.
+  std::vector<std::vector<float>> hadamards;
+  // Cold causal masks for ggml flash attention. They are ordinary upstream
+  // mask payloads, broadcast across batch and heads during replay.
+  std::vector<std::vector<ggml_fp16_t>> attention_masks;
   std::vector<IndexCheck> index_checks;
   float one = 1.0F;
   float zero = 0.0F;
@@ -97,6 +104,10 @@ bool matrix_operand(const TensorDesc &input,
           columns(input) == columns(output)) ||
          (columns(input) == 1 && rows(input) == rows(output));
 }
+bool native_matmul_rhs(const TensorDesc &description) noexcept {
+  auto physical = description.transposed();
+  return physical && physical->is_dense();
+}
 std::int32_t axis(std::int32_t value, std::size_t rank) noexcept {
   return value < 0 ? value + static_cast<std::int32_t>(rank) : value;
 }
@@ -139,6 +150,15 @@ ggml_tensor *matrix(ggml_context *context, ggml_tensor *value,
   return ggml_reshape_2d(context, value, columns(description),
                          rows(description));
 }
+ggml_tensor *native_shape(ggml_context *context, ggml_tensor *value,
+                          const TensorDesc &description) {
+  if (!ggml_is_contiguous(value) || description.rank() > GGML_MAX_DIMS)
+    return matrix(context, value, description);
+  std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+  for (std::size_t i = 0; i < description.rank(); ++i)
+    shape[i] = description.dimensions()[description.rank() - i - 1];
+  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2], shape[3]);
+}
 ggml_tensor *as_float(ggml_context *context, ggml_tensor *value) {
   return value->type == GGML_TYPE_F32
              ? value
@@ -148,7 +168,7 @@ ggml_tensor *as_output(ggml_context *context, ggml_tensor *value,
                        const TensorDesc &description) {
   if (value->type != native_type(description.data_type()))
     value = ggml_cast(context, value, native_type(description.data_type()));
-  return matrix(context, value, description);
+  return native_shape(context, value, description);
 }
 
 std::int64_t extent_product(std::span<const std::int64_t> shape) noexcept {
@@ -255,7 +275,7 @@ ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
 }
 
 ggml_tensor *lower(Program &program, Invocation &invocation,
-                   const internal::Node &node) {
+                   const internal::Node &node, std::size_t node_index) {
   auto *context = invocation.arena.get();
   const auto &recipe = program.recipe;
   const auto &output = recipe.values[node.output];
@@ -407,6 +427,81 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
       result = restore_indexed_rows(
           context, ggml_add(context, base_rows, updates), inner, extent, outer);
     }
+  } else if (const auto *matmul = node.operation.get_if<MatMul>()) {
+    // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
+    // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
+    // shared RHS across the corresponding activation batches.
+    auto *left = native_shape(context, invocation.values[node.inputs[0]],
+                              recipe.values[node.inputs[0]]);
+    auto *right = ggml_transpose(context, invocation.values[node.inputs[1]]);
+    if (!ggml_is_contiguous(right))
+      right = ggml_cont(context, right);
+    result = ggml_mul_mat(context, right, left);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+      return nullptr;
+    (void)matmul;
+  } else if (const auto *rope = node.operation.get_if<RoPE>()) {
+    auto *positions = invocation.values[node.inputs[1]];
+    auto *frequencies = invocation.values[node.inputs[2]];
+    auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
+    one->data = &program.one;
+    auto *factors = ggml_div(context, ggml_repeat(context, one, frequencies),
+                             frequencies);
+    const int mode = rope->layout == RopeLayout::kInterleaved
+                         ? GGML_ROPE_TYPE_NORMAL
+                         : GGML_ROPE_TYPE_NEOX;
+    result = ggml_rope_ext(
+        context, invocation.values[node.inputs[0]], positions, factors,
+        static_cast<int>(rope->rotary_dimensions), mode, 0, 1.0F, 1.0F,
+        0.0F, 1.0F, 0.0F, 0.0F);
+  } else if (node.operation.get_if<Hadamard>()) {
+    const auto &values = program.hadamards[node_index];
+    if (values.empty())
+      return nullptr;
+    const auto width = columns(output);
+    auto *transform =
+        ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
+    transform->data = const_cast<float *>(values.data());
+    result = ggml_mul_mat(context, transform, as_float(context, input(0)));
+    ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+      return nullptr;
+  } else if (const auto *attention =
+                 node.operation.get_if<ScaledDotProductAttention>()) {
+    auto *query = invocation.values[node.inputs[0]];
+    auto *key = invocation.values[node.inputs[1]];
+    auto *value = invocation.values[node.inputs[2]];
+    const auto type = query->type;
+    query = ggml_permute(context, as_float(context, query), 0, 2, 1, 3);
+    key = ggml_permute(context, key, 0, 2, 1, 3);
+    value = ggml_permute(context, value, 0, 2, 1, 3);
+    if (type == GGML_TYPE_F16) {
+      const auto &mask_values = program.attention_masks[node_index];
+      if (mask_values.empty())
+        return nullptr;
+      auto *mask = ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1],
+                                      query->ne[1]);
+      mask->data = const_cast<ggml_fp16_t *>(mask_values.data());
+      result = ggml_flash_attn_ext(context, query, key, value, mask,
+                                   attention->scale, 0.0F, 0.0F);
+      if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+        return nullptr;
+    } else {
+      key = as_float(context, key);
+      value = as_float(context, value);
+      auto *scores = ggml_mul_mat(context, key, query);
+      if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
+        return nullptr;
+      scores = ggml_scale(context, scores, attention->scale);
+      scores = ggml_diag_mask_inf(
+          context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
+      auto *probabilities = ggml_soft_max(context, scores);
+      value = ggml_cont(context, ggml_transpose(context, value));
+      result = ggml_mul_mat(context, value, probabilities);
+      if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+        return nullptr;
+      result = ggml_permute(context, result, 0, 2, 1, 3);
+    }
   }
   return result ? as_output(context, result, output) : nullptr;
 }
@@ -452,7 +547,16 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
     for (const auto id : recipe.inputs) {
       const auto &description = recipe.values[id];
       ggml_tensor *tensor = nullptr;
-      if (description.is_dense() || elements(description) == 0) {
+      if ((description.is_dense() && description.rank() <= GGML_MAX_DIMS) ||
+          elements(description) == 0) {
+        std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
+        for (std::size_t i = 0; i < description.rank(); ++i)
+          dimensions[i] = (std::max)(
+              description.dimensions()[description.rank() - i - 1],
+              std::int64_t{1});
+        tensor = ggml_new_tensor(context, native_type(description.data_type()),
+                                 GGML_MAX_DIMS, dimensions.data());
+      } else if (description.is_dense()) {
         tensor = ggml_new_tensor_2d(
             context, native_type(description.data_type()),
             (std::max)(columns(description), std::int64_t{1}),
@@ -470,8 +574,10 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
       invocation->values[id] = tensor;
       invocation->input_roots.push_back(tensor);
     }
-    for (const auto &node : recipe.nodes) {
-      auto *result = lower(program, *invocation, node);
+    for (std::size_t node_index = 0; node_index < recipe.nodes.size();
+         ++node_index) {
+      const auto &node = recipe.nodes[node_index];
+      auto *result = lower(program, *invocation, node, node_index);
       if (!result)
         return Status::Internal(
             "ggml CPU lowering differs from its admitted schema");
@@ -715,6 +821,13 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
                  ProviderRouteKey{standard ? standard_index::kRoute : 1}};
   if (standard)
     output->cost = standard_index::costs();
+  else if (request.operation.get_if<MatMul>() != nullptr &&
+           !native_matmul_rhs(request.inputs[1])) {
+    auto bytes = request.inputs[1].required_bytes();
+    if (!bytes)
+      return std::move(bytes).error();
+    output->cost.repack_bytes = *bytes;
+  }
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *context,
@@ -836,6 +949,66 @@ bool supports(void *context, Operation operation,
            floating(inputs[0].data_type()) &&
            inputs[2].data_type() == inputs[0].data_type() &&
            output.data_type() == inputs[0].data_type();
+  if (const auto *matmul = operation.get_if<MatMul>()) {
+    if (!nonempty || elements(output) == 0 || inputs.size() != 2 ||
+        inputs[0].rank() < 2 || inputs[0].rank() > 4 ||
+        inputs[1].rank() < 2 || inputs[1].rank() > 4 ||
+        (inputs[0].rank() > 2 && !inputs[0].is_dense()) ||
+        (inputs[1].rank() > 2 && !inputs[1].is_dense() &&
+         !native_matmul_rhs(inputs[1])) ||
+        matmul->accumulation_type != DataType::kFloat32 ||
+        (inputs[0].data_type() != DataType::kFloat16 &&
+         inputs[0].data_type() != DataType::kBFloat16) ||
+        inputs[1].data_type() != inputs[0].data_type() ||
+        output.data_type() != inputs[0].data_type())
+      return false;
+    std::array<std::int64_t, 2> left_batch{1, 1}, right_batch{1, 1};
+    const auto fill_batch = [](const TensorDesc &description,
+                               std::array<std::int64_t, 2> &batch) {
+      const auto count = description.rank() - 2;
+      for (std::size_t i = 0; i < count; ++i)
+        batch[2 - count + i] = description.dimensions()[i];
+    };
+    fill_batch(inputs[0], left_batch);
+    fill_batch(inputs[1], right_batch);
+    return left_batch[0] % right_batch[0] == 0 &&
+           left_batch[1] % right_batch[1] == 0;
+  }
+  if (const auto *rope = operation.get_if<RoPE>())
+    return inputs.size() == 3 && inputs[0].rank() == 4 &&
+           rope->sequence_axis == 1 && inputs[0].is_dense() &&
+           (inputs[0].data_type() == DataType::kFloat16 ||
+            inputs[0].data_type() == DataType::kBFloat16) &&
+           inputs[1].rank() == 1 && inputs[1].is_dense() &&
+           inputs[1].data_type() == DataType::kInt32 &&
+           inputs[2].rank() == 1 && inputs[2].is_dense() &&
+           inputs[2].data_type() == DataType::kFloat32;
+  if (const auto *hadamard = operation.get_if<Hadamard>())
+    return inputs.size() == 1 && inputs[0].is_dense() &&
+           floating(inputs[0].data_type()) &&
+           hadamard->accumulation_type == DataType::kFloat32;
+  if (const auto *attention =
+          operation.get_if<ScaledDotProductAttention>()) {
+    if (inputs.size() != 3 || !attention->causal ||
+        attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
+        attention->mask != MaskKind::kNone ||
+        attention->accumulation_type != DataType::kFloat32 ||
+        !std::isfinite(attention->scale))
+      return false;
+    const auto type = inputs[0].data_type();
+    if (type != DataType::kFloat16 && type != DataType::kBFloat16 &&
+        type != DataType::kFloat32)
+      return false;
+    for (const auto &description : inputs)
+      if (description.rank() != 4 || !description.is_dense() ||
+          description.data_type() != type)
+        return false;
+    const auto q = inputs[0].dimensions();
+    const auto k = inputs[1].dimensions();
+    return q[0] > 0 && q[1] > 0 && k[1] >= q[1] && q[2] == 8 &&
+           k[2] == 2 && q[3] == 256 && k[3] == 256 && q[0] == k[0] &&
+           inputs[1] == inputs[2] && output == inputs[0];
+  }
   return false;
 }
 bool region_operation(Operation operation) noexcept {
@@ -843,7 +1016,9 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<Unary>() || operation.get_if<Binary>() ||
          operation.get_if<RmsNorm>() || operation.get_if<LayerNorm>() ||
          operation.get_if<Reduce>() || operation.get_if<Concat>() ||
-         operation.get_if<Scatter>();
+         operation.get_if<Scatter>() || operation.get_if<MatMul>() ||
+         operation.get_if<RoPE>() || operation.get_if<Hadamard>() ||
+         operation.get_if<ScaledDotProductAttention>();
 }
 ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                mem::AllocatorRef allocator,
@@ -901,12 +1076,51 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       if (id >= available.size() || !available[id])
         return ProviderPrepareOutcome::error(
             Status::InvalidArgument("ggml CPU output identity is invalid"));
+    std::vector<std::vector<float>> hadamards(recipe.nodes.size());
+    std::vector<std::vector<ggml_fp16_t>> attention_masks(recipe.nodes.size());
+    for (std::size_t node_index = 0; node_index < recipe.nodes.size();
+         ++node_index) {
+      const auto &node = recipe.nodes[node_index];
+      if (node.operation.get_if<Hadamard>()) {
+        const auto width = static_cast<std::size_t>(
+            recipe.values[node.output].dimensions().back());
+        if (width > SIZE_MAX / width ||
+            width * width > SIZE_MAX / sizeof(float))
+          return ProviderPrepareOutcome::error(
+              Status::OutOfRange("Hadamard matrix size overflows"));
+        auto &matrix = hadamards[node_index];
+        matrix.resize(width * width);
+        const auto scale = 1.0F / std::sqrt(static_cast<float>(width));
+        for (std::size_t row = 0; row < width; ++row)
+          for (std::size_t column = 0; column < width; ++column)
+            matrix[row * width + column] =
+                std::popcount(row & column) % 2 == 0 ? scale : -scale;
+      }
+      if (node.operation.get_if<ScaledDotProductAttention>() &&
+          recipe.values[node.inputs[0]].data_type() == DataType::kFloat16) {
+        const auto query_length = static_cast<std::size_t>(
+            recipe.values[node.inputs[0]].dimensions()[1]);
+        const auto key_length = static_cast<std::size_t>(
+            recipe.values[node.inputs[1]].dimensions()[1]);
+        if (query_length > SIZE_MAX / key_length)
+          return ProviderPrepareOutcome::error(
+              Status::OutOfRange("attention mask size overflows"));
+        auto &mask = attention_masks[node_index];
+        mask.resize(query_length * key_length);
+        const auto past = key_length - query_length;
+        for (std::size_t query = 0; query < query_length; ++query)
+          for (std::size_t key = 0; key < key_length; ++key)
+            mask[query * key_length + key] = ggml_fp32_to_fp16(
+                key <= past + query ? 0.0F : -INFINITY);
+      }
+    }
     void *storage = allocator.allocate(sizeof(Program), alignof(Program));
     if (!storage)
       return ProviderPrepareOutcome::resource_declined(allocation_failure());
-    auto *program =
-        ::new (storage) Program{static_cast<Configuration *>(context)->options,
-                                std::move(recipe), std::move(index_checks)};
+    auto *program = ::new (storage) Program{
+        static_cast<Configuration *>(context)->options, std::move(recipe),
+        std::move(hadamards), std::move(attention_masks),
+        std::move(index_checks)};
     *output = {.vtable = &kPrepared,
                .state = program,
                .workspace = {},

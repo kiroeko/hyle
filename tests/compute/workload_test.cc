@@ -16,20 +16,23 @@ using hyle::compute::RegionSemanticId;
 using hyle::compute::WorkloadContext;
 using hyle::compute::WorkloadPhase;
 
-constexpr ModelDescription kModel{"qwen3_5", "snapshot-a", "configuration-a"};
+constexpr ModelDescription kModel{"qwen3_5", "qwen3.5-2b", "snapshot-a",
+                                  "configuration-a"};
 
 TEST(ModelIdentity, OwnsStringsAndSharesBackingThroughMovesAndLastRelease) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
   ModelIdentity retained;
   {
-    std::string family(kModel.family), revision(kModel.revision),
-        configuration(kModel.configuration);
-    auto made = ModelIdentity::create({family, revision, configuration}, quota.get());
+    std::string family(kModel.family), name(kModel.name),
+        revision(kModel.revision), configuration(kModel.configuration);
+    auto made = ModelIdentity::create({family, name, revision, configuration},
+                                      quota.get());
     ASSERT_TRUE(made.has_value());
     const auto allocated = quota.used();
     ASSERT_GT(allocated, 0u);
     retained = *made;
     family.assign(family.size(), 'x');
+    name.clear();
     revision.clear();
     configuration.clear();
     ModelIdentity copied = *made;
@@ -56,16 +59,28 @@ TEST(ModelIdentity, EmptyPartialAndUnknownDoNotMatchCompleteRules) {
   EXPECT_EQ(quota.peak(), 0u);
   EXPECT_FALSE(empty->matches({}));
   EXPECT_FALSE(empty->matches(kModel));
-  auto partial = ModelIdentity::create({kModel.family, {}, {}});
+  auto partial = ModelIdentity::create({kModel.family, {}, {}, {}});
   ASSERT_TRUE(partial.has_value());
   EXPECT_FALSE(partial->description().complete());
+  EXPECT_TRUE(partial->matches_family(kModel.family));
+  EXPECT_FALSE(partial->matches_model(kModel.family, kModel.name));
   EXPECT_FALSE(partial->matches(partial->description()));
   EXPECT_FALSE(partial->matches(kModel));
-  auto unknown = ModelIdentity::create({"unknown-family", kModel.revision,
-                                       kModel.configuration});
+  auto family_model =
+      ModelIdentity::create({kModel.family, kModel.name, {}, {}});
+  ASSERT_TRUE(family_model.has_value());
+  EXPECT_TRUE(family_model->matches_family(kModel.family));
+  EXPECT_TRUE(family_model->matches_model(kModel.family, kModel.name));
+  EXPECT_FALSE(family_model->matches(kModel));
+  auto unknown = ModelIdentity::create(
+      {"unknown-family", kModel.name, kModel.revision, kModel.configuration});
   ASSERT_TRUE(unknown.has_value());
   EXPECT_FALSE(unknown->matches(kModel));
-  EXPECT_FALSE(ModelIdentity::create({{}, "orphan-revision", {}}).has_value());
+  EXPECT_FALSE(
+      ModelIdentity::create({{}, "orphan-name", {}, {}}).has_value());
+  EXPECT_FALSE(ModelIdentity::create(
+                   {kModel.family, {}, "orphan-revision", {}})
+                   .has_value());
   EXPECT_FALSE(ModelIdentity::create(kModel, {}).has_value());
 }
 
@@ -77,16 +92,21 @@ TEST(ModelIdentity, ExactFieldsDistinguishVersionsConfigurationsAndBoundaries) {
   EXPECT_EQ(*model, *equal);
   EXPECT_NE(model->description().family.data(), equal->description().family.data());
   for (const auto other : std::array{
-           ModelDescription{"other", kModel.revision, kModel.configuration},
-           ModelDescription{kModel.family, "snapshot-b", kModel.configuration},
-           ModelDescription{kModel.family, kModel.revision, "configuration-b"}}) {
+           ModelDescription{"other", kModel.name, kModel.revision,
+                            kModel.configuration},
+           ModelDescription{kModel.family, "other-model", kModel.revision,
+                            kModel.configuration},
+           ModelDescription{kModel.family, kModel.name, "snapshot-b",
+                            kModel.configuration},
+           ModelDescription{kModel.family, kModel.name, kModel.revision,
+                            "configuration-b"}}) {
     auto different = ModelIdentity::create(other);
     ASSERT_TRUE(different.has_value());
     EXPECT_NE(*model, *different);
     EXPECT_FALSE(model->matches(other));
   }
-  EXPECT_NE(*ModelIdentity::create({"ab", "c", "d"}),
-            *ModelIdentity::create({"a", "bc", "d"}));
+  EXPECT_NE(*ModelIdentity::create({"ab", "c", "d", "e"}),
+            *ModelIdentity::create({"a", "bc", "d", "e"}));
 }
 
 TEST(ModelIdentity, OomDoesNotCreatePartialOwners) {

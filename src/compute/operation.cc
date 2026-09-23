@@ -1543,6 +1543,15 @@ Result<PreparedOperation> prepare(const Context &context, RoPE operation,
                                  resource, workload);
 }
 
+Result<PreparedOperation> prepare(const Context &context, Hadamard operation,
+                                  TensorDesc input,
+                                  mem::MemoryResourceRef resource,
+                                  const WorkloadContext &workload) noexcept {
+  const std::array inputs{input};
+  return prepare_inferred_single(context, Operation(operation), inputs,
+                                 resource, workload);
+}
+
 Result<PreparedOperation> prepare(const Context &context, Softmax operation,
                                   TensorDesc input,
                                   mem::MemoryResourceRef resource,

@@ -391,6 +391,10 @@ prepare(const Context &context, RoPE operation, TensorDesc input,
         mem::MemoryResourceRef resource = mem::system_resource(),
         const WorkloadContext &workload = {}) noexcept;
 HYLE_COMPUTE_API Result<PreparedOperation>
+prepare(const Context &context, Hadamard operation, TensorDesc input,
+        mem::MemoryResourceRef resource = mem::system_resource(),
+        const WorkloadContext &workload = {}) noexcept;
+HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Softmax operation, TensorDesc input,
         mem::MemoryResourceRef resource = mem::system_resource(),
         const WorkloadContext &workload = {}) noexcept;

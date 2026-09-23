@@ -1091,4 +1091,340 @@ TEST(GgmlCpuProvider, EmptyScanHasNoNativeEpisodeOrPayloadAccess) {
                         TensorView::create(description, output.view()).value());
   EXPECT_TRUE(status.ok()) << status.message();
 }
+
+TEST(GgmlCpuProvider, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  {
+    using F16 = hyle::simd::float16_t;
+    const auto left_desc = dense(DataType::kFloat16, {2, 3});
+    const auto right_desc = dense(DataType::kFloat16, {3, 2});
+    const auto output_desc = dense(DataType::kFloat16, {2, 2});
+    const std::array<float, 6> left_values{1, 2, 3, 4, 5, 6};
+    const std::array<float, 6> right_values{1, 2, 3, 4, 5, 6};
+    std::array<F16, 6> left_half{}, right_half{};
+    for (std::size_t i = 0; i < left_half.size(); ++i) {
+      left_half[i] = half_test::encode<F16>(left_values[i]);
+      right_half[i] = half_test::encode<F16>(right_values[i]);
+    }
+    auto left = half_test::buffer<F16>(left_half);
+    auto right = half_test::buffer<F16>(right_half);
+    auto output = output_buffer(output_desc);
+    const std::array inputs{
+        ConstTensorView::create(left_desc, left.view()).value(),
+        ConstTensorView::create(right_desc, right.view()).value()};
+    ASSERT_TRUE(execute(context, MatMul{}, inputs,
+                        TensorView::create(output_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<F16>(output);
+    const std::array expected{22.0F, 28.0F, 49.0F, 64.0F};
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+  {
+    using B16 = hyle::simd::bfloat16_t;
+    const auto left_desc = dense(DataType::kBFloat16, {2, 3});
+    const auto right_desc = dense(DataType::kBFloat16, {3, 2});
+    const auto output_desc = dense(DataType::kBFloat16, {2, 2});
+    std::array<B16, 6> left_values{}, right_values{};
+    for (std::size_t i = 0; i < left_values.size(); ++i) {
+      left_values[i] = half_test::encode<B16>(static_cast<double>(i + 1));
+      right_values[i] = half_test::encode<B16>(static_cast<double>(i + 1));
+    }
+    auto left = half_test::buffer<B16>(left_values);
+    auto right = half_test::buffer<B16>(right_values);
+    auto output = output_buffer(output_desc);
+    const std::array inputs{
+        ConstTensorView::create(left_desc, left.view()).value(),
+        ConstTensorView::create(right_desc, right.view()).value()};
+    ASSERT_TRUE(execute(context, MatMul{}, inputs,
+                        TensorView::create(output_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<B16>(output);
+    const std::array expected{22.0F, 28.0F, 49.0F, 64.0F};
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+  {
+    const auto description = dense(DataType::kFloat32, {1, 4});
+    auto source = half_test::buffer<float>(
+        std::array<float, 4>{1, 2, 3, 4});
+    auto output = output_buffer(description);
+    const auto input =
+        ConstTensorView::create(description, source.view()).value();
+    for (const bool inverse : {false, true}) {
+      ASSERT_TRUE(execute(context, Hadamard{.inverse = inverse},
+                          std::span(&input, 1),
+                          TensorView::create(description, output.view()).value())
+                      .ok());
+      EXPECT_EQ(half_test::read<float>(output),
+                (std::vector<float>{5, -1, -2, 0}));
+    }
+  }
+  {
+    using F16 = hyle::simd::float16_t;
+    const auto data_desc = dense(DataType::kFloat16, {1, 2, 1, 4});
+    const auto position_desc = dense(DataType::kInt32, {2});
+    const auto frequency_desc = dense(DataType::kFloat32, {2});
+    std::array<F16, 8> half_data{};
+    for (std::size_t i = 0; i < half_data.size(); ++i)
+      half_data[i] = half_test::encode<F16>(static_cast<float>(i + 1));
+    auto data = half_test::buffer<F16>(half_data);
+    auto positions =
+        half_test::buffer<std::int32_t>(std::array<std::int32_t, 2>{0, 2});
+    auto frequencies =
+        half_test::buffer<float>(std::array<float, 2>{0.5F, 0.25F});
+    auto output = output_buffer(data_desc);
+    const std::array inputs{
+        ConstTensorView::create(data_desc, data.view()).value(),
+        ConstTensorView::create(position_desc, positions.view()).value(),
+        ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+    ASSERT_TRUE(execute(context,
+                        RoPE{.rotary_dimensions = 4,
+                             .sequence_axis = 1,
+                             .layout = RopeLayout::kInterleaved},
+                        inputs,
+                        TensorView::create(data_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<F16>(output);
+    const std::array expected{
+        1.0F,
+        2.0F,
+        3.0F,
+        4.0F,
+        5.0F * std::cos(1.0F) - 6.0F * std::sin(1.0F),
+        5.0F * std::sin(1.0F) + 6.0F * std::cos(1.0F),
+        7.0F * std::cos(0.5F) - 8.0F * std::sin(0.5F),
+        7.0F * std::sin(0.5F) + 8.0F * std::cos(0.5F)};
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+  {
+    using F16 = hyle::simd::float16_t;
+    const auto data_desc = dense(DataType::kFloat16, {1, 2, 1, 8});
+    const auto position_desc = dense(DataType::kInt32, {2});
+    const auto frequency_desc = dense(DataType::kFloat32, {2});
+    std::array<F16, 16> half_data{};
+    for (std::size_t i = 0; i < half_data.size(); ++i)
+      half_data[i] = half_test::encode<F16>(static_cast<float>(i + 1));
+    auto data = half_test::buffer<F16>(half_data);
+    auto positions =
+        half_test::buffer<std::int32_t>(std::array<std::int32_t, 2>{0, 2});
+    auto frequencies =
+        half_test::buffer<float>(std::array<float, 2>{0.5F, 0.25F});
+    auto output = output_buffer(data_desc);
+    const std::array inputs{
+        ConstTensorView::create(data_desc, data.view()).value(),
+        ConstTensorView::create(position_desc, positions.view()).value(),
+        ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+    ASSERT_TRUE(execute(context,
+                        RoPE{.rotary_dimensions = 4,
+                             .sequence_axis = 1,
+                             .layout = RopeLayout::kHalfSplit},
+                        inputs,
+                        TensorView::create(data_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<F16>(output);
+    std::array<double, 16> expected{};
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      expected[i] = static_cast<double>(i + 1);
+    expected[8] = 9.0 * std::cos(1.0) - 11.0 * std::sin(1.0);
+    expected[9] = 10.0 * std::cos(0.5) - 12.0 * std::sin(0.5);
+    expected[10] = 9.0 * std::sin(1.0) + 11.0 * std::cos(1.0);
+    expected[11] = 10.0 * std::sin(0.5) + 12.0 * std::cos(0.5);
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+}
+
+TEST(GgmlCpuProvider, BatchedMatMulBroadcastsNativeTransposedWeightsWithoutCopy) {
+  using F16 = hyle::simd::float16_t;
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto left_desc = dense(DataType::kFloat16, {2, 2, 3});
+  std::array<F16, 12> left_values{};
+  for (std::size_t i = 0; i < left_values.size(); ++i)
+    left_values[i] = half_test::encode<F16>(static_cast<double>(i % 6 + 1));
+  auto left = half_test::buffer<F16>(left_values);
+  for (const bool batched_weights : {false, true}) {
+    SCOPED_TRACE(batched_weights);
+    const auto physical_desc =
+        batched_weights ? dense(DataType::kFloat16, {2, 2, 3})
+                        : dense(DataType::kFloat16, {2, 3});
+    const auto right_desc = physical_desc.transposed().value();
+    std::vector<F16> weights(physical_desc.element_count().value());
+    const std::size_t batches = batched_weights ? 2 : 1;
+    for (std::size_t batch = 0; batch < batches; ++batch)
+      for (std::size_t column = 0; column < 2; ++column)
+        for (std::size_t reduction = 0; reduction < 3; ++reduction) {
+          const double value = static_cast<double>(
+              1 + batch * 6 + reduction * 2 + column);
+          weights[(batch * 2 + column) * 3 + reduction] =
+              half_test::encode<F16>(value);
+        }
+    auto right = half_test::buffer<F16>(weights);
+    const std::array descriptions{left_desc, right_desc};
+    const auto output_desc =
+        infer_single_output(Operation(MatMul{}), descriptions).value();
+    auto output = output_buffer(output_desc);
+    const std::array inputs{
+        ConstTensorView::create(left_desc, left.view()).value(),
+        ConstTensorView::create(right_desc, right.view()).value()};
+    auto status =
+        execute(context, MatMul{}, inputs,
+                TensorView::create(output_desc, output.view()).value());
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = half_test::read<F16>(output);
+    for (std::size_t batch = 0; batch < 2; ++batch)
+      for (std::size_t row = 0; row < 2; ++row)
+        for (std::size_t column = 0; column < 2; ++column) {
+          double expected = 0;
+          for (std::size_t reduction = 0; reduction < 3; ++reduction) {
+            const auto activation =
+                half_test::decode(left_values[(batch * 2 + row) * 3 +
+                                              reduction]);
+            const auto weight_batch = batched_weights ? batch : 0;
+            const auto weight = half_test::decode(
+                weights[(weight_batch * 2 + column) * 3 + reduction]);
+            expected += activation * weight;
+          }
+          half_test::expect_near(
+              actual[(batch * 2 + row) * 2 + column], expected);
+        }
+  }
+}
+
+TEST(GgmlCpuProvider, HalfMatMulCoversDecodeTailAndRankFourBroadcast) {
+  using F16 = hyle::simd::float16_t;
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  for (const std::int64_t rows : {1, 17, 128}) {
+    SCOPED_TRACE(rows);
+    const auto left_desc = dense(DataType::kFloat16, {rows, 5});
+    const auto right_desc = dense(DataType::kFloat16, {5, 7});
+    const auto output_desc = dense(DataType::kFloat16, {rows, 7});
+    std::vector<F16> left_values(static_cast<std::size_t>(rows * 5),
+                                 half_test::encode<F16>(1));
+    std::vector<F16> right_values(35, half_test::encode<F16>(1));
+    auto left = half_test::buffer<F16>(left_values);
+    auto right = half_test::buffer<F16>(right_values);
+    auto output = output_buffer(output_desc);
+    const std::array inputs{
+        ConstTensorView::create(left_desc, left.view()).value(),
+        ConstTensorView::create(right_desc, right.view()).value()};
+    ASSERT_TRUE(execute(context, MatMul{}, inputs,
+                        TensorView::create(output_desc, output.view()).value())
+                    .ok());
+    for (const auto value : half_test::read<F16>(output))
+      half_test::expect_near(value, 5);
+  }
+
+  const auto left_desc = dense(DataType::kFloat16, {2, 3, 2, 3});
+  const auto right_desc = dense(DataType::kFloat16, {1, 3, 3, 2});
+  const auto output_desc = dense(DataType::kFloat16, {2, 3, 2, 2});
+  std::vector<F16> left_values(left_desc.element_count().value(),
+                               half_test::encode<F16>(1));
+  std::vector<F16> right_values(right_desc.element_count().value(),
+                                half_test::encode<F16>(1));
+  auto left = half_test::buffer<F16>(left_values);
+  auto right = half_test::buffer<F16>(right_values);
+  auto output = output_buffer(output_desc);
+  const std::array inputs{
+      ConstTensorView::create(left_desc, left.view()).value(),
+      ConstTensorView::create(right_desc, right.view()).value()};
+  ASSERT_TRUE(execute(context, MatMul{}, inputs,
+                      TensorView::create(output_desc, output.view()).value())
+                  .ok());
+  for (const auto value : half_test::read<F16>(output))
+    half_test::expect_near(value, 3);
+}
+
+TEST(GgmlCpuProvider, MatureAttentionHandlesHead256GqaDecode) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto query_desc = dense(DataType::kFloat32, {1, 1, 8, 256});
+  const auto kv_desc = dense(DataType::kFloat32, {1, 1, 2, 256});
+  std::vector<float> query(query_desc.element_count().value(), 0.03125F);
+  std::vector<float> key(kv_desc.element_count().value(), 0.0625F);
+  std::vector<float> value(kv_desc.element_count().value());
+  for (std::size_t head = 0; head < 2; ++head)
+    for (std::size_t depth = 0; depth < 256; ++depth)
+      value[head * 256 + depth] =
+          static_cast<float>(head * 1000 + depth) / 256.0F;
+  auto q = half_test::buffer<float>(query);
+  auto k = half_test::buffer<float>(key);
+  auto v = half_test::buffer<float>(value);
+  auto output = output_buffer(query_desc);
+  const std::array inputs{
+      ConstTensorView::create(query_desc, q.view()).value(),
+      ConstTensorView::create(kv_desc, k.view()).value(),
+      ConstTensorView::create(kv_desc, v.view()).value()};
+  const ScaledDotProductAttention attention{
+      .layout = AttentionLayout::kBatchSequenceHeadDepth,
+      .scale = 0.0625F,
+      .causal = true,
+      .accumulation_type = DataType::kFloat32};
+  ASSERT_TRUE(execute(context, attention, inputs,
+                      TensorView::create(query_desc, output.view()).value())
+                  .ok());
+  const auto actual = half_test::read<float>(output);
+  for (std::size_t head = 0; head < 8; ++head)
+    for (std::size_t depth = 0; depth < 256; ++depth)
+      EXPECT_NEAR(actual[head * 256 + depth],
+                  value[(head / 4) * 256 + depth], 1.0e-5F)
+          << head << ':' << depth;
+}
+
+template <class T> void causal_gqa_prefill() {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  constexpr std::size_t query_length = 2, key_length = 3;
+  const auto query_desc =
+      dense(half_test::data_type<T>(), {1, query_length, 8, 256});
+  const auto kv_desc =
+      dense(half_test::data_type<T>(), {1, key_length, 2, 256});
+  std::vector<T> query(query_desc.element_count().value(),
+                       half_test::encode<T>(0));
+  std::vector<T> key(kv_desc.element_count().value(),
+                     half_test::encode<T>(0));
+  std::vector<T> value(kv_desc.element_count().value());
+  for (std::size_t position = 0; position < key_length; ++position)
+    for (std::size_t head = 0; head < 2; ++head)
+      for (std::size_t depth = 0; depth < 256; ++depth)
+        value[(position * 2 + head) * 256 + depth] = half_test::encode<T>(
+            static_cast<double>(position * 4 + head * 2 + depth % 2));
+  auto q = half_test::buffer<T>(query);
+  auto k = half_test::buffer<T>(key);
+  auto v = half_test::buffer<T>(value);
+  auto output = output_buffer(query_desc);
+  const std::array inputs{
+      ConstTensorView::create(query_desc, q.view()).value(),
+      ConstTensorView::create(kv_desc, k.view()).value(),
+      ConstTensorView::create(kv_desc, v.view()).value()};
+  const ScaledDotProductAttention attention{
+      .layout = AttentionLayout::kBatchSequenceHeadDepth,
+      .scale = 0.0625F,
+      .causal = true,
+      .accumulation_type = DataType::kFloat32};
+  ASSERT_TRUE(execute(context, attention, inputs,
+                      TensorView::create(query_desc, output.view()).value())
+                  .ok());
+  const auto actual = half_test::read<T>(output);
+  for (std::size_t position = 0; position < query_length; ++position)
+    for (std::size_t head = 0; head < 8; ++head)
+      for (std::size_t depth = 0; depth < 256; ++depth) {
+        const auto kv_head = head / 4;
+        double expected = 0;
+        for (std::size_t key_position = 0;
+             key_position <= position + key_length - query_length;
+             ++key_position)
+          expected += static_cast<double>(key_position * 4 + kv_head * 2 +
+                                          depth % 2);
+        expected /= static_cast<double>(position + key_length - query_length +
+                                        1);
+        half_test::expect_near(
+            actual[(position * 8 + head) * 256 + depth], expected);
+      }
+}
+
+TEST(GgmlCpuProvider, MatureAttentionAppliesCausalMaskForHalfPrefill) {
+  causal_gqa_prefill<hyle::simd::float16_t>();
+  causal_gqa_prefill<hyle::simd::bfloat16_t>();
+}
 } // namespace

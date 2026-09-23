@@ -51,13 +51,37 @@ SOTA/胜出结论只覆盖证据绑定的硬件与软件组合；驱动、Toolki
 
 ### 1.2 模型条件与完整片段路由
 
-四路线都必须能将显式模型家族、模型 revision/配置身份、prefill/decode 和片段语义，结合
+四路线都必须能将显式模型家族、模型名、模型 revision/配置身份、prefill/decode 和片段语义，结合
 上节的设备/驱动/Toolkit/Provider 条件，匹配专用计算方法或完整融合 region。模型事实由
 consumer 提供；SDK 不为此增加模型加载器。具体模型规则可只在有合格实现的路线/设备域生效，
 其它情况走同路线的合格通用基线或明确拒绝，不借 CPU fallback 伪装四路覆盖。
 规则仍受实际输入/图、精度、状态、资源和完成语义约束；名称相同不代表版本/配置可互换。
 相关身份变化需要重新准备并失效受影响缓存，运行不重新探测或测速。
 这是当前架构要求，尚未接通/验证的模型规则不得在用户支持表中写为已交付。
+
+### 1.3 组合路由键与两级绑定
+
+路由资格可理解成一个多字段连接键，但不把所有字段复制进一个热路径对象：
+
+| 资格轴 | 权威来源 | 固定时机 |
+|---|---|---|
+| OS/平台、编译器 ABI、可交付路线和 Provider 集 | 构建因子与已链接产品 | 编译/链接 |
+| CPU、CUDA、Apple、Vulkan 四路线之一 | 用户选择的原生 Context | Context 创建 |
+| 设备型号、CPU ISA、GPU 架构/SM、feature/limits | 路线原生环境快照 | Context/Provider 创建 |
+| 驱动、runtime、Toolkit/SDK、Provider 版本 | 路线原生环境和锁定实现 | Context/Provider 创建 |
+| 模型 family/name/revision/config、prefill/decode、region 语义 | `WorkloadContext` | prepare/compile |
+| operation/DAG、dtype、shape、layout、量化 mode/group/物理 format | 真实请求和 `StorageFormatId` | prepare/compile |
+| memory、workspace、并发、完成与融合边界 | 真实资源和 Provider proposal | prepare/compile |
+
+一条规则是上述字段任意子集的**合取**。例如可以只限定 `CUDA + SM89 + Q4-S128`，也可以继续限定
+驱动区间、`qwen3_5/qwen3.5-2b`、decode 和某个 versioned region；未写的轴是该规则的通配域，已写但
+未知或不相等则不能命中。模型身份按 family、family+name、完整四字段逐级收窄，量化身份始终来自
+真实 operation 与物理 format，不能再用模型标签复制一份。
+
+两级绑定避免排列组合进入热路径。构建与 Context 创建先删除不可能的路线/实现，Provider 的冷
+`propose` 再对剩余事实作合取匹配，按版本化固定优先规则从窄域到成熟基线选择；`prepare/compile`
+复核资源并生成一个已绑定 artifact。普通 `submit` 只执行该 artifact，不解释规则、不枚举 Provider、
+不查询驱动也不计时。改变任何参与资格的事实都重新准备；不参与资格的逐 token 数据仍是普通输入。
 
 ## 2. CPU：持久执行资源与真实 ISA 实现
 

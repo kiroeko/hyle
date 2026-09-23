@@ -13,6 +13,35 @@ namespace hyle::graph::cpu::internal {
 namespace native = compute::ggml_cpu::internal;
 namespace {
 
+Result<std::size_t> matmul_repack_bytes(const Graph &graph,
+                                        std::span<const NodeId> nodes) noexcept {
+  std::size_t total = 0;
+  for (const auto node : nodes) {
+    auto operation = graph.operation(node);
+    if (!operation)
+      return std::unexpected(std::move(operation).error());
+    if (operation->get_if<compute::MatMul>() == nullptr)
+      continue;
+    auto input = graph.node_input(node, 1);
+    if (!input)
+      return std::unexpected(std::move(input).error());
+    auto description = graph.value_description(*input);
+    if (!description)
+      return std::unexpected(std::move(description).error());
+    auto physical = description->transposed();
+    if (physical && physical->is_dense())
+      continue;
+    auto bytes = description->required_bytes();
+    if (!bytes)
+      return std::unexpected(std::move(bytes).error());
+    if (*bytes > SIZE_MAX - total)
+      return std::unexpected(
+          Status::OutOfRange("ggml CPU region repack bytes overflow"));
+    total += *bytes;
+  }
+  return total;
+}
+
 Result<bool> supported_node(void *context, const Graph &graph,
                             NodeId node) noexcept {
   auto operation = graph.operation(node);
@@ -78,12 +107,15 @@ Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
       return std::unexpected(std::move(contractible).error());
     if (!*contractible)
       return true;
+    auto repack = matmul_repack_bytes(graph, nodes);
+    if (!repack)
+      return std::unexpected(std::move(repack).error());
     return writer.try_add(
         {.nodes = nodes,
          .cost = {.workspace = compute::WorkspaceRequirement{},
                   .persistent_bytes = std::nullopt,
                   .copy_bytes = 0,
-                  .repack_bytes = 0,
+                  .repack_bytes = *repack,
                   .synchronization_count = 0,
                   .dispatch_count = 1},
          .route = 1,
@@ -223,6 +255,10 @@ compile(void *context, const RegionCompileRequest &request,
   if (!status.ok())
     return compute::ProviderPrepareOutcome::unsupported(std::move(status));
   try {
+    auto repack = matmul_repack_bytes(*request.graph, request.nodes);
+    if (!repack)
+      return compute::ProviderPrepareOutcome::error(
+          std::move(repack).error());
     native::Recipe recipe;
     std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
     for (std::uint32_t i = 0; i < values.size(); ++i)
@@ -268,7 +304,7 @@ compile(void *context, const RegionCompileRequest &request,
                .state = artifact,
                .properties = {.workspace = {},
                               .persistent_bytes = std::nullopt,
-                              .copy_bytes = 0,
+                              .copy_bytes = *repack,
                               .synchronization_count = 0,
                               .dispatch_count = 1,
                               .runtime = native::runtime(context),

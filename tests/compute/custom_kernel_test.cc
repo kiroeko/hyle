@@ -19,7 +19,8 @@ TEST(CustomKernel, WorkloadIsBoundOnceAndRetainedThroughInvocation) {
   Tensors tensors;
   ASSERT_TRUE(tensors.fill().ok());
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
-  constexpr ModelDescription model{"qwen3_5", "snapshot-a", "configuration-a"};
+  constexpr ModelDescription model{"qwen3_5", "qwen3.5-2b", "snapshot-a",
+                                   "configuration-a"};
   WorkloadContext expected{ModelIdentity::create(model, quota.get()).value(),
                            WorkloadPhase::kDecode, {1, 2, 1}};
   auto provider_value = make_custom_provider(

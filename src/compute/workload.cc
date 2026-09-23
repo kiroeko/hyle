@@ -32,6 +32,9 @@ ModelIdentity::create(ModelDescription description,
                        mem::AllocatorRef allocator) noexcept {
   if (!allocator.valid() ||
       (description.family.empty() &&
+       (!description.name.empty() || !description.revision.empty() ||
+        !description.configuration.empty())) ||
+      (description.name.empty() &&
        (!description.revision.empty() || !description.configuration.empty())))
     return std::unexpected(Status::InvalidArgument("model identity"));
   if (description.family.empty())
@@ -41,8 +44,9 @@ ModelIdentity::create(ModelDescription description,
   constexpr auto maximum =
       static_cast<std::size_t>((std::numeric_limits<std::ptrdiff_t>::max)());
   std::size_t bytes = sizeof(State);
-  for (const auto field : std::array{description.family, description.revision,
-                                    description.configuration}) {
+  for (const auto field :
+       std::array{description.family, description.name, description.revision,
+                  description.configuration}) {
     if (field.size() > maximum - bytes)
       return std::unexpected(Status::ResourceExhausted("model identity size"));
     bytes += field.size();
@@ -61,7 +65,8 @@ ModelIdentity::create(ModelDescription description,
     destination += source.size();
     return result;
   };
-  state->description = {copy(description.family), copy(description.revision),
+  state->description = {copy(description.family), copy(description.name),
+                        copy(description.revision),
                         copy(description.configuration)};
   return ModelIdentity(state);
 }
@@ -102,6 +107,19 @@ ModelIdentity::~ModelIdentity() {
 
 ModelDescription ModelIdentity::description() const noexcept {
   return state_ != nullptr ? state_->description : ModelDescription{};
+}
+
+bool ModelIdentity::matches_family(
+    std::string_view required_family) const noexcept {
+  return !required_family.empty() &&
+         description().family == required_family;
+}
+
+bool ModelIdentity::matches_model(std::string_view required_family,
+                                  std::string_view required_name) const noexcept {
+  const auto actual = description();
+  return !required_family.empty() && !required_name.empty() &&
+         actual.family == required_family && actual.name == required_name;
 }
 
 bool ModelIdentity::matches(ModelDescription required) const noexcept {

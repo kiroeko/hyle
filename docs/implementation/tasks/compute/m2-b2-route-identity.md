@@ -46,3 +46,11 @@
 将模型条件与其原生环境、真实 operation/Graph 和资源条件作任意合取，不需要中央规则 DSL。
 
 状态进入 `AUDITED`。产品改动仅限 RQ1--RQ3；P0 只核对冷分配/拷贝与 submit 零新增工作，不启动 P1。
+
+## 实现进展
+
+RQ1--RQ3 已进入 B2 产品候选：四段字符串仍由一次 `ModelIdentity::create` 冷分配持有；新增 family、
+family+name 和 exact 谓词，迁移了 Compute custom Provider、Graph region 和 workload fixture 的全部直接
+构造点。专用 Graph 规则测试覆盖错误 family/name/revision/config、错误 phase/region 与 generic fallback，
+并确认三次 replay 后 proposal/qualification 计数不变。Windows 定向构建与七个相关测试通过；最终
+候选/交付裁决随 B2 公共头闭包执行。

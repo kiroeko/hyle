@@ -218,6 +218,214 @@ TEST(CpuDefaultGraph, MatureNormPostOpsFuseAndPreserveObservableBoundaries) {
 }
 #endif
 
+#if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
+  using F16 = hyle::simd::float16_t;
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto left_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat16,
+                                 std::array<std::int64_t, 2>{2, 3})
+          .value();
+  const auto right_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat16,
+                                 std::array<std::int64_t, 2>{3, 4})
+          .value();
+  const auto output_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat16,
+                                 std::array<std::int64_t, 2>{2, 4})
+          .value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto left = builder.input(left_desc).value();
+  const auto right = builder.input(right_desc).value();
+  const auto projected = builder.add(compute::MatMul{}, left, right).value();
+  const auto transformed =
+      builder.add(compute::Hadamard{}, projected).value();
+  ASSERT_TRUE(builder.publish(transformed).ok());
+  auto logical = std::move(builder).finish().value();
+  const auto workload = workload_test::known(compute::WorkloadPhase::kDecode);
+  auto compiled = graph::compile(logical, context, {.workload = workload});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  ASSERT_EQ(compiled->report.region_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+  EXPECT_EQ(compiled->report.step(0)->node_count, 2U);
+  EXPECT_EQ(compiled->report.step(0)->copy_bytes,
+            right_desc.required_bytes().value());
+  EXPECT_EQ(compiled->executable.workload(), workload);
+
+  std::array<F16, 6> left_values{};
+  std::array<F16, 12> right_values{};
+  for (std::size_t i = 0; i < left_values.size(); ++i)
+    left_values[i] = half_test::encode<F16>(static_cast<double>(i + 1));
+  for (std::size_t i = 0; i < right_values.size(); ++i)
+    right_values[i] = half_test::encode<F16>(static_cast<double>(i + 1));
+  auto left_buffer = half_test::buffer<F16>(left_values);
+  auto right_buffer = half_test::buffer<F16>(right_values);
+  std::array outputs{
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                output_desc.required_bytes().value(), 64)
+          .value(),
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                output_desc.required_bytes().value(), 64)
+          .value()};
+  std::array invocations{compiled->executable.create_invocation().value(),
+                         compiled->executable.create_invocation().value()};
+  const std::array queues{graph::QueueBinding{
+      .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  for (std::size_t slot = 0; slot < invocations.size(); ++slot) {
+    auto &invocation = invocations[slot];
+    ASSERT_TRUE(invocation
+                    .bind(left, compute::ConstTensorView::create(
+                                    left_desc, left_buffer.view())
+                                    .value())
+                    .ok());
+    ASSERT_TRUE(invocation
+                    .bind(right, compute::ConstTensorView::create(
+                                     right_desc, right_buffer.view())
+                                     .value())
+                    .ok());
+    ASSERT_TRUE(invocation
+                    .bind(transformed,
+                          compute::TensorView::create(output_desc,
+                                                      outputs[slot].view())
+                              .value())
+                    .ok());
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  }
+  const auto run = [&](std::size_t slot) {
+    auto done = invocations[slot].submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+  };
+  run(0);
+  const auto first = half_test::read<F16>(outputs[0]);
+  const std::array first_expected{94.0, -6.0, -12.0, 0.0,
+                                  211.0, -15.0, -30.0, 0.0};
+  ASSERT_EQ(first.size(), first_expected.size());
+  for (std::size_t i = 0; i < first.size(); ++i)
+    half_test::expect_near(first[i], first_expected[i]);
+
+  for (std::size_t i = 0; i < left_values.size(); ++i)
+    left_values[i] = half_test::encode<F16>(static_cast<double>(i + 2));
+  ASSERT_TRUE(left_buffer.view()
+                  .write(std::as_bytes(std::span(left_values)))
+                  .ok());
+  run(1);
+  const auto second = half_test::read<F16>(outputs[1]);
+  const std::array second_expected{133.0, -9.0, -18.0, 0.0,
+                                   250.0, -18.0, -36.0, 0.0};
+  ASSERT_EQ(second.size(), second_expected.size());
+  for (std::size_t i = 0; i < second.size(); ++i)
+    half_test::expect_near(second[i], second_expected[i]);
+  const auto retained = half_test::read<F16>(outputs[0]);
+  ASSERT_EQ(retained.size(), first.size());
+  EXPECT_EQ(std::memcmp(retained.data(), first.data(),
+                        first.size() * sizeof(F16)),
+            0);
+  ASSERT_TRUE(context.close().ok());
+  EXPECT_FALSE(invocations[0].submit(queue));
+}
+
+TEST(CpuDefaultGraph, MatureHalfGqaPrefillUsesOneCausalRegion) {
+  using F16 = hyle::simd::float16_t;
+  constexpr std::size_t query_length = 2, key_length = 3;
+  const auto query_desc =
+      compute::TensorDesc::dense(
+          compute::DataType::kFloat16,
+          std::array<std::int64_t, 4>{1, query_length, 8, 256})
+          .value();
+  const auto kv_desc =
+      compute::TensorDesc::dense(
+          compute::DataType::kFloat16,
+          std::array<std::int64_t, 4>{1, key_length, 2, 256})
+          .value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto query = builder.input(query_desc).value();
+  const auto key = builder.input(kv_desc).value();
+  const auto value = builder.input(kv_desc).value();
+  const auto output =
+      builder
+          .add(compute::ScaledDotProductAttention{
+                   .layout = compute::AttentionLayout::kBatchSequenceHeadDepth,
+                   .scale = 0.0625F,
+                   .causal = true,
+                   .accumulation_type = compute::DataType::kFloat32},
+               query, key, value)
+          .value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = graph::cpu::create_context().value();
+  auto compiled = graph::compile(
+      logical, context,
+      {.workload = workload_test::known(compute::WorkloadPhase::kPrefill)});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+  EXPECT_EQ(compiled->report.step(0)->node_count, 1U);
+
+  std::vector<F16> query_values(query_desc.element_count().value(),
+                                half_test::encode<F16>(0));
+  std::vector<F16> key_values(kv_desc.element_count().value(),
+                              half_test::encode<F16>(0));
+  std::vector<F16> value_values(kv_desc.element_count().value());
+  for (std::size_t position = 0; position < key_length; ++position)
+    for (std::size_t head = 0; head < 2; ++head)
+      for (std::size_t depth = 0; depth < 256; ++depth)
+        value_values[(position * 2 + head) * 256 + depth] =
+            half_test::encode<F16>(
+                static_cast<double>(position * 4 + head * 2 + depth % 2));
+  auto query_buffer = half_test::buffer<F16>(query_values);
+  auto key_buffer = half_test::buffer<F16>(key_values);
+  auto value_buffer = half_test::buffer<F16>(value_values);
+  auto output_buffer = half_test::buffer<F16>(
+      std::vector<F16>(query_desc.element_count().value()));
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(query, compute::ConstTensorView::create(
+                                   query_desc, query_buffer.view())
+                                   .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(key, compute::ConstTensorView::create(
+                                 kv_desc, key_buffer.view())
+                                 .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(value, compute::ConstTensorView::create(
+                                   kv_desc, value_buffer.view())
+                                   .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(output, compute::TensorView::create(
+                                    query_desc, output_buffer.view())
+                                    .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  auto done = invocation.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  const auto actual = half_test::read<F16>(output_buffer);
+  for (std::size_t position = 0; position < query_length; ++position)
+    for (std::size_t head = 0; head < 8; ++head)
+      for (std::size_t depth = 0; depth < 256; ++depth) {
+        const auto kv_head = head / 4;
+        double expected = 0;
+        for (std::size_t key_position = 0;
+             key_position <= position + key_length - query_length;
+             ++key_position)
+          expected += static_cast<double>(key_position * 4 + kv_head * 2 +
+                                          depth % 2);
+        expected /= static_cast<double>(position + key_length - query_length +
+                                        1);
+        half_test::expect_near(
+            actual[(position * 8 + head) * 256 + depth], expected);
+      }
+}
+#endif
+
 TEST(CpuDefaultGraph, NonModelGraphReplaysAndReclaimsItsOwners) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();

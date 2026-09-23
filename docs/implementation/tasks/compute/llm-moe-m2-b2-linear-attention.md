@@ -109,3 +109,58 @@
 本次源码/API 审计累计保守记 **35/180分钟**（SCOPED 前置10、四路线入口与格式17、Hadamard/
 模型语义8）；正常实现、构建和预声明验证另计。当前仍没有新增 BOUND、覆盖或性能 PASS；现在开始
 按 B2-C0→C1→C2→C3→C4→C5 批量施工。
+
+### B2-C0R 路由资格维度补充（AUDITED，2026-09-23）
+
+实施中按用户给出的“组合路由键”反查现有冷绑定接缝。平台/四路线由构建因子与所选 Context 固定；
+设备、GPU 架构/SM、驱动/runtime/toolkit 与 Provider 版本由对应 Context/Provider 冷快照固定；
+operation、dtype/layout/shape 与 Q4/Q8 物理格式来自真实请求；模型和阶段来自 `WorkloadContext`。
+`propose`/Graph region 请求已经能对这些事实作合取匹配，submit 不读取它们，因此不新增万能规则引擎、
+热路径查表或重复的“量化等级”模型标签。
+
+唯一确认的表达缺口是 `ModelDescription` 把 family 直接连到 revision/configuration，没有独立模型名，
+无法清楚表达“Qwen3.5 全族”“Qwen3.5-2B”与某一精确 checkpoint/config 三层资格。有限 FIX 增加
+独立 `name`，保留一次冷分配，并提供 family、family+name、四字段 exact 三种字节精确匹配；
+revision/configuration 不能脱离 family+name。更新现有真实消费者与测试，验证未知/部分身份不会误中
+更窄规则。硬件与软件身份仍留在各原生路线，量化仍由 `QuantizedMatMul` mode/group/storage format
+表达，避免一份事实出现两个可能不一致的来源。此补充属于 B2-C0 schema/规则绑定，不扩张数学实现。
+
+组合键的长期表达已同步到 `compute-routes.md`：构建/Context 先固定平台与四路线，冷 proposal 将
+设备、驱动/Toolkit/Provider、模型四级身份、阶段/region、operation/shape/format/量化和资源条件作
+任意子集合取；热 submit 只执行绑定 artifact。规则按窄资格到成熟基线排列，不生成字段笛卡尔积，
+也不允许一个模型名绕过真实 dtype/format/device 条件。
+
+### B2-C1 Q8-B32 成熟 CPU 资格结果（2026-09-23）
+
+对 oneDNN 3.13.2 的 weight-only MatMul 做了有界原版接线探针。上游教程的 F32 source/s8 weights/
+runtime scales 不能代签本合同的 FP16 activation、FP16 block32 scale、F32 accumulate。锁定源码的
+`brgemm_matmul_utils.cpp` 明确要求 optimized `strict` weight decompression 使用 F32 source；FP16
+source 需 `fpmath=f16`，FP16 scale 还需 `isa_has_f16`。当前 i9-13900K 无 AVX512-FP16；实际冷建
+primitive 对 FP16 source、signed s8、group32 的精确请求返回 `dnnl_unimplemented`，把 FP16 scale
+无损拓宽为 F32 仍被拒绝。试接产品代码和失败测试均已撤回，没有留下不合格路线。
+
+因此 CPU F06.3 仍是具名成熟上游缺口：不以 oneDNN F32 WOQ、ggml 的 activation Q8 或 replay 时
+整权重展开冒充 W8A16。后续 CPU 批次继续交付已证明的 F05/F07/F08；F06.3 等具有原生 FP16 WOQ
+资格的 CPU/Provider，或其它成熟 bounded tile decode 出现后再绑定。本结论是硬件/ISA 参与组合路由
+的实际案例，不触发 HYLE 自研量化 kernel。
+
+### B2-C1 CPU 产品候选（2026-09-23）
+
+CPU 普通 Context 保持 `oneDNN -> ggml CPU -> HYLE native` 的固定成熟优先顺序。oneDNN 已有 F32
+MatMul 和四节点 gated FFN region 继续承载其合格域；本批只在 ggml CPU 私有 recipe 接通原版能力：
+
+- F05：FP16/BF16 rank-2--4 MatMul、leading batch/broadcast 和 M=1/17/128。物理已为 `[N,K]`
+  dense 的转置 view 直接交给 ggml；其它 RHS 的完整 replay repack 字节显式进入 proposal/Graph 报告，
+  不隐藏 whole-weight copy。
+- F07：head256、8Q/2KV 的 causal GQA decode/prefill；FP16 使用 ggml flash-attention 并在冷准备期
+  固定真实 causal mask，BF16/F32 使用同一成熟 ggml 图原语组合。Graph 单节点 region、两种 half
+  Direct 路线与独立均值/因果 oracle 已通过。KV append/read 继续复用 B1 的 Gather/Scatter state ports。
+- F08：partial interleaved/half-split RoPE 使用调用者给出的冻结 frequency tensor；Hadamard 使用
+  ggml `GGML_HINT_SRC0_IS_HADAMARD` 的原版 FWHT，正向与 inverse 都遵守归一化自逆语义。冷制品持有
+  reference fallback 所需的 immutable 系数，不在 replay 生成矩阵或 mask。
+- F06.1--F06.3 在 CPU 都没有与本批 Q4-S128/Q4-A64/Q8-B32 物理合同精确相等的成熟载体，继续作为
+  具名 residual；没有借格式转换、activation A8 或冻结 HYLE kernel 冒充覆盖。
+
+Windows shared 增量构建和 `compute/compute_ops/oneDNN/ggml/CPU route/graph/CPU graph route` 七个定向
+测试均通过；包括 Direct/Graph、prefill/decode、两 invocation、旧结果稳定、close 失败和模型冷身份。
+当前仍是产品候选，不把尚未执行的 source/static 交付、WSL 检查或完整片段 P0/P1 写成 PASS。

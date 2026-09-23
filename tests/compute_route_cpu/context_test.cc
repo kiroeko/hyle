@@ -296,6 +296,70 @@ TEST(CpuDefaultContext, InvalidAndUnsupportedInputsRemainErrors) {
             std::string_view::npos);
 }
 
+#if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultContext, B2MatureDomainsBindThroughDefaultRuleSet) {
+  auto context = create_context().value();
+  const auto f16_left =
+      TensorDesc::dense(DataType::kFloat16,
+                        std::array<std::int64_t, 3>{2, 17, 64})
+          .value();
+  const auto f16_weight =
+      TensorDesc::dense(DataType::kFloat16,
+                        std::array<std::int64_t, 2>{64, 96})
+          .value();
+  auto linear = prepare(context, MatMul{}, f16_left, f16_weight);
+  ASSERT_TRUE(linear) << linear.error().message();
+  EXPECT_EQ(linear->provider().id, ggml_cpu::kProviderId);
+
+  const auto rope_data =
+      TensorDesc::dense(DataType::kFloat16,
+                        std::array<std::int64_t, 4>{1, 17, 8, 256})
+          .value();
+  const auto positions =
+      TensorDesc::dense(DataType::kInt32,
+                        std::array<std::int64_t, 1>{17})
+          .value();
+  const auto frequencies =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 1>{128})
+          .value();
+  auto rope = prepare(context,
+                      RoPE{.rotary_dimensions = 256,
+                           .sequence_axis = 1,
+                           .layout = RopeLayout::kHalfSplit},
+                      rope_data, positions, frequencies);
+  ASSERT_TRUE(rope) << rope.error().message();
+  EXPECT_EQ(rope->provider().id, ggml_cpu::kProviderId);
+
+  const auto hadamard_input =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 3>{2, 17, 256})
+          .value();
+  auto hadamard = prepare(context, Hadamard{}, hadamard_input);
+  ASSERT_TRUE(hadamard) << hadamard.error().message();
+  EXPECT_EQ(hadamard->provider().id, ggml_cpu::kProviderId);
+
+  const auto query =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 4>{1, 1, 8, 256})
+          .value();
+  const auto key_value =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array<std::int64_t, 4>{1, 31, 2, 256})
+          .value();
+  auto attention = prepare(
+      context,
+      ScaledDotProductAttention{
+          .layout = AttentionLayout::kBatchSequenceHeadDepth,
+          .scale = 0.0625F,
+          .causal = true,
+          .accumulation_type = DataType::kFloat32},
+      query, key_value, key_value);
+  ASSERT_TRUE(attention) << attention.error().message();
+  EXPECT_EQ(attention->provider().id, ggml_cpu::kProviderId);
+}
+#endif
+
 } // namespace
 
 #if defined(HYLE_COMPUTE_ONEDNN)

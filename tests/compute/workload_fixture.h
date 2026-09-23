@@ -9,6 +9,7 @@ namespace workload_test {
 // qualification claim. Source: qwen35-2b-local-input.json (2026-09-17).
 inline constexpr hyle::compute::ModelDescription kModel{
     "qwen3_5",
+    "qwen3.5-2b",
     "local-sha256:4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
     "config-sha256:ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4"};
 

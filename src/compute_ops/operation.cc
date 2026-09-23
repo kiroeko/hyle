@@ -68,11 +68,11 @@ Status validate_operation_modes(const Operation &operation) noexcept {
   switch (operation.kind()) {
   case OperationKind::kQuantizedMatMul: {
     const auto &matmul = *operation.get_if<QuantizedMatMul>();
-    if (!enum_in_range(matmul.mode, QuantizedWeightMode::kUnsignedAffine4) ||
+    if (!enum_in_range(matmul.mode, QuantizedWeightMode::kSignedSymmetric8) ||
         matmul.group_size == 0 ||
         !is_quantized_matmul_float(matmul.accumulation_type)) {
       return Status::InvalidArgument(
-          "QuantizedMatMul requires a valid Q4 mode, nonzero group and "
+          "QuantizedMatMul requires a valid Q4/Q8 mode, nonzero group and "
           "explicit floating accumulation type");
     }
     break;
@@ -156,6 +156,7 @@ Status validate_operation_modes(const Operation &operation) noexcept {
   case OperationKind::kLayerNorm:
   case OperationKind::kMatMul:
   case OperationKind::kConcat:
+  case OperationKind::kHadamard:
   case OperationKind::kScan:
   case OperationKind::kTopK:
   case OperationKind::kGatedDeltaNet:
@@ -824,6 +825,8 @@ std::string_view operation_name(OperationKind operation) noexcept {
     return "concat";
   case OperationKind::kRoPE:
     return "rope";
+  case OperationKind::kHadamard:
+    return "hadamard";
   case OperationKind::kSoftmax:
     return "softmax";
   case OperationKind::kTopK:
@@ -1020,6 +1023,17 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
             PrecisionPolicy::kExact,
             DataType::kUnknown,
             true};
+  case OperationKind::kHadamard: {
+    const auto *hadamard = operation.get_if<Hadamard>();
+    return {{1, 1},
+            1,
+            AliasPolicy::kNone,
+            EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType,
+            hadamard != nullptr ? hadamard->accumulation_type
+                                : DataType::kUnknown,
+            true};
+  }
   case OperationKind::kSoftmax: {
     const auto *softmax = operation.get_if<Softmax>();
     const std::uint16_t count =
@@ -1490,6 +1504,24 @@ Status infer_output_descriptions(const Operation &operation,
       first = std::unexpected(std::move(status));
     } else {
       first = dense_like(inputs[0], inputs[0].data_type());
+    }
+    break;
+  }
+  case OperationKind::kHadamard: {
+    const auto &hadamard = *operation.get_if<Hadamard>();
+    const auto &input = inputs[0];
+    Status accumulation = validate_accumulation(hadamard.accumulation_type);
+    const auto dimension = input.rank() == 0 ? 0 : input.dimensions().back();
+    if (!accumulation.ok()) {
+      first = std::unexpected(std::move(accumulation));
+    } else if (!is_quantized_matmul_float(input.data_type()) ||
+               input.rank() == 0 || dimension <= 0 ||
+               (dimension & (dimension - 1)) != 0) {
+      first = std::unexpected(Status::InvalidArgument(
+          "Hadamard requires a floating rank >= 1 tensor with a positive "
+          "power-of-two final dimension"));
+    } else {
+      first = dense_like(input, input.data_type());
     }
     break;
   }

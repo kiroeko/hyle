@@ -83,8 +83,8 @@ TEST(OperationViewAlias, RejectsUnrepresentableOffsetsAndInconsistentSpans) {
   EXPECT_FALSE(detail::view_alias_offset(View{}, {}, {}).has_value());
 }
 
-TEST(OperationCatalog, HasTwentyOneTypedBuiltinFamiliesAndInvalidDefault) {
-  const std::array<Operation, 21> operations{
+TEST(OperationCatalog, HasTwentyTwoTypedBuiltinFamiliesAndInvalidDefault) {
+  const std::array<Operation, 22> operations{
       Operation(View::reshape(shape(2, 3)).value()),
       Operation(Copy{}),
       Operation(Fill{shape(2), DataType::kFloat32, ScalarValue(0.0F)}),
@@ -101,6 +101,7 @@ TEST(OperationCatalog, HasTwentyOneTypedBuiltinFamiliesAndInvalidDefault) {
       Operation(Scatter{}),
       Operation(Concat{}),
       Operation(RoPE{.rotary_dimensions = 8}),
+      Operation(Hadamard{}),
       Operation(Softmax{}),
       Operation(TopK{}),
       Operation(ScaledDotProductAttention{}),
@@ -120,7 +121,7 @@ TEST(OperationCatalog, HasTwentyOneTypedBuiltinFamiliesAndInvalidDefault) {
     EXPECT_EQ(operation_traits(operations[index]).resource_count, 0u);
     EXPECT_TRUE(validate_operation_effects(operations[index]).ok());
   }
-  EXPECT_EQ(operation_traits(operations[17]).outputs, 2u);
+  EXPECT_EQ(operation_traits(operations[18]).outputs, 2u);
   EXPECT_EQ(operation_traits(operations[0]).alias,
             AliasPolicy::kMustAliasInput0);
   EXPECT_FALSE(operation_traits(operations[0]).materializes);
@@ -332,12 +333,50 @@ TEST(OperationQuantizedMatMul, InfersSignedAndAffineGroupedLinearProjections) {
                         .mode = QuantizedWeightMode::kUnsignedAffine4}),
                     std::array{activation, weight, parameter, parameter}),
           tensor(type, batch, 256));
+      EXPECT_EQ(
+          infer_one(Operation(QuantizedMatMul{
+                        .mode = QuantizedWeightMode::kSignedSymmetric8,
+                        .group_size = 32}),
+                    std::array{activation, weight,
+                               tensor(type, 256, 8)}),
+          tensor(type, batch, 256));
     }
     EXPECT_EQ(infer_one(Operation(QuantizedMatMul{.group_size = 128}),
                         std::array{tensor(type, 2, 7, 256), weight,
                                    tensor(type, 256, 2)}),
               tensor(type, 2, 7, 256));
   }
+}
+
+TEST(OperationHadamard, PreservesShapeAndRequiresPowerOfTwoFinalDimension) {
+  for (const auto type : {DataType::kFloat16, DataType::kBFloat16,
+                          DataType::kFloat32, DataType::kFloat64}) {
+    const auto input = tensor(type, 2, 17, 256);
+    for (const bool inverse : {false, true}) {
+      const Operation operation(
+          Hadamard{.inverse = inverse,
+                   .accumulation_type = DataType::kFloat32});
+      EXPECT_EQ(infer_one(operation, std::array{input}), input);
+      const auto traits = operation_traits(operation);
+      EXPECT_EQ(traits.inputs.minimum, 1u);
+      EXPECT_EQ(traits.inputs.maximum, 1u);
+      EXPECT_EQ(traits.accumulation_type, DataType::kFloat32);
+      EXPECT_EQ(traits.alias, AliasPolicy::kNone);
+    }
+  }
+  for (const auto &invalid : {
+           tensor(DataType::kFloat32), tensor(DataType::kFloat32, 0),
+           tensor(DataType::kFloat32, 7), tensor(DataType::kInt32, 8)}) {
+    EXPECT_TRUE(infer_single_output(Operation(Hadamard{}),
+                                    std::array{invalid})
+                    .error()
+                    .IsInvalidArgument());
+  }
+  EXPECT_TRUE(infer_single_output(
+                  Operation(Hadamard{.accumulation_type = DataType::kBool}),
+                  std::array{tensor(DataType::kFloat32, 8)})
+                  .error()
+                  .IsInvalidArgument());
 }
 
 TEST(OperationQuantizedMatMul, RejectsIncompleteAndContradictoryContracts) {

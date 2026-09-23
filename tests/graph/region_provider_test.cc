@@ -1938,20 +1938,28 @@ void expect_negation_replay(const hyle::graph::Executable &executable,
 TEST(GraphRules, ModelQualificationIsColdExactAndKeepsTheGenericFallback) {
   using namespace hyle::compute;
   const auto required = workload_test::known(WorkloadPhase::kDecode);
-  std::array<WorkloadContext, 8> requests;
+  std::array<WorkloadContext, 9> requests;
   requests.fill(required);
   requests[1] = {};
-  requests[2].model = ModelIdentity::create({"unknown", "r", "c"}).value();
+  requests[2].model =
+      ModelIdentity::create({"unknown", "unknown-model", "r", "c"}).value();
   requests[3].model = ModelIdentity::create({workload_test::kModel.family,
-                                            {}, {}}).value();
+                                            {}, {}, {}}).value();
   requests[4].model = ModelIdentity::create({workload_test::kModel.family,
+                                            "other-model",
+                                            workload_test::kModel.revision,
+                                            workload_test::kModel.configuration})
+                          .value();
+  requests[5].model = ModelIdentity::create({workload_test::kModel.family,
+                                            workload_test::kModel.name,
                                             "other-revision",
                                             workload_test::kModel.configuration}).value();
-  requests[5].model = ModelIdentity::create({workload_test::kModel.family,
+  requests[6].model = ModelIdentity::create({workload_test::kModel.family,
+                                            workload_test::kModel.name,
                                             workload_test::kModel.revision,
                                             "other-config"}).value();
-  requests[6].phase = WorkloadPhase::kPrefill;
-  ++requests[7].region.version;
+  requests[7].phase = WorkloadPhase::kPrefill;
+  ++requests[8].region.version;
   const auto logical = make_negations(1);
   for (std::size_t index = 0; index < requests.size(); ++index) {
     SCOPED_TRACE(index);
