@@ -143,7 +143,7 @@ combine、真实投影宽度、共享状态、MTP index carry 和两个 invocati
 |---|---|---|---|
 | B2 | [`CLOSED`](llm-moe-m2-b2-terminal.md) | 成熟入口已批量接线并完成四路线、资源和交付验收；精确格式/完整片段缺口已记为有限 residual | 直接进入 B3 |
 | B3 | [`CLOSED`](llm-moe-m2-b3-terminal.md) | F32 causal conv 与 scalar/KDA GDN 已接四路线原版成熟入口；低精度、完整模型链和具名 backend 限制已进入 M3-03 residual | 直接进入 B4 |
-| B4 | [`SCOPED`](llm-moe-m2-b4-moe-model-fragments.md) | B3 已关闭；当前只固定 owner、自然 schema 与成熟 Provider 审计边界，尚未授权产品修改 | 审计后批量施工，关闭再进入 B5 |
+| B4 | [`CLOSED`](llm-moe-m2-b4-terminal.md) | grouped expert MatMul 与 mHC 三枚 region 已接四路线 ggml 原版入口，普通 Direct/Graph、资源与两种 Apple 交付已验证 | 直接进入 B5 |
 | B5 | `QUEUED_BY_PLAN` | B4 关闭 | 直接进入 B6 |
 | B6 | `QUEUED_BY_PLAN` | B5 关闭 | 完成 M2 汇总，暂停并向用户报告；不进入 M3 |
 

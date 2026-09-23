@@ -1,6 +1,6 @@
 # M2-B4 成熟 Provider MoE 与模型片段批次
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -69,3 +69,6 @@ B6，不能仅凭位宽相似签署。
 Apple 的改动只把既有 ggml Metal native-region owner 从单一 GDN 扩到这组已审计原版 op，不建立
 万能执行器。组合路由仍在 prepare 阶段按平台、硬件、驱动/SDK、模型身份、路线、量化档位和
 Provider 版本匹配，执行阶段不搜索或计时。有限 FIX 已冻结，可以进入产品施工。
+
+本批已按[终局记录](llm-moe-m2-b4-terminal.md)在产品候选 `d40aa5329ac9e6783556b1595118b28742cde7c7`
+关闭；后续残差不重新授权本卡施工。

@@ -57,7 +57,7 @@
         "F14.4",
         "F14.5"
       ],
-      "status": "AUDITED"
+      "status": "CLOSED"
     },
     {
       "id": "B5",
@@ -768,6 +768,151 @@
       "expected_selector_gates": [],
       "applicability": "not_applicable",
       "reason": "No frozen complete recurrent model-fragment P1 card exists for B3; retained-program P0 applies and model-chain performance remains M3-03."
+    },
+    {
+      "id": "b4-windows-cpu",
+      "batch": "B4",
+      "profile": "windows-cpu-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_ops",
+        "factor:compute_provider_ggml",
+        "factor:compute_route_cpu",
+        "factor:graph_route_cpu"
+      ],
+      "applicability": "required",
+      "reason": "B4 CPU grouped expert and mHC Direct/Graph mature-provider correctness and replay."
+    },
+    {
+      "id": "b4-windows-cuda",
+      "batch": "B4",
+      "profile": "windows-cuda-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_cuda",
+        "factor:compute_route_cuda",
+        "factor:graph_provider_ggml_cuda",
+        "factor:graph_route_cuda"
+      ],
+      "applicability": "required",
+      "reason": "B4 CUDA grouped expert and mHC native Direct/Graph acceptance on SM89."
+    },
+    {
+      "id": "b4-air-apple",
+      "batch": "B4",
+      "profile": "air-apple-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_metal",
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B4 Apple shared ggml Metal Direct/Graph native acceptance on MacBook Air."
+    },
+    {
+      "id": "b4-mini-apple-static",
+      "batch": "B4",
+      "profile": "mini-apple-static",
+      "kind": "correctness",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_metal",
+        "factor:compute_route_apple",
+        "factor:graph_route_apple"
+      ],
+      "applicability": "required",
+      "reason": "B4 Apple static portability, resource-fault and native execution acceptance on Mac mini."
+    },
+    {
+      "id": "b4-windows-vulkan",
+      "batch": "B4",
+      "profile": "windows-vulkan-shared",
+      "kind": "correctness",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "expected_selector_gates": [
+        "factor:compute_provider_ggml_vulkan",
+        "factor:compute_route_vulkan",
+        "factor:graph_route_vulkan"
+      ],
+      "applicability": "required",
+      "reason": "B4 Vulkan grouped expert and mHC managed-region acceptance on RTX 4070."
+    },
+    {
+      "id": "b4-fragment-p1",
+      "batch": "B4",
+      "profile": "windows-cuda-shared",
+      "kind": "performance",
+      "requirements": [
+        "F13.2",
+        "F14.1"
+      ],
+      "expected_selector_gates": [],
+      "applicability": "not_applicable",
+      "reason": "No frozen complete MoE or MTP model-fragment P1 card exists for B4; retained-region P0 applies and model-chain performance remains M3-04."
     }
   ],
   "residuals": [
@@ -936,6 +1081,90 @@
       "state": "UNPROVEN",
       "reason": "F16/BF16 recurrent, extra state snapshots and complete 24-layer model journeys remain unproven.",
       "owner": "M3-03"
+    },
+    {
+      "id": "b4-cpu-complete-model-fragments",
+      "batch": "B4",
+      "route": "cpu",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted grouped expert and mHC regions are bound, but full-checkpoint routing, hash routing, shared/latent/SiTU, cross-block residual and complete MTP carry have not yet run as one real model fragment.",
+      "owner": "M3-04"
+    },
+    {
+      "id": "b4-cuda-complete-model-fragments",
+      "batch": "B4",
+      "route": "cuda",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted grouped expert and mHC regions are bound, but full-checkpoint routing, hash routing, shared/latent/SiTU, cross-block residual and complete MTP carry have not yet run as one real model fragment.",
+      "owner": "M3-04"
+    },
+    {
+      "id": "b4-apple-complete-model-fragments",
+      "batch": "B4",
+      "route": "apple",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted grouped expert and mHC regions are bound, but full-checkpoint routing, hash routing, shared/latent/SiTU, cross-block residual and complete MTP carry have not yet run as one real model fragment.",
+      "owner": "M3-04"
+    },
+    {
+      "id": "b4-vulkan-complete-model-fragments",
+      "batch": "B4",
+      "route": "vulkan",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "state": "UNPROVEN",
+      "reason": "The admitted grouped expert and mHC regions are bound, but full-checkpoint routing, hash routing, shared/latent/SiTU, cross-block residual and complete MTP carry have not yet run as one real model fragment.",
+      "owner": "M3-04"
     }
   ]
 }
