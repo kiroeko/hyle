@@ -124,6 +124,9 @@ M1-G 的独立 patch factor 完成维护/升级/OOM/并发/三交付审计之前
 
 ## 4. M2 按模型片段批量接入
 
+B2--B6 的逐批需求、Provider 分工、有限 FIX、验收与停止合同见
+[M2 B2--B6 批次合同](llm-moe-m2-batch-contracts.md)。本节短表只显示执行顺序；不能单独授权产品改动。
+
 每批使用上面的四路线承载表，一次把对应 family 映射到成熟 operation schema/region，
 按 CPU→CUDA→Apple→Vulkan 串行完成重型验证。源码工作可逐 seam 推进；不用等自研比较才能接库。
 
