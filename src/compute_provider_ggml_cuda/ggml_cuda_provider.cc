@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstdlib>
 #include <exception>
@@ -57,6 +58,7 @@ struct Program final {
   int device = -1;
   internal::Recipe recipe;
   std::vector<std::size_t> alignments;
+  std::vector<std::vector<float>> hadamards;
 };
 
 // Called only from catch blocks; native namespaces and numbers survive the
@@ -100,6 +102,7 @@ struct Invocation final {
   std::vector<ggml_backend_buffer *> scratch;
   std::vector<ggml_tensor *> masks;
   std::vector<internal::ScalarConstant> constants;
+  std::vector<internal::DenseConstant> dense_constants;
   std::vector<ggml_tensor *> views;
   std::vector<void *> pointers;
   bool failed = false;
@@ -236,13 +239,17 @@ struct Invocation final {
       tensors[id] = internal::create_tensor_input(arena.get(), description);
       ggml_set_input(tensors[id]);
     }
-    for (const auto &node : recipe.nodes) {
+    for (std::size_t node_index = 0; node_index < recipe.nodes.size();
+         ++node_index) {
+      const auto &node = recipe.nodes[node_index];
       ggml_tensor *result = nullptr;
       if (node.operation.get_if<ScaledDotProductAttention>())
         result = attention(node);
       else
         result = internal::lower_tensor_operation(arena.get(), recipe, node,
-                                                  tensors, constants);
+                                                  tensors, constants,
+                                                  dense_constants,
+                                                  program.hadamards[node_index]);
       if (!result)
         return Status::Unimplemented("ggml CUDA tensor lowering declined");
       if (!ggml_backend_supports_op(backend, result))
@@ -296,6 +303,8 @@ struct Invocation final {
     for (const auto &constant : constants)
       ggml_backend_tensor_set(constant.tensor, &constant.value, 0,
                               sizeof(constant.value));
+    for (const auto &constant : dense_constants)
+      ggml_backend_tensor_set(constant.tensor, constant.data, 0, constant.bytes);
     for (auto *mask : masks) {
       const auto columns = static_cast<std::size_t>(mask->ne[0]);
       const auto rows = static_cast<std::size_t>(mask->ne[1]);
@@ -590,9 +599,13 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   *output = {};
   const auto &context = *static_cast<Context *>(value);
   std::vector<std::size_t> alignments;
+  std::vector<std::vector<float>> hadamards;
   try {
     alignments.resize(recipe.values.size(), 1);
-    for (const auto &node : recipe.nodes) {
+    hadamards.resize(recipe.nodes.size());
+    for (std::size_t node_index = 0; node_index < recipe.nodes.size();
+         ++node_index) {
+      const auto &node = recipe.nodes[node_index];
       const auto require = [&](std::uint32_t id) {
         alignments[id] = std::max(
             alignments[id],
@@ -601,6 +614,24 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
       for (const auto id : node.inputs)
         require(id);
       require(node.output);
+      if (node.operation.get_if<Hadamard>()) {
+        const auto width = recipe.values[node.output].dimensions().back();
+        if (width <= 0 || width > 4096 ||
+            static_cast<std::uint64_t>(width) *
+                    static_cast<std::uint64_t>(width) >
+                SIZE_MAX / sizeof(float))
+          return ProviderPrepareOutcome::unsupported(
+              Status::Unimplemented("ggml CUDA Hadamard width is outside the admitted original backend domain"));
+        auto &matrix = hadamards[node_index];
+        matrix.resize(static_cast<std::size_t>(width * width));
+        const auto scale = 1.0F / std::sqrt(static_cast<float>(width));
+        for (std::int64_t row = 0; row < width; ++row)
+          for (std::int64_t column = 0; column < width; ++column)
+            matrix[static_cast<std::size_t>(row * width + column)] =
+                std::popcount(static_cast<std::uint64_t>(row & column)) % 2
+                    ? -scale
+                    : scale;
+      }
     }
   } catch (...) {
     return ProviderPrepareOutcome::error(failure());
@@ -612,7 +643,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   *output = {.vtable = &kPrepared,
              .state = ::new (storage)
                  Program{context.primary, context.device, std::move(recipe),
-                         std::move(alignments)},
+                         std::move(alignments), std::move(hadamards)},
              .workspace = {},
              .runtime = kRuntime,
              .persistent_bytes = std::nullopt,

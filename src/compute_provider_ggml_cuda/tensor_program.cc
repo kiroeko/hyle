@@ -14,6 +14,8 @@ ggml_type native_type(DataType type) noexcept {
     return GGML_TYPE_F16;
   case DataType::kBFloat16:
     return GGML_TYPE_BF16;
+  case DataType::kInt32:
+    return GGML_TYPE_I32;
   default:
     return GGML_TYPE_COUNT;
   }
@@ -72,6 +74,15 @@ ggml_tensor *matrix(ggml_context *context, ggml_tensor *value,
   return ggml_reshape_2d(context, value, columns(description),
                          rows(description));
 }
+ggml_tensor *native_shape(ggml_context *context, ggml_tensor *value,
+                          const TensorDesc &description) {
+  if (!ggml_is_contiguous(value) || description.rank() > GGML_MAX_DIMS)
+    return matrix(context, value, description);
+  std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+  for (std::size_t i = 0; i < description.rank(); ++i)
+    shape[i] = description.dimensions()[description.rank() - i - 1];
+  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2], shape[3]);
+}
 ggml_tensor *as_float(ggml_context *context, ggml_tensor *value) {
   return value->type == GGML_TYPE_F32
              ? value
@@ -81,7 +92,7 @@ ggml_tensor *as_output(ggml_context *context, ggml_tensor *value,
                        const TensorDesc &description) {
   if (value->type != native_type(description.data_type()))
     value = ggml_cast(context, value, native_type(description.data_type()));
-  return matrix(context, value, description);
+  return native_shape(context, value, description);
 }
 
 std::int64_t extent_product(std::span<const std::int64_t> shape) noexcept {
@@ -194,8 +205,13 @@ bool tensor_operation_supports(Operation operation,
   if (inputs.empty() || outputs.size() != 1 || !outputs[0].is_dense() ||
       !representable(outputs[0]))
     return false;
-  for (const auto &description : inputs)
-    if (!representable(description))
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    if (!representable(inputs[i]) &&
+        !(operation.get_if<RoPE>() && i == 1 && inputs[i].valid() &&
+          inputs[i].is_plain() && inputs[i].is_dense() &&
+          inputs[i].data_type() == DataType::kInt32 &&
+          inputs[i].element_count() &&
+          *inputs[i].element_count() <= (INT32_MAX - 1024) / sizeof(float)))
       return false;
   const auto inferred = infer_single_output(operation, inputs);
   if (!inferred || *inferred != outputs[0])
@@ -236,6 +252,42 @@ bool tensor_operation_supports(Operation operation,
     return softmax->kind == SoftmaxKind::kSoftmax &&
            softmax->mask != MaskKind::kBoolean &&
            softmax->accumulation_type == DataType::kFloat32;
+  if (const auto *matmul = operation.get_if<MatMul>()) {
+    if (inputs.size() != 2 || inputs[0].rank() < 2 || inputs[0].rank() > 4 ||
+        inputs[1].rank() < 2 || inputs[1].rank() > 4 ||
+        (inputs[0].rank() == 2 && inputs[1].rank() == 2) ||
+        !inputs[0].is_dense() || !inputs[1].is_dense() ||
+        matmul->accumulation_type != DataType::kFloat32 ||
+        (inputs[0].data_type() != DataType::kFloat16 &&
+         inputs[0].data_type() != DataType::kBFloat16) ||
+        inputs[1].data_type() != inputs[0].data_type() ||
+        output.data_type() != inputs[0].data_type())
+      return false;
+    std::array<std::int64_t, 2> left_batch{1, 1}, right_batch{1, 1};
+    const auto fill_batch = [](const TensorDesc &description,
+                               std::array<std::int64_t, 2> &batch) {
+      const auto count = description.rank() - 2;
+      for (std::size_t i = 0; i < count; ++i)
+        batch[2 - count + i] = description.dimensions()[i];
+    };
+    fill_batch(inputs[0], left_batch);
+    fill_batch(inputs[1], right_batch);
+    return left_batch[0] % right_batch[0] == 0 &&
+           left_batch[1] % right_batch[1] == 0;
+  }
+  if (const auto *rope = operation.get_if<RoPE>())
+    return inputs.size() == 3 && inputs[0].rank() == 4 &&
+           rope->sequence_axis == 1 && inputs[0].is_dense() &&
+           (inputs[0].data_type() == DataType::kFloat16 ||
+            inputs[0].data_type() == DataType::kBFloat16) &&
+           inputs[1].rank() == 1 && inputs[1].is_dense() &&
+           inputs[1].data_type() == DataType::kInt32 &&
+           inputs[2].rank() == 1 && inputs[2].is_dense() &&
+           inputs[2].data_type() == DataType::kFloat32;
+  if (const auto *hadamard = operation.get_if<Hadamard>())
+    return inputs.size() == 1 && inputs[0].is_dense() &&
+           floating(inputs[0].data_type()) &&
+           hadamard->accumulation_type == DataType::kFloat32;
   return false;
 }
 
@@ -261,7 +313,9 @@ ggml_tensor *create_tensor_input(ggml_context *context,
 ggml_tensor *lower_tensor_operation(ggml_context *context, const Recipe &recipe,
                                     const Node &node,
                                     std::span<ggml_tensor *const> values,
-                                    std::vector<ScalarConstant> &constants) {
+                                    std::vector<ScalarConstant> &constants,
+                                    std::vector<DenseConstant> &dense_constants,
+                                    std::span<const float> hadamard) {
   const auto &output = recipe.values[node.output];
   const auto input = [&](std::size_t index) {
     const auto id = node.inputs[index];
@@ -386,6 +440,41 @@ ggml_tensor *lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       result = result ? ggml_concat(context, result, part, 1)
                       : ggml_dup(context, part);
     }
+  } else if (node.operation.get_if<MatMul>()) {
+    auto *left = native_shape(context, values[node.inputs[0]],
+                              recipe.values[node.inputs[0]]);
+    auto *right = ggml_transpose(context, values[node.inputs[1]]);
+    if (!ggml_is_contiguous(right))
+      right = ggml_cont(context, right);
+    result = ggml_mul_mat(context, right, left);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+      return nullptr;
+  } else if (const auto *rope = node.operation.get_if<RoPE>()) {
+    auto *positions = values[node.inputs[1]];
+    auto *frequencies = values[node.inputs[2]];
+    auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
+    constants.push_back({one, 1.0F});
+    auto *factors = ggml_div(context, ggml_repeat(context, one, frequencies),
+                             frequencies);
+    const int mode = rope->layout == RopeLayout::kInterleaved
+                         ? GGML_ROPE_TYPE_NORMAL
+                         : GGML_ROPE_TYPE_NEOX;
+    result = ggml_rope_ext(
+        context, values[node.inputs[0]], positions, factors,
+        static_cast<int>(rope->rotary_dimensions), mode, 0, 1.0F, 1.0F,
+        0.0F, 1.0F, 0.0F, 0.0F);
+  } else if (node.operation.get_if<Hadamard>()) {
+    const auto width = columns(output);
+    if (hadamard.size() != static_cast<std::size_t>(width * width))
+      return nullptr;
+    auto *transform =
+        ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
+    dense_constants.push_back(
+        {transform, hadamard.data(), hadamard.size_bytes()});
+    result = ggml_mul_mat(context, transform, as_float(context, input(0)));
+    ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32))
+      return nullptr;
   }
   return result ? as_output(context, result, output) : nullptr;
 }

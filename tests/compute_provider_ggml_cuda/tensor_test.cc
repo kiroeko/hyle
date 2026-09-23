@@ -118,6 +118,90 @@ TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
       prepare(ctx, Softmax{.kind = SoftmaxKind::kLogSoftmax}, description));
 }
 
+TEST(GgmlCudaTensor, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
+  using F16 = hyle::simd::float16_t;
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto resource = memory.ref();
+  {
+    const auto left_desc = dense(DataType::kFloat16, {2, 2, 3});
+    const auto right_desc = dense(DataType::kFloat16, {1, 3, 2});
+    const auto output_desc = dense(DataType::kFloat16, {2, 2, 2});
+    std::array<F16, 12> left_values{};
+    std::array<F16, 6> right_values{};
+    for (std::size_t i = 0; i < left_values.size(); ++i)
+      left_values[i] = half_test::encode<F16>(static_cast<double>(i % 6 + 1));
+    for (std::size_t i = 0; i < right_values.size(); ++i)
+      right_values[i] = half_test::encode<F16>(static_cast<double>(i + 1));
+    auto left = upload<F16>(resource, left_values);
+    auto right = upload<F16>(resource, right_values);
+    auto output = output_buffer(resource, output_desc);
+    const std::array inputs{
+        ConstTensorView::create(left_desc, left.view()).value(),
+        ConstTensorView::create(right_desc, right.view()).value()};
+    ASSERT_TRUE(execute(ctx, MatMul{}, inputs,
+                        TensorView::create(output_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<F16>(output);
+    const std::array expected{22.0, 28.0, 49.0, 64.0,
+                              22.0, 28.0, 49.0, 64.0};
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+  {
+    const auto description = dense(DataType::kFloat32, {1, 4});
+    auto source = upload<float>(resource, std::array<float, 4>{1, 2, 3, 4});
+    auto output = output_buffer(resource, description);
+    const auto input =
+        ConstTensorView::create(description, source.view()).value();
+    for (const bool inverse : {false, true}) {
+      ASSERT_TRUE(execute(ctx, Hadamard{.inverse = inverse},
+                          std::span(&input, 1),
+                          TensorView::create(description, output.view()).value())
+                      .ok());
+      const auto actual = half_test::read<float>(output);
+      const std::array expected{5.0F, -1.0F, -2.0F, 0.0F};
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[i], 2.e-6F);
+    }
+  }
+  {
+    const auto data_desc = dense(DataType::kFloat16, {1, 2, 1, 4});
+    const auto position_desc = dense(DataType::kInt32, {2});
+    const auto frequency_desc = dense(DataType::kFloat32, {2});
+    std::array<F16, 8> values{};
+    for (std::size_t i = 0; i < values.size(); ++i)
+      values[i] = half_test::encode<F16>(static_cast<double>(i + 1));
+    auto data = upload<F16>(resource, values);
+    auto positions =
+        upload<std::int32_t>(resource, std::array<std::int32_t, 2>{0, 2});
+    auto frequencies =
+        upload<float>(resource, std::array<float, 2>{0.5F, 0.25F});
+    auto output = output_buffer(resource, data_desc);
+    const std::array inputs{
+        ConstTensorView::create(data_desc, data.view()).value(),
+        ConstTensorView::create(position_desc, positions.view()).value(),
+        ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+    ASSERT_TRUE(execute(ctx,
+                        RoPE{.rotary_dimensions = 4,
+                             .sequence_axis = 1,
+                             .layout = RopeLayout::kInterleaved},
+                        inputs,
+                        TensorView::create(data_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<F16>(output);
+    const std::array expected{
+        1.0, 2.0, 3.0, 4.0,
+        5.0 * std::cos(1.0) - 6.0 * std::sin(1.0),
+        5.0 * std::sin(1.0) + 6.0 * std::cos(1.0),
+        7.0 * std::cos(0.5) - 8.0 * std::sin(0.5),
+        7.0 * std::sin(0.5) + 8.0 * std::cos(0.5)};
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+}
+
 TEST(GgmlCudaTensor, SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias) {
   auto ctx = context();
   softmax_batch<float>(ctx);
