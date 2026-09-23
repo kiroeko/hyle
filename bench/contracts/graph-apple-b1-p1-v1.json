@@ -1,0 +1,303 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "graph-apple-b1-p1-v1",
+  "module": "graph_route_apple",
+  "claim": "M1-MAC engineering qualification of the Apple M2 B1 mature MLX complete-region bundle: BF16 conversion boundaries, checked Scatter/Gather state, RMSNorm, SiLU gate and residual, against an independent original MLX C++ expression with identical HYLE ownership and completion. No HYLE algorithm win or extrapolation to other hardware/toolchains.",
+  "candidate": {
+    "target": "hyle_graph_route_apple",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "graph_route_apple",
+    "entrypoint": "include/hyle/graph/apple.h"
+  },
+  "peers": [
+    {
+      "id": "mlx-native",
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "configuration": {
+        "delivery_shape": "source",
+        "role": "Independent original MLX C++ expression of the same complete region under the same Context; no typed lowering or Graph calls.",
+        "flags": "Metal-only MLX, JIT enabled, BF16 storage/F32 accumulation, no LTO; actual tool versions recorded.",
+        "precision": "BF16 state/update/output, F32 checked-index status and accumulation, F32 norm weight.",
+        "scope": "Complete resident region, valid ready arrays, two checked index boundaries, owning checked completion."
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    }
+  ],
+  "workloads": [
+    {
+      "id": "apple-b1-bf16-state-norm-gate-r17-w2048",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "llm-moe/apple/bf16-state-norm-gate-region",
+      "provenance": {
+        "path": "tests/graph_route_apple/scatter_test.cc",
+        "sha256": "c3c8268977b85326948b7d033a61784e4244103d1534933a69e657dda28e22fb"
+      },
+      "ownership_topology": {
+        "candidate": "Ordinary Apple Graph program with two reusable invocation slots and owning results.",
+        "peer": "Independent raw MLX C++ callable through a separate Context with the same slots and resident constants.",
+        "equivalence": "Identical ready-input binding, checked index calculations, BF16/F32 conversions, native stream, compiled-region execution, terminal synchronization, result ownership and status observation."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-region",
+        "budget": 5,
+        "denominator": "one complete B1 region through checked terminal completion and result release",
+        "derivation": "Registered Apple Graph state consumer shape from the immutable candidate test; engineering archetype."
+      },
+      "semantic_contract": "Update BF16 state[37,2048] with 17 unique indexed BF16 rows; gather those rows; round through BF16->F32->BF16; apply F32-accumulating RMSNorm, separate SiLU gate and residual; publish changed state and BF16 result. Both checked index statuses are evaluated.",
+      "comparability": "COMPARABLE",
+      "peer_id": "mlx-native",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Two distinct deterministic finite resident BF16 state/update sets, unique valid I64 indices and non-unit F32 norm weights; full outputs compared bitwise before timing.",
+        "scale": {
+          "state_rows": 37,
+          "rows": 17,
+          "width": 2048
+        }
+      },
+      "setup": "Separate candidate/peer Contexts and resident inputs, shared immutable logical constants, two reusable invocation slots, full two-output bitwise preflight, changed-input check and eight alternating warm calls.",
+      "charged_phases": [
+        "Ready input binding, one complete compiled region submission, both checked index reductions, actual terminal synchronization, hidden status observation, and result/Completion release; all conversions and temporaries included."
+      ],
+      "pair": {
+        "candidate": "HYLE Apple Graph B1 BF16 Scatter Norm Gate R=17 W=2048",
+        "peer": "MLX lifecycle Graph B1 BF16 Scatter Norm Gate R=17 W=2048"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "apple-b1-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "macos"
+    ],
+    "certification_platforms": [
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "OFF",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "graph_route_apple",
+          "HYLE_COMPUTE_CUDA": "OFF",
+          "HYLE_COMPUTE_CPU": "OFF",
+          "HYLE_COMPUTE_ONEDNN": "OFF",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "HYLE_COMPUTE_APPLE": "ON",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+          "FETCHCONTENT_FULLY_DISCONNECTED": "ON"
+        },
+        "peer_cache": {
+          "mlx-native": "HYLE_APPLE_REFERENCE_SOURCE_DIR"
+        }
+      },
+      "profiles": {
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21.0",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "graph-apple-b1-primary",
+          "target": "hyle_graph_route_apple_b1_bench",
+          "stem": "hyle_graph_route_apple_b1_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_APPLE_B1_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "apple-b1-bf16-state-norm-gate-r17-w2048",
+              "title": "Graph B1 BF16 Scatter Norm Gate R=17 W=2048"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "apple-b1-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "bench/compute_route_apple/validate_b1_aa.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    }
+  }
+}

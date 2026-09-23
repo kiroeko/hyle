@@ -428,6 +428,9 @@ Scatter浮点add按[M2-S公共数值裁决](llm-moe-m2-scatter-numerical-semanti
   新独立 factor 先注册 QUEUED，再 SCOPED/AUDITED；不把注册空 target 算接入。
 - Windows 是产品真相，WSL/macOS 是验证副本。构建 parallel2，重型任务跨机器串行；
   Windows DLL 邻置 EXE、PATH 隔离及 SetErrorMode，禁止 UAC/修改电源策略/防火墙弹窗。
+- WSL/macOS 的源码任务目录均为可丢弃副本。每次验证先核对并删除该批具名任务目录，再从
+  Windows 不可变提交生成完整归档、校验 SHA-256 后解包；禁止在旧副本上增量覆盖，也禁止
+  从验证机向 Windows 反向同步源码、文档或状态。
 - 模型沿用户本地清单同步，不重复下载；依赖与构建只保留活动缓存和必要可复现证据，阶段末
   删除本 goal 的失败/过期副本前验证绝对路径。不触碰用户模型、源码或无关临时文件。
 - 提交推送使用 `[skip ci]`。每轮维护检查、registry 前序 revision 和 skipped reasons 都保存。

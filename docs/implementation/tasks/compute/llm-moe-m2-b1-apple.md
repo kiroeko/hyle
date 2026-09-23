@@ -517,3 +517,22 @@ Compute Ops 2、ggml Metal 1、Apple Direct 2、Graph 2。两个环境/fixture�
 当前进入CANDIDATE只冻结产品树；尚未运行的单个Apple B1 P1 bundle、final selected复核、
 21行矩阵PASS与CLOSED绝不由上述结果代签。统一脚本在候选上为Compute+Graph **57,434实现行 /
 249文件**，不含tests/vendor，self-check通过。
+
+## 候选验证副本刷新
+
+2026-09-23按总计划的验证副本规则，已完成取证的Air开发、插桩与交付目录、Mini正确性目录及
+WSL Apple-OFF源码副本均在核对绝对任务路径后删除。剩余P1使用新建的
+`/Users/kiro/hyle-m2b1-apple-p1`，只接收上述Windows候选归档；解包前复核完整SHA-256为
+`ea7ce20dc666a37d8a56803ba72c8698d3762dfb8eaa79495e0446a96c7e9781`，共6086个文件。
+该目录不承载产品修改，也不允许反向同步。
+
+## P1 bundle 冻结
+
+产品候选仍为`fd03ba10...`；候选之后只新增
+`graph-apple-b1-p1-v1`测试仪器，合同SHA-256为
+`9375fc6260f091d184d00aaf8256098bc33a8faf4277be6f1bb8cc69c173d43e`。单个完整region固定为
+BF16状态与更新、checked Scatter/Gather、BF16→F32→BF16边界、RMSNorm、SiLU gate与residual，
+形状`state[37,2048]`、`updates[17,2048]`；HYLE普通Graph与独立原版MLX C++表达使用各自Context、
+两个复用invocation和相同终端同步。peer也执行两次边界检查与状态归约，全部转换、临时和完成成本
+计费；计时前逐位比较两个完整输出及变化输入。固定四个执行/分配顺序层、A/A、5%门，初始15个
+独立进程样本，只有合同允许的纠正才到31；不增加逐算子microbenchmark或第二套性能仪器。
