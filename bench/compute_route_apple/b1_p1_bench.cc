@@ -20,6 +20,7 @@
 #include <mlx/fast.h>
 #include <mlx/memory.h>
 #include <mlx/ops.h>
+#include <mlx/transforms.h>
 #include <pthread.h>
 
 #include "../common/perf_process.h"
@@ -81,7 +82,6 @@ struct Data final {
       weights[column] = 0.95F +
                         0.0001F * float(sample_bits(column ^ 0x91e10da5U) % 997);
     native_weights = mx::array(weights.data(), {kWidth}, mx::float32);
-    mx::eval(native_weights);
     native_weights.wait();
     for (int slot = 0; slot < kSlots; ++slot) {
       states[slot].resize(kStateRows * kWidth);
@@ -118,7 +118,8 @@ resident_inputs(const Data &data) {
         mx::array(data.updates[slot].data(), {kRows, kWidth}, mx::float32),
         mx::bfloat16);
     auto ids = mx::array(data.ids[slot].data(), {kRows}, mx::int64);
-    mx::eval({state, ids, update});
+    mx::async_eval({state, ids, update});
+    mx::synchronize(mx::default_stream(mx::Device::gpu));
     state.wait();
     ids.wait();
     update.wait();
@@ -285,7 +286,8 @@ private:
       host->reserve(kStateRows * kWidth + kRows * kWidth);
       for (std::size_t output = 0; output < 2; ++output) {
         auto bits = mx::view(arrays[output], mx::uint16);
-        mx::eval(bits);
+        mx::async_eval({bits});
+        mx::synchronize(mx::default_stream(mx::Device::gpu));
         bits.wait();
         const auto count = output == 0 ? kStateRows * kWidth : kRows * kWidth;
         host->insert(host->end(), bits.data<std::uint16_t>(),
