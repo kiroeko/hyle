@@ -239,6 +239,16 @@ bool tensor_operation_supports(Operation operation,
                      description.data_type() == DataType::kInt32);
            }) &&
            outputs[0].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::LightningIndexer>())
+    return outputs.size() == 1 && inputs.size() == 4 &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[2].data_type() == DataType::kFloat32 &&
+           inputs[3].data_type() == DataType::kFloat16 &&
+           std::ranges::all_of(inputs, [](const auto &description) {
+             return description.is_dense();
+           }) &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (operation.get_if<GatedDeltaNet>()) {
     if (outputs.size() != 2 || inputs.size() != 6 ||
         !std::ranges::all_of(inputs, [](const auto &description) {
@@ -495,6 +505,11 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     result = ggml_dsv4_hc_post(context, values[node.inputs[0]],
                                values[node.inputs[1]], values[node.inputs[2]],
                                values[node.inputs[3]]);
+  } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
+    result = ggml_lightning_indexer(context, values[node.inputs[0]],
+                                    values[node.inputs[1]],
+                                    values[node.inputs[2]],
+                                    values[node.inputs[3]]);
   } else if (node.operation.get_if<MatMul>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);

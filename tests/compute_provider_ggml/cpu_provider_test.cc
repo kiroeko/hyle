@@ -13,6 +13,7 @@
 
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
+#include "../sparse_fragment_test_support.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
@@ -194,6 +195,33 @@ TEST(GgmlCpuProvider, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<float>(output);
     ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
+
+TEST(GgmlCpuProvider, MatureLightningIndexerUsesOrdinaryEntryAndReplays) {
+  const sparse_fragment_test::Fixture test;
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  std::vector<Buffer> storage;
+  std::vector<ConstTensorView> inputs;
+  for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+    storage.push_back(output_buffer(test.inputs[i]));
+    ASSERT_TRUE(storage.back().view().write(test.payloads[i]).ok());
+    inputs.push_back(
+        ConstTensorView::create(test.inputs[i], storage.back().view()).value());
+  }
+  auto output = output_buffer(test.output);
+  auto view = TensorView::create(test.output, output.view()).value();
+  auto prepared = prepare(context, test.operation, inputs, std::span(&view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto invocation = prepared->create_invocation().value();
+  auto queue = context.create_queue().value();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue, inputs, std::span(&view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
   }

@@ -1019,6 +1019,26 @@ TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
       infer_single_output(model_ops::hyper_connection_post(), invalid_post));
 }
 
+TEST(OperationModelOps, LightningIndexerKeepsSparseModelLayout) {
+  const auto f32 = DataType::kFloat32;
+  const auto f16 = DataType::kFloat16;
+  const std::array inputs{tensor(f32, 2, 3, 64, 128),
+                          tensor(f32, 2, 7, 1, 128),
+                          tensor(f32, 2, 1, 3, 64),
+                          tensor(f16, 1, 1, 3, 7)};
+  EXPECT_EQ(infer_one(model_ops::lightning_indexer(), inputs),
+            tensor(f32, 2, 1, 3, 7));
+  auto invalid = inputs;
+  invalid[3] = tensor(f32, 1, 1, 3, 7);
+  EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
+  invalid = inputs;
+  invalid[0] = tensor(f32, 2, 3, 32, 128);
+  EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
+  invalid = inputs;
+  invalid[3] = tensor(f16, 3, 1, 3, 7);
+  EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
+}
+
 TEST(OperationValidation, RequiresExactInputAndOutputSpans) {
   const Operation operation(Binary{});
   const TensorDesc input = tensor(DataType::kFloat32, 4);

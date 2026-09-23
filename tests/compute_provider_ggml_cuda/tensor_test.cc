@@ -1,6 +1,7 @@
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
 #include "../model_fragment_test_support.h"
+#include "../sparse_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
 
@@ -127,6 +128,34 @@ TEST(GgmlCudaTensor, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<float>(output);
     ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
+
+TEST(GgmlCudaTensor, MatureLightningIndexerUsesOrdinaryEntryAndReplays) {
+  const sparse_fragment_test::Fixture test;
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  std::vector<Buffer> storage;
+  std::vector<ConstTensorView> inputs;
+  for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+    storage.push_back(upload<std::byte>(memory.ref(), test.payloads[i]));
+    inputs.push_back(
+        ConstTensorView::create(test.inputs[i], storage.back().view()).value());
+  }
+  auto output = output_buffer(memory.ref(), test.output);
+  auto view = TensorView::create(test.output, output.view()).value();
+  auto prepared = prepare(ctx, test.operation, inputs, std::span(&view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto invocation = prepared->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue, inputs, std::span(&view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
   }

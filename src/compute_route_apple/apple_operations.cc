@@ -47,7 +47,8 @@ bool ggml_model_operation(const Operation &operation) noexcept {
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
-         operation.custom_as<model_ops::HyperConnectionPost>();
+         operation.custom_as<model_ops::HyperConnectionPost>() ||
+         operation.custom_as<model_ops::LightningIndexer>();
 }
 } // namespace
 
@@ -160,12 +161,14 @@ Context::prepare(const Operation &operation,
       for (std::size_t i = 0; i < inputs.size(); ++i) {
         const auto data_type = inputs[i].dtype == mx::float32
                                    ? DataType::kFloat32
+                               : inputs[i].dtype == mx::float16
+                                   ? DataType::kFloat16
                                : inputs[i].dtype == mx::int32
                                    ? DataType::kInt32
                                    : DataType::kUnknown;
         if (data_type == DataType::kUnknown)
           return std::unexpected(Status::Unimplemented(
-              "Apple original model region admits F32/I32 inputs"));
+              "Apple original model region admits F32/F16/I32 inputs"));
         std::vector<std::int64_t> shape(inputs[i].shape.begin(), inputs[i].shape.end());
         HYLE_ASSIGN_OR_RETURN(auto desc, TensorDesc::dense(data_type, shape));
         region.native_inputs.push_back(desc);

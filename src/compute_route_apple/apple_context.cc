@@ -698,9 +698,12 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
           const auto &spec = plan.values[id];
           if ((desc.data_type() == DataType::kFloat32 &&
                spec.dtype != mx::float32) ||
+              (desc.data_type() == DataType::kFloat16 &&
+               spec.dtype != mx::float16) ||
               (desc.data_type() == DataType::kInt32 &&
                spec.dtype != mx::int32) ||
               (desc.data_type() != DataType::kFloat32 &&
+               desc.data_type() != DataType::kFloat16 &&
                desc.data_type() != DataType::kInt32))
             return false;
           return std::ranges::equal(desc.dimensions(), spec.shape);

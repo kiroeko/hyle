@@ -453,6 +453,11 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         context, invocation.values[node.inputs[0]],
         invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
         invocation.values[node.inputs[3]]);
+  } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
+    result = ggml_lightning_indexer(
+        context, invocation.values[node.inputs[0]],
+        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
+        invocation.values[node.inputs[3]]);
   } else if (const auto *matmul = node.operation.get_if<MatMul>()) {
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
     // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
@@ -970,6 +975,15 @@ bool supports(void *context, Operation operation,
                      description.data_type() == DataType::kInt32);
            }) &&
            outputs[0].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::LightningIndexer>())
+    return outputs.size() == 1 && inputs.size() == 4 && inputs[0].is_dense() &&
+           inputs[1].is_dense() && inputs[2].is_dense() &&
+           inputs[3].is_dense() &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[2].data_type() == DataType::kFloat32 &&
+           inputs[3].data_type() == DataType::kFloat16 &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (operation.get_if<GatedDeltaNet>()) {
     if (outputs.size() != 2 || inputs.size() != 6 ||
         !std::ranges::all_of(inputs, [](const auto &description) {
@@ -1104,7 +1118,8 @@ bool region_operation(Operation operation) noexcept {
          operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionCombine>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionPre>().has_value() ||
-         operation.custom_as<model_ops::HyperConnectionPost>().has_value();
+         operation.custom_as<model_ops::HyperConnectionPost>().has_value() ||
+         operation.custom_as<model_ops::LightningIndexer>().has_value();
 }
 ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                mem::AllocatorRef allocator,

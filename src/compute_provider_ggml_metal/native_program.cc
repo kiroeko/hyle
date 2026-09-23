@@ -58,6 +58,8 @@ ggml_type native_type(DataType type) noexcept {
   switch (type) {
   case DataType::kFloat32:
     return GGML_TYPE_F32;
+  case DataType::kFloat16:
+    return GGML_TYPE_F16;
   case DataType::kInt32:
     return GGML_TYPE_I32;
   default:
@@ -70,7 +72,8 @@ bool mature_model_operation(Operation operation) noexcept {
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
-         operation.custom_as<model_ops::HyperConnectionPost>();
+         operation.custom_as<model_ops::HyperConnectionPost>() ||
+         operation.custom_as<model_ops::LightningIndexer>();
 }
 } // namespace
 
@@ -184,6 +187,9 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       result = ggml_dsv4_hc_pre(state->arena.get(), t[0], t[1]);
     } else if (operation.custom_as<model_ops::HyperConnectionPost>()) {
       result = ggml_dsv4_hc_post(state->arena.get(), t[0], t[1], t[2], t[3]);
+    } else if (operation.custom_as<model_ops::LightningIndexer>()) {
+      result = ggml_lightning_indexer(state->arena.get(), t[0], t[1], t[2],
+                                      t[3]);
     }
     state->output_port = inputs.size();
     state->port_count = inputs.size() + 1;

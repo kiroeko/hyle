@@ -1,6 +1,7 @@
 #include "hyle/graph/vulkan.h"
 #include "../compute_route_vulkan/recurrent_test_support.h"
 #include "../model_fragment_test_support.h"
+#include "../sparse_fragment_test_support.h"
 
 namespace {
 using namespace vulkan_recurrent_test;
@@ -38,6 +39,36 @@ TEST(VulkanGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
     const auto actual =
         vulkan_test::read(context, result->get()->tensors()[0]).value();
     ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
+
+TEST(VulkanGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
+  const sparse_fragment_test::Fixture test;
+  auto context = vulkan_test::context().value();
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId, 4> inputs;
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    inputs[i] = builder.input(test.inputs[i]).value();
+  const auto node = builder.add_node(test.operation, inputs).value();
+  const auto output = builder.result(node).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  auto program = gv::compile(context, graph, {}, {.report = &report}).value();
+  EXPECT_EQ(report.managed_region_count, 1U);
+  auto invocation = program.create_invocation().value();
+  std::vector<c::vulkan::Tensor> resident;
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    resident.push_back(context.upload(test.inputs[i], test.payloads[i]).value());
+  ASSERT_TRUE(invocation.bind(resident).ok());
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto work = invocation.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual =
+        vulkan_test::read(context, result->get()->tensors()[0]).value();
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
   }

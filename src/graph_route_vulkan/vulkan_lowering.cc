@@ -146,7 +146,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
           node->operation.custom_as<
               compute::model_ops::HyperConnectionCombine>() ||
           node->operation.custom_as<compute::model_ops::HyperConnectionPre>() ||
-          node->operation.custom_as<compute::model_ops::HyperConnectionPost>();
+          node->operation.custom_as<compute::model_ops::HyperConnectionPost>() ||
+          node->operation.custom_as<compute::model_ops::LightningIndexer>();
       if (node->operation.kind() == compute::OperationKind::kCustom &&
           !mature_custom) {
         if (!options.custom)

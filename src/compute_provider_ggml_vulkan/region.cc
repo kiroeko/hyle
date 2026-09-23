@@ -270,6 +270,15 @@ bool region_supports(const Operation &operation,
                      description.data_type() == DataType::kInt32);
            }) &&
            outputs[0].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::LightningIndexer>())
+    return outputs.size() == 1 && inputs.size() == 4 &&
+           inputs[0].is_dense() && inputs[1].is_dense() &&
+           inputs[2].is_dense() && inputs[3].is_dense() &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[2].data_type() == DataType::kFloat32 &&
+           inputs[3].data_type() == DataType::kFloat16 &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
                                       .route = NativeRoute::kVulkan,
@@ -612,6 +621,9 @@ Result<Region> Region::create(NativeDevice device,
       } else if (node.operation.custom_as<model_ops::HyperConnectionPost>()) {
         output = ggml_dsv4_hc_post(context, arguments[0], arguments[1],
                                    arguments[2], arguments[3]);
+      } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
+        output = ggml_lightning_indexer(context, arguments[0], arguments[1],
+                                        arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>()) {
         auto *right = arguments[1];
         const bool mxfp4 = mxfp4_domain(recipe.values[node.inputs[1]]);

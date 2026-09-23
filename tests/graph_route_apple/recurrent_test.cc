@@ -7,6 +7,7 @@
 
 #include "../compute_route_apple/recurrent_fixture.h"
 #include "../model_fragment_test_support.h"
+#include "../sparse_fragment_test_support.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -57,6 +58,49 @@ TEST(AppleGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
     const auto arrays = result->get()->arrays();
     ASSERT_EQ(arrays.size(), 1U);
     ASSERT_EQ(arrays[0].size(), test.expected.size());
+    for (std::size_t i = 0; i < test.expected.size(); ++i)
+      EXPECT_NEAR(arrays[0].data<float>()[i], test.expected[i], 2.0e-5F)
+          << i;
+  }
+}
+
+TEST(AppleGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
+  const sparse_fragment_test::Fixture test;
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId, 4> ports;
+  for (std::size_t i = 0; i < ports.size(); ++i)
+    ports[i] = builder.input(test.inputs[i]).value();
+  const auto node = builder.add_node(test.operation, ports).value();
+  const auto output = builder.result(node).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  ga::CompileReport report;
+  auto program = ga::compile(*context, graph, {}, {.report = &report}).value();
+  EXPECT_NE(report.implementation_policy.find("ggml Metal"),
+            std::string::npos);
+  auto invocation = program.create_invocation().value();
+  std::vector<mx::array> inputs;
+  for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+    mx::Shape shape;
+    for (const auto extent : test.inputs[i].dimensions())
+      shape.push_back(static_cast<int>(extent));
+    if (test.inputs[i].data_type() == c::DataType::kFloat16) {
+      inputs.emplace_back(
+          std::initializer_list<float>{-1, 0, 0.5F, -2, 0.25F, -0.5F, 1, 0},
+          shape, mx::float16);
+    } else {
+      inputs.emplace_back(
+          reinterpret_cast<const float *>(test.payloads[i].data()), shape);
+    }
+  }
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto work = invocation.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto arrays = result->get()->arrays();
     for (std::size_t i = 0; i < test.expected.size(); ++i)
       EXPECT_NEAR(arrays[0].data<float>()[i], test.expected[i], 2.0e-5F)
           << i;

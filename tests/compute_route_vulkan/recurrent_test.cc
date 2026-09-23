@@ -3,6 +3,7 @@
 #include "vulkan_program_internal.h"
 
 #include "../model_fragment_test_support.h"
+#include "../sparse_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
 
@@ -166,5 +167,18 @@ TEST(VulkanRecurrent, MatureMoeAndHyperConnectionBatchUsesManagedRegions) {
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
   }
+}
+
+TEST(VulkanRecurrent, MatureLightningIndexerUsesManagedRegion) {
+  const sparse_fragment_test::Fixture test;
+  auto context = vulkan_test::context().value();
+  std::vector<v::Tensor> inputs;
+  for (std::size_t i = 0; i < test.inputs.size(); ++i)
+    inputs.push_back(context.upload(test.inputs[i], test.payloads[i]).value());
+  auto output = vulkan_tensor_test::execute(context, test.operation, inputs);
+  ASSERT_TRUE(output) << output.error().message();
+  const auto actual = vulkan_test::read(context, *output).value();
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
 }
 } // namespace

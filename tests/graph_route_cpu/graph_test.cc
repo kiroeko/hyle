@@ -11,6 +11,7 @@
 #include "../compute/workload_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
+#include "../sparse_fragment_test_support.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
@@ -73,6 +74,58 @@ TEST(CpuDefaultGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
     ASSERT_TRUE(done->wait().ok());
     const auto actual = half_test::read<float>(result);
     ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
+
+TEST(CpuDefaultGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
+  const sparse_fragment_test::Fixture test;
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  auto builder = graph::GraphBuilder::create().value();
+  std::array<graph::ValueId, 4> inputs;
+  std::array<hyle::mem::Buffer, 4> storage;
+  for (std::size_t i = 0; i < inputs.size(); ++i) {
+    inputs[i] = builder.input(test.inputs[i]).value();
+    storage[i] = hyle::mem::Buffer::create(
+                     hyle::mem::system_resource(),
+                     test.inputs[i].required_bytes().value(), 64)
+                     .value();
+    ASSERT_TRUE(storage[i].view().write(test.payloads[i]).ok());
+  }
+  const auto node = builder.add_node(test.operation, inputs).value();
+  const auto output = builder.result(node).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto logical = std::move(builder).finish().value();
+  auto compiled = graph::compile(logical, context).value();
+  ASSERT_EQ(compiled.report.step_count(), 1U);
+  EXPECT_EQ(compiled.report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+  auto invocation = compiled.executable.create_invocation().value();
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    ASSERT_TRUE(invocation
+                    .bind(inputs[i], compute::ConstTensorView::create(
+                                         test.inputs[i], storage[i].view())
+                                         .value())
+                    .ok());
+  auto result = hyle::mem::Buffer::create(
+                    hyle::mem::system_resource(),
+                    test.output.required_bytes().value(), 64)
+                    .value();
+  ASSERT_TRUE(invocation
+                  .bind(output, compute::TensorView::create(
+                                    test.output, result.view())
+                                    .value())
+                  .ok());
+  const std::array queues{graph::QueueBinding{
+      .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(result);
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
   }

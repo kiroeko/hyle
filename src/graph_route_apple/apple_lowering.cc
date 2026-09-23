@@ -42,7 +42,8 @@ bool ggml_model_operation(const compute::Operation &operation) noexcept {
          operation.custom_as<
              compute::model_ops::HyperConnectionCombine>() ||
          operation.custom_as<compute::model_ops::HyperConnectionPre>() ||
-         operation.custom_as<compute::model_ops::HyperConnectionPost>();
+         operation.custom_as<compute::model_ops::HyperConnectionPost>() ||
+         operation.custom_as<compute::model_ops::LightningIndexer>();
 }
 
 Result<ca::InputSpec> native_spec(const compute::TensorDesc &description) {

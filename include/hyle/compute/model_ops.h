@@ -228,6 +228,60 @@ struct HyperConnectionPost final {
   }
 };
 
+// DeepSeek/GLM learned sparse-attention score region.  We expose model-order
+// tensors while the provider retains its native score kernel:
+//   query   [S,T,H,D]
+//   key     [S,K,1,D]
+//   weights [S,1,T,H] (already prescaled)
+//   mask    [Sm,1,T,K] (F16, Sm broadcasts across S)
+//   output  [S,1,T,K].
+// The first common four-route domain matches the original Metal kernel;
+// route-specific supersets remain provider qualifications.
+struct LightningIndexer final {
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4c494e4458000006ULL};
+  static constexpr std::string_view operation_name = "lightning-indexer";
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{4, 4}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32,
+            true};
+  }
+
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 4 || outputs.size() != 1)
+      return Status::InvalidArgument("LightningIndexer requires four inputs");
+    for (const auto &input : inputs)
+      if (input.rank() != 4 || !input.is_dense())
+        return Status::InvalidArgument(
+            "LightningIndexer requires dense rank-four inputs");
+    if (inputs[0].data_type() != DataType::kFloat32 ||
+        inputs[1].data_type() != DataType::kFloat32 ||
+        inputs[2].data_type() != DataType::kFloat32 ||
+        inputs[3].data_type() != DataType::kFloat16)
+      return Status::InvalidArgument(
+          "LightningIndexer requires F32 query/key/weights and F16 mask");
+    const auto q = inputs[0].dimensions();
+    const auto k = inputs[1].dimensions();
+    const auto weights = inputs[2].dimensions();
+    const auto mask = inputs[3].dimensions();
+    if (q[0] <= 0 || q[1] <= 0 || q[2] != 64 || q[3] != 128 ||
+        k[0] != q[0] || k[1] <= 0 || k[2] != 1 || k[3] != q[3] ||
+        weights[0] != q[0] || weights[1] != 1 || weights[2] != q[1] ||
+        weights[3] != q[2] || mask[0] <= 0 || q[0] % mask[0] != 0 ||
+        mask[1] != 1 || mask[2] != q[1] || mask[3] != k[1])
+      return Status::InvalidArgument(
+          "LightningIndexer dimensions do not match D128/H64 sparse scoring");
+    const std::array shape{q[0], std::int64_t{1}, q[1], k[1]};
+    auto output = TensorDesc::dense(DataType::kFloat32, shape);
+    if (!output)
+      return std::move(output).error();
+    outputs[0] = *output;
+    return Status::Ok();
+  }
+};
+
 inline Operation grouped_matmul() noexcept {
   return Operation::custom(GroupedMatMul{});
 }
@@ -240,6 +294,9 @@ inline Operation hyper_connection_pre() noexcept {
 }
 inline Operation hyper_connection_post() noexcept {
   return Operation::custom(HyperConnectionPost{});
+}
+inline Operation lightning_indexer() noexcept {
+  return Operation::custom(LightningIndexer{});
 }
 
 } // namespace hyle::compute::model_ops
