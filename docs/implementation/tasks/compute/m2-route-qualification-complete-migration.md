@@ -1,6 +1,6 @@
 # M2 组合路由资格完整迁移
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -125,3 +125,15 @@ Windows CUDA source consumer 在完整编译、链接和 DLL staging 后由 CTes
 退回 `AUDITED`。新增且只新增 CM8：统一修正样例中 RMSNorm 与可选 oneDNN 两处同形 workspace
 准备；不改公共 API、Provider 优先级、算法或其它样例。修正后生成新不可变候选并只重跑受影响的
 三交付、原路线定向门及 docs/closure；既有跨平台 PASS 可在产品树身份未变的范围内复用。
+
+## CM8 修正候选
+
+- 新 product candidate：`3d7e212972e27f8f532cb084f5eb5c4656b45016`；tree
+  `836df752e2a158f8f3b4d00bbeef9f916f1ac559`。
+- 两处普通 Compute package workspace 准备现在只在 requirement 非零时分配；零 requirement 传默认
+  空 view，符合 provider-owned invocation 合同。公共 API、路线实现、数学与 Provider 顺序均未改。
+- Windows scratch 先稳定复现 `size=0`、有效零字节 view 被拒绝；替换为当前 canonical 样例后只增量
+  编译 consumer，实际识别 RTX 4070 / SM89、完成 CUDA FFN 并返回 0。
+
+八个 owner 恢复 `CANDIDATE`。原失败和诊断保留；尚待对新候选完成三交付、Apple 回放、受影响
+selector/组件合同、docs/closure。未运行项仍不写 PASS。
