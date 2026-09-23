@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
+#include "../model_fragment_test_support.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
@@ -170,6 +171,32 @@ TEST(GgmlCpuProvider, MatureKdaPublishesScoresAndStateIndependently) {
   EXPECT_EQ(half_test::read<float>(output_storage[0]),
             std::vector<float>(*output_desc[0].element_count(), 0.F));
   EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
+}
+
+TEST(GgmlCpuProvider, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    std::vector<Buffer> storage;
+    std::vector<ConstTensorView> inputs;
+    storage.reserve(test.inputs.size());
+    inputs.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+      storage.push_back(output_buffer(test.inputs[i]));
+      ASSERT_TRUE(storage.back().view().write(test.payloads[i]).ok());
+      inputs.push_back(
+          ConstTensorView::create(test.inputs[i], storage.back().view()).value());
+    }
+    auto output = output_buffer(test.output);
+    const auto status = execute(
+        context, test.operation, inputs,
+        TensorView::create(test.output, output.view()).value());
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = half_test::read<float>(output);
+    ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
 }
 
 TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {

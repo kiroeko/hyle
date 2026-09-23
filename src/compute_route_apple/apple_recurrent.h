@@ -8,11 +8,10 @@ namespace hyle::compute::apple::detail {
 // MLX owns every payload, including the packed scores/state output allocation.
 struct Recurrent final {
   std::unique_ptr<ggml_metal::NativeProgram> program;
-  mlx::core::Shape scores_shape;
-  mlx::core::Shape state_shape;
+  std::vector<mlx::core::Shape> output_shapes;
 
   static Result<std::unique_ptr<Recurrent>>
-  create(std::span<const TensorDesc> inputs) noexcept;
+  create(Operation operation, std::span<const TensorDesc> inputs) noexcept;
   Result<std::vector<mlx::core::array>>
   run(std::span<const mlx::core::array> inputs, mlx::core::Stream stream);
 };

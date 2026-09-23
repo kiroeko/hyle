@@ -682,24 +682,37 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
       if (region.kind == RegionKind::kMlx) {
         if (!region.mlx)
           return std::unexpected(Status::InvalidArgument("Apple MLX region has no native callable"));
-      } else if (region.kind == RegionKind::kGatedDeltaNet) {
-        if (region.inputs.size() != 6 || region.outputs.size() != 2)
-          return std::unexpected(Status::InvalidArgument("Apple recurrent region arity mismatch"));
-        HYLE_RETURN_IF_ERROR(ggml_metal::NativeProgram::validate(region.recurrent_inputs));
-        std::array<TensorDesc, 2> outputs;
+      } else if (region.kind == RegionKind::kGgml) {
+        const auto traits = operation_traits(region.operation);
+        if (!traits.inputs.accepts(region.inputs.size()) ||
+            region.outputs.size() != traits.outputs ||
+            region.native_inputs.size() != region.inputs.size())
+          return std::unexpected(
+              Status::InvalidArgument("Apple ggml region arity mismatch"));
+        HYLE_RETURN_IF_ERROR(ggml_metal::NativeProgram::validate(
+            region.operation, region.native_inputs));
+        std::vector<TensorDesc> outputs(traits.outputs);
         HYLE_RETURN_IF_ERROR(infer_output_descriptions(
-            Operation(GatedDeltaNet{}), region.recurrent_inputs, outputs));
+            region.operation, region.native_inputs, outputs));
         auto match = [&](const TensorDesc &desc, std::size_t id) {
           const auto &spec = plan.values[id];
-          return spec.dtype == mx::float32 &&
-                 std::ranges::equal(desc.dimensions(), spec.shape);
+          if ((desc.data_type() == DataType::kFloat32 &&
+               spec.dtype != mx::float32) ||
+              (desc.data_type() == DataType::kInt32 &&
+               spec.dtype != mx::int32) ||
+              (desc.data_type() != DataType::kFloat32 &&
+               desc.data_type() != DataType::kInt32))
+            return false;
+          return std::ranges::equal(desc.dimensions(), spec.shape);
         };
-        for (std::size_t port = 0; port < 6; ++port)
-          if (!match(region.recurrent_inputs[port], region.inputs[port]))
-            return std::unexpected(Status::InvalidArgument("Apple recurrent input schema mismatch"));
-        for (std::size_t port = 0; port < 2; ++port)
+        for (std::size_t port = 0; port < region.inputs.size(); ++port)
+          if (!match(region.native_inputs[port], region.inputs[port]))
+            return std::unexpected(
+                Status::InvalidArgument("Apple ggml input schema mismatch"));
+        for (std::size_t port = 0; port < outputs.size(); ++port)
           if (!match(outputs[port], region.outputs[port]))
-            return std::unexpected(Status::InvalidArgument("Apple recurrent output schema mismatch"));
+            return std::unexpected(
+                Status::InvalidArgument("Apple ggml output schema mismatch"));
       } else {
         return std::unexpected(Status::InvalidArgument("unknown Apple native region kind"));
       }
@@ -716,10 +729,12 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
       try {
         for (std::size_t i = 0; i < prepared.description.regions.size(); ++i) {
           auto &region = prepared.description.regions[i];
-          if (region.kind == RegionKind::kGatedDeltaNet) {
+          if (region.kind == RegionKind::kGgml) {
             // Qualify original pipeline/resources in preparation. Each actual
             // invocation subsequently owns an independent backend/metadata.
-            HYLE_ASSIGN_OR_RETURN(auto probe, Recurrent::create(region.recurrent_inputs));
+            HYLE_ASSIGN_OR_RETURN(
+                auto probe,
+                Recurrent::create(region.operation, region.native_inputs));
             continue;
           }
           std::vector<InputSpec> specs;
@@ -774,9 +789,10 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
       state->arguments.reserve(max_inputs);
       auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
         for (std::size_t i = 0; i < plan.regions.size(); ++i)
-          if (plan.regions[i].kind == detail::RegionKind::kGatedDeltaNet) {
+          if (plan.regions[i].kind == detail::RegionKind::kGgml) {
             HYLE_ASSIGN_OR_RETURN(state->recurrent[i],
-                detail::Recurrent::create(plan.regions[i].recurrent_inputs));
+                detail::Recurrent::create(plan.regions[i].operation,
+                                          plan.regions[i].native_inputs));
           }
         return Status::Ok();
       });

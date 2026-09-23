@@ -1,5 +1,8 @@
 #include "recurrent_test_support.h"
+#include "tensor_test_support.h"
 #include "vulkan_program_internal.h"
+
+#include "../model_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
 
@@ -144,5 +147,24 @@ TEST(VulkanRecurrent, MatureCausalConvUsesManagedRegion) {
   ASSERT_TRUE(result) << result.error().message();
   EXPECT_EQ(vulkan_test::read(context, result->get()->tensors()[0]).value(),
             (std::vector<float>{14, 20, 20, 20, 26, 20}));
+}
+
+TEST(VulkanRecurrent, MatureMoeAndHyperConnectionBatchUsesManagedRegions) {
+  auto context = vulkan_test::context().value();
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    std::vector<v::Tensor> inputs;
+    inputs.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i)
+      inputs.push_back(
+          context.upload(test.inputs[i], test.payloads[i]).value());
+    auto output =
+        vulkan_tensor_test::execute(context, test.operation, inputs);
+    ASSERT_TRUE(output) << output.error().message();
+    const auto actual = vulkan_test::read(context, *output).value();
+    ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
 }
 } // namespace

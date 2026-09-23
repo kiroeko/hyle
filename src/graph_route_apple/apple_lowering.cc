@@ -36,6 +36,15 @@ struct Plan {
   CustomLowering custom;
 };
 
+bool ggml_model_operation(const compute::Operation &operation) noexcept {
+  return operation.get_if<compute::GatedDeltaNet>() ||
+         operation.custom_as<compute::model_ops::GroupedMatMul>() ||
+         operation.custom_as<
+             compute::model_ops::HyperConnectionCombine>() ||
+         operation.custom_as<compute::model_ops::HyperConnectionPre>() ||
+         operation.custom_as<compute::model_ops::HyperConnectionPost>();
+}
+
 Result<ca::InputSpec> native_spec(const compute::TensorDesc &description) {
   if (!description.valid())
     return std::unexpected(Status::InvalidArgument(
@@ -168,20 +177,20 @@ Result<ca::Program> compile_regions(const ca::Context &context,
   for (std::size_t begin = 0; begin < plan->nodes.size();) {
     ca::detail::Region region;
     const auto &first = plan->nodes[begin];
-    if (first.operation.kind() == compute::OperationKind::kGatedDeltaNet) {
-      region.kind = ca::detail::RegionKind::kGatedDeltaNet;
+    if (ggml_model_operation(first.operation)) {
+      region.kind = ca::detail::RegionKind::kGgml;
+      region.operation = first.operation;
       region.inputs = first.inputs;
       region.outputs = first.outputs;
       for (auto id : first.inputs)
-        region.recurrent_inputs.push_back(plan->descriptions[id]);
+        region.native_inputs.push_back(plan->descriptions[id]);
       native.regions.push_back(std::move(region));
       ++begin;
       continue;
     }
     auto end = begin + 1;
     while (end < plan->nodes.size() &&
-           plan->nodes[end].operation.kind() !=
-               compute::OperationKind::kGatedDeltaNet)
+           !ggml_model_operation(plan->nodes[end].operation))
       ++end;
     std::vector<bool> internal(native.values.size(), false);
     std::vector<bool> argument(native.values.size(), false);
@@ -327,6 +336,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         continue;
       if (operation.kind() == compute::OperationKind::kCustom &&
           !operation.custom_as<compute::model_ops::CausalConv1d>() &&
+          !ggml_model_operation(operation) &&
           !plan->custom)
         return std::unexpected(Status::Unimplemented(
             "Apple custom operation needs a cold native lowering"));
@@ -356,18 +366,18 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       for (const auto output : plan->outputs)
         report->outputs.push_back(plan->descriptions[output]);
     }
-    const bool has_recurrent =
+    const bool has_native_model_region =
         std::ranges::any_of(plan->nodes, [](const auto &node) {
-          return node.operation.kind() ==
-                 compute::OperationKind::kGatedDeltaNet;
+          return ggml_model_operation(node.operation);
         });
-    if (has_recurrent) {
+    if (has_native_model_region) {
       if (report != nullptr) {
         report->implementation_policy =
-            "Original ggml Metal GatedDeltaNet regions and maximal MLX "
+            "Original ggml Metal model regions and maximal MLX "
             "compiled regions; fixed cold binding";
-        report->numerical_policy += "; recurrent F32 equal heads D32/64/128, "
-                                    "explicit non-mutating initial/final state";
+        report->numerical_policy +=
+            "; provider-owned grouped expert/mHC/recurrent F32 regions, "
+            "explicit non-mutating initial/final state";
         report->boundary_policy +=
             "; checked host completion at runtime boundaries; native MTLBuffer "
             "import; strided inputs use original MLX contiguous copy";

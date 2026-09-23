@@ -9,14 +9,15 @@ namespace hyle::compute::apple::detail {
 
 // Compute-owned, cold region boundary used by the native Graph compiler.
 // It deliberately carries neither Graph types nor a per-kernel executor.
-enum class RegionKind { kMlx, kGatedDeltaNet };
+enum class RegionKind { kMlx, kGgml };
 
 struct Region final {
   RegionKind kind = RegionKind::kMlx;
   std::vector<std::size_t> inputs;
   std::vector<std::size_t> outputs;
   RegionFunction mlx;
-  std::vector<TensorDesc> recurrent_inputs;
+  Operation operation;
+  std::vector<TensorDesc> native_inputs;
 };
 
 struct RegionPlan final {

@@ -1,17 +1,20 @@
 #include "native_program.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <exception>
 #include <limits>
 #include <new>
 #include <utility>
+#include <vector>
 
 #include <ggml.h>
 #include <ggml-backend.h>
 #include <ggml-metal.h>
 
 #include "metadata_arena.h"
+#include "hyle/compute/model_ops.h"
 
 // Private, locked resource seams. These symbols never form an installed C API.
 extern "C" {
@@ -50,6 +53,25 @@ Status native_status(std::int64_t code) noexcept {
                             NativeError{NativeErrorDomain::Unknown, code},
                             "MTLCommandBufferErrorDomain: ggml Metal completion");
 }
+
+ggml_type native_type(DataType type) noexcept {
+  switch (type) {
+  case DataType::kFloat32:
+    return GGML_TYPE_F32;
+  case DataType::kInt32:
+    return GGML_TYPE_I32;
+  default:
+    return GGML_TYPE_COUNT;
+  }
+}
+
+bool mature_model_operation(Operation operation) noexcept {
+  return operation.get_if<GatedDeltaNet>() ||
+         operation.custom_as<model_ops::GroupedMatMul>() ||
+         operation.custom_as<model_ops::HyperConnectionCombine>() ||
+         operation.custom_as<model_ops::HyperConnectionPre>() ||
+         operation.custom_as<model_ops::HyperConnectionPost>();
+}
 } // namespace
 
 struct NativeProgram::State {
@@ -60,6 +82,10 @@ struct NativeProgram::State {
   std::array<BufferOwner, 7> buffers;
   std::array<void *, 7> native_buffers{};
   std::array<std::size_t, 7> bytes{};
+  std::vector<TensorDesc> outputs;
+  std::vector<std::size_t> output_offsets;
+  std::size_t port_count = 0;
+  std::size_t output_port = 0;
   std::size_t scores = 0;
   bool failed = false;
 
@@ -78,82 +104,143 @@ NativeProgram::NativeProgram(std::unique_ptr<State> state) noexcept
     : state_(std::move(state)) {}
 NativeProgram::~NativeProgram() = default;
 
-Status NativeProgram::validate(std::span<const TensorDesc> inputs) noexcept {
-  std::array<TensorDesc, 2> outputs;
-  HYLE_RETURN_IF_ERROR(
-      infer_output_descriptions(Operation(GatedDeltaNet{}), inputs, outputs));
-  const auto q = inputs[0].dimensions();
-  const auto v = inputs[2].dimensions();
-  if (q[2] != v[2] || q[3] != v[3] ||
-      (q[3] != 32 && q[3] != 64 && q[3] != 128) || q[1] > 32767)
+Status NativeProgram::validate(Operation operation,
+                               std::span<const TensorDesc> inputs) noexcept {
+  if (!mature_model_operation(operation) || inputs.size() + 1 > 7)
+    return Status::Unimplemented("ggml Metal model operation is not admitted");
+  const auto output_count = operation_traits(operation).outputs;
+  if (output_count > 2)
     return Status::Unimplemented(
-        "ggml Metal GatedDeltaNet requires equal heads, D32/64/128 and T<=32767");
-  for (const auto &input : inputs) {
-    if (input.data_type() != DataType::kFloat32 || !input.is_dense())
+        "ggml Metal model operation exceeds the native output limit");
+  std::array<TensorDesc, 2> output_storage;
+  const auto outputs = std::span(output_storage).first(output_count);
+  HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, outputs));
+  if (operation.get_if<GatedDeltaNet>()) {
+    const auto q = inputs[0].dimensions();
+    const auto v = inputs[2].dimensions();
+    if (q[2] != v[2] || q[3] != v[3] ||
+        (q[3] != 32 && q[3] != 64 && q[3] != 128) || q[1] > 32767)
       return Status::Unimplemented(
-          "ggml Metal GatedDeltaNet currently admits dense F32 inputs");
-    HYLE_ASSIGN_OR_RETURN(auto bytes, input.required_bytes());
-    if (bytes / sizeof(float) > std::size_t{INT32_MAX})
-      return Status::OutOfRange("ggml Metal recurrent indexing exceeds I32");
+          "ggml Metal GatedDeltaNet requires equal heads, D32/64/128 and T<=32767");
   }
-  HYLE_ASSIGN_OR_RETURN(auto scores, outputs[0].required_bytes());
-  HYLE_ASSIGN_OR_RETURN(auto state, outputs[1].required_bytes());
-  if ((scores + state) / sizeof(float) > std::size_t{INT32_MAX})
-    return Status::OutOfRange("ggml Metal recurrent output exceeds I32");
+  for (const auto &input : inputs) {
+    if (native_type(input.data_type()) == GGML_TYPE_COUNT || !input.is_dense() ||
+        input.rank() > GGML_MAX_DIMS)
+      return Status::Unimplemented(
+          "ggml Metal model region requires dense F32/I32 inputs within rank four");
+    HYLE_ASSIGN_OR_RETURN(auto bytes, input.required_bytes());
+    if (bytes > std::size_t{INT32_MAX} * sizeof(float))
+      return Status::OutOfRange("ggml Metal model input indexing exceeds I32");
+  }
+  std::size_t total = 0;
+  for (const auto &output : outputs) {
+    if (output.data_type() != DataType::kFloat32 || !output.is_dense())
+      return Status::Unimplemented("ggml Metal model outputs must be dense F32");
+    HYLE_ASSIGN_OR_RETURN(auto bytes, output.required_bytes());
+    if (bytes > std::numeric_limits<std::size_t>::max() - total)
+      return Status::OutOfRange("ggml Metal model output size overflows");
+    total += bytes;
+  }
+  if (total / sizeof(float) > std::size_t{INT32_MAX})
+    return Status::OutOfRange("ggml Metal model output exceeds I32");
   return Status::Ok();
 }
 
 Result<std::unique_ptr<NativeProgram>>
-NativeProgram::create(std::span<const TensorDesc> inputs,
+NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
                       mem::AllocatorRef allocator) noexcept {
-  HYLE_RETURN_IF_ERROR(validate(inputs));
+  HYLE_RETURN_IF_ERROR(validate(operation, inputs));
   try {
     auto state = std::make_unique<State>();
     HYLE_ASSIGN_OR_RETURN(state->arena,
-                          ggml_runtime::MetadataArena::for_graph(7, 16, allocator));
+                          ggml_runtime::MetadataArena::for_graph(12, 32, allocator));
     state->backend = ggml_backend_metal_init();
     if (state->backend == nullptr)
       return std::unexpected(Status::Unavailable("ggml Metal backend unavailable"));
     for (std::size_t i = 0; i < inputs.size(); ++i) {
       const auto dims = inputs[i].dimensions();
-      state->tensors[i] = ggml_new_tensor_4d(state->arena.get(), GGML_TYPE_F32,
-                                            dims[3], dims[2], dims[1], dims[0]);
+      std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+      std::reverse_copy(dims.begin(), dims.end(), shape.begin());
+      state->tensors[i] = ggml_new_tensor(
+          state->arena.get(), native_type(inputs[i].data_type()),
+          static_cast<int>((std::max)(std::size_t{1}, dims.size())),
+          shape.data());
       if (state->tensors[i] == nullptr)
         return std::unexpected(Status::ResourceExhausted("ggml Metal tensor metadata exhausted"));
       HYLE_ASSIGN_OR_RETURN(state->bytes[i], inputs[i].required_bytes());
     }
     auto &t = state->tensors;
-    t[6] = ggml_gated_delta_net(state->arena.get(), t[0], t[1], t[2], t[3],
-                                t[4], t[5], 1);
-    if (t[6] == nullptr)
+    ggml_tensor *result = nullptr;
+    if (operation.get_if<GatedDeltaNet>()) {
+      result = ggml_gated_delta_net(state->arena.get(), t[0], t[1], t[2],
+                                    t[3], t[4], t[5], 1);
+    } else if (operation.custom_as<model_ops::GroupedMatMul>()) {
+      result = ggml_mul_mat_id(state->arena.get(), t[0], t[1], t[2]);
+    } else if (const auto descriptor =
+                   operation.custom_as<model_ops::HyperConnectionCombine>()) {
+      result = ggml_dsv4_hc_comb(state->arena.get(), t[0], t[1], t[2],
+                                 descriptor->epsilon, descriptor->iterations);
+    } else if (operation.custom_as<model_ops::HyperConnectionPre>()) {
+      result = ggml_dsv4_hc_pre(state->arena.get(), t[0], t[1]);
+    } else if (operation.custom_as<model_ops::HyperConnectionPost>()) {
+      result = ggml_dsv4_hc_post(state->arena.get(), t[0], t[1], t[2], t[3]);
+    }
+    state->output_port = inputs.size();
+    state->port_count = inputs.size() + 1;
+    t[state->output_port] = result;
+    if (result == nullptr)
       return std::unexpected(Status::ResourceExhausted("ggml Metal output metadata exhausted"));
-    state->scores = state->bytes[2];
-    state->bytes[6] = state->scores + state->bytes[5];
-    if (!ggml_backend_supports_op(state->backend, t[6]))
-      return std::unexpected(Status::Unimplemented("ggml Metal recurrent capability unavailable"));
+    state->outputs.resize(operation_traits(operation).outputs);
+    HYLE_RETURN_IF_ERROR(
+        infer_output_descriptions(operation, inputs, state->outputs));
+    std::size_t total = 0;
+    for (const auto &output : state->outputs) {
+      state->output_offsets.push_back(total);
+      HYLE_ASSIGN_OR_RETURN(auto bytes, output.required_bytes());
+      total += bytes;
+    }
+    state->scores = state->output_offsets.size() > 1
+                        ? state->output_offsets[1]
+                        : total;
+    state->bytes[state->output_port] = total;
+    if (!ggml_backend_supports_op(state->backend, result))
+      return std::unexpected(Status::Unimplemented("ggml Metal model capability unavailable"));
     // Original specialization/cache, cold and shape-only; no user data or
     // mutable state is executed to manufacture a prepared replay claim.
-    if (!ggml_hyle_metal_prepare_gdn(state->backend, t[6]))
+    if (operation.get_if<GatedDeltaNet>() &&
+        !ggml_hyle_metal_prepare_gdn(state->backend, result))
       return std::unexpected(Status::Unavailable("ggml Metal recurrent pipeline preparation failed"));
-    state->graph = ggml_new_graph_custom(state->arena.get(), 16, false);
+    state->graph = ggml_new_graph_custom(state->arena.get(), 32, false);
     if (state->graph == nullptr)
       return std::unexpected(Status::ResourceExhausted("ggml Metal graph metadata exhausted"));
-    ggml_build_forward_expand(state->graph, t[6]);
+    ggml_build_forward_expand(state->graph, result);
     return std::unique_ptr<NativeProgram>(new NativeProgram(std::move(state)));
   } catch (...) {
     return std::unexpected(exception_status());
   }
 }
 
+std::size_t NativeProgram::output_count() const noexcept {
+  return state_->outputs.size();
+}
+const TensorDesc &
+NativeProgram::output_description(std::size_t index) const noexcept {
+  return state_->outputs[index];
+}
+std::size_t NativeProgram::output_offset(std::size_t index) const noexcept {
+  return state_->output_offsets[index];
+}
 std::size_t NativeProgram::score_bytes() const noexcept { return state_->scores; }
-std::size_t NativeProgram::output_bytes() const noexcept { return state_->bytes[6]; }
+std::size_t NativeProgram::output_bytes() const noexcept {
+  return state_->bytes[state_->output_port];
+}
 
 Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
   auto &s = *state_;
   if (s.failed)
     return Status::FailedPrecondition("failed ggml Metal program must be recreated");
-  if (ports.size() != s.tensors.size())
-    return Status::InvalidArgument("ggml Metal recurrent buffer count mismatch");
+  if (ports.size() != s.port_count)
+    return Status::InvalidArgument("ggml Metal model buffer count mismatch");
   try {
     std::array<BufferOwner, 7> replacements;
     for (std::size_t i = 0; i < ports.size(); ++i) {

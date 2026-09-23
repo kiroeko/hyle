@@ -988,6 +988,37 @@ TEST(OperationModelOps, CausalConv1dKeepsNaturalSequenceLayout) {
   EXPECT_FALSE(infer_single_output(operation, invalid));
 }
 
+TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
+  const auto f32 = DataType::kFloat32;
+  const auto i32 = DataType::kInt32;
+  const std::array grouped{tensor(f32, 3, 5, 7), tensor(f32, 11, 2, 7),
+                           tensor(i32, 11, 2)};
+  EXPECT_EQ(infer_one(model_ops::grouped_matmul(), grouped),
+            tensor(f32, 11, 2, 5));
+
+  const std::array combine{tensor(f32, 11, 24), tensor(f32, 3),
+                           tensor(f32, 24)};
+  EXPECT_EQ(infer_one(model_ops::hyper_connection_combine(), combine),
+            tensor(f32, 11, 4, 4));
+  const std::array pre{tensor(f32, 11, 4, 7), tensor(f32, 11, 4)};
+  EXPECT_EQ(infer_one(model_ops::hyper_connection_pre(), pre),
+            tensor(f32, 11, 7));
+  const std::array post{tensor(f32, 11, 7), tensor(f32, 11, 4, 7),
+                        tensor(f32, 11, 4), tensor(f32, 11, 4, 4)};
+  EXPECT_EQ(infer_one(model_ops::hyper_connection_post(), post),
+            tensor(f32, 11, 4, 7));
+
+  auto invalid_grouped = grouped;
+  invalid_grouped[2] = tensor(i32, 11, 3);
+  EXPECT_FALSE(infer_single_output(model_ops::grouped_matmul(), invalid_grouped));
+  EXPECT_FALSE(infer_single_output(
+      model_ops::hyper_connection_combine(-1.0F, 0), combine));
+  auto invalid_post = post;
+  invalid_post[3] = tensor(f32, 11, 4, 3);
+  EXPECT_FALSE(
+      infer_single_output(model_ops::hyper_connection_post(), invalid_post));
+}
+
 TEST(OperationValidation, RequiresExactInputAndOutputSpans) {
   const Operation operation(Binary{});
   const TensorDesc input = tensor(DataType::kFloat32, 4);

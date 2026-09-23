@@ -212,8 +212,9 @@ bool tensor_operation_supports(Operation operation,
     return false;
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (!representable(inputs[i]) &&
-        !(operation.get_if<RoPE>() && i == 1 && inputs[i].valid() &&
-          inputs[i].is_plain() && inputs[i].is_dense() &&
+        !((operation.get_if<RoPE>() && i == 1 ||
+           operation.custom_as<model_ops::GroupedMatMul>() && i == 2) &&
+          inputs[i].valid() && inputs[i].is_plain() && inputs[i].is_dense() &&
           inputs[i].data_type() == DataType::kInt32 &&
           inputs[i].element_count() &&
           *inputs[i].element_count() <= (INT32_MAX - 1024) / sizeof(float)))
@@ -227,6 +228,17 @@ bool tensor_operation_supports(Operation operation,
     return outputs.size() == 1 && inputs.size() == 2 &&
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::GroupedMatMul>() ||
+      operation.custom_as<model_ops::HyperConnectionCombine>() ||
+      operation.custom_as<model_ops::HyperConnectionPre>() ||
+      operation.custom_as<model_ops::HyperConnectionPost>())
+    return outputs.size() == 1 &&
+           std::ranges::all_of(inputs, [](const auto &description) {
+             return description.is_dense() &&
+                    (description.data_type() == DataType::kFloat32 ||
+                     description.data_type() == DataType::kInt32);
+           }) &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (operation.get_if<GatedDeltaNet>()) {
     if (outputs.size() != 2 || inputs.size() != 6 ||
         !std::ranges::all_of(inputs, [](const auto &description) {
@@ -468,6 +480,21 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     auto *samples = ggml_cont(
         context, ggml_permute(context, values[node.inputs[0]], 1, 0, 2, 3));
     result = ggml_ssm_conv(context, samples, values[node.inputs[1]]);
+  } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
+    result = ggml_mul_mat_id(context, values[node.inputs[0]],
+                             values[node.inputs[1]], values[node.inputs[2]]);
+  } else if (const auto descriptor =
+                 node.operation.custom_as<model_ops::HyperConnectionCombine>()) {
+    result = ggml_dsv4_hc_comb(context, values[node.inputs[0]],
+                               values[node.inputs[1]], values[node.inputs[2]],
+                               descriptor->epsilon, descriptor->iterations);
+  } else if (node.operation.custom_as<model_ops::HyperConnectionPre>()) {
+    result = ggml_dsv4_hc_pre(context, values[node.inputs[0]],
+                              values[node.inputs[1]]);
+  } else if (node.operation.custom_as<model_ops::HyperConnectionPost>()) {
+    result = ggml_dsv4_hc_post(context, values[node.inputs[0]],
+                               values[node.inputs[1]], values[node.inputs[2]],
+                               values[node.inputs[3]]);
   } else if (node.operation.get_if<MatMul>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);

@@ -1,10 +1,47 @@
 #include "hyle/graph/vulkan.h"
 #include "../compute_route_vulkan/recurrent_test_support.h"
+#include "../model_fragment_test_support.h"
 
 namespace {
 using namespace vulkan_recurrent_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
+
+TEST(VulkanGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
+  auto context = vulkan_test::context().value();
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    auto builder = g::GraphBuilder::create().value();
+    std::vector<g::ValueId> inputs;
+    inputs.reserve(test.inputs.size());
+    for (const auto &description : test.inputs)
+      inputs.push_back(builder.input(description).value());
+    const auto node = builder.add_node(test.operation, inputs).value();
+    const auto output = builder.result(node).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    gv::CompileReport report;
+    auto program = gv::compile(context, graph, {}, {.report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(report.managed_region_count, 1U);
+    auto invocation = program->create_invocation().value();
+    std::vector<c::vulkan::Tensor> resident;
+    resident.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i)
+      resident.push_back(
+          context.upload(test.inputs[i], test.payloads[i]).value());
+    ASSERT_TRUE(invocation.bind(resident).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual =
+        vulkan_test::read(context, result->get()->tensors()[0]).value();
+    ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
 
 TEST(VulkanGraph, OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks) {
   Fixture fixture(5, 2, 32);

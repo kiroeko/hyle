@@ -1,5 +1,6 @@
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
+#include "../model_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
 
@@ -101,6 +102,34 @@ TEST(GgmlCudaTensor, MatureKdaPublishesScoresAndStateIndependently) {
   EXPECT_EQ(half_test::read<float>(output_storage[0]),
             std::vector<float>(*output_desc[0].element_count(), 0.F));
   EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
+}
+
+TEST(GgmlCudaTensor, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    std::vector<Buffer> storage;
+    std::vector<ConstTensorView> inputs;
+    storage.reserve(test.inputs.size());
+    inputs.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+      storage.push_back(upload<std::byte>(resource, test.payloads[i]));
+      inputs.push_back(
+          ConstTensorView::create(test.inputs[i], storage.back().view()).value());
+    }
+    auto output = output_buffer(resource, test.output);
+    const auto status = execute(
+        ctx, test.operation, inputs,
+        TensorView::create(test.output, output.view()).value());
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = half_test::read<float>(output);
+    ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
 }
 
 TEST(GgmlCudaTensor, LayerNormRetainsSmallVarianceAtLargeOffset) {

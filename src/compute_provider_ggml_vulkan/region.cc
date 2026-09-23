@@ -259,6 +259,17 @@ bool region_supports(const Operation &operation,
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32 &&
            outputs[0].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::GroupedMatMul>() ||
+      operation.custom_as<model_ops::HyperConnectionCombine>() ||
+      operation.custom_as<model_ops::HyperConnectionPre>() ||
+      operation.custom_as<model_ops::HyperConnectionPost>())
+    return outputs.size() == 1 &&
+           std::ranges::all_of(inputs, [](const auto &description) {
+             return description.is_dense() &&
+                    (description.data_type() == DataType::kFloat32 ||
+                     description.data_type() == DataType::kInt32);
+           }) &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
                                       .route = NativeRoute::kVulkan,
@@ -587,6 +598,20 @@ Result<Region> Region::create(NativeDevice device,
         auto *samples =
             ggml_cont(context, ggml_permute(context, arguments[0], 1, 0, 2, 3));
         output = ggml_ssm_conv(context, samples, arguments[1]);
+      } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
+        output =
+            ggml_mul_mat_id(context, arguments[0], arguments[1], arguments[2]);
+      } else if (const auto descriptor =
+                     node.operation.custom_as<
+                         model_ops::HyperConnectionCombine>()) {
+        output = ggml_dsv4_hc_comb(context, arguments[0], arguments[1],
+                                   arguments[2], descriptor->epsilon,
+                                   descriptor->iterations);
+      } else if (node.operation.custom_as<model_ops::HyperConnectionPre>()) {
+        output = ggml_dsv4_hc_pre(context, arguments[0], arguments[1]);
+      } else if (node.operation.custom_as<model_ops::HyperConnectionPost>()) {
+        output = ggml_dsv4_hc_post(context, arguments[0], arguments[1],
+                                   arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>()) {
         auto *right = arguments[1];
         const bool mxfp4 = mxfp4_domain(recipe.values[node.inputs[1]]);

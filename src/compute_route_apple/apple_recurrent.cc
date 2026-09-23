@@ -49,15 +49,16 @@ ggml_metal::BufferView view(const mx::array &value) {
 } // namespace
 
 Result<std::unique_ptr<Recurrent>>
-Recurrent::create(std::span<const TensorDesc> inputs) noexcept {
+Recurrent::create(Operation operation, std::span<const TensorDesc> inputs) noexcept {
   try {
-    HYLE_ASSIGN_OR_RETURN(auto native, ggml_metal::NativeProgram::create(inputs));
+    HYLE_ASSIGN_OR_RETURN(
+        auto native, ggml_metal::NativeProgram::create(operation, inputs));
     auto result = std::make_unique<Recurrent>();
     result->program = std::move(native);
-    for (auto d : inputs[2].dimensions())
-      result->scores_shape.push_back(static_cast<int>(d));
-    for (auto d : inputs[5].dimensions())
-      result->state_shape.push_back(static_cast<int>(d));
+    result->output_shapes.resize(result->program->output_count());
+    for (std::size_t port = 0; port < result->program->output_count(); ++port)
+      for (auto d : result->program->output_description(port).dimensions())
+        result->output_shapes[port].push_back(static_cast<int>(d));
     return result;
   } catch (...) {
     return std::unexpected(native_exception());
@@ -81,14 +82,18 @@ Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
       input.wait();
   }
   auto packed = packed_array(program->output_bytes());
-  std::array<ggml_metal::BufferView, 7> ports;
+  std::vector<ggml_metal::BufferView> ports(dense.size() + 1);
   for (std::size_t i = 0; i < dense.size(); ++i)
     ports[i] = view(dense[i]);
   ports.back() = view(packed);
   HYLE_RETURN_IF_ERROR(program->run(ports));
   packed.set_status(mx::array::available);
-  return std::vector<mx::array>{
-      output_view(packed, scores_shape, 0),
-      output_view(packed, state_shape, program->score_bytes() / sizeof(float))};
+  std::vector<mx::array> outputs;
+  outputs.reserve(output_shapes.size());
+  for (std::size_t port = 0; port < output_shapes.size(); ++port)
+    outputs.push_back(output_view(packed, output_shapes[port],
+                                  program->output_offset(port) /
+                                      sizeof(float)));
+  return outputs;
 }
 } // namespace hyle::compute::apple::detail

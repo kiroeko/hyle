@@ -140,8 +140,15 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       auto &node = nodes[index];
       if (!node)
         continue;
+      const bool mature_custom =
+          node->operation.custom_as<compute::model_ops::CausalConv1d>() ||
+          node->operation.custom_as<compute::model_ops::GroupedMatMul>() ||
+          node->operation.custom_as<
+              compute::model_ops::HyperConnectionCombine>() ||
+          node->operation.custom_as<compute::model_ops::HyperConnectionPre>() ||
+          node->operation.custom_as<compute::model_ops::HyperConnectionPost>();
       if (node->operation.kind() == compute::OperationKind::kCustom &&
-          !node->operation.custom_as<compute::model_ops::CausalConv1d>()) {
+          !mature_custom) {
         if (!options.custom)
           return std::unexpected(Status::Unimplemented(
               "Vulkan custom schema needs a cold native lowering"));

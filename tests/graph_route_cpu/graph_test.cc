@@ -10,6 +10,7 @@
 
 #include "../compute/workload_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
+#include "../model_fragment_test_support.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
@@ -19,6 +20,64 @@
 namespace {
 namespace compute = hyle::compute;
 namespace graph = hyle::graph;
+
+#if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    std::vector<hyle::mem::Buffer> storage;
+    std::vector<graph::ValueId> inputs;
+    auto builder = graph::GraphBuilder::create().value();
+    storage.reserve(test.inputs.size());
+    inputs.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+      storage.push_back(hyle::mem::Buffer::create(
+                            hyle::mem::system_resource(),
+                            test.inputs[i].required_bytes().value(), 64)
+                            .value());
+      ASSERT_TRUE(storage.back().view().write(test.payloads[i]).ok());
+      inputs.push_back(builder.input(test.inputs[i]).value());
+    }
+    const auto node = builder.add_node(test.operation, inputs).value();
+    const auto output = builder.result(node).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto logical = std::move(builder).finish().value();
+    auto compiled = graph::compile(logical, context);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_EQ(compiled->report.step_count(), 1U);
+    EXPECT_EQ(compiled->report.step(0)->provider.id,
+              compute::ggml_cpu::kProviderId);
+    auto invocation = compiled->executable.create_invocation().value();
+    for (std::size_t i = 0; i < inputs.size(); ++i)
+      ASSERT_TRUE(invocation
+                      .bind(inputs[i], compute::ConstTensorView::create(
+                                           test.inputs[i], storage[i].view())
+                                           .value())
+                      .ok());
+    auto result = hyle::mem::Buffer::create(
+                      hyle::mem::system_resource(),
+                      test.output.required_bytes().value(), 64)
+                      .value();
+    ASSERT_TRUE(invocation
+                    .bind(output, compute::TensorView::create(
+                                      test.output, result.view())
+                                      .value())
+                    .ok());
+    const std::array queues{graph::QueueBinding{
+        .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(result);
+    ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
+#endif
 
 #if defined(HYLE_GRAPH_ONEDNN) || defined(HYLE_COMPUTE_GGML_CPU)
 void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,

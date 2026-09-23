@@ -1,5 +1,6 @@
 #include "hyle/compute/apple.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/model_ops.h"
 
 #include <array>
 #include <cstdint>
@@ -39,6 +40,14 @@ Result<TensorDesc> float_description(const mx::array &input) noexcept {
   // Native MLX owns any stride handling. This description validates logical
   // operation semantics; it does not import a HYLE buffer or claim zero copy.
   return TensorDesc::dense(DataType::kFloat32, {shape.data(), input.ndim()});
+}
+
+bool ggml_model_operation(const Operation &operation) noexcept {
+  return operation.get_if<GatedDeltaNet>() ||
+         operation.custom_as<model_ops::GroupedMatMul>() ||
+         operation.custom_as<model_ops::HyperConnectionCombine>() ||
+         operation.custom_as<model_ops::HyperConnectionPre>() ||
+         operation.custom_as<model_ops::HyperConnectionPost>();
 }
 } // namespace
 
@@ -117,7 +126,7 @@ Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
                  const WorkloadContext &workload) const noexcept {
   try {
-    if (operation.kind() == OperationKind::kGatedDeltaNet) {
+    if (ggml_model_operation(operation)) {
       std::vector<InputSpec> specs;
       specs.reserve(examples.size());
       for (const auto &input : examples) {
@@ -142,28 +151,37 @@ Context::prepare(const Operation &operation,
                  std::span<const InputSpec> inputs,
                  const WorkloadContext &workload) const noexcept {
   try {
-    if (operation.kind() == OperationKind::kGatedDeltaNet) {
+    if (ggml_model_operation(operation)) {
       detail::RegionPlan plan;
       plan.workload = workload;
       detail::Region region;
-      region.kind = detail::RegionKind::kGatedDeltaNet;
+      region.kind = detail::RegionKind::kGgml;
+      region.operation = operation;
       for (std::size_t i = 0; i < inputs.size(); ++i) {
-        if (inputs[i].dtype != mx::float32)
-          return std::unexpected(Status::Unimplemented("Apple original recurrent region currently admits F32 inputs"));
+        const auto data_type = inputs[i].dtype == mx::float32
+                                   ? DataType::kFloat32
+                               : inputs[i].dtype == mx::int32
+                                   ? DataType::kInt32
+                                   : DataType::kUnknown;
+        if (data_type == DataType::kUnknown)
+          return std::unexpected(Status::Unimplemented(
+              "Apple original model region admits F32/I32 inputs"));
         std::vector<std::int64_t> shape(inputs[i].shape.begin(), inputs[i].shape.end());
-        HYLE_ASSIGN_OR_RETURN(auto desc, TensorDesc::dense(DataType::kFloat32, shape));
-        region.recurrent_inputs.push_back(desc);
+        HYLE_ASSIGN_OR_RETURN(auto desc, TensorDesc::dense(data_type, shape));
+        region.native_inputs.push_back(desc);
         region.inputs.push_back(i);
         plan.inputs.push_back(i);
         plan.values.push_back(inputs[i]);
       }
-      std::array<TensorDesc, 2> outputs;
-      HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, region.recurrent_inputs, outputs));
+      std::vector<TensorDesc> outputs(operation_traits(operation).outputs);
+      HYLE_RETURN_IF_ERROR(infer_output_descriptions(
+          operation, region.native_inputs, outputs));
       for (const auto &output : outputs) {
         const auto id = plan.values.size();
         region.outputs.push_back(id);
         plan.outputs.push_back(id);
         InputSpec spec;
+        spec.dtype = mx::float32;
         for (auto d : output.dimensions())
           spec.shape.push_back(static_cast<int>(d));
         plan.values.push_back(std::move(spec));

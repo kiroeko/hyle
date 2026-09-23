@@ -7,6 +7,7 @@
 
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
+#include "../model_fragment_test_support.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -174,5 +175,42 @@ TEST(AppleRecurrent, MatureCausalConvUsesMlxRegion) {
   const std::array expected{14.F, 20.F, 20.F, 20.F, 26.F, 20.F};
   for (std::size_t i = 0; i < expected.size(); ++i)
     EXPECT_FLOAT_EQ(arrays[0].data<float>()[i], expected[i]);
+}
+
+TEST(AppleRecurrent, MatureMoeAndHyperConnectionBatchUsesOriginalMetal) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    std::vector<mx::array> inputs;
+    inputs.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+      mx::Shape shape;
+      for (auto extent : test.inputs[i].dimensions())
+        shape.push_back(static_cast<int>(extent));
+      if (test.inputs[i].data_type() == c::DataType::kInt32)
+        inputs.emplace_back(
+            reinterpret_cast<const std::int32_t *>(test.payloads[i].data()),
+            shape);
+      else
+        inputs.emplace_back(
+            reinterpret_cast<const float *>(test.payloads[i].data()), shape);
+    }
+    auto program = context->prepare(test.operation, inputs);
+    ASSERT_TRUE(program) << program.error().message();
+    auto invocation = program->create_invocation();
+    ASSERT_TRUE(invocation);
+    ASSERT_TRUE(invocation->bind(inputs).ok());
+    auto work = invocation->submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto arrays = result->get()->arrays();
+    ASSERT_EQ(arrays.size(), 1U);
+    ASSERT_EQ(arrays[0].size(), test.expected.size());
+    for (std::size_t i = 0; i < test.expected.size(); ++i)
+      EXPECT_NEAR(arrays[0].data<float>()[i], test.expected[i], 2.0e-5F)
+          << i;
+  }
 }
 } // namespace

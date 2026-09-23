@@ -1,7 +1,76 @@
 #include "hyle/graph/providers/ggml_cuda.h"
+#include "../model_fragment_test_support.h"
 #include "region_test_support.h"
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
+
+TEST(GgmlCudaGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
+  using namespace ggml_cuda_graph_test;
+  auto context = compute::Context::create(cuda::device(0).value(),
+                                          graph::ggml_cuda::provider())
+                     .value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  for (const auto &test : model_fragment_test::cases()) {
+    SCOPED_TRACE(test.name);
+    std::vector<mem::Buffer> storage;
+    std::vector<graph::ValueId> inputs;
+    auto builder = graph::GraphBuilder::create().value();
+    storage.reserve(test.inputs.size());
+    inputs.reserve(test.inputs.size());
+    for (std::size_t i = 0; i < test.inputs.size(); ++i) {
+      storage.push_back(mem::Buffer::create(
+                            memory.ref(), test.inputs[i].required_bytes().value(),
+                            256)
+                            .value());
+      ASSERT_TRUE(storage.back().view().write(test.payloads[i]).ok());
+      inputs.push_back(builder.input(test.inputs[i]).value());
+    }
+    const auto node = builder.add_node(test.operation, inputs).value();
+    const auto output = builder.result(node).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto logical = std::move(builder).finish().value();
+    const std::array domains{
+        graph::StorageDomain{.resource = memory.ref()}};
+    const std::array targets{graph::ExecutionTarget{
+        .context = &context, .default_storage = graph::StorageDomainId{0}}};
+    const std::array lanes{
+        graph::ExecutionLane{.target = graph::ExecutionTargetId{0}}};
+    auto compiled = graph::compile(
+        logical,
+        {.storage_domains = domains, .targets = targets, .lanes = lanes});
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_EQ(compiled->report.step_count(), 1U);
+    EXPECT_EQ(compiled->report.step(0)->provider.id,
+              compute::ggml_cuda::kProviderId);
+    auto invocation = compiled->executable.create_invocation().value();
+    for (std::size_t i = 0; i < inputs.size(); ++i)
+      ASSERT_TRUE(invocation
+                      .bind(inputs[i], compute::ConstTensorView::create(
+                                           test.inputs[i], storage[i].view())
+                                           .value())
+                      .ok());
+    auto result = mem::Buffer::create(memory.ref(),
+                                      test.output.required_bytes().value(), 256)
+                      .value();
+    ASSERT_TRUE(invocation
+                    .bind(output, compute::TensorView::create(
+                                      test.output, result.view())
+                                      .value())
+                    .ok());
+    auto queue = context.create_queue().value();
+    const std::array queues{graph::QueueBinding{
+        .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(result);
+    ASSERT_EQ(actual.size(), test.expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
 
 TEST(GgmlCudaGraph, SoftmaxRegionPublishesLogicalAxesAndRetainsOldResults) {
   using namespace ggml_cuda_graph_test;

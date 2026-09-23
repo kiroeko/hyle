@@ -435,6 +435,24 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         context,
         ggml_permute(context, invocation.values[node.inputs[0]], 1, 0, 2, 3));
     result = ggml_ssm_conv(context, samples, invocation.values[node.inputs[1]]);
+  } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
+    result = ggml_mul_mat_id(context, invocation.values[node.inputs[0]],
+                             invocation.values[node.inputs[1]],
+                             invocation.values[node.inputs[2]]);
+  } else if (const auto descriptor =
+                 node.operation.custom_as<model_ops::HyperConnectionCombine>()) {
+    result = ggml_dsv4_hc_comb(
+        context, invocation.values[node.inputs[0]],
+        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
+        descriptor->epsilon, descriptor->iterations);
+  } else if (node.operation.custom_as<model_ops::HyperConnectionPre>()) {
+    result = ggml_dsv4_hc_pre(context, invocation.values[node.inputs[0]],
+                              invocation.values[node.inputs[1]]);
+  } else if (node.operation.custom_as<model_ops::HyperConnectionPost>()) {
+    result = ggml_dsv4_hc_post(
+        context, invocation.values[node.inputs[0]],
+        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
+        invocation.values[node.inputs[3]]);
   } else if (const auto *matmul = node.operation.get_if<MatMul>()) {
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
     // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
@@ -941,6 +959,17 @@ bool supports(void *context, Operation operation,
     return outputs.size() == 1 && inputs.size() == 2 &&
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::GroupedMatMul>() ||
+      operation.custom_as<model_ops::HyperConnectionCombine>() ||
+      operation.custom_as<model_ops::HyperConnectionPre>() ||
+      operation.custom_as<model_ops::HyperConnectionPost>())
+    return outputs.size() == 1 &&
+           std::ranges::all_of(inputs, [](const auto &description) {
+             return description.is_dense() &&
+                    (description.data_type() == DataType::kFloat32 ||
+                     description.data_type() == DataType::kInt32);
+           }) &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (operation.get_if<GatedDeltaNet>()) {
     if (outputs.size() != 2 || inputs.size() != 6 ||
         !std::ranges::all_of(inputs, [](const auto &description) {
@@ -1071,7 +1100,11 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<RoPE>() || operation.get_if<Hadamard>() ||
          operation.get_if<ScaledDotProductAttention>() ||
          operation.get_if<GatedDeltaNet>() ||
-         operation.custom_as<model_ops::CausalConv1d>().has_value();
+         operation.custom_as<model_ops::CausalConv1d>().has_value() ||
+         operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
+         operation.custom_as<model_ops::HyperConnectionCombine>().has_value() ||
+         operation.custom_as<model_ops::HyperConnectionPre>().has_value() ||
+         operation.custom_as<model_ops::HyperConnectionPost>().has_value();
 }
 ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                mem::AllocatorRef allocator,

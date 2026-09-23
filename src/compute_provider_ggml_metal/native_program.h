@@ -34,14 +34,27 @@ public:
   NativeProgram &operator=(const NativeProgram &) = delete;
   HYLE_GGML_METAL_INTERNAL_API ~NativeProgram();
   HYLE_GGML_METAL_INTERNAL_API static Result<std::unique_ptr<NativeProgram>>
-  create(std::span<const TensorDesc> inputs,
+  create(Operation operation, std::span<const TensorDesc> inputs,
          mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
+  static Result<std::unique_ptr<NativeProgram>>
+  create(std::span<const TensorDesc> inputs,
+         mem::AllocatorRef allocator = mem::system_allocator()) noexcept {
+    return create(Operation(GatedDeltaNet{}), inputs, allocator);
+  }
   HYLE_GGML_METAL_INTERNAL_API static Status
-  validate(std::span<const TensorDesc> inputs) noexcept;
-  // Seven ports: six inputs followed by one contiguous F32 allocation holding
-  // scores then final state. The array views retain that allocation directly.
+  validate(Operation operation, std::span<const TensorDesc> inputs) noexcept;
+  static Status validate(std::span<const TensorDesc> inputs) noexcept {
+    return validate(Operation(GatedDeltaNet{}), inputs);
+  }
+  // Input ports followed by one contiguous output allocation. Multi-output
+  // native regions publish non-overlapping views that retain that allocation.
   HYLE_GGML_METAL_INTERNAL_API Status
   run(std::span<const BufferView> ports) noexcept;
+  HYLE_GGML_METAL_INTERNAL_API std::size_t output_count() const noexcept;
+  HYLE_GGML_METAL_INTERNAL_API const TensorDesc &
+  output_description(std::size_t index) const noexcept;
+  HYLE_GGML_METAL_INTERNAL_API std::size_t
+  output_offset(std::size_t index) const noexcept;
   HYLE_GGML_METAL_INTERNAL_API std::size_t score_bytes() const noexcept;
   HYLE_GGML_METAL_INTERNAL_API std::size_t output_bytes() const noexcept;
 
