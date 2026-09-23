@@ -21,8 +21,11 @@ TEST(VulkanGraph, OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy) {
     const auto absolute =
         builder.add(c::Unary{c::UnaryKind::kAbs}, middle).value();
     const auto output = builder.add(c::Copy{}, absolute).value();
+    const auto low =
+        builder.add(c::Cast{c::DataType::kBFloat16}, middle).value();
     ASSERT_TRUE(builder.publish(output).ok());
     ASSERT_TRUE(builder.publish(middle).ok());
+    ASSERT_TRUE(builder.publish(low).ok());
     auto graph = std::move(builder).finish().value();
     gv::CompileReport report;
     const auto resident = context.upload(data.weight, data.w).value();
@@ -46,6 +49,7 @@ TEST(VulkanGraph, OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy) {
       ASSERT_TRUE(result) << result.error().message();
       t::expect(context, result->get()->tensors()[0], positive, true);
       t::expect(context, result->get()->tensors()[1], expected, true);
+      t::expect(context, result->get()->tensors()[2], expected, true);
     }
     EXPECT_EQ(t::bytes(context, resident), data.w);
   }

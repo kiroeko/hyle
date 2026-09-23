@@ -71,6 +71,40 @@ TEST(VulkanIree, OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire) {
   EXPECT_EQ(quota.used(), 0U);
 }
 
+TEST(VulkanIree, OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs) {
+  auto context = vulkan_test::context().value();
+  for (auto mode : {c::Float8ScaleMode::kFloat32Block128,
+                    c::Float8ScaleMode::kUnsignedExponent8Group32}) {
+    Float8Inputs data(3, 128, 128, mode, 2);
+    auto multiply =
+        v::prepare(context, c::MatMul{}, data.activation, data.weight).value();
+    auto convert =
+        v::prepare(context, c::Cast{c::DataType::kBFloat16},
+                   multiply.output_descriptions()[0])
+            .value();
+    const auto activation = context.upload(data.activation, data.a).value();
+    const auto weight = context.upload(data.weight, data.w).value();
+    const auto middle =
+        context.allocate(multiply.output_descriptions()[0]).value();
+    const auto output = context.allocate(convert.output_descriptions()[0]).value();
+    auto recorder = v::Recorder::create(context).value();
+    ASSERT_TRUE(recorder
+                    .append(multiply, std::array{activation, weight},
+                            std::array{middle})
+                    .ok());
+    ASSERT_TRUE(
+        recorder.append(convert, std::array{middle}, std::array{output}).ok());
+    auto recorded = recorder.finish().value();
+    for (int repeat = 0; repeat < 2; ++repeat) {
+      auto completion = recorded.submit().value();
+      ASSERT_TRUE(completion.wait().ok());
+      t::expect(context, output, data.multiply(), true);
+    }
+    EXPECT_EQ(t::bytes(context, activation), data.a);
+    EXPECT_EQ(t::bytes(context, weight), data.w);
+  }
+}
+
 TEST(VulkanIree,
      CheckedScanAutomaticallyAdvancesAndStopsBeforePublishingFailure) {
   auto context = vulkan_test::context().value();
