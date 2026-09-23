@@ -224,8 +224,8 @@ TEST(CudaKernels, AllGatesBfloatAndRealWidthsKeepFloatIntermediates) {
 }
 
 TEST(CudaKernels, EmptyGatesDoNotRequireDevicePayloadAllocations) {
-  for (const auto selected : {compute::cuda_native::provider(),
-                              compute::cuda_native::sglang_provider()}) {
+  for (const auto &selected : {compute::cuda_native::provider(),
+                               compute::cuda_native::sglang_provider()}) {
     auto owner = context(selected);
     auto queue = owner.create_queue().value();
     auto resource =

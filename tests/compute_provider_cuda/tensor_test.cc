@@ -585,9 +585,10 @@ TEST(CudaTensor, NormalizationHandlesSpecialValuesAndStableVariance) {
       else
         EXPECT_EQ(actual[i], 0);
     }
-    if (layer)
+    if (layer) {
       for (std::size_t i = 384; i < actual.size(); ++i)
         EXPECT_FLOAT_EQ(actual[i], i % 2 == 0 ? -1.0F : 1.0F);
+    }
   }
   auto unsupported =
       prepare(fixture.owner, RmsNorm{.accumulation_type = DataType::kFloat64},
@@ -846,10 +847,11 @@ void check_softmax(Fixture &fixture, std::span<const std::int64_t> shape,
     }
   }
   ASSERT_TRUE(input.write<T>(values).ok());
-  if (mask_kind == MaskKind::kBoolean)
+  if (mask_kind == MaskKind::kBoolean) {
     ASSERT_TRUE(mask.write<std::uint8_t>(boolean).ok());
-  else if (mask_kind == MaskKind::kAdditive)
+  } else if (mask_kind == MaskKind::kAdditive) {
     ASSERT_TRUE(mask.write<T>(additive).ok());
+  }
   const float scale = special ? 1 : -0.75F;
   const Softmax op{
       .axis = axis, .scale = scale, .kind = kind, .mask = mask_kind};
@@ -1398,7 +1400,7 @@ TEST(CudaConcat, VariadicStorageBitsAcrossAxesByteStridesAndEmptyGroups) {
                          extents, strided);
       }
     }
-    for (const auto extents :
+    for (const auto &extents :
          {std::array<std::int64_t, 9>{0, 0, 0, 0, 2, 0, 1, 0, 3},
           std::array<std::int64_t, 9>{2, 0, 3, 0, 0, 0, 0, 0, 0},
           std::array<std::int64_t, 9>{0, 0, 0, 0, 0, 0, 0, 0, 0}}) {
