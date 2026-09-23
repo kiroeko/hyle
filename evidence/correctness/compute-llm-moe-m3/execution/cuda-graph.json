@@ -1,0 +1,292 @@
+{
+  "tests": 27,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:02:21Z",
+  "time": "2.078s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "CudaDefaultGraph",
+      "tests": 27,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:02:21Z",
+      "time": "2.078s",
+      "testsuite": [
+        {
+          "name": "MaturePrefillDecodeThroughNormalEntries",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\attention_test.cc",
+          "line": 82,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.283s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalCcclTopKAndScanKeepIndependentWorkspaceAndOldResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\collectives_test.cc",
+          "line": 8,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.008s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalCcclOverflowPreservesOutputAndFreshInvocationRecovers",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\collectives_test.cc",
+          "line": 94,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.001s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalCcclTopKFeedsGatherWithIndependentSlotsAndRetainedResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\collectives_test.cc",
+          "line": 133,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.006s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalCcclGatherFailurePreservesOutputAndRetiresSlot",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\collectives_test.cc",
+          "line": 217,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.001s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\concat_test.cc",
+          "line": 41,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.018s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\gather_test.cc",
+          "line": 50,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.477s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "CheckedGatherErrorsRecoverAndRetainClosedOrAbandonedOwners",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\gather_test.cc",
+          "line": 361,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.025s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalTensorRegionThroughOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ggml_test.cc",
+          "line": 6,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.002s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalSoftmaxRegionThroughOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ggml_test.cc",
+          "line": 15,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.001s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OriginalGgmlRegionComposesWithCublas",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ggml_test.cc",
+          "line": 24,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.004s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "MatureHalfLinearAndHadamardUseOneGgmlRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ggml_test.cc",
+          "line": 33,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.002s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "UnrelatedCublasNodeDoesNotSplitGgmlRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ggml_test.cc",
+          "line": 103,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.001s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "BfloatGatesUseNormalDirectAndCapturedGraphEntries",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\graph_test.cc",
+          "line": 11,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.01s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\graph_test.cc",
+          "line": 249,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:21Z",
+          "time": "0.134s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "ExplicitCommandsUseTheSameNumericalChain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\graph_test.cc",
+          "line": 259,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.004s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "DefaultRulesCaptureSeparateAndPackedTailCapability",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\graph_test.cc",
+          "line": 263,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.001s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "RejectsMissingResourcesAndUnsupportedOperations",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\graph_test.cc",
+          "line": 316,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "MixedFloatNormAndSwishGateCaptureReusableIndependentState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\norm_test.cc",
+          "line": 38,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.077s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\reduction_test.cc",
+          "line": 38,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.009s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\scan_test.cc",
+          "line": 51,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.168s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "IntegerScanOverflowPreservesOutputRecoversAndRetainsPendingOwners",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\scan_test.cc",
+          "line": 401,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.037s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\scatter_test.cc",
+          "line": 48,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.55s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "CheckedScatterOwnsSortGraphThroughFailureCloseAndAbandon",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\scatter_test.cc",
+          "line": 381,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.049s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\sglang_primitives_test.cc",
+          "line": 37,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:22Z",
+          "time": "0.105s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "TensorChainCapturesViewsConversionsMasksAndIndependentResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\tensor_test.cc",
+          "line": 32,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:23Z",
+          "time": "0.026s",
+          "classname": "CudaDefaultGraph"
+        },
+        {
+          "name": "SoftmaxTopKAndRenormalizationCaptureBothOutputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\topk_test.cc",
+          "line": 41,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:23Z",
+          "time": "0.067s",
+          "classname": "CudaDefaultGraph"
+        }
+      ]
+    }
+  ]
+}

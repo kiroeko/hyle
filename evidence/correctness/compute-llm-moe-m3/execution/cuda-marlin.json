@@ -1,0 +1,72 @@
+{
+  "tests": 5,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:02:24Z",
+  "time": "8.288s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "MarlinProvider",
+      "tests": 5,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:02:24Z",
+      "time": "8.288s",
+      "testsuite": [
+        {
+          "name": "DecodePrefillAndRowTailsMatchDoubleOracle",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_marlin\\marlin_provider_test.cc",
+          "line": 164,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:24Z",
+          "time": "7.517s",
+          "classname": "MarlinProvider"
+        },
+        {
+          "name": "TileSelectionAndMinimumMatrixMatchDoubleOracle",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_marlin\\marlin_provider_test.cc",
+          "line": 171,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:32Z",
+          "time": "0.762s",
+          "classname": "MarlinProvider"
+        },
+        {
+          "name": "RejectsInvalidPackingAndUnsupportedExecutionDomain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_marlin\\marlin_provider_test.cc",
+          "line": 178,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:33Z",
+          "time": "0.002s",
+          "classname": "MarlinProvider"
+        },
+        {
+          "name": "CompletionRetainsReleasedArtifactAndLane",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_marlin\\marlin_provider_test.cc",
+          "line": 230,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:33Z",
+          "time": "0.001s",
+          "classname": "MarlinProvider"
+        },
+        {
+          "name": "ColdAllocationFailuresRollBackAndReplayDoesNotAllocateMetadata",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_marlin\\marlin_provider_test.cc",
+          "line": 340,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:33Z",
+          "time": "0.004s",
+          "classname": "MarlinProvider"
+        }
+      ]
+    }
+  ]
+}

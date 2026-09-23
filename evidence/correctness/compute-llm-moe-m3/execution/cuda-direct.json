@@ -1,0 +1,113 @@
+{
+  "tests": 8,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:02:20Z",
+  "time": "0.297s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "CudaDefaultCompute",
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:02:20Z",
+      "time": "0.252s",
+      "testsuite": [
+        {
+          "name": "DenseAndCompressedFfnUseFixedRulesAndIndependentSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\context_test.cc",
+          "line": 128,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0.251s",
+          "classname": "CudaDefaultCompute"
+        },
+        {
+          "name": "RejectsInvalidDeviceAndUnsupportedOperations",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\context_test.cc",
+          "line": 138,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0s",
+          "classname": "CudaDefaultCompute"
+        },
+        {
+          "name": "DescriptorPreparationChecksDeviceResourcesBeforePayload",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\context_test.cc",
+          "line": 153,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0s",
+          "classname": "CudaDefaultCompute"
+        },
+        {
+          "name": "DefaultRulesRetainSeparateAndPackedTailCapability",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\context_test.cc",
+          "line": 174,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0.001s",
+          "classname": "CudaDefaultCompute"
+        }
+      ]
+    },
+    {
+      "name": "CudaDefault",
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:02:20Z",
+      "time": "0.045s",
+      "testsuite": [
+        {
+          "name": "OriginalCcclThroughOrdinaryDirectEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\ggml_test.cc",
+          "line": 7,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0.016s",
+          "classname": "CudaDefault"
+        },
+        {
+          "name": "OriginalGgmlThroughOrdinaryDirectEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\ggml_test.cc",
+          "line": 19,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0.002s",
+          "classname": "CudaDefault"
+        },
+        {
+          "name": "OriginalTensorBatchThroughOrdinaryDirectEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\ggml_test.cc",
+          "line": 24,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0.024s",
+          "classname": "CudaDefault"
+        },
+        {
+          "name": "OriginalSoftmaxThroughOrdinaryDirectEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\ggml_test.cc",
+          "line": 30,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:20Z",
+          "time": "0.002s",
+          "classname": "CudaDefault"
+        }
+      ]
+    }
+  ]
+}

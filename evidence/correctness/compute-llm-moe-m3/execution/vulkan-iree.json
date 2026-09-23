@@ -1,0 +1,92 @@
+{
+  "tests": 7,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:04:09Z",
+  "time": "0.803s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "IreeNative",
+      "tests": 7,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:04:09Z",
+      "time": "0.803s",
+      "testsuite": [
+        {
+          "name": "QuotaFailureRollsBackAndReleasesBorrowedOwner",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 171,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:09Z",
+          "time": "0.146s",
+          "classname": "IreeNative"
+        },
+        {
+          "name": "OriginalCheckedScansUseSharedDeviceAndRepeat",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 190,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:09Z",
+          "time": "0.107s",
+          "classname": "IreeNative"
+        },
+        {
+          "name": "OriginalFp8ProgramsUseCompressedInputAndIndependentSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 238,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:09Z",
+          "time": "0.114s",
+          "classname": "IreeNative"
+        },
+        {
+          "name": "OriginalProactorAdvancesIndependentProgramsWithoutHostPolling",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 288,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:10Z",
+          "time": "0.099s",
+          "classname": "IreeNative"
+        },
+        {
+          "name": "CheckedScanReportsIntermediateAndExclusiveFinalOverflow",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 339,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:10Z",
+          "time": "0.107s",
+          "classname": "IreeNative"
+        },
+        {
+          "name": "RuntimeQuotaFailureKeepsOutputsPrivateAndReleasesResources",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 364,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:10Z",
+          "time": "0.128s",
+          "classname": "IreeNative"
+        },
+        {
+          "name": "RetirementIncludesTheNotificationReturning",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_iree_vulkan\\native_test.cc",
+          "line": 403,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:04:10Z",
+          "time": "0.098s",
+          "classname": "IreeNative"
+        }
+      ]
+    }
+  ]
+}

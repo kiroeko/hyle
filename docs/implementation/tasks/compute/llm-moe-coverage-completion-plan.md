@@ -347,8 +347,8 @@ Scatter浮点add按[M2-S公共数值裁决](llm-moe-m2-scatter-numerical-semanti
 
 ### M3：按模型计算链验收，核对真实剩余覆盖
 
-当前施工边界见 [M3 四路线真实模型计算链验收卡](llm-moe-m3-model-chain-acceptance.md)。该卡先审计
-六组共享测试消费者与有限接入缺陷，转为 `AUDITED` 后才允许修改产品或回填覆盖结论。
+M3 已按 [四路线真实模型计算链验收卡](llm-moe-m3-model-chain-acceptance.md)完成六组共享测试消费者、
+256 格执行映射与具名拒绝边界，进入不可变 `CANDIDATE`；产品候选未变，M4 尚未开始。
 
 下列是消费分组，可随 M2 对应能力接入顺序执行；不是新的自实现队列：
 
@@ -366,11 +366,10 @@ Scatter浮点add按[M2-S公共数值裁决](llm-moe-m2-scatter-numerical-semanti
 - [x] **M3-08 Provider 接入完成门**：M0 所有必需 Provider 已接通其准入范围并完成适用验证，
   所有候选处置有理由，未完成接入数量为0。此门未过，M4 新自实现数量必须保持0。
 
-M3 于 2026-09-24 完成[中间审计](llm-moe-m3-terminal.md)：256 格已有初次分类，33 PASS、21
-`BACKEND_REJECTED`、64 `NUMERIC_INCOMPATIBLE`、4 `UPSTREAM_MISSING`、134
-`VALIDATION_NOT_RUN`。随后审查确认 134 个未运行格不能作为 M3 终局残差；M3 恢复为活动验收，按
-M3-01/02/04/05/06 的五个共享批次执行并回填。已有明确准备期拒绝的 89 格不做无效重测，本地 2B
-完整 HYLE 旅程仍为 0/16；M3 完成前不进入 M4。
+M3 于 2026-09-24 完成[终局](llm-moe-m3-terminal.md)：第二轮重新构建四路线当前测试，逐格绑定
+Direct/Graph 收据或实际准备期拒绝。最终 153 PASS、21 `BACKEND_REJECTED`、78
+`NUMERIC_INCOMPATIBLE`、4 `UPSTREAM_MISSING`、0 `VALIDATION_NOT_RUN`。本地 2B 完整 HYLE 旅程
+仍为 0/16：四路线均在真实 shape 的 BF16 recurrent 边界停止。M3 等待终局检查，M4 保持未启动。
 
 2026-09-20用户取消M3-01完成后的专门通知与暂停，验收完成后直接继续后续阶段；
 正常工作包进展仍按实际实现与证据报告。不把旧C1文档、测试数量或局部交付算作该里程碑完成。

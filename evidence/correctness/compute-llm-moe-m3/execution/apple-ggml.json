@@ -1,0 +1,42 @@
+{
+  "tests": 2,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:05:53Z",
+  "time": "0.077s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "GgmlMetalProgram",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:05:53Z",
+      "time": "0.077s",
+      "testsuite": [
+        {
+          "name": "OriginalRecurrentRealModelShapeAndUnlabelledDomain",
+          "file": "\/Users\/kiro\/hyle\/tests\/compute_provider_ggml_metal\/native_program_test.mm",
+          "line": 125,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:53Z",
+          "time": "0.077s",
+          "classname": "GgmlMetalProgram"
+        },
+        {
+          "name": "DeclinesUnqualifiedShapesAndMetadataOomIsRecoverable",
+          "file": "\/Users\/kiro\/hyle\/tests\/compute_provider_ggml_metal\/native_program_test.mm",
+          "line": 131,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:53Z",
+          "time": "0s",
+          "classname": "GgmlMetalProgram"
+        }
+      ]
+    }
+  ]
+}

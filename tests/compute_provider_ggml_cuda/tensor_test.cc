@@ -1,5 +1,6 @@
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
+#include "../compute_ops/qwen35_recurrent_contract_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
@@ -103,6 +104,31 @@ TEST(GgmlCudaTensor, MatureKdaPublishesScoresAndStateIndependently) {
   EXPECT_EQ(half_test::read<float>(output_storage[0]),
             std::vector<float>(*output_desc[0].element_count(), 0.F));
   EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
+}
+
+TEST(GgmlCudaTensor,
+     Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation) {
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  for (const std::int64_t tokens : {1, 17, 128}) {
+    SCOPED_TRACE(tokens);
+    const auto f32 = qwen35_recurrent_contract_test::inputs(
+        DataType::kFloat32, tokens);
+    const auto f32_outputs = qwen35_recurrent_contract_test::outputs(f32);
+    auto accepted = prepare(ctx, Operation(GatedDeltaNet{}), f32, f32_outputs,
+                            memory.ref());
+    ASSERT_TRUE(accepted) << accepted.error().message();
+    EXPECT_EQ(accepted->provider().id, ggml_cuda::kProviderId);
+
+    const auto b16 = qwen35_recurrent_contract_test::inputs(
+        DataType::kBFloat16, tokens);
+    const auto b16_outputs = qwen35_recurrent_contract_test::outputs(b16);
+    auto rejected = prepare(ctx, Operation(GatedDeltaNet{}), b16, b16_outputs,
+                            memory.ref());
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+  }
 }
 
 TEST(GgmlCudaTensor, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {

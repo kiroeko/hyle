@@ -1,0 +1,1491 @@
+{
+  "tests": 126,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:40:13Z",
+  "time": "20.347s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "VulkanNative",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:13Z",
+      "time": "0.279s",
+      "testsuite": [
+        {
+          "name": "NativeOwnersTransfersAndQuota",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\native_test.cc",
+          "line": 27,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.206s",
+          "classname": "VulkanNative"
+        },
+        {
+          "name": "RecorderCombinesMatureFfnAndCustomSpirvWithReadyHandoff",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\native_test.cc",
+          "line": 189,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.073s",
+          "classname": "VulkanNative"
+        }
+      ]
+    },
+    {
+      "name": "VulkanTyped",
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:13Z",
+      "time": "0.366s",
+      "testsuite": [
+        {
+          "name": "MatMulDenseConstantChangingAndTransposedRhs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\native_test.cc",
+          "line": 73,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.108s",
+          "classname": "VulkanTyped"
+        },
+        {
+          "name": "SiluSeparateAndPackedHalvesWithOddRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\native_test.cc",
+          "line": 120,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.068s",
+          "classname": "VulkanTyped"
+        },
+        {
+          "name": "RebindingChangesBothActivationAndDenseRhsOnRecordedCommands",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\native_test.cc",
+          "line": 162,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.063s",
+          "classname": "VulkanTyped"
+        },
+        {
+          "name": "InvalidDomainsAndForeignDeviceAreRejected",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\native_test.cc",
+          "line": 258,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.126s",
+          "classname": "VulkanTyped"
+        }
+      ]
+    },
+    {
+      "name": "VulkanLifetime",
+      "tests": 13,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:13Z",
+      "time": "1.501s",
+      "testsuite": [
+        {
+          "name": "IreeCheckedScanCopyFailuresDrainAcceptedPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 140,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:13Z",
+          "time": "0.316s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "IreeCancellationReusesSlotAndCloseDrainsAbandonment",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 176,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.108s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "IreeNoncoherentFlagFailurePreservesCallerOutput",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 223,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.222s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "NoncoherentTransferBranchUsesRealFlushAndInvalidate",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 260,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.063s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "SubmitOomDoesNotWaitForUnacceptedFenceAndCanRetry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 282,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.063s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "ObservationOomRetainsWorkUntilActualNativeRetirement",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 305,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.064s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "PartialAllocationFailureReleasesNativeQuotaAndDescriptors",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 344,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.065s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "PackedProgramDoesNotRetainAnUnusedDenseWeightCopy",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 368,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.066s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "CancellationAndAbandonmentKeepOwnersWithoutDestructorWait",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 400,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.062s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "ExportedTensorAndNativeTokenPreventSlotOverwrite",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 436,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.062s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "IndependentThreadsReplayWhileContextCollects",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 469,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:14Z",
+          "time": "0.076s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 512,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.263s",
+          "classname": "VulkanLifetime"
+        },
+        {
+          "name": "ManagedWaitAllowsIndependentProducerAndCancelledSlotReuse",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 603,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.065s",
+          "classname": "VulkanLifetime"
+        }
+      ]
+    },
+    {
+      "name": "VulkanLifecycle",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:15Z",
+      "time": "0.205s",
+      "testsuite": [
+        {
+          "name": "CheckedGatherFlushInvalidateCancelAndAbandon",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 649,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.075s",
+          "classname": "VulkanLifecycle"
+        },
+        {
+          "name": "CheckedGatherPartialAcceptanceDrainsAndPreservesNativeFailure",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 722,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.063s",
+          "classname": "VulkanLifecycle"
+        },
+        {
+          "name": "CheckedGatherMappedFailuresKeepAdmissionAndRetirementDistinct",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\lifecycle_test.cc",
+          "line": 749,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.066s",
+          "classname": "VulkanLifecycle"
+        }
+      ]
+    },
+    {
+      "name": "VulkanTensor",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:15Z",
+      "time": "0.578s",
+      "testsuite": [
+        {
+          "name": "ExactStorageHandlesOddStridesWordsAndEmptyTransfers",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\tensor_test.cc",
+          "line": 12,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.164s",
+          "classname": "VulkanTensor"
+        },
+        {
+          "name": "UnaryBinaryAndCastUseIndependentFloatingOracles",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\tensor_test.cc",
+          "line": 125,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.191s",
+          "classname": "VulkanTensor"
+        },
+        {
+          "name": "ScalarEmptyTailRankEightBroadcastAndColdRefusal",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\tensor_test.cc",
+          "line": 218,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:15Z",
+          "time": "0.221s",
+          "classname": "VulkanTensor"
+        }
+      ]
+    },
+    {
+      "name": "VulkanView",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:16Z",
+      "time": "0.205s",
+      "testsuite": [
+        {
+          "name": "MetadataAliasesSixStorageTypesWithoutDeviceAllocation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\view_test.cc",
+          "line": 10,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.076s",
+          "classname": "VulkanView"
+        },
+        {
+          "name": "PreparedAliasAndFixedRecorderRequireRealSharedRanges",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\view_test.cc",
+          "line": 89,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.064s",
+          "classname": "VulkanView"
+        },
+        {
+          "name": "OriginChangesReuseResourcesAndFailedRecordingCannotSubmit",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\view_test.cc",
+          "line": 161,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.063s",
+          "classname": "VulkanView"
+        }
+      ]
+    },
+    {
+      "name": "VulkanGateNorm",
+      "tests": 6,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:16Z",
+      "time": "1.234s",
+      "testsuite": [
+        {
+          "name": "LayerNormUsesMatureRegionsThroughHighRankStorageAdapters",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gate_norm_test.cc",
+          "line": 12,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.087s",
+          "classname": "VulkanGateNorm"
+        },
+        {
+          "name": "MatureLayerNormUsesNativeFallbackOutsideColdDeviceLimits",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gate_norm_test.cc",
+          "line": 68,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.064s",
+          "classname": "VulkanGateNorm"
+        },
+        {
+          "name": "ThreeGatesSupportBothLayoutsAndOddByteOrigins",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gate_norm_test.cc",
+          "line": 88,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.334s",
+          "classname": "VulkanGateNorm"
+        },
+        {
+          "name": "NormUsesFloatAccumulationAndIndependentParameterStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gate_norm_test.cc",
+          "line": 166,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:16Z",
+          "time": "0.498s",
+          "classname": "VulkanGateNorm"
+        },
+        {
+          "name": "SpecialValuesStableVarianceRankEightAndPreciseAffine",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gate_norm_test.cc",
+          "line": 231,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:17Z",
+          "time": "0.126s",
+          "classname": "VulkanGateNorm"
+        },
+        {
+          "name": "OddHalfRowsPreserveNeighborsInFixedRecorder",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gate_norm_test.cc",
+          "line": 293,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:17Z",
+          "time": "0.122s",
+          "classname": "VulkanGateNorm"
+        }
+      ]
+    },
+    {
+      "name": "VulkanConcat",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:17Z",
+      "time": "0.858s",
+      "testsuite": [
+        {
+          "name": "VariadicExactStorageAcrossEveryAxisAndStridedStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\concat_test.cc",
+          "line": 9,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:17Z",
+          "time": "0.711s",
+          "classname": "VulkanConcat"
+        },
+        {
+          "name": "EmptyGroupsHugeEmptyBroadcastAndRepeatedInputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\concat_test.cc",
+          "line": 63,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:18Z",
+          "time": "0.07s",
+          "classname": "VulkanConcat"
+        },
+        {
+          "name": "SharedWordBoundariesPreserveBorrowedNeighborsAndRejectAlias",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\concat_test.cc",
+          "line": 106,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:18Z",
+          "time": "0.076s",
+          "classname": "VulkanConcat"
+        }
+      ]
+    },
+    {
+      "name": "VulkanReduction",
+      "tests": 9,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:18Z",
+      "time": "4.282s",
+      "testsuite": [
+        {
+          "name": "MatureRowsCoverBothDispatchBoundariesAndHalfRounding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 21,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:18Z",
+          "time": "0.455s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "MatureLongProbabilityRetainsLastBlockPeak",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 51,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:18Z",
+          "time": "0.209s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "MatureMasksPreserveScaleOrderAndF32IntermediateRounding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 76,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:19Z",
+          "time": "0.07s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "MatureReductionRespectsColdGridLimits",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 112,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:19Z",
+          "time": "0.062s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "AllTypesAxesLayoutsIdentitiesAndSignedZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 132,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:19Z",
+          "time": "0.433s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "SoftmaxMasksAxesCacheBoundaryAndOddViewOrigins",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 220,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:19Z",
+          "time": "2.739s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "NonfiniteRowsTinyLogTailBroadcastAndRejection",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 282,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.101s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "FixedRecorderPreservesGuardBytesAndRejectsAlias",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 368,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.141s",
+          "classname": "VulkanReduction"
+        },
+        {
+          "name": "StatisticsBuffersAreReusedAndIndependentResultsSurviveClose",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\reduction_test.cc",
+          "line": 453,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.067s",
+          "classname": "VulkanReduction"
+        }
+      ]
+    },
+    {
+      "name": "VulkanProviderBridge",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:22Z",
+      "time": "0.131s",
+      "testsuite": [
+        {
+          "name": "RouteProducerAndGgmlRegionShareOneDevice",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\provider_bridge_test.cc",
+          "line": 23,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.064s",
+          "classname": "VulkanProviderBridge"
+        },
+        {
+          "name": "ExpertCallbackFailureReleasesSharedQueueLock",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\provider_bridge_test.cc",
+          "line": 121,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.067s",
+          "classname": "VulkanProviderBridge"
+        }
+      ]
+    },
+    {
+      "name": "VulkanManaged",
+      "tests": 10,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:22Z",
+      "time": "1.351s",
+      "testsuite": [
+        {
+          "name": "DirectNormRebindsIndependentSlotsAndRetainsOldResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 13,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.138s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 86,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:22Z",
+          "time": "0.075s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "PointwiseFamilyUsesRealProviderWithoutNormAnchor",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 140,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.369s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "SubtractDividePreserveBothBroadcastOrdersAndScalar",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 195,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.119s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "StableTransformsPreserveSmallValuesAndHighRankHalfStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 258,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.104s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "CrossBroadcastAndDegenerateRankEightUseMatureArithmetic",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 332,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.217s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "ElementwiseDeviceLimitsRetainQualifiedFallbacks",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 388,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.061s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "PackedAndSeparateSwiGluRetainHighRankRowHalves",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 402,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.072s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "B2MatureLinearPositionAndTransformReplay",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 459,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:23Z",
+          "time": "0.122s",
+          "classname": "VulkanManaged"
+        },
+        {
+          "name": "B2MatureCausalGqaRetainsReplayResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\managed_region_test.cc",
+          "line": 534,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:24Z",
+          "time": "0.071s",
+          "classname": "VulkanManaged"
+        }
+      ]
+    },
+    {
+      "name": "VulkanTopK",
+      "tests": 13,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:24Z",
+      "time": "1.444s",
+      "testsuite": [
+        {
+          "name": "IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 9,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:24Z",
+          "time": "0.25s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "PaddedScratchAndDispatchLimitsAreCheckedBeforeRecording",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 35,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:24Z",
+          "time": "0.063s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "FrozenExpertWidthsTailsAndStableRawOutputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 72,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:24Z",
+          "time": "0.359s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "AxisLayoutAdaptersPreserveInputHolesAndZeroStride",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 109,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:24Z",
+          "time": "0.087s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "OriginalLargeSortKeepsTheSameStableAndNanPolicy",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 147,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:24Z",
+          "time": "0.107s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "RebindingByteOriginsRefreshesFrozenProviderViews",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 169,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.076s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "CapturedDenseRankEightRetainsItsByteOrigin",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 251,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.102s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "EqualRowsNanPayloadsAndSignedZerosSurviveTailPadding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 313,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.072s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "RankEightAndRelaxedOrderUseTheSameOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 337,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.068s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "RecorderValidatesTwoOutputBindingsAndReplaysChangedInput",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 374,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.069s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "EmptyDomainAndInvalidPreparationHaveNoPayloadFallback",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 429,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.06s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "QuotaFailureRollsBackAndFreshInvocationStillWorks",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 450,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.064s",
+          "classname": "VulkanTopK"
+        },
+        {
+          "name": "ColdMultiOutputSsaRejectsMissingDuplicateAndSelfProducedIds",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\topk_test.cc",
+          "line": 475,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.06s",
+          "classname": "VulkanTopK"
+        }
+      ]
+    },
+    {
+      "name": "VulkanGather",
+      "tests": 8,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:25Z",
+      "time": "0.892s",
+      "testsuite": [
+        {
+          "name": "RejectsNativeGetRowsLimitsDuringPreparation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 11,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.058s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 37,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.207s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "WideRowsCoverEveryNativeWorkgroup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 85,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:25Z",
+          "time": "0.185s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "OddStridesBroadcastIndicesScalarAndRankEight",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 117,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:26Z",
+          "time": "0.103s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "BadIndicesPreserveRecordedOutputAndRetireOnlyFailedSlot",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 181,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:26Z",
+          "time": "0.091s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "ByteOriginsWorkForCapturedAndDynamicTablesAndIndices",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 237,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:26Z",
+          "time": "0.109s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "EmptyIndicesAndEmptyResultStillRespectCheckedDomain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 295,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:26Z",
+          "time": "0.071s",
+          "classname": "VulkanGather"
+        },
+        {
+          "name": "RecorderRetainsErrorsFromEveryAppendedCheckedProgram",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gather_test.cc",
+          "line": 319,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:26Z",
+          "time": "0.064s",
+          "classname": "VulkanGather"
+        }
+      ]
+    },
+    {
+      "name": "VulkanScan",
+      "tests": 5,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:26Z",
+      "time": "1.415s",
+      "testsuite": [
+        {
+          "name": "NativeWidthsAndRaggedRowsMatchIndependentPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 11,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:26Z",
+          "time": "0.938s",
+          "classname": "VulkanScan"
+        },
+        {
+          "name": "ArbitraryAxesStridesRankEightAndEmpty",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 62,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:27Z",
+          "time": "0.118s",
+          "classname": "VulkanScan"
+        },
+        {
+          "name": "RowDispatchHandlesTheSecondNativeGridBoundary",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 104,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:27Z",
+          "time": "0.194s",
+          "classname": "VulkanScan"
+        },
+        {
+          "name": "RebindsOriginsPreservesSnapshotsAndHandlesNonfinitePrefixes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 116,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:27Z",
+          "time": "0.103s",
+          "classname": "VulkanScan"
+        },
+        {
+          "name": "RejectsFloatNativeLimitsBeforeSubmission",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 177,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:27Z",
+          "time": "0.059s",
+          "classname": "VulkanScan"
+        }
+      ]
+    },
+    {
+      "name": "VulkanIntegerScan",
+      "tests": 8,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:27Z",
+      "time": "1.055s",
+      "testsuite": [
+        {
+          "name": "HierarchicalWidthsMatchIndependentWidePrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 200,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:27Z",
+          "time": "0.2s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "LocalBlockOverflowDoesNotRejectLegalGlobalPrefixes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 218,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.113s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "AxesStridesRankEightAndEmptyPreserveInputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 237,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.156s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "EveryPrefixAndExclusiveFinalTotalAreChecked",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 274,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.15s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "LateRowFailurePreservesEntireRecordedOutput",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 307,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.113s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "OriginsIndependentSlotsAndRetainedResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 338,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.171s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "FrozenNonLastAxisLimitsRejectBeforeSubmission",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 393,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.066s",
+          "classname": "VulkanIntegerScan"
+        },
+        {
+          "name": "FrozenNonLastAxisQuotaAndRetainedResult",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scan_test.cc",
+          "line": 424,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.082s",
+          "classname": "VulkanIntegerScan"
+        }
+      ]
+    },
+    {
+      "name": "VulkanScatter",
+      "tests": 9,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:28Z",
+      "time": "1.182s",
+      "testsuite": [
+        {
+          "name": "AssignPreservesAllStorageBitsAndLastLogicalUpdate",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 13,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:28Z",
+          "time": "0.33s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "AddIncludesBaseAndEveryDuplicateUpdate",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 47,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:29Z",
+          "time": "0.169s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "OrdinaryCheckedAddBindsManagedGgmlRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 81,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:29Z",
+          "time": "0.065s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "AxesRankEightMultidimensionalIndicesAndByteStrides",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 99,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:29Z",
+          "time": "0.097s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "EmptyAndLongUnsortedIndexListsUseOriginalStableSort",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 155,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:29Z",
+          "time": "0.105s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "CheckedFailurePreservesAllOutputAndAllowsFreshSlot",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 199,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:29Z",
+          "time": "0.126s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "ByteOriginsIndependentReplaysAndRetainedResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 285,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:29Z",
+          "time": "0.151s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "ColdMetadataAndNativeLimitsRejectWithoutSubmission",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 340,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.062s",
+          "classname": "VulkanScatter"
+        },
+        {
+          "name": "QuotaFailureRollsBackAndCloseKeepsCompletedOutputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\scatter_test.cc",
+          "line": 386,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.073s",
+          "classname": "VulkanScatter"
+        }
+      ]
+    },
+    {
+      "name": "VulkanRecurrent",
+      "tests": 7,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:30Z",
+      "time": "0.565s",
+      "testsuite": [
+        {
+          "name": "OriginalDirectStateAndIndependentRetainedOutputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 14,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.167s",
+          "classname": "VulkanRecurrent"
+        },
+        {
+          "name": "Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 79,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.068s",
+          "classname": "VulkanRecurrent"
+        },
+        {
+          "name": "RejectsUnsupportedDomainAndPreservesSuccessfulBinding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 99,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.066s",
+          "classname": "VulkanRecurrent"
+        },
+        {
+          "name": "PerChannelKdaGateUsesMatureManagedRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 128,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.065s",
+          "classname": "VulkanRecurrent"
+        },
+        {
+          "name": "MatureCausalConvUsesManagedRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 146,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.064s",
+          "classname": "VulkanRecurrent"
+        },
+        {
+          "name": "MatureMoeAndHyperConnectionBatchUsesManagedRegions",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 175,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.071s",
+          "classname": "VulkanRecurrent"
+        },
+        {
+          "name": "MatureLightningIndexerUsesManagedRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\recurrent_test.cc",
+          "line": 194,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.062s",
+          "classname": "VulkanRecurrent"
+        }
+      ]
+    },
+    {
+      "name": "VulkanMxfp4",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:30Z",
+      "time": "0.145s",
+      "testsuite": [
+        {
+          "name": "OriginalDirectRepeatedSlotsKeepCompressedInputsAndResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mxfp4_test.cc",
+          "line": 7,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.087s",
+          "classname": "VulkanMxfp4"
+        },
+        {
+          "name": "RejectsUnrelatedEncodingAndPlainMathOnCompressedStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mxfp4_test.cc",
+          "line": 62,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.058s",
+          "classname": "VulkanMxfp4"
+        }
+      ]
+    },
+    {
+      "name": "VulkanIree",
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:30Z",
+      "time": "0.434s",
+      "testsuite": [
+        {
+          "name": "OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\iree_test.cc",
+          "line": 13,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:30Z",
+          "time": "0.143s",
+          "classname": "VulkanIree"
+        },
+        {
+          "name": "OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\iree_test.cc",
+          "line": 74,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.113s",
+          "classname": "VulkanIree"
+        },
+        {
+          "name": "CheckedScanAutomaticallyAdvancesAndStopsBeforePublishingFailure",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\iree_test.cc",
+          "line": 109,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.117s",
+          "classname": "VulkanIree"
+        },
+        {
+          "name": "Float8RejectsMismatchedScalesAndUnavailableLaunchDomain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\iree_test.cc",
+          "line": 163,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.059s",
+          "classname": "VulkanIree"
+        }
+      ]
+    },
+    {
+      "name": "VulkanMatureTensor",
+      "tests": 12,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:40:31Z",
+      "time": "2.217s",
+      "testsuite": [
+        {
+          "name": "CrossBroadcastUsesOriginalRegionAtRankTwoSixAndEight",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 41,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.159s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "ArbitraryAxesKeepDimensionsAndExactRowTiles",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 102,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.156s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "CopyPreservesBitsAndConcatRestoresHighRankAxes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 141,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.087s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "HighRankNormAndUnaryStayInMatureRegion",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 197,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.067s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "IntegerCopyPreservesBitsInIndependentStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 234,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.063s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "SoftmaxAxesAndBroadcastMasksUseOriginalRegions",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 254,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:31Z",
+          "time": "0.812s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "SoftmaxMaskKeepsScaleRoundingAndExceptionalRows",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 331,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:32Z",
+          "time": "0.073s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "StorageConcatPreservesBitsAcrossEmptyPortsAndAllAxes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 357,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:32Z",
+          "time": "0.258s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "EverySixteenBitPatternCopiesAndConvertsWithOddTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 412,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:33Z",
+          "time": "0.138s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "NarrowingPreservesNanClassAndNearestEvenBoundaries",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 448,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:33Z",
+          "time": "0.157s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "LowPrecisionFamiliesUseOriginalProvidersAndFloatGamma",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 489,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:33Z",
+          "time": "0.176s",
+          "classname": "VulkanMatureTensor"
+        },
+        {
+          "name": "BFloatConversionAllocationFailureReleasesQuota",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\mature_tensor_test.cc",
+          "line": 579,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:40:33Z",
+          "time": "0.064s",
+          "classname": "VulkanMatureTensor"
+        }
+      ]
+    }
+  ]
+}

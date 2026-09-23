@@ -1,0 +1,192 @@
+{
+  "tests": 17,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:05:50Z",
+  "time": "2.886s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "AppleGraph",
+      "tests": 17,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:05:50Z",
+      "time": "2.885s",
+      "testsuite": [
+        {
+          "name": "WholeQ4FfnChangedInputsLeasesAndDestroyedGraph",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/graph_test.cc",
+          "line": 63,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.043s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "BatchedLinearAndHadamardStayInOneCompiledRegion",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/graph_test.cc",
+          "line": 128,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.006s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/graph_test.cc",
+          "line": 189,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.008s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "RejectsMissingPendingAndMismatchedConstants",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/graph_test.cc",
+          "line": 248,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/graph_test.cc",
+          "line": 263,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.008s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "ReportOutlivesConstantsCustomPayloadAndContext",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/graph_test.cc",
+          "line": 320,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.006s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "IntegerSelectionFeedsGatherAcrossRepeatedNativeInvocations",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/indexing_test.cc",
+          "line": 14,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.013s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/indexing_test.cc",
+          "line": 86,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.408s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "ModelL2SwishAndAttentionGatesMatchIndependentStorageBoundaries",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/model_composition_test.cc",
+          "line": 121,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.22s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "RmsSwishKeepsTheRequiredIntermediateStorageRounding",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/model_composition_test.cc",
+          "line": 186,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.003s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/recurrent_test.cc",
+          "line": 19,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.017s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "MatureLightningIndexerUsesOrdinaryGraphEntry",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/recurrent_test.cc",
+          "line": 67,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "OriginalRecurrentRegionsComposeWithMlxAndExplicitState",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/recurrent_test.cc",
+          "line": 110,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.005s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "ProbabilitySelectionNormalizationUsesOrdinaryMultiOutputNodes",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/reduction_test.cc",
+          "line": 15,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "0.136s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "ScatterStateFeedsLaterInvocationsAndKeepsOldResults",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/scatter_test.cc",
+          "line": 14,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:50Z",
+          "time": "1.03s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "BFloatCastBoundariesSurviveFusionAndChangedStridedInputs",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/tensor_test.cc",
+          "line": 15,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:51Z",
+          "time": "0.003s",
+          "classname": "AppleGraph"
+        },
+        {
+          "name": "HalfNormGateResidualAndViewsRetainIndependentNativeResults",
+          "file": "\/Users\/kiro\/hyle\/tests\/graph_route_apple\/tensor_test.cc",
+          "line": 72,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:05:51Z",
+          "time": "0.972s",
+          "classname": "AppleGraph"
+        }
+      ]
+    }
+  ]
+}

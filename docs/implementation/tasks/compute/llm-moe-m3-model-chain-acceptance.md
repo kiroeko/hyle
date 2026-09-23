@@ -1,6 +1,6 @@
 # M3 四路线真实模型计算链验收
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -79,10 +79,10 @@
 |---|---|---|
 | M3-C0 | `KEEP` 本地 13 文件 source ID、冻结 token、C0 独立 reference/quantization recipe；重新核对原文件。只有某条真实链能进入执行时才重建相应外部制品，不为准备期已拒绝的格式制造数 GB 临时文件 | 输入 hash 必须一致；历史外部路径不存在不写当前 PASS |
 | M3-C1 | `BORROW` M2 已接的 oneDNN/ggml/cuBLASLt/Marlin/FlashInfer/MLX/IREE 原生程序、普通 Direct/Graph、资源与完成路径；用现有路线测试按能力族集中复验 | 不逐算子重建；候选、Provider pin 和机器身份写入一份聚合收据 |
-| M3-C2 | `FIX` 仅增加测试侧表驱动审计器和真实 Qwen shape 的 prepare/组合用例；它读取 config/manifest 并输出 64×4 verdict，不安装模型 loader 或 tokenizer | 每格必须有实际收据或具名 `BACKEND_REJECTED`、`NUMERIC_INCOMPATIBLE`、`UPSTREAM_MISSING`、`VALIDATION_NOT_RUN` |
+| M3-C2 | `FIX` 仅增加测试侧表驱动审计器和真实 Qwen shape 的 prepare/组合用例；它读取 config/manifest 并输出 64×4 verdict，不安装模型 loader 或 tokenizer | 每格必须有实际收据或具名 `BACKEND_REJECTED`、`NUMERIC_INCOMPATIBLE`、`UPSTREAM_MISSING`；终局不得保留 `VALIDATION_NOT_RUN` |
 | M3-C3 | `FIX_IF_REPRODUCED` 只允许修成熟 Provider schema/lowering、资源/完成或冷路由错误；不改变数学。每个具名缺陷最多两次源码驱动纠正 | 修复后只重跑受影响路线；没有反例则产品代码改动为 0 |
 | M3-C4 | `DEFER` Q4-S128、Q4-A64、Q8-B32、BF16 recurrent、完整 MoE/sparse/compression 和 F18 精确格式中已由 M2 证明 backend 不相容的格；M3 保存真实链最早拒绝边界，M4 才审最小补缺 | 相近位宽、浮点展开常驻、CPU fallback 和其它路线结果都不能代签 |
-| M3-C5 | `REJECT` 新 kernel/shader/decoder/quantizer、冻结自研回退或竞速、缩小本地 2B 宽度后称完整模型、仅运行 reference 后称 HYLE 通过，以及为失败准备继续生成无消费者的大制品 | 本轮新增自研数学 0；适用未运行保持 `VALIDATION_NOT_RUN` |
+| M3-C5 | `REJECT` 新 kernel/shader/decoder/quantizer、冻结自研回退或竞速、缩小本地 2B 宽度后称完整模型、仅运行 reference 后称 HYLE 通过，以及为失败准备继续生成无消费者的大制品 | 本轮新增自研数学 0；适用未运行不得关闭本卡 |
 
 ### 六批固定消费者
 
@@ -100,11 +100,12 @@
 本卡有限 FIX 已冻结。可以增加上述测试消费者、收据与必要的成熟接入纠正；任何产品修改仍须由
 实际失败指向 C3，不能借 M3 扩大算子目录。
 
-## 中间审计更正
+## 终局
 
-2026-09-24 更正：此前记录只完成输入/reference、四路线 factor、Provider 门和 256 格初次分类；
-134 格仍为 `VALIDATION_NOT_RUN`，因此 M3 未完成。本卡保持 `AUDITED`，继续授权 C2 的六组共享
-测试消费者及 C3 的实际成熟接入纠正；产品数学仍冻结。见
-[中间审计](llm-moe-m3-terminal.md)与
-[聚合收据](../../../../evidence/correctness/compute-llm-moe-m3/acceptance.json)。M3 完成这些实际运行并
-回填覆盖后才能终局，期间不进入 M4。
+2026-09-24 第二轮把此前 134 个 `VALIDATION_NOT_RUN` 全部绑定到当前源码的实际 Direct/Graph
+收据或具名执行拒绝；最终为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream
+missing、0 validation not run。产品候选和数学未变，测试侧补充了真实 Qwen shape 的 BF16
+recurrent prepare 边界与公共 model-op BF16 schema 拒绝。见[终局](llm-moe-m3-terminal.md)、
+[执行映射](../../../../evidence/correctness/compute-llm-moe-m3/execution-map.json)和
+[聚合收据](../../../../evidence/correctness/compute-llm-moe-m3/acceptance.json)。M3 进入不可变
+`CANDIDATE`；终局检查完成前不进入 M4。

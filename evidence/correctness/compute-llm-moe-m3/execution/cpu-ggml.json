@@ -1,0 +1,312 @@
+{
+  "tests": 29,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:39:38Z",
+  "time": "0.026s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "GgmlCpuProvider",
+      "tests": 29,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:39:38Z",
+      "time": "0.026s",
+      "testsuite": [
+        {
+          "name": "NormsUseIndependentOracleAcrossStorageTypes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 108,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0.001s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureCausalConvUsesNaturalSequenceLayout",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 114,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureKdaPublishesScoresAndStateIndependently",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 135,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 179,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 201,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureLightningIndexerUsesOrdinaryEntryAndReplays",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 227,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "AdmittedUnarySpecialValuesAndHalfCastRounding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 254,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "DenseRankSixBroadcastStridedCopyConcatAndGather",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 330,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "GatherAxesPreserveTypesAndValidateCurrentStridedIndices",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 516,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0.001s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "GatherEmptyIndicesNeedNoPayload",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 523,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "ScatterAddUsesMatureDuplicateReductionAndChecksIndices",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 609,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "ScatterAddWithEmptyIndicesCopiesTheBase",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 615,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "ColumnBroadcastKeepsOperandOrder",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 637,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "GeneralBroadcastPreservesHeadBatchAndOperandAxes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 763,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0.004s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "SelectedReductionsCoverAllRankSixAxisSets",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 864,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0.015s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "EmptyReductionsPublishIdentitiesAndScalarValues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 876,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "PersistentIndependentSlotsHonorExecutorAndClose",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 882,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "DeclinesUnqualifiedDomainsAndInvalidThreadBudget",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 948,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "InvocationAllocationFailureRollsBackAndCanRecover",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 981,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "StandardScanHandlesAxisStridesAndCheckedOverflow",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1015,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "StandardSelectionPreservesStableOrderAndStorageBits",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1140,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "StandardScanReplaysWithoutAllocationsAndHonorsQuota",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1146,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "StandardSelectionKeepsAdjacentLargeIntegersDistinct",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1202,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "EmptyScanHasNoNativeEpisodeOrPayloadAccess",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1228,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureLinearRopeAndHadamardUseOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1239,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "BatchedMatMulBroadcastsNativeTransposedWeightsWithoutCopy",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1383,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "HalfMatMulCoversDecodeTailAndRankFourBroadcast",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1438,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureAttentionHandlesHead256GqaDecode",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1482,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0s",
+          "classname": "GgmlCpuProvider"
+        },
+        {
+          "name": "MatureAttentionAppliesCausalMaskForHalfPrefill",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml\\cpu_provider_test.cc",
+          "line": 1565,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:38Z",
+          "time": "0.001s",
+          "classname": "GgmlCpuProvider"
+        }
+      ]
+    }
+  ]
+}

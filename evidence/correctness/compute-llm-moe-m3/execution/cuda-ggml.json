@@ -1,0 +1,234 @@
+{
+  "tests": 19,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:39:54Z",
+  "time": "1.168s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "GgmlCuda",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:39:54Z",
+      "time": "0.08s",
+      "testsuite": [
+        {
+          "name": "ColdAllocationsRollBackWithoutRetainingNativeResources",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\allocation_test.cc",
+          "line": 67,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:54Z",
+          "time": "0.077s",
+          "classname": "GgmlCuda"
+        },
+        {
+          "name": "IndependentInvocationsReplayAndRetainBorrowedPayload",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\provider_test.cc",
+          "line": 21,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.002s",
+          "classname": "GgmlCuda"
+        }
+      ]
+    },
+    {
+      "name": "GgmlCudaAttention",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:39:55Z",
+      "time": "0.714s",
+      "testsuite": [
+        {
+          "name": "OriginalPrefillDecodeAndIndependentReplays",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\attention_test.cc",
+          "line": 87,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.375s",
+          "classname": "GgmlCudaAttention"
+        },
+        {
+          "name": "ZeroAndNegativeScalePreserveCausalMask",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\attention_test.cc",
+          "line": 94,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.249s",
+          "classname": "GgmlCudaAttention"
+        },
+        {
+          "name": "Bfloat16ValuesOutsideFloat16RangeRemainFinite",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\attention_test.cc",
+          "line": 103,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.089s",
+          "classname": "GgmlCudaAttention"
+        }
+      ]
+    },
+    {
+      "name": "GgmlCudaTensor",
+      "tests": 14,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:39:55Z",
+      "time": "0.373s",
+      "testsuite": [
+        {
+          "name": "FloatingNormAffineAndUnaryConversions",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 17,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.018s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "MatureCausalConvUsesNaturalSequenceLayout",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 25,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.002s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "MatureKdaPublishesScoresAndStateIndependently",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 63,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.002s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 110,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 134,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.01s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "MatureLightningIndexerUsesOrdinaryEntryAndReplays",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 162,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.001s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "LayerNormRetainsSmallVarianceAtLargeOffset",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 190,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "BroadcastUsesLogicalAxesAndBothOperandOrders",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 215,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.058s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "SelectedReductionsUseDenseAndStridedLogicalCoordinates",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 222,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:55Z",
+          "time": "0.12s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "StridedCopyAndVariadicConcatPreserveBits",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 234,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:56Z",
+          "time": "0.003s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "UnsupportedNumericDomainsDeclineBeforeNativeExecution",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 276,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:56Z",
+          "time": "0s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "MatureLinearRopeAndHadamardUseOrdinaryEntry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 291,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:56Z",
+          "time": "0.008s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 376,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:56Z",
+          "time": "0.144s",
+          "classname": "GgmlCudaTensor"
+        },
+        {
+          "name": "SoftmaxRejectsPartialOverlapAndMaskAlias",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+          "line": 383,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:39:56Z",
+          "time": "0s",
+          "classname": "GgmlCudaTensor"
+        }
+      ]
+    }
+  ]
+}

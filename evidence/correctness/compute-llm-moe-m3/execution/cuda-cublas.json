@@ -1,0 +1,72 @@
+{
+  "tests": 5,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:02:24Z",
+  "time": "0.264s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "CublasProvider",
+      "tests": 5,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:02:24Z",
+      "time": "0.264s",
+      "testsuite": [
+        {
+          "name": "Float32LayoutsAndChangedInputsMatchDoubleOracle",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cublas\\cublas_provider_test.cc",
+          "line": 159,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:24Z",
+          "time": "0.129s",
+          "classname": "CublasProvider"
+        },
+        {
+          "name": "HalfDecodeAndPrefillUseIndependentLanes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cublas\\cublas_provider_test.cc",
+          "line": 167,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:24Z",
+          "time": "0.131s",
+          "classname": "CublasProvider"
+        },
+        {
+          "name": "RejectsUnsupportedTypesAndHostOnlyResources",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cublas\\cublas_provider_test.cc",
+          "line": 177,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:24Z",
+          "time": "0s",
+          "classname": "CublasProvider"
+        },
+        {
+          "name": "CompletionRetainsReleasedPreparedAndInvocation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cublas\\cublas_provider_test.cc",
+          "line": 200,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:24Z",
+          "time": "0.001s",
+          "classname": "CublasProvider"
+        },
+        {
+          "name": "ColdMetadataFailuresRollBackAndReservedReplayDoesNotAllocate",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cublas\\cublas_provider_test.cc",
+          "line": 302,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:02:24Z",
+          "time": "0.001s",
+          "classname": "CublasProvider"
+        }
+      ]
+    }
+  ]
+}

@@ -1011,8 +1011,16 @@ TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
   auto invalid_grouped = grouped;
   invalid_grouped[2] = tensor(i32, 11, 3);
   EXPECT_FALSE(infer_single_output(model_ops::grouped_matmul(), invalid_grouped));
+  invalid_grouped = grouped;
+  invalid_grouped[0] = tensor(DataType::kBFloat16, 3, 5, 7);
+  invalid_grouped[1] = tensor(DataType::kBFloat16, 11, 2, 7);
+  EXPECT_FALSE(infer_single_output(model_ops::grouped_matmul(), invalid_grouped));
   EXPECT_FALSE(infer_single_output(
       model_ops::hyper_connection_combine(-1.0F, 0), combine));
+  auto bfloat_combine = combine;
+  bfloat_combine[0] = tensor(DataType::kBFloat16, 11, 24);
+  EXPECT_FALSE(infer_single_output(model_ops::hyper_connection_combine(),
+                                   bfloat_combine));
   auto invalid_post = post;
   invalid_post[3] = tensor(f32, 11, 4, 3);
   EXPECT_FALSE(
@@ -1033,6 +1041,9 @@ TEST(OperationModelOps, LightningIndexerKeepsSparseModelLayout) {
   EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
   invalid = inputs;
   invalid[0] = tensor(f32, 2, 3, 32, 128);
+  EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
+  invalid = inputs;
+  invalid[0] = tensor(DataType::kBFloat16, 2, 3, 64, 128);
   EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
   invalid = inputs;
   invalid[3] = tensor(f16, 3, 1, 3, 7);

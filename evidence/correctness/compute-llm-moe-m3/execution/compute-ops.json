@@ -1,0 +1,701 @@
+{
+  "tests": 47,
+  "failures": 0,
+  "disabled": 0,
+  "errors": 0,
+  "timestamp": "2026-09-24T07:22:57Z",
+  "time": "0s",
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "OperationViewAlias",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "CheckedSliceOffsetsMatchAddressingAndEmptyRules",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 45,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationViewAlias"
+        },
+        {
+          "name": "RejectsUnrepresentableOffsetsAndInconsistentSpans",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 71,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationViewAlias"
+        }
+      ]
+    },
+    {
+      "name": "OperationCatalog",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "HasTwentyTwoTypedBuiltinFamiliesAndInvalidDefault",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 87,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationCatalog"
+        }
+      ]
+    },
+    {
+      "name": "OperationScan",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "ChecksAxisAndInputDomainWithoutPayload",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 132,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationScan"
+        }
+      ]
+    },
+    {
+      "name": "OperationViews",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "InferReshapeSlicePermutationAndBroadcastWithoutKernel",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 161,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationViews"
+        }
+      ]
+    },
+    {
+      "name": "OperationMaterialization",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "CoversCopyFillAndCastContracts",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 187,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationMaterialization"
+        }
+      ]
+    },
+    {
+      "name": "OperationElementwise",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "AppliesBroadcastAndSelectTypeRules",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 210,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationElementwise"
+        },
+        {
+          "name": "SelectIncludesConditionInBroadcastShape",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 228,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationElementwise"
+        },
+        {
+          "name": "SoftplusPreservesFloatingDomainAndRejectsInteger",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 256,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationElementwise"
+        }
+      ]
+    },
+    {
+      "name": "OperationReductionAndNorm",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "PreserveExplicitAxesAndParameterShapes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 270,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationReductionAndNorm"
+        },
+        {
+          "name": "HalfInputPreservesFloat32LearnedParameters",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 287,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationReductionAndNorm"
+        }
+      ]
+    },
+    {
+      "name": "OperationQuantizedMatMul",
+      "tests": 4,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "InfersSignedAndAffineGroupedLinearProjections",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 323,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationQuantizedMatMul"
+        },
+        {
+          "name": "RejectsIncompleteAndContradictoryContracts",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 379,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationQuantizedMatMul"
+        },
+        {
+          "name": "PreservesEmptyOutputsAndChecksOutputOverflow",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 439,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationQuantizedMatMul"
+        },
+        {
+          "name": "CarriesTheWholeDescriptorAcrossSharedLibrary",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 847,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationQuantizedMatMul"
+        }
+      ]
+    },
+    {
+      "name": "OperationHadamard",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "PreservesShapeAndRequiresPowerOfTwoFinalDimension",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 350,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationHadamard"
+        }
+      ]
+    },
+    {
+      "name": "OperationMatMul",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "BroadcastsBatchDimensionsWithoutLayoutFlags",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 460,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationMatMul"
+        }
+      ]
+    },
+    {
+      "name": "OperationGatedActivation",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "SupportsPackedAndSeparateConsumerShapes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 473,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationGatedActivation"
+        }
+      ]
+    },
+    {
+      "name": "OperationIndexing",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "ScatterAssignmentAndAdditionHaveDistinctPrecision",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 484,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationIndexing"
+        },
+        {
+          "name": "CoversGatherScatterAndVariadicConcat",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 499,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationIndexing"
+        }
+      ]
+    },
+    {
+      "name": "OperationTransformer",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "CoversRoPESoftmaxTopKAndAttentionShapes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 517,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationTransformer"
+        },
+        {
+          "name": "GroupedAttentionPreservesQueryHeadsAndMaskDomain",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 561,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationTransformer"
+        }
+      ]
+    },
+    {
+      "name": "OperationCustom",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "UsesInlineTypedDescriptorWithoutGlobalRegistry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 674,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationCustom"
+        },
+        {
+          "name": "DecodesSchemaIdentityAcrossSharedFactorBoundary",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 861,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationCustom"
+        }
+      ]
+    },
+    {
+      "name": "OperationResources",
+      "tests": 7,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "ReturnsOwnedAccessValuesFromCopiedInlineDescriptor",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 746,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        },
+        {
+          "name": "ValidatesFullFiniteArityAndRejectsIndexBeforeCallback",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 763,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        },
+        {
+          "name": "RejectsInvalidEffectAndCountBeforeInference",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 782,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        },
+        {
+          "name": "RejectsMissingOrPotentiallyThrowingAccessCallback",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 806,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        },
+        {
+          "name": "RejectsMalformedAccessAtAnyPort",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 819,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        },
+        {
+          "name": "PureAndUnknownEffectsDoNotRequireResourceCallbacks",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 831,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        },
+        {
+          "name": "UsesProducerAccessCallbackAcrossSharedFactorBoundary",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 874,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationResources"
+        }
+      ]
+    },
+    {
+      "name": "OperationGatedDeltaNet",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "PreservesExplicitStateAndGroupedHeadContract",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 891,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationGatedDeltaNet"
+        },
+        {
+          "name": "RejectsWrongGatesStateTypesAndArityAtomically",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 925,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationGatedDeltaNet"
+        }
+      ]
+    },
+    {
+      "name": "OperationModelOps",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "CausalConv1dKeepsNaturalSequenceLayout",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 972,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationModelOps"
+        },
+        {
+          "name": "GroupedExpertAndHyperConnectionKeepModelLayouts",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 991,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationModelOps"
+        },
+        {
+          "name": "LightningIndexerKeepsSparseModelLayout",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 1030,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationModelOps"
+        }
+      ]
+    },
+    {
+      "name": "OperationValidation",
+      "tests": 2,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "RequiresExactInputAndOutputSpans",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 1053,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationValidation"
+        },
+        {
+          "name": "RejectsUnknownTypedModesBeforeShapeInference",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\operation_test.cc",
+          "line": 1064,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "OperationValidation"
+        }
+      ]
+    },
+    {
+      "name": "ComputeOpsTensorDesc",
+      "tests": 6,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "CoversEveryPublicScalarWidth",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\tensor_desc_test.cc",
+          "line": 20,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsTensorDesc"
+        },
+        {
+          "name": "OwnsPortableShapeAndStrideFactsWithoutStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\tensor_desc_test.cc",
+          "line": 39,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsTensorDesc"
+        },
+        {
+          "name": "KeepsBlockedEncodingSeparateFromLogicalType",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\tensor_desc_test.cc",
+          "line": 53,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsTensorDesc"
+        },
+        {
+          "name": "RejectsSchemasThatCannotBeRepresented",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\tensor_desc_test.cc",
+          "line": 67,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsTensorDesc"
+        },
+        {
+          "name": "ZeroExtentMakesElementCountZeroBeforeMultiplication",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\tensor_desc_test.cc",
+          "line": 79,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsTensorDesc"
+        },
+        {
+          "name": "TransposeSwapsOnlyMatrixAxesForBatchedLayouts",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\tensor_desc_test.cc",
+          "line": 90,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsTensorDesc"
+        }
+      ]
+    },
+    {
+      "name": "ComputeOpsLowPrecision",
+      "tests": 3,
+      "failures": 0,
+      "disabled": 0,
+      "errors": 0,
+      "timestamp": "2026-09-24T07:22:57Z",
+      "time": "0s",
+      "testsuite": [
+        {
+          "name": "Float8PhysicalSizesAndLogicalOrientation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\low_precision_test.cc",
+          "line": 13,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsLowPrecision"
+        },
+        {
+          "name": "Mxfp4BlockAxisFollowsLogicalK",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\low_precision_test.cc",
+          "line": 44,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsLowPrecision"
+        },
+        {
+          "name": "RejectsIncompleteBlocksAndOverflow",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\low_precision_test.cc",
+          "line": 69,
+          "status": "RUN",
+          "result": "COMPLETED",
+          "timestamp": "2026-09-24T07:22:57Z",
+          "time": "0s",
+          "classname": "ComputeOpsLowPrecision"
+        }
+      ]
+    }
+  ]
+}

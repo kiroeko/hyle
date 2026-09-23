@@ -75,6 +75,24 @@ TEST(AppleRecurrent, OrdinaryPreparationInterleavedRequestsAndOldOutputOwner) {
   }
 }
 
+TEST(AppleRecurrent, Qwen35RealShapeRejectsBfloatAtPreparation) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  for (const int tokens : {1, 17, 128}) {
+    SCOPED_TRACE(tokens);
+    const std::vector<a::InputSpec> inputs{
+        {{1, tokens, 16, 128}, mx::bfloat16},
+        {{1, tokens, 16, 128}, mx::bfloat16},
+        {{1, tokens, 16, 128}, mx::bfloat16},
+        {{1, tokens, 16, 1}, mx::float32},
+        {{1, tokens, 16, 1}, mx::float32},
+        {{1, 16, 128, 128}, mx::float32}};
+    auto rejected = context->prepare(c::GatedDeltaNet{}, inputs);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+  }
+}
+
 TEST(AppleRecurrent, StridedMlxInputAndPreparationDiagnostics) {
   apple_test::Recurrent fixture(5, 2, 32);
   std::vector<float> transposed(fixture.data[0].size());

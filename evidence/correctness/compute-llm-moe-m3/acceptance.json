@@ -7,6 +7,12 @@
   "product_candidate_commit": "68278c999b623edbd0c87f05d3926208ea84f6db",
   "product_math_changes": 0,
   "test_consumer_changes": [
+    "tests/compute_ops/qwen35_recurrent_contract_test_support.h",
+    "tests/compute_provider_ggml/cpu_provider_test.cc",
+    "tests/compute_provider_ggml_cuda/tensor_test.cc",
+    "tests/compute_route_apple/recurrent_test.cc",
+    "tests/compute_route_vulkan/recurrent_test.cc",
+    "tests/compute_ops/operation_test.cc",
     "tests/compute_models/m3_acceptance_test.py"
   ],
   "input": {
@@ -31,67 +37,73 @@
   "route_factor_execution": {
     "windows_cpu": {
       "state": "PASS",
-      "tests": 4,
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/windows-cpu.txt"
+      "tests": 57,
+      "receipts": [
+        "evidence/correctness/compute-llm-moe-m3/execution/cpu-direct.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/cpu-ggml.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/cpu-graph.json"
+      ]
     },
     "windows_cuda": {
       "state": "PASS",
-      "tests": 6,
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/windows-cuda.txt"
+      "tests": 64,
+      "receipts": [
+        "evidence/correctness/compute-llm-moe-m3/execution/cuda-direct.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/cuda-ggml.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/cuda-graph.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/cuda-cublas.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/cuda-marlin.json"
+      ]
     },
     "windows_vulkan": {
       "state": "PASS",
-      "tests": 4,
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/windows-vulkan.txt"
+      "tests": 190,
+      "receipts": [
+        "evidence/correctness/compute-llm-moe-m3/execution/vulkan-direct.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/vulkan-ggml.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/vulkan-graph.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/vulkan-iree.json"
+      ]
     },
     "macbook_air_apple": {
       "state": "PASS",
-      "tests": 3,
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt"
+      "tests": 64,
+      "receipts": [
+        "evidence/correctness/compute-llm-moe-m3/execution/apple-direct.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/apple-graph.json",
+        "evidence/correctness/compute-llm-moe-m3/execution/apple-ggml.json"
+      ]
     },
-    "macbook_air_vulkan": {
-      "state": "PASS",
-      "tests": 4,
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/air-vulkan.txt"
-    },
-    "macbook_air_compute_ops_relinked": {
+    "common_schema": {
       "state": "PASS",
       "tests": 47,
-      "reason": "stale executable was relinked against the current operation ABI",
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/air-compute-ops.txt"
-    },
-    "mac_mini_apple_static": {
-      "state": "PASS",
-      "tests": 2,
-      "role": "correctness/portability only",
-      "log": "evidence/correctness/compute-llm-moe-m3/logs/mini-apple.txt"
+      "receipt": "evidence/correctness/compute-llm-moe-m3/execution/compute-ops.json"
     }
   },
   "groups": [
     {
       "id": "M3-01",
-      "state": "ADJUDICATED",
+      "state": "CANDIDATE",
       "requirements": 21,
       "cells": 84,
       "states": {
         "BACKEND_REJECTED": 15,
-        "PASS": 33,
-        "VALIDATION_NOT_RUN": 36
+        "PASS": 69
       }
     },
     {
       "id": "M3-02",
-      "state": "ADJUDICATED",
+      "state": "CANDIDATE",
       "requirements": 13,
       "cells": 52,
       "states": {
         "NUMERIC_INCOMPATIBLE": 16,
-        "VALIDATION_NOT_RUN": 36
+        "PASS": 36
       }
     },
     {
       "id": "M3-03",
-      "state": "ADJUDICATED",
+      "state": "CANDIDATE",
       "requirements": 6,
       "cells": 24,
       "states": {
@@ -100,34 +112,33 @@
     },
     {
       "id": "M3-04",
-      "state": "ADJUDICATED",
+      "state": "CANDIDATE",
       "requirements": 11,
       "cells": 44,
       "states": {
-        "NUMERIC_INCOMPATIBLE": 12,
-        "VALIDATION_NOT_RUN": 32
+        "NUMERIC_INCOMPATIBLE": 24,
+        "PASS": 20
       }
     },
     {
       "id": "M3-05",
-      "state": "ADJUDICATED",
+      "state": "CANDIDATE",
       "requirements": 8,
       "cells": 32,
       "states": {
         "NUMERIC_INCOMPATIBLE": 4,
-        "VALIDATION_NOT_RUN": 28
+        "PASS": 28
       }
     },
     {
       "id": "M3-06",
-      "state": "ADJUDICATED",
+      "state": "CANDIDATE",
       "requirements": 5,
       "cells": 20,
       "states": {
         "BACKEND_REJECTED": 6,
-        "NUMERIC_INCOMPATIBLE": 8,
-        "UPSTREAM_MISSING": 4,
-        "VALIDATION_NOT_RUN": 2
+        "NUMERIC_INCOMPATIBLE": 10,
+        "UPSTREAM_MISSING": 4
       }
     }
   ],
@@ -136,12 +147,12 @@
     "cells": 256,
     "states": {
       "BACKEND_REJECTED": 21,
-      "NUMERIC_INCOMPATIBLE": 64,
-      "PASS": 33,
-      "UPSTREAM_MISSING": 4,
-      "VALIDATION_NOT_RUN": 134
+      "NUMERIC_INCOMPATIBLE": 78,
+      "PASS": 153,
+      "UPSTREAM_MISSING": 4
     },
-    "unadjudicated": 0
+    "unadjudicated": 0,
+    "validation_not_run": 0
   },
   "provider_integration_gate": {
     "state": "PASS",
@@ -152,26 +163,33 @@
     "planned": 16,
     "hyle_passed": 0,
     "reference_is_not_hyle_execution": true,
-    "B16": "stops at the first linear-attention block because the mature recurrent region is F32-only",
+    "B16": "actual real-shape preparation stops at the first GatedDeltaNet block on CPU/CUDA/Apple/Vulkan because the mature recurrent regions reject BF16; F32 shape admission was separately proved on CPU/CUDA/Vulkan and real-shape F32 execution already passed on Apple",
     "Q4_S128": "no common exact four-route carrier; CUDA Marlin alone does not make a four-route model chain",
     "Q8_B32": "no admitted exact carrier on any route",
-    "F8_B128": "only the Vulkan dense primitive is exact; recurrent and complete model regions remain uncovered"
+    "F8_B128": "Vulkan dense IREE direct/graph executes the exact format; the complete profile remains numerically incompatible at the actual BF16 recurrent boundary"
   },
   "performance": {
     "tier": "P0",
     "state": "PASS",
-    "reason": "M3 changed no product API or algorithm and found no immutable complete model fragment eligible for P1."
+    "reason": "M3 changed only test consumers and receipts; product API, provider math and routing candidate 68278c999 remain unchanged, so P1 is not applicable."
   },
   "external_artifacts": {
     "repository_contains_model_tensors": false,
     "temporary_reference_tensors_removed_after_receipt": true
   },
-  "correction": "INTERIM_AUDIT_ONLY; 134 VALIDATION_NOT_RUN cells remain M3 work",
-  "verdict": "M3_IN_PROGRESS",
+  "correction": "RESOLVED; the 134 former VALIDATION_NOT_RUN cells were executed/mapped in the second pass and none remain",
+  "verdict": "M3_CANDIDATE",
   "implementation_loc": {
     "command": "python scripts/loc-report.py --module compute-graph-all --module-path include/hyle/compute --module-path include/hyle/graph --module-path src/compute* --module-path src/graph* --commit 68278c999b623edbd0c87f05d3926208ea84f6db --self-check --json",
     "code": 59749,
     "files": 252,
     "self_check": "pass"
+  },
+  "second_pass_execution": {
+    "state": "PASS",
+    "resumed_cells": 134,
+    "execution_map": "evidence/correctness/compute-llm-moe-m3/execution-map.json",
+    "product_changes": 0,
+    "test_only_changes": true
   }
 }

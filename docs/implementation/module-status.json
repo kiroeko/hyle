@@ -363,27 +363,31 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_backend_cpu",
@@ -425,21 +429,24 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_provider_cublas",
-      "state": "AUDITED",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md"
+      "state": "CANDIDATE",
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_provider_marlin",
@@ -465,45 +472,52 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_ggml_runtime",
@@ -518,15 +532,17 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -541,15 +557,17 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "summary": "M3 CANDIDATE：134 个历史未运行格已全部实跑/映射，256 格为 153 PASS、21 backend rejected、78 numeric incompatible、4 upstream missing；产品候选/数学未变，等待终局检查。",
+      "candidate": "68278c999b623edbd0c87f05d3926208ea84f6db"
     }
   ]
 }

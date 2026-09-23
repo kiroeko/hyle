@@ -1,0 +1,3431 @@
+{
+  "schema_version": 1,
+  "kind": "m3-second-pass-execution-map",
+  "date": "2026-09-24",
+  "product_candidate_commit": "68278c999b623edbd0c87f05d3926208ea84f6db",
+  "test_scope": "M3-C2 only; no product algorithm or provider math changed",
+  "receipts": {
+    "apple-direct": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/apple-direct.json",
+      "sha256": "d2748737df776d017b4eab23b4af36c8cc60f2288d2ba27fed5998895efa2754",
+      "tests": 45,
+      "failures": 0,
+      "skipped": []
+    },
+    "apple-ggml": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/apple-ggml.json",
+      "sha256": "51f4d208137c9316d508de9dd398c1e2b5e31af3af69ee665122b59fde100680",
+      "tests": 2,
+      "failures": 0,
+      "skipped": []
+    },
+    "apple-graph": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/apple-graph.json",
+      "sha256": "e343f83f710ecfa4cd6f56adbb130a54c7dfafe2d68dc4c70a22bb8bf0abafa9",
+      "tests": 17,
+      "failures": 0,
+      "skipped": []
+    },
+    "compute-ops": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/compute-ops.json",
+      "sha256": "fd528ad250e61743d37c0a65332e077f010ea28c1413aff9136487156267a8dc",
+      "tests": 47,
+      "failures": 0,
+      "skipped": []
+    },
+    "cpu-direct": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cpu-direct.json",
+      "sha256": "a87ac4513b8f48c95393e28cc3c70d2833b91e99be4dac9dde43f38be01f4029",
+      "tests": 8,
+      "failures": 0,
+      "skipped": []
+    },
+    "cpu-ggml": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cpu-ggml.json",
+      "sha256": "8be357e082c7e7c193c191485ff57048bf464b5a0e100cc35d2bfe287b8ba1b1",
+      "tests": 29,
+      "failures": 0,
+      "skipped": []
+    },
+    "cpu-graph": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cpu-graph.json",
+      "sha256": "784611c58169fdb69c400f560c9d88c7900df9249d8f9a44954765567e150bcd",
+      "tests": 20,
+      "failures": 0,
+      "skipped": []
+    },
+    "cuda-cublas": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cuda-cublas.json",
+      "sha256": "e6a1c2d88b5be39cc9ecafd7d5844befc3bb4de09623907dc27d2390ed77226d",
+      "tests": 5,
+      "failures": 0,
+      "skipped": []
+    },
+    "cuda-direct": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cuda-direct.json",
+      "sha256": "d8ae1fd5de03969f6a3467fb5c08ff57008be025f61247f3265d6ce62b9e1a69",
+      "tests": 8,
+      "failures": 0,
+      "skipped": []
+    },
+    "cuda-ggml": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cuda-ggml.json",
+      "sha256": "08935a450a701ef95a394cd1cbca46f7620bd0904845ec0f31dca16c2c64cfce",
+      "tests": 19,
+      "failures": 0,
+      "skipped": []
+    },
+    "cuda-graph": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cuda-graph.json",
+      "sha256": "62274aef5ee423ff9f9b86ef88a66c065e81616bce707162887973f8b9c5dedf",
+      "tests": 27,
+      "failures": 0,
+      "skipped": []
+    },
+    "cuda-marlin": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/cuda-marlin.json",
+      "sha256": "f47e9ccd78f0b0740942f5c86247eedc8f1df837afa040000344c57e6795f83b",
+      "tests": 5,
+      "failures": 0,
+      "skipped": []
+    },
+    "vulkan-direct": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/vulkan-direct.json",
+      "sha256": "f2895e2b9bef2acf25a773a2bf48663f8a7f06e2a3090b2c192f25e45bc5f143",
+      "tests": 126,
+      "failures": 0,
+      "skipped": []
+    },
+    "vulkan-ggml": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/vulkan-ggml.json",
+      "sha256": "9e3fa44195d4495cfbcd7880acbd948624d194aea616bdebc585b5f6d34370ea",
+      "tests": 20,
+      "failures": 0,
+      "skipped": [
+        "GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance"
+      ]
+    },
+    "vulkan-graph": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/vulkan-graph.json",
+      "sha256": "35d92a04f63bb06aa3840260821ceb49894158d4f2fb0e8b6921d907111e5289",
+      "tests": 37,
+      "failures": 0,
+      "skipped": []
+    },
+    "vulkan-iree": {
+      "path": "evidence/correctness/compute-llm-moe-m3/execution/vulkan-iree.json",
+      "sha256": "d8ba029660e759dc46080ad25b9bc7fff3470dc7831d0f7f4ca7c3522ebc752f",
+      "tests": 7,
+      "failures": 0,
+      "skipped": []
+    }
+  },
+  "resumed_cell_count": 134,
+  "resumed_cells": [
+    "F01.1.cuda",
+    "F01.2.cpu",
+    "F01.2.cuda",
+    "F01.2.vulkan",
+    "F01.3.cuda",
+    "F01.3.vulkan",
+    "F02.1.cpu",
+    "F02.1.cuda",
+    "F02.1.vulkan",
+    "F02.4.cuda",
+    "F02.4.vulkan",
+    "F03.1.cpu",
+    "F03.1.cuda",
+    "F03.1.vulkan",
+    "F03.2.cuda",
+    "F03.2.vulkan",
+    "F03.3.cpu",
+    "F03.3.cuda",
+    "F03.3.vulkan",
+    "F03.4.cpu",
+    "F03.4.cuda",
+    "F03.4.vulkan",
+    "F04.1.cpu",
+    "F04.1.cuda",
+    "F04.1.vulkan",
+    "F04.2.cpu",
+    "F04.2.cuda",
+    "F04.2.vulkan",
+    "F04.3.cpu",
+    "F04.3.cuda",
+    "F04.3.vulkan",
+    "F04.4.cpu",
+    "F04.4.cuda",
+    "F04.4.vulkan",
+    "F04.6.cuda",
+    "F04.6.vulkan",
+    "F05.1.cpu",
+    "F05.1.cuda",
+    "F05.1.apple_mlx_metal",
+    "F05.1.vulkan",
+    "F05.2.cpu",
+    "F05.2.cuda",
+    "F05.2.apple_mlx_metal",
+    "F05.2.vulkan",
+    "F05.3.cpu",
+    "F05.3.cuda",
+    "F05.3.apple_mlx_metal",
+    "F05.3.vulkan",
+    "F05.4.cpu",
+    "F05.4.cuda",
+    "F05.4.apple_mlx_metal",
+    "F05.4.vulkan",
+    "F06.1.cuda",
+    "F06.2.apple_mlx_metal",
+    "F07.1.cpu",
+    "F07.1.cuda",
+    "F07.1.apple_mlx_metal",
+    "F07.2.cpu",
+    "F07.2.cuda",
+    "F07.2.apple_mlx_metal",
+    "F07.3.cpu",
+    "F07.3.cuda",
+    "F07.3.apple_mlx_metal",
+    "F08.1.cpu",
+    "F08.1.cuda",
+    "F08.1.apple_mlx_metal",
+    "F08.2.cpu",
+    "F08.2.cuda",
+    "F08.2.apple_mlx_metal",
+    "F08.3.cpu",
+    "F08.3.cuda",
+    "F08.3.apple_mlx_metal",
+    "F12.1.cpu",
+    "F12.1.cuda",
+    "F12.1.apple_mlx_metal",
+    "F12.1.vulkan",
+    "F12.2.cpu",
+    "F12.2.cuda",
+    "F12.2.apple_mlx_metal",
+    "F12.2.vulkan",
+    "F12.3.cpu",
+    "F12.3.cuda",
+    "F12.3.apple_mlx_metal",
+    "F12.3.vulkan",
+    "F13.3.cpu",
+    "F13.3.cuda",
+    "F13.3.apple_mlx_metal",
+    "F13.3.vulkan",
+    "F14.2.cpu",
+    "F14.2.cuda",
+    "F14.2.apple_mlx_metal",
+    "F14.2.vulkan",
+    "F14.3.cpu",
+    "F14.3.cuda",
+    "F14.3.apple_mlx_metal",
+    "F14.3.vulkan",
+    "F14.4.cpu",
+    "F14.4.cuda",
+    "F14.4.apple_mlx_metal",
+    "F14.4.vulkan",
+    "F14.5.cpu",
+    "F14.5.cuda",
+    "F14.5.apple_mlx_metal",
+    "F14.5.vulkan",
+    "F15.1.cpu",
+    "F15.1.cuda",
+    "F15.1.apple_mlx_metal",
+    "F15.1.vulkan",
+    "F15.2.cpu",
+    "F15.2.cuda",
+    "F15.2.apple_mlx_metal",
+    "F15.2.vulkan",
+    "F16.2.cpu",
+    "F16.2.cuda",
+    "F16.2.apple_mlx_metal",
+    "F16.2.vulkan",
+    "F16.3.cpu",
+    "F16.3.cuda",
+    "F16.3.apple_mlx_metal",
+    "F16.3.vulkan",
+    "F17.1.cpu",
+    "F17.1.cuda",
+    "F17.1.apple_mlx_metal",
+    "F17.1.vulkan",
+    "F17.2.cpu",
+    "F17.2.cuda",
+    "F17.2.apple_mlx_metal",
+    "F17.2.vulkan",
+    "F17.3.cpu",
+    "F17.3.cuda",
+    "F17.3.apple_mlx_metal",
+    "F17.3.vulkan",
+    "F18.1.vulkan",
+    "F18.2.vulkan"
+  ],
+  "cells": {
+    "F01.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F01.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.DenseRankSixBroadcastStridedCopyConcatAndGather"
+        },
+        {
+          "receipt": "compute-ops",
+          "test": "OperationMaterialization.CoversCopyFillAndCastContracts"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F01.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F01.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanMatureTensor.EverySixteenBitPatternCopiesAndConvertsWithOddTail"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.FiveViewsReassembleWithoutIntermediateCopiesAndKeepOldResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureStorageConcatKeepsEmptyBindingsAndPublishedResults"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F01.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F01.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanMatureTensor.EverySixteenBitPatternCopiesAndConvertsWithOddTail"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.FiveViewsReassembleWithoutIntermediateCopiesAndKeepOldResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureStorageConcatKeepsEmptyBindingsAndPublishedResults"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F02.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.GatherAxesPreserveTypesAndValidateCurrentStridedIndices"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F02.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F02.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGather.AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GatherSharesCapturedTableAndPreservesIndependentResults"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F02.4.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F02.4.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.IntegerScanOffsetsFeedNativeGatherAndNormWithCheckedFailure"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.GeneralBroadcastPreservesHeadBatchAndOperandAxes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.SelectedGroupMeansBroadcastWithinOneMatureRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.BroadcastUsesLogicalAxesAndBothOperandOrders"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.CrossBroadcastAndDegenerateRankEightUseMatureArithmetic"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.FloatingNormAffineAndUnaryConversions"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.StableTransformsPreserveSmallValuesAndHighRankHalfStorage"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.ManagedSiluKeepsTheCommonInfinityAndNanSemantics"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.BfloatGatesUseNormalDirectAndCapturedGraphEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGateNorm.ThreeGatesSupportBothLayoutsAndOddByteOrigins"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.4.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.4.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.BfloatGatesUseNormalDirectAndCapturedGraphEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F03.4.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGateNorm.ThreeGatesSupportBothLayoutsAndOddByteOrigins"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.FloatingNormAffineAndUnaryConversions"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGateNorm.NormUsesFloatAccumulationAndIndependentParameterStorage"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureHighRankL2RetainsPublishedReductionAndIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.FloatingNormAffineAndUnaryConversions"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGateNorm.NormUsesFloatAccumulationAndIndependentParameterStorage"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureHighRankL2RetainsPublishedReductionAndIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.FloatingNormAffineAndUnaryConversions"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGateNorm.NormUsesFloatAccumulationAndIndependentParameterStorage"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureHighRankL2RetainsPublishedReductionAndIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.4.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.4.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.FloatingNormAffineAndUnaryConversions"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.4.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGateNorm.NormUsesFloatAccumulationAndIndependentParameterStorage"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureHighRankL2RetainsPublishedReductionAndIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.6.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F04.6.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanTopK.FrozenExpertWidthsTailsAndStableRawOutputs"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.TopKComposesWithMaturePointwiseAndPublishesRawIndices"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.1.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.HalfMatMulCoversDecodeTailAndRankFourBroadcast"
+        },
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.MatMulRulesAndChangedInputReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-cublas",
+          "test": "CublasProvider.HalfDecodeAndPrefillUseIndependentLanes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.B2MatureLinearPositionAndTransformReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.HalfMatMulCoversDecodeTailAndRankFourBroadcast"
+        },
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.MatMulRulesAndChangedInputReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-cublas",
+          "test": "CublasProvider.HalfDecodeAndPrefillUseIndependentLanes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.B2MatureLinearPositionAndTransformReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.HalfMatMulCoversDecodeTailAndRankFourBroadcast"
+        },
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.MatMulRulesAndChangedInputReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-cublas",
+          "test": "CublasProvider.HalfDecodeAndPrefillUseIndependentLanes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.B2MatureLinearPositionAndTransformReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.4.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.4.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.MatMulRulesAndChangedInputReplay"
+        },
+        {
+          "receipt": "cpu-direct",
+          "test": "CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.4.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefaultCompute.DenseAndCompressedFfnUseFixedRulesAndIndependentSlots"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F05.4.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanNative.RecorderCombinesMatureFfnAndCustomSpirvWithReadyHandoff"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F06.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-marlin",
+          "test": "MarlinProvider.DecodePrefillAndRowTailsMatchDoubleOracle"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F06.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.1.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ModelL2SwishAndAttentionGatesMatchIndependentStorageBoundaries"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.OriginalRecurrentRegionsComposeWithMlxAndExplicitState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionHandlesHead256GqaDecode"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleScatter.AddIncludesEveryDuplicateWithF32Accumulation"
+        },
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ScatterStateFeedsLaterInvocationsAndKeepsOldResults"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ModelL2SwishAndAttentionGatesMatchIndependentStorageBoundaries"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.OriginalRecurrentRegionsComposeWithMlxAndExplicitState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionHandlesHead256GqaDecode"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F07.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.1.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureLinearRopeAndHadamardUseOrdinaryEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MatureHalfLinearAndHadamardUseOneGgmlRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureLinearRopeAndHadamardUseOrdinaryEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MatureHalfLinearAndHadamardUseOneGgmlRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureLinearRopeAndHadamardUseOrdinaryEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F08.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MatureHalfLinearAndHadamardUseOneGgmlRegion"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F09.1.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.Qwen35RealShapeRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.1.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.1.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.2.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.Qwen35RealShapeRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.2.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.2.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F09.2.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.1.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.Qwen35RealShapeRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.1.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.1.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.2.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.Qwen35RealShapeRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.2.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.2.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F10.2.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.1.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.Qwen35RealShapeRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.1.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.1.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.2.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.Qwen35RealShapeRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.2.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.2.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F11.2.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+      "preclassified": true
+    },
+    "F12.1.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleReduction.TopKStableTiesRawStorageAndLargeAxes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ProbabilitySelectionNormalizationUsesOrdinaryMultiOutputNodes"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardSelectionPreservesStableOrderAndStorageBits"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.StandardTopKPublishesBothOutputsAcrossReplay"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanTopK.FrozenExpertWidthsTailsAndStableRawOutputs"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.TopKComposesWithMaturePointwiseAndPublishesRawIndices"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleReduction.TopKStableTiesRawStorageAndLargeAxes"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ProbabilitySelectionNormalizationUsesOrdinaryMultiOutputNodes"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardSelectionPreservesStableOrderAndStorageBits"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.StandardTopKPublishesBothOutputsAcrossReplay"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanTopK.FrozenExpertWidthsTailsAndStableRawOutputs"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.TopKComposesWithMaturePointwiseAndPublishesRawIndices"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.GatherPreservesStorageAcrossIndexWidthsShapesAndLayouts"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.IntegerSelectionFeedsGatherAcrossRepeatedNativeInvocations"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.GatherAxesPreserveTypesAndValidateCurrentStridedIndices"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F12.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanGather.AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GatherSharesCapturedTableAndPreservesIndependentResults"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F13.1.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.1.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.1.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.2.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.2.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.2.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.2.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F13.3.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F13.3.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F13.3.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F13.3.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F14.1.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F14.1.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F14.1.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F14.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F14.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleScatter.AddIncludesEveryDuplicateWithF32Accumulation"
+        },
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ScatterStateFeedsLaterInvocationsAndKeepsOldResults"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ModelL2SwishAndAttentionGatesMatchIndependentStorageBoundaries"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.OriginalRecurrentRegionsComposeWithMlxAndExplicitState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionHandlesHead256GqaDecode"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.B2MatureCausalGqaRetainsReplayResults"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.TypedResidualMaskReplayMatchesDirectRecordingAndIndependentMath"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F14.4.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F14.4.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F14.4.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F14.4.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment."
+    },
+    "F14.5.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureLightningIndexerUsesOriginalMetalAndReplays"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureLightningIndexerUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment."
+    },
+    "F14.5.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureLightningIndexerUsesOrdinaryEntryAndReplays"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureLightningIndexerUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment."
+    },
+    "F14.5.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureLightningIndexerUsesOrdinaryEntryAndReplays"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs"
+        }
+      ],
+      "detail": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment."
+    },
+    "F14.5.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureLightningIndexerUsesManagedRegion"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureLightningIndexerUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment."
+    },
+    "F15.1.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ModelL2SwishAndAttentionGatesMatchIndependentStorageBoundaries"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.OriginalRecurrentRegionsComposeWithMlxAndExplicitState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionHandlesHead256GqaDecode"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.B2MatureCausalGqaRetainsReplayResults"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.TypedResidualMaskReplayMatchesDirectRecordingAndIndependentMath"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ModelL2SwishAndAttentionGatesMatchIndependentStorageBoundaries"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.OriginalRecurrentRegionsComposeWithMlxAndExplicitState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionHandlesHead256GqaDecode"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F15.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanManaged.B2MatureCausalGqaRetainsReplayResults"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.TypedResidualMaskReplayMatchesDirectRecordingAndIndependentMath"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.1.apple_mlx_metal": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleRecurrent.MatureLightningIndexerUsesOriginalMetalAndReplays"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.MatureLightningIndexerUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F16.1.cpu": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.MatureLightningIndexerUsesOrdinaryEntryAndReplays"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureLightningIndexerUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F16.1.cuda": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "cuda-ggml",
+          "test": "GgmlCudaTensor.MatureLightningIndexerUsesOrdinaryEntryAndReplays"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F16.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "compute-ops",
+          "test": "OperationModelOps.LightningIndexerKeepsSparseModelLayout"
+        }
+      ],
+      "positive_domain": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.MatureLightningIndexerUsesManagedRegion"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.MatureLightningIndexerUsesOrdinaryGraphEntry"
+        }
+      ],
+      "detail": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+      "preclassified": true
+    },
+    "F16.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleScatter.AddIncludesEveryDuplicateWithF32Accumulation"
+        },
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ScatterStateFeedsLaterInvocationsAndKeepsOldResults"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanHandlesAxisStridesAndCheckedOverflow"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F16.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.IntegerScanOffsetsFeedNativeGatherAndNormWithCheckedFailure"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.1.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleScatter.AddIncludesEveryDuplicateWithF32Accumulation"
+        },
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ScatterStateFeedsLaterInvocationsAndKeepsOldResults"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.1.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.1.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.1.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.2.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleScatter.AddIncludesEveryDuplicateWithF32Accumulation"
+        },
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ScatterStateFeedsLaterInvocationsAndKeepsOldResults"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.2.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.2.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.2.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.3.apple_mlx_metal": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "apple-direct",
+          "test": "AppleScatter.AddIncludesEveryDuplicateWithF32Accumulation"
+        },
+        {
+          "receipt": "apple-direct",
+          "test": "AppleIndexing.ScanMatchesIntegerAndFloatingPrefixesIncludingExclusiveTotal"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.ScatterStateFeedsLaterInvocationsAndKeepsOldResults"
+        },
+        {
+          "receipt": "apple-graph",
+          "test": "AppleGraph.CheckedEmbeddingAndScanKeepStateAndRecoverInFreshSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.3.cpu": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices"
+        },
+        {
+          "receipt": "cpu-ggml",
+          "test": "GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices"
+        },
+        {
+          "receipt": "cpu-graph",
+          "test": "CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.3.cuda": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "cuda-direct",
+          "test": "CudaDefault.OriginalCcclThroughOrdinaryDirectEntry"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual"
+        },
+        {
+          "receipt": "cuda-graph",
+          "test": "CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUseCapturedIndependentSlots"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F17.3.vulkan": {
+      "state": "PASS",
+      "direct": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix"
+        }
+      ],
+      "graph": [
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks"
+        }
+      ],
+      "detail": "Named route receipts execute the required typed fragment through ordinary Direct and Graph entries with replayed inputs and native storage."
+    },
+    "F18.1.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIree.OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "Exact IREE FP8 direct and graph regions execute, but the same route actually rejects the real-shape BF16 recurrent boundary required by the complete 2B/profile chain."
+    },
+    "F18.2.vulkan": {
+      "state": "NUMERIC_INCOMPATIBLE",
+      "boundary": [
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanIree.OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire"
+        },
+        {
+          "receipt": "vulkan-graph",
+          "test": "VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy"
+        },
+        {
+          "receipt": "vulkan-direct",
+          "test": "VulkanRecurrent.Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation"
+        }
+      ],
+      "detail": "Exact IREE FP8 direct and graph regions execute, but the same route actually rejects the real-shape BF16 recurrent boundary required by the complete 2B/profile chain."
+    }
+  },
+  "final_states": {
+    "BACKEND_REJECTED": 21,
+    "NUMERIC_INCOMPATIBLE": 78,
+    "PASS": 153,
+    "UPSTREAM_MISSING": 4
+  },
+  "validation_not_run": 0,
+  "limitations": [
+    "PASS is for the declared HYLE Direct/Graph fragment and its consumer-owned composition edges, not an end-to-end tokenizer/model-engine journey.",
+    "Qwen3.5-2B B16 still stops at the actual BF16 GatedDeltaNet prepare boundary on all four routes.",
+    "F32-only grouped expert, hyper-connection and sparse-index schemas do not satisfy rows that require BF16/F16 checkpoint storage.",
+    "Vulkan IREE exact dense FP8 executes, but the complete profile remains blocked by the BF16 recurrent boundary."
+  ]
+}
