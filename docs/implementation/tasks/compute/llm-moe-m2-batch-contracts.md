@@ -142,7 +142,7 @@ combine、真实投影宽度、共享状态、MTP index carry 和两个 invocati
 | 批次 | 当前状态 | 启动条件 | 关闭后动作 |
 |---|---|---|---|
 | B2 | [`CLOSED`](llm-moe-m2-b2-terminal.md) | 成熟入口已批量接线并完成四路线、资源和交付验收；精确格式/完整片段缺口已记为有限 residual | 直接进入 B3 |
-| B3 | `QUEUED_BY_PLAN` | B2 关闭 | 直接进入 B4 |
+| B3 | [`SCOPED`](llm-moe-m2-b3-recurrent-state.md) | B2 已关闭；当前固定成熟入口和有限 FIX | 直接进入 B4 |
 | B4 | `QUEUED_BY_PLAN` | B3 关闭 | 直接进入 B5 |
 | B5 | `QUEUED_BY_PLAN` | B4 关闭 | 直接进入 B6 |
 | B6 | `QUEUED_BY_PLAN` | B5 关闭 | 完成 M2 汇总，暂停并向用户报告；不进入 M3 |

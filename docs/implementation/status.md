@@ -67,7 +67,7 @@
 | compute_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/llm-moe-m2-b2-linear-attention.md) | M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized. |
 | graph_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/llm-moe-m2-b2-linear-attention.md) | M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。 |
 | compute_provider_flashinfer | CLOSED | P0 / [PASS](../../evidence/correctness/compute-m2-route-complete/README.md) | [record](tasks/compute/m2-route-qualification-complete-migration.md) | M2 组合路由完整迁移 CLOSED：SM89、Provider、attention operation/dtype 静态资格统一；WSL FP16/BF16 provider、CUDA 交付与 P0 通过。 |
-| compute_provider_ggml_metal | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-apple-admission/README.md) | [record](tasks/compute/llm-moe-m1-apple-admission.md) | M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。 |
+| compute_provider_ggml_metal | SCOPED | — | [record](tasks/compute/llm-moe-m2-b3-recurrent-state.md) | M2-B3 SCOPED：只审计并接入锁定 ggml/MLX 的 causal conv 与 GDN/KDA 原版 region；四路线普通 Direct/Graph、显式 state、资源与批量验收，冻结自研数学不参与。 |
 | compute_provider_iree_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-m2-b2-linear-attention.md) | M2-B2 AUDITED：F05–F08 的成熟 Provider 入口、精确域、资源边界与 B2-C0–C5 有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工。未运行门保持 UNPROVEN，冻结自研数学不参与。 |
 
 <!-- END GENERATED MODULE STATUS -->
