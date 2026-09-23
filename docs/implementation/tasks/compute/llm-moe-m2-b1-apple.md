@@ -481,3 +481,17 @@ P1固定比较同一原版MLX完整程序的HYLE普通路径与直接MLX生命�
 storage和同步一致；先A/A与双顺序，5% material门。只选B1中实际增加成本的BF16转换边界、
 Scatter状态与模型norm/gate片段组成一个bundle，不与冻结自研竞速。API/算法在产品基线已固定；
 候选验证中若产品源码改变则退回AUDITED并废弃该P1，不追加第二套仪器或无限样本。
+
+## 集中验收检查点：Air shared 组合门
+
+2026-09-23按批量补充合同在同一Air Release/shared/WERROR构建中集中运行Compute Ops、
+ggml Metal、Apple Direct与Graph。路线组先4/4通过；补充构建ggml Metal测试时，shared链接
+暴露测试直接使用`TensorDesc`、`system_allocator`和`Status`却未声明对应库。静态链接曾能
+遮蔽该fixture缺陷，产品Provider及其私有依赖没有变化。
+
+A4范围内只为`hyle_compute_provider_ggml_metal_test`声明其直接测试依赖`hyle_compute_ops`、
+`hyle_mem`和`hyle_error`；不改组件图、产品链接或计算实现。首次绕过任务脚本的自动重配置又因
+缺少已登记Metal shim停止，恢复`development.sh Configure`后，同一构建的集中门7/7通过：
+Compute Ops 2、ggml Metal 1、Apple Direct 2、Graph 2。两个环境/fixture失败均保留，未计为
+产品数值失败。Mini、插桩、OFF、三交付、final selected与P1仍按整批一次执行；本检查点不提前
+签21行或CLOSED。
