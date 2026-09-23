@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <mlx/ops.h>
 
 #include "ffn_fixture.h"
 #include "../compute/workload_fixture.h"
@@ -58,6 +59,96 @@ TEST(AppleTyped, MatMulAndSiluGatesUseOrdinaryPreparation) {
       EXPECT_NEAR(lease->get()->arrays()[0].data<float>()[i],
                   x / (1.f + std::exp(-x)) * y, 1e-5f);
     }
+  }
+}
+
+TEST(AppleTyped, MlxBatchedLinearPositionAndGqaAttentionReplay) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+
+  const std::vector<mx::array> linear_inputs{
+      mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 2.f, 1.f, 0.f, 3.f, 2.f,
+                 1.f},
+                {2, 2, 3}, mx::float16),
+      mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f}, {1, 3, 2}, mx::float16)};
+  auto linear = context->prepare(c::MatMul{}, linear_inputs);
+  ASSERT_TRUE(linear) << linear.error().message();
+  auto linear_slot = linear->create_invocation();
+  ASSERT_TRUE(linear_slot);
+  ASSERT_TRUE(linear_slot->bind(linear_inputs).ok());
+  auto linear_work = linear_slot->submit();
+  ASSERT_TRUE(linear_work);
+  auto linear_result = linear_work->wait();
+  ASSERT_TRUE(linear_result);
+  auto linear_f32 =
+      mx::astype(linear_result->get()->arrays()[0], mx::float32);
+  linear_f32.eval();
+  EXPECT_EQ(linear_f32.shape(), (mx::Shape{2, 2, 2}));
+  EXPECT_NEAR(linear_f32.data<float>()[0], 22.f, 1.e-2f);
+  EXPECT_NEAR(linear_f32.data<float>()[3], 64.f, 1.e-2f);
+  EXPECT_NEAR(linear_f32.data<float>()[4], 5.f, 1.e-2f);
+
+  const std::vector<mx::array> rope_inputs{
+      mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f}, {1, 2, 1, 4}),
+      mx::array({0, 2}, {2}, mx::int32),
+      mx::array({0.5f, 0.25f})};
+  auto rope = context->prepare(
+      c::RoPE{.rotary_dimensions = 4,
+              .sequence_axis = 1,
+              .layout = c::RopeLayout::kInterleaved},
+      rope_inputs);
+  ASSERT_TRUE(rope) << rope.error().message();
+  auto rope_slot = rope->create_invocation();
+  ASSERT_TRUE(rope_slot);
+  ASSERT_TRUE(rope_slot->bind(rope_inputs).ok());
+  auto rope_work = rope_slot->submit();
+  ASSERT_TRUE(rope_work);
+  auto rope_result = rope_work->wait();
+  ASSERT_TRUE(rope_result);
+  const auto *rotated = rope_result->get()->arrays()[0].data<float>();
+  EXPECT_FLOAT_EQ(rotated[0], 1.f);
+  EXPECT_NEAR(rotated[4], 5.f * std::cos(1.f) - 6.f * std::sin(1.f), 2.e-5f);
+  EXPECT_NEAR(rotated[7], 7.f * std::sin(.5f) + 8.f * std::cos(.5f), 2.e-5f);
+
+  const std::vector<mx::array> hadamard_inputs{
+      mx::array({1.f, 2.f, 3.f, 4.f}, {1, 4})};
+  auto hadamard = context->prepare(c::Hadamard{}, hadamard_inputs);
+  ASSERT_TRUE(hadamard) << hadamard.error().message();
+  auto hadamard_slot = hadamard->create_invocation();
+  ASSERT_TRUE(hadamard_slot);
+  ASSERT_TRUE(hadamard_slot->bind(hadamard_inputs).ok());
+  auto hadamard_work = hadamard_slot->submit();
+  ASSERT_TRUE(hadamard_work);
+  auto hadamard_result = hadamard_work->wait();
+  ASSERT_TRUE(hadamard_result);
+  const std::array expected_hadamard{5.f, -1.f, -2.f, 0.f};
+  for (std::size_t i = 0; i < expected_hadamard.size(); ++i)
+    EXPECT_NEAR(hadamard_result->get()->arrays()[0].data<float>()[i],
+                expected_hadamard[i], 2.e-6f);
+
+  const std::vector<mx::array> attention_inputs{
+      mx::array({0.f, 0.f}, {1, 1, 2, 1}),
+      mx::array({0.f, 0.f, 0.f}, {1, 3, 1, 1}),
+      mx::array({1.f, 2.f, 6.f}, {1, 3, 1, 1})};
+  const c::ScaledDotProductAttention attention{
+      .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+      .scale = 1.f,
+      .causal = true};
+  auto attention_program = context->prepare(attention, attention_inputs);
+  ASSERT_TRUE(attention_program) << attention_program.error().message();
+  auto attention_slot = attention_program->create_invocation();
+  ASSERT_TRUE(attention_slot);
+  for (int replay = 0; replay < 2; ++replay) {
+    ASSERT_TRUE(attention_slot->bind(attention_inputs).ok());
+    auto attention_work = attention_slot->submit();
+    ASSERT_TRUE(attention_work);
+    auto attention_result = attention_work->wait();
+    ASSERT_TRUE(attention_result);
+    ASSERT_EQ(attention_result->get()->arrays()[0].size(), 2U);
+    EXPECT_NEAR(attention_result->get()->arrays()[0].data<float>()[0], 3.f,
+                2.e-5f);
+    EXPECT_NEAR(attention_result->get()->arrays()[0].data<float>()[1], 3.f,
+                2.e-5f);
   }
 }
 

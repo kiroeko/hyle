@@ -204,3 +204,23 @@ CUDA/Apple/Vulkan 的 Graph owner 已保持 `AUDITED`，其改动只限现有 re
 `compute_route_cuda`、`compute_provider_cublas`、Marlin 与 FlashInfer 继续复用现有合格实现；没有新事实要求
 改动其数学或 Provider owner。至此恢复审计没有改变公共 API、route identity、常态 metadata 或执行期
 选择模型，四个恢复 owner 可以进入有限产品施工。
+
+### B2-C3 Apple 产品候选（2026-09-24）
+
+Apple 普通 `Context::prepare` 与 Graph 的单一 MLX compiled region 已接通本批成熟入口：
+
+- F05：MLX `matmul` 直接承载 F16/BF16/F32 rank-2--4 与 leading batch broadcast；不再保留旧的
+  “只接受二维 F32”限制。
+- F07：公共 BSHD 在冷 lowering 转为 MLX BHSD，原版 fast SDPA 承载 GQA 与 bottom-right causal，
+  输出转回公共布局；准备后 replay 不重新选路。
+- F08：Hadamard 使用 MLX 原版归一化 transform。公共 RoPE 允许任意完整 position tensor 和
+  `[sequence,pairs]` frequencies，范围宽于 MLX `fast::rope` 的连续 offset/一维 frequency 接口，
+  因此在同一个 compiled region 内用 MLX 原版 slice/trigonometric/pointwise 原语精确组合，没有新增
+  HYLE Metal kernel。
+- F06：既有 MLX unsigned-affine Q4/group64 原生 packing 继续有效；与其物理合同不同的公共格式仍
+  精确拒绝。causal 与额外显式 mask 同时存在的 SDPA 也保持 residual，不把单一 mask mode 冒充组合。
+
+MacBook Air M4 的共享 Release 候选增量构建通过；完整 `compute_route_apple` 40-test suite 与完整
+`graph_route_apple` suite 均通过。新增纵切覆盖 half batched MatMul、非连续 positions RoPE、归一化
+Hadamard、8Q/1KV causal GQA、Graph 两节点单 region 和两次 replay；旧 BF16 MatMul 拒绝断言已按新
+公开能力迁移。source/static 与 Mini portability 留到四路线候选稳定后的集中交付闸门，不提前写 PASS。

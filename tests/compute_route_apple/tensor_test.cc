@@ -425,6 +425,8 @@ TEST(AppleTensor, MixedParameterNormsMatchFp64AndRejectWrongPrecision) {
   EXPECT_TRUE(bad.error().IsInvalidArgument());
   const std::array bfmat{a::InputSpec{{2, 2}, mx::bfloat16},
                          a::InputSpec{{2, 2}, mx::bfloat16}};
-  EXPECT_FALSE(context.prepare(c::MatMul{}, bfmat));
+  EXPECT_TRUE(context.prepare(c::MatMul{}, bfmat));
+  EXPECT_FALSE(context.prepare(
+      c::MatMul{.accumulation_type = c::DataType::kFloat64}, bfmat));
 }
 } // namespace

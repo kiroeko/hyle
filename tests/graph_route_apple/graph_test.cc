@@ -125,6 +125,51 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
   }
 }
 
+TEST(AppleGraph, BatchedLinearAndHadamardStayInOneCompiledRegion) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto builder = g::GraphBuilder::create();
+  ASSERT_TRUE(builder);
+  auto x = builder->input(dense({2, 2, 2}));
+  auto weight = builder->constant(dense({1, 2, 4}));
+  ASSERT_TRUE(x && weight);
+  auto projected = builder->add(c::MatMul{}, *x, *weight);
+  ASSERT_TRUE(projected);
+  auto transformed = builder->add(c::Hadamard{}, *projected);
+  ASSERT_TRUE(transformed);
+  ASSERT_TRUE(builder->publish(*transformed).ok());
+  auto graph = std::move(*builder).finish();
+  ASSERT_TRUE(graph);
+
+  const std::array constants{
+      mx::array({1.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 1.f}, {1, 2, 4})};
+  ga::CompileReport report;
+  auto program = ga::compile(*context, *graph, constants, {.report = &report});
+  ASSERT_TRUE(program) << program.error().message();
+  ASSERT_TRUE(report.status.ok());
+  ASSERT_EQ(report.nodes.size(), 2U);
+  EXPECT_EQ(report.nodes[0].kind, c::OperationKind::kMatMul);
+  EXPECT_EQ(report.nodes[1].kind, c::OperationKind::kHadamard);
+
+  auto slot = program->create_invocation();
+  ASSERT_TRUE(slot);
+  for (int replay = 1; replay <= 2; ++replay) {
+    const float base = static_cast<float>(replay);
+    const std::array inputs{mx::array(
+        {base, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f}, {2, 2, 2})};
+    ASSERT_TRUE(slot->bind(inputs).ok());
+    auto work = slot->submit();
+    ASSERT_TRUE(work);
+    auto result = work->wait();
+    ASSERT_TRUE(result);
+    const auto *values = result->get()->arrays()[0].data<float>();
+    EXPECT_NEAR(values[0], base + 2.f, 2.e-6f);
+    EXPECT_NEAR(values[1], base - 2.f, 2.e-6f);
+    EXPECT_NEAR(values[2], 0.f, 2.e-6f);
+    EXPECT_NEAR(values[3], 0.f, 2.e-6f);
+  }
+}
+
 struct Affine final {
   static constexpr c::OperationId operation_id{0x68796c657235ULL, 1};
   static constexpr auto operation_name = "apple-test-affine";

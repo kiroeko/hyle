@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -202,10 +203,112 @@ bool admitted(OperationKind kind) {
   case OperationKind::kGather:
   case OperationKind::kScatter:
   case OperationKind::kScan:
+  case OperationKind::kMatMul:
+  case OperationKind::kRoPE:
+  case OperationKind::kHadamard:
+  case OperationKind::kScaledDotProductAttention:
     return true;
   default:
     return false;
   }
+}
+
+mx::array lower_rope(const RoPE &rope, std::span<const mx::array> inputs,
+                     mx::Stream stream) {
+  const auto &data = inputs[0];
+  const auto rank = data.ndim();
+  const auto sequence_axis =
+      rope.sequence_axis < 0 ? rope.sequence_axis + static_cast<int>(rank)
+                             : rope.sequence_axis;
+  const auto pairs = static_cast<int>(rope.rotary_dimensions / 2);
+
+  mx::Shape position_shape(rank, 1);
+  if (inputs[1].ndim() == 1) {
+    position_shape[sequence_axis] = data.shape(sequence_axis);
+  } else {
+    for (std::size_t axis = 0; axis < inputs[1].ndim(); ++axis)
+      position_shape[axis] = inputs[1].shape(static_cast<int>(axis));
+  }
+  auto positions = mx::reshape(mx::astype(inputs[1], mx::float32, stream),
+                               position_shape, stream);
+
+  mx::Shape frequency_shape(rank, 1);
+  frequency_shape.back() = pairs;
+  if (inputs[2].ndim() == 2)
+    frequency_shape[sequence_axis] = data.shape(sequence_axis);
+  auto frequencies = mx::reshape(
+      mx::astype(inputs[2], mx::float32, stream), frequency_shape, stream);
+  auto angles = mx::multiply(positions, frequencies, stream);
+  auto cosines = mx::astype(mx::cos(angles, stream), data.dtype(), stream);
+  auto sines = mx::astype(mx::sin(angles, stream), data.dtype(), stream);
+
+  mx::Shape start(rank, 0), stop = data.shape(), strides(rank, 1);
+  mx::array first = data;
+  mx::array second = data;
+  if (rope.layout == RopeLayout::kInterleaved) {
+    stop.back() = static_cast<int>(rope.rotary_dimensions);
+    strides.back() = 2;
+    first = mx::slice(data, start, stop, strides, stream);
+    start.back() = 1;
+    second = mx::slice(data, start, stop, strides, stream);
+  } else {
+    stop.back() = pairs;
+    first = mx::slice(data, start, stop, stream);
+    start.back() = pairs;
+    stop.back() = static_cast<int>(rope.rotary_dimensions);
+    second = mx::slice(data, start, stop, stream);
+  }
+  auto rotated_first = mx::subtract(mx::multiply(first, cosines, stream),
+                                    mx::multiply(second, sines, stream), stream);
+  auto rotated_second = mx::add(mx::multiply(first, sines, stream),
+                                mx::multiply(second, cosines, stream), stream);
+  mx::array rotated = rotated_first;
+  if (rope.layout == RopeLayout::kInterleaved) {
+    auto interleaved = mx::concatenate(
+        {mx::expand_dims(rotated_first, -1, stream),
+         mx::expand_dims(rotated_second, -1, stream)},
+        -1, stream);
+    auto rotary_shape = data.shape();
+    rotary_shape.back() = static_cast<int>(rope.rotary_dimensions);
+    rotated = mx::reshape(interleaved, rotary_shape, stream);
+  } else {
+    rotated = mx::concatenate({rotated_first, rotated_second}, -1, stream);
+  }
+  if (rope.rotary_dimensions < static_cast<std::size_t>(data.shape(-1))) {
+    start = mx::Shape(rank, 0);
+    start.back() = static_cast<int>(rope.rotary_dimensions);
+    rotated = mx::concatenate(
+        {rotated, mx::slice(data, start, data.shape(), stream)}, -1, stream);
+  }
+  return rotated;
+}
+
+mx::array lower_attention(const ScaledDotProductAttention &attention,
+                          std::span<const mx::array> inputs,
+                          mx::Stream stream) {
+  auto query = inputs[0];
+  auto key = inputs[1];
+  auto value = inputs[2];
+  const bool sequence_first =
+      attention.layout == AttentionLayout::kBatchSequenceHeadDepth;
+  if (sequence_first) {
+    query = mx::transpose(query, {0, 2, 1, 3}, stream);
+    key = mx::transpose(key, {0, 2, 1, 3}, stream);
+    value = mx::transpose(value, {0, 2, 1, 3}, stream);
+  }
+  std::optional<mx::array> mask;
+  std::string mask_mode;
+  if (attention.mask != MaskKind::kNone) {
+    mask = inputs[3];
+    mask_mode = "array";
+  } else if (attention.causal) {
+    mask_mode = "causal";
+  }
+  auto result = mx::fast::scaled_dot_product_attention(
+      query, key, value, attention.scale, mask_mode, mask, std::nullopt, false,
+      stream);
+  return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream)
+                        : result;
 }
 } // namespace
 
@@ -298,6 +401,31 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       return lower_mature_reduction(operation, inputs, shape, stream);
     if (operation.kind() == OperationKind::kCast)
       return std::vector{mx::astype(inputs[0], type, stream)};
+    if (const auto *matmul = operation.get_if<MatMul>()) {
+      if (matmul->accumulation_type != DataType::kFloat32 ||
+          !floating(inputs[1].dtype()))
+        return std::unexpected(Status::Unimplemented(
+            "Apple MLX MatMul requires floating inputs and F32 accumulation"));
+      return std::vector{mx::matmul(inputs[0], inputs[1], stream)};
+    }
+    if (const auto *rope = operation.get_if<RoPE>())
+      return std::vector{lower_rope(*rope, inputs, stream)};
+    if (const auto *hadamard = operation.get_if<Hadamard>()) {
+      if (hadamard->accumulation_type != DataType::kFloat32)
+        return std::unexpected(Status::Unimplemented(
+            "Apple MLX Hadamard requires F32 accumulation"));
+      const auto scale =
+          1.0F / std::sqrt(static_cast<float>(inputs[0].shape(-1)));
+      return std::vector{mx::hadamard_transform(inputs[0], scale, stream)};
+    }
+    if (const auto *attention =
+            operation.get_if<ScaledDotProductAttention>()) {
+      if (attention->accumulation_type != DataType::kFloat32 ||
+          (attention->causal && attention->mask != MaskKind::kNone))
+        return std::unexpected(Status::Unimplemented(
+            "Apple MLX SDPA requires F32 accumulation and one mask mode"));
+      return std::vector{lower_attention(*attention, inputs, stream)};
+    }
     auto first = mx::astype(inputs[0], mx::float32, stream);
     if (const auto *value = operation.get_if<Unary>())
       return std::vector{
