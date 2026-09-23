@@ -1,11 +1,14 @@
 #include "recurrent_test_support.h"
 #include "vulkan_program_internal.h"
 
+#include "hyle/compute/model_ops.h"
+
 namespace {
 using namespace vulkan_recurrent_test;
 
 TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
-  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 64 * 1024 * 1024);
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
+                                  64 * 1024 * 1024);
   auto context = vulkan_test::context(&quota).value();
   for (const auto depth : {16, 32, 64, 128}) {
     for (const auto tokens : {1, 5}) {
@@ -16,8 +19,8 @@ TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
       const auto reference = original.oracle();
       const auto changed_reference = changed.oracle();
       const auto &d = original.descriptions;
-      auto program = v::prepare(context, c::GatedDeltaNet{},
-                                d[0], d[1], d[2], d[3], d[4], d[5]);
+      auto program = v::prepare(context, c::GatedDeltaNet{}, d[0], d[1], d[2],
+                                d[3], d[4], d[5]);
       ASSERT_TRUE(program) << program.error().message();
       const auto &plan = v::detail::Access::program(*program);
       ASSERT_TRUE(plan->dispatches.back().region);
@@ -50,10 +53,12 @@ TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
         else if (repeat == 2)
           EXPECT_EQ(quota.used(), warmed_bytes);
       }
-      EXPECT_EQ(vulkan_test::read(context, inputs[5]).value(), original.data[5]);
+      EXPECT_EQ(vulkan_test::read(context, inputs[5]).value(),
+                original.data[5]);
       EXPECT_FALSE(first.submit());
       retained[0] = {};
-      EXPECT_FALSE(first.submit()); // State alone retains the same execution slot.
+      EXPECT_FALSE(
+          first.submit()); // State alone retains the same execution slot.
       retained[1] = {};
       auto replay = first.submit();
       ASSERT_TRUE(replay);
@@ -75,9 +80,11 @@ TEST(VulkanRecurrent, RejectsUnsupportedDomainAndPreservesSuccessfulBinding) {
   EXPECT_EQ(rejected.error().code(), hyle::StatusCode::Unimplemented);
   auto arguments = supported.arguments();
   arguments.pop_back();
-  EXPECT_FALSE(v::prepare(context, c::Operation(c::GatedDeltaNet{}), arguments));
+  EXPECT_FALSE(
+      v::prepare(context, c::Operation(c::GatedDeltaNet{}), arguments));
   auto program = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
-                            supported.arguments()).value();
+                            supported.arguments())
+                     .value();
   auto slot = program.create_invocation().value();
   auto inputs = supported.upload(context);
   ASSERT_TRUE(slot.bind(inputs).ok());
@@ -90,5 +97,52 @@ TEST(VulkanRecurrent, RejectsUnsupportedDomainAndPreservesSuccessfulBinding) {
   const auto expected = supported.oracle();
   expect(context, result->get()->tensors()[0], expected[0]);
   expect(context, result->get()->tensors()[1], expected[1]);
+}
+
+TEST(VulkanRecurrent, PerChannelKdaGateUsesMatureManagedRegion) {
+  auto context = vulkan_test::context().value();
+  Fixture fixture(3, 2, 32, 0, true);
+  auto program = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
+                            fixture.arguments());
+  ASSERT_TRUE(program) << program.error().message();
+  auto slot = program->create_invocation().value();
+  auto inputs = fixture.upload(context);
+  ASSERT_TRUE(slot.bind(inputs).ok());
+  auto work = slot.submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto expected = fixture.oracle();
+  expect(context, result->get()->tensors()[0], expected[0]);
+  expect(context, result->get()->tensors()[1], expected[1]);
+}
+
+TEST(VulkanRecurrent, MatureCausalConvUsesManagedRegion) {
+  auto context = vulkan_test::context().value();
+  const auto samples_desc =
+      c::TensorDesc::dense(c::DataType::kFloat32,
+                           std::array<std::int64_t, 3>{1, 5, 2})
+          .value();
+  const auto weights_desc =
+      c::TensorDesc::dense(c::DataType::kFloat32,
+                           std::array<std::int64_t, 2>{2, 3})
+          .value();
+  const std::array arguments{v::Argument(samples_desc),
+                             v::Argument(weights_desc)};
+  auto program = v::prepare(context, c::model_ops::causal_conv1d(), arguments);
+  ASSERT_TRUE(program) << program.error().message();
+  const std::array<float, 10> samples{1, 10, 2, 20, 3, 30, 4, 40, 5, 50};
+  const std::array<float, 6> weights{1, 2, 3, -1, 0, 1};
+  const std::array inputs{
+      vulkan_test::upload(context, samples_desc, samples).value(),
+      vulkan_test::upload(context, weights_desc, weights).value()};
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(inputs).ok());
+  auto work = slot.submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  EXPECT_EQ(vulkan_test::read(context, result->get()->tensors()[0]).value(),
+            (std::vector<float>{14, 20, 20, 20, 26, 20}));
 }
 } // namespace

@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "hyle/compute/detail/vulkan_plan.h"
+#include "hyle/compute/model_ops.h"
 
 namespace hyle::graph::vulkan {
 namespace cv = compute::vulkan;
@@ -139,7 +140,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       auto &node = nodes[index];
       if (!node)
         continue;
-      if (node->operation.kind() == compute::OperationKind::kCustom) {
+      if (node->operation.kind() == compute::OperationKind::kCustom &&
+          !node->operation.custom_as<compute::model_ops::CausalConv1d>()) {
         if (!options.custom)
           return std::unexpected(Status::Unimplemented(
               "Vulkan custom schema needs a cold native lowering"));

@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
 
+#include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
 
 namespace {
@@ -19,7 +20,9 @@ void check(std::span<const mx::array> actual,
     ASSERT_EQ(actual[port].size(), expected[port].size());
     double max_error = 0;
     for (std::size_t i = 0; i < expected[port].size(); ++i)
-      max_error = std::max(max_error, std::abs(double(actual[port].data<float>()[i]) - expected[port][i]));
+      max_error =
+          std::max(max_error, std::abs(double(actual[port].data<float>()[i]) -
+                                       expected[port][i]));
     EXPECT_LT(max_error, 3e-6);
   }
 }
@@ -59,9 +62,11 @@ TEST(AppleRecurrent, OrdinaryPreparationInterleavedRequestsAndOldOutputOwner) {
     }
     const auto arrays = old->get()->arrays();
     EXPECT_EQ(arrays[0].buffer().ptr(), arrays[1].buffer().ptr());
-    EXPECT_EQ(arrays[1].offset(), static_cast<std::int64_t>(arrays[0].nbytes()));
+    EXPECT_EQ(arrays[1].offset(),
+              static_cast<std::int64_t>(arrays[0].nbytes()));
     EXPECT_EQ(std::memcmp(first.inputs[5].data<float>(), first.data[5].data(),
-                          first.data[5].size() * sizeof(float)), 0);
+                          first.data[5].size() * sizeof(float)),
+              0);
     ASSERT_TRUE(context->close().ok());
     check(arrays, first.oracle());
     EXPECT_FALSE(right->submit());
@@ -77,7 +82,8 @@ TEST(AppleRecurrent, StridedMlxInputAndPreparationDiagnostics) {
         for (int d = 0; d < 32; ++d)
           transposed[((b * 5 + t) * 32 + d) * 2 + h] =
               fixture.data[0][((b * 5 + t) * 2 + h) * 32 + d];
-  fixture.inputs[0] = mx::transpose(mx::array(transposed.data(), {2, 5, 32, 2}), {0, 1, 3, 2});
+  fixture.inputs[0] =
+      mx::transpose(mx::array(transposed.data(), {2, 5, 32, 2}), {0, 1, 3, 2});
   fixture.inputs[0].eval();
   fixture.inputs[0].wait();
   ASSERT_FALSE(fixture.inputs[0].flags().row_contiguous);
@@ -129,5 +135,44 @@ TEST(AppleRecurrent, AbandonedCompletionAndCancelCloseDrain) {
     check(done->get()->arrays(), fixture.oracle());
   else
     EXPECT_TRUE(done.error().IsCancelled());
+}
+
+TEST(AppleRecurrent, PerChannelKdaGateUsesOriginalMetalRegion) {
+  apple_test::Recurrent fixture(3, 2, 32, 0, true);
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto program = context->prepare(c::GatedDeltaNet{}, fixture.inputs);
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  ASSERT_TRUE(invocation->bind(fixture.inputs).ok());
+  auto work = invocation->submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  check(result->get()->arrays(), fixture.oracle());
+}
+
+TEST(AppleRecurrent, MatureCausalConvUsesMlxRegion) {
+  const std::array<float, 10> samples{1, 10, 2, 20, 3, 30, 4, 40, 5, 50};
+  const std::array<float, 6> weights{1, 2, 3, -1, 0, 1};
+  const std::array inputs{mx::array(samples.data(), {1, 5, 2}),
+                          mx::array(weights.data(), {2, 3})};
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto program = context->prepare(c::model_ops::causal_conv1d(), inputs);
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+  ASSERT_TRUE(invocation->bind(inputs).ok());
+  auto work = invocation->submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto arrays = result->get()->arrays();
+  ASSERT_EQ(arrays.size(), 1U);
+  const std::array expected{14.F, 20.F, 20.F, 20.F, 26.F, 20.F};
+  for (std::size_t i = 0; i < expected.size(); ++i)
+    EXPECT_FLOAT_EQ(arrays[0].data<float>()[i], expected[i]);
 }
 } // namespace

@@ -1,6 +1,8 @@
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
 
+#include "hyle/compute/model_ops.h"
+
 namespace {
 using namespace ggml_cuda_tensor_test;
 
@@ -15,6 +17,90 @@ TEST(GgmlCudaTensor, FloatingNormAffineAndUnaryConversions) {
   norms<hyle::simd::float16_t>(ctx);
   norms<hyle::simd::bfloat16_t>(ctx);
   unary_and_cast(ctx);
+}
+
+TEST(GgmlCudaTensor, MatureCausalConvUsesNaturalSequenceLayout) {
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto resource = memory.ref();
+  constexpr std::size_t channels = 128;
+  const auto samples_desc = dense(DataType::kFloat32, {1, 5, channels});
+  const auto weights_desc = dense(DataType::kFloat32, {channels, 3});
+  const auto output_desc = dense(DataType::kFloat32, {1, 3, channels});
+  std::vector<float> samples(5 * channels), weights(3 * channels),
+      expected(3 * channels);
+  for (std::size_t token = 0; token < 5; ++token)
+    for (std::size_t channel = 0; channel < channels; ++channel)
+      samples[token * channels + channel] =
+          static_cast<float>(token + 1) + static_cast<float>(channel) / 256.F;
+  for (std::size_t channel = 0; channel < channels; ++channel) {
+    weights[channel * 3] = 1.F;
+    weights[channel * 3 + 1] = 2.F;
+    weights[channel * 3 + 2] = 3.F;
+    for (std::size_t token = 0; token < 3; ++token)
+      expected[token * channels + channel] =
+          samples[token * channels + channel] +
+          2.F * samples[(token + 1) * channels + channel] +
+          3.F * samples[(token + 2) * channels + channel];
+  }
+  auto samples_buffer = upload<float>(resource, samples);
+  auto weights_buffer = upload<float>(resource, weights);
+  auto output = output_buffer(resource, output_desc);
+  const std::array inputs{
+      ConstTensorView::create(samples_desc, samples_buffer.view()).value(),
+      ConstTensorView::create(weights_desc, weights_buffer.view()).value()};
+  const auto status =
+      execute(ctx, model_ops::causal_conv1d(), inputs,
+              TensorView::create(output_desc, output.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message();
+  EXPECT_EQ(half_test::read<float>(output), expected);
+}
+
+TEST(GgmlCudaTensor, MatureKdaPublishesScoresAndStateIndependently) {
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto resource = memory.ref();
+  const std::array descriptions{dense(DataType::kFloat32, {1, 1, 2, 32}),
+                                dense(DataType::kFloat32, {1, 1, 2, 32}),
+                                dense(DataType::kFloat32, {1, 1, 2, 32}),
+                                dense(DataType::kFloat32, {1, 1, 2, 32}),
+                                dense(DataType::kFloat32, {1, 1, 2, 1}),
+                                dense(DataType::kFloat32, {1, 2, 32, 32})};
+  std::vector<Buffer> storage;
+  std::vector<ConstTensorView> inputs;
+  storage.reserve(descriptions.size());
+  inputs.reserve(descriptions.size());
+  std::vector<float> expected_state(*descriptions[5].element_count());
+  for (std::size_t i = 0; i < expected_state.size(); ++i)
+    expected_state[i] = static_cast<float>(i % 31) / 128.F;
+  for (std::size_t i = 0; i < descriptions.size(); ++i) {
+    std::vector<float> values(*descriptions[i].element_count(), 0.F);
+    if (i == 5)
+      values = expected_state;
+    storage.push_back(upload<float>(resource, values));
+    inputs.push_back(
+        ConstTensorView::create(descriptions[i], storage.back().view())
+            .value());
+  }
+  const std::array output_desc{descriptions[2], descriptions[5]};
+  std::array output_storage{output_buffer(resource, output_desc[0]),
+                            output_buffer(resource, output_desc[1])};
+  const std::array outputs{
+      TensorView::create(output_desc[0], output_storage[0].view()).value(),
+      TensorView::create(output_desc[1], output_storage[1].view()).value()};
+  auto prepared = prepare(ctx, Operation(GatedDeltaNet{}), inputs, outputs);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  auto completion = invocation.submit(queue, inputs, outputs);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  EXPECT_EQ(half_test::read<float>(output_storage[0]),
+            std::vector<float>(*output_desc[0].element_count(), 0.F));
+  EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
 }
 
 TEST(GgmlCudaTensor, LayerNormRetainsSmallVarianceAtLargeOffset) {
@@ -144,8 +230,7 @@ TEST(GgmlCudaTensor, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
                         TensorView::create(output_desc, output.view()).value())
                     .ok());
     const auto actual = half_test::read<F16>(output);
-    const std::array expected{22.0, 28.0, 49.0, 64.0,
-                              22.0, 28.0, 49.0, 64.0};
+    const std::array expected{22.0, 28.0, 49.0, 64.0, 22.0, 28.0, 49.0, 64.0};
     for (std::size_t i = 0; i < actual.size(); ++i)
       half_test::expect_near(actual[i], expected[i]);
   }
@@ -156,10 +241,10 @@ TEST(GgmlCudaTensor, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
     const auto input =
         ConstTensorView::create(description, source.view()).value();
     for (const bool inverse : {false, true}) {
-      ASSERT_TRUE(execute(ctx, Hadamard{.inverse = inverse},
-                          std::span(&input, 1),
-                          TensorView::create(description, output.view()).value())
-                      .ok());
+      ASSERT_TRUE(
+          execute(ctx, Hadamard{.inverse = inverse}, std::span(&input, 1),
+                  TensorView::create(description, output.view()).value())
+              .ok());
       const auto actual = half_test::read<float>(output);
       const std::array expected{5.0F, -1.0F, -2.0F, 0.0F};
       for (std::size_t i = 0; i < actual.size(); ++i)
@@ -191,12 +276,14 @@ TEST(GgmlCudaTensor, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
                         TensorView::create(data_desc, output.view()).value())
                     .ok());
     const auto actual = half_test::read<F16>(output);
-    const std::array expected{
-        1.0, 2.0, 3.0, 4.0,
-        5.0 * std::cos(1.0) - 6.0 * std::sin(1.0),
-        5.0 * std::sin(1.0) + 6.0 * std::cos(1.0),
-        7.0 * std::cos(0.5) - 8.0 * std::sin(0.5),
-        7.0 * std::sin(0.5) + 8.0 * std::cos(0.5)};
+    const std::array expected{1.0,
+                              2.0,
+                              3.0,
+                              4.0,
+                              5.0 * std::cos(1.0) - 6.0 * std::sin(1.0),
+                              5.0 * std::sin(1.0) + 6.0 * std::cos(1.0),
+                              7.0 * std::cos(0.5) - 8.0 * std::sin(0.5),
+                              7.0 * std::sin(0.5) + 8.0 * std::cos(0.5)};
     for (std::size_t i = 0; i < actual.size(); ++i)
       half_test::expect_near(actual[i], expected[i]);
   }

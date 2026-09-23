@@ -10,6 +10,7 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/route_rule.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
@@ -253,6 +254,11 @@ bool region_supports(const Operation &operation,
            floating(outputs[0].data_type()) &&
            (outputs[0].data_type() != DataType::kBFloat16 ||
             inputs[0].data_type() == DataType::kBFloat16);
+  if (operation.custom_as<model_ops::CausalConv1d>())
+    return inputs.size() == 2 && outputs.size() == 1 &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
                                       .route = NativeRoute::kVulkan,
@@ -287,25 +293,24 @@ bool region_supports(const Operation &operation,
            left_batch[1] % right_batch[1] == 0;
   }
   if (const auto *rope = operation.get_if<RoPE>())
-    return inputs.size() == 3 && outputs.size() == 1 &&
-           inputs[0].rank() == 4 && rope->sequence_axis == 1 &&
-           inputs[0].is_dense() &&
+    return inputs.size() == 3 && outputs.size() == 1 && inputs[0].rank() == 4 &&
+           rope->sequence_axis == 1 && inputs[0].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat32 ||
             inputs[0].data_type() == DataType::kFloat16) &&
            inputs[1].rank() == 1 && inputs[1].data_type() == DataType::kInt32 &&
-           inputs[2].rank() == 1 && inputs[2].data_type() == DataType::kFloat32 &&
+           inputs[2].rank() == 1 &&
+           inputs[2].data_type() == DataType::kFloat32 &&
            outputs[0] == inputs[0];
   if (const auto *hadamard = operation.get_if<Hadamard>()) {
     const auto width = inputs[0].dimensions().back();
-    return inputs.size() == 1 && outputs.size() == 1 &&
-           inputs[0].is_dense() && outputs[0] == inputs[0] &&
+    return inputs.size() == 1 && outputs.size() == 1 && inputs[0].is_dense() &&
+           outputs[0] == inputs[0] &&
            (inputs[0].data_type() == DataType::kFloat32 ||
             inputs[0].data_type() == DataType::kFloat16) &&
            hadamard->accumulation_type == DataType::kFloat32 &&
            (width == 64 || width == 128 || width == 256 || width == 512);
   }
-  if (const auto *attention =
-          operation.get_if<ScaledDotProductAttention>()) {
+  if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
     if (inputs.size() != 3 || outputs.size() != 1 || !attention->causal ||
         attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
@@ -316,8 +321,7 @@ bool region_supports(const Operation &operation,
     if (type != DataType::kFloat32 && type != DataType::kFloat16)
       return false;
     for (const auto &input : inputs)
-      if (!input.is_dense() || input.rank() != 4 ||
-          input.data_type() != type)
+      if (!input.is_dense() || input.rank() != 4 || input.data_type() != type)
         return false;
     const auto query = inputs[0].dimensions();
     const auto key = inputs[1].dimensions();
@@ -579,6 +583,10 @@ Result<Region> Region::create(NativeDevice device,
         }
         if (node.inputs.size() == 1)
           output = ggml_dup(context, output);
+      } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
+        auto *samples =
+            ggml_cont(context, ggml_permute(context, arguments[0], 1, 0, 2, 3));
+        output = ggml_ssm_conv(context, samples, arguments[1]);
       } else if (node.operation.get_if<MatMul>()) {
         auto *right = arguments[1];
         const bool mxfp4 = mxfp4_domain(recipe.values[node.inputs[1]]);
@@ -597,14 +605,14 @@ Result<Region> Region::create(NativeDevice device,
                                          : ggml_cast(context, product, target);
       } else if (const auto *rope = node.operation.get_if<RoPE>()) {
         auto *frequencies = arguments[2];
-        auto *factors = ggml_div(
-            context, ggml_fill(context, frequencies, 1.0F), frequencies);
-        output = ggml_rope_ext(
-            context, left, arguments[1], factors,
-            static_cast<int>(rope->rotary_dimensions),
-            rope->layout == RopeLayout::kInterleaved ? GGML_ROPE_TYPE_NORMAL
-                                                     : GGML_ROPE_TYPE_NEOX,
-            0, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
+        auto *factors = ggml_div(context, ggml_fill(context, frequencies, 1.0F),
+                                 frequencies);
+        output = ggml_rope_ext(context, left, arguments[1], factors,
+                               static_cast<int>(rope->rotary_dimensions),
+                               rope->layout == RopeLayout::kInterleaved
+                                   ? GGML_ROPE_TYPE_NORMAL
+                                   : GGML_ROPE_TYPE_NEOX,
+                               0, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
       } else if (node.operation.get_if<Hadamard>()) {
         const auto width = recipe.values[node.inputs[0]].dimensions().back();
         auto *source = left->type == GGML_TYPE_F32
@@ -615,8 +623,8 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_mul_mat(context, transform, source);
         ggml_mul_mat_set_hint(output, GGML_HINT_SRC0_IS_HADAMARD);
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
-          return std::unexpected(Status::Unimplemented(
-              "ggml Vulkan Hadamard F32 accumulation"));
+          return std::unexpected(
+              Status::Unimplemented("ggml Vulkan Hadamard F32 accumulation"));
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (const auto *attention =
@@ -624,11 +632,11 @@ Result<Region> Region::create(NativeDevice device,
         auto *query = ggml_permute(
             context, ggml_cast(context, left, GGML_TYPE_F32), 0, 2, 1, 3);
         auto *key = ggml_permute(
-            context, ggml_cast(context, arguments[1], GGML_TYPE_F32), 0, 2,
-            1, 3);
+            context, ggml_cast(context, arguments[1], GGML_TYPE_F32), 0, 2, 1,
+            3);
         auto *value = ggml_permute(
-            context, ggml_cast(context, arguments[2], GGML_TYPE_F32), 0, 2,
-            1, 3);
+            context, ggml_cast(context, arguments[2], GGML_TYPE_F32), 0, 2, 1,
+            3);
         auto *scores = ggml_mul_mat(context, key, query);
         if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented(
@@ -642,8 +650,7 @@ Result<Region> Region::create(NativeDevice device,
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented(
               "ggml Vulkan attention value accumulation"));
-        output = ggml_cont(
-            context, ggml_permute(context, output, 0, 2, 1, 3));
+        output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (node.operation.get_if<GatedDeltaNet>()) {
@@ -810,13 +817,13 @@ Result<Region> Region::create(NativeDevice device,
         ggml_tensor *mask = nullptr;
         if (node.inputs.size() == 2) {
           mask = expand_broadcast(context, arguments[1],
-                                   recipe.values[node.inputs[1]], description);
+                                  recipe.values[node.inputs[1]], description);
           // Binary can broadcast a scalar/row/column directly. Softmax needs
           // the complete logical mask before changing its selected axis.
           if (ggml_nelements(mask) != ggml_nelements(left))
             mask = ggml_repeat_4d(context, mask, columns(description),
-                                   ggml_nelements(left) / columns(description),
-                                   1, 1);
+                                  ggml_nelements(left) / columns(description),
+                                  1, 1);
           mask = rows(mask);
           // The public contract rounds the scale multiplication before mask
           // addition. A separate original Scale prevents fused-multiply-add.

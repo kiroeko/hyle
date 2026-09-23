@@ -16,7 +16,7 @@ struct Extension final {
 struct Node final {
   Operation operation;
   std::vector<std::uint32_t> inputs;
-  std::uint32_t output = 0;
+  std::vector<std::uint32_t> outputs;
 };
 // Immutable, recipe-local descriptions. No Graph objects or payload addresses.
 struct Recipe final {

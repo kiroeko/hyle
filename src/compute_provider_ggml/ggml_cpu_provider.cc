@@ -14,6 +14,7 @@
 
 #include "cpu_execution.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::ggml_cpu {
 namespace {
@@ -157,7 +158,8 @@ ggml_tensor *native_shape(ggml_context *context, ggml_tensor *value,
   std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
   for (std::size_t i = 0; i < description.rank(); ++i)
     shape[i] = description.dimensions()[description.rank() - i - 1];
-  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2], shape[3]);
+  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2],
+                         shape[3]);
 }
 ggml_tensor *as_float(ggml_context *context, ggml_tensor *value) {
   return value->type == GGML_TYPE_F32
@@ -274,11 +276,12 @@ ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
   return value;
 }
 
-ggml_tensor *lower(Program &program, Invocation &invocation,
-                   const internal::Node &node, std::size_t node_index) {
+std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
+                                 const internal::Node &node,
+                                 std::size_t node_index) {
   auto *context = invocation.arena.get();
   const auto &recipe = program.recipe;
-  const auto &output = recipe.values[node.output];
+  const auto &output = recipe.values[node.outputs[0]];
   const auto input = [&](std::size_t index) {
     const auto id = node.inputs[index];
     return matrix(context, invocation.values[id], recipe.values[id]);
@@ -427,6 +430,11 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
       result = restore_indexed_rows(
           context, ggml_add(context, base_rows, updates), inner, extent, outer);
     }
+  } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
+    auto *samples = ggml_cont(
+        context,
+        ggml_permute(context, invocation.values[node.inputs[0]], 1, 0, 2, 3));
+    result = ggml_ssm_conv(context, samples, invocation.values[node.inputs[1]]);
   } else if (const auto *matmul = node.operation.get_if<MatMul>()) {
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
     // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
@@ -438,34 +446,33 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
       right = ggml_cont(context, right);
     result = ggml_mul_mat(context, right, left);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-      return nullptr;
+      return {};
     (void)matmul;
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
     auto *positions = invocation.values[node.inputs[1]];
     auto *frequencies = invocation.values[node.inputs[2]];
     auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
     one->data = &program.one;
-    auto *factors = ggml_div(context, ggml_repeat(context, one, frequencies),
-                             frequencies);
+    auto *factors =
+        ggml_div(context, ggml_repeat(context, one, frequencies), frequencies);
     const int mode = rope->layout == RopeLayout::kInterleaved
                          ? GGML_ROPE_TYPE_NORMAL
                          : GGML_ROPE_TYPE_NEOX;
-    result = ggml_rope_ext(
-        context, invocation.values[node.inputs[0]], positions, factors,
-        static_cast<int>(rope->rotary_dimensions), mode, 0, 1.0F, 1.0F,
-        0.0F, 1.0F, 0.0F, 0.0F);
+    result =
+        ggml_rope_ext(context, invocation.values[node.inputs[0]], positions,
+                      factors, static_cast<int>(rope->rotary_dimensions), mode,
+                      0, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
   } else if (node.operation.get_if<Hadamard>()) {
     const auto &values = program.hadamards[node_index];
     if (values.empty())
-      return nullptr;
+      return {};
     const auto width = columns(output);
-    auto *transform =
-        ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
+    auto *transform = ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
     transform->data = const_cast<float *>(values.data());
     result = ggml_mul_mat(context, transform, as_float(context, input(0)));
     ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-      return nullptr;
+      return {};
   } else if (const auto *attention =
                  node.operation.get_if<ScaledDotProductAttention>()) {
     auto *query = invocation.values[node.inputs[0]];
@@ -478,32 +485,52 @@ ggml_tensor *lower(Program &program, Invocation &invocation,
     if (type == GGML_TYPE_F16) {
       const auto &mask_values = program.attention_masks[node_index];
       if (mask_values.empty())
-        return nullptr;
-      auto *mask = ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1],
-                                      query->ne[1]);
+        return {};
+      auto *mask =
+          ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1], query->ne[1]);
       mask->data = const_cast<ggml_fp16_t *>(mask_values.data());
       result = ggml_flash_attn_ext(context, query, key, value, mask,
                                    attention->scale, 0.0F, 0.0F);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-        return nullptr;
+        return {};
     } else {
       key = as_float(context, key);
       value = as_float(context, value);
       auto *scores = ggml_mul_mat(context, key, query);
       if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
-        return nullptr;
+        return {};
       scores = ggml_scale(context, scores, attention->scale);
-      scores = ggml_diag_mask_inf(
-          context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
+      scores = ggml_diag_mask_inf(context, scores,
+                                  static_cast<int>(key->ne[1] - query->ne[1]));
       auto *probabilities = ggml_soft_max(context, scores);
       value = ggml_cont(context, ggml_transpose(context, value));
       result = ggml_mul_mat(context, value, probabilities);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-        return nullptr;
+        return {};
       result = ggml_permute(context, result, 0, 2, 1, 3);
     }
+  } else if (node.operation.get_if<GatedDeltaNet>()) {
+    auto *packed = ggml_gated_delta_net(
+        context, invocation.values[node.inputs[0]],
+        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
+        invocation.values[node.inputs[3]], invocation.values[node.inputs[4]],
+        invocation.values[node.inputs[5]], 1);
+    const auto score_count =
+        static_cast<std::int64_t>(elements(recipe.values[node.outputs[0]]));
+    const auto state_count =
+        static_cast<std::int64_t>(elements(recipe.values[node.outputs[1]]));
+    auto *scores =
+        ggml_cont(context, ggml_view_1d(context, packed, score_count, 0));
+    auto *state =
+        ggml_cont(context, ggml_view_1d(context, packed, state_count,
+                                        static_cast<std::size_t>(score_count) *
+                                            sizeof(float)));
+    return {as_output(context, scores, recipe.values[node.outputs[0]]),
+            as_output(context, state, recipe.values[node.outputs[1]])};
   }
-  return result ? as_output(context, result, output) : nullptr;
+  if (!result)
+    return {};
+  return {as_output(context, result, output)};
 }
 
 void destroy_invocation(void *value, mem::AllocatorRef allocator) noexcept {
@@ -551,9 +578,9 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
           elements(description) == 0) {
         std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
         for (std::size_t i = 0; i < description.rank(); ++i)
-          dimensions[i] = (std::max)(
-              description.dimensions()[description.rank() - i - 1],
-              std::int64_t{1});
+          dimensions[i] =
+              (std::max)(description.dimensions()[description.rank() - i - 1],
+                         std::int64_t{1});
         tensor = ggml_new_tensor(context, native_type(description.data_type()),
                                  GGML_MAX_DIMS, dimensions.data());
       } else if (description.is_dense()) {
@@ -577,12 +604,14 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
-      auto *result = lower(program, *invocation, node, node_index);
-      if (!result)
+      auto results = lower(program, *invocation, node, node_index);
+      if (results.size() != node.outputs.size())
         return Status::Internal(
             "ggml CPU lowering differs from its admitted schema");
-      invocation->values[node.output] = result;
-      ggml_build_forward_expand(invocation->graph, result);
+      for (std::size_t i = 0; i < results.size(); ++i) {
+        invocation->values[node.outputs[i]] = results[i];
+        ggml_build_forward_expand(invocation->graph, results[i]);
+      }
     }
     for (const auto id : recipe.outputs) {
       auto *root = invocation->values[id];
@@ -847,15 +876,17 @@ ProviderPrepareOutcome prepare(void *context,
   try {
     internal::Recipe recipe;
     recipe.values.assign(request.inputs.begin(), request.inputs.end());
-    recipe.values.push_back(request.outputs[0]);
-    internal::Node node{request.operation,
-                        {},
-                        static_cast<std::uint32_t>(request.inputs.size())};
+    internal::Node node{request.operation, {}, {}};
     for (std::uint32_t i = 0; i < request.inputs.size(); ++i) {
       recipe.inputs.push_back(i);
       node.inputs.push_back(i);
     }
-    recipe.outputs.push_back(node.output);
+    for (const auto &description : request.outputs) {
+      const auto id = static_cast<std::uint32_t>(recipe.values.size());
+      recipe.values.push_back(description);
+      node.outputs.push_back(id);
+      recipe.outputs.push_back(id);
+    }
     recipe.nodes.push_back(std::move(node));
     return internal::compile(context, std::move(recipe), allocator, output);
   } catch (...) {
@@ -893,16 +924,38 @@ ProviderRuntimeProperties runtime(void *value) noexcept {
 bool supports(void *context, Operation operation,
               std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
-  if (!context || inputs.empty() || outputs.size() != 1 ||
-      !outputs[0].is_dense() || !representable(outputs[0]))
+  if (!context || inputs.empty() || outputs.empty() ||
+      !std::ranges::all_of(outputs, [](const auto &description) {
+        return description.is_dense() && representable(description);
+      }))
     return false;
   for (const auto &description : inputs)
     if (!representable(description))
       return false;
-  const auto inferred = infer_single_output(operation, inputs);
-  if (!inferred || *inferred != outputs[0])
+  std::vector<TensorDesc> inferred(outputs.size());
+  if (!infer_output_descriptions(operation, inputs, inferred).ok() ||
+      !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if (operation.custom_as<model_ops::CausalConv1d>())
+    return outputs.size() == 1 && inputs.size() == 2 &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32;
+  if (operation.get_if<GatedDeltaNet>()) {
+    if (outputs.size() != 2 || inputs.size() != 6 ||
+        !std::ranges::all_of(inputs, [](const auto &description) {
+          return description.is_dense() &&
+                 description.data_type() == DataType::kFloat32;
+        }))
+      return false;
+    const auto q = inputs[0].dimensions();
+    const auto v = inputs[2].dimensions();
+    return q[2] == v[2] && q[3] == v[3] &&
+           *outputs[0].element_count() + *outputs[1].element_count() <=
+               std::size_t{INT32_MAX};
+  }
+  if (outputs.size() != 1)
+    return false;
   const auto nonempty = std::ranges::all_of(
       inputs, [](const auto &d) { return elements(d) != 0; });
   if (!nonempty && elements(output) != 0 && !operation.get_if<Concat>() &&
@@ -951,8 +1004,8 @@ bool supports(void *context, Operation operation,
            output.data_type() == inputs[0].data_type();
   if (const auto *matmul = operation.get_if<MatMul>()) {
     if (!nonempty || elements(output) == 0 || inputs.size() != 2 ||
-        inputs[0].rank() < 2 || inputs[0].rank() > 4 ||
-        inputs[1].rank() < 2 || inputs[1].rank() > 4 ||
+        inputs[0].rank() < 2 || inputs[0].rank() > 4 || inputs[1].rank() < 2 ||
+        inputs[1].rank() > 4 ||
         (inputs[0].rank() > 2 && !inputs[0].is_dense()) ||
         (inputs[1].rank() > 2 && !inputs[1].is_dense() &&
          !native_matmul_rhs(inputs[1])) ||
@@ -980,15 +1033,13 @@ bool supports(void *context, Operation operation,
            (inputs[0].data_type() == DataType::kFloat16 ||
             inputs[0].data_type() == DataType::kBFloat16) &&
            inputs[1].rank() == 1 && inputs[1].is_dense() &&
-           inputs[1].data_type() == DataType::kInt32 &&
-           inputs[2].rank() == 1 && inputs[2].is_dense() &&
-           inputs[2].data_type() == DataType::kFloat32;
+           inputs[1].data_type() == DataType::kInt32 && inputs[2].rank() == 1 &&
+           inputs[2].is_dense() && inputs[2].data_type() == DataType::kFloat32;
   if (const auto *hadamard = operation.get_if<Hadamard>())
     return inputs.size() == 1 && inputs[0].is_dense() &&
            floating(inputs[0].data_type()) &&
            hadamard->accumulation_type == DataType::kFloat32;
-  if (const auto *attention =
-          operation.get_if<ScaledDotProductAttention>()) {
+  if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
     if (inputs.size() != 3 || !attention->causal ||
         attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
@@ -1005,8 +1056,8 @@ bool supports(void *context, Operation operation,
         return false;
     const auto q = inputs[0].dimensions();
     const auto k = inputs[1].dimensions();
-    return q[0] > 0 && q[1] > 0 && k[1] >= q[1] && q[2] == 8 &&
-           k[2] == 2 && q[3] == 256 && k[3] == 256 && q[0] == k[0] &&
+    return q[0] > 0 && q[1] > 0 && k[1] >= q[1] && q[2] == 8 && k[2] == 2 &&
+           q[3] == 256 && k[3] == 256 && q[0] == k[0] &&
            inputs[1] == inputs[2] && output == inputs[0];
   }
   return false;
@@ -1018,7 +1069,9 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<Reduce>() || operation.get_if<Concat>() ||
          operation.get_if<Scatter>() || operation.get_if<MatMul>() ||
          operation.get_if<RoPE>() || operation.get_if<Hadamard>() ||
-         operation.get_if<ScaledDotProductAttention>();
+         operation.get_if<ScaledDotProductAttention>() ||
+         operation.get_if<GatedDeltaNet>() ||
+         operation.custom_as<model_ops::CausalConv1d>().has_value();
 }
 ProviderPrepareOutcome compile(void *context, Recipe recipe,
                                mem::AllocatorRef allocator,
@@ -1044,9 +1097,14 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
               Status::InvalidArgument("ggml CPU recipe is not topological"));
         inputs.push_back(recipe.values[id]);
       }
-      if (node.output >= available.size() || available[node.output] ||
-          !supports(context, node.operation, inputs,
-                    std::span(&recipe.values[node.output], 1)))
+      std::vector<TensorDesc> outputs;
+      for (const auto id : node.outputs) {
+        if (id >= available.size() || available[id])
+          return ProviderPrepareOutcome::error(
+              Status::InvalidArgument("ggml CPU output identity is invalid"));
+        outputs.push_back(recipe.values[id]);
+      }
+      if (!supports(context, node.operation, inputs, outputs))
         return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
             "ggml CPU recipe contains an unqualified node"));
       if (const auto *gather = node.operation.get_if<Gather>()) {
@@ -1070,7 +1128,8 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
              inputs[0].dimensions()[static_cast<std::size_t>(
                  axis(scatter->axis, inputs[0].rank()))]});
       }
-      available[node.output] = true;
+      for (const auto id : node.outputs)
+        available[id] = true;
     }
     for (const auto id : recipe.outputs)
       if (id >= available.size() || !available[id])
@@ -1083,7 +1142,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       const auto &node = recipe.nodes[node_index];
       if (node.operation.get_if<Hadamard>()) {
         const auto width = static_cast<std::size_t>(
-            recipe.values[node.output].dimensions().back());
+            recipe.values[node.outputs[0]].dimensions().back());
         if (width > SIZE_MAX / width ||
             width * width > SIZE_MAX / sizeof(float))
           return ProviderPrepareOutcome::error(
@@ -1110,17 +1169,17 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
         const auto past = key_length - query_length;
         for (std::size_t query = 0; query < query_length; ++query)
           for (std::size_t key = 0; key < key_length; ++key)
-            mask[query * key_length + key] = ggml_fp32_to_fp16(
-                key <= past + query ? 0.0F : -INFINITY);
+            mask[query * key_length + key] =
+                ggml_fp32_to_fp16(key <= past + query ? 0.0F : -INFINITY);
       }
     }
     void *storage = allocator.allocate(sizeof(Program), alignof(Program));
     if (!storage)
       return ProviderPrepareOutcome::resource_declined(allocation_failure());
-    auto *program = ::new (storage) Program{
-        static_cast<Configuration *>(context)->options, std::move(recipe),
-        std::move(hadamards), std::move(attention_masks),
-        std::move(index_checks)};
+    auto *program = ::new (storage)
+        Program{static_cast<Configuration *>(context)->options,
+                std::move(recipe), std::move(hadamards),
+                std::move(attention_masks), std::move(index_checks)};
     *output = {.vtable = &kPrepared,
                .state = program,
                .workspace = {},

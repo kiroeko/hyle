@@ -13,8 +13,9 @@ namespace hyle::graph::cpu::internal {
 namespace native = compute::ggml_cpu::internal;
 namespace {
 
-Result<std::size_t> matmul_repack_bytes(const Graph &graph,
-                                        std::span<const NodeId> nodes) noexcept {
+Result<std::size_t>
+matmul_repack_bytes(const Graph &graph,
+                    std::span<const NodeId> nodes) noexcept {
   std::size_t total = 0;
   for (const auto node : nodes) {
     auto operation = graph.operation(node);
@@ -257,8 +258,7 @@ compile(void *context, const RegionCompileRequest &request,
   try {
     auto repack = matmul_repack_bytes(*request.graph, request.nodes);
     if (!repack)
-      return compute::ProviderPrepareOutcome::error(
-          std::move(repack).error());
+      return compute::ProviderPrepareOutcome::error(std::move(repack).error());
     native::Recipe recipe;
     std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
     for (std::uint32_t i = 0; i < values.size(); ++i)
@@ -274,7 +274,7 @@ compile(void *context, const RegionCompileRequest &request,
     for (const auto node : request.nodes) {
       native::Node lowered{request.graph->operation(node).value(),
                            {},
-                           local(request.graph->result(node).value())};
+                           {local(request.graph->result(node).value())}};
       for (std::size_t i = 0; i < request.graph->node_input_count(node).value();
            ++i) {
         const auto id = local(request.graph->node_input(node, i).value());

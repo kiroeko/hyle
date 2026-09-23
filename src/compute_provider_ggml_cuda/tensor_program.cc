@@ -4,6 +4,8 @@
 #include <array>
 #include <climits>
 
+#include "hyle/compute/model_ops.h"
+
 namespace hyle::compute::ggml_cuda::internal {
 namespace {
 ggml_type native_type(DataType type) noexcept {
@@ -81,7 +83,8 @@ ggml_tensor *native_shape(ggml_context *context, ggml_tensor *value,
   std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
   for (std::size_t i = 0; i < description.rank(); ++i)
     shape[i] = description.dimensions()[description.rank() - i - 1];
-  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2], shape[3]);
+  return ggml_reshape_4d(context, value, shape[0], shape[1], shape[2],
+                         shape[3]);
 }
 ggml_tensor *as_float(ggml_context *context, ggml_tensor *value) {
   return value->type == GGML_TYPE_F32
@@ -202,8 +205,10 @@ ggml_tensor *restore_axis(ggml_context *context, ggml_tensor *value,
 bool tensor_operation_supports(Operation operation,
                                std::span<const TensorDesc> inputs,
                                std::span<const TensorDesc> outputs) noexcept {
-  if (inputs.empty() || outputs.size() != 1 || !outputs[0].is_dense() ||
-      !representable(outputs[0]))
+  if (inputs.empty() || outputs.empty() ||
+      !std::ranges::all_of(outputs, [](const auto &description) {
+        return description.is_dense() && representable(description);
+      }))
     return false;
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (!representable(inputs[i]) &&
@@ -213,10 +218,30 @@ bool tensor_operation_supports(Operation operation,
           inputs[i].element_count() &&
           *inputs[i].element_count() <= (INT32_MAX - 1024) / sizeof(float)))
       return false;
-  const auto inferred = infer_single_output(operation, inputs);
-  if (!inferred || *inferred != outputs[0])
+  std::vector<TensorDesc> inferred(outputs.size());
+  if (!infer_output_descriptions(operation, inputs, inferred).ok() ||
+      !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if (operation.custom_as<model_ops::CausalConv1d>())
+    return outputs.size() == 1 && inputs.size() == 2 &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32;
+  if (operation.get_if<GatedDeltaNet>()) {
+    if (outputs.size() != 2 || inputs.size() != 6 ||
+        !std::ranges::all_of(inputs, [](const auto &description) {
+          return description.is_dense() &&
+                 description.data_type() == DataType::kFloat32;
+        }))
+      return false;
+    const auto q = inputs[0].dimensions();
+    const auto v = inputs[2].dimensions();
+    return q[2] == v[2] && q[3] == v[3] &&
+           *outputs[0].element_count() + *outputs[1].element_count() <=
+               std::size_t{INT32_MAX};
+  }
+  if (outputs.size() != 1)
+    return false;
   if (operation.get_if<Copy>() || operation.get_if<Concat>())
     return true;
   if (operation.get_if<Cast>())
@@ -281,9 +306,8 @@ bool tensor_operation_supports(Operation operation,
            (inputs[0].data_type() == DataType::kFloat16 ||
             inputs[0].data_type() == DataType::kBFloat16) &&
            inputs[1].rank() == 1 && inputs[1].is_dense() &&
-           inputs[1].data_type() == DataType::kInt32 &&
-           inputs[2].rank() == 1 && inputs[2].is_dense() &&
-           inputs[2].data_type() == DataType::kFloat32;
+           inputs[1].data_type() == DataType::kInt32 && inputs[2].rank() == 1 &&
+           inputs[2].is_dense() && inputs[2].data_type() == DataType::kFloat32;
   if (const auto *hadamard = operation.get_if<Hadamard>())
     return inputs.size() == 1 && inputs[0].is_dense() &&
            floating(inputs[0].data_type()) &&
@@ -310,13 +334,13 @@ ggml_tensor *create_tensor_input(ggml_context *context,
   return value;
 }
 
-ggml_tensor *lower_tensor_operation(ggml_context *context, const Recipe &recipe,
-                                    const Node &node,
-                                    std::span<ggml_tensor *const> values,
-                                    std::vector<ScalarConstant> &constants,
-                                    std::vector<DenseConstant> &dense_constants,
-                                    std::span<const float> hadamard) {
-  const auto &output = recipe.values[node.output];
+std::vector<ggml_tensor *>
+lower_tensor_operation(ggml_context *context, const Recipe &recipe,
+                       const Node &node, std::span<ggml_tensor *const> values,
+                       std::vector<ScalarConstant> &constants,
+                       std::vector<DenseConstant> &dense_constants,
+                       std::span<const float> hadamard) {
+  const auto &output = recipe.values[node.outputs[0]];
   const auto input = [&](std::size_t index) {
     const auto id = node.inputs[index];
     return matrix(context, values[id], recipe.values[id]);
@@ -440,6 +464,10 @@ ggml_tensor *lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       result = result ? ggml_concat(context, result, part, 1)
                       : ggml_dup(context, part);
     }
+  } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
+    auto *samples = ggml_cont(
+        context, ggml_permute(context, values[node.inputs[0]], 1, 0, 2, 3));
+    result = ggml_ssm_conv(context, samples, values[node.inputs[1]]);
   } else if (node.operation.get_if<MatMul>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
@@ -448,35 +476,52 @@ ggml_tensor *lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       right = ggml_cont(context, right);
     result = ggml_mul_mat(context, right, left);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-      return nullptr;
+      return {};
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
     auto *positions = values[node.inputs[1]];
     auto *frequencies = values[node.inputs[2]];
     auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
     constants.push_back({one, 1.0F});
-    auto *factors = ggml_div(context, ggml_repeat(context, one, frequencies),
-                             frequencies);
+    auto *factors =
+        ggml_div(context, ggml_repeat(context, one, frequencies), frequencies);
     const int mode = rope->layout == RopeLayout::kInterleaved
                          ? GGML_ROPE_TYPE_NORMAL
                          : GGML_ROPE_TYPE_NEOX;
-    result = ggml_rope_ext(
-        context, values[node.inputs[0]], positions, factors,
-        static_cast<int>(rope->rotary_dimensions), mode, 0, 1.0F, 1.0F,
-        0.0F, 1.0F, 0.0F, 0.0F);
+    result = ggml_rope_ext(context, values[node.inputs[0]], positions, factors,
+                           static_cast<int>(rope->rotary_dimensions), mode, 0,
+                           1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
   } else if (node.operation.get_if<Hadamard>()) {
     const auto width = columns(output);
     if (hadamard.size() != static_cast<std::size_t>(width * width))
-      return nullptr;
-    auto *transform =
-        ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
+      return {};
+    auto *transform = ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
     dense_constants.push_back(
         {transform, hadamard.data(), hadamard.size_bytes()});
     result = ggml_mul_mat(context, transform, as_float(context, input(0)));
     ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
-      return nullptr;
+      return {};
+  } else if (node.operation.get_if<GatedDeltaNet>()) {
+    auto *packed = ggml_gated_delta_net(
+        context, values[node.inputs[0]], values[node.inputs[1]],
+        values[node.inputs[2]], values[node.inputs[3]], values[node.inputs[4]],
+        values[node.inputs[5]], 1);
+    const auto score_count = static_cast<std::int64_t>(
+        *recipe.values[node.outputs[0]].element_count());
+    const auto state_count = static_cast<std::int64_t>(
+        *recipe.values[node.outputs[1]].element_count());
+    auto *scores =
+        ggml_cont(context, ggml_view_1d(context, packed, score_count, 0));
+    auto *state =
+        ggml_cont(context, ggml_view_1d(context, packed, state_count,
+                                        static_cast<std::size_t>(score_count) *
+                                            sizeof(float)));
+    return {as_output(context, scores, recipe.values[node.outputs[0]]),
+            as_output(context, state, recipe.values[node.outputs[1]])};
   }
-  return result ? as_output(context, result, output) : nullptr;
+  if (!result)
+    return {};
+  return {as_output(context, result, output)};
 }
 
 } // namespace hyle::compute::ggml_cuda::internal

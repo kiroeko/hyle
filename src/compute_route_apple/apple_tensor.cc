@@ -16,6 +16,7 @@
 #include "apple_internal.h"
 #include "apple_mature_indexing.h"
 #include "apple_mature_reduction.h"
+#include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -217,9 +218,9 @@ mx::array lower_rope(const RoPE &rope, std::span<const mx::array> inputs,
                      mx::Stream stream) {
   const auto &data = inputs[0];
   const auto rank = data.ndim();
-  const auto sequence_axis =
-      rope.sequence_axis < 0 ? rope.sequence_axis + static_cast<int>(rank)
-                             : rope.sequence_axis;
+  const auto sequence_axis = rope.sequence_axis < 0
+                                 ? rope.sequence_axis + static_cast<int>(rank)
+                                 : rope.sequence_axis;
   const auto pairs = static_cast<int>(rope.rotary_dimensions / 2);
 
   mx::Shape position_shape(rank, 1);
@@ -236,8 +237,8 @@ mx::array lower_rope(const RoPE &rope, std::span<const mx::array> inputs,
   frequency_shape.back() = pairs;
   if (inputs[2].ndim() == 2)
     frequency_shape[sequence_axis] = data.shape(sequence_axis);
-  auto frequencies = mx::reshape(
-      mx::astype(inputs[2], mx::float32, stream), frequency_shape, stream);
+  auto frequencies = mx::reshape(mx::astype(inputs[2], mx::float32, stream),
+                                 frequency_shape, stream);
   auto angles = mx::multiply(positions, frequencies, stream);
   auto cosines = mx::astype(mx::cos(angles, stream), data.dtype(), stream);
   auto sines = mx::astype(mx::sin(angles, stream), data.dtype(), stream);
@@ -258,16 +259,17 @@ mx::array lower_rope(const RoPE &rope, std::span<const mx::array> inputs,
     stop.back() = static_cast<int>(rope.rotary_dimensions);
     second = mx::slice(data, start, stop, stream);
   }
-  auto rotated_first = mx::subtract(mx::multiply(first, cosines, stream),
-                                    mx::multiply(second, sines, stream), stream);
+  auto rotated_first =
+      mx::subtract(mx::multiply(first, cosines, stream),
+                   mx::multiply(second, sines, stream), stream);
   auto rotated_second = mx::add(mx::multiply(first, sines, stream),
                                 mx::multiply(second, cosines, stream), stream);
   mx::array rotated = rotated_first;
   if (rope.layout == RopeLayout::kInterleaved) {
-    auto interleaved = mx::concatenate(
-        {mx::expand_dims(rotated_first, -1, stream),
-         mx::expand_dims(rotated_second, -1, stream)},
-        -1, stream);
+    auto interleaved =
+        mx::concatenate({mx::expand_dims(rotated_first, -1, stream),
+                         mx::expand_dims(rotated_second, -1, stream)},
+                        -1, stream);
     auto rotary_shape = data.shape();
     rotary_shape.back() = static_cast<int>(rope.rotary_dimensions);
     rotated = mx::reshape(interleaved, rotary_shape, stream);
@@ -307,8 +309,7 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
   auto result = mx::fast::scaled_dot_product_attention(
       query, key, value, attention.scale, mask_mode, mask, std::nullopt, false,
       stream);
-  return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream)
-                        : result;
+  return sequence_first ? mx::transpose(result, {0, 2, 1, 3}, stream) : result;
 }
 } // namespace
 
@@ -316,7 +317,8 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
                                             std::span<const mx::array> inputs,
                                             mx::Stream stream) noexcept {
   try {
-    if (!admitted(operation.kind()))
+    const auto causal_conv = operation.custom_as<model_ops::CausalConv1d>();
+    if (!causal_conv && !admitted(operation.kind()))
       return std::unexpected(Status::Unimplemented(
           "Apple typed operation has no admitted MLX lowering"));
     if (!operation_traits(operation).inputs.accepts(inputs.size()))
@@ -337,6 +339,16 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
+    if (causal_conv) {
+      if (!floating(inputs[0].dtype()) ||
+          inputs[1].dtype() != inputs[0].dtype())
+        return std::unexpected(Status::Unimplemented(
+            "Apple MLX CausalConv1d requires matching floating inputs"));
+      const auto channels = inputs[0].shape(-1);
+      auto weights = mx::expand_dims(inputs[1], -1, stream);
+      return std::vector{
+          mx::conv1d(inputs[0], weights, 1, 0, 1, channels, stream)};
+    }
     if (operation.kind() == OperationKind::kGather ||
         operation.kind() == OperationKind::kScan ||
         operation.kind() == OperationKind::kScatter ||
@@ -418,8 +430,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
           1.0F / std::sqrt(static_cast<float>(inputs[0].shape(-1)));
       return std::vector{mx::hadamard_transform(inputs[0], scale, stream)};
     }
-    if (const auto *attention =
-            operation.get_if<ScaledDotProductAttention>()) {
+    if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
       if (attention->accumulation_type != DataType::kFloat32 ||
           (attention->causal && attention->mask != MaskKind::kNone))
         return std::unexpected(Status::Unimplemented(

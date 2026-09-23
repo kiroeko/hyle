@@ -17,21 +17,26 @@ struct Fixture final {
   int tokens;
   int heads;
   int depth;
+  bool per_channel_gate;
   std::array<std::vector<float>, 6> data;
   std::array<c::TensorDesc, 6> descriptions;
 
-  Fixture(int t, int h, int d, int seed = 0)
-      : tokens(t), heads(h), depth(d) {
+  Fixture(int t, int h, int d, int seed = 0, bool kda = false)
+      : tokens(t), heads(h), depth(d), per_channel_gate(kda) {
     for (std::size_t i = 0; i < data.size(); ++i) {
       const std::array<std::int64_t, 4> shape =
           i == 5 ? std::array<std::int64_t, 4>{2, h, d, d}
-                 : std::array<std::int64_t, 4>{2, t, h, i < 3 ? d : 1};
-      descriptions[i] = c::TensorDesc::dense(c::DataType::kFloat32, shape).value();
+                 : std::array<std::int64_t, 4>{
+                       2, t, h, i < 3 || (i == 3 && kda) ? d : 1};
+      descriptions[i] =
+          c::TensorDesc::dense(c::DataType::kFloat32, shape).value();
       data[i].resize(*descriptions[i].element_count());
       for (std::size_t j = 0; j < data[i].size(); ++j)
-        data[i][j] = i == 3 ? -0.03F * float(1 + j % 7)
-                     : i == 4 ? 0.1F + 0.02F * float(j % 5)
-                              : float(std::sin(double(j + 13 * i + seed) * 0.17) * 0.025);
+        data[i][j] =
+            i == 3 ? -0.03F * float(1 + j % 7)
+            : i == 4
+                ? 0.1F + 0.02F * float(j % 5)
+                : float(std::sin(double(j + 13 * i + seed) * 0.17) * 0.025);
     }
   }
 
@@ -45,7 +50,8 @@ struct Fixture final {
   std::array<v::Tensor, 6> upload(const v::Context &context) const {
     std::array<v::Tensor, 6> result;
     for (std::size_t i = 0; i < result.size(); ++i)
-      result[i] = vulkan_test::upload(context, descriptions[i], data[i]).value();
+      result[i] =
+          vulkan_test::upload(context, descriptions[i], data[i]).value();
     return result;
   }
 
@@ -65,16 +71,18 @@ struct Fixture final {
             const auto row = matrix + std::size_t(value * depth);
             double projected = 0;
             for (int key = 0; key < depth; ++key) {
-              state[row + key] *= std::exp(double(data[3][token]));
+              const auto gate = per_channel_gate ? data[3][token * depth + key]
+                                                 : data[3][token];
+              state[row + key] *= std::exp(double(gate));
               projected += state[row + key] * data[1][token * depth + key];
             }
-            const double delta = data[4][token] *
-                (data[2][token * depth + value] - projected);
+            const double delta =
+                data[4][token] * (data[2][token * depth + value] - projected);
             double score = 0;
             for (int key = 0; key < depth; ++key) {
               state[row + key] += delta * data[1][token * depth + key];
               score += state[row + key] *
-                  double(data[0][token * depth + key] * query_scale);
+                       double(data[0][token * depth + key] * query_scale);
             }
             result[0][token * depth + value] = score / std::sqrt(double(depth));
           }
@@ -91,7 +99,8 @@ inline void expect(const v::Context &context, const v::Tensor &tensor,
   double max_error = 0;
   for (std::size_t i = 0; i < reference.size(); ++i) {
     ASSERT_TRUE(std::isfinite((*actual)[i]));
-    max_error = (std::max)(max_error, std::abs(double((*actual)[i]) - reference[i]));
+    max_error =
+        (std::max)(max_error, std::abs(double((*actual)[i]) - reference[i]));
   }
   EXPECT_LT(max_error, 3e-6);
 }

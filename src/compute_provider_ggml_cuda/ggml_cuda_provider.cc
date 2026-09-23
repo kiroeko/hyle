@@ -242,19 +242,22 @@ struct Invocation final {
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
-      ggml_tensor *result = nullptr;
-      if (node.operation.get_if<ScaledDotProductAttention>())
-        result = attention(node);
-      else
-        result = internal::lower_tensor_operation(arena.get(), recipe, node,
-                                                  tensors, constants,
-                                                  dense_constants,
-                                                  program.hadamards[node_index]);
-      if (!result)
+      std::vector<ggml_tensor *> results;
+      if (node.operation.get_if<ScaledDotProductAttention>()) {
+        if (auto *result = attention(node))
+          results.push_back(result);
+      } else {
+        results = internal::lower_tensor_operation(
+            arena.get(), recipe, node, tensors, constants, dense_constants,
+            program.hadamards[node_index]);
+      }
+      if (results.size() != node.outputs.size())
         return Status::Unimplemented("ggml CUDA tensor lowering declined");
-      if (!ggml_backend_supports_op(backend, result))
-        return Status::Unimplemented("ggml CUDA native operation declined");
-      tensors[node.output] = result;
+      for (std::size_t i = 0; i < results.size(); ++i) {
+        if (!ggml_backend_supports_op(backend, results[i]))
+          return Status::Unimplemented("ggml CUDA native operation declined");
+        tensors[node.outputs[i]] = results[i];
+      }
     }
     for (std::size_t id = 0; id < count; ++id) {
       roots[id] = tensors[id];
@@ -304,7 +307,8 @@ struct Invocation final {
       ggml_backend_tensor_set(constant.tensor, &constant.value, 0,
                               sizeof(constant.value));
     for (const auto &constant : dense_constants)
-      ggml_backend_tensor_set(constant.tensor, constant.data, 0, constant.bytes);
+      ggml_backend_tensor_set(constant.tensor, constant.data, 0,
+                              constant.bytes);
     for (auto *mask : masks) {
       const auto columns = static_cast<std::size_t>(mask->ne[0]);
       const auto rows = static_cast<std::size_t>(mask->ne[1]);
@@ -523,15 +527,17 @@ ProviderPrepareOutcome prepare(void *context,
   try {
     internal::Recipe recipe;
     recipe.values.assign(request.inputs.begin(), request.inputs.end());
-    recipe.values.push_back(request.outputs[0]);
-    internal::Node node{request.operation,
-                        {},
-                        static_cast<std::uint32_t>(request.inputs.size())};
+    internal::Node node{request.operation, {}, {}};
     for (std::uint32_t i = 0; i < request.inputs.size(); ++i) {
       recipe.inputs.push_back(i);
       node.inputs.push_back(i);
     }
-    recipe.outputs.push_back(node.output);
+    for (const auto &description : request.outputs) {
+      const auto id = static_cast<std::uint32_t>(recipe.values.size());
+      recipe.values.push_back(description);
+      node.outputs.push_back(id);
+      recipe.outputs.push_back(id);
+    }
     recipe.nodes.push_back(std::move(node));
     return internal::compile(context, std::move(recipe), allocator, output);
   } catch (...) {
@@ -559,11 +565,10 @@ namespace internal {
 bool supports(void *value, Operation operation,
               std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
-  if (!value || !static_cast<Context *>(value)->qualified ||
-      outputs.size() != 1)
+  if (!value || !static_cast<Context *>(value)->qualified || outputs.empty())
     return false;
   if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
-    if (inputs.size() != 3 || !attention->causal ||
+    if (outputs.size() != 1 || inputs.size() != 3 || !attention->causal ||
         attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
         attention->accumulation_type != DataType::kFloat32 ||
@@ -613,15 +618,17 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
       };
       for (const auto id : node.inputs)
         require(id);
-      require(node.output);
+      for (const auto id : node.outputs)
+        require(id);
       if (node.operation.get_if<Hadamard>()) {
-        const auto width = recipe.values[node.output].dimensions().back();
+        const auto width = recipe.values[node.outputs[0]].dimensions().back();
         if (width <= 0 || width > 4096 ||
             static_cast<std::uint64_t>(width) *
                     static_cast<std::uint64_t>(width) >
                 SIZE_MAX / sizeof(float))
           return ProviderPrepareOutcome::unsupported(
-              Status::Unimplemented("ggml CUDA Hadamard width is outside the admitted original backend domain"));
+              Status::Unimplemented("ggml CUDA Hadamard width is outside the "
+                                    "admitted original backend domain"));
         auto &matrix = hadamards[node_index];
         matrix.resize(static_cast<std::size_t>(width * width));
         const auto scale = 1.0F / std::sqrt(static_cast<float>(width));

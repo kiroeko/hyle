@@ -252,7 +252,7 @@ compile(void *context, const RegionCompileRequest &request,
     for (const auto node : request.nodes) {
       native::Node lowered{request.graph->operation(node).value(),
                            {},
-                           local(request.graph->result(node).value())};
+                           {local(request.graph->result(node).value())}};
       for (std::size_t i = 0; i < request.graph->node_input_count(node).value();
            ++i) {
         const auto id = local(request.graph->node_input(node, i).value());

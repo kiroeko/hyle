@@ -19,10 +19,9 @@ struct DenseConstant final {
 bool tensor_operation_supports(Operation, std::span<const TensorDesc>,
                                std::span<const TensorDesc>) noexcept;
 ggml_tensor *create_tensor_input(ggml_context *, const TensorDesc &);
-ggml_tensor *lower_tensor_operation(ggml_context *, const Recipe &,
-                                    const Node &, std::span<ggml_tensor *const>,
-                                    std::vector<ScalarConstant> &,
-                                    std::vector<DenseConstant> &,
-                                    std::span<const float> hadamard);
+std::vector<ggml_tensor *> lower_tensor_operation(
+    ggml_context *, const Recipe &, const Node &, std::span<ggml_tensor *const>,
+    std::vector<ScalarConstant> &, std::vector<DenseConstant> &,
+    std::span<const float> hadamard);
 
 } // namespace hyle::compute::ggml_cuda::internal

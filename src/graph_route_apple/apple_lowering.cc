@@ -1,5 +1,6 @@
-#include "hyle/graph/apple.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/model_ops.h"
+#include "hyle/graph/apple.h"
 
 #include "hyle/obs/trace.h"
 
@@ -114,10 +115,14 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
     arguments.clear();
     for (auto index : node.inputs)
       arguments.push_back(*values[index]);
-    auto outputs = node.operation.kind() == compute::OperationKind::kCustom
-                       ? plan.custom(node.operation, arguments, stream)
-                       : ca::lower(node.operation, arguments, stream,
-                                   plan.workload);
+    const bool mature_custom =
+        node.operation.custom_as<compute::model_ops::CausalConv1d>()
+            .has_value();
+    auto outputs =
+        node.operation.kind() == compute::OperationKind::kCustom &&
+                !mature_custom
+            ? plan.custom(node.operation, arguments, stream)
+            : ca::lower(node.operation, arguments, stream, plan.workload);
     if (!outputs)
       return std::unexpected(std::move(outputs).error());
     if (outputs->size() != node.outputs.size())
@@ -137,7 +142,7 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
 }
 
 Result<ca::Program> compile_regions(const ca::Context &context,
-                                     std::shared_ptr<const Plan> plan) {
+                                    std::shared_ptr<const Plan> plan) {
   ca::detail::RegionPlan native;
   native.workload = plan->workload;
   native.values.resize(plan->descriptions.size());
@@ -147,7 +152,8 @@ Result<ca::Program> compile_regions(const ca::Context &context,
   native.constant_values = plan->values;
   for (std::size_t id = 0; id < plan->descriptions.size(); ++id)
     if (plan->descriptions[id].valid()) {
-      HYLE_ASSIGN_OR_RETURN(native.values[id], native_spec(plan->descriptions[id]));
+      HYLE_ASSIGN_OR_RETURN(native.values[id],
+                            native_spec(plan->descriptions[id]));
     }
   std::vector<std::size_t> last_use(native.values.size());
   std::vector<bool> constant(native.values.size(), false);
@@ -174,7 +180,8 @@ Result<ca::Program> compile_regions(const ca::Context &context,
     }
     auto end = begin + 1;
     while (end < plan->nodes.size() &&
-           plan->nodes[end].operation.kind() != compute::OperationKind::kGatedDeltaNet)
+           plan->nodes[end].operation.kind() !=
+               compute::OperationKind::kGatedDeltaNet)
       ++end;
     std::vector<bool> internal(native.values.size(), false);
     std::vector<bool> argument(native.values.size(), false);
@@ -193,9 +200,11 @@ Result<ca::Program> compile_regions(const ca::Context &context,
     // Only cross-region/public values become MLX outputs. Publishing every
     // intermediate here would prevent the original compiler's fusion.
     region.mlx = [plan, begin, end, inputs = region.inputs,
-                  outputs = region.outputs](const auto &values, mx::Stream stream) {
-      return trace(*plan, std::span<const Node>(plan->nodes).subspan(begin, end - begin),
-                   inputs, outputs, values, stream);
+                  outputs = region.outputs](const auto &values,
+                                            mx::Stream stream) {
+      return trace(
+          *plan, std::span<const Node>(plan->nodes).subspan(begin, end - begin),
+          inputs, outputs, values, stream);
     };
     native.regions.push_back(std::move(region));
     begin = end;
@@ -316,7 +325,9 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       }
       if (!needed)
         continue;
-      if (operation.kind() == compute::OperationKind::kCustom && !plan->custom)
+      if (operation.kind() == compute::OperationKind::kCustom &&
+          !operation.custom_as<compute::model_ops::CausalConv1d>() &&
+          !plan->custom)
         return std::unexpected(Status::Unimplemented(
             "Apple custom operation needs a cold native lowering"));
       HYLE_ASSIGN_OR_RETURN(auto input_count, graph.node_input_count(id));
@@ -345,20 +356,28 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       for (const auto output : plan->outputs)
         report->outputs.push_back(plan->descriptions[output]);
     }
-    const bool has_recurrent = std::ranges::any_of(plan->nodes, [](const auto &node) {
-      return node.operation.kind() == compute::OperationKind::kGatedDeltaNet;
-    });
+    const bool has_recurrent =
+        std::ranges::any_of(plan->nodes, [](const auto &node) {
+          return node.operation.kind() ==
+                 compute::OperationKind::kGatedDeltaNet;
+        });
     if (has_recurrent) {
       if (report != nullptr) {
-        report->implementation_policy = "Original ggml Metal GatedDeltaNet regions and maximal MLX compiled regions; fixed cold binding";
-        report->numerical_policy += "; recurrent F32 equal heads D32/64/128, explicit non-mutating initial/final state";
-        report->boundary_policy += "; checked host completion at runtime boundaries; native MTLBuffer import; strided inputs use original MLX contiguous copy";
+        report->implementation_policy =
+            "Original ggml Metal GatedDeltaNet regions and maximal MLX "
+            "compiled regions; fixed cold binding";
+        report->numerical_policy += "; recurrent F32 equal heads D32/64/128, "
+                                    "explicit non-mutating initial/final state";
+        report->boundary_policy +=
+            "; checked host completion at runtime boundaries; native MTLBuffer "
+            "import; strided inputs use original MLX contiguous copy";
       }
       return compile_regions(context, std::move(plan));
     }
     return context.compile(
         [plan = std::move(plan)](const auto &inputs, mx::Stream stream) {
-          return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs, stream);
+          return trace(*plan, plan->nodes, plan->inputs, plan->outputs, inputs,
+                       stream);
         },
         specs, options.workload);
   } catch (const std::bad_alloc &) {

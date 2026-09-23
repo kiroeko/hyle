@@ -384,7 +384,8 @@ _hyle_declare_component(compute_ops
     hyle/compute/ops_visibility.h
     hyle/compute/tensor_desc.h
     hyle/compute/low_precision.h
-    hyle/compute/operation.h)
+    hyle/compute/operation.h
+    hyle/compute/model_ops.h)
 
 # Explicit CPU execution axis and HYLE reference/optimized operation provider.
 # Their public include paths remain under Compute; factor names are maintenance

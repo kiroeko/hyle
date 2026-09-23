@@ -35,7 +35,7 @@ inline std::size_t boundary_alignment(Operation operation,
 struct Node final {
   Operation operation;
   std::vector<std::uint32_t> inputs;
-  std::uint32_t output = 0;
+  std::vector<std::uint32_t> outputs;
 };
 struct Recipe final {
   std::vector<TensorDesc> values;

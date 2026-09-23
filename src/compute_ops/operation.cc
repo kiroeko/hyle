@@ -170,7 +170,8 @@ Result<TensorDesc>
 infer_gated_delta_net(std::span<const TensorDesc> inputs) noexcept {
   for (const auto &input : inputs) {
     if (input.rank() != 4 || !input.is_plain() ||
-        std::ranges::any_of(input.dimensions(), [](auto d) { return d <= 0; })) {
+        std::ranges::any_of(input.dimensions(),
+                            [](auto d) { return d <= 0; })) {
       return std::unexpected(Status::InvalidArgument(
           "GatedDeltaNet requires nonempty plain rank-4 inputs"));
     }
@@ -182,8 +183,9 @@ infer_gated_delta_net(std::span<const TensorDesc> inputs) noexcept {
       inputs[3].data_type() != DataType::kFloat32 ||
       inputs[4].data_type() != DataType::kFloat32 ||
       inputs[5].data_type() != DataType::kFloat32) {
-    return std::unexpected(Status::InvalidArgument(
-        "GatedDeltaNet requires matching F16/BF16/F32 QKV and FP32 gates/state"));
+    return std::unexpected(
+        Status::InvalidArgument("GatedDeltaNet requires matching F16/BF16/F32 "
+                                "QKV and FP32 gates/state"));
   }
   const auto q = inputs[0].dimensions();
   const auto k = inputs[1].dimensions();
@@ -192,12 +194,12 @@ infer_gated_delta_net(std::span<const TensorDesc> inputs) noexcept {
   const auto beta = inputs[4].dimensions();
   const auto state = inputs[5].dimensions();
   if (!std::ranges::equal(q, k) || q[0] != v[0] || q[1] != v[1] ||
-      v[2] % q[2] != 0 || !std::ranges::equal(g, beta) ||
-      g[0] != v[0] || g[1] != v[1] || g[2] != v[2] || g[3] != 1 ||
-      state[0] != v[0] || state[1] != v[2] || state[2] != v[3] ||
-      state[3] != q[3]) {
+      v[2] % q[2] != 0 || beta[0] != v[0] || beta[1] != v[1] ||
+      beta[2] != v[2] || beta[3] != 1 || g[0] != v[0] || g[1] != v[1] ||
+      g[2] != v[2] || (g[3] != 1 && g[3] != v[3]) || state[0] != v[0] ||
+      state[1] != v[2] || state[2] != v[3] || state[3] != q[3]) {
     return std::unexpected(Status::InvalidArgument(
-        "GatedDeltaNet QKV, scalar gates or [B,Hv,Dv,Dk] state shape mismatch"));
+        "GatedDeltaNet QKV, scalar/per-channel gates or state shape mismatch"));
   }
   return TensorDesc::dense(type, v);
 }
@@ -1069,8 +1071,13 @@ OperationTraits operation_traits(const Operation &operation) noexcept {
             true};
   }
   case OperationKind::kGatedDeltaNet:
-    return {{6, 6}, 2, AliasPolicy::kNone, EffectKind::kPure,
-            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+    return {{6, 6},
+            2,
+            AliasPolicy::kNone,
+            EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType,
+            DataType::kFloat32,
+            true};
   case OperationKind::kCustom: {
     const auto *value =
         std::get_if<detail::CustomOperationValue>(&operation.value_);
@@ -1369,7 +1376,8 @@ Status infer_output_descriptions(const Operation &operation,
     break;
   }
   case OperationKind::kQuantizedMatMul:
-    first = infer_quantized_matmul(*operation.get_if<QuantizedMatMul>(), inputs);
+    first =
+        infer_quantized_matmul(*operation.get_if<QuantizedMatMul>(), inputs);
     break;
   case OperationKind::kGatedActivation: {
     const GatedActivation &gated = *operation.get_if<GatedActivation>();
@@ -1601,9 +1609,9 @@ Status infer_output_descriptions(const Operation &operation,
   case OperationKind::kGatedDeltaNet:
     first = infer_gated_delta_net(inputs);
     if (first) {
-      HYLE_ASSIGN_OR_RETURN(inferred[1],
-                            TensorDesc::dense(DataType::kFloat32,
-                                              inputs[5].dimensions()));
+      HYLE_ASSIGN_OR_RETURN(
+          inferred[1],
+          TensorDesc::dense(DataType::kFloat32, inputs[5].dimensions()));
     }
     break;
   case OperationKind::kUnknown:
