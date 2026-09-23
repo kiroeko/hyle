@@ -398,14 +398,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
+      "summary": "M2 组合路由完整迁移 SCOPED：统一从既有 CUDA Environment 投影冷路由事实，供 FlashInfer、ggml CUDA、Marlin 复用；不改变 Context、设备资源或执行路径。"
     },
     {
       "module": "compute_provider_native",

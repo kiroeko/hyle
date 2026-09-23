@@ -4,7 +4,7 @@
 
 ## Closure card
 
-- component / owner：`compute_provider_flashinfer`、`compute_provider_ggml_cuda`、
+- component / owner：`compute_backend_cuda`、`compute_provider_flashinfer`、`compute_provider_ggml_cuda`、
   `compute_provider_marlin`、`compute_route_apple`、`compute_route_vulkan`、
   `compute_provider_ggml_vulkan`；`/root`。
 - baseline commit：`35e488a2074f22a73505bd32ed0800600f378309`。
@@ -27,8 +27,9 @@
   workload/operation/format，prepared artifact 执行已绑定程序。
 - scope：完整枚举当前 `src/compute_provider*`、`src/compute_route*`、`src/graph_provider*`、
   `src/graph_route*` 中的平台、硬件/架构、驱动/runtime/Toolkit/SDK/API、Provider 版本、模型、phase/
-  region、量化 mode/group/物理格式条件；迁移所有真正选择 Provider 或实现变体的手写静态条件；为
-  CUDA/Apple/Vulkan 复用各自 Environment 事实，消除同一事实的重复路由表达。
+  region、量化 mode/group/物理格式条件；迁移所有真正选择 Provider 或实现变体的手写静态条件；由
+  `compute_backend_cuda` 从不可变 Environment 投影一次共同 CUDA 事实，Apple/Vulkan 由各自 native owner
+  投影，消除同一事实的重复路由表达。
 - non-goals：不把 rank/shape/stride、容量/overflow、workspace、occupancy、设备 limit、同步、资源
   accessibility、SDK 原生 `supports_op` 或错误诊断搬进 matcher；不改变 Provider 次序、数学、支持域、
   fallback、模型 loader 或 B2 算子范围；不重写 selector/交付脚本。
