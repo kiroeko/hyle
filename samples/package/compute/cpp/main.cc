@@ -65,12 +65,16 @@ int main() {
   if (prepared->workload() != *workload)
     return 4;
   const auto norm_workspace_requirement = prepared->workspace_requirement();
-  auto norm_workspace = hyle::mem::Buffer::create(
-      hyle::mem::system_resource(), norm_workspace_requirement.size,
-      norm_workspace_requirement.alignment);
-  if (!norm_workspace)
-    return 5;
-  auto invocation = prepared->create_invocation(norm_workspace->view());
+  hyle::mem::Buffer norm_workspace;
+  if (norm_workspace_requirement.size != 0) {
+    auto storage = hyle::mem::Buffer::create(
+        hyle::mem::system_resource(), norm_workspace_requirement.size,
+        norm_workspace_requirement.alignment);
+    if (!storage)
+      return 5;
+    norm_workspace = std::move(*storage);
+  }
+  auto invocation = prepared->create_invocation(norm_workspace.view());
   if (!invocation)
     return 5;
   auto completion = invocation->submit(*queue, *input_view, *output_view);
@@ -149,12 +153,16 @@ int main() {
     return 13;
   }
   const auto requirement = provider_prepared->workspace_requirement();
-  auto workspace = hyle::mem::Buffer::create(
-      hyle::mem::system_resource(), requirement.size, requirement.alignment);
-  if (!workspace)
-    return 14;
+  hyle::mem::Buffer workspace;
+  if (requirement.size != 0) {
+    auto storage = hyle::mem::Buffer::create(
+        hyle::mem::system_resource(), requirement.size, requirement.alignment);
+    if (!storage)
+      return 14;
+    workspace = std::move(*storage);
+  }
   auto provider_invocation =
-      provider_prepared->create_invocation(workspace->view());
+      provider_prepared->create_invocation(workspace.view());
   auto left_tensor =
       ConstTensorView::create(*left_description, left_storage->view());
   auto right_tensor =
