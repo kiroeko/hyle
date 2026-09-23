@@ -348,4 +348,41 @@ TEST(VulkanGraph, StableModelGatesShareMatureRegionAndKeepPublishedForks) {
   context = {};
   EXPECT_EQ(quota.used(), 0U);
 }
+
+TEST(VulkanGraph, B2BatchedLinearAndHadamardShareOneMatureRegion) {
+  auto context = vulkan_test::context().value();
+  const auto left_desc = dense(c::DataType::kFloat16, {1, 2, 3});
+  const auto right_desc = dense(c::DataType::kFloat16, {1, 3, 64});
+  auto builder = g::GraphBuilder::create().value();
+  const auto left = builder.input(left_desc).value();
+  const auto right = builder.constant(right_desc).value();
+  const auto product = builder.add(c::MatMul{}, left, right).value();
+  const auto output = builder.add(c::Hadamard{}, product).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  std::array<double, 192> right_values{};
+  right_values.fill(1.0);
+  const std::array constants{make(context, right_desc, right_values)};
+  gv::CompileReport report;
+  auto program = gv::compile(context, graph, constants, {.report = &report});
+  ASSERT_TRUE(program) << program.error().message();
+  ASSERT_TRUE(report.status.ok());
+  EXPECT_EQ(report.managed_region_count, 1U);
+  ASSERT_EQ(report.nodes.size(), 2U);
+  EXPECT_EQ(report.nodes[0].kind, c::OperationKind::kMatMul);
+  EXPECT_EQ(report.nodes[1].kind, c::OperationKind::kHadamard);
+  auto slot = program->create_invocation().value();
+  for (int replay = 0; replay < 2; ++replay) {
+    const std::array<double, 6> left_values{1.0 + replay, 2, 3,
+                                            4.0 + replay, 5, 6};
+    const auto input = make(context, left_desc, left_values);
+    ASSERT_TRUE(slot.bind(input).ok());
+    auto work = slot.submit().value();
+    auto result = work.wait().value();
+    std::array<double, 128> expected{};
+    expected[0] = 8.0 * (left_values[0] + left_values[1] + left_values[2]);
+    expected[64] = 8.0 * (left_values[3] + left_values[4] + left_values[5]);
+    expect(context, result.get()->tensors()[0], expected);
+  }
+}
 } // namespace

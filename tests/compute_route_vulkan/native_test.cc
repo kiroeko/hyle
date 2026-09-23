@@ -279,7 +279,10 @@ TEST(VulkanTyped, InvalidDomainsAndForeignDeviceAreRejected) {
   const std::array<std::int64_t, 2> dims{2, 2};
   auto half = c::TensorDesc::dense(c::DataType::kFloat16, dims);
   ASSERT_TRUE(half);
-  EXPECT_FALSE(v::prepare(*context, c::MatMul{}, *half, *half));
+  EXPECT_TRUE(v::prepare(*context, c::MatMul{}, *half, *half));
+  EXPECT_FALSE(v::prepare(
+      *context, c::MatMul{.accumulation_type = c::DataType::kFloat16}, *half,
+      *half));
 }
 
 } // namespace

@@ -224,3 +224,42 @@ MacBook Air M4 的共享 Release 候选增量构建通过；完整 `compute_rout
 `graph_route_apple` suite 均通过。新增纵切覆盖 half batched MatMul、非连续 positions RoPE、归一化
 Hadamard、8Q/1KV causal GQA、Graph 两节点单 region 和两次 replay；旧 BF16 MatMul 拒绝断言已按新
 公开能力迁移。source/static 与 Mini portability 留到四路线候选稳定后的集中交付闸门，不提前写 PASS。
+
+### B2-C2 CUDA 产品候选（2026-09-24）
+
+CUDA 保留 cuBLASLt 的既有 rank-2 qualified 域，并在同一个锁定 ggml CUDA tensor recipe 中批量接入
+成熟原版入口：
+
+- F05：F16/BF16/F32 rank-3/4 batch MatMul 与 leading batch broadcast 使用 ggml `mul_mat`；既有
+  cuBLASLt rank-2 路由优先级和 native stream/completion 不变。
+- F07：复用已经接通并验证 head256 prefill/decode 的 ggml CUDA/FlashInfer attention 和 B1 的
+  Gather/Scatter state ports，本轮不拆开成熟 attention region。
+- F08：`rope_ext` 使用调用者的 position/frequency，Hadamard 使用原版 FWHT hint；普通 Graph 可把
+  half MatMul→Hadamard 两节点绑定为一个 ggml region，replay 不重新选择 Provider。
+- F06：现有 Marlin Q4-S128 合格域继续有效；公共 Q4-A64/Q8-B32 与当前 ggml tensor carrier 不等价的
+  格保持 residual，没有转换为 A8 或在 replay 展开整权重。
+
+Windows SM89 的 WERROR 增量构建、ggml CUDA Direct 专项和 CUDA Graph 专项共8项测试通过；包括
+batched MatMul、两种 RoPE layout、Hadamard forward/inverse、完整 region 和双 replay。跨 WSL 静态
+交付与最终集中门仍由 B2-C5 签署，本节只记录稳定产品候选。
+
+### B2-C4 Vulkan 产品候选（2026-09-24）
+
+Vulkan 在现有 ggml managed graph 中批量接入 F05/F07/F08 原版节点，没有新增 SPIR-V 或 CPU payload
+fallback：
+
+- F05：F16 与 batched F32 进入 ggml Vulkan `mul_mat`；BF16 通过路线已有的设备内 F32 边界适配。
+  已资格化的 rank-2 F32 native/packed 路线继续优先，避免改变其 packing、OOM 和完成生命周期。
+- F07：BSHD 在 retained ggml graph 内换位为 backend 布局，使用 F32 score/value MatMul、
+  bottom-right causal mask、softmax 和 GQA broadcast；结果换回公共布局。KV state 继续使用 B1
+  Gather/Scatter 和同一 native queue/fence。
+- F08：RoPE 使用 `rope_ext` 与显式 position/frequency；Hadamard 使用锁定 Vulkan backend 的
+  `GGML_HINT_SRC0_IS_HADAMARD` FWHT，当前真实支持宽度为64/128/256/512。
+- F06：ggml Q4_0/Q4_1/Q8_0 与公共 Q4-S128/Q4-A64/Q8-B32 物理合同不同，IREE 也没有精确 B2
+  制品，因此三行保持 residual；没有以相似位宽代签。
+
+RTX 4070 的 Direct 专项覆盖 F16/BF16 batched MatMul、非零 position RoPE、归一化 Hadamard、
+causal GQA、两 slot 与旧结果 lease；Graph 的 MatMul→Hadamard 两节点在一个 managed region 中完成
+两次 replay。完整 Vulkan 路线9个串行测试目标全部通过（Compute route 120 tests、Graph route
+35 tests，另含 ggml/IREE source/provider/header 与组合门）。MoltenVK 静态交付仍留给 B2-C5，不能
+由 Windows 结果代签。

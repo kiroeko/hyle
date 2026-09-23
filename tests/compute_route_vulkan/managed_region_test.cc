@@ -455,4 +455,118 @@ TEST(VulkanManaged, PackedAndSeparateSwiGluRetainHighRankRowHalves) {
     }
   }
 }
+
+TEST(VulkanManaged, B2MatureLinearPositionAndTransformReplay) {
+  auto context = vulkan_test::context().value();
+  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    const auto left_desc = dense(type, {2, 2, 3});
+    const auto right_desc = dense(type, {1, 3, 4});
+    const std::array<double, 12> right_values{1,  2,  3,  4, 5,  6,
+                                               7,  8,  9, 10, 11, 12};
+    const auto right = make(context, right_desc, right_values);
+    auto program = v::prepare(context, c::MatMul{}, left_desc, right);
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(std::ranges::count_if(
+                  d::Access::program(*program)->dispatches,
+                  [](const auto &dispatch) { return !!dispatch.region; }),
+              1);
+    auto slot = program->create_invocation().value();
+    for (int replay = 0; replay < 2; ++replay) {
+      std::array<double, 12> left_values{};
+      for (std::size_t i = 0; i < left_values.size(); ++i)
+        left_values[i] = static_cast<double>(i + 1 + replay);
+      const auto left = make(context, left_desc, left_values);
+      ASSERT_TRUE(slot.bind(left).ok());
+      auto work = slot.submit().value();
+      auto result = work.wait().value();
+      std::array<double, 16> expected{};
+      for (std::size_t batch = 0; batch < 2; ++batch)
+        for (std::size_t row = 0; row < 2; ++row)
+          for (std::size_t column = 0; column < 4; ++column)
+            for (std::size_t inner = 0; inner < 3; ++inner)
+              expected[(batch * 2 + row) * 4 + column] +=
+                  rounded(left_values[(batch * 2 + row) * 3 + inner], type) *
+                  rounded(right_values[inner * 4 + column], type);
+      expect(context, result.get()->tensors()[0], expected);
+    }
+  }
+
+  const auto rope_desc = dense(c::DataType::kFloat32, {1, 2, 1, 4});
+  const auto position_desc = dense(c::DataType::kInt32, {2});
+  const auto frequency_desc = dense(c::DataType::kFloat32, {2});
+  const std::array<double, 8> rope_values{1, 2, 3, 4, 5, 6, 7, 8};
+  const std::array<std::int32_t, 2> positions{0, 2};
+  const auto rope_data = make(context, rope_desc, rope_values);
+  const auto position =
+      context.upload(position_desc, std::as_bytes(std::span(positions))).value();
+  const auto frequency = make(context, frequency_desc, std::array{0.5, 0.25});
+  auto rope = v::prepare(
+      context,
+      c::RoPE{.rotary_dimensions = 4,
+              .sequence_axis = 1,
+              .layout = c::RopeLayout::kInterleaved},
+      rope_desc, position_desc, frequency_desc);
+  ASSERT_TRUE(rope) << rope.error().message();
+  auto rope_slot = rope->create_invocation().value();
+  ASSERT_TRUE(rope_slot.bind(rope_data, position, frequency).ok());
+  auto rope_work = rope_slot.submit().value();
+  auto rope_result = rope_work.wait().value();
+  const std::array<double, 8> rotated{
+      1, 2, 3, 4,
+      5 * std::cos(1.0) - 6 * std::sin(1.0),
+      5 * std::sin(1.0) + 6 * std::cos(1.0),
+      7 * std::cos(0.5) - 8 * std::sin(0.5),
+      7 * std::sin(0.5) + 8 * std::cos(0.5)};
+  expect(context, rope_result.get()->tensors()[0], rotated);
+
+  const auto transform_desc = dense(c::DataType::kFloat32, {1, 64});
+  std::array<double, 64> ones{};
+  ones.fill(1.0);
+  const auto transform_input = make(context, transform_desc, ones);
+  auto transform =
+      execute(context, c::Operation(c::Hadamard{}), std::array{transform_input});
+  ASSERT_TRUE(transform) << transform.error().message();
+  std::array<double, 64> transformed{};
+  transformed[0] = 8.0;
+  expect(context, *transform, transformed);
+}
+
+TEST(VulkanManaged, B2MatureCausalGqaRetainsReplayResults) {
+  auto context = vulkan_test::context().value();
+  const auto query_desc = dense(c::DataType::kFloat32, {1, 1, 2, 1});
+  const auto key_value_desc = dense(c::DataType::kFloat32, {1, 3, 1, 1});
+  auto program = v::prepare(
+      context,
+      c::ScaledDotProductAttention{
+          .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+          .scale = 1.0F,
+          .causal = true,
+          .accumulation_type = c::DataType::kFloat32},
+      query_desc, key_value_desc, key_value_desc);
+  ASSERT_TRUE(program) << program.error().message();
+  auto first = program->create_invocation();
+  auto second = program->create_invocation();
+  ASSERT_TRUE(first) << first.error().message();
+  ASSERT_TRUE(second) << second.error().message();
+  const auto query = make(context, query_desc, std::array{0.0, 0.0});
+  const auto key = make(context, key_value_desc, std::array{0.0, 0.0, 0.0});
+  v::Tensor retained;
+  for (int replay = 0; replay < 2; ++replay) {
+    const std::array<double, 3> values{1.0 + replay, 2.0 + replay,
+                                       6.0 + replay};
+    const auto value = make(context, key_value_desc, values);
+    auto &slot = replay == 0 ? *first : *second;
+    ASSERT_TRUE(slot.bind(query, key, value).ok());
+    auto work = slot.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const std::array expected{3.0 + replay, 3.0 + replay};
+    expect(context, result->get()->tensors()[0], expected);
+    if (replay == 0)
+      retained = result->get()->tensors()[0];
+    else
+      expect(context, retained, std::array{3.0, 3.0});
+  }
+}
 } // namespace

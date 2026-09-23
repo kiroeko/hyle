@@ -100,6 +100,14 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   std::array<TensorDesc, 2> outputs;
   for (std::size_t i = 0; i < step.outputs.size(); ++i)
     outputs[i] = program.values[step.outputs[i]].description;
+  // Keep the qualified native/packed rank-2 F32 route ahead of the mature
+  // provider. B2 extends the route with half, bfloat and batched domains; it
+  // must not change the lifetime and packing contract of the existing path.
+  if (!promote_bfloat && step.operation.get_if<MatMul>() && input_count == 2 &&
+      inputs[0].rank() == 2 && inputs[1].rank() == 2 &&
+      inputs[0].data_type() == DataType::kFloat32 &&
+      inputs[1].data_type() == DataType::kFloat32)
+    return false;
   if (const auto *softmax = step.operation.get_if<Softmax>();
       softmax && softmax->mask == MaskKind::kAdditive && input_count == 2 &&
       inputs[0].data_type() != inputs[1].data_type())
@@ -117,6 +125,9 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     return false;
   if (promote_bfloat) {
     for (std::size_t i = 0; i < input_count; ++i) {
+      if (step.operation.get_if<RoPE>() && i == 1 &&
+          inputs[i].data_type() == DataType::kInt32)
+        continue;
       if (!inputs[i].is_plain() || !inputs[i].is_dense() ||
           (inputs[i].data_type() != DataType::kFloat32 &&
            !low_precision(inputs[i])))
@@ -139,8 +150,10 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     return false;
   if (step.operation.get_if<MatMul>()) {
     const auto &limits = program.runtime->device->properties.limits;
-    const auto rows = static_cast<std::uint64_t>(inputs[0].dimensions()[0]);
-    const auto columns = static_cast<std::uint64_t>(inputs[1].dimensions()[1]);
+    const auto rows = static_cast<std::uint64_t>(
+        *inputs[0].element_count() / inputs[0].dimensions().back());
+    const auto columns =
+        static_cast<std::uint64_t>(inputs[1].dimensions().back());
     // Original matmul may choose up to eight split-K pieces. Bound both its
     // F32 partial workspace and all grids before native graph allocation.
     if (rows > limits.maxComputeWorkGroupCount[1] ||
@@ -251,7 +264,9 @@ bool bfloat_region_operation(const ProgramState &program,
         step.operation.get_if<GatedActivation>() ||
         step.operation.get_if<RmsNorm>() ||
         step.operation.get_if<LayerNorm>() || step.operation.get_if<Reduce>() ||
-        step.operation.get_if<Softmax>()))
+        step.operation.get_if<Softmax>() || step.operation.get_if<MatMul>() ||
+        step.operation.get_if<RoPE>() || step.operation.get_if<Hadamard>() ||
+        step.operation.get_if<ScaledDotProductAttention>()))
     return false;
   const auto wide = TensorDesc::dense(
       DataType::kFloat32,
@@ -277,7 +292,8 @@ Status lower_bfloat_region(ProgramState &program,
     Plan local;
     PlanStep wide = step;
     for (auto &input : wide.inputs) {
-      if (program.values[input].description.data_type() == DataType::kFloat32)
+      const auto type = program.values[input].description.data_type();
+      if (type == DataType::kFloat32 || type == DataType::kInt32)
         continue;
       HYLE_ASSIGN_OR_RETURN(auto converted,
                             append(program.values[input].description));

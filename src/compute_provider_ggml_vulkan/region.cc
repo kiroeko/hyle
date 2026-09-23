@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <limits>
 #include <new>
 
@@ -258,12 +259,72 @@ bool region_supports(const Operation &operation,
                                       .operation = operation,
                                       .inputs = inputs,
                                       .outputs = outputs};
-    return match_route_rule(kMxfp4MatMulRule, route_input).matched() &&
-           inputs.size() == 2 && outputs.size() == 1 &&
-           matmul->accumulation_type == DataType::kFloat32 &&
-           inputs[0].rank() == 2 && inputs[0].is_plain() &&
-           mxfp4_domain(inputs[1]) && outputs[0].rank() == 2 &&
-           outputs[0].is_plain();
+    if (match_route_rule(kMxfp4MatMulRule, route_input).matched())
+      return inputs.size() == 2 && outputs.size() == 1 &&
+             matmul->accumulation_type == DataType::kFloat32 &&
+             inputs[0].rank() == 2 && inputs[0].is_plain() &&
+             mxfp4_domain(inputs[1]) && outputs[0].rank() == 2 &&
+             outputs[0].is_plain();
+    if (inputs.size() != 2 || outputs.size() != 1 ||
+        matmul->accumulation_type != DataType::kFloat32 ||
+        inputs[0].rank() < 2 || inputs[0].rank() > GGML_MAX_DIMS ||
+        inputs[1].rank() < 2 || inputs[1].rank() > GGML_MAX_DIMS ||
+        !inputs[0].is_dense() || !inputs[1].is_dense() ||
+        inputs[0].data_type() != inputs[1].data_type() ||
+        outputs[0].data_type() != inputs[0].data_type() ||
+        !floating(inputs[0].data_type()))
+      return false;
+    std::array<std::int64_t, 2> left_batch{1, 1}, right_batch{1, 1};
+    const auto fill_batch = [](const TensorDesc &description,
+                               std::array<std::int64_t, 2> &batch) {
+      const auto count = description.rank() - 2;
+      for (std::size_t i = 0; i < count; ++i)
+        batch[2 - count + i] = description.dimensions()[i];
+    };
+    fill_batch(inputs[0], left_batch);
+    fill_batch(inputs[1], right_batch);
+    return left_batch[0] % right_batch[0] == 0 &&
+           left_batch[1] % right_batch[1] == 0;
+  }
+  if (const auto *rope = operation.get_if<RoPE>())
+    return inputs.size() == 3 && outputs.size() == 1 &&
+           inputs[0].rank() == 4 && rope->sequence_axis == 1 &&
+           inputs[0].is_dense() &&
+           (inputs[0].data_type() == DataType::kFloat32 ||
+            inputs[0].data_type() == DataType::kFloat16) &&
+           inputs[1].rank() == 1 && inputs[1].data_type() == DataType::kInt32 &&
+           inputs[2].rank() == 1 && inputs[2].data_type() == DataType::kFloat32 &&
+           outputs[0] == inputs[0];
+  if (const auto *hadamard = operation.get_if<Hadamard>()) {
+    const auto width = inputs[0].dimensions().back();
+    return inputs.size() == 1 && outputs.size() == 1 &&
+           inputs[0].is_dense() && outputs[0] == inputs[0] &&
+           (inputs[0].data_type() == DataType::kFloat32 ||
+            inputs[0].data_type() == DataType::kFloat16) &&
+           hadamard->accumulation_type == DataType::kFloat32 &&
+           (width == 64 || width == 128 || width == 256 || width == 512);
+  }
+  if (const auto *attention =
+          operation.get_if<ScaledDotProductAttention>()) {
+    if (inputs.size() != 3 || outputs.size() != 1 || !attention->causal ||
+        attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
+        attention->mask != MaskKind::kNone ||
+        attention->accumulation_type != DataType::kFloat32 ||
+        !std::isfinite(attention->scale))
+      return false;
+    const auto type = inputs[0].data_type();
+    if (type != DataType::kFloat32 && type != DataType::kFloat16)
+      return false;
+    for (const auto &input : inputs)
+      if (!input.is_dense() || input.rank() != 4 ||
+          input.data_type() != type)
+        return false;
+    const auto query = inputs[0].dimensions();
+    const auto key = inputs[1].dimensions();
+    return query[0] == key[0] && query[1] > 0 && key[1] >= query[1] &&
+           query[2] > 0 && key[2] > 0 && query[2] % key[2] == 0 &&
+           query[3] == key[3] && inputs[1] == inputs[2] &&
+           outputs[0] == inputs[0];
   }
   if (operation.get_if<GatedDeltaNet>()) {
     if (inputs.size() != 6 || outputs.size() != 2 ||
@@ -519,11 +580,72 @@ Result<Region> Region::create(NativeDevice device,
         if (node.inputs.size() == 1)
           output = ggml_dup(context, output);
       } else if (node.operation.get_if<MatMul>()) {
-        auto *product = ggml_mul_mat(context, arguments[1], left);
+        auto *right = arguments[1];
+        const bool mxfp4 = mxfp4_domain(recipe.values[node.inputs[1]]);
+        if (!mxfp4) {
+          right = ggml_transpose(context, right);
+          if (!ggml_is_contiguous(right))
+            right = ggml_cont(context, right);
+        }
+        auto *product = ggml_mul_mat(context, right, left);
         if (!ggml_prec_set_acc(product, GGML_PREC_F32))
           return std::unexpected(
-              Status::Unimplemented("ggml Vulkan MXFP4 F32 accumulation"));
-        output = ggml_cast(context, product, GGML_TYPE_F16);
+              Status::Unimplemented("ggml Vulkan MatMul F32 accumulation"));
+        const auto target =
+            native_type(recipe.values[node.outputs[0]].data_type());
+        output = product->type == target ? product
+                                         : ggml_cast(context, product, target);
+      } else if (const auto *rope = node.operation.get_if<RoPE>()) {
+        auto *frequencies = arguments[2];
+        auto *factors = ggml_div(
+            context, ggml_fill(context, frequencies, 1.0F), frequencies);
+        output = ggml_rope_ext(
+            context, left, arguments[1], factors,
+            static_cast<int>(rope->rotary_dimensions),
+            rope->layout == RopeLayout::kInterleaved ? GGML_ROPE_TYPE_NORMAL
+                                                     : GGML_ROPE_TYPE_NEOX,
+            0, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
+      } else if (node.operation.get_if<Hadamard>()) {
+        const auto width = recipe.values[node.inputs[0]].dimensions().back();
+        auto *source = left->type == GGML_TYPE_F32
+                           ? left
+                           : ggml_cast(context, left, GGML_TYPE_F32);
+        auto *transform =
+            ggml_new_tensor_2d(context, GGML_TYPE_F32, width, width);
+        output = ggml_mul_mat(context, transform, source);
+        ggml_mul_mat_set_hint(output, GGML_HINT_SRC0_IS_HADAMARD);
+        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented(
+              "ggml Vulkan Hadamard F32 accumulation"));
+        if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
+          output = ggml_cast(context, output, GGML_TYPE_F16);
+      } else if (const auto *attention =
+                     node.operation.get_if<ScaledDotProductAttention>()) {
+        auto *query = ggml_permute(
+            context, ggml_cast(context, left, GGML_TYPE_F32), 0, 2, 1, 3);
+        auto *key = ggml_permute(
+            context, ggml_cast(context, arguments[1], GGML_TYPE_F32), 0, 2,
+            1, 3);
+        auto *value = ggml_permute(
+            context, ggml_cast(context, arguments[2], GGML_TYPE_F32), 0, 2,
+            1, 3);
+        auto *scores = ggml_mul_mat(context, key, query);
+        if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented(
+              "ggml Vulkan attention score accumulation"));
+        scores = ggml_scale(context, scores, attention->scale);
+        scores = ggml_diag_mask_inf(
+            context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
+        auto *probabilities = ggml_soft_max(context, scores);
+        value = ggml_cont(context, ggml_transpose(context, value));
+        output = ggml_mul_mat(context, value, probabilities);
+        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented(
+              "ggml Vulkan attention value accumulation"));
+        output = ggml_cont(
+            context, ggml_permute(context, output, 0, 2, 1, 3));
+        if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
+          output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (node.operation.get_if<GatedDeltaNet>()) {
         auto *value = arguments[2];
         auto *initial = arguments[5];
