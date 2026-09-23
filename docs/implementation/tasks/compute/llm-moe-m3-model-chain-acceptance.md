@@ -99,3 +99,11 @@
 
 本卡有限 FIX 已冻结。可以增加上述测试消费者、收据与必要的成熟接入纠正；任何产品修改仍须由
 实际失败指向 C3，不能借 M3 扩大算子目录。
+
+## 终局
+
+M3 已于 2026-09-24 按有限 FIX 完成，产品数学改动为 0。输入/reference 身份、四路线当前 factor、
+六组消费链的最早拒绝边界、256 格最终分类以及 Provider 完成门见
+[M3 终局](llm-moe-m3-terminal.md)与
+[聚合验收收据](../../../../evidence/correctness/compute-llm-moe-m3/acceptance.json)。覆盖矩阵没有
+`UNPROVEN`，但只有 33 格具备完整 PASS；其余具名残差必须由 M4 重新定界，本卡不授权继续修改产品。

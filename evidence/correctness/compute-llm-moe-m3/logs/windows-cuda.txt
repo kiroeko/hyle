@@ -1,0 +1,25 @@
+Test project C:/hv/m2b1-cuda
+    Start 53: hyle_compute_provider_cublas_test
+1/6 Test #53: hyle_compute_provider_cublas_test ......   Passed    0.38 sec
+    Start 55: hyle_compute_provider_marlin_test
+2/6 Test #55: hyle_compute_provider_marlin_test ......   Passed    8.38 sec
+    Start 59: hyle_compute_route_cuda_test
+3/6 Test #59: hyle_compute_route_cuda_test ...........   Passed    0.45 sec
+    Start 61: hyle_graph_route_cuda_test
+4/6 Test #61: hyle_graph_route_cuda_test .............   Passed    2.22 sec
+    Start 65: hyle_compute_provider_ggml_cuda_test
+5/6 Test #65: hyle_compute_provider_ggml_cuda_test ...   Passed    1.26 sec
+    Start 67: hyle_graph_provider_ggml_cuda_test
+6/6 Test #67: hyle_graph_provider_ggml_cuda_test .....   Passed    0.22 sec
+
+100% tests passed out of 6
+
+Label Time Summary:
+compute_provider_cublas       =   0.38 sec*proc (1 test)
+compute_provider_ggml_cuda    =   1.26 sec*proc (1 test)
+compute_provider_marlin       =   8.38 sec*proc (1 test)
+compute_route_cuda            =   0.45 sec*proc (1 test)
+graph_provider_ggml_cuda      =   0.22 sec*proc (1 test)
+graph_route_cuda              =   2.22 sec*proc (1 test)
+
+Total Test time (real) =  12.93 sec

@@ -365,25 +365,25 @@
       "module": "compute_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_backend_cpu",
@@ -427,18 +427,18 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_provider_cublas",
       "state": "AUDITED",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。",
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md"
     },
     {
@@ -467,43 +467,43 @@
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -520,13 +520,13 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -543,13 +543,13 @@
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     },
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
+      "summary": "M3 COMPLETE：64×4 覆盖已全部裁决，Provider 接入完成门 PASS，产品数学改动 0；33 PASS，223 个具名覆盖残差交 M4。owner 保持 AUDITED 仅保存边界，M4 修改产品前必须重新 SCOPED→AUDITED。"
     }
   ]
 }

@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "kind": "m3-real-model-chain-acceptance",
+  "date": "2026-09-24",
+  "canonical_workspace": "C:/public/project-hyle/hyle",
+  "audit_commit": "16829eaa52e19b0ab2859112ef61126870abf81a",
+  "product_candidate_commit": "68278c999b623edbd0c87f05d3926208ea84f6db",
+  "product_math_changes": 0,
+  "test_consumer_changes": [
+    "tests/compute_models/m3_acceptance_test.py"
+  ],
+  "input": {
+    "model": "Qwen/Qwen3.5-2B local user asset",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "files_verified": 13,
+    "bytes_verified": 4571274023,
+    "result": "PASS",
+    "evidence": "evidence/correctness/compute-llm-moe-m3/input-receipt.json"
+  },
+  "reference": {
+    "profile": "B16",
+    "cases": [
+      "b16_p1_d8",
+      "b16_p17_d8",
+      "b16_p128_d8"
+    ],
+    "artifact_hashes_reverified": "PASS",
+    "result": "REFERENCE_OUTPUT_GENERATED_NOT_HYLE_VERDICT",
+    "evidence": "evidence/correctness/compute-llm-moe-m3/b16-reference-receipt.json"
+  },
+  "route_factor_execution": {
+    "windows_cpu": {
+      "state": "PASS",
+      "tests": 4,
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/windows-cpu.txt"
+    },
+    "windows_cuda": {
+      "state": "PASS",
+      "tests": 6,
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/windows-cuda.txt"
+    },
+    "windows_vulkan": {
+      "state": "PASS",
+      "tests": 4,
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/windows-vulkan.txt"
+    },
+    "macbook_air_apple": {
+      "state": "PASS",
+      "tests": 3,
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt"
+    },
+    "macbook_air_vulkan": {
+      "state": "PASS",
+      "tests": 4,
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/air-vulkan.txt"
+    },
+    "macbook_air_compute_ops_relinked": {
+      "state": "PASS",
+      "tests": 47,
+      "reason": "stale executable was relinked against the current operation ABI",
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/air-compute-ops.txt"
+    },
+    "mac_mini_apple_static": {
+      "state": "PASS",
+      "tests": 2,
+      "role": "correctness/portability only",
+      "log": "evidence/correctness/compute-llm-moe-m3/logs/mini-apple.txt"
+    }
+  },
+  "groups": [
+    {
+      "id": "M3-01",
+      "state": "ADJUDICATED",
+      "requirements": 21,
+      "cells": 84,
+      "states": {
+        "BACKEND_REJECTED": 15,
+        "PASS": 33,
+        "VALIDATION_NOT_RUN": 36
+      }
+    },
+    {
+      "id": "M3-02",
+      "state": "ADJUDICATED",
+      "requirements": 13,
+      "cells": 52,
+      "states": {
+        "NUMERIC_INCOMPATIBLE": 16,
+        "VALIDATION_NOT_RUN": 36
+      }
+    },
+    {
+      "id": "M3-03",
+      "state": "ADJUDICATED",
+      "requirements": 6,
+      "cells": 24,
+      "states": {
+        "NUMERIC_INCOMPATIBLE": 24
+      }
+    },
+    {
+      "id": "M3-04",
+      "state": "ADJUDICATED",
+      "requirements": 11,
+      "cells": 44,
+      "states": {
+        "NUMERIC_INCOMPATIBLE": 12,
+        "VALIDATION_NOT_RUN": 32
+      }
+    },
+    {
+      "id": "M3-05",
+      "state": "ADJUDICATED",
+      "requirements": 8,
+      "cells": 32,
+      "states": {
+        "NUMERIC_INCOMPATIBLE": 4,
+        "VALIDATION_NOT_RUN": 28
+      }
+    },
+    {
+      "id": "M3-06",
+      "state": "ADJUDICATED",
+      "requirements": 5,
+      "cells": 20,
+      "states": {
+        "BACKEND_REJECTED": 6,
+        "NUMERIC_INCOMPATIBLE": 8,
+        "UPSTREAM_MISSING": 4,
+        "VALIDATION_NOT_RUN": 2
+      }
+    }
+  ],
+  "coverage_summary": {
+    "requirements": 64,
+    "cells": 256,
+    "states": {
+      "BACKEND_REJECTED": 21,
+      "NUMERIC_INCOMPATIBLE": 64,
+      "PASS": 33,
+      "UPSTREAM_MISSING": 4,
+      "VALIDATION_NOT_RUN": 134
+    },
+    "unadjudicated": 0
+  },
+  "provider_integration_gate": {
+    "state": "PASS",
+    "admitted_integrations_outstanding": 0,
+    "evidence": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md"
+  },
+  "local_model_journeys": {
+    "planned": 16,
+    "hyle_passed": 0,
+    "reference_is_not_hyle_execution": true,
+    "B16": "stops at the first linear-attention block because the mature recurrent region is F32-only",
+    "Q4_S128": "no common exact four-route carrier; CUDA Marlin alone does not make a four-route model chain",
+    "Q8_B32": "no admitted exact carrier on any route",
+    "F8_B128": "only the Vulkan dense primitive is exact; recurrent and complete model regions remain uncovered"
+  },
+  "performance": {
+    "tier": "P0",
+    "state": "PASS",
+    "reason": "M3 changed no product API or algorithm and found no immutable complete model fragment eligible for P1."
+  },
+  "external_artifacts": {
+    "repository_contains_model_tensors": false,
+    "temporary_reference_tensors_removed_after_receipt": true
+  },
+  "verdict": "M3_COMPLETE_WITH_RECORDED_COVERAGE_GAPS",
+  "implementation_loc": {
+    "command": "python scripts/loc-report.py --module compute-graph-all --module-path include/hyle/compute --module-path include/hyle/graph --module-path src/compute* --module-path src/graph* --commit 68278c999b623edbd0c87f05d3926208ea84f6db --self-check --json",
+    "code": 59749,
+    "files": 252,
+    "self_check": "pass"
+  }
+}

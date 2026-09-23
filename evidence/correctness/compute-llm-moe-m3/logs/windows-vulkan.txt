@@ -1,0 +1,19 @@
+Test project C:/hv/m2vk
+    Start 48: hyle_compute_route_vulkan_test
+1/4 Test #48: hyle_compute_route_vulkan_test ...........   Passed   20.37 sec
+    Start 50: hyle_graph_route_vulkan_test
+2/4 Test #50: hyle_graph_route_vulkan_test .............   Passed    5.21 sec
+    Start 52: hyle_compute_provider_ggml_vulkan_test
+3/4 Test #52: hyle_compute_provider_ggml_vulkan_test ...   Passed    1.31 sec
+    Start 56: hyle_compute_provider_iree_vulkan_test
+4/4 Test #56: hyle_compute_provider_iree_vulkan_test ...   Passed    0.85 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+compute_provider_ggml_vulkan    =   1.31 sec*proc (1 test)
+compute_provider_iree_vulkan    =   0.85 sec*proc (1 test)
+compute_route_vulkan            =  20.37 sec*proc (1 test)
+graph_route_vulkan              =   5.21 sec*proc (1 test)
+
+Total Test time (real) =  27.75 sec

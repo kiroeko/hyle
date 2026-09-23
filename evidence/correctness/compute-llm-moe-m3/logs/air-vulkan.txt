@@ -1,0 +1,19 @@
+Test project /Users/kiro/hyle-m2b1-vulkan/build
+    Start 46: hyle_compute_route_vulkan_test
+1/4 Test #46: hyle_compute_route_vulkan_test ...........   Passed   14.05 sec
+    Start 48: hyle_graph_route_vulkan_test
+2/4 Test #48: hyle_graph_route_vulkan_test .............   Passed    1.65 sec
+    Start 50: hyle_compute_provider_ggml_vulkan_test
+3/4 Test #50: hyle_compute_provider_ggml_vulkan_test ...   Passed    0.12 sec
+    Start 53: hyle_compute_provider_iree_vulkan_test
+4/4 Test #53: hyle_compute_provider_iree_vulkan_test ...   Passed    0.17 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Label Time Summary:
+compute_provider_ggml_vulkan    =   0.12 sec*proc (1 test)
+compute_provider_iree_vulkan    =   0.17 sec*proc (1 test)
+compute_route_vulkan            =  14.05 sec*proc (1 test)
+graph_route_vulkan              =   1.65 sec*proc (1 test)
+
+Total Test time (real) =  16.00 sec

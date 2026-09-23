@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "admitted_requirement_matrix_not_module_registry",
   "plan": "llm-moe-coverage-completion-plan.md",
   "source_catalog": "llm-moe-model-sources.json",
@@ -1898,7 +1898,7 @@
     "holdout_shapes": "B=2 and T=23/129/257 where consumed; empty/one/tile tails/nonzero offsets and state",
     "capacity": "keep actual hidden/head widths; isolate experts and scaled-capacity whole compositions; no full giant checkpoint",
     "profiles": "all explicitly named profiles are four-route MUST only where consumed; schema/mocked/custom-user callbacks are not coverage",
-    "cases": "case ids are required tests, currently UNPROVEN; each implementation card binds runnable test ids and raw result receipts; no PASS hand entry"
+    "cases": "M3 adjudicates every route cell from immutable execution receipts or a named rejection/gap category; only complete applicable row contracts may be PASS."
   },
   "route_plans": {
     "cpu": {
@@ -2007,24 +2007,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers do not accept every required non-contiguous layout/reorder domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked Vulkan providers reject required non-contiguous and empty layout cases.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2061,24 +2079,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2115,24 +2151,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers do not accept every required numeric cast and non-contiguous conversion domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2169,24 +2223,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2223,24 +2295,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers do not implement the required scatter-assignment domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CUDA providers do not implement the required scatter-assignment domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked Vulkan providers do not implement the required scatter-assignment domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2278,24 +2368,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers do not accept the complete boolean-mask and LogSoftmax domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CUDA providers do not accept the complete boolean-mask domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked Vulkan providers do not accept the complete boolean-mask domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2327,24 +2435,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked ggml CPU scan does not accept the required I32 scan domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2380,24 +2506,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2433,24 +2577,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers reject required stable special-value unary cases.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2486,24 +2648,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2534,24 +2714,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2587,24 +2785,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2640,24 +2856,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2694,24 +2928,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2748,24 +3000,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2801,24 +3071,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers do not accept the complete stable reduction/LogSoftmax domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CUDA providers do not accept the required LogSoftmax domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked Vulkan providers do not accept the required stable LogSoftmax domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2851,24 +3139,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "locked CPU providers do not implement the full stable TopK public domain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "M2 Apple B1 closed the complete row contract; M3 rebuilt the operation ABI and reran the native Direct/Graph/provider factors successfully.",
           "evidence": [
             "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
             "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2904,20 +3210,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -2953,20 +3279,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3002,20 +3348,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3051,20 +3417,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3091,20 +3477,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked CPU carrier does not match the exact Q4-S128 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked Apple MLX/Metal carrier does not match the exact Q4-S128 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked Vulkan carrier does not match the exact Q4-S128 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3138,20 +3544,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked CPU carrier does not match the exact Q4-A64 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked CUDA carrier does not match the exact Q4-A64 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked Vulkan carrier does not match the exact Q4-A64 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3178,20 +3604,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked CPU carrier does not match the exact Q8-B32 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked CUDA carrier does not match the exact Q8-B32 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked Apple MLX/Metal carrier does not match the exact Q8-B32 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked Vulkan carrier does not match the exact Q8-B32 codes, scales, activation and output contract.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3222,20 +3668,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked ggml Vulkan attention/RoPE region does not accept the BF16 domain required by the local checkpoint; an F32 fragment cannot sign the full row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3272,20 +3738,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked ggml Vulkan attention/RoPE region does not accept the BF16 domain required by the local checkpoint; an F32 fragment cannot sign the full row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3316,20 +3802,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked ggml Vulkan attention/RoPE region does not accept the BF16 domain required by the local checkpoint; an F32 fragment cannot sign the full row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3361,20 +3867,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked ggml Vulkan attention/RoPE region does not accept the BF16 domain required by the local checkpoint; an F32 fragment cannot sign the full row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3407,20 +3933,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked ggml Vulkan attention/RoPE region does not accept the BF16 domain required by the local checkpoint; an F32 fragment cannot sign the full row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3450,20 +3996,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The locked ggml Vulkan attention/RoPE region does not accept the BF16 domain required by the local checkpoint; an F32 fragment cannot sign the full row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3500,20 +4066,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3552,20 +4138,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3603,20 +4209,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3654,20 +4280,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3698,20 +4344,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3742,20 +4408,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3788,20 +4474,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3834,20 +4540,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3876,20 +4602,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3924,20 +4670,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -3972,20 +4738,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4014,20 +4800,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4058,20 +4864,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4100,20 +4926,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4144,20 +4990,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4187,20 +5053,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4231,20 +5117,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4277,20 +5183,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4323,20 +5249,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4369,20 +5315,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4411,20 +5377,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4454,20 +5440,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4497,20 +5503,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4541,20 +5567,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4585,20 +5631,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4627,20 +5693,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "The qualified CPU device/provider rejects the exact E4M3 payload and scale contract on the recorded hardware/toolchain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "The qualified CUDA device/provider rejects the exact E4M3 payload and scale contract on the recorded hardware/toolchain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "The qualified Apple MLX/Metal device/provider rejects the exact E4M3 payload and scale contract on the recorded hardware/toolchain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "IREE Vulkan accepts the exact dense FP8 format and passed its provider region, but the complete 24-layer/profile chain was not run.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4668,20 +5754,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "The qualified CPU device/provider rejects the exact E4M3 payload and scale contract on the recorded hardware/toolchain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "The qualified CUDA device/provider rejects the exact E4M3 payload and scale contract on the recorded hardware/toolchain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "BACKEND_REJECTED",
+          "reason": "The qualified Apple MLX/Metal device/provider rejects the exact E4M3 payload and scale contract on the recorded hardware/toolchain.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "IREE Vulkan accepts the exact dense FP8 format and passed its provider region, but the complete 24-layer/profile chain was not run.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4708,20 +5814,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available CPU FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available CUDA FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available Apple MLX/Metal FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available Vulkan FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4749,20 +5875,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available CPU FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available CUDA FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available Apple MLX/Metal FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "NUMERIC_INCOMPATIBLE",
+          "reason": "The available Vulkan FP4/MXFP4 carrier differs in activation width, scale grouping or output contract from the required exact W4A8/FP4-FP8 profile.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4792,20 +5938,40 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "UPSTREAM_MISSING",
+          "reason": "No admitted mature CPU provider exposes the exact quantized attention/index state region required by this row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "UPSTREAM_MISSING",
+          "reason": "No admitted mature CUDA provider exposes the exact quantized attention/index state region required by this row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "UPSTREAM_MISSING",
+          "reason": "No admitted mature Apple MLX/Metal provider exposes the exact quantized attention/index state region required by this row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "UPSTREAM_MISSING",
+          "reason": "No admitted mature Vulkan provider exposes the exact quantized attention/index state region required by this row.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4839,24 +6005,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cpu.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cuda.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
-            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/mini-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4890,24 +6074,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cpu.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cuda.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
-            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/mini-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4941,24 +6143,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cpu.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cuda.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
-            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/mini-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     },
@@ -4992,24 +6212,42 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cpu.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "cuda": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-cuda.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         },
         "apple_mlx_metal": {
           "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
-            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
-            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/mini-apple.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "reason": "Current route/provider factors and the unchanged M2 source/static/shared receipts pass native binding, replay, result lifetime, failure publication and delivery for every admitted capability.",
+          "evidence": [
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/logs/windows-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/logs/air-vulkan.txt",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
+          ]
         }
       }
     }
@@ -5029,5 +6267,12 @@
     "existing_self_algorithms": "frozen at ebe5af5109afb01b029c1ba85484d03be61d6fe6 until bounded M5 comparison; valid loss deletes, zero optimization rounds",
     "provider_mapping": "llm-moe-provider-map.json",
     "provider_admission_and_work_packages": "llm-moe-provider-integration-ledger.md"
+  },
+  "m3_adjudication": {
+    "state": "COMPLETE",
+    "date": "2026-09-24",
+    "record": "docs/implementation/tasks/compute/llm-moe-m3-terminal.md",
+    "acceptance": "evidence/correctness/compute-llm-moe-m3/acceptance.json",
+    "meaning": "Coverage accounting is complete; non-PASS cells remain M4 inputs and are not product support claims."
   }
 }

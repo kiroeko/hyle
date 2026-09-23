@@ -1,0 +1,19 @@
+Test project C:/hv/m2b1-cpu
+    Start 66: hyle_compute_provider_ggml_test
+1/4 Test #66: hyle_compute_provider_ggml_test ...   Passed    0.09 sec
+    Start 69: hyle_compute_ops_test
+2/4 Test #69: hyle_compute_ops_test .............   Passed    0.04 sec
+    Start 75: hyle_compute_route_cpu_test
+3/4 Test #75: hyle_compute_route_cpu_test .......   Passed    0.06 sec
+    Start 77: hyle_graph_route_cpu_test
+4/4 Test #77: hyle_graph_route_cpu_test .........   Passed    0.10 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+compute_ops              =   0.04 sec*proc (1 test)
+compute_provider_ggml    =   0.09 sec*proc (1 test)
+compute_route_cpu        =   0.06 sec*proc (1 test)
+graph_route_cpu          =   0.10 sec*proc (1 test)
+
+Total Test time (real) =   0.31 sec

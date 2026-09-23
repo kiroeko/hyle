@@ -1,0 +1,13 @@
+Test project /Users/kiro/hyle-m2b2-apple-static
+    Start 48: hyle_compute_route_apple_test
+1/2 Test #48: hyle_compute_route_apple_test ....   Passed    1.35 sec
+    Start 50: hyle_graph_route_apple_test
+2/2 Test #50: hyle_graph_route_apple_test ......   Passed    2.77 sec
+
+100% tests passed out of 2
+
+Label Time Summary:
+compute_route_apple    =   1.35 sec*proc (1 test)
+graph_route_apple      =   2.77 sec*proc (1 test)
+
+Total Test time (real) =   4.12 sec
