@@ -82,7 +82,7 @@
         "F18.4",
         "F18.5"
       ],
-      "status": "QUEUED_BY_PLAN"
+      "status": "SCOPED"
     }
   ],
   "provider_features": [
