@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "m3_model_chain_audit_not_execution_verdict",
+  "candidate": "b5a8e760c1c461dfbf2915e81df8e28633ae5043",
+  "date": "2026-09-24",
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "input_receipt": "C:/hv/m3/input-receipt.json",
+  "model": {
+    "id": "Qwen/Qwen3.5-2B local user asset",
+    "layers": 24,
+    "linear_attention_layers": 18,
+    "full_attention_layers": 6,
+    "hidden": 2048,
+    "intermediate": 6144,
+    "attention_heads": 8,
+    "kv_heads": 2,
+    "attention_head_depth": 256,
+    "linear_key_heads": 16,
+    "linear_value_heads": 16,
+    "linear_head_depth": 128,
+    "conv_channels": 6144,
+    "conv_kernel": 4,
+    "state_type": "F32"
+  },
+  "inspected": [
+    "include/hyle/compute/operation.h",
+    "include/hyle/compute/model_ops.h",
+    "src/compute_provider_ggml/ggml_cpu_provider.cc",
+    "src/compute_provider_ggml_cuda/tensor_program.cc",
+    "src/compute_provider_ggml_metal/native_program.cc",
+    "src/compute_provider_ggml_vulkan/region.cc",
+    "src/compute_route_vulkan/vulkan_program.cc",
+    "tests/compute_models/qwen35_reference.py",
+    "tests/compute_models/prepare_quantized.py",
+    "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+    "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+    "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md"
+  ],
+  "findings": [
+    {
+      "id": "M3-A1",
+      "verdict": "SHAPE_COMPATIBLE",
+      "detail": "Local Qwen recurrent key/value head counts are equal and depth 128; conv channels 6144 satisfy the locked CUDA multiple-of-128 constraint."
+    },
+    {
+      "id": "M3-A2",
+      "verdict": "NUMERIC_DOMAIN_UNPROVEN",
+      "detail": "M2 qualified the four mature recurrent routes only for dense F32. The local checkpoint consumes BF16 projection/conv values with F32 recurrent state, so public BF16 schema alone cannot sign the model chain."
+    },
+    {
+      "id": "M3-A3",
+      "verdict": "FORMAT_INCOMPATIBLE",
+      "detail": "No common four-route carrier currently accepts the exact Q4-S128 or Q8-B32 W8A16 contracts. Route-specific Q4 variants are not interchangeable."
+    },
+    {
+      "id": "M3-A4",
+      "verdict": "FRAGMENT_ONLY",
+      "detail": "Grouped expert, mHC and Lightning Indexer mature operations are bound on four routes, while complete routing/MTP/sparse/compression chains remain unexecuted and cannot inherit primitive PASS."
+    },
+    {
+      "id": "M3-A5",
+      "verdict": "FORMAT_INCOMPATIBLE",
+      "detail": "Only the qualified IREE Vulkan dense F18.1/F18.2 domains are exact; SM89 CUDA, current CPU/Apple candidates and grouped/index F18 domains retain the M2 named rejection boundaries."
+    }
+  ],
+  "finite_fix": [
+    "test-side model-chain audit and real-shape prepare consumers",
+    "one aggregated 64x4 verdict receipt",
+    "mature provider schema/lowering/resource correction only when reproduced"
+  ],
+  "forbidden": [
+    "new HYLE math kernel or shader",
+    "new decoder or quantizer",
+    "frozen self-written fallback or comparison",
+    "reduced-width local 2B result presented as a complete model",
+    "reference-only output presented as HYLE execution"
+  ],
+  "result": "AUDITED"
+}

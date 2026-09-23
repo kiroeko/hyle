@@ -1,6 +1,6 @@
 # M3 四路线真实模型计算链验收
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -67,4 +67,35 @@
 - 维护：change-impact selector、`check-module-closure.py --previous-ref`、`check-docs.py`、统一
   Compute+Graph LOC；阶段结束清理短构建根、传输包和派生测试制品。
 
-审计尚未完成，本卡当前不授权产品实现或覆盖 PASS。
+## AUDITED：真实消费边界与有限 FIX
+
+2026-09-24 已核对本地 config、Transformers 5.3.0 的 Qwen3.5 forward、公共 operation schema、
+四路线 lowering 和 M2 不可变收据。[审计收据](../../../../evidence/correctness/compute-llm-moe-m3/audit.json)
+固定了源码位置和精确反例。当前模型的 DeltaNet 是 16 个 key/value head、head depth 128，卷积通道
+6144，因而满足四个 ggml 后端的 equal-head/depth 形状；真正阻止 B16 整链的是成熟 recurrent
+入口目前只资格化 dense F32，而不是模型 shape。公共 BF16 描述存在不代表后端已接受该域。
+
+| ID | 裁决与有限施工 | 验收/停止 |
+|---|---|---|
+| M3-C0 | `KEEP` 本地 13 文件 source ID、冻结 token、C0 独立 reference/quantization recipe；重新核对原文件。只有某条真实链能进入执行时才重建相应外部制品，不为准备期已拒绝的格式制造数 GB 临时文件 | 输入 hash 必须一致；历史外部路径不存在不写当前 PASS |
+| M3-C1 | `BORROW` M2 已接的 oneDNN/ggml/cuBLASLt/Marlin/FlashInfer/MLX/IREE 原生程序、普通 Direct/Graph、资源与完成路径；用现有路线测试按能力族集中复验 | 不逐算子重建；候选、Provider pin 和机器身份写入一份聚合收据 |
+| M3-C2 | `FIX` 仅增加测试侧表驱动审计器和真实 Qwen shape 的 prepare/组合用例；它读取 config/manifest 并输出 64×4 verdict，不安装模型 loader 或 tokenizer | 每格必须有实际收据或具名 `BACKEND_REJECTED`、`NUMERIC_INCOMPATIBLE`、`UPSTREAM_MISSING`、`VALIDATION_NOT_RUN` |
+| M3-C3 | `FIX_IF_REPRODUCED` 只允许修成熟 Provider schema/lowering、资源/完成或冷路由错误；不改变数学。每个具名缺陷最多两次源码驱动纠正 | 修复后只重跑受影响路线；没有反例则产品代码改动为 0 |
+| M3-C4 | `DEFER` Q4-S128、Q4-A64、Q8-B32、BF16 recurrent、完整 MoE/sparse/compression 和 F18 精确格式中已由 M2 证明 backend 不相容的格；M3 保存真实链最早拒绝边界，M4 才审最小补缺 | 相近位宽、浮点展开常驻、CPU fallback 和其它路线结果都不能代签 |
+| M3-C5 | `REJECT` 新 kernel/shader/decoder/quantizer、冻结自研回退或竞速、缩小本地 2B 宽度后称完整模型、仅运行 reference 后称 HYLE 通过，以及为失败准备继续生成无消费者的大制品 | 本轮新增自研数学 0；适用未运行保持 `VALIDATION_NOT_RUN` |
+
+### 六批固定消费者
+
+- M3-01 复用同一候选的 route/provider 表驱动测试，聚合 F01--F04/F19；只有覆盖该行完整 dtype、
+  layout、Direct/Graph、资源和三交付合同的格才可从 `UNPROVEN` 转为 `PASS`。
+- M3-02 用真实 `M=1/17/128`、hidden 2048、FFN 6144、head256、Q/KV 8/2 作准备/执行；每种量化
+  保持原 codes/scales 身份。任一路精确格式缺失会使对应完整 2B 档位停止，不继续量化全模型。
+- M3-03 用 6144 通道卷积和 `[B,T,16,128]` DeltaNet/KDA、F32 state 作 24 层拓扑审计；先测试
+  B16 边界。若成熟后端在首个线性注意力层拒绝 BF16，prompt/decode 旅程记明确阻断而不跑假整链。
+- M3-04/M3-05 使用已冻结目标配置的真实宽度、专家数/选择数和缩小容量结构；现有单原语通过只作
+  支撑证据，routing→state 的完整片段未实际执行时不得把行写 PASS。
+- M3-06 只运行与设备/Provider 精确兼容的 codes/scales；M2 已证明 SM89 和现有 CPU/Apple 候选
+  不接受的精确档不重测同一拒绝，也不把 IREE Vulkan dense 结果外推到 grouped/index 或其它路线。
+
+本卡有限 FIX 已冻结。可以增加上述测试消费者、收据与必要的成熟接入纠正；任何产品修改仍须由
+实际失败指向 C3，不能借 M3 扩大算子目录。

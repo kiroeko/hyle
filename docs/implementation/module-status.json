@@ -364,26 +364,26 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_backend_cpu",
@@ -426,20 +426,20 @@
     {
       "module": "compute_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_provider_cublas",
       "state": "AUDITED",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md"
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。",
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md"
     },
     {
       "module": "compute_provider_marlin",
@@ -466,44 +466,44 @@
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -519,14 +519,14 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -542,14 +542,14 @@
     {
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     },
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-terminal.md",
-      "summary": "M2 B1–B6 CLOSED：已准入成熟 Provider 能力完成批量 Direct/Graph 接线与适用验收；具名上游、设备、精确格式和完整模型链残差转 M3，冻结自研数学未启动。组件保持 AUDITED，M3 必须重新定界后施工。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
+      "summary": "M3 AUDITED：六组真实模型链、64×4 verdict 与 Provider 完成门的有限 FIX 已冻结；只增测试消费者及成熟接入纠正，BF16 recurrent、精确量化和完整 MoE/sparse 链按实际拒绝保留残差，自研数学仍冻结。"
     }
   ]
 }
