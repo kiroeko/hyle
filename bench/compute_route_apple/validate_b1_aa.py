@@ -53,8 +53,14 @@ def reference_identity(build: Path) -> dict:
     if revision != PIN or subprocess.check_output(
             ['git', 'status', '--porcelain'], cwd=peer):
         raise RuntimeError('MLX reference is not clean at the pinned revision')
+    manifest_path = ROOT / 'third_party/mlx_cast/patches.json'
+    manifest = json.loads(manifest_path.read_text())
+    patches = {entry['path']: entry for entry in manifest['files']}
+    if len(patches) != len(manifest['files']):
+        raise RuntimeError('duplicate path in locked MLX patch manifest')
     entries = subprocess.check_output(['git', 'ls-tree', '-rz', 'HEAD'], cwd=peer)
     count = 0
+    observed_patches = {}
     for item in entries.split(b'\0'):
         if not item:
             continue
@@ -64,16 +70,40 @@ def reference_identity(build: Path) -> dict:
             raise RuntimeError('unsupported nested MLX Git object')
         path = actual / os.fsdecode(raw_name)
         data = os.fsencode(os.readlink(path)) if mode == b'120000' else path.read_bytes()
-        observed = hashlib.sha1(
-            b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-        if observed != expected.decode():
-            raise RuntimeError(f'compiled locked MLX differs from reference: {path}')
+        relative = os.fsdecode(raw_name)
+        patch = patches.get(relative)
+        if patch is None:
+            observed = hashlib.sha1(
+                b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+            if observed != expected.decode():
+                raise RuntimeError(
+                    f'compiled locked MLX differs outside admitted patches: {path}')
+        else:
+            upstream = peer / relative
+            upstream_data = (os.fsencode(os.readlink(upstream))
+                             if mode == b'120000' else upstream.read_bytes())
+            upstream_hash = hashlib.sha256(upstream_data).hexdigest()
+            result_hash = hashlib.sha256(data).hexdigest()
+            if upstream_hash != patch['before_sha256']:
+                raise RuntimeError(
+                    f'locked MLX patch input differs from manifest: {relative}')
+            if result_hash != patch['after_sha256']:
+                raise RuntimeError(
+                    f'compiled MLX patch result differs from manifest: {relative}')
+            observed_patches[relative] = {
+                'before_sha256': upstream_hash,
+                'after_sha256': result_hash,
+            }
         count += 1
+    if set(observed_patches) != set(patches):
+        raise RuntimeError('compiled MLX did not consume the exact locked patch set')
     return {
         'revision': revision,
         'tree': subprocess.check_output(
             ['git', 'rev-parse', 'HEAD^{tree}'], cwd=peer, text=True).strip(),
         'compiled_blob_count': count,
+        'patch_manifest_sha256': digest(manifest_path),
+        'patched_files': observed_patches,
         'metallib': digest(build / 'bin/mlx.metallib'),
     }
 
