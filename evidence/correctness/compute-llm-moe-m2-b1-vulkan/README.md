@@ -25,6 +25,21 @@ Copy特殊值原始位、所有Concat轴、两slot、变更输入、保留旧结
 Windows约0.73GiB的单一build和Air约0.77GiB的验证目录保留供本批后续复用；没有新建废弃build，
 没有模型副本或二进制加入证据压缩包。
 
+## V1-I：成熟 Scatter-add
+
+工作树基于 `1580e386fbd26f015b809de9fb4208b2e7761a2a`。原版 ggml Vulkan
+`GetRowsBack` 已接普通 Direct/Graph Scatter-add，覆盖 F32/F16/BF16、重复 index、任意中间轴、
+多维/空 index、checked 失败保留旧结果、重放和结果生命周期；计划事实确认普通 checked add
+选择一个 managed ggml region。Windows Release/shared/WERROR 增量构建通过，Compute route
+**118/118**、Graph route **34/34** 测试通过。原始 build/test 日志保留在唯一活动工作树的
+`.scratch/validation/m2-vulkan-indexed`，不把可再生二进制或大日志提交进仓库。
+聚焦选择器的 ggml/IREE Provider、Compute Route、Graph Route 共 **9/9 CTest** 通过；总计
+136.67 秒，其中既有 MASM composition 门占 109.43 秒，后续能力增量复用到批次收口。
+
+[开发收据](indexed-development.json)记录身份、测试、纠正、成本和未完成门。没有 P1、SOTA
+声明或自研比较；Assign、跨机、三交付和整批最终门仍未签。统一 LOC 为 **57,740实现行/
+249文件**，排除tests/vendor，self-check通过。
+
 ## V1-P：半精度与同设备 Provider 组合
 
 当前产品候选`2191c6160`。dense非空F16/BF16 Copy、浮点Cast的合格方向以及已接算术族的

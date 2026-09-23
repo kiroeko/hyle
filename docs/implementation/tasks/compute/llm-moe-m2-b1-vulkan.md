@@ -258,6 +258,51 @@ index/mask/state成熟承载、新域三交付/适用插桩及最终综合门/P1
 **57,343实现行/249文件**，排除tests/vendor，self-check通过。两机均复用唯一活动build，
 Windows约0.73GiB，无新增build或模型副本。
 
+### V1-I：成熟 indexed mutation 的最终有限 FIX
+
+2026-09-23，源码/设计预算累计 **120/120 分钟**，此后不再扩大 Vulkan B1 源码调查。
+原 pin 已确认 `GGML_OP_GET_ROWS_BACK` 在 Vulkan 上为 F32 source/I32 index/F32 result 的
+原版实现，并在同一 destination row 内累加重复 index；`GGML_OP_SET_ROWS` 对重复 destination
+row 的结果则由上游明确为未定义。由此只接入公共 Scatter `kAdd`，不以不相容的 SetRows
+冒充 last-logical-writer 的 Scatter `kAssign`。
+
+- **I1-F**：provider 接受 dense、非空、plain 的 F32/F16 Scatter-add、I32 index、unchecked
+  边界。冷期把公开 `[outer, extent, inner]` 变换成原版 row table；F16 base/update 显式提升
+  F32，由原版 GetRowsBack 合并重复更新并只在公开输出处舍入。不得把 index 当浮点参数转换。
+- **I2-F**：路线普通 checked/unchecked 入口先用既有 checked-index 控制程序生成 safe index；
+  checked 失败仍经既有 conditional publish 保留旧 output。BF16 复用已资格化的 IREE
+  F32/BF16 边界，provider 中间仍为 F32；空 index 退化为成熟 Copy，不提交空 vendor graph。
+- **I3-F**：只准入公开形状可在 `INT32_MAX`、storage-buffer、原版 row dispatch 和现有
+  16-bit feature 内表达的域；原版 row-table 输入要求 descriptor 对齐，不满足时只用既有
+  byte-copy adapter。普通 Direct 与 Graph 共用同一冷绑定结果，执行时不重新搜索或计时。
+- **I4-F**：Windows 真 GPU 验证 F32/F16/BF16、重复 index、任意中间轴、多维/空 index、
+  dynamic checked failure、重放和 retained output，并以 plan facts 证明 managed ggml region
+  被实际选择；provider 内部入口另证原版 recipe。适用 Air 与三交付仍随稳定批次集中执行。
+
+本 FIX 不修改旧自研 Scatter 数学；它只作为未准入形状/Assign 的冻结 fallback。Assign 与
+其它原版不相容域保留精确残差，交给 M3 汇总、M4 裁决。实现或预声明验证遇到具体错误可以
+在上述边界内纠正，但不得另开算法、shader、性能比较或仪器扩建。
+
+### V1-I：Windows 开发检查点
+
+普通 Direct/Graph 已自动绑定原版 ggml Vulkan `GetRowsBack` Scatter-add；F32/F16/BF16、
+重复 index、任意中间轴、多维与空 index、checked 失败保留旧结果、重放和 retained output
+均由真实 GPU 路径通过。定向用例确认普通 checked add 只生成一个 managed ggml region；
+Windows Release/shared/WERROR 增量构建通过，Compute route **118/118**、Graph route
+**34/34** 测试通过；选择器聚焦后的四个 Vulkan factor **9/9 CTest** 通过。其 136.67 秒中
+109.43 秒是既有 MASM composition 门，按批次证据复用，不进入逐能力开发循环。
+
+实施中纠正一个真实生命周期错误：追加临时 value 会令先前保存的 `TensorDesc` 引用失效，
+现改为在扩容前复制 descriptor；相应用例未放宽。旧资源拒绝测试也按成熟实现的实际资源结构
+纠正：原版 GetRowsBack 不使用冻结 fallback 的排序 shared memory/组合表，仍保留真实
+storage、dispatch 和 Assign 限制。
+
+Windows 活动树已一次固定 Vulkan SDK、SPIR-V Headers 和 Provider pin；后续批次只通过现有
+`hyle-windows.ps1` 导入 MSVC 环境并做增量 build，不重复 configure。直接绕过驱动造成的
+MSVC 环境失败不计产品失败。当前只形成开发检查点，Air、三交付、整批 selected/P1 与 B1 最终残差
+仍集中留在路线收口；不新增完整21行 PASS。统一 LOC 为 **57,740实现行/249文件**，排除
+tests/vendor，self-check 通过。
+
 ### V1-A：attention Softmax 布局的有限审计
 
 baseline `8fa45c7c`，原四owner保持AUDITED。父卡源码/设计累计114/120分钟，余6分钟；

@@ -175,7 +175,7 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   if ((promote_bfloat || step.operation.get_if<Copy>() ||
        step.operation.get_if<Cast>() || step.operation.get_if<Concat>() ||
        step.operation.get_if<Binary>() || step.operation.get_if<Reduce>() ||
-       step.operation.get_if<Softmax>() ||
+       step.operation.get_if<Softmax>() || step.operation.get_if<Scatter>() ||
        std::ranges::any_of(std::span(inputs).first(input_count),
                            low_precision) ||
        low_precision(outputs[0])) &&
@@ -204,6 +204,21 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
         limits.maxComputeWorkGroupSize[0] < 512 ||
         static_cast<std::uint64_t>(inputs[0].dimensions()[1]) >
             std::uint64_t{limits.maxComputeWorkGroupCount[0]} * 512)
+      return false;
+  }
+  if (const auto *scatter = step.operation.get_if<Scatter>()) {
+    const auto &base = inputs[0];
+    const auto axis = static_cast<std::size_t>(
+        scatter->axis < 0
+            ? scatter->axis + static_cast<std::int32_t>(base.rank())
+            : scatter->axis);
+    const auto extent = static_cast<std::uint64_t>(base.dimensions()[axis]);
+    const auto count = *inputs[1].element_count();
+    const auto inner_outer = *base.element_count() / extent;
+    const auto &limits = program.runtime->device->properties.limits;
+    if (extent > INT32_MAX || count > INT32_MAX || inner_outer > INT32_MAX ||
+        limits.maxComputeWorkGroupInvocations < 512 ||
+        limits.maxComputeWorkGroupSize[0] < 512)
       return false;
   }
   if (step.operation.get_if<Scan>() && !scan_limits(program, inputs[0]))
@@ -295,6 +310,174 @@ Status lower_bfloat_region(ProgramState &program,
   }
 }
 
+bool mature_scatter_add_operation(const ProgramState &program,
+                                  const PlanStep &step) noexcept {
+  const auto *scatter = step.operation.get_if<Scatter>();
+  if (step.custom || !scatter || scatter->kind != ScatterKind::kAdd ||
+      step.inputs.size() != 3 || step.outputs.size() != 1)
+    return false;
+  const auto &base = program.values[step.inputs[0]].description;
+  const auto &indices = program.values[step.inputs[1]].description;
+  const auto &updates = program.values[step.inputs[2]].description;
+  const auto &output = program.values[step.outputs[0]].description;
+  if (!base.is_plain() || !base.is_dense() || !indices.is_plain() ||
+      !indices.is_dense() || !updates.is_plain() || !updates.is_dense() ||
+      !output.is_plain() || !output.is_dense() ||
+      indices.data_type() != DataType::kInt32 ||
+      (base.data_type() != DataType::kFloat32 &&
+       base.data_type() != DataType::kFloat16 &&
+       base.data_type() != DataType::kBFloat16) ||
+      updates.data_type() != base.data_type() ||
+      output.data_type() != base.data_type() || !base.element_count() ||
+      *base.element_count() == 0 || !indices.element_count() ||
+      !updates.element_count() || !output.element_count() ||
+      *output.element_count() == 0)
+    return false;
+  const auto axis = static_cast<std::size_t>(
+      scatter->axis < 0 ? scatter->axis + static_cast<std::int32_t>(base.rank())
+                        : scatter->axis);
+  const auto extent = static_cast<std::uint64_t>(base.dimensions()[axis]);
+  const auto count = *indices.element_count();
+  const auto inner_outer = *base.element_count() / extent;
+  const auto &device = *program.runtime->device;
+  const auto &limits = device.properties.limits;
+  const auto maximum =
+      (std::min)(std::uint64_t{INT32_MAX},
+                 static_cast<std::uint64_t>(limits.maxStorageBufferRange) /
+                     sizeof(float));
+  if (extent > INT32_MAX || count > INT32_MAX || inner_outer > INT32_MAX ||
+      *base.element_count() > maximum || *updates.element_count() > maximum ||
+      *output.element_count() > maximum || count > maximum ||
+      limits.maxComputeWorkGroupInvocations < 512 ||
+      limits.maxComputeWorkGroupSize[0] < 512 || !layout_limits(program, step))
+    return false;
+  const auto &features = device.provider.native();
+  if (base.data_type() != DataType::kFloat32 &&
+      (!features.shader_float16 || !features.storage_buffer16))
+    return false;
+  if (base.data_type() == DataType::kBFloat16 && count != 0) {
+    const auto wide =
+        TensorDesc::dense(DataType::kFloat32, output.dimensions());
+    return wide && iree_precision_supported(device, *wide);
+  }
+  return true;
+}
+
+Status lower_mature_scatter_add(ProgramState &program,
+                                const PlanStep &step) noexcept {
+  try {
+    if (!mature_scatter_add_operation(program, step))
+      return Status::Unimplemented("ggml Vulkan Scatter add domain");
+    while (program.aliases.size() < program.values.size()) {
+      const auto id = static_cast<std::uint32_t>(program.aliases.size());
+      program.aliases.push_back({id, 0});
+    }
+    const auto append = [&](const TensorDesc &description) {
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    const auto indices = program.values[step.inputs[1]].description;
+    if (*indices.element_count() == 0) {
+      Plan copy;
+      copy.outputs = step.outputs;
+      copy.steps.push_back({Operation(Copy{}),
+                            {step.inputs[0]},
+                            step.outputs,
+                            {},
+                            {1, 1, 1},
+                            {}});
+      const std::vector<std::size_t> last_uses(program.values.size(), 0);
+      return lower_region(program, copy, 0, 1, last_uses);
+    }
+    const auto scatter = *step.operation.get_if<Scatter>();
+    const auto base = program.values[step.inputs[0]].description;
+    const auto update_description = program.values[step.inputs[2]].description;
+    const auto output_description = program.values[step.outputs[0]].description;
+    const auto axis = static_cast<std::size_t>(
+        scatter.axis < 0 ? scatter.axis + static_cast<std::int32_t>(base.rank())
+                         : scatter.axis);
+    const auto extent = static_cast<std::uint64_t>(base.dimensions()[axis]);
+    const bool checked = scatter.bounds == IndexBoundsPolicy::kChecked;
+    if (checked && !program.status_value) {
+      HYLE_ASSIGN_OR_RETURN(auto status,
+                            TensorDesc::dense(DataType::kInt32, {}));
+      program.status_value = append(status);
+    }
+    HYLE_ASSIGN_OR_RETURN(
+        auto safe_description,
+        TensorDesc::dense(DataType::kInt32, indices.dimensions()));
+    const auto safe = append(safe_description);
+    HYLE_RETURN_IF_ERROR(
+        lower_index_check(program, step.inputs[1], safe, extent, checked));
+
+    Plan local;
+    auto base_value = step.inputs[0];
+    auto update_value = step.inputs[2];
+    const bool bfloat = base.data_type() == DataType::kBFloat16;
+    if (bfloat) {
+      HYLE_ASSIGN_OR_RETURN(
+          auto wide_base,
+          TensorDesc::dense(DataType::kFloat32, base.dimensions()));
+      HYLE_ASSIGN_OR_RETURN(auto wide_updates,
+                            TensorDesc::dense(DataType::kFloat32,
+                                              update_description.dimensions()));
+      base_value = append(wide_base);
+      update_value = append(wide_updates);
+      local.steps.push_back({Operation(Cast{DataType::kFloat32}),
+                             {step.inputs[0]},
+                             {base_value},
+                             {},
+                             {1, 1, 1},
+                             {}});
+      local.steps.push_back({Operation(Cast{DataType::kFloat32}),
+                             {step.inputs[2]},
+                             {update_value},
+                             {},
+                             {1, 1, 1},
+                             {}});
+    }
+    TensorDesc provider_output = output_description;
+    if (bfloat) {
+      HYLE_ASSIGN_OR_RETURN(
+          provider_output,
+          TensorDesc::dense(DataType::kFloat32, provider_output.dimensions()));
+    }
+    const auto provider_result =
+        (!bfloat && !checked) ? step.outputs[0] : append(provider_output);
+    local.steps.push_back({Operation(Scatter{scatter.axis, ScatterKind::kAdd,
+                                             IndexBoundsPolicy::kUnchecked}),
+                           {base_value, safe, update_value},
+                           {provider_result},
+                           {},
+                           {1, 1, 1},
+                           {}});
+    local.outputs = {provider_result};
+    const std::vector<std::size_t> last_uses(program.values.size(), 0);
+    HYLE_RETURN_IF_ERROR(
+        lower_region(program, local, 0, local.steps.size(), last_uses));
+    auto published = provider_result;
+    if (bfloat) {
+      if (checked)
+        published = append(output_description);
+      else
+        published = step.outputs[0];
+      HYLE_RETURN_IF_ERROR(
+          lower_iree(program, {Operation(Cast{DataType::kBFloat16}),
+                               {provider_result},
+                               {published},
+                               {},
+                               {1, 1, 1},
+                               {}}));
+    }
+    return checked ? lower_checked_copy(program, published, step.outputs[0])
+                   : Status::Ok();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("ggml Vulkan Scatter add metadata");
+  }
+}
+
 Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
                     std::size_t end,
                     std::span<const std::size_t> last_uses) noexcept {
@@ -332,9 +515,9 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       for (const auto input : step.inputs)
         if (has_payload(step, input))
           node.inputs.push_back(local(input));
-      // Argsort, GroupNorm, Softmax and multi-pass Scan need aligned
-      // descriptors. Other admitted operations retain their offset-aware input
-      // contract.
+      // Argsort, indexed rows, GroupNorm, Softmax and multi-pass Scan need
+      // aligned descriptors. Other admitted operations retain their
+      // offset-aware input contract.
       if (step.operation.get_if<TopK>() || step.operation.get_if<Scan>() ||
           step.operation.get_if<LayerNorm>())
         uses[local(step.inputs[0])].descriptor_aligned = true;
@@ -345,6 +528,9 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         for (const auto input : step.inputs)
           uses[local(input)].descriptor_aligned = true;
       if (step.operation.get_if<MatMul>())
+        for (const auto input : step.inputs)
+          uses[local(input)].descriptor_aligned = true;
+      if (step.operation.get_if<Scatter>())
         for (const auto input : step.inputs)
           uses[local(input)].descriptor_aligned = true;
       for (const auto output : step.outputs) {

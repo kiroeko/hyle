@@ -8,6 +8,7 @@
 
 namespace {
 using namespace vulkan_scatter_test;
+namespace d = v::detail;
 
 TEST(VulkanScatter, AssignPreservesAllStorageBitsAndLastLogicalUpdate) {
   auto context = vulkan_test::context().value();
@@ -43,7 +44,7 @@ TEST(VulkanScatter, AssignPreservesAllStorageBitsAndLastLogicalUpdate) {
       }
 }
 
-TEST(VulkanScatter, AddKeepsBaseFirstAndRoundsEachHalfUpdate) {
+TEST(VulkanScatter, AddIncludesBaseAndEveryDuplicateUpdate) {
   auto context = vulkan_test::context().value();
   const auto index_desc = dense(c::DataType::kInt32, {7});
   const std::vector<std::uint64_t> positions{3, 1, 3, 3, 2, 2, 4};
@@ -54,15 +55,8 @@ TEST(VulkanScatter, AddKeepsBaseFirstAndRoundsEachHalfUpdate) {
     for (const std::int64_t width : {1, 3, 129}) {
       const auto desc = dense(type, {7, width});
       auto base = numeric(desc), update = numeric(desc, 1);
-      const double large = type == c::DataType::kFloat32   ? 16777216
-                           : type == c::DataType::kFloat16 ? 2048
-                                                           : 256;
-      for (std::size_t col = 0; col < static_cast<std::size_t>(width); ++col) {
-        base[3 * width + col] = encode(large, type);
-        update[col] = encode(1, type);
-        update[2 * width + col] = encode(-large, type);
-        update[3 * width + col] = encode(1, type);
-      }
+      // Exact binary fractions keep the result independent of the contract's
+      // permitted reassociation and wider intermediate accumulation.
       update[4 * width] = encode(INFINITY, type);
       update[5 * width] = encode(-INFINITY, type);
       update[6 * width] = encode(NAN, type);
@@ -70,6 +64,9 @@ TEST(VulkanScatter, AddKeepsBaseFirstAndRoundsEachHalfUpdate) {
       const auto updates = context.upload(desc, payload(desc, update)).value();
       for (const auto bounds :
            {c::IndexBoundsPolicy::kChecked, c::IndexBoundsPolicy::kUnchecked}) {
+        SCOPED_TRACE(::testing::Message()
+                     << static_cast<int>(type) << '/' << width << '/'
+                     << static_cast<int>(bounds));
         const c::Scatter operation{0, c::ScatterKind::kAdd, bounds};
         auto output = execute(context, c::Operation(operation),
                               std::array{source, indices, updates});
@@ -79,6 +76,24 @@ TEST(VulkanScatter, AddKeepsBaseFirstAndRoundsEachHalfUpdate) {
                        true);
       }
     }
+}
+
+TEST(VulkanScatter, OrdinaryCheckedAddBindsManagedGgmlRegion) {
+  auto context = vulkan_test::context().value();
+  const auto base = dense(c::DataType::kFloat32, {2, 7, 3});
+  const auto indices = dense(c::DataType::kInt32, {4});
+  const auto updates = dense(c::DataType::kFloat32, {2, 4, 3});
+  auto prepared = v::prepare(
+      context,
+      c::Scatter{1, c::ScatterKind::kAdd, c::IndexBoundsPolicy::kChecked}, base,
+      indices, updates);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  const auto &dispatches = d::Access::program(*prepared)->dispatches;
+  EXPECT_EQ(std::ranges::count_if(dispatches,
+                                  [](const auto &dispatch) {
+                                    return dispatch.region != nullptr;
+                                  }),
+            1);
 }
 
 TEST(VulkanScatter, AxesRankEightMultidimensionalIndicesAndByteStrides) {
@@ -339,12 +354,19 @@ TEST(VulkanScatter, ColdMetadataAndNativeLimitsRejectWithoutSubmission) {
     else
       limits.maxComputeWorkGroupCount[0] = 0;
     for (const bool adding : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << mode << '/' << adding);
       auto rejected =
           v::prepare(context,
                      c::Scatter{0, adding ? c::ScatterKind::kAdd
                                           : c::ScatterKind::kAssign},
                      desc, index_desc, desc);
-      EXPECT_FALSE(rejected);
+      if ((mode == 0 || mode == 2) && adding) {
+        // Each mature buffer still fits 600 bytes, and GetRowsBack needs no
+        // old combined-table or sort scratch.
+        EXPECT_TRUE(rejected) << rejected.error().message();
+      } else {
+        EXPECT_FALSE(rejected);
+      }
       if (!rejected)
         EXPECT_TRUE(rejected.error().IsUnimplemented() ||
                     rejected.error().IsOutOfRange());

@@ -84,6 +84,26 @@ ggml_tensor *matrix(ggml_context *context, ggml_tensor *value,
     return value;
   return ggml_reshape_2d(context, value, width, rows);
 }
+ggml_tensor *indexed_rows(ggml_context *context, ggml_tensor *value,
+                          std::int64_t inner, std::int64_t rows,
+                          std::int64_t outer) {
+  value = ggml_reshape_3d(context, value, inner, rows, outer);
+  if (outer != 1) {
+    value = ggml_permute(context, value, 0, 2, 1, 3);
+    value = ggml_cont(context, value);
+  }
+  return ggml_reshape_2d(context, value, inner * outer, rows);
+}
+ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
+                                  std::int64_t inner, std::int64_t rows,
+                                  std::int64_t outer) {
+  if (outer != 1) {
+    value = ggml_reshape_3d(context, value, inner, outer, rows);
+    value = ggml_permute(context, value, 0, 2, 1, 3);
+    value = ggml_cont(context, value);
+  }
+  return value;
+}
 ggml_tensor *expand_broadcast(ggml_context *context, ggml_tensor *value,
                               const TensorDesc &source,
                               const TensorDesc &output) {
@@ -255,6 +275,15 @@ bool region_supports(const Operation &operation,
            inputs[0].data_type() == DataType::kInt32 && inputs[0].rank() == 2 &&
            inputs[1].data_type() == DataType::kInt32 && inputs[1].rank() == 1 &&
            outputs[0].data_type() == DataType::kInt32;
+  if (const auto *scatter = operation.get_if<Scatter>())
+    return inputs.size() == 3 && outputs.size() == 1 &&
+           scatter->kind == ScatterKind::kAdd &&
+           scatter->bounds == IndexBoundsPolicy::kUnchecked &&
+           inputs[1].data_type() == DataType::kInt32 &&
+           (inputs[0].data_type() == DataType::kFloat32 ||
+            inputs[0].data_type() == DataType::kFloat16) &&
+           inputs[2].data_type() == inputs[0].data_type() &&
+           outputs[0].data_type() == inputs[0].data_type();
   if (outputs.size() != 1 ||
       (outputs[0].data_type() != DataType::kFloat32 &&
        outputs[0].data_type() != DataType::kFloat16) ||
@@ -372,6 +401,7 @@ Result<Region> Region::create(NativeDevice device,
     for (const auto &node : recipe.nodes) {
       capacity += node.operation.get_if<Scan>()            ? 16
                   : node.operation.get_if<Reduce>()        ? 12
+                  : node.operation.get_if<Scatter>()       ? 10
                   : node.operation.get_if<TopK>()          ? 10
                   : node.operation.get_if<LayerNorm>()     ? 5
                   : node.operation.get_if<GatedDeltaNet>() ? 5
@@ -522,6 +552,36 @@ Result<Region> Region::create(NativeDevice device,
         tensors[node.outputs[1]] = indices;
       } else if (node.operation.get_if<Gather>()) {
         output = ggml_get_rows(context, left, arguments[1]);
+      } else if (const auto *scatter = node.operation.get_if<Scatter>()) {
+        const auto &base = recipe.values[node.inputs[0]];
+        const auto axis = static_cast<std::size_t>(
+            scatter->axis < 0
+                ? scatter->axis + static_cast<std::int32_t>(base.rank())
+                : scatter->axis);
+        const auto inner = extent_product(base.dimensions().subspan(axis + 1));
+        const auto outer = extent_product(base.dimensions().first(axis));
+        const auto extent = base.dimensions()[axis];
+        const auto count = static_cast<std::int64_t>(
+            *recipe.values[node.inputs[1]].element_count());
+        auto *base_value =
+            arguments[0]->type == GGML_TYPE_F32
+                ? arguments[0]
+                : ggml_cast(context, arguments[0], GGML_TYPE_F32);
+        auto *update_value =
+            arguments[2]->type == GGML_TYPE_F32
+                ? arguments[2]
+                : ggml_cast(context, arguments[2], GGML_TYPE_F32);
+        auto *base_rows =
+            indexed_rows(context, base_value, inner, extent, outer);
+        auto *update_rows =
+            indexed_rows(context, update_value, inner, count, outer);
+        auto *indices = ggml_reshape_1d(context, arguments[1], count);
+        auto *delta =
+            ggml_get_rows_back(context, update_rows, indices, base_rows);
+        output = restore_indexed_rows(
+            context, ggml_add(context, base_rows, delta), inner, extent, outer);
+        if (base.data_type() == DataType::kFloat16)
+          output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (node.operation.get_if<Scan>()) {
         const auto width = left->ne[0];
         const auto rows = ggml_nelements(left) / width;

@@ -131,6 +131,9 @@ Status lower_managed_reduction(ProgramState &, const PlanStep &) noexcept;
 Status lower_topk(ProgramState &, const PlanStep &) noexcept;
 Status lower_gather(ProgramState &, const PlanStep &) noexcept;
 Status lower_scan(ProgramState &, const PlanStep &) noexcept;
+bool mature_scatter_add_operation(const ProgramState &,
+                                  const PlanStep &) noexcept;
+Status lower_mature_scatter_add(ProgramState &, const PlanStep &) noexcept;
 Status lower_scatter(ProgramState &, const PlanStep &) noexcept;
 Status lower_region(ProgramState &, const Plan &, std::size_t first,
                     std::size_t end,

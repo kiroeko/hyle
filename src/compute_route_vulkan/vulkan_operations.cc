@@ -417,6 +417,9 @@ Status lower_operation(
       return lower_gather(program, step);
     if (step.operation.kind() == OperationKind::kScan)
       return lower_scan(program, step);
+    if (step.operation.kind() == OperationKind::kScatter &&
+        mature_scatter_add_operation(program, step))
+      return lower_mature_scatter_add(program, step);
     if (step.operation.kind() == OperationKind::kScatter)
       return lower_scatter(program, step);
     if (step.outputs.size() != 1)

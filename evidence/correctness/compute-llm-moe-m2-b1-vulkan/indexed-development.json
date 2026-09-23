@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "task": "M2-B1 Vulkan mature indexed mutation development checkpoint",
+  "date": "2026-09-23",
+  "baseline": "1580e386fbd26f015b809de9fb4208b2e7761a2a",
+  "candidate": "WORKTREE",
+  "machine": "W1-WIN",
+  "configuration": "Release/shared/WERROR, HYLE_COMPUTE_VULKAN=ON",
+  "provider": "pinned ggml Vulkan GGML_OP_GET_ROWS_BACK",
+  "admitted": [
+    "Scatter kAdd for dense F32/F16/BF16 with I32 indices",
+    "checked and unchecked Direct/Graph",
+    "duplicate indices, middle axis, multidimensional and empty index domains"
+  ],
+  "verification": {
+    "incremental_build": "PASS",
+    "compute_route_vulkan": "118/118 PASS",
+    "graph_route_vulkan": "34/34 PASS",
+    "selected_vulkan_factors": "9/9 CTest PASS",
+    "selected_elapsed_seconds": 136.67,
+    "masm_composition_seconds": 109.43,
+    "ordinary_checked_add_managed_regions": 1,
+    "loc_self_check": "PASS"
+  },
+  "corrections": [
+    "copy TensorDesc values before temporary-value vector growth invalidates references",
+    "resource rejection test now models the mature provider's independent buffers and no sort scratch",
+    "Windows build re-run through hyle-windows.ps1 so MSVC include environment is present"
+  ],
+  "not_run": [
+    "Air applicability",
+    "final B1 source/static/shared delivery",
+    "final selected gates",
+    "P1"
+  ],
+  "verdict": "DEVELOPMENT_PASS",
+  "full_B1_verdict": "INCONCLUSIVE",
+  "performance_samples": 0,
+  "new_complete_requirement_cells": 0,
+  "loc": {
+    "compute_graph_implementation": 57740,
+    "implementation_files": 249,
+    "policy": "scripts/loc-report.py --self-check; excludes tests and third-party source"
+  }
+}
