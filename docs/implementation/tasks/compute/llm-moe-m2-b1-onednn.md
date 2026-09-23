@@ -122,3 +122,25 @@ FP64稳定公式 oracle，沿用现有稳定函数测试的 `5e-6 * abs(expected
   两请求/重放/旧结果、资源平衡和现有错误路径；不修改冻结的后备数学。
 - 复用Windows单一活动构建，执行本卡预声明的定向测试；三交付/其余平台/必要 P1
   仍按稳定整批候选执行，未运行不得算通过。源码、原版探针和原始失败均随开发收据保存。
+
+### Windows Softplus 开发裁决
+
+产品`76176b4d39e94ca0745153cfbe9460976ca749aa`，tree
+`e512bd3ee13c124b46426a2dd0782228e5c39190`。原版参考实现现已绑定普通Direct和Graph；
+115,382个原样本再次经产品入口通过，标量/rank1..8、空张量、alias拒绝、双slot、变输入重放、
+两个发布结果保活、close拒绝和HYLE allocation平衡通过。Windows Release/shared/WERROR
+最终13/13 CTest通过，包含selector所选四个factor、5个公开头门及真实executor消费者。
+
+本次准入**仅F32 dense**。最初布局测试证明原版`ref:any`不接受rank1、stride=8的输入，
+现冷路径明确拒绝非dense，不物化隐式副本；这保留为成熟接入缺口，不把拒绝算成功覆盖。
+F16/BF16及奇数字节stride也不准入。保留最初未编译的旧迭代结束枚举名、非连续布局失败、
+测试夹具向空span传输的失败及各次修正日志；后者只修测试的空传输，没有改产品数值门。
+
+P0：新描述匹配只在准备发生；每次调用仍为一个原版primitive，O(N)数学由oneDNN负责。
+HYLE无新增热分配、数学kernel、输入转换或整张量拷贝，复用既有线程/stream/参数/scratch。
+vendor内部资源继续unknown/managed，不冒充零。当前未计时、不签P1或完整21行/256格。
+其余平台、插桩、source/static/shared旅程及整批性能仍为待验；两个owner继续AUDITED。
+
+[开发收据与全部原始记录](../../../../evidence/correctness/compute-llm-moe-m2-b1-onednn/README.md)
+保存原版与产品身份、selected/skipped理由和未运行门；不重跑旧Q2，源码/设计额度仍120/120分钟。
+统一脚本全Compute+Graph为**57,434实现行/249文件**，不含测试/vendor，self-check PASS。

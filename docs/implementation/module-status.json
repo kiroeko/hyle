@@ -365,7 +365,7 @@
       "module": "compute_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select已通过Windows普通Direct/Graph、15种storage/广播/stride/资源开发门；数值Cast/min/max/稳定函数和跨平台/三交付/P1未齐。旧Q2工程改判无效测量；源码审计120/120分钟，自研冻结，完整覆盖0。"
+      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select及固定ref:any的F32 dense Softplus已接普通Direct/Graph，Windows 13/13定向门通过；数值Cast/min/max、非连续/half稳定函数及跨平台/三交付/P1未齐。旧Q2改判无效测量，源码审计120/120分钟，自研冻结，完整覆盖0。"
     },
     {
       "module": "compute_provider_ggml",
@@ -377,7 +377,7 @@
       "module": "graph_provider_onednn",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select已通过Windows普通Direct/Graph、15种storage/广播/stride/资源开发门；数值Cast/min/max/稳定函数和跨平台/三交付/P1未齐。旧Q2工程改判无效测量；源码审计120/120分钟，自研冻结，完整覆盖0。"
+      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select及固定ref:any的F32 dense Softplus已接普通Direct/Graph，Windows 13/13定向门通过；数值Cast/min/max、非连续/half稳定函数及跨平台/三交付/P1未齐。旧Q2改判无效测量，源码审计120/120分钟，自研冻结，完整覆盖0。"
     },
     {
       "module": "compute_ops",
@@ -427,13 +427,13 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml与标准库成熟路径、任意轴Gather/一般广播/指定轴归约及空identity已通过Windows开发验证；Scatter/稳定激活/全mask等域及跨平台/三交付/P1仍未完成。无新增完整覆盖，自研冻结，旧oneDNN Q2已按用户决定改判无效测量，不再阻塞接入。"
+      "summary": "M2-B1 CPU AUDITED：ggml/标准库成熟路径、任意轴Gather/广播/归约及oneDNN Copy/Select/F32 dense Softplus已通过Windows开发门；Scatter/half稳定激活/全mask等域与跨平台/三交付/P1未齐。新完整覆盖0，自研冻结，旧oneDNN Q2无效测量不再阻塞。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml region、标准库叶程序、L2及分组均值/广播/方差组合已通过Windows开发验证，包含中间值/双slot/无热HYLE分配；21行完整门与跨平台/三交付/P1仍未完成。自研冻结，旧oneDNN Q2已按用户决定改判无效测量，不再阻塞接入。"
+      "summary": "M2-B1 CPU AUDITED：ggml region、标准库叶程序、L2/分组均值组合及oneDNN稳定Softplus→Select片段已通过Windows开发门，含双发布结果/双slot/重放和无热HYLE分配；21行完整门与跨平台/三交付/P1待验。自研冻结，旧Q2无效测量不再阻塞。"
     },
     {
       "module": "compute_provider_cublas",

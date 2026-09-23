@@ -696,8 +696,13 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 
 实现用原版oneDNN字节primitive描述存储，无浮点转换、预先展开广播或HYLE数学kernel。
 每个请求复用上述stream/argument handles与caller scratch；managed replay、vendor资源
-未知项和失败退休语义保持。当前这两个映射均要求输出不与输入重叠。Windows开发验证已
-通过；完整平台/三交付/成本资格仍按任务卡验收，min/max、稳定函数及数值Cast尚未由本批绑定。
+未知项和失败退休语义保持。当前这两个映射均要求输出不与输入重叠。
+
+`Unary{UnaryKind::kSoftplus}` 的 F32 dense 标量/rank1..8/空张量也已接入普通CPU入口及
+Graph叶程序桥接。准备时固定匹配原版 `ref:any`：该版本默认JIT的小负值尾部不符合稳定精度
+合同，因此不用于此域。执行不搜索或计时；输出不能与输入重叠。非连续布局、F16/BF16尚未由
+这条成熟映射支持，准备时明确拒绝。Windows开发验证已通过；完整平台/三交付/成本资格仍按
+任务卡验收，min/max及数值Cast的其余合格映射尚待完成。
 
 ### ggml CPU 接入检查点
 

@@ -1,0 +1,312 @@
+{
+  "schema": 1,
+  "card": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
+  "checkpoint": "original oneDNN stable F32 dense Softplus",
+  "candidate": "76176b4d39e94ca0745153cfbe9460976ca749aa",
+  "tree": "e512bd3ee13c124b46426a2dd0782228e5c39190",
+  "baseline": "9e196d37",
+  "owner_state": "AUDITED",
+  "environment": {
+    "candidate": "76176b4d39e94ca0745153cfbe9460976ca749aa",
+    "tree": "e512bd3ee13c124b46426a2dd0782228e5c39190",
+    "machine": {
+      "os": "Windows 11",
+      "cpu": "Intel Core i9-13900K",
+      "cores": 24,
+      "logical_processors": 32,
+      "toolchain": "MSVC 19.50.35728.0 / 14.50.35717",
+      "build": "Release/shared/WERROR"
+    },
+    "build_directory": "C:/hv/m2od",
+    "build_parallel": 2,
+    "test_parallel": 1,
+    "uac_or_power_changes": false,
+    "dll_adjacent": true,
+    "artifacts": [
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_compute_ops_test.exe",
+        "bytes": 554496,
+        "sha256": "80291558353658c351bf85c3b26df4c2c59dc4faadaac7f7ba7c0c72cd2dbee6"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_compute_provider_onednn_test.exe",
+        "bytes": 613888,
+        "sha256": "7ccb49cc69a68b1c76f4a72785524a22b0d12f4019fc6374aeb4ad4f9ffc30d7"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_compute_provider_onednn_composition_test.exe",
+        "bytes": 302592,
+        "sha256": "a4447cbc6efdbab938b8d234777aadfcc6289551374cbed585eaf48f780317b3"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_compute_provider_onednn_graph_test.exe",
+        "bytes": 325632,
+        "sha256": "a74e0ba4940f35e9d53e0f77b64790e233b93f22f173bbe25a656d8b707bbf49"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_graph_provider_onednn_test.exe",
+        "bytes": 518144,
+        "sha256": "8f142b5554aa91224abbf04a7479a45d4c700c08fdbd012a29743b63af273ca8"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_compute_route_cpu_test.exe",
+        "bytes": 390656,
+        "sha256": "f2aa2ef9cd1f486acc601ff0985584b1e45f871c5ab1eac39757e258d0ec597c"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_graph_route_cpu_test.exe",
+        "bytes": 662528,
+        "sha256": "b82fdad1eeca63552cd9ff816b09f7436b134cb600bca2e5452653985f0cc113"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_graph_route_cpu_cpu_executor_test.exe",
+        "bytes": 43520,
+        "sha256": "f3edd398f46e71578015d7279d90d6e36f1e3de9a3e457916eaf68a3b26f53f4"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\hyle_compute_provider_onednn.dll",
+        "bytes": 16673792,
+        "sha256": "841dc1b8ffc6645f6a153863458cff5794010c828eddcbcc9e4ef8d77edd24aa"
+      },
+      {
+        "path": "C:\\hv\\m2od\\bin\\dnnl.lib",
+        "bytes": 835085894,
+        "sha256": "469b2612ed924152dd95bea28df4ec97ecb6e6bf5321b4fa57d2915523c9639a"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\concrt140.dll",
+        "bytes": 321696,
+        "sha256": "b2faf3b85b23c840b654e57d5497a0ad31acd02fb01856cad4725a1715d5f78e"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\msvcp140.dll",
+        "bytes": 553552,
+        "sha256": "def46aa6a8f72f27bafac0c43334419486a4d1dcdb6c479a8ef7034b3e1fa4cb"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\msvcp140_1.dll",
+        "bytes": 35488,
+        "sha256": "2dd670f874562fbdca5b022df1943d70a57ba91fde559280e3a1daebe4db2380"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\msvcp140_2.dll",
+        "bytes": 278608,
+        "sha256": "1d60da3ac2b06482912ca852fa7047436e6e474b4cfffa3bf77f4598cfbf454c"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\msvcp140_atomic_wait.dll",
+        "bytes": 48800,
+        "sha256": "e7963645e0d1db08e300614d4c5fa7194bd8173e9ab7a5558859e6b232ed3241"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\msvcp140_codecvt_ids.dll",
+        "bytes": 31392,
+        "sha256": "ae8d922b00cdd93e3ebecc37beb46c800f383ebdeb9f9e5b84e04a72428b6fb3"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\qualify.exe",
+        "bytes": 16579072,
+        "sha256": "e358ce1d728a30ffc769b4aa5e65c36a167e8dbdf2c9b9d1f5e5bf56b7fb0e9c"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\qualify.obj",
+        "bytes": 110687,
+        "sha256": "64d1981769f4eb1ff279d5fc765ced75ffeb7a2e496c17cd20cb458dc07b7261"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\vccorlib140.dll",
+        "bytes": 350880,
+        "sha256": "6b8d8a76c3e6664293407553650e60b94df9aaafc7c92057ea83032bd228e44f"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\vcruntime140.dll",
+        "bytes": 123472,
+        "sha256": "184146852727a9db4eea06178716bec3cdbb1015c911f6b0f915b184ad7775b2"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\vcruntime140_1.dll",
+        "bytes": 47264,
+        "sha256": "e6bfb3662ab4b1969a73441dbe35c96d51441b6bff8cf1fe7430bd5b246ca605"
+      },
+      {
+        "path": ".scratch\\validation\\m2-b1-onednn-softplus\\vcruntime140_threads.dll",
+        "bytes": 37456,
+        "sha256": "a6222020b500a9a86b36e040c2dbd0e459716db1bf2810a11cd7512ea9b8d89b"
+      }
+    ]
+  },
+  "onednn": {
+    "version": "3.13.2",
+    "revision": "71094df45190",
+    "runtime": "THREADPOOL",
+    "graph_api": "OFF",
+    "primitive": "eltwise_soft_relu(alpha=1, beta=0)",
+    "fixed_implementation": "ref:any",
+    "fpmath": "strict"
+  },
+  "qualification": {
+    "timing": "NOT_RUN",
+    "reference": "independent FP64 stable log1p(exp(x)) formula",
+    "tolerance": "existing stable gate: 5e-6 * abs(expected) + 1e-43; class/Inf separately",
+    "samples": "extrema/NaN/Inf/signed zero, [-120,120] step 1/64, 100003 deterministic raw F32 patterns",
+    "original_results": [
+      {
+        "implementation": "jit:avx2",
+        "samples": 115382,
+        "mismatches": 6999,
+        "special_mismatches": 0,
+        "max_abs": 7.62939453125e-06,
+        "max_rel_normal": 4.5637741910596164e+32,
+        "first_index": 2,
+        "actual": "0",
+        "expected": "8.1940126239905147e-40"
+      },
+      {
+        "implementation": "jit:avx",
+        "samples": 115382,
+        "mismatches": 6995,
+        "special_mismatches": 0,
+        "max_abs": 7.62939453125e-06,
+        "max_rel_normal": 4.5637741910596164e+32,
+        "first_index": 2,
+        "actual": "0",
+        "expected": "8.1940126239905147e-40"
+      },
+      {
+        "implementation": "jit:sse41",
+        "samples": 115382,
+        "mismatches": 6995,
+        "special_mismatches": 0,
+        "max_abs": 7.62939453125e-06,
+        "max_rel_normal": 4.5637741910596164e+32,
+        "first_index": 2,
+        "actual": "0",
+        "expected": "8.1940126239905147e-40"
+      },
+      {
+        "implementation": "ref:any",
+        "samples": 115382,
+        "mismatches": 0,
+        "special_mismatches": 0,
+        "max_abs": 5.098172071171803e-07,
+        "max_rel_normal": 1.4214754544977513e-07,
+        "first_index": 0,
+        "actual": "0",
+        "expected": "0"
+      }
+    ],
+    "rule": "cold name match only; absent qualified implementation is Unsupported; no submit-time selection"
+  },
+  "validation": {
+    "ctest": {
+      "passed": 13,
+      "total": 13,
+      "header_gates": 5,
+      "gtest_cases": 121,
+      "standalone_consumers": 3
+    },
+    "gtest_counts": {
+      "compute_provider_onednn": 29,
+      "compute_provider_onednn_consumers": 2,
+      "graph_provider_onednn": 20,
+      "compute_ops": 43,
+      "compute_route_cpu": 9,
+      "graph_route_cpu": 18
+    },
+    "scope": [
+      "115382 independent numeric samples through the product provider",
+      "dense scalar/rank1..8 and empty tensors; explicit non-dense/half/odd-stride refusal",
+      "ordinary Direct factory binds oneDNN without caller provider ordering",
+      "Graph Softplus to Select, two published values, two slots, changing payload replay",
+      "retained prior results, alias refusal before writes, owner close refusal",
+      "no hot HYLE allocation/reallocation, HYLE allocator balanced after teardown",
+      "existing original normalization/MatMul region, executor and failure consumers"
+    ],
+    "maintenance": {
+      "docs": "PASS",
+      "closure": "PASS"
+    },
+    "closure_previous_ref": "76176b4d39e94ca0745153cfbe9460976ca749aa",
+    "selected": {
+      "factors": [
+        "compute_provider_onednn",
+        "compute_route_cpu",
+        "graph_provider_onednn",
+        "graph_route_cpu"
+      ],
+      "selected_gate_count": 7,
+      "skipped_gate_count": 125,
+      "configure_and_factors": "PASS"
+    }
+  },
+  "retained_failures": [
+    {
+      "candidate": "d6cb1fb8",
+      "log": "windows-build.log",
+      "cause": "old descriptor iterator end enum name; corrected to pinned dnnl_last_impl_reached"
+    },
+    {
+      "candidate": "a93c1b6e",
+      "log": "windows-ctest-initial-full.log",
+      "cause": "original ref:any rejects rank1 stride=8 input; constrain admission to dense, gap retained"
+    },
+    {
+      "candidate": "9d7a6fbc",
+      "log": "windows-ctest-layout-full.log",
+      "cause": "fixture requested host transfer with empty/null span; skip empty fixture transfers only"
+    }
+  ],
+  "cost_contract": [
+    "O(rank + vendor implementation count) cold descriptor matching, no timing",
+    "one original O(N) primitive per accepted request, existing stream/handles/scratch/executor",
+    "no new HYLE math, hot allocation, whole tensor copies or type conversion",
+    "vendor private resource/allocation remains unknown and managed, never counted as zero",
+    "no self-written operator comparison or performance claim"
+  ],
+  "pending": [
+    "remaining B1 mature domains and independent full-model numeric profiles",
+    "qualified non-dense and F16/BF16 Softplus, numerical Cast/min/max compositions",
+    "WSL/Air/Mini applicable new-domain journeys and host instrumentation",
+    "source/static/shared relocated consumer acceptance for the stable batch",
+    "complete selected set inherited from earlier vendor dependency declaration",
+    "qualified P1 on immutable stable batch; old Q2 is INVALID_MEASUREMENT and will not rerun"
+  ],
+  "full_B1_aggregate": "INCONCLUSIVE",
+  "new_complete_matrix_cells": 0,
+  "p1": "NOT_RUN",
+  "hyle_numerical_kernels_added": 0,
+  "source_design_budget_minutes": {
+    "used": 120,
+    "limit": 120,
+    "qualification_execution_and_implementation": "separate, no new library research"
+  },
+  "loc": {
+    "id": "module",
+    "label": "module implementation (compute-graph)",
+    "code": 57434,
+    "files": 249,
+    "selected_files": 283,
+    "paths": [
+      "include/hyle/compute*",
+      "include/hyle/graph*",
+      "src/compute*",
+      "src/graph*"
+    ],
+    "languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ]
+  },
+  "loc_self_check": "pass",
+  "raw_archive": {
+    "path": "softplus-development-raw.zip",
+    "files": 24,
+    "bytes": 84564,
+    "sha256": "cff5108901c1f868fc936b1eae60fe6714ec2476891d2653fb09c4a3a0274c79",
+    "integrity": "CRC and every manifest SHA256 verified"
+  }
+}
