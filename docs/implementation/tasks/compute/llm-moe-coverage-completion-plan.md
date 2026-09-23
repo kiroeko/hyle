@@ -347,6 +347,9 @@ Scatter浮点add按[M2-S公共数值裁决](llm-moe-m2-scatter-numerical-semanti
 
 ### M3：按模型计算链验收，核对真实剩余覆盖
 
+当前施工边界见 [M3 四路线真实模型计算链验收卡](llm-moe-m3-model-chain-acceptance.md)。该卡先审计
+六组共享测试消费者与有限接入缺陷，转为 `AUDITED` 后才允许修改产品或回填覆盖结论。
+
 下列是消费分组，可随 M2 对应能力接入顺序执行；不是新的自实现队列：
 
 | ID | 需求域 | 真实验收与产物 |
