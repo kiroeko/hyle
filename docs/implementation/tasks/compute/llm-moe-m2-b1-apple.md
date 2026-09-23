@@ -2,6 +2,11 @@
 
 ## Closure card
 
+**2026-09-23批量执行补充**：本卡21行作为一个Apple路线批次收口；既有MLX能力族共用同一
+候选和表驱动验收，不再逐算子开增量卡或重复三交付/P1。开发期只跑受影响门，稳定后集中一次
+完成Air/Mini、host插桩、Windows/WSL OFF、三交付、final selected与必要P1。完成本卡只代表
+Apple B1；整个M2完成后暂停，不进入M3。
+
 - component / owner：`compute_route_apple`；`/root`。普通Graph是直接消费者，当前没有已证实需要
   修改`graph_route_apple`产品的事实，不自动重开它或ggml Metal/runtime。
 - baseline：`50189a2b`，Windows canonical，工作树干净。当前阶段SCOPED，先审计后固定有限FIX。
@@ -25,7 +30,7 @@
   包括转换、同步、融合、checked终态与结果寿命。5%非劣门；A/A和双顺序先资格，15对起，
   合法总上限31对。不测试冻结实现的输赢，Mini不代签Air Formal profile。
 - stop：21行及全部适用门完成后关闭；不兼容域保留原版反例与具名成熟后备责任，不缩小分母。
-  不把接口未接通改名为算法缺口。完整goal继续；M5开始前暂停等待用户。
+  不把接口未接通改名为算法缺口。完整M2继续；M2完成后先暂停汇报，恢复后仍保留M5前停止点。
 
 ## 待审有限改动集
 

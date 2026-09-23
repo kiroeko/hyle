@@ -2,6 +2,10 @@
 
 ## Closure card
 
+**2026-09-23批量执行补充**：本卡D1–D3作为一个oneDNN能力族批次收口；Select/比较、
+reorder、min/max与稳定函数共用一次资格、Direct/Graph接线和集中交付/P1，不再逐primitive
+建立施工循环。完成后回填CPU B1账本；整个M2完成后暂停，不进入M3。
+
 - component / owner：`compute_provider_onednn`、`graph_provider_onednn`；`/root`。
 - baseline：`625ae14c`，Windows canonical，工作树干净。SCOPED基线；当前已进入下述AUDITED有限实施。
 - trigger：2026-09-21用户明确批准将新能力接入与旧Q2资格失败分开，要求后续查清同实现差距。
@@ -25,7 +29,8 @@
 - 性能：P0全调用账单；新能力正确性/API固定后，仅对不可变候选按父卡5%门及原仪器做必要
   同原版成熟调用验收。旧Q2不重跑、不继承PASS；新qualification失败即保留事实按预算裁决。
 - stop：本卡有限合格域及适用门完成后关闭；CPU父卡21行与四路线256格分母保持。
-  用户要求的[后续A/A原因调查](llm-moe-onednn-aa-cause-followup.md)单列，M5前暂停不变。
+  用户要求的[后续A/A原因调查](llm-moe-onednn-aa-cause-followup.md)单列。M2完成后先暂停汇报；
+  恢复后仍保留M5前停止点。
 
 ## 有限 FIX
 
