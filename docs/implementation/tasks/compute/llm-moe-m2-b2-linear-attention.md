@@ -188,3 +188,19 @@ baseline 和合法 reopen trigger。本次恢复不重开组合 matcher，不改
 两次 replay；反偏置纵切是精确格式拒绝、设备原版 `supports` 拒绝、close/failure 与旧结果 lease。
 开发期按路线集中构建和定向正确性；候选稳定后才集中执行 manifest 的交付、跨环境、P0/P1 和 selected
 门。总调查/纠正预算继续使用本卡原 180 分钟上限，不为本次状态恢复新增研究预算。
+
+### 恢复审计（AUDITED）
+
+按新 baseline 复核实际 lowering 后，有限修改位置固定如下：
+
+| owner | 已存在的成熟入口 | 本轮有限 glue | 明确 residual |
+|---|---|---|---|
+| `compute_provider_ggml_cuda` | ggml CUDA graph、`mul_mat`、`rope_ext`、flash attention、Hadamard hint | 在同一个私有 tensor recipe 加入 F05/F08，并复用已接 F07；只在冷 `supports` 接受原版真实支持域 | 三种公共 Q4/Q8 格式没有与当前 recipe 等价的无损 native carrier；不转换成 A8 |
+| `compute_route_apple` | MLX `matmul`、`quantized_matmul`、fast SDPA、RoPE/Hadamard 原语与 compiled region | 扩大 typed lowering 到 half/batch 和可精确表达的 F07/F08；沿用一个 compiled region、array/stream/completion owner | 公共格式与 MLX packing/group 不相等的 F06 行拒绝 |
+| `compute_provider_ggml_vulkan` | ggml Vulkan managed graph 的 `mul_mat`、flash attention、RoPE 与量化 tensor types | 扩大 managed recipe 资格和原版 lowering；设备最终仍由 `ggml_backend_supports_op` 裁决 | Q4_0/Q4_1/Q8_0 与公共 S128/A64/B32 不同的行，以及 MoltenVK 原版拒绝域 |
+| `compute_route_vulkan` | 已有 managed-region batching、native fence/completion 和 IREE 标准补位 | 只让上述 B2 operation 进入现有最大 region；不新增 shader 或 CPU payload fallback | IREE 无精确 B2 量化/attention 制品时不代签 |
+
+CUDA/Apple/Vulkan 的 Graph owner 已保持 `AUDITED`，其改动只限现有 region 选择和普通入口测试。
+`compute_route_cuda`、`compute_provider_cublas`、Marlin 与 FlashInfer 继续复用现有合格实现；没有新事实要求
+改动其数学或 Provider owner。至此恢复审计没有改变公共 API、route identity、常态 metadata 或执行期
+选择模型，四个恢复 owner 可以进入有限产品施工。

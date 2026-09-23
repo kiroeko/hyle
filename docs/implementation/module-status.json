@@ -477,9 +477,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
+      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
     },
     {
       "module": "graph_route_apple",
@@ -489,9 +489,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
+      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
     },
     {
       "module": "graph_route_vulkan",
@@ -501,9 +501,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
+      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
     },
     {
       "module": "compute_ggml_runtime",
@@ -518,9 +518,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b2-linear-attention.md",
-      "summary": "M2-B2 mature-provider lowering resumed after the independent route-rule closure; scope is limited to audited B2 CUDA/Apple/Vulkan native regions."
+      "summary": "M2-B2 mature-provider lowering AUDITED at 7efa13c2: only fixed CUDA/Apple/Vulkan native region glue and exact residual handling are authorized."
     },
     {
       "module": "graph_provider_ggml_cuda",
