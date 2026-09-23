@@ -22,6 +22,8 @@
 
 当前公共工具修复事实：
 
+- [Provider 批次治理 v1](project/provider-batch-governance-v1.md)：为 M2 B2--B6 固定 Provider 能力
+  超集、稳定路线 profile、Git 增量同步、证据复用与单一终局收据；不重写 selector/closure/P1 核心；
 - [Native route 平台适用性](build/validation-native-route-platforms-v1.md)：Apple/CUDA 的真实 ON 测试与跨平台 OFF 边界；
 - [Objective-C++ 实现 LOC 计入](build/loc-objective-cpp-accounting-v1.md)：修正 `.mm` 正式实现的语言范围遗漏；
 - [GLSL 实现 LOC 计入](build/loc-glsl-accounting-v1.md)：修正正式 compute shader 的语言范围遗漏；
