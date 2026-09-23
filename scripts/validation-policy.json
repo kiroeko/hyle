@@ -117,6 +117,10 @@
       "tests": ["tests/tooling/shared_export_hygiene_test.py"]
     },
     {
+      "paths": ["scripts/provider-batch.py", "scripts/provider-batch-schema-v1.json", "docs/implementation/tasks/compute/llm-moe-m2-provider-batch.json", "tests/tooling/provider_batch_test.py"],
+      "tests": ["tests/tooling/provider_batch_test.py"]
+    },
+    {
       "paths": ["scripts/hyle_perf/*", "scripts/hyle-perf.py", "scripts/perf-*.json", "scripts/bench-stat.py", "tests/tooling/*perf*", "tests/tooling/bench_stat_parser_test.py"],
       "tests": ["tests/tooling/bench_stat_parser_test.py", "tests/tooling/perf_machine_test.py", "tests/tooling/hyle_perf_core_test.py", "tests/tooling/hyle_perf_nanobench_test.py", "tests/tooling/hyle_perf_runner_test.py", "tests/tooling/hyle_perf_controls_test.py", "tests/tooling/hyle_perf_evidence_runner_test.py", "tests/tooling/hyle_perf_raw_replay_test.py", "tests/tooling/hyle_perf_build_replay_test.py"]
     }

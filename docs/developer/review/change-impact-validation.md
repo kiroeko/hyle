@@ -68,6 +68,25 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 `product_authorization` 会列出本次产品 owner、最终状态和逐 commit 违规。合并提交只对与所有 parent
 都不同的冲突解决结果增加一次检查；普通分支产品 commit 仍按其真实 parent 的 registry 状态判断。
 
+## Provider 批次编排层
+
+大批成熟 Provider 接线可用 [`provider-batch.py`](../../../scripts/provider-batch.py) 与 versioned
+manifest 固定 B2--B6 的 Provider feature 超集、路线、系统、三交付 profile、factor、test label、
+适用性和 residual。这个批次层只减少重复配置和状态抄写，不是第二套验证事实：
+
+- `plan` 固定 artifact identity，重型 build 并行度为2，test 为1，并按 CPU→CUDA→Apple→Vulkan
+  顺序给出 argv 模板；它不启动 CMake、CTest 或 P1；
+- `bundle` 只从干净 Windows canonical 工作树的不可变 commit 生成相对 baseline 的 Git 增量，远端
+  已有 baseline 后 fetch 精确 candidate；不用 tar 覆盖源码和重置整棵 checkout 的时间戳；
+- 每组实际 gate 仍由本页 selector `plan/run` 选择和签署。批次 `finalize` 只接受 digest 匹配、
+  candidate/tree 匹配且 verdict 为 PASS 的 selector result；其中 gate 必须为实际 `PASS` 或 selector
+  签署的 `REUSED`；
+- manifest 中明确不适用的组写 `SKIPPED` 和原因，残差保持 `UNPROVEN`。批次 terminal 不能直接更新
+  覆盖矩阵，也不能把 skip、编入 Provider 或尚未运行的门写成 PASS。
+
+工具和 M2 当前 manifest 的日常命令见[维护脚本](../../../scripts/README.md)。新增批次只扩 manifest
+和当前 owner 卡；不复制 selector receipt key、lease、P1、公用 closure 状态机或性能统计。
+
 编译所选测试可能构建依赖 artifact，但依赖不因此成为额外测试根。只构建
 `hyle_<factor>_tests`，CTest 精确匹配 factor label；独立选择 `headers`，不调用全量 `hyle_tests`。
 没有独立 header suite 的因子明确显示限制；consumer/delivery 编译不冒充逐头 self-containment。

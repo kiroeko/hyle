@@ -15,6 +15,7 @@
 | 校验文档 | `check-docs.py` | 四类目录、相对链接、退役 FFI 和从 `docs/README.md` 可达性 |
 | 检查 shared 导出 | `check-shared-export-hygiene.py` | 扫描实际 PE/ELF/Mach-O artifact，拒绝意外 HYLE C、mimalloc、oneDNN 与 raw fcontext 导出；不冒充 C++ ABI 白名单 |
 | 统计代码 | `loc-report.py` | 全库、自实现不含测试、单 factor 或 registry 状态集合；支持 immutable commit |
+| 编排成熟 Provider 批次 | `provider-batch.py validate/plan/bundle/finalize` | 固定批次 feature/profile，低并行生成计划，以 Git 增量同步不可变候选，并汇总 selector 已签结果；不执行构建或自行判定 gate |
 | Unix 工具链入口 | `hyle-unix.sh` | 选择受支持 GCC/Clang，拒绝半配置环境，不安装系统工具 |
 | Windows 工具链入口 | `hyle-windows.ps1` | 选择已安装 VS/SDK，支持独占 `-BinaryDir`、factor 与产品 smoke |
 
@@ -27,6 +28,20 @@ python scripts/check-module-closure.py --write-status
 python scripts/check-docs.py
 python scripts/loc-report.py --registry-state CLOSED --commit HEAD --self-check
 ```
+
+M2 成熟 Provider 批次先校验并生成不可变候选计划；跨机只传相对 baseline 的 Git bundle：
+
+```text
+python scripts/provider-batch.py validate --manifest docs/implementation/tasks/compute/llm-moe-m2-provider-batch.json
+python scripts/provider-batch.py plan --manifest docs/implementation/tasks/compute/llm-moe-m2-provider-batch.json --candidate <candidate-commit> --output .scratch/provider-batch/plan.json
+python scripts/provider-batch.py bundle --manifest docs/implementation/tasks/compute/llm-moe-m2-provider-batch.json --candidate <candidate-commit> --output <outside-worktree>/candidate.bundle
+python scripts/provider-batch.py finalize --manifest docs/implementation/tasks/compute/llm-moe-m2-provider-batch.json --plan .scratch/provider-batch/plan.json --ledger .scratch/provider-batch/ledger.json --output .scratch/provider-batch/terminal.json
+```
+
+`plan` 和 `bundle` 只接受已提交且与工作树 manifest 语义一致的候选。远端必须已有 manifest 的
+baseline，再 fetch bundle 中的 `refs/hyle-batch/candidate`；`finalize` 只消费 selector 结果文件及其
+SHA256，不复制 PASS/REUSED 判定。manifest 的结构入口是
+[`provider-batch-schema-v1.json`](provider-batch-schema-v1.json)，跨字段语义由工具校验。
 
 只有产品候选提交后才执行 selector 的 native gates；精确 context、receipt cache 和 P1 card 格式见
 [按变更影响验证](../docs/developer/review/change-impact-validation.md)。

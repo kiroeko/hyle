@@ -1,0 +1,442 @@
+{
+  "schema_version": 1,
+  "id": "llm-moe-m2-b2-b6",
+  "description": "Stable Provider feature and build profiles shared by M2 B2 through B6. COMPILED_ONLY never means bound or covered.",
+  "baseline": "4d2805feb9982a9db06320f4900eed5f55f2fccc",
+  "heavy_parallelism": 2,
+  "heavy_route_order": [
+    "cpu",
+    "cuda",
+    "apple",
+    "vulkan"
+  ],
+  "batches": [
+    {
+      "id": "B2",
+      "requirements": [
+        "F05.1",
+        "F05.2",
+        "F05.3",
+        "F05.4",
+        "F06.1",
+        "F06.2",
+        "F06.3",
+        "F07.1",
+        "F07.2",
+        "F07.3",
+        "F08.1",
+        "F08.2",
+        "F08.3"
+      ],
+      "status": "READY_TO_SCOPE"
+    },
+    {
+      "id": "B3",
+      "requirements": [
+        "F09.1",
+        "F09.2",
+        "F10.1",
+        "F10.2",
+        "F11.1",
+        "F11.2"
+      ],
+      "status": "QUEUED_BY_PLAN"
+    },
+    {
+      "id": "B4",
+      "requirements": [
+        "F12.1",
+        "F12.2",
+        "F12.3",
+        "F13.1",
+        "F13.2",
+        "F13.3",
+        "F14.1",
+        "F14.2",
+        "F14.3",
+        "F14.4",
+        "F14.5"
+      ],
+      "status": "QUEUED_BY_PLAN"
+    },
+    {
+      "id": "B5",
+      "requirements": [
+        "F15.1",
+        "F15.2",
+        "F16.1",
+        "F16.2",
+        "F16.3",
+        "F17.1",
+        "F17.2",
+        "F17.3"
+      ],
+      "status": "QUEUED_BY_PLAN"
+    },
+    {
+      "id": "B6",
+      "requirements": [
+        "F18.1",
+        "F18.2",
+        "F18.3",
+        "F18.4",
+        "F18.5"
+      ],
+      "status": "QUEUED_BY_PLAN"
+    }
+  ],
+  "provider_features": [
+    {
+      "id": "ggml-456172ec",
+      "pin": "456172ec733a135778adcd32d00e576a58232e45",
+      "build_features": [
+        "backend-cpu",
+        "backend-cuda",
+        "backend-metal",
+        "backend-vulkan",
+        "default-operation-set"
+      ],
+      "batches": [
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6"
+      ],
+      "claim": "COMPILED_ONLY",
+      "notes": "Each route keeps its native backend and upstream capability checks; the build does not claim every requirement is accepted."
+    },
+    {
+      "id": "onednn-v3.13.2",
+      "pin": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+      "build_features": [
+        "BINARY",
+        "ELTWISE",
+        "LAYER_NORMALIZATION",
+        "MATMUL",
+        "REORDER"
+      ],
+      "batches": [
+        "B2",
+        "B4",
+        "B6"
+      ],
+      "claim": "COMPILED_ONLY",
+      "notes": "This is the fixed ONEDNN_ENABLE_PRIMITIVE superset; later batches must not reconfigure it per operation."
+    },
+    {
+      "id": "mlx-0.32.2",
+      "pin": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "build_features": [
+        "compiled-array-regions",
+        "metal-backend",
+        "public-cpp-operations",
+        "quantized-matmul"
+      ],
+      "batches": [
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6"
+      ],
+      "claim": "COMPILED_ONLY"
+    },
+    {
+      "id": "cuda-mature-suite",
+      "pin": "cuda-13.3+cccl-cublaslt-marlin-sglang-flashinfer-locked",
+      "build_features": [
+        "cccl",
+        "cublaslt",
+        "flashinfer-0.6.18",
+        "marlin-51918e252af4",
+        "sglang-06992c92ad44"
+      ],
+      "batches": [
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6"
+      ],
+      "claim": "COMPILED_ONLY",
+      "notes": "Windows omits the Linux-only FlashInfer factor and uses the admitted ggml CUDA fallback where required."
+    },
+    {
+      "id": "iree-vulkan-3.12.0rc20260919",
+      "pin": "6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+      "build_features": [
+        "native-vulkan-runtime",
+        "offline-standard-op-region",
+        "spirv-type-legalization"
+      ],
+      "batches": [
+        "B2",
+        "B6"
+      ],
+      "claim": "COMPILED_ONLY",
+      "notes": "Conditional admission remains requirement-specific on RTX 4070 and MoltenVK."
+    }
+  ],
+  "profiles": [
+    {
+      "id": "windows-source",
+      "route": "all",
+      "system": "Windows",
+      "delivery": "source",
+      "factors": [],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON"
+      },
+      "test_labels": [],
+      "sanitizer": "off",
+      "toolchain": "msvc-x64"
+    },
+    {
+      "id": "windows-cpu-shared",
+      "route": "cpu",
+      "system": "Windows",
+      "delivery": "shared",
+      "factors": [
+        "compute_provider_ggml",
+        "compute_provider_onednn",
+        "compute_route_cpu",
+        "graph_provider_onednn",
+        "graph_route_cpu"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "ON",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_ONEDNN": "ON",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "OFF"
+      },
+      "test_labels": [
+        "compute_provider_ggml",
+        "compute_provider_onednn",
+        "compute_route_cpu",
+        "graph_provider_onednn",
+        "graph_route_cpu"
+      ],
+      "sanitizer": "off",
+      "toolchain": "msvc-x64"
+    },
+    {
+      "id": "wsl-cpu-static",
+      "route": "cpu",
+      "system": "Linux",
+      "delivery": "static",
+      "factors": [
+        "compute_provider_ggml",
+        "compute_provider_onednn",
+        "compute_route_cpu",
+        "graph_provider_onednn",
+        "graph_route_cpu"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "ON",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_ONEDNN": "ON",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "ON"
+      },
+      "test_labels": [
+        "compute_provider_ggml",
+        "compute_provider_onednn",
+        "compute_route_cpu",
+        "graph_provider_onednn",
+        "graph_route_cpu"
+      ],
+      "sanitizer": "off",
+      "toolchain": "gcc14-x64"
+    },
+    {
+      "id": "windows-cuda-shared",
+      "route": "cuda",
+      "system": "Windows",
+      "delivery": "shared",
+      "factors": [
+        "compute_provider_cublas",
+        "compute_provider_cuda",
+        "compute_provider_ggml_cuda",
+        "compute_provider_marlin",
+        "compute_route_cuda",
+        "graph_provider_ggml_cuda",
+        "graph_route_cuda"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "ON",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "OFF"
+      },
+      "test_labels": [
+        "compute_provider_cublas",
+        "compute_provider_cuda",
+        "compute_provider_ggml_cuda",
+        "compute_provider_marlin",
+        "compute_route_cuda",
+        "graph_provider_ggml_cuda",
+        "graph_route_cuda"
+      ],
+      "sanitizer": "off",
+      "toolchain": "msvc-x64-cuda13.3"
+    },
+    {
+      "id": "wsl-cuda-static",
+      "route": "cuda",
+      "system": "Linux",
+      "delivery": "static",
+      "factors": [
+        "compute_provider_cublas",
+        "compute_provider_cuda",
+        "compute_provider_flashinfer",
+        "compute_provider_ggml_cuda",
+        "compute_provider_marlin",
+        "compute_route_cuda",
+        "graph_provider_ggml_cuda",
+        "graph_route_cuda"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "ON",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "ON"
+      },
+      "test_labels": [
+        "compute_provider_cublas",
+        "compute_provider_cuda",
+        "compute_provider_flashinfer",
+        "compute_provider_ggml_cuda",
+        "compute_provider_marlin",
+        "compute_route_cuda",
+        "graph_provider_ggml_cuda",
+        "graph_route_cuda"
+      ],
+      "sanitizer": "off",
+      "toolchain": "gcc14-x64-cuda13.3"
+    },
+    {
+      "id": "air-apple-shared",
+      "route": "apple",
+      "system": "Darwin",
+      "delivery": "shared",
+      "factors": [
+        "compute_provider_ggml_metal",
+        "compute_route_apple",
+        "graph_route_apple"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "ON",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "OFF"
+      },
+      "test_labels": [
+        "compute_provider_ggml_metal",
+        "compute_route_apple",
+        "graph_route_apple"
+      ],
+      "sanitizer": "off",
+      "toolchain": "appleclang-arm64"
+    },
+    {
+      "id": "mini-apple-static",
+      "route": "apple",
+      "system": "Darwin",
+      "delivery": "static",
+      "factors": [
+        "compute_provider_ggml_metal",
+        "compute_route_apple",
+        "graph_route_apple"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "ON",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "ON"
+      },
+      "test_labels": [
+        "compute_provider_ggml_metal",
+        "compute_route_apple",
+        "graph_route_apple"
+      ],
+      "sanitizer": "off",
+      "toolchain": "appleclang-arm64"
+    },
+    {
+      "id": "windows-vulkan-shared",
+      "route": "vulkan",
+      "system": "Windows",
+      "delivery": "shared",
+      "factors": [
+        "compute_provider_ggml_vulkan",
+        "compute_provider_iree_vulkan",
+        "compute_route_vulkan",
+        "graph_route_vulkan"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_VULKAN": "ON",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "OFF"
+      },
+      "test_labels": [
+        "compute_provider_ggml_vulkan",
+        "compute_provider_iree_vulkan",
+        "compute_route_vulkan",
+        "graph_route_vulkan"
+      ],
+      "sanitizer": "off",
+      "toolchain": "msvc-x64-vulkan1.4"
+    },
+    {
+      "id": "air-vulkan-static",
+      "route": "vulkan",
+      "system": "Darwin",
+      "delivery": "static",
+      "factors": [
+        "compute_provider_ggml_vulkan",
+        "compute_provider_iree_vulkan",
+        "compute_route_vulkan",
+        "graph_route_vulkan"
+      ],
+      "cmake_cache": {
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_CPU": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_VULKAN": "ON",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "ON"
+      },
+      "test_labels": [
+        "compute_provider_ggml_vulkan",
+        "compute_provider_iree_vulkan",
+        "compute_route_vulkan",
+        "graph_route_vulkan"
+      ],
+      "sanitizer": "off",
+      "toolchain": "appleclang-arm64-moltenvk"
+    }
+  ],
+  "gate_groups": [],
+  "residuals": []
+}

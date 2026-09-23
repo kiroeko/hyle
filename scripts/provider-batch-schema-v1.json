@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyle.dev/schema/provider-batch-v1.json",
+  "title": "HYLE mature Provider batch manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "baseline",
+    "heavy_parallelism",
+    "heavy_route_order",
+    "batches",
+    "provider_features",
+    "profiles",
+    "gate_groups",
+    "residuals"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "description": {"type": "string"},
+    "baseline": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "heavy_parallelism": {"const": 2},
+    "heavy_route_order": {"const": ["cpu", "cuda", "apple", "vulkan"]},
+    "batches": {"type": "array", "minItems": 5},
+    "provider_features": {"type": "array", "minItems": 1},
+    "profiles": {"type": "array", "minItems": 9},
+    "gate_groups": {"type": "array"},
+    "residuals": {"type": "array"}
+  },
+  "$comment": "The executable semantic validator is scripts/provider-batch.py; it enforces uniqueness, cross references, delivery coverage, applicability reasons and UNPROVEN residuals beyond this structural schema."
+}

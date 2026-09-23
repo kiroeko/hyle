@@ -8,6 +8,11 @@
 [Provider 映射](llm-moe-provider-map.json)为准。本页不把映射写成 PASS，也不授权任何 HYLE
 自实现数学。
 
+[M2 批次 manifest](llm-moe-m2-provider-batch.json)是本页的机器可验证投影：固定 B2--B6 的43行
+需求归属、成熟 Provider 编译超集、CPU/CUDA/Apple/Vulkan 的9个稳定 source/static/shared profile、
+低并行度和执行顺序。`COMPILED_ONLY` 只说明构建能力已声明，不能代签接线或覆盖。B2 审计时向同一
+manifest 增加 gate group 与 residual，不重新创建逐算子 profile。
+
 M2-B1 已于2026-09-23按[终局](llm-moe-m2-b1-terminal.md)结束。B2 必须先绑定当前 owner、
 baseline 和有限 FIX 表并进入 AUDITED，才能修改产品代码。B3--B6 同理，不因本页存在而提前施工。每个批次只有一张活动父卡；路线和
 Provider 是父卡内的批量接入单元，不为每个算子重复建卡、配置、构建或出具交付证据。
@@ -24,7 +29,8 @@ Provider 是父卡内的批量接入单元，不为每个算子重复建卡、�
   自实现凑覆盖，M3 汇总真实覆盖，M4 才能审计最小补缺。
 - 每条路线复用 B1 已建立的活动构建树、依赖缓存和环境 profile。一次增量构建覆盖本批全部产品
   改动；跨环境、host 插桩、source/static/shared、最终 selected 与必要 P1 在路线候选稳定后各
-  集中运行一次。未变接缝按 tree/contract/toolchain/machine 身份复用。
+  集中运行一次。未变接缝按 tree/contract/toolchain/machine 身份复用。Windows 提交后用 manifest
+  baseline 的 Git 增量 bundle 同步验证副本，不用 tar 覆盖 checkout 或破坏增量构建时间戳。
 - B2 启动时根据本页 B2--B6 的既定需求一次声明每个 Provider 的 M2 primitive/feature 超集；后续
   批次只增加 HYLE 映射，不逐批改变 vendor 编译选项。具体上游不允许裁剪或超集会显著增加交付
   负担时记录例外，但不能到每个算子才重新配置和冷编译 Provider。
