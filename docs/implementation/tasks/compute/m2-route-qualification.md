@@ -117,3 +117,22 @@ FP8/BF16/FP16 可由 dtype/format 条件表达，不伪装成 Q4/Q8 operation。
 引擎；它统一“一个规则是任意字段子集的合取”这件事，同时让四路线继续拥有原生 Environment、资源、
 程序和完成语义。除 CCCL 既有资格表达迁移外不改任何 Provider 支持域、数学、shape 或默认赢家。
 本专题期间继续暂停 M2-B2 的 Provider 算子接线和候选验证。
+
+## CANDIDATE freeze
+
+- product candidate：`a7b3910835eadf0c75f51554e6ed7b266b66bbd5`；tree
+  `0cfa13b01499273915351ee8e94b80b1167e421a`。
+- RQ1--RQ3：`compute` 交付 `RouteRule`、借用式 `RouteMatchInput` 和纯只读
+  `match_route_rule`。固定字段与 namespaced 原生属性可作任意稀疏合取；未知事实不满足具名条件，
+  非法层级、重复 ID、错型和非法范围确定拒绝。
+- RQ4：Direct 自定义 Provider 与 Graph region fixture 都在 proposal/compile 冷路径使用共同 matcher；
+  prepared artifact 的三次 replay 沿用既有计数断言，没有匹配器或模型/驱动判断进入 submit。
+- RQ5：CCCL 的 SM89、CUDA runtime/build Toolkit 13.3 和上游版本 pin 已迁移到 Context 创建时的一次
+  共同匹配；Context 仍只保存最终布尔资格，支持域与执行程序不变。
+- RQ6：架构文档明确共同层只统一资格合取和拒绝轴，Provider 继续拥有候选顺序、成熟 fallback、资源、
+  程序与完成语义。
+- P0：matcher 只遍历调用方借用的有限 span；无分配、锁、原子、系统调用、设备查询或计时。重复 ID
+  验证是冷路径的二次小循环；prepared submit 的对象布局、字段和分支没有变化。
+
+公开 API、匹配语义和消费者形状在该 commit 冻结，状态进入 `CANDIDATE`。后续只运行预声明验证、记录
+证据和作终局裁决；发现产品问题则退回 `AUDITED`。

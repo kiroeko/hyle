@@ -271,9 +271,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification.md",
-      "summary": "M2 组合路由资格表达 AUDITED：冻结平台/四路线、原生硬件与软件栈、Provider、模型和量化条件的稀疏冷匹配；共同层只判资格，Provider 保留优先级与执行。"
+      "candidate": "a7b3910835eadf0c75f51554e6ed7b266b66bbd5",
+      "summary": "M2 组合路由资格表达 CANDIDATE：共同稀疏冷匹配、Direct/Graph 消费者和 CCCL 实际迁移已冻结；等待候选验证与终局裁决。"
     },
     {
       "module": "graph",
@@ -449,9 +450,10 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification.md",
-      "summary": "M2 组合路由资格表达 AUDITED：仅迁移 CCCL 既有 SM89/CUDA 13.3/上游版本冷资格到共同稀疏规则；支持域、数学和 submit 保持不变。"
+      "candidate": "a7b3910835eadf0c75f51554e6ed7b266b66bbd5",
+      "summary": "M2 组合路由资格表达 CANDIDATE：CCCL 既有 SM89/CUDA 13.3/上游版本冷资格已迁移到共同规则；支持域、数学和 submit 保持不变。"
     },
     {
       "module": "compute_route_cuda",
