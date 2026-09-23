@@ -43,7 +43,6 @@ struct Program final {
 };
 
 const char *version() noexcept;
-bool qualified_version() noexcept;
 cudaError_t configure(Program *program) noexcept;
 cudaError_t submit(const Program &program, const void *input,
                    const void *index_input, void *values, void *indices,

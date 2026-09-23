@@ -7,6 +7,7 @@
 #include <new>
 
 #include "collectives.h"
+#include "hyle/compute/route_rule.h"
 #include "native_context.h"
 #include "provider_internal.h"
 
@@ -24,6 +25,12 @@ struct Prepared final {
 struct Invocation final {
   void *workspace = nullptr;
 };
+
+inline constexpr std::array kQualificationPredicates{
+    RouteAttributePredicate::number(route_attribute::kArchitectureMajor, 8),
+    RouteAttributePredicate::number(route_attribute::kArchitectureMinor, 9),
+    RouteAttributePredicate::number(route_attribute::kRuntimeVersion, 13030),
+    RouteAttributePredicate::number(route_attribute::kToolkitVersion, 13030)};
 
 ProviderRuntimeProperties
 runtime(const collectives::Program &program) noexcept {
@@ -144,7 +151,7 @@ Status describe(Operation operation, std::span<const TensorDesc> inputs,
   return Status::Ok();
 }
 
-Status create_context(const Provider &, Device device, void *backend,
+Status create_context(const Provider &provider, Device device, void *backend,
                       mem::AllocatorRef allocator, void **output) noexcept {
   *output = nullptr;
   if (device.backend_id() != cuda::kBackendId)
@@ -156,11 +163,27 @@ Status create_context(const Provider &, Device device, void *backend,
   auto *storage = allocator.allocate(sizeof(Context), alignof(Context));
   if (!storage)
     return Status::ResourceExhausted("CCCL context allocation failed");
-  *output = ::new (storage) Context{
-      primary, collectives::qualified_version() &&
-                   environment->build_toolkit_version == 13030 &&
-                   environment->runtime_version == 13030 &&
-                   environment->sm_major == 8 && environment->sm_minor == 9};
+  const std::array facts{
+      RouteAttribute::number(route_attribute::kArchitectureMajor,
+                             static_cast<std::uint64_t>(environment->sm_major)),
+      RouteAttribute::number(route_attribute::kArchitectureMinor,
+                             static_cast<std::uint64_t>(environment->sm_minor)),
+      RouteAttribute::number(
+          route_attribute::kRuntimeVersion,
+          static_cast<std::uint64_t>(environment->runtime_version)),
+      RouteAttribute::number(
+          route_attribute::kToolkitVersion,
+          static_cast<std::uint64_t>(environment->build_toolkit_version))};
+  const RouteRule rule{.route = NativeRoute::kCuda,
+                       .provider = kCcclProviderId,
+                       .provider_version = "CCCL-300304",
+                       .attributes = kQualificationPredicates};
+  const RouteMatchInput input{.platform = kBuildRoutePlatform,
+                              .route = NativeRoute::kCuda,
+                              .provider = provider.identity(),
+                              .attributes = facts};
+  *output =
+      ::new (storage) Context{primary, match_route_rule(rule, input).matched()};
   return Status::Ok();
 }
 void destroy_context(void *value, mem::AllocatorRef allocator) noexcept {

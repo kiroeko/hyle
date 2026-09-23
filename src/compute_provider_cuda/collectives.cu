@@ -408,7 +408,6 @@ cudaError_t submit_typed(const Program &program, const void *input,
 const char *version() noexcept { return "CCCL-" HYLE_CCCL_STRING(CUB_VERSION); }
 #undef HYLE_CCCL_STRING
 #undef HYLE_CCCL_STRING_INNER
-bool qualified_version() noexcept { return CUB_VERSION == 300304; }
 
 cudaError_t configure(Program *program) noexcept try {
   if (program->count == 0)

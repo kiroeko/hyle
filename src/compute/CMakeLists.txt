@@ -7,6 +7,7 @@ hyle_add_module(compute TRACE SOURCES
   device.cc
   operation.cc
   provider.cc
+  route_rule.cc
   result.cc
   shape_domain.cc
   shape_program.cc

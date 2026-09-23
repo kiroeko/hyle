@@ -44,7 +44,8 @@ SDK 和 Provider 版本；还须满足数值、格式、shape、资源与融合�
 路线在创建或准备阶段读取必要事实，匹配研发已经验证并随实现版本化的条件，绑定原生程序或
 有限变体。执行不重查设备/版本、不计时选优；普通用户仍只选择路线和资源约束。条件未知或超出
 资格范围时不套用该性能规则，采用已声明的合法成熟基线或明确拒绝。各路线自行承载这些条件，
-不要求统一硬件描述、通用规则引擎或用户提供 profile。
+不要求统一硬件描述或用户提供 profile。共同 `RouteRule` matcher 只统一稀疏合取、未知值和拒绝轴；
+它不发现、排序或运行 Provider，各路线仍拥有原生环境、规则次序和程序。
 
 SOTA/胜出结论只覆盖证据绑定的硬件与软件组合；驱动、Toolkit 或 Provider 升级影响某条规则时，
 定向复核该规则及其真实消费链，不重开全部架构，也不把单 kernel 优势直接当作整图收益。
@@ -78,10 +79,20 @@ consumer 提供；SDK 不为此增加模型加载器。具体模型规则可只�
 未知或不相等则不能命中。模型身份按 family、family+name、完整四字段逐级收窄，量化身份始终来自
 真实 operation 与物理 format，不能再用模型标签复制一份。
 
+产品表达分为固定字段和稀疏原生属性：`RoutePlatform`、`NativeRoute`、`ProviderIdentity`、模型、
+phase/region、operation/dtype 与 Q4/Q8 mode/group/format 是共同字段；device/architecture、driver、
+runtime、Toolkit/SDK/API、subgroup 等是带稳定 ID 的 unsigned/text 属性。数值属性支持 exact 或闭区间，
+文本只作字节精确匹配；Provider 可为路线私有事实声明自己的 namespaced ID。属性缺失表示 unknown，
+绝不能满足具名 predicate；重复属性、非法范围和断层模型规则是非法规则，不静默退化为 wildcard。
+版本数值只在同时限定原生路线的规则中解释，例如 CUDA 整数版本不能拿去比较 Vulkan 或 Apple 版本。
+
 两级绑定避免排列组合进入热路径。构建与 Context 创建先删除不可能的路线/实现，Provider 的冷
 `propose` 再对剩余事实作合取匹配，按版本化固定优先规则从窄域到成熟基线选择；`prepare/compile`
 复核资源并生成一个已绑定 artifact。普通 `submit` 只执行该 artifact，不解释规则、不枚举 Provider、
 不查询驱动也不计时。改变任何参与资格的事实都重新准备；不参与资格的逐 token 数据仍是普通输入。
+共同 matcher 借用静态 rule、Context facts 和真实 prepare request，只返回匹配或首个拒绝轴，不保留
+任何 span；因此 Provider 可在编译时定义规则数组、在 Context 创建时缓存硬件/软件事实，并在冷
+`propose` 一次绑定。普通应用不接触这些规则，也不提供 Provider 顺序。
 
 ## 2. CPU：持久执行资源与真实 ISA 实现
 

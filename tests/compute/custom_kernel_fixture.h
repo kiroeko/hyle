@@ -11,6 +11,7 @@
 
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/custom_kernel.h"
+#include "hyle/compute/route_rule.h"
 
 namespace custom_test {
 
@@ -246,8 +247,30 @@ struct WorkloadFactory final {
   Result<KernelProposal>
   propose(const KernelRequest &request, std::span<ResourceRequirement> inputs,
           std::span<ResourceRequirement> outputs) const noexcept {
-    if (request.workload != *expected)
-      return std::unexpected(Status::Internal("cold workload changed at propose"));
+    const RouteRule rule{
+        .platform = kBuildRoutePlatform,
+        .route = NativeRoute::kCpu,
+        .provider = identity.id,
+        .provider_version = identity.version,
+        .model = expected->model.description(),
+        .phase = expected->phase,
+        .region = expected->region,
+        .operation = OperationKind::kCustom,
+        .input0_type = DataType::kFloat32,
+        .output0_type = DataType::kFloat32,
+        .quantization = {.presence = RouteQuantizationPresence::kNone}};
+    const RouteMatchInput facts{.platform = kBuildRoutePlatform,
+                                .route = NativeRoute::kCpu,
+                                .provider = identity,
+                                .model = request.workload.model.description(),
+                                .phase = request.workload.phase,
+                                .region = request.workload.region,
+                                .operation = request.operation,
+                                .inputs = request.inputs,
+                                .outputs = request.outputs};
+    if (!match_route_rule(rule, facts))
+      return std::unexpected(
+          Status::Unimplemented("cold workload route is not qualified"));
     return base.propose(request, inputs, outputs);
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,

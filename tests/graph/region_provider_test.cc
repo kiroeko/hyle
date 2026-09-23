@@ -21,6 +21,7 @@
 #include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/providers/native.h"
+#include "hyle/compute/route_rule.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/buffer.h"
 #include "provider_internal.h"
@@ -1066,11 +1067,22 @@ Status propose_region_resources(
   auto &probe = *static_cast<RegionProbe *>(context);
   ++probe.region_resource_count;
   probe.resource_workload = request.workload;
-  if (probe.required_workload != nullptr &&
-      (!request.workload.model.matches(
-           probe.required_workload->model.description()) ||
-       request.workload != *probe.required_workload))
-    return Status::Unimplemented("model-specific region is not qualified");
+  if (probe.required_workload != nullptr) {
+    const hyle::compute::RouteRule rule{
+        .platform = hyle::compute::kBuildRoutePlatform,
+        .route = hyle::compute::NativeRoute::kCpu,
+        .model = probe.required_workload->model.description(),
+        .phase = probe.required_workload->phase,
+        .region = probe.required_workload->region};
+    const hyle::compute::RouteMatchInput facts{
+        .platform = hyle::compute::kBuildRoutePlatform,
+        .route = hyle::compute::NativeRoute::kCpu,
+        .model = request.workload.model.description(),
+        .phase = request.workload.phase,
+        .region = request.workload.region};
+    if (!hyle::compute::match_route_rule(rule, facts))
+      return Status::Unimplemented("model-specific region is not qualified");
+  }
   EXPECT_FALSE(request.constant_artifacts.available());
   if (probe.resource_scratch_bytes != 0) {
     void *scratch = allocator.allocate(probe.resource_scratch_bytes,
