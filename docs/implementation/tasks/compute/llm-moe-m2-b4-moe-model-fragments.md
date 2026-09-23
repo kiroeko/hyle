@@ -1,11 +1,11 @@
 # M2-B4 成熟 Provider MoE 与模型片段批次
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
 - round / owner：M2-B4；`/root`。
-- baseline：`d12193cab61d67eb8318d14d08f2e85f83275fe4`；B3 已关闭，Windows canonical
+- baseline：`d12193cab61d67eb8318d14d08f2e85f83275fe4`；[B3 已关闭](llm-moe-m2-b3-recurrent-state.md)，Windows canonical
   工作树在本卡登记前干净。
 - trigger：F12.1--F14.5 的 MoE routing→dispatch→expert→combine、shared/latent/SiTU 与
   DeepSeek V4 mHC/MTP 真实消费。B1/B2 已提供 score、TopK、Gather/Scatter、MatMul 与常用组合，
@@ -44,3 +44,28 @@ TopK、Gather/Scatter、activation、residual 与普通 MatMul 只作已有成�
 
 完成上游入口和 backend 资格审计后，本卡须写入有限 `KEEP/FIX/BORROW/DEFER/REJECT` 表并转为
 `AUDITED`，之后才能修改产品代码。
+
+## AUDITED：原版入口与有限 FIX
+
+2026-09-24 在 SCOPED baseline 上核对锁定 ggml `456172ec` 的 public schema、四个 backend 的
+`supports_op` 与实际 dispatch。CPU、CUDA、Metal、Vulkan 都提供 `GGML_OP_MUL_MAT_ID` 和
+`GGML_OP_DSV4_HC_COMB/PRE/POST`；四条路线保持各自 native buffer、stream/queue、graph 与完成
+语义。Grouped MatMul 的第一批准入域固定为 dense F32，量化 weight 的准确 storage-format 映射留给
+B6，不能仅凭位宽相似签署。
+
+| ID | 有限施工 | 验收 |
+|---|---|---|
+| B4-C0 | 在 `model_ops.h` 增加 `GroupedMatMul` 与 mHC combine/pre/post 的稳定 typed descriptor；只表达自然布局、F32 域、固定 `hc=4` 与 combine cold 参数 | header self-contained、arity/type/shape、错误不发布 |
+| B4-C1 | CPU ggml retained recipe 一次 lower 四枚原版节点，Graph 复用同一合法 leaf/region | Direct/Graph、偏斜/重复专家、两次 replay、独立 oracle |
+| B4-C2 | CUDA ggml recipe 复用同一逻辑 lower 和 native stream/buffer；资格继续由原版 backend 裁决 | SM89 Direct/Graph、完成/失败、无 `.cu` 新增 |
+| B4-C3 | 将现有 Apple ggml Metal whole-region seam 有限泛化到已登记 typed model op，lower 四枚原版节点；MLX 继续承担普通组合 | Air shared、Mini static、native Metal buffer/replay，无新 shader |
+| B4-C4 | Vulkan managed region lower 四枚原版节点，Graph custom dispatch 识别这些 provider-owned schema | RTX 4070 与适用 MoltenVK，`ggml_backend_supports_op` 为最终资格 |
+| B4-C5 | 一组 B4 fixture 同时覆盖 grouped expert 与 mHC 纵切；F12/F13 其余 routing/dispatch/combine 复用 B1/B2 的成熟组合；MTP 只验证可组合边界 | P0 resource/dispatch；M2 末尾统一三交付；P1 保持不适用 |
+
+`KEEP`：B1/B2 已接入的 score、stable TopK、Gather/Scatter、activation、residual、MatMul 和组合图；
+`BORROW`：以上四枚 ggml 原版 model op；`DEFER`：量化 grouped weights 的准确 format 映射到 B6，
+完整模型层/多卡 dispatch 到 M3/M4；`REJECT`：host expert loop、自研数学、逐 token 同步及运行时竞速。
+
+Apple 的改动只把既有 ggml Metal native-region owner 从单一 GDN 扩到这组已审计原版 op，不建立
+万能执行器。组合路由仍在 prepare 阶段按平台、硬件、驱动/SDK、模型身份、路线、量化档位和
+Provider 版本匹配，执行阶段不搜索或计时。有限 FIX 已冻结，可以进入产品施工。
