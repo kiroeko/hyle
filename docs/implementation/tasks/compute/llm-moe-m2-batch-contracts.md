@@ -8,8 +8,8 @@
 [Provider 映射](llm-moe-provider-map.json)为准。本页不把映射写成 PASS，也不授权任何 HYLE
 自实现数学。
 
-当前只执行 B1。B1 关闭后，B2 必须先绑定当前 owner、baseline 和有限 FIX 表并进入 AUDITED，
-才能修改产品代码。B3--B6 同理，不因本页存在而提前施工。每个批次只有一张活动父卡；路线和
+M2-B1 已于2026-09-23按[终局](llm-moe-m2-b1-terminal.md)结束。B2 必须先绑定当前 owner、
+baseline 和有限 FIX 表并进入 AUDITED，才能修改产品代码。B3--B6 同理，不因本页存在而提前施工。每个批次只有一张活动父卡；路线和
 Provider 是父卡内的批量接入单元，不为每个算子重复建卡、配置、构建或出具交付证据。
 
 ## 2. 共同执行合同
@@ -135,7 +135,7 @@ combine、真实投影宽度、共享状态、MTP index carry 和两个 invocati
 
 | 批次 | 当前状态 | 启动条件 | 关闭后动作 |
 |---|---|---|---|
-| B2 | `QUEUED_BY_PLAN` | B1 关闭；绑定 owner/baseline；有限表 AUDITED | 直接进入 B3 |
+| B2 | `READY_TO_SCOPE` | B1 已结束；绑定 owner/baseline；有限表 AUDITED | 直接进入 B3 |
 | B3 | `QUEUED_BY_PLAN` | B2 关闭 | 直接进入 B4 |
 | B4 | `QUEUED_BY_PLAN` | B3 关闭 | 直接进入 B5 |
 | B5 | `QUEUED_BY_PLAN` | B4 关闭 | 直接进入 B6 |

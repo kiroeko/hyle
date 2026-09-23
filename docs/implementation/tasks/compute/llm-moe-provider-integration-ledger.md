@@ -132,7 +132,7 @@ B2--B6 的逐批需求、Provider 分工、有限 FIX、验收与停止合同见
 
 | 批 | 需求行 | 实际消费与可复用映射 | 到点产物 |
 |---|---|---|---|
-| B1 张量与状态基础 | F01–F04/F19 | embedding→norm/gate→residual/index/state；一份参数/类型表驱动四 Provider lowering | 四路线普通 Direct/Graph、动态错误、两请求/旧结果、适用三交付；满足全部门后记入M3-01，按用户最新指示直接继续 |
+| B1 张量与状态基础（2026-09-23结束） | F01–F04/F19 | embedding→norm/gate→residual/index/state；一份参数/类型表驱动四 Provider lowering | [终局](llm-moe-m2-b1-terminal.md)：已准入成熟路径与聚合门完成；Apple 21格PASS，其余精确残差保持UNPROVEN并交M3/M4；可进入B2 |
 | B2 线性与注意力 | F05–F08 | 原版 dense/quantized FFN、GQA prefill/decode、KV/RoPE/YaRN/Hadamard；用整片段复用 packing/workspace | 相同 codes/scales 的 Q4/Q8 消费，head256、变 position/length、压缩驻留和必要转换账单 |
 | B3 递归混合 | F09–F11 | 原版 conv/DeltaNet/KDA fused 或现成图组合；state 输入输出整体接入 | prompt1/17/128、257-token chunk 与单步等价、非零状态；本地2B B16/Q4/Q8 的24层、8步 teacher-forced decode |
 | B4 MoE 与模型片段 | F12–F14 | 上游 routing/dispatch/grouped expert/combine、latent/SiTU、mHC/AttnRes/MTP 组合 | 空/偏斜专家、重复 combine、真实宽度、共享状态；不把引擎调度/采样带入 SDK |

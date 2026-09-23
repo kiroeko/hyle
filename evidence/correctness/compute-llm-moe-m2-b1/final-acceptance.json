@@ -1,0 +1,48 @@
+{
+  "schema": "hyle.compute-llm-moe-m2-b1.final/v1",
+  "stage": "M2-B1 mature-provider batch terminal",
+  "outcome": "PASS_WITH_RECORDED_RESIDUALS",
+  "product_candidate": "e43b85a5c98425036b3d63ca5104ee1ba3c2306b",
+  "scope": "admitted mature-provider paths for F01-F04/F19",
+  "coverage": {
+    "apple_route_cells_passed": 21,
+    "total_route_cells": 256,
+    "complete_requirement_rows": 0,
+    "cpu_cuda_vulkan_complete_cells": "UNPROVEN"
+  },
+  "validation": {
+    "windows_vulkan": "compute 118/118, graph 34/34, focused 9/9",
+    "wsl_onednn_static_tsan": "33/33",
+    "wsl_cuda_shared": "10/10",
+    "wsl_cuda_static": "10/10",
+    "air_vulkan_static": "6/6",
+    "apple_full_terminal": "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json"
+  },
+  "delivery": {
+    "source": "canonical Windows Git tree",
+    "shared": ["Windows CPU/Vulkan", "WSL CUDA"],
+    "static": ["WSL CPU/oneDNN", "WSL CUDA", "macOS Vulkan", "Apple full terminal"],
+    "unchanged_package_seams": "reused from M1 and Apple B1 by product/package identity"
+  },
+  "performance": {
+    "non_apple_tier": "P0",
+    "non_apple_verdict": "PASS",
+    "reason": "no standalone operator speed claim; full-fragment P1 belongs to B2-B6",
+    "apple_tier": "P1",
+    "apple_verdict": "PASS",
+    "apple_evidence": "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json"
+  },
+  "loc": {
+    "commit": "e43b85a5c98425036b3d63ca5104ee1ba3c2306b",
+    "compute_graph_implementation_lines": 57740,
+    "compute_graph_files": 249,
+    "tests_bench_docs_vendor_excluded": true,
+    "self_check": "PASS"
+  },
+  "limitations": [
+    "Only Apple has all 21 B1 route cells at PASS.",
+    "CPU, CUDA and Vulkan retain exact upstream-domain and semantic residuals; their matrix cells remain UNPROVEN.",
+    "This receipt closes the B1 demand batch, while the shared M2 component owners remain AUDITED for B2.",
+    "Frozen HYLE kernels did not participate in routing or performance comparisons."
+  ]
+}

@@ -311,16 +311,13 @@ B2--B6 的需求、四路线成熟承载、有限 FIX、批量验收和停止条
    全部改动，只跑表驱动正确性；卡片只在能力族边界和批次收口更新。首次依赖编译、环境配置失败
    和重复文档门不计能力进度，也不得成为逐算子施工步骤。
 
-2026-09-21启动[M2-B1 Vulkan](llm-moe-m2-b1-vulkan.md)，补同一基础需求批次的第四路线。
-CPU/CUDA/Apple当前未决项保留；按需求批次推进四路线，不等前三路线全域完成才启动Vulkan。
-重型构建与验证仍串行，符合身份和合同条件的M1证据复用，不重新调查已收口接入。
+2026-09-23，[M2-B1 成熟 Provider 基础批次](llm-moe-m2-b1-terminal.md)已按上述第7项退出门
+结束：四路线已准入的原版能力均已接普通 Direct/Graph，适用环境与 source/static/shared 聚合门
+通过；具名上游/语义残差保持 UNPROVEN 并交 M3/M4。只有 Apple 的21个路线格为PASS，跨四路线
+完整行仍为0/64。B2可以启动；共享M2 owner保持AUDITED，不伪造组件CLOSED后立即重开。
 
-Vulkan当前开发检查点已接dense F32高rank张量族及F16/BF16的成熟Copy/Cast/既有算术族，
-ggml与IREE在同设备组合并保留公开精度边界；Air NaN问题由标准浮点执行元数据纠正。
-存储增量另接I32 Copy、F16/BF16/I32 Concat和空输入冷翻译；Softmax增量接任意轴/rank1..8、
-同类型广播additive mask及必要的独立Scale。最新同一候选Windows/Air各8/8开发门通过。
-完整B1的21行覆盖、适用三交付/插桩/最终selected与P1仍待完成，不计新的完整矩阵PASS。
-具体实现、失败和剩余预算以[本卡](llm-moe-m2-b1-vulkan.md)为准。
+Vulkan B1的具体实现、失败和源码边界保存在[路线卡](llm-moe-m2-b1-vulkan.md)；最终聚合验证与
+未准入残差以[B1终局](llm-moe-m2-b1-terminal.md)为准。
 
 Apple B1已经按同一集中合同CLOSED：MLX成熟路径的F01–F04/F19共21格完成普通Direct/Graph、
 资源/失败、两台Mac适用门、三交付和完整region P1；矩阵为21/256路线格，跨四路线完整行仍0/64。

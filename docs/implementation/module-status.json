@@ -364,20 +364,20 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select及固定ref:any的F32 dense Softplus已接普通Direct/Graph，Windows 13/13定向门通过；数值Cast/min/max、非连续/half稳定函数及跨平台/三交付/P1未齐。旧Q2改判无效测量，源码审计120/120分钟，自研冻结，完整覆盖0。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml Direct/Graph、标准库Scan/TopK、任意轴Gather、一般广播/指定轴Sum/Mean、L2及原版重复Scatter-add已通过Windows开发门；后者7/7定向目标通过。assign等精确残差、跨平台/三交付/P1未齐，F02.2仍UNPROVEN，自研冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-onednn.md",
-      "summary": "M2-B1 oneDNN AUDITED：原版字节Copy/Select及固定ref:any的F32 dense Softplus已接普通Direct/Graph，Windows 13/13定向门通过；数值Cast/min/max、非连续/half稳定函数及跨平台/三交付/P1未齐。旧Q2改判无效测量，源码审计120/120分钟，自研冻结，完整覆盖0。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_ops",
@@ -426,14 +426,14 @@
     {
       "module": "compute_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml/标准库成熟路径、任意轴Gather/广播/归约、重复Scatter-add及oneDNN Copy/Select/F32 dense Softplus已接普通入口；Scatter assign/half稳定激活/全mask等残差与跨平台/三交付/P1未齐。F02.2仍UNPROVEN，自研冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cpu.md",
-      "summary": "M2-B1 CPU AUDITED：ggml region、标准库叶程序、L2/分组均值、原版重复Scatter-add及oneDNN稳定Softplus→Select片段已通过Windows开发门；Scatter-add单步Graph/越界旧结果已验。精确残差与跨平台/三交付/P1待验，F02.2仍UNPROVEN，自研冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_provider_cublas",
@@ -461,14 +461,14 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK/Gather已接普通Direct/Graph；Windows10/10 CTest、105次GoogleTest执行通过，Gather全storage/checked失败与双slot已验。共享源码预算110/120；完整跨平台/三交付/P1及21行仍未完成，新覆盖0，自研冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md",
-      "summary": "M2-B1 CUDA-I AUDITED：原版CCCL Scan/TopK/Gather已接普通Direct/Graph；Windows10/10 CTest、105次GoogleTest执行通过，Gather全storage/checked失败与双slot已验。共享源码预算110/120；完整跨平台/三交付/P1及21行仍未完成，新覆盖0，自研冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "graph_route_cuda",
@@ -507,20 +507,20 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -536,14 +536,14 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda.md",
-      "summary": "M2-B1 CUDA AUDITED：C1–C4有限成熟接线固定，首批原版浮点layout/cast/broadcast/unary/norm/reduce；原生资源/输出root绑定与普通入口验证。完整21行未签，自研冻结，旧oneDNN条件不变。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-cuda.md",
-      "summary": "M2-B1 CUDA AUDITED：C1–C4有限成熟接线固定，首批原版浮点layout/cast/broadcast/unary/norm/reduce；原生资源/输出root绑定与普通入口验证。完整21行未签，自研冻结，旧oneDNN条件不变。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -570,8 +570,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-vulkan.md",
-      "summary": "M2-B1 V1-A开发检查点：原版ggml Softmax任意轴/rank1..8、同类型广播additive mask和独立Scale已接普通Direct/Graph，保留half公开舍入；Windows/Air各8/8通过。前存储/精度检查点保留，完整21行及新域三交付/插桩/最终综合门/P1仍待完成；源码/设计118/120分钟，自研冻结，完整矩阵未新增。"
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+      "summary": "M2-B1 批次已结束：当前已准入成熟 Provider 路径完成普通 Direct/Graph、资源/失败与适用聚合门；精确上游/语义残差保持 UNPROVEN 并交 M3/M4，冻结自研未参与。owner 保持 AUDITED 供 M2 复用；B2 修改产品前须另行绑定有限 FIX。"
     }
   ]
 }
