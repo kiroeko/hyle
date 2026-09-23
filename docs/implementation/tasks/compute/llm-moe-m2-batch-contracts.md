@@ -141,7 +141,7 @@ combine、真实投影宽度、共享状态、MTP index carry 和两个 invocati
 
 | 批次 | 当前状态 | 启动条件 | 关闭后动作 |
 |---|---|---|---|
-| B2 | [`SCOPED`](llm-moe-m2-b2-linear-attention.md) | B1 已结束；当前先完成成熟入口审计与有限表 AUDITED | 直接进入 B3 |
+| B2 | [`AUDITED`](llm-moe-m2-b2-linear-attention.md) | 成熟入口与有限 FIX 已冻结；按 CPU→CUDA→Apple→Vulkan 批量施工 | 直接进入 B3 |
 | B3 | `QUEUED_BY_PLAN` | B2 关闭 | 直接进入 B4 |
 | B4 | `QUEUED_BY_PLAN` | B3 关闭 | 直接进入 B5 |
 | B5 | `QUEUED_BY_PLAN` | B4 关闭 | 直接进入 B6 |
