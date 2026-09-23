@@ -1,6 +1,6 @@
 # M2 组合路由资格完整迁移
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -84,6 +84,7 @@ shared-memory 等均是原生 capability/resource 计算，不属于静态 best-
 | CM5 | Vulkan 两个设备/subgroup shader 资格迁移为有序 rules | NVIDIA、Apple M4、未知设备三路不变；large shape 只在 NVIDIA 命中 |
 | CM6 | ggml Vulkan MXFP4 单 tensor 与 MatMul region 资格迁移 | canonical MXFP4 正例与伪格式/布局反例；Direct/Graph region 不变 |
 | CM7 | 受管轴扫描与行为测试；文档列出保留的本地检查 | 产品不再手写上述静态比较；三交付与真实路线 correctness 通过 |
+| CM8 | 修正普通 Compute package consumer 对零 workspace 的调用 | requirement 为零时传空 view，非零时才分配；不改变 Compute API、Provider 或算法 |
 
 API 冻结为既有公开 `RouteRule`；没有具体反例要求修改 `compute`。只新增 CUDA backend 私有事实投影和
 Vulkan owner 私有 boolean attribute。所有 matcher 调用只在 Context 创建、proposal、prepare/compile；
@@ -110,3 +111,17 @@ Vulkan owner 私有 boolean attribute。所有 matcher 调用只在 Context 创�
 产品与 API 在该提交冻结，八个 owner 进入 `CANDIDATE`。尚待 Linux FlashInfer、Apple 原生路线、
 三交付、selector 与终局 docs/closure；这些门未运行前不写 PASS。若跨平台验证暴露产品缺陷，按有限
 CM1--CM7 退回 `AUDITED` 修正，不借机恢复 B2 或扩算子。
+
+## 三交付反例与退回 AUDITED
+
+Windows CUDA source consumer 在完整编译、链接和 DLL staging 后由 CTest 返回失败。定向诊断证明
+普通样例把 `workspace_requirement().size == 0` 的 provider-owned RMSNorm 仍包装成有效的零字节
+`BufferView`，`create_invocation` 因而按合同拒绝并报告
+`provider-owned operation does not accept caller workspace`。这不是 route matcher、CUDA 数学或
+运行库缺失；scratch 中按 requirement 为零传默认空 view 后，同一 consumer 在 RTX 4070 / SM89
+实际运行并返回 0。
+
+候选 `f15204826` 的路线产品实现保持有效，但交付样例不足以通过预声明三交付门，故八个 owner 明确
+退回 `AUDITED`。新增且只新增 CM8：统一修正样例中 RMSNorm 与可选 oneDNN 两处同形 workspace
+准备；不改公共 API、Provider 优先级、算法或其它样例。修正后生成新不可变候选并只重跑受影响的
+三交付、原路线定向门及 docs/closure；既有跨平台 PASS 可在产品树身份未变的范围内复用。
