@@ -398,9 +398,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：固定复用 CUDA Environment 的六项冷 route facts；Context、资源与执行路径不变。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：CUDA Environment 六项冷 facts 及全部现存受管路由点已迁移；候选等待跨平台与交付门。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "compute_provider_native",
@@ -438,15 +439,17 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：迁移 SM80+ 与 Q4-S128/weight/scale format；pack、shape、资源和执行边界不变。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：SM80+ 与 Q4-S128/weight/scale format 已迁移；pack、shape、资源和执行边界不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：CCCL 改用 backend 统一 facts，既有 SM89/CUDA 13.3/provider pin 与执行不变。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：CCCL 已复用 backend 统一 facts，既有 SM89/CUDA 13.3/provider pin 与执行不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "compute_route_cuda",
@@ -462,9 +465,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：迁移 affine Q4 route/operation/dtype/mode/group/format；MLX 原生语义不变，B2 暂停。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：affine Q4 route/operation/dtype/mode/group/format 已迁移；MLX 原生语义不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "graph_route_apple",
@@ -474,9 +478,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：迁移 NVIDIA/Apple M4 subgroup shader 资格；shape、device limit 和原生资源不变，B2 暂停。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：NVIDIA/Apple M4 subgroup shader 资格已迁移；shape、device limit 和原生资源不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "graph_route_vulkan",
@@ -486,9 +491,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：迁移 MXFP4 format 与 MatMul region 静态资格；canonical layout 与 ggml native support 不变，B2 暂停。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：MXFP4 format 与 MatMul region 静态资格已迁移；canonical layout 与 ggml native support 不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "compute_ggml_runtime",
@@ -503,9 +509,10 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：迁移 SM89 冷资格；ggml 原生 supports、资源、region 和执行不变。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：SM89 冷资格已迁移；ggml 原生 supports、资源、region 和执行不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -515,9 +522,10 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 AUDITED：迁移 SM89、Provider、attention operation/dtype 资格；shape、residency 与原生程序不变。"
+      "summary": "M2 组合路由完整迁移 CANDIDATE：SM89、Provider、attention operation/dtype 资格已迁移；shape、residency 与原生程序不变。",
+      "candidate": "f15204826ba001524b6a66b6fa2291400226a160"
     },
     {
       "module": "compute_provider_ggml_metal",

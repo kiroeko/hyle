@@ -1,6 +1,6 @@
 # M2 组合路由资格完整迁移
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -90,3 +90,23 @@ Vulkan owner 私有 boolean attribute。所有 matcher 调用只在 Context 创�
 不进入 bind/submit/wait。P0 检查对象布局、调用位置和成本结构，P1 不适用。
 
 状态进入 `AUDITED`；允许且只允许 CM1--CM7。B2、新算子、自研数学、性能比较继续暂停。
+
+## CANDIDATE freeze
+
+- product candidate：`f15204826ba001524b6a66b6fa2291400226a160`；tree
+  `5ef86a1a2a90aad6f480515a5fdbb92b74edff76`。
+- CM1--CM3：CUDA backend 统一投影 device/SM/driver/runtime/toolkit 六项冷事实；CCCL、FlashInfer、
+  ggml CUDA 和 Marlin 的现存硬件、Provider、operation/dtype 与 Q4-S128 资格均改用共同 rule。
+- CM4--CM6：Apple affine Q4、Vulkan NVIDIA/Apple M4 subgroup shader 与 ggml Vulkan MXFP4/MatMul
+  资格均改用共同 rule；原生 shape、layout、设备 limit、SDK capability、资源和同步检查留在原 owner。
+- CM7：受管轴扫描只保留 Apple Graph 的公开 Q4 storage 解码和 Vulkan reduction 的资源计算；它们不
+  选择 Provider 或实现。`match_route_rule` 不在 submit/enqueue/execute/bind/wait 中出现。
+- Windows MSVC 19.50、CUDA 13.3、SM89、Vulkan：六个受影响产品/测试目标完整构建；CUDA backend、
+  CUDA Provider、ggml CUDA、Marlin、Vulkan route、ggml Vulkan 六个真实套件 `6/6 PASS`。格式化后的
+  四个受影响目标增量重建并 `4/4 PASS`；DLL 已邻置 staging，没有交互弹窗。
+- P0：facts 是固定大小借用数组；匹配仅发生在 Context 创建、proposal、prepare/compile，prepared
+  artifact 和提交路径不保留规则或重新裁决。没有改变数学、Provider 顺序、支持域或 fallback。
+
+产品与 API 在该提交冻结，八个 owner 进入 `CANDIDATE`。尚待 Linux FlashInfer、Apple 原生路线、
+三交付、selector 与终局 docs/closure；这些门未运行前不写 PASS。若跨平台验证暴露产品缺陷，按有限
+CM1--CM7 退回 `AUDITED` 修正，不借机恢复 B2 或扩算子。
