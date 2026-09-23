@@ -1,10 +1,13 @@
 #pragma once
 
+#include <array>
+
 #include <cuda.h>
 
 #include "device_status_kernel.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/route_rule.h"
 
 namespace hyle::compute::cuda::detail {
 
@@ -18,6 +21,33 @@ borrow_primary_context(void *backend_state) noexcept;
 // lifetime preconditions as borrow_primary_context. Null state returns null.
 HYLE_COMPUTE_BACKEND_CUDA_API const Environment *
 borrow_environment(void *backend_state) noexcept;
+
+// One cold projection of the immutable backend snapshot. Providers borrow the
+// returned strings only while the Environment lives and keep no matcher state
+// in prepared artifacts or submissions.
+struct RouteFacts final {
+  std::array<RouteAttribute, 6> attributes;
+};
+
+inline RouteFacts route_facts(const Environment &environment) noexcept {
+  return {{
+      RouteAttribute::string(route_attribute::kDeviceName,
+                             environment.device_name.data()),
+      RouteAttribute::number(route_attribute::kArchitectureMajor,
+                             static_cast<std::uint64_t>(environment.sm_major)),
+      RouteAttribute::number(route_attribute::kArchitectureMinor,
+                             static_cast<std::uint64_t>(environment.sm_minor)),
+      RouteAttribute::number(
+          route_attribute::kDriverVersion,
+          static_cast<std::uint64_t>(environment.driver_cuda_version)),
+      RouteAttribute::number(
+          route_attribute::kRuntimeVersion,
+          static_cast<std::uint64_t>(environment.runtime_version)),
+      RouteAttribute::number(
+          route_attribute::kToolkitVersion,
+          static_cast<std::uint64_t>(environment.build_toolkit_version)),
+  }};
+}
 
 // Inside one already-admitted QueueSequence only. The first use records a
 // reset; propagate its EnqueueResult even if a later command fails. A capture

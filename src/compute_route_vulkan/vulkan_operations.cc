@@ -12,6 +12,31 @@
 namespace hyle::compute::vulkan::detail {
 namespace {
 
+inline constexpr std::array kNvidiaSubgroupPredicates{
+    RouteAttributePredicate::number(route_attribute::kDeviceVendorId, 0x10de),
+    RouteAttributePredicate::number(route_attribute::kDeviceId, 0x2786),
+    RouteAttributePredicate::number(route_attribute::kSubgroupSize, 32),
+    RouteAttributePredicate::number(kSubgroupArithmeticAttribute, 1)};
+inline constexpr RouteRule kNvidiaSubgroupRule{
+    .route = NativeRoute::kVulkan,
+    .attributes = kNvidiaSubgroupPredicates,
+    .operation = OperationKind::kMatMul,
+    .input0_type = DataType::kFloat32,
+    .input1_type = DataType::kFloat32,
+    .output0_type = DataType::kFloat32};
+inline constexpr std::array kAppleSubgroupPredicates{
+    RouteAttributePredicate::number(route_attribute::kDeviceVendorId, 0x106b),
+    RouteAttributePredicate::string(route_attribute::kDeviceName, "Apple M4"),
+    RouteAttributePredicate::number(route_attribute::kSubgroupSize, 32),
+    RouteAttributePredicate::number(kSubgroupArithmeticAttribute, 1)};
+inline constexpr RouteRule kAppleSubgroupRule{
+    .route = NativeRoute::kVulkan,
+    .attributes = kAppleSubgroupPredicates,
+    .operation = OperationKind::kMatMul,
+    .input0_type = DataType::kFloat32,
+    .input1_type = DataType::kFloat32,
+    .output0_type = DataType::kFloat32};
+
 // Push layouts, fast division and non-cooperative F32 tile recipes follow
 // ggml 456172ec733a. See third_party/ggml_vulkan_shaders/NOTICE.md and LICENSE.
 std::array<std::uint32_t, 2> fastdiv(std::uint32_t divisor) noexcept {
@@ -215,16 +240,25 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     // Preserve mature single/few-vector reduction. Qualified NVIDIA shapes
     // use the upstream larger-group rule; unknown devices keep the legal
     // shared-memory baseline until their own performance qualification.
+    const auto facts = route_facts(device.environment);
+    const std::array route_inputs{a, b};
+    const std::array route_outputs{program.values[step.outputs[0]].description};
+    const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                      .route = NativeRoute::kVulkan,
+                                      .attributes = facts.attributes,
+                                      .model =
+                                          program.workload.model.description(),
+                                      .phase = program.workload.phase,
+                                      .region = program.workload.region,
+                                      .operation = step.operation,
+                                      .inputs = route_inputs,
+                                      .outputs = route_outputs};
+    const bool nvidia_subgroup =
+        match_route_rule(kNvidiaSubgroupRule, route_input).matched();
     const bool known_subgroup =
-        device.environment.subgroup_arithmetic &&
-        device.environment.subgroup_size == 32 &&
-        ((device.environment.vendor_id == 0x10de &&
-          device.environment.device_id == 0x2786) ||
-         (device.environment.vendor_id == 0x106b &&
-          device.environment.device_name == "Apple M4"));
-    const bool large = known_subgroup &&
-                       device.environment.vendor_id == 0x10de && n <= 8192 &&
-                       k >= 1024;
+        nvidia_subgroup ||
+        match_route_rule(kAppleSubgroupRule, route_input).matched();
+    const bool large = nvidia_subgroup && n <= 8192 && k >= 1024;
     const std::uint32_t block = large ? 128u : 32u;
     const auto shader = !known_subgroup ? shaders::mv_f32()
                         : large         ? shaders::mv_f32_hybrid()

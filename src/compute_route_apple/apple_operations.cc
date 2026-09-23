@@ -8,10 +8,23 @@
 
 #include "apple_internal.h"
 #include "apple_tensor.h"
+#include "hyle/compute/route_rule.h"
 
 namespace hyle::compute::apple {
 namespace mx = mlx::core;
 namespace {
+inline constexpr RouteRule kAffineQ4Rule{
+    .route = NativeRoute::kApple,
+    .operation = OperationKind::kQuantizedMatMul,
+    .input0_type = DataType::kFloat32,
+    .input1_type = DataType::kFloat32,
+    .output0_type = DataType::kFloat32,
+    .input1_format = kAffineQ4Format,
+    .quantization = {.presence = RouteQuantizationPresence::kQuantizedMatMul,
+                     .mode = QuantizedWeightMode::kUnsignedAffine4,
+                     .group_size = 64,
+                     .weight_format = kAffineQ4Format}};
+
 Result<TensorDesc> float_description(const mx::array &input) noexcept {
   if (input.dtype() != mx::float32 || input.ndim() > kMaxTensorRank)
     return std::unexpected(Status::Unimplemented(
@@ -60,9 +73,7 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
                    inputs[0].ndim() != 2 || inputs[1].ndim() != 2))
       return std::unexpected(Status::Unimplemented(
           "Apple typed MatMul admits 2-D F32 accumulation"));
-    if (qmm && (qmm->mode != QuantizedWeightMode::kUnsignedAffine4 ||
-                qmm->group_size != 64 ||
-                qmm->accumulation_type != DataType::kFloat32 ||
+    if (qmm && (qmm->accumulation_type != DataType::kFloat32 ||
                 inputs[0].ndim() != 2 || inputs[1].ndim() != 2 ||
                 inputs[1].dtype() != mx::uint32))
       return std::unexpected(Status::Unimplemented(
@@ -83,6 +94,22 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
         infer_single_output(operation, {descriptions.data(), inputs.size()});
     if (!output)
       return std::unexpected(std::move(output).error());
+
+    if (qmm) {
+      const std::array outputs{*output};
+      const RouteMatchInput route_input{
+          .platform = kBuildRoutePlatform,
+          .route = NativeRoute::kApple,
+          .model = workload.model.description(),
+          .phase = workload.phase,
+          .region = workload.region,
+          .operation = operation,
+          .inputs = {descriptions.data(), inputs.size()},
+          .outputs = outputs};
+      if (!match_route_rule(kAffineQ4Rule, route_input).matched())
+        return std::unexpected(Status::Unimplemented(
+            "Apple Q4 requires affine group64 public storage"));
+    }
 
     if (matmul)
       return std::vector<mx::array>{mx::matmul(inputs[0], inputs[1], stream)};

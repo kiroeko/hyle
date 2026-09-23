@@ -12,6 +12,7 @@
 #include <ggml-cuda.h>
 #include <ggml.h>
 
+#include "hyle/compute/route_rule.h"
 #include "metadata_arena.h"
 #include "native_bridge.h"
 #include "native_context.h"
@@ -19,6 +20,16 @@
 
 namespace hyle::compute::ggml_cuda {
 namespace {
+
+inline constexpr std::string_view kProviderVersion =
+    "456172ec+hyle-resource-v1";
+inline constexpr std::array kHardwarePredicates{
+    RouteAttributePredicate::number(route_attribute::kArchitectureMajor, 8),
+    RouteAttributePredicate::number(route_attribute::kArchitectureMinor, 9)};
+inline constexpr RouteRule kHardwareRule{.route = NativeRoute::kCuda,
+                                         .provider = kProviderId,
+                                         .provider_version = kProviderVersion,
+                                         .attributes = kHardwarePredicates};
 
 bool default_cublas_precision() noexcept {
 #if defined(_WIN32)
@@ -324,9 +335,14 @@ Status create_context(const Provider &provider, Device device, void *backend,
     void *storage = allocator.allocate(sizeof(Context), alignof(Context));
     if (!storage)
       return Status::ResourceExhausted("ggml CUDA context allocation failed");
+    const auto facts = cuda::detail::route_facts(*environment);
+    const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                      .route = NativeRoute::kCuda,
+                                      .provider = provider.identity(),
+                                      .attributes = facts.attributes};
     *output = ::new (storage)
         Context{primary, native_device,
-                environment->sm_major == 8 && environment->sm_minor == 9,
+                match_route_rule(kHardwareRule, route_input).matched(),
                 default_cublas_precision(),
                 detail::ProviderAccess::payload<Extension>(provider)};
     return Status::Ok();
@@ -521,7 +537,7 @@ const void *query_extension(void *value, ProviderExtensionId id) noexcept {
 const detail::ProviderVTable kProvider{
     .identity = {.id = kProviderId,
                  .name = "ggml-cuda",
-                 .version = "456172ec+hyle-resource-v1"},
+                 .version = kProviderVersion},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

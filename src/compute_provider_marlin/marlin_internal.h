@@ -1,7 +1,9 @@
 #pragma once
 
 #include <climits>
+#include <limits>
 
+#include "hyle/compute/route_rule.h"
 #include "native_context.h"
 #include "native_kernel.h"
 
@@ -13,17 +15,26 @@ struct Hardware final {
   int shared_bytes = 0;
 };
 
-inline Result<Hardware> hardware(Device device, CUcontext primary) noexcept {
+inline constexpr std::array kHardwarePredicates{RouteAttributePredicate::range(
+    route_attribute::kArchitectureMajor, 8,
+    (std::numeric_limits<std::uint64_t>::max)())};
+inline constexpr RouteRule kHardwareRule{.route = NativeRoute::kCuda,
+                                         .attributes = kHardwarePredicates};
+
+inline Result<Hardware>
+hardware(Device device, CUcontext primary,
+         const cuda::Environment &environment) noexcept {
   if (device.backend_id() != cuda::kBackendId || primary == nullptr)
     return std::unexpected(
         Status::Unimplemented("Marlin requires the CUDA backend"));
   HYLE_ASSIGN_OR_RETURN(auto ordinal, cuda::device_ordinal(device));
   cuda::detail::ScopedPrimaryContext scope(primary);
   HYLE_RETURN_IF_ERROR(scope.status());
-  int major = 0;
-  HYLE_RETURN_IF_ERROR(cuda::status(cudaDeviceGetAttribute(
-      &major, cudaDevAttrComputeCapabilityMajor, ordinal)));
-  if (major < 8)
+  const auto facts = cuda::detail::route_facts(environment);
+  const RouteMatchInput input{.platform = kBuildRoutePlatform,
+                              .route = NativeRoute::kCuda,
+                              .attributes = facts.attributes};
+  if (!match_route_rule(kHardwareRule, input).matched())
     return std::unexpected(
         Status::Unimplemented("Marlin requires SM80 or newer"));
   Hardware result{.primary = primary};

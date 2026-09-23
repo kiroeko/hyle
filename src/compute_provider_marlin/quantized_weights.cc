@@ -41,8 +41,10 @@ Result<QuantizedWeights> QuantizedWeights::pack(
   const std::size_t packed_bytes = n * k / 2;
   const std::size_t scale_bytes = n * groups * sizeof(__half);
   HYLE_ASSIGN_OR_RETURN(auto primary, cuda::primary_context(context));
-  HYLE_ASSIGN_OR_RETURN(auto hardware,
-                        internal::hardware(context.device(), primary));
+  HYLE_ASSIGN_OR_RETURN(auto environment, cuda::environment(context));
+  HYLE_ASSIGN_OR_RETURN(
+      auto hardware,
+      internal::hardware(context.device(), primary, environment));
   cuda::detail::ScopedPrimaryContext scope(primary);
   HYLE_RETURN_IF_ERROR(scope.status());
   HYLE_ASSIGN_OR_RETURN(

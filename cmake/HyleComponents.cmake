@@ -475,7 +475,7 @@ _hyle_declare_component(graph_route_vulkan
 # The Vulkan implementation factor owns its native adapters.
 # No dependency on the route or Graph: both retain their own public semantics.
 _hyle_declare_component(compute_provider_ggml_vulkan
-  PRIVATE_DEPS core compute_ops error mem platform compute_ggml_runtime)
+  PRIVATE_DEPS core compute compute_ops error mem platform compute_ggml_runtime)
 
 # Shared locked source and fallible resource seam; private to native providers.
 _hyle_declare_component(compute_ggml_runtime

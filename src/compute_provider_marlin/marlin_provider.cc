@@ -12,6 +12,20 @@
 namespace hyle::compute::marlin {
 namespace {
 
+inline constexpr std::string_view kProviderVersion = "vllm-51918e252af4";
+inline constexpr RouteRule kQuantizedMatMulRule{
+    .route = NativeRoute::kCuda,
+    .operation = OperationKind::kQuantizedMatMul,
+    .input0_type = DataType::kFloat16,
+    .input1_type = DataType::kFloat16,
+    .output0_type = DataType::kFloat16,
+    .input1_format = kWeightFormat,
+    .quantization = {.presence = RouteQuantizationPresence::kQuantizedMatMul,
+                     .mode = QuantizedWeightMode::kSignedSymmetric4,
+                     .group_size = 128,
+                     .weight_format = kWeightFormat,
+                     .scale_format = kScaleFormat}};
+
 struct Prepared final {
   CUcontext primary = nullptr;
   native::Program program{};
@@ -29,8 +43,12 @@ Status create_context(const Provider &, Device device, void *backend_state,
   *output = nullptr;
   if (device.backend_id() != cuda::kBackendId)
     return Status::Unimplemented("Marlin requires the CUDA backend");
+  const auto *environment = cuda::detail::borrow_environment(backend_state);
+  if (environment == nullptr)
+    return Status::FailedPrecondition("Marlin CUDA context is invalid");
   auto hardware = internal::hardware(
-      device, cuda::detail::borrow_primary_context(backend_state));
+      device, cuda::detail::borrow_primary_context(backend_state),
+      *environment);
   if (!hardware)
     return std::move(hardware).error();
   void *storage = allocator.allocate(sizeof(internal::Hardware),
@@ -52,12 +70,19 @@ void destroy_context(void *state, mem::AllocatorRef allocator) noexcept {
 
 Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs) noexcept {
+  if (inputs.size() != 3 || outputs.size() != 1)
+    return Status::Unimplemented(
+        "Marlin implements three-input Q4 MatMul only");
+  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                    .route = NativeRoute::kCuda,
+                                    .operation = operation,
+                                    .inputs = inputs,
+                                    .outputs = outputs};
+  if (!match_route_rule(kQuantizedMatMulRule, route_input).matched())
+    return Status::Unimplemented(
+        "Marlin requires symmetric group128 FP16 Q4 storage");
   const auto *quantized = operation.get_if<QuantizedMatMul>();
-  if (quantized == nullptr ||
-      quantized->mode != QuantizedWeightMode::kSignedSymmetric4 ||
-      quantized->group_size != 128 ||
-      quantized->accumulation_type != DataType::kFloat32 ||
-      inputs.size() != 3 || outputs.size() != 1)
+  if (quantized->accumulation_type != DataType::kFloat32)
     return Status::Unimplemented(
         "Marlin implements symmetric group128 FP32-accumulating Q4 only");
   for (const auto &input : inputs) {
@@ -89,9 +114,7 @@ Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
   HYLE_ASSIGN_OR_RETURN(auto weight_bytes, inputs[1].required_bytes());
   HYLE_ASSIGN_OR_RETURN(auto scale_bytes, inputs[2].required_bytes());
   if (inputs[1].storage_format().kind() != StorageFormatKind::kOpaque ||
-      inputs[1].storage_format().id() != kWeightFormat ||
       inputs[2].storage_format().kind() != StorageFormatKind::kOpaque ||
-      inputs[2].storage_format().id() != kScaleFormat ||
       weight_bytes != count / 2 || scale_bytes != count / 128 * 2)
     return Status::Unimplemented(
         "Marlin requires its exact packed weights and scales");
@@ -284,7 +307,7 @@ Status drain_context(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "marlin",
-                 .version = "vllm-51918e252af4"},
+                 .version = kProviderVersion},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

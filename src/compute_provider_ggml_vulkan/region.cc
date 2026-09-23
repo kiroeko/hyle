@@ -9,9 +9,21 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/route_rule.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
+inline constexpr RouteRule kMxfp4TensorRule{.route = NativeRoute::kVulkan,
+                                            .input0_format = kMxfp4Weight};
+inline constexpr RouteRule kMxfp4MatMulRule{
+    .route = NativeRoute::kVulkan,
+    .operation = OperationKind::kMatMul,
+    .input0_type = DataType::kFloat16,
+    .input1_type = DataType::kFloat16,
+    .output0_type = DataType::kFloat16,
+    .input1_format = kMxfp4Weight,
+    .quantization = {.presence = RouteQuantizationPresence::kNone}};
+
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -24,8 +36,12 @@ ggml_type native_type(DataType type) noexcept {
   return type == DataType::kInt32 ? GGML_TYPE_I32 : GGML_TYPE_F32;
 }
 bool mxfp4_domain(const TensorDesc &description) noexcept {
+  const std::array inputs{description};
+  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                    .route = NativeRoute::kVulkan,
+                                    .inputs = inputs};
   if (description.rank() != 2 ||
-      description.storage_format().id() != kMxfp4Weight)
+      !match_route_rule(kMxfp4TensorRule, route_input).matched())
     return false;
   const auto canonical = mxfp4_weight_description(description.dimensions()[0],
                                                   description.dimensions()[1]);
@@ -236,14 +252,19 @@ bool region_supports(const Operation &operation,
            floating(outputs[0].data_type()) &&
            (outputs[0].data_type() != DataType::kBFloat16 ||
             inputs[0].data_type() == DataType::kBFloat16);
-  if (const auto *matmul = operation.get_if<MatMul>())
-    return inputs.size() == 2 && outputs.size() == 1 &&
+  if (const auto *matmul = operation.get_if<MatMul>()) {
+    const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                      .route = NativeRoute::kVulkan,
+                                      .operation = operation,
+                                      .inputs = inputs,
+                                      .outputs = outputs};
+    return match_route_rule(kMxfp4MatMulRule, route_input).matched() &&
+           inputs.size() == 2 && outputs.size() == 1 &&
            matmul->accumulation_type == DataType::kFloat32 &&
            inputs[0].rank() == 2 && inputs[0].is_plain() &&
-           inputs[0].data_type() == DataType::kFloat16 &&
            mxfp4_domain(inputs[1]) && outputs[0].rank() == 2 &&
-           outputs[0].is_plain() &&
-           outputs[0].data_type() == DataType::kFloat16;
+           outputs[0].is_plain();
+  }
   if (operation.get_if<GatedDeltaNet>()) {
     if (inputs.size() != 6 || outputs.size() != 2 ||
         !std::ranges::all_of(inputs, [](const auto &input) {

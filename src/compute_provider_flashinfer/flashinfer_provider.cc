@@ -9,6 +9,7 @@
 #include <limits>
 #include <new>
 
+#include "hyle/compute/route_rule.h"
 #include "native_attention.h"
 #include "native_context.h"
 #include "provider_internal.h"
@@ -17,6 +18,26 @@ namespace hyle::compute::flashinfer {
 namespace {
 
 constexpr std::size_t kAlignment = 16;
+inline constexpr std::string_view kProviderVersion = "0.6.18+69ff11fc";
+inline constexpr std::array kHardwarePredicates{
+    RouteAttributePredicate::number(route_attribute::kArchitectureMajor, 8),
+    RouteAttributePredicate::number(route_attribute::kArchitectureMinor, 9)};
+inline constexpr RouteRule kHardwareRule{.route = NativeRoute::kCuda,
+                                         .provider = kProviderId,
+                                         .provider_version = kProviderVersion,
+                                         .attributes = kHardwarePredicates};
+inline constexpr RouteRule kFloat16AttentionRule{
+    .route = NativeRoute::kCuda,
+    .operation = OperationKind::kScaledDotProductAttention,
+    .input0_type = DataType::kFloat16,
+    .input1_type = DataType::kFloat16,
+    .output0_type = DataType::kFloat16};
+inline constexpr RouteRule kBFloat16AttentionRule{
+    .route = NativeRoute::kCuda,
+    .operation = OperationKind::kScaledDotProductAttention,
+    .input0_type = DataType::kBFloat16,
+    .input1_type = DataType::kBFloat16,
+    .output0_type = DataType::kBFloat16};
 constexpr ProviderRuntimeProperties kRuntime{
     .mode = ProviderRuntimeMode::kSharedQueue,
     .workspace_owner = ProviderWorkspaceOwner::kCaller,
@@ -46,8 +67,9 @@ struct Invocation final {
   bool failed = false;
 };
 
-Status create_context(const Provider &, Device device, void *backend_state,
-                      mem::AllocatorRef allocator, void **output) noexcept {
+Status create_context(const Provider &provider, Device device,
+                      void *backend_state, mem::AllocatorRef allocator,
+                      void **output) noexcept {
   *output = nullptr;
   if (device.backend_id() != cuda::kBackendId)
     return Status::Unimplemented("FlashInfer requires CUDA");
@@ -55,8 +77,14 @@ Status create_context(const Provider &, Device device, void *backend_state,
   const auto *environment = cuda::detail::borrow_environment(backend_state);
   if (primary == nullptr || environment == nullptr)
     return Status::FailedPrecondition("FlashInfer CUDA context is invalid");
+  const auto facts = cuda::detail::route_facts(*environment);
+  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                    .route = NativeRoute::kCuda,
+                                    .provider = provider.identity(),
+                                    .attributes = facts.attributes};
+  const bool qualified = match_route_rule(kHardwareRule, route_input).matched();
   std::uint64_t maximum_grid = 0;
-  if (environment->sm_major == 8 && environment->sm_minor == 9) {
+  if (qualified) {
     cuda::detail::ScopedPrimaryContext scope(primary);
     HYLE_RETURN_IF_ERROR(scope.status());
     int multiprocessors = 0;
@@ -95,16 +123,22 @@ Status describe(const ProviderContext &context, Operation operation,
                 std::span<const TensorDesc> outputs,
                 Prepared &prepared) noexcept {
   const auto *attention = operation.get_if<ScaledDotProductAttention>();
-  if (context.maximum_grid == 0 || attention == nullptr || inputs.size() != 3 ||
-      outputs.size() != 1 || !attention->causal ||
+  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
+                                    .route = NativeRoute::kCuda,
+                                    .operation = operation,
+                                    .inputs = inputs,
+                                    .outputs = outputs};
+  const bool typed_attention =
+      match_route_rule(kFloat16AttentionRule, route_input).matched() ||
+      match_route_rule(kBFloat16AttentionRule, route_input).matched();
+  if (context.maximum_grid == 0 || !typed_attention || attention == nullptr ||
+      inputs.size() != 3 || outputs.size() != 1 || !attention->causal ||
       attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
       attention->mask != MaskKind::kNone ||
       attention->accumulation_type != DataType::kFloat32)
     return Status::Unimplemented(
         "FlashInfer requires the admitted causal SM89 domain");
   const auto type = inputs[0].data_type();
-  if (type != DataType::kFloat16 && type != DataType::kBFloat16)
-    return Status::Unimplemented("FlashInfer requires FP16/BF16");
   for (const auto &description : inputs) {
     if (!description.valid() || !description.is_plain() ||
         !description.is_dense() || description.rank() != 4 ||
@@ -314,7 +348,7 @@ Status drain_context(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "flashinfer",
-                 .version = "0.6.18+69ff11fc"},
+                 .version = kProviderVersion},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

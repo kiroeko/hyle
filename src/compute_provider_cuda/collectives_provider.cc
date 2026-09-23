@@ -163,17 +163,7 @@ Status create_context(const Provider &provider, Device device, void *backend,
   auto *storage = allocator.allocate(sizeof(Context), alignof(Context));
   if (!storage)
     return Status::ResourceExhausted("CCCL context allocation failed");
-  const std::array facts{
-      RouteAttribute::number(route_attribute::kArchitectureMajor,
-                             static_cast<std::uint64_t>(environment->sm_major)),
-      RouteAttribute::number(route_attribute::kArchitectureMinor,
-                             static_cast<std::uint64_t>(environment->sm_minor)),
-      RouteAttribute::number(
-          route_attribute::kRuntimeVersion,
-          static_cast<std::uint64_t>(environment->runtime_version)),
-      RouteAttribute::number(
-          route_attribute::kToolkitVersion,
-          static_cast<std::uint64_t>(environment->build_toolkit_version))};
+  const auto facts = cuda::detail::route_facts(*environment);
   const RouteRule rule{.route = NativeRoute::kCuda,
                        .provider = kCcclProviderId,
                        .provider_version = "CCCL-300304",
@@ -181,7 +171,7 @@ Status create_context(const Provider &provider, Device device, void *backend,
   const RouteMatchInput input{.platform = kBuildRoutePlatform,
                               .route = NativeRoute::kCuda,
                               .provider = provider.identity(),
-                              .attributes = facts};
+                              .attributes = facts.attributes};
   *output =
       ::new (storage) Context{primary, match_route_rule(rule, input).matched()};
   return Status::Ok();
