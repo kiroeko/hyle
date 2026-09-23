@@ -452,3 +452,27 @@ WSL OFF、新域三交付、其余selected门、完整21行记账及P1尚未完�
 
 必要日志及失败接法压入开发证据后，核对任务owner与绝对路径，清理Windows/Air各60,581,791
 字节源码归档和Windows 1,661,106字节OFF构建；保留Air活动构建、依赖缓存和模型。
+
+## A-F：21行最终候选审计
+
+基线`3bdee8b0`。最后4分钟源码/设计额度只核对既有产品映射、普通测试和21行需求，不扩
+Provider、公开API、数学实现或依赖；Apple B1累计120/120分钟。审计确认无需新增产品接线：
+
+| 需求行 | 已固定的成熟路径与验收入口 |
+|---|---|
+| F01.1–3 | Graph View元数据；原版MLX Copy/Concat/Cast，含BF16窄修复后的全payload及中点邻值；`AppleTensor`和`AppleGraph`张量用例 |
+| F02.1–4 | 原版MLX Gather/Scatter/Scan/Sort，checked状态及稳定值/索引；`AppleIndexing`、`AppleScatter`、`AppleReduction`及Graph状态片段 |
+| F03.1–4 | 原版MLX广播算术、稳定Unary/GatedActivation；模型L2/swish和Attention sigmoid普通Graph consumer固定storage边界 |
+| F04.1–6 | 原版MLX RMS/LayerNorm、归约、Softmax/LogSoftmax/TopK，加已有L2与RMS-swish组合；Direct/Graph独立oracle |
+| F19.1–4 | 原生shape/参数冷绑定、每请求stream/状态、失败退休/取消/关闭、两slot重放/旧结果、固定规则报告和三交付consumer |
+
+以上不是由操作名推导：前序开发收据已经覆盖类型/布局/空值/特殊值、重复索引、mask、舍入、
+alias、动态失败、资源和普通入口。本轮只把同一不可变候选上的剩余门合并执行：Air与Mini完整
+Apple定向组，Air host插桩，Windows/WSL Apple-OFF，source/static/shared relocated consumer，
+selector实际适用门及一次合格P1。Mac mini只签correctness/portability；P1仅在登记的Air环境，
+如M1-MAC仍不具Formal身份则按规则保留工程证据限制，不伪造Formal结论。
+
+P1固定比较同一原版MLX完整程序的HYLE普通路径与直接MLX生命周期，准备/常量/执行/完成边界、
+storage和同步一致；先A/A与双顺序，5% material门。只选B1中实际增加成本的BF16转换边界、
+Scatter状态与模型norm/gate片段组成一个bundle，不与冻结自研竞速。API/算法在产品基线已固定；
+候选验证中若产品源码改变则退回AUDITED并废弃该P1，不追加第二套仪器或无限样本。
