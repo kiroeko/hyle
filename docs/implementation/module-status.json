@@ -369,9 +369,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "graph_provider_onednn",
@@ -381,9 +381,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_backend_cpu",
@@ -425,15 +425,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_cublas",
@@ -465,45 +465,45 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -518,15 +518,15 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -541,9 +541,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m2-b4-moe-model-fragments.md",
-      "summary": "M2-B4 AUDITED：锁定 ggml 四后端的 grouped MatMul 与 DeepSeek V4 mHC 原版入口；B4-C0–C5 有限 FIX 已冻结，四路线批量接线，新增自研数学为 0。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m2-b5-sparse-compression.md",
+      "summary": "M2-B5 SCOPED：只审计并接入四后端成熟 Lightning Indexer；MLA、pool/tail 与 compression 优先复用已有成熟图能力，新增自研数学为 0。"
     },
     {
       "module": "compute_provider_iree_vulkan",
