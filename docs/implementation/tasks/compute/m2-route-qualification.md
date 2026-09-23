@@ -136,3 +136,43 @@ FP8/BF16/FP16 可由 dtype/format 条件表达，不伪装成 Q4/Q8 operation。
 
 公开 API、匹配语义和消费者形状在该 commit 冻结，状态进入 `CANDIDATE`。后续只运行预声明验证、记录
 证据和作终局裁决；发现产品问题则退回 `AUDITED`。
+
+## Terminal：CLOSED（2026-09-23）
+
+不可变产品候选仍为 `a7b3910835eadf0c75f51554e6ed7b266b66bbd5`，tree
+`0cfa13b01499273915351ee8e94b80b1167e421a`。Windows W1/MSVC 19.50 selector 从
+`4a780fff` 到该候选选择 25 项并全部 `PASS`：docs、closure、统一配置、Compute 公开头与共同测试，
+CPU/CUDA/Vulkan backend、Provider 与 route 直接消费者，Graph 及三条 Graph route，以及 Compute/Graph
+源码、静态、动态交付；107 项 skip/reuse 理由原样保留。P1 不适用。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：只实现 RQ1--RQ6；没有扩算子、数学、Provider 支持域或 B2 接线 |
+| architecture | PASS：共同层只做稀疏资格合取；四路线保留原生事实、优先级、资源、程序和完成 owner |
+| correctness | PASS：完整组合、逐轴拒绝、非法/重复事实、四路线身份、Q4/Q8 与 FP8 区分均通过；真实 CCCL Provider 门通过 |
+| delivery | PASS：Compute/Graph 的 source/static/shared 消费 smoke 全部通过 |
+| usability_docs | PASS：公开头自足，架构文档说明编译期/Context/prepare 两级绑定与普通用户边界 |
+| red_team | PASS：未知事实不能满足具名规则，借用 span 不逃逸；无中央 registry、用户排序、热路径重新匹配或跨路线万能对象 |
+| engineering_performance | PASS（P0）：冷路径遍历有限 span，无分配/锁/原子/syscall/设备查询/计时；prepared submit 零新增字段与调用 |
+
+Direct 与 Graph 的 fixture 都保留既有“一次 proposal/compile、三次 replay 不增加准备计数”断言。CCCL
+在 Context 创建时把 SM、runtime、build Toolkit 和 Provider pin 合取成一个布尔资格，submit 不保留或
+解释规则。先前旧缓存中的 Gather 测试链接缺口没有在干净 selector 候选树复现；正式
+`compute_provider_cuda` 构建与测试通过，因此不作为本卡限制。
+
+统一 `loc-report.py --module compute-graph-all --module-path include/hyle/compute --module-path
+include/hyle/graph --module-path 'src/compute*' --module-path 'src/graph*' --commit a7b39108 --self-check
+--json`：Compute+Graph **58,466 行 / 251 个实现文件**，不含测试/vendor，self-check `pass`。本轮新增
+的是共同规则和一条真实迁移，不把其余存量 LOC 计作本专题完成量。
+
+限制：本卡只迁移 CCCL 这一条已有真实资格；其它 Provider 在其后续接入卡需要具体组合条件时使用同一
+matcher，不为没有规则的路线制造空调用。Apple 原生 runtime 本轮未变、未在 Windows 冒充验证；共同
+matcher 的 Apple 路线值和稀疏语义已由平台无关测试覆盖。版本数值仍由路线/Provider 定义编码，规则须
+同时约束相应路线，不能跨生态比较整数版本。
+
+重开条件：共同 matcher 出现可复现的错误命中/拒绝、借用寿命或并发缺陷；真实 Provider 需要当前
+规则无法表达的平台/硬件/软件栈/模型/量化组合；公开 route 合同变化；或 prepared 热路径出现可测的
+规则解释成本。普通新增 Provider 规则、未知硬件和 B2 算子接线不重开本卡。
+
+RQ1--RQ6 与七门全部完成，`compute`、`compute_provider_cuda` 在本专题进入 `CLOSED`。停止路由系统
+重构，不据此恢复 M2-B2。
