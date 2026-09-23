@@ -295,6 +295,9 @@ SCOPED卡恢复，不能直接清除BLOCKED；oneDNN原性能阻塞也不由M1�
    重型验证仍串行、并行度2。
 5. 当前先把已稳定的Apple B1作为第一个集中收口批次，再用同一方法完成CPU、CUDA、Vulkan
    的B1剩余族；随后B2–B6按Provider region批量推进。完成整个M2后暂停并向用户报告，不进入M3。
+6. 仪器只保留能裁决本批实际风险的最小集合。路线validator核对已准入Provider、补丁、资源和
+   合同的精确身份，不要求合法patched tree等同unpatched upstream，也不把其它路线的控制密度
+   机械复制到本批。已有共同仪器只有在可复现缺陷妨碍当前裁决时才定向修正，不扩建公共治理系统。
 
 2026-09-21启动[M2-B1 Vulkan](llm-moe-m2-b1-vulkan.md)，补同一基础需求批次的第四路线。
 CPU/CUDA/Apple当前未决项保留；按需求批次推进四路线，不等前三路线全域完成才启动Vulkan。
@@ -306,6 +309,10 @@ ggml与IREE在同设备组合并保留公开精度边界；Air NaN问题由标�
 同类型广播additive mask及必要的独立Scale。最新同一候选Windows/Air各8/8开发门通过。
 完整B1的21行覆盖、适用三交付/插桩/最终selected与P1仍待完成，不计新的完整矩阵PASS。
 具体实现、失败和剩余预算以[本卡](llm-moe-m2-b1-vulkan.md)为准。
+
+Apple B1已经按同一集中合同CLOSED：MLX成熟路径的F01–F04/F19共21格完成普通Direct/Graph、
+资源/失败、两台Mac适用门、三交付和完整region P1；矩阵为21/256路线格，跨四路线完整行仍0/64。
+产品候选为`fd03ba10`，未启动冻结自研比较；旧不可达自定义Metal链继续留到M5裁决。
 
 | 批次 | Provider 与接法 | 一批要接的需求 | owner 与停止点 |
 |---|---|---|---|

@@ -2015,8 +2015,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2065,8 +2069,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2115,8 +2123,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2165,8 +2177,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2215,8 +2231,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2266,8 +2286,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2311,8 +2335,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2360,8 +2388,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2409,8 +2441,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2458,8 +2494,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2502,8 +2542,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2551,8 +2595,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2600,8 +2648,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2650,8 +2702,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2700,8 +2756,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2749,8 +2809,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -2795,8 +2859,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -4779,8 +4847,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -4826,8 +4898,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -4873,8 +4949,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",
@@ -4920,8 +5000,12 @@
           "evidence": []
         },
         "apple_mlx_metal": {
-          "state": "UNPROVEN",
-          "evidence": []
+          "state": "PASS",
+          "evidence": [
+            "evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json",
+            "evidence/performance/compute-llm-moe-m2-b1-apple/manifest.json",
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md"
+          ]
         },
         "vulkan": {
           "state": "UNPROVEN",

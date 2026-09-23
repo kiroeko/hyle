@@ -1,0 +1,150 @@
+{
+  "schema": "hyle.apple-b1-aa/v1",
+  "gate": "PASS",
+  "identity": {
+    "artifact": "16d61913d68b8cd3e1bc0b6a25ea15bffc7a1bfaee2d26ae3e67b61883c4ef51",
+    "reference": {
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "tree": "05433bcb7241af2b3531e7ee94f1eed07d4bf15c",
+      "compiled_blob_count": 943,
+      "patch_manifest_sha256": "95af48cadc435640e1b6aa94dd72adf5d559a5f216fc7054a6b32bb68f4d01ac",
+      "patched_files": {
+        "mlx/backend/metal/jit_kernels.cpp": {
+          "before_sha256": "8201a166cc426cd7b1f6983e5e6f282d3ca7a1992cc4c3a80fa42cf8dd237c46",
+          "after_sha256": "5226035d4ad6dc02937f8e6a35d88c4dfc9fe627b03a3d8d2ddfa3f965f276b6"
+        },
+        "mlx/backend/metal/kernels/bf16.h": {
+          "before_sha256": "abd87446a310b77ac530ef52a324feae5cb285d03ec9613e3a88ebb71410fdcb",
+          "after_sha256": "78f0871b82a1157610867e02cbcee03a37620df032e53f0c1297541d113e164a"
+        },
+        "mlx/compile.cpp": {
+          "before_sha256": "b95efbcaa0a0173d6d2184f43e49b75af43c376ab2eb970012ef344d694358f7",
+          "after_sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c"
+        }
+      },
+      "metallib": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    "validator": "d3884a3ce9752f6733bb0320bd45d7e29b18efe1b27aaac20d9e86933d4b97de",
+    "machine_identity": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "M1-MAC",
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "environment": "macos",
+      "independent_hardware": true,
+      "profile_provisioned": true,
+      "registration_state": "UNREGISTERED",
+      "stable_machine_id_source": "macos-platform-uuid-sha256",
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_matches_registered": false,
+      "required_host_facts_match": false,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "raw_identifier_recorded": false
+    },
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+    "model": "Mac16,12",
+    "caller_qos": "interactive"
+  },
+  "runs": [
+    {
+      "route": "native",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratio": 1.0092401705671021,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/native-0-0.log",
+      "sha256": "ee420cf911b89ee7e3aabdd5a3e88e51fa13680a039d00e9dcaeaf19ce8090af"
+    },
+    {
+      "route": "native",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratio": 0.9976839118728468,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/native-0-1.log",
+      "sha256": "4c73c7d8f34e35b4b8802152b1b4a13bfbd0f305daa05924b1a22207baa1873d"
+    },
+    {
+      "route": "native",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratio": 0.9994835972725051,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/native-1-0.log",
+      "sha256": "534c03e6228a7a6b6d22ac5197db581ee8c1325335bddf96b06267b0cd4970b6"
+    },
+    {
+      "route": "native",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratio": 1.0001533410304515,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/native-1-1.log",
+      "sha256": "089a4875b1f2b7017bd067d6ec32765c18083c8472fef3dd3dff77d1c1e712f9"
+    },
+    {
+      "route": "selected",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratio": 1.0056150606695768,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/selected-0-0.log",
+      "sha256": "ea4d0773627843b99f1a6b031d0a17cfe5d1e99e5a8a3470aba3eed079833582"
+    },
+    {
+      "route": "selected",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratio": 1.0020287286633711,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/selected-0-1.log",
+      "sha256": "1c64e7b6961a7243383846cc6f7a984ecc6aeb1e15e3f2325b1854485a7c2ab1"
+    },
+    {
+      "route": "selected",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratio": 0.9592692065069868,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/selected-1-0.log",
+      "sha256": "2fc329e62d47025290c748e0a2dbf82e3a67c4cc6e259a49e6d24b9a1e2ff05d"
+    },
+    {
+      "route": "selected",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratio": 1.0007778425979943,
+      "log": "/Users/kiro/hyle-m2b1-apple-p1/evidence/apple-b1-aa-raw/selected-1-1.log",
+      "sha256": "fce7788e30f13760f5cd25c45aa55842f3651676c3c4a0acf49663a5ed949302"
+    }
+  ],
+  "native_environment": "# APPLE_ENV device=Apple M4 architecture=applegpu_g16g os=Version 27.0 (Build 26A428) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 sdk=270000 deployment=140400 metal=Apple metal version 32023.883 (metalfe-32023.883)",
+  "observed_owner_qos": "21",
+  "summaries": {
+    "native": {
+      "ratios": [
+        1.0092401705671021,
+        0.9976839118728468,
+        0.9994835972725051,
+        1.0001533410304515
+      ],
+      "factor_medians": {
+        "all": 0.9998184691514783,
+        "execution_order=candidate-first": 1.0034620412199744,
+        "execution_order=peer-first": 0.9998184691514783,
+        "allocation_order=candidate-first": 1.0043618839198036,
+        "allocation_order=peer-first": 0.9989186264516492
+      }
+    },
+    "selected": {
+      "ratios": [
+        1.0056150606695768,
+        1.0020287286633711,
+        0.9592692065069868,
+        1.0007778425979943
+      ],
+      "factor_medians": {
+        "all": 1.0014032856306827,
+        "execution_order=candidate-first": 1.003821894666474,
+        "execution_order=peer-first": 0.9800235245524905,
+        "allocation_order=candidate-first": 0.9824421335882818,
+        "allocation_order=peer-first": 1.0014032856306827
+      }
+    }
+  },
+  "errors": []
+}

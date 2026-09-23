@@ -1,0 +1,112 @@
+{
+  "schema": "hyle.compute-llm-moe-m2-b1-apple.final/v1",
+  "stage": "M2-B1 Apple terminal acceptance",
+  "outcome": "PASS",
+  "state": "CLOSED",
+  "product_candidate": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e",
+  "qualification_harness_commit": "a8c9d8aa91df1f4a0cf9006897767f3ced41b907",
+  "provider": {
+    "name": "MLX",
+    "version": "0.32.2",
+    "commit": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "qualification": "original MLX operations and compiled regions plus the admitted upstream-derived BF16 storage-boundary patch"
+  },
+  "coverage": {
+    "route": "apple_mlx_metal",
+    "passed_cells": 21,
+    "total_route_cells": 256,
+    "complete_requirement_rows": 0,
+    "requirement_ids": [
+      "F01.1",
+      "F01.2",
+      "F01.3",
+      "F02.1",
+      "F02.2",
+      "F02.3",
+      "F02.4",
+      "F03.1",
+      "F03.2",
+      "F03.3",
+      "F03.4",
+      "F04.1",
+      "F04.2",
+      "F04.3",
+      "F04.4",
+      "F04.5",
+      "F04.6",
+      "F19.1",
+      "F19.2",
+      "F19.3",
+      "F19.4"
+    ]
+  },
+  "correctness_and_delivery": {
+    "verdict": "PASS",
+    "receipt": "final-candidate-validation.json",
+    "receipt_sha256": "4af7c88fcd88c033a411b8fe1ae5389447493f1dc4fcf8b5260bda21399bbe75",
+    "raw_archive": "final-candidate-raw.zip",
+    "raw_archive_sha256": "b3cf5f37ddcb847404bc26a93cedba5be3708e81d846e95f0b539c138a2f54b1",
+    "gates": [
+      "MacBook Air Release/shared 7/7",
+      "Mac mini Release/static 7/7 correctness and portability",
+      "MacBook Air host ASan 4/4 and UBSan 4/4",
+      "source, relocated shared and relocated static ordinary C++ consumers",
+      "Windows and WSL Apple-OFF public headers 2/2 each",
+      "native resource, repeated invocation, completion, failure and close semantics"
+    ]
+  },
+  "performance": {
+    "tier": "P1 engineering",
+    "verdict": "PASS",
+    "qualification": "QUALIFIED",
+    "contract": "graph-apple-b1-p1-v1",
+    "contract_sha256": "9375fc6260f091d184d00aaf8256098bc33a8faf4277be6f1bb8cc69c173d43e",
+    "samples_per_stratum": 15,
+    "escalated_to_31": false,
+    "complete_region": "BF16 state/update, checked Scatter/Gather, BF16-F32-BF16, RMSNorm, SiLU gate and residual",
+    "combined_exact_verdict": "PARITY",
+    "combined_noninferiority_gate": "PASS",
+    "median_candidate_peer_ratios": [
+      1.0041440437237064,
+      1.001926064718102,
+      1.0061802105116004,
+      0.9989937877329599
+    ],
+    "confidence_interval_union": [
+      0.9886599422862538,
+      1.008454780597304
+    ],
+    "manifest": "../../performance/compute-llm-moe-m2-b1-apple/manifest.json",
+    "manifest_sha256": "2a624cf9f3c5c35721918af2bb2c2eccc51a2a3fe14e81712eda4e13d2a7a266",
+    "raw_archive": "../../performance/compute-llm-moe-m2-b1-apple/raw.zip",
+    "raw_archive_sha256": "4a914aedd921c20974036f285ea248c9c5a9cc7ba70aef991294002af22cb82c"
+  },
+  "validation_selection": {
+    "base": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e",
+    "preclosure_plan_sha256": "d81a08b413c4b42e933ae7d82cb1013667792f9b18f9ea6a93595cc65c41ee44",
+    "selected": [
+      "docs",
+      "closure"
+    ],
+    "reason": "Changes after the immutable product candidate are benchmark instrumentation, evidence, documentation and state only."
+  },
+  "instrumentation_correction": {
+    "classification": "validator contract correction; no product change",
+    "detail": "The route-specific validator previously required an admitted patched MLX tree to equal unpatched upstream. It now verifies the clean upstream pin, the exact admitted patch manifest, before/after hashes, patch set and metallib identity.",
+    "policy": "Do not copy this Apple-specific control density into later M2 batches unless the route card identifies the same risk."
+  },
+  "loc": {
+    "commit": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e",
+    "compute_graph_implementation_lines": 57434,
+    "compute_graph_files": 249,
+    "tests_bench_docs_vendor_excluded": true,
+    "self_check": "PASS"
+  },
+  "limitations": [
+    "The MacBook Air P1 profile is engineering qualification, not Formal independent-hardware certification.",
+    "Mac mini signs correctness and portability only.",
+    "Host sanitizers do not qualify the Metal driver or device memory and macOS ASan did not provide leak detection.",
+    "The compiled but unreachable legacy custom Metal scatter and old indexing chain remain frozen for M5 disposition; they do not carry any of these 21 PASS cells.",
+    "The other 235 route cells remain UNPROVEN and no one of the 64 requirement rows is complete across all four routes."
+  ]
+}

@@ -48,7 +48,7 @@ host ASan/UBSan及两台Mac适用门通过；只关闭有限接入范围，新�
 | ggml Metal | 必需；F09–F17 成熟递归/稀疏/MoE 片段 | native backend region；`456172ec`，MIT | M1-A 已接 F32 whole recurrent 与 MLX 普通 Direct/Graph 组合、原生资源/完成及三交付；批量覆盖待 M2 |
 | ggml Vulkan | 已有复用并扩接；F01–F17 | 现有 managed region 批量映射；`456172ec`，MIT | M2-B1高rank广播/norm、任意轴Sum/Mean、半精度Copy/Cast/既有算术族及I32 Copy/浮点和I32 Concat已接普通入口；任意轴Softmax/广播additive mask同一候选也通过Windows/Air开发门；完整21行域/新增三交付/P1仍未完成 |
 | oneDNN | 已有复用并扩接；CPU F01/F04–F06/F18 | primitive/Graph partition、reorder + MatMul；3.13.2 `71094df4`，Apache-2.0 | locked pin 已有 FP8/E2M1/UE8 reorder 源码；格式组合与设备资格待验证；Q2现裁决为INVALID_MEASUREMENT，不再作为接入阻塞，也不宣称性能PASS |
-| MLX | 已有复用并扩接；Apple F01–F08/F18 | C++ typed/compiled array region；0.32.2 `1f8e74e3`，MIT | locked pin 的 `from_fp8/to_fp8/quantized_matmul/gather_qmm/qqmm` 已定位；默认 nvfp4 不等于所有 F18 档位 |
+| MLX | 已有复用并扩接；Apple F01–F08/F18 | C++ typed/compiled array region；0.32.2 `1f8e74e3`，MIT | M2-B1已关闭F01–F04/F19共21格：普通Direct/Graph、原生资源/失败、三交付与完整region P1通过；其余43个Apple格待后续批次。`from_fp8/to_fp8/quantized_matmul/gather_qmm/qqmm`已定位，默认nvfp4不等于所有F18档位 |
 | cuBLASLt | 已有复用；CUDA F05 与量化解码后的合法浮点 GEMM | CUDA Toolkit 的公开 C API，精确 toolkit/driver 由已有环境与 package receipt 绑定 | 不增加第二份 toolkit 下载器；属于 NVIDIA SDK 分发合同 |
 | Marlin | 已有复用；CUDA F06 合格 W4A16 域 | 已锁 vLLM `51918e25` 原版窄源码，Apache-2.0 | group/zero/packing 与数值档位逐一匹配，不能只匹配4bit |
 | SGLang | 已有复用并扩接；CUDA activation/norm、F18 量化/专家程序 | `06992c92` 已有 C++/CUDA 源码片段，Apache-2.0 | AB 只有 W1 static 局部收据；不把 Python/Torch 安装当 SDK 接入 |

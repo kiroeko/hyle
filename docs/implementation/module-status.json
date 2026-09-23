@@ -483,10 +483,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-m2-b1-apple.md",
-      "summary": "M2-B1 Apple CANDIDATE：21行成熟MLX路径固定；Air/Mini集中7/7、Air ASan/UBSan、三交付及Windows/WSL OFF通过。候选fd03ba10；final selected/P1待验，自研冻结，完整覆盖0。",
-      "candidate": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e"
+      "summary": "M2-B1 Apple CLOSED：成熟MLX路径的F01–F04/F19共21格完成普通Direct/Graph、资源/失败、Air/Mini适用门、三交付和完整region P1；候选fd03ba10，自研继续冻结，矩阵21/256且完整行0/64。",
+      "candidate": "fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/compute-llm-moe-m2-b1-apple/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_apple",

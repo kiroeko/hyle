@@ -536,3 +536,35 @@ BF16状态与更新、checked Scatter/Gather、BF16→F32→BF16边界、RMSNorm
 两个复用invocation和相同终端同步。peer也执行两次边界检查与状态归约，全部转换、临时和完成成本
 计费；计时前逐位比较两个完整输出及变化输入。固定四个执行/分配顺序层、A/A、5%门，初始15个
 独立进程样本，只有合同允许的纠正才到31；不增加逐算子microbenchmark或第二套性能仪器。
+
+## Terminal：CLOSED（M2-B1 Apple 21 格）
+
+产品候选保持`fd03ba10da3d08b7f8d1fa010e92bc82bc250a4e`；候选之后只有测试、P1合同、
+验证器、文档、状态与证据变化。最终验收见
+[收据](../../../../evidence/correctness/compute-llm-moe-m2-b1-apple/final-acceptance.json)。
+
+| 门 | 最终裁决 |
+|---|---|
+| 成熟实现与普通入口 | PASS：原版MLX operation/compiled region和已准入的上游来源BF16 storage边界补丁承载F01–F04/F19；Direct与Graph均使用普通公开路径，未新增HYLE数学 |
+| 正确性与状态 | PASS：Air shared和Mini static各7/7；重复索引、特殊值、舍入、动态输入、两slot、旧结果、失败退休、取消和close均在独立oracle下通过；Mini只签correctness/portability |
+| 资源与插桩 | PASS：原生owner、stream、结果lease与完成边界通过；Air host ASan/UBSan各4/4。host插桩不代签Metal driver/device，ASan无leak detection |
+| 三交付与隔离 | PASS：source、relocated shared、relocated static普通Compute+Graph消费者通过；producer源码/build隐藏，资源、许可证、私有头、符号及Windows/WSL Apple-OFF门通过 |
+| P1工程门 | PASS：一个完整region在四种执行/分配顺序层均为PARITY且5%非劣门通过；n=15，candidate/peer中位比0.99899–1.00618，99.26%置信区间总范围0.98866–1.00845，无需升到31 |
+| 最终选择与治理 | PASS：产品候选后只需docs/closure；未重建产品或重跑P1。修正的Apple验证器改为核对clean上游pin和准入patch的精确before/after身份，不再错误要求patched provider等同unpatched upstream |
+
+性能仪器按本卡风险收缩：该次有限运行保留A/A、known-delta、timer-floor与完整region公平边界；
+以后M2批次不机械复制Apple专用控制密度。只有可复现的共同仪器缺陷才改公共工具，路线validator
+只检查本路线实际先决条件。本次修正没有改变统计器、样本结果或产品候选，初次失败属于合同校验
+过度，不记为产品FAIL。
+
+矩阵现将Apple路线的F01.1–3、F02.1–4、F03.1–4、F04.1–6、F19.1–4共**21格**记为
+PASS；总进度为**21/256路线格**，其余235格仍UNPROVEN。由于CPU、CUDA和Vulkan对应格尚未
+全部签收，64行中跨四路线完整行为**0/64**，不把单路线关闭写成M2或整个goal完成。
+
+普通产品路径`apple_tensor.cc -> lower_mature_indexing()`使用MLX原版scatter/gather/take/where。
+已编译但当前普通路径不可达的旧`apple_scatter.cc`自定义Metal与旧`apple_indexing.cc`链继续冻结，
+留到M5按覆盖与可达性处理；它们不承载本轮21格，也不因此删除SIMD或其它通用基础。
+
+统一脚本在不可变候选上复核Compute+Graph为**57,434实现行 / 249文件**，排除tests、bench、
+docs和vendor，self-check PASS。Apple B1关闭后继续CPU、CUDA、Vulkan B1及B2–B6；整个M2完成
+后按用户约定暂停，不进入M3。
