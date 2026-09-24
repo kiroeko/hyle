@@ -420,9 +420,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_sched",
@@ -431,15 +432,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_provider_cublas",
@@ -454,51 +457,59 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
+      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
     },
     {
       "module": "compute_provider_ggml_vulkan",

@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "id": "llm-moe-d4-provider-first-retirement",
-  "baseline": "7d0ff127262c83ba0fdae98059baec6da9fae135",
+  "baseline": "0128315b3314a637b6370d9488c14bd0b413d213",
+  "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
   "policy": {
     "new_performance_runs": 0,
     "algorithm_optimization_budget": 0,

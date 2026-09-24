@@ -1,6 +1,6 @@
 # M3-D4：Provider 优先的旧算子批量退场
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -99,3 +99,21 @@
 
 表外不删除 CPU/CUDA/Vulkan fallback 域，不新增 kernel/provider/性能仪器。实现中若静态或 correctness
 证明成熟替代没有 ledger 所写合同，立即恢复该精确残余并记录限制，不扩大成逐算子研究。
+
+## CANDIDATE：`91c2fb4df18f6937d64d195793a8c5b30b06a8ed`
+
+有限退场集已整批实施：Marlin 不再有公开入口、实现、依赖、导出或普通 consumer；CPU native
+Scan/TopK、CUDA native Gather/Scan/TopK、Apple 五个旧实现文件，以及 Vulkan 自有 F32 MatMul/SwiGLU
+域均已删除或收窄。Vulkan 为 ggml region 保留了准备期的精确转置物化 adapter；这是成熟 Provider 的
+边界转换，不是恢复自有 MatMul。组件 ID 的 append-only 合同要求 `compute_provider_marlin` 只保留 registry
+身份墓碑，其内部 target 为 `OPTIONAL_ABSENT`。
+
+Windows CPU 6/6、CUDA 6/6、Vulkan 5/5 受影响门通过；同一精确 archive 在 MacBook Air 与 Mac mini
+各通过 Apple 5/5，mini 只签 portability。组件合同通过，Compute 与 Graph 普通 C++ consumer 均通过
+source、relocated shared、relocated static 三交付；shared DLL 由运行时 helper 放在 EXE 同目录。
+P0 确认 Provider 在准备期固定绑定且 submit 无搜索、计时或裁决。D4 按协议不运行 P1。
+
+[完整证据](../../../../evidence/correctness/llm-moe-d4-self-operator-retirement/README.md)记录候选、归档哈希、
+各路线结果、三交付和统一 LOC。当前 Compute + Graph 为 57,658 实现行/228 文件，不含 tests、bench、
+docs、vendor 与生成目录。候选提交在全部 tracked 文件中净删除 11,232 行；其中 `include/hyle` 与 `src`
+删除 3,685 行、新增 129 行。下一步只进行状态终审，不追加构建或性能采样。

@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "baseline": "0128315b3314a637b6370d9488c14bd0b413d213",
+  "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+  "archive_sha256": "A11A9C5B3D10BC504DF9A5CDD0C86CBD4591ECB3ED2828A8F3282443EF48EBEF",
+  "product_change": {
+    "all_tracked_files": {
+      "files": 94,
+      "insertions": 277,
+      "deletions": 11509
+    },
+    "include_and_src": {
+      "files": 40,
+      "insertions": 129,
+      "deletions": 3685
+    }
+  },
+  "correctness": [
+    {
+      "route": "cpu",
+      "machine": "Windows canonical",
+      "passed": 6,
+      "total": 6,
+      "verdict": "PASS"
+    },
+    {
+      "route": "cuda",
+      "machine": "Windows canonical, NVIDIA RTX 4070",
+      "passed": 6,
+      "total": 6,
+      "verdict": "PASS"
+    },
+    {
+      "route": "vulkan",
+      "machine": "Windows canonical, NVIDIA RTX 4070",
+      "passed": 5,
+      "total": 5,
+      "verdict": "PASS"
+    },
+    {
+      "route": "apple",
+      "machine": "MacBook Air Mac16,12",
+      "passed": 5,
+      "total": 5,
+      "role": "primary correctness and delivery",
+      "verdict": "PASS"
+    },
+    {
+      "route": "apple",
+      "machine": "Mac mini Mac16,10",
+      "passed": 5,
+      "total": 5,
+      "role": "independent correctness and portability",
+      "verdict": "PASS"
+    }
+  ],
+  "contracts": {
+    "component_graph": "PASS",
+    "compute_source_shared_static_relocated_consumers": "PASS",
+    "graph_source_shared_static_relocated_consumers": "PASS",
+    "compute_shared_export_hygiene": {
+      "libraries": 15,
+      "exports": 1047,
+      "verdict": "PASS"
+    },
+    "graph_shared_export_hygiene": {
+      "libraries": 18,
+      "exports": 1244,
+      "verdict": "PASS"
+    }
+  },
+  "performance": {
+    "tier": "P0",
+    "verdict": "PASS",
+    "p1": "NOT_RUN_BY_PROTOCOL",
+    "reason": "D4 retires domains using frozen mature-provider evidence; D5 owns full-profile fragment P1."
+  },
+  "implementation_loc": {
+    "file": "implementation-loc.json",
+    "code": 57658,
+    "files": 228,
+    "self_check": "PASS"
+  }
+}
