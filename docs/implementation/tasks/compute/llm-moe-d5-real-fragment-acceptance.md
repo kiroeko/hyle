@@ -319,8 +319,16 @@ MSVC 19.50、WERROR 的不可变 selector 对 docs、closure、configure、Provi
 ggml CUDA Graph provider 与 CUDA Graph 全部 PASS；收据见
 [CUDA Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-r01/README.md)。
 
-ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU 与 CUDA 共四个 primary GGUF cell
-只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
+**D5-F8 Apple CANDIDATE（`94264ba2`）**：Apple Direct 的 GGUF carrier 与 Graph region 已把同一
+checked embedding 域交给固定 ggml Metal `ggml_get_rows`。Qwen3.5 primary GGUF 的 Q6_K
+`[7,2048]` R01 在 formal Air M4 上完成普通 Direct/Graph 冷绑定、两次变化 indices replay、独立
+packed-byte oracle、越界提交前失败、输出保持及后续恢复；Provider owner suite 同时运行 Q4_K/Q6_K/
+Q8_0。固定上游 Metal Q4_K 的独立解码资格界为实测 `0.4% + 2e-4`，Q6_K/Q8_0 保持 `1e-6`。
+AppleClang 21、Release/WERROR selector 的 docs、closure、configure、Provider、Direct 与 Graph 全部
+PASS；收据见 [Apple Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-r01/README.md)。
+
+ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU、CUDA 与 Apple 共六个 primary GGUF
+cell 只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
 
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 

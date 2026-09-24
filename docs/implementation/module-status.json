@@ -513,15 +513,17 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 AUDITED：Apple 普通 Direct 的 GGUF embedding carrier 尚未进入既有 ggml Metal region；只补精确 Q4_K/Q6_K/Q8_0 checked Gather 绑定，自研数学继续冻结。"
+      "summary": "M3-D5-F8 Apple CANDIDATE 94264ba2：普通 Direct 已将 Q4_K/Q6_K/Q8_0 checked embedding 交给固定 ggml Metal；Qwen3.5 primary GGUF R01、replay、失败与 WERROR selector 通过，等待其余 region 和完整验收。",
+      "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 AUDITED：Apple Graph 的 GGUF embedding constant 尚未切成既有 ggml Metal region；只补精确 Q4_K/Q6_K/Q8_0 checked Gather 绑定，自研数学继续冻结。"
+      "summary": "M3-D5-F8 Apple CANDIDATE 94264ba2：Graph 已将量化 embedding constant 切入固定 ggml Metal region；Qwen3.5 primary GGUF R01、replay、失败与 WERROR selector 通过，等待其余 region 和完整验收。",
+      "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3"
     },
     {
       "module": "compute_route_vulkan",
@@ -589,9 +591,10 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
+      "summary": "M3-D5-F8 Apple CANDIDATE 94264ba2：固定 ggml Metal GET_ROWS 已接管 Q4_K/Q6_K/Q8_0 checked embedding；Qwen3.5 primary GGUF R01 的 Direct/Graph、replay、失败、owner suite 与 WERROR selector 通过。",
+      "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3"
     },
     {
       "module": "compute_provider_iree_vulkan",

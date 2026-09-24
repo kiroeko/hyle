@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3",
+  "candidate_tree": "aa5e630e1244e582d9df4ae94485b626ffee4f5f",
+  "verdict": "PARTIAL_RUN_PASS_R01_ONLY",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "region": "R01",
+    "route": "apple",
+    "entries": ["direct", "graph"],
+    "not_claimed": [
+      "R02-R05",
+      "R13-R15",
+      "complete profile cell",
+      "three deliveries",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "format": "Q6_K",
+    "payload": "format-valid deterministic nonzero bytes with independent ggml dequantization oracle"
+  },
+  "consumer": {
+    "operation": "checked Gather axis 0",
+    "table_shape": [7, 2048],
+    "indices_shape": [2],
+    "output_shape": [2, 2048],
+    "provider": "ggml-metal",
+    "replay": "same prepared artifact, two changed shared-buffer I32 index sets",
+    "failure": "out-of-range index fails before native graph submission, preserves output, and a later valid invocation succeeds",
+    "owner_formats": ["Q4_K", "Q6_K", "Q8_0"],
+    "oracle_qualification": {
+      "Q4_K": "abs(expected) * 0.004 + 0.0002, measured fixed-upstream Metal reconstruction bound",
+      "Q6_K": "0.000001",
+      "Q8_0": "0.000001"
+    }
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "AppleD5.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "graph",
+      "test": "AppleGraphD5.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "provider",
+      "test": "GgmlMetalProgram.TargetEmbeddingFormatsUseNativeGetRowsAndCheckBoundsBeforeSubmit",
+      "result": "PASS"
+    }
+  ],
+  "selector": {
+    "baseline": "69832e6d4aec4867addab5426a7c32b52c0587c0",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_ggml_metal",
+      "factor:compute_route_apple",
+      "factor:graph_route_apple"
+    ],
+    "skipped_or_reused": 126,
+    "toolchain": "AppleClang 21.0.0, libc++, macOS SDK 27.0",
+    "flags": "Release -O3 -DNDEBUG; WERROR",
+    "machine": "M1-MAC, MacBook Air Mac16,12, Apple M4, 16 GB, macOS 27.0 build 26A428",
+    "metal_toolchain": "Metal 17F109 command-line tools shim"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts after the complete route fragment is immutable."
+  }
+}
