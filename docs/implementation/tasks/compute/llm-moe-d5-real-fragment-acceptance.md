@@ -85,7 +85,7 @@ block/group 与逐 tensor role 的混合格式。官方与 GGUF 是不同 profil
 其它 Provider 或任何算子域。若 CUDA 13.3 heuristic 对该真实形状仍拒绝，则记录精确 backend rejection，
 不在 D5 内扩大实现。
 
-**D5-F1 CANDIDATE（`67948310b`）**：cuBLASLt 13.6.0 在 RTX 4070 上接受 BF16 row/column-major
+**D5-F1 CLOSED（`67948310b`）**：cuBLASLt 13.6.0 在 RTX 4070 上接受 BF16 row/column-major
 布局并以 FP32 累加运行。Provider 6/6、CUDA Direct 10/10、CUDA Graph 29/29 以及 Compute/Graph
 源码、共享、静态和搬迁消费者均通过；不可变候选上的真实 R03 Direct/Graph 两次 submit 收据见
 [CUDA Qwen3.5 R03](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-r03/README.md)。
