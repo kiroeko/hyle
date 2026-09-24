@@ -153,6 +153,13 @@ supports-op 也没有等头限制。Windows baseline 的精确 K16/V48×128、T=
 不改变公共 schema、route 顺序、GDN 状态布局或 KDA gate 语义。若某个固定上游 backend 实际拒绝该精确
 比例，则该路线记录 `BACKEND_REJECTED` 和原生拒绝，不在 D5 内实现替代算子。
 
+**D5-F3 CANDIDATE（`d7cb7e01`）**：四个 adapter 只放宽到公共 schema 已允许且固定 ggml 原生实现
+支持的 `V_heads % K_heads == 0`。同一份官方 Qwen3.8-27B R05 K16/V48×128、decode T=1 fixture 在
+Windows CPU/CUDA/Vulkan 和 formal Air Apple M4 的普通 Direct/Graph 入口全部通过，两次 submit 的
+输出与新 state 均匹配独立 double oracle；完整受影响 owner suite 也通过。未增加 HYLE 数学、kernel、
+shader、fallback 或热选择。收据见 [Qwen3.8 R05 grouped-head](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-grouped-head/README.md)。
+该收据仍只覆盖 R05；其余 region、三交付与 P1 未完成，所以 176-cell ledger 不提前改变任何 cell。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

@@ -374,9 +374,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml CPU adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并完成真实 Direct/Graph 资格。"
+      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml CPU adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
+      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
     },
     {
       "module": "graph_provider_onednn",
@@ -556,9 +557,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml Vulkan adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并完成真实 Direct/Graph 资格。"
+      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml Vulkan adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，RTX 4070 普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
+      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
     },
     {
       "module": "compute_ggml_runtime",
@@ -573,9 +575,10 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml CUDA adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并完成真实 Direct/Graph 资格。"
+      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml CUDA adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，RTX 4070 普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
+      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -597,9 +600,10 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml Metal adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并在 formal Air 完成真实 Direct/Graph 资格。"
+      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml Metal adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，formal Air Apple M4 普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
+      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
     },
     {
       "module": "compute_provider_iree_vulkan",

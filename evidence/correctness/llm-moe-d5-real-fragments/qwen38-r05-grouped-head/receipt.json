@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a",
+  "candidate_tree": "b23a019d816ccf3f235cd5fcedafd1b1c050f9c3",
+  "verdict": "PARTIAL_RUN_PASS_R05_ONLY",
+  "scope": {
+    "profile": "qwen38_27b:official:official-bf16",
+    "region": "R05",
+    "routes": [
+      "cpu",
+      "cuda",
+      "apple",
+      "vulkan"
+    ],
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "not_claimed": [
+      "remaining Qwen3.8 regions",
+      "complete profile cells",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "variant": "official-bf16",
+    "format_family": "safetensors",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "manifest_sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
+    "fixture": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+    "payload": "deterministic nonzero format-valid data; no checkpoint bytes committed",
+    "oracle": "independent double-precision grouped-head Gated DeltaNet recurrence"
+  },
+  "consumer": {
+    "shape": {
+      "q": [
+        1,
+        1,
+        16,
+        128
+      ],
+      "k": [
+        1,
+        1,
+        16,
+        128
+      ],
+      "v": [
+        1,
+        1,
+        48,
+        128
+      ],
+      "decay": [
+        1,
+        1,
+        48,
+        1
+      ],
+      "beta": [
+        1,
+        1,
+        48,
+        1
+      ],
+      "state": [
+        1,
+        48,
+        128,
+        128
+      ],
+      "output": [
+        1,
+        1,
+        48,
+        128
+      ],
+      "new_state": [
+        1,
+        48,
+        128,
+        128
+      ]
+    },
+    "dtype": "F32 recurrent inputs/state/math for the official BF16 model profile",
+    "workload": {
+      "phase": "decode",
+      "region_namespace": "0x48594c454d4f444c",
+      "region_id": 5,
+      "version": 1
+    },
+    "provider": "ggml 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "replay": "same prepared artifact, two submits with deterministic changed inputs; both outputs and recurrent states checked"
+  },
+  "runs": [
+    {
+      "route": "cpu",
+      "direct_test": "CpuDefaultContext.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays",
+      "graph_test": "CpuDefaultGraph.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays",
+      "targeted_elapsed_ms": {
+        "direct": 15,
+        "graph": 16
+      },
+      "suite": {
+        "provider": "33/33 PASS",
+        "direct": "13/13 applicable PASS",
+        "graph": "28/28 applicable PASS"
+      }
+    },
+    {
+      "route": "cuda",
+      "direct_test": "CudaDefaultCompute.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays",
+      "graph_test": "CudaDefaultGraph.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays",
+      "targeted_elapsed_ms": {
+        "direct": 96,
+        "graph": 95
+      },
+      "suite": {
+        "provider": "21/21 PASS",
+        "graph_provider": "8/8 PASS",
+        "direct": "10/10 applicable PASS",
+        "graph": "29/29 applicable PASS"
+      }
+    },
+    {
+      "route": "vulkan",
+      "direct_test": "VulkanRecurrent.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays",
+      "graph_test": "VulkanGraph.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays",
+      "targeted_elapsed_ms": {
+        "direct": 221,
+        "graph": 240
+      },
+      "suite": {
+        "ggml_provider": "19/19 applicable PASS",
+        "iree_provider": "7/7 PASS",
+        "direct": "127/127 applicable PASS",
+        "graph": "40/40 applicable PASS"
+      }
+    },
+    {
+      "route": "apple",
+      "direct_test": "AppleRecurrent.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays",
+      "graph_test": "AppleGraph.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays",
+      "targeted_elapsed_ms": {
+        "direct": 94,
+        "graph": 60
+      },
+      "suite": {
+        "direct": "46/46 applicable PASS",
+        "graph": "19/19 applicable PASS"
+      }
+    }
+  ],
+  "machines": {
+    "windows": {
+      "os": "Windows 11",
+      "gpu": "NVIDIA GeForce RTX 4070",
+      "gpu_memory_mib": 12282,
+      "driver": "610.62",
+      "cuda_toolkit": "13.3"
+    },
+    "apple": {
+      "profile": "M1-MAC formal",
+      "model": "MacBook Air Mac16,12",
+      "chip": "Apple M4",
+      "memory_gib": 16,
+      "os": "macOS 27.0 (26A428)"
+    }
+  },
+  "maintenance": {
+    "selector": "PASS; 12 selected gates, 118 skipped/reused",
+    "inputs_test": "13/13 PASS",
+    "d5_ledger_self_check": "PASS; 22 profiles, 176 cells, all complete-cell states remain VALIDATION_NOT_RUN",
+    "module_closure": "PASS; 57 components, schema 4, previous-ref d7cb7e016b3c620ed3fd9e6839a748257cdca42a",
+    "docs": "PASS; 538 Markdown files, 2519 relative links",
+    "diff_check": "PASS"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "R05 is a correctness partial; D5 P1 runs once on the immutable complete route profile."
+  },
+  "ledger": {
+    "changed_cells": 0,
+    "reason": "R05 alone does not complete any profile/route Direct or Graph cell."
+  }
+}
