@@ -1,0 +1,92 @@
+# M3-D5：真实模型片段批量验收
+
+<!-- MODULE REVIEW: AUDITED -->
+
+## Closure card
+
+- owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
+  产品缺陷时，才以失败收据把对应 Provider/route/Graph owner 重新定界到 `SCOPED -> AUDITED`。
+- baseline：`deae2ed23fd3bf9ebc30364874d94881fc8f16c3`；D4 已关闭，Windows canonical 工作树干净且与
+  `origin/main` 一致。
+- trigger：[M3 主卡](llm-moe-m3-provider-demand-reconciliation.md)的 D1-D4 已完成需求正规化、成熟
+  Provider 接线和错误自实现退场，但 D3 candidate 只证明代表格式/程序，不等于 22 个真实 profile 的
+  模型片段已运行。D5 必须消除这种证据缺口。
+- 正常 consumer：普通 C++ 用户提供 exact model/artifact profile，选择 CPU、CUDA、Apple 或 Vulkan
+  路线，以 Direct `prepare` 或 Graph `compile` 准备真实 region；同一 artifact 重复 submit 时不重新
+  选 Provider、解码权重或建立 workspace。
+- 主纵切：本地 `Qwen/Qwen3.5-2B@15852e8` 官方 BF16，直接读取用户已有 safetensors 中的真实 tensor
+  slice，覆盖 dense projection、full attention、Gated DeltaNet、MTP 和状态。
+- 正交纵切：Qwen3.8-2.4T IQ4 MoE、Kimi K3 MXFP4/KDA、DeepSeek V4 FP4/FP8+DSA/mHC、
+  GLM-5.3 FP8+DSA 及 GLM-5.3-Flash KDA；使用固定 header/config 的真实内宽并缩小 token、expert
+  capacity，不宣称整模型推理。
+- scope：八个模型、22 个固定 profile、15 个语义 region；四路线各自的 Direct/Graph、两次 submit、
+  profile/region 冷绑定、数值/状态、资源/完成/失败、源码/静态/动态交付，以及适用 P1。
+- non-goals：模型 loader 产品化、tokenizer/采样/推理 engine、整模型常驻、下载其它巨型 checkpoint、
+  新增或优化 HYLE 数学/kernel/shader、逐算子重开旧实现对比、视觉 encoder。
+- 依赖与 consumer：D3 的 ggml CPU/CUDA/Metal/Vulkan native storage candidate、oneDNN/cuBLASLt/
+  FlashInfer/MLX/IREE 限定域、公共 `WorkloadContext`/region signature 与 Graph compile；D6 消费本卡收据。
+- performance：正确性稳定后的不可变 candidate 执行一次适用 `P1`。计入准备、必要转换、上传、同步、
+  workspace 和完成；只验证自然成熟路线没有 material 工程退化，不与已删除自研算子竞速。
+- machines：Windows RTX 4070 是 CPU/CUDA/Vulkan 产品真相；MacBook Air `Mac16,12` 是 Apple formal
+  机，Mac mini `Mac16,10` 只签 correctness/portability。重型路线串行、构建低并行。
+- budget：一个共享 profile/shape manifest、一个本地 safetensors 有界提取器、每路线一组参数化 Direct
+  和 Graph consumer、每路线一次稳定后三交付与一次适用 P1。不得按 15 region × 22 profile 手写测试。
+- stop：[`llm-moe-d5-acceptance-ledger.json`](llm-moe-d5-acceptance-ledger.json)的 176 个
+  profile/route/entry cell 全部获得 `RUN_PASS`、`BACKEND_REJECTED` 或 `UPSTREAM_MISSING`；未运行数为
+  0。若精确缺口需要新数学或 Provider，记录最小后续卡并停止，不在 D5 扩张。
+
+## 批量验收形状
+
+| 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
+|---|---:|---|---|
+| Qwen3.5-2B | 3 | H=2048、FFN=6144、GQA 8/2×256、GDN 16×128、conv K4 | R01-R05、R13-R15 |
+| Qwen3.8-27B | 3 | H=5120、FFN=17408、GQA 24/4×256、GDN K16/V48×128 | R01-R05、R13-R15 |
+| Qwen3.8-2.4T | 3 | H=8192、E=512/top10、expert N=2048、GQA 64/4×256 | R01-R05、R10-R11、R13-R15 |
+| Kimi K3 | 3 | H=7168、E=896/top16、expert N=3584、attention 96×128 | R01-R03、R06-R07、R10-R12、R14-R15 |
+| DeepSeek V4 Pro | 1 | H=7168、E=384/top6、expert N=3072、index H64×D128/top1024、hc4 | R01-R03、R07-R15 |
+| DeepSeek V4 Flash | 3 | H=4096、E=256/top6、expert N=2048、index H64×D128/top512、hc4 | R01-R03、R07-R15 |
+| GLM-5.3 | 3 | H=6144、E=256/top8、expert N=2048、index H32×D128/top2048 | R01-R03、R07-R11、R13-R15 |
+| GLM-5.3-Flash | 3 | H=4096、E=288/top8、expert N=2048、KDA H64×D128、hc4 | R01-R03、R06-R15 |
+
+真实宽度不缩小；只缩小 batch、token、活跃 expert 和上下文容量。量化 profile 必须保留实际 codes/scales、
+block/group 与逐 tensor role 的混合格式。官方与 GGUF 是不同 profile；某条路线拒绝官方 FP4/FP8 时，
+不能用同模型 GGUF 的通过结果代签。
+
+## 能力审计与有限动作
+
+| ID | 当前事实 | 有限动作 | 完成证据 |
+|---|---|---|---|
+| D5-A1 | 22 个 profile 身份和真实 shape 已固定，但尚无统一运行 ledger | 生成共享 manifest 与 176-cell ledger，测试和 evidence 只引用稳定 ID | schema/self-check 通过；每格回指模型来源和 region |
+| D5-A2 | 本地 Qwen 权重已校验，现有 provider test 仍多为合成小 shape | 有界读取选定 BF16/F32 tensor slice，生成外部 scratch fixture 与独立 oracle | 文件 digest、tensor 名/offset/dtype/shape 和结果收据 |
+| D5-A3 | D3 已运行真实量化 block，但没有和 exact model profile/region 绑定 | 参数化现有成熟 Direct/Graph 程序，传入 exact `WorkloadContext` 并使用真实内宽 | Provider/report、两次 submit、结果/状态、准备期拒绝 |
+| D5-A4 | 生命周期测试分散在路线测试中 | 每路线批量复用现有 resource/completion/failure fixture；只补 profile 纵向组合缺口 | 无热选择/重排、失败不发布、teardown 平衡 |
+| D5-A5 | D3 三交付只签代表格式，未签 profile 片段 | 候选稳定后每路线一次 source/static/shared 外部 consumer | 搬迁后运行普通入口；DLL 与 EXE 同目录 |
+| D5-A6 | 完整 profile 成本尚未验收 | 每路线选一个主 profile 和一个量化/MoE 反偏置做一次适用 P1 | 完整成本、A/A 与双顺序合格；精确限制入账 |
+
+以上六项是 D5 全部动作。A2-A4 属于测试消费者和证据；若它们揭示产品缺陷，先停止并重开精确 owner，
+不得在测试内实现 fallback 或新数学。
+
+## 验收合同
+
+1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、
+   provider/software/device identity 和输出 oracle；source symbol、target、枚举或 prepare-only 均不算。
+2. 同一 prepared artifact 至少 submit 两次；第二次必须改变 activation 或 state，证明没有 stale output，且
+   submit 不重新选路、计时、解码或分配持久 workspace。
+3. `BACKEND_REJECTED` 需要精确 route/device/provider/version/format/shape 的 prepare/capability 失败；
+   `UPSTREAM_MISSING` 需要固定成熟源码和 provider inventory 的具名缺口。不得保留模糊 `NOT_RUN`。
+4. 本地 Qwen 实际 bytes 只作为测试输入复制到验证 scratch；不提交模型数据，不让远程副本覆盖 Windows
+   产品源码。其它巨型模型使用固定 header/config 与格式合法的非零 payload，不冒充实际 checkpoint bytes。
+5. region 可以由 Provider 融合承载，也可以由 Graph 组合成熟节点；HYLE 只检查边界、路由、状态和结果，
+   不为“看见每个算子”拆坏上游融合。
+
+## 预声明验证
+
+- 文档/ledger 先运行 closure、docs 与 JSON self-check，不构建、不跑 P1。
+- 测试 consumer 稳定后按 selector 选择 CPU、CUDA、Apple、Vulkan 的直接目标；重型路线串行。
+- 候选固定后才运行三交付与 P1。未运行项保留 `VALIDATION_NOT_RUN`，绝不提前写 PASS。
+- D6 只汇总红队、最终矩阵、限制、LOC 和状态，不在终审首次接线。
+
+## AUDITED
+
+八个模型批次、22 个 profile、真实宽度、176 个运行 cell、六项有限动作、机器、P1 与停止条件已经冻结。
+D5 从 A1/A2 开始批量实现；新增模型、profile、Provider 或自研数学均须退回重新定界。

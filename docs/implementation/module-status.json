@@ -393,8 +393,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-provider-demand-reconciliation.md",
-      "summary": "M3 AUDITED：八个真实模型的 22 个 profile 已归并为 15 个语义 region；六项有限 FIX 固定为 ggml-native 批量接缝、真实 profile 路由/验收与无需求旧接线退场，自研算子继续冻结。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "M3-D5 AUDITED：八个真实模型、22 个固定 profile 与 15 个语义 region 已冻结为 176 个四路线 Direct/Graph 验收格；批量复用成熟 Provider，真实宽度不缩小，自研数学继续冻结。"
     },
     {
       "module": "compute_backend_cpu",
