@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "candidate": "42f0320f64d88b7e0e9b78daa17f8790a88f53cc",
+  "candidate_tree": "9f9cff878b89e0e6fe283325c076d65d63bb7717",
+  "verdict": "PARTIAL_RUN_PASS_R01_ONLY",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "region": "R01",
+    "route": "cpu",
+    "entries": ["direct", "graph"],
+    "not_claimed": [
+      "R02-R05",
+      "R13-R15",
+      "complete profile cell",
+      "three deliveries",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "format": "Q6_K",
+    "payload": "format-valid deterministic nonzero bytes with independent ggml dequantization oracle"
+  },
+  "consumer": {
+    "operation": "checked Gather axis 0",
+    "table_shape": [7, 2048],
+    "indices_shape": [2],
+    "output_shape": [2, 2048],
+    "provider": "ggml-cpu",
+    "replay": "same prepared artifact, two changed I32 index sets",
+    "failure": "out-of-range index fails completion and preserves output",
+    "owner_formats": ["Q4_K", "Q6_K", "Q8_0"]
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "CpuDefaultDirect.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "graph",
+      "test": "CpuDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "provider",
+      "test": "GgmlCpuProvider.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds",
+      "result": "PASS"
+    }
+  ],
+  "selector": {
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_ggml",
+      "factor:compute_route_cpu",
+      "factor:graph_route_cpu"
+    ],
+    "toolchain": "MSVC 19.50.35728",
+    "flags": "/EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K, NVIDIA GeForce RTX 4070"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts after the complete route fragment is immutable."
+  }
+}

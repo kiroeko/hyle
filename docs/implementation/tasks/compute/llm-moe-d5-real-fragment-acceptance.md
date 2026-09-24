@@ -299,6 +299,15 @@ Windows baseline `0c7293ff38ac078c095e623062398087a5a89ba1` 上，普通 CPU Dir
    路由顺序和自研数学继续冻结；固定上游若在具体设备拒绝精确域，按合同记录
    `BACKEND_REJECTED`。
 
+**D5-F8 CPU CANDIDATE（`42f0320f`）**：CPU adapter 已在固定 ggml 的
+`ggml_get_rows` 上接纳 Q4_K/Q6_K/Q8_0 精确 embedding 域。Qwen3.5 primary GGUF 的 Q6_K
+`[7,2048]` R01 在普通 Direct/Graph 中完成 profile 冷绑定、两次变化 indices replay、独立 packed-byte
+oracle、checked 失败不发布和 Graph 零 replay metadata 分配。i9-13900K/RTX 4070、MSVC 19.50、
+WERROR 的 selector 对 docs、closure、configure、Provider、CPU Direct 与 CPU Graph 全部 PASS；收据见
+[CPU Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-r01/README.md)。
+ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；两个 CPU cell 只新增 R01 partial receipt，
+其余 region 未运行，因此不提前把完整 cell 写成 PASS。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
