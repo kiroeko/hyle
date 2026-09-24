@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../compute/workload_fixture.h"
+#include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
@@ -214,6 +215,98 @@ TEST(CpuDefaultGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
     const auto actual = half_test::read<float>(result);
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], test.expected[i], 2.0e-5F) << i;
+  }
+}
+
+TEST(CpuDefaultGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
+  const auto fixture_root = d5_qwen35_fixture::root();
+  if (!fixture_root)
+    GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
+  d5_qwen35_fixture::Projection fixture;
+  ASSERT_NO_THROW(fixture = d5_qwen35_fixture::load_projection(*fixture_root));
+
+  const auto activation_desc = compute::TensorDesc::dense(
+                                   compute::DataType::kBFloat16,
+                                   std::array<std::int64_t, 2>{
+                                       1, d5_qwen35_fixture::kHidden})
+                                   .value();
+  const auto stored_weight_desc =
+      compute::TensorDesc::dense(
+          compute::DataType::kBFloat16,
+          std::array<std::int64_t, 2>{d5_qwen35_fixture::kHidden,
+                                      d5_qwen35_fixture::kHidden})
+          .value();
+  const auto weight_desc = stored_weight_desc.transposed().value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto activation_value = builder.input(activation_desc).value();
+  const auto weight_value = builder.input(weight_desc).value();
+  const auto output_value =
+      builder.add(compute::MatMul{}, activation_value, weight_value).value();
+  ASSERT_TRUE(builder.publish(output_value).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = graph::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto workload = d5_qwen35_fixture::workload(
+      compute::WorkloadPhase::kDecode);
+  auto compiled = graph::compile(logical, context, {.workload = workload});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.workload(), workload);
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+
+  auto activation =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                fixture.activation.size(), 64)
+          .value();
+  auto weight = hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                          fixture.weight.size(), 64)
+                    .value();
+  const auto output_desc = logical.value_description(output_value).value();
+  auto output = hyle::mem::Buffer::create(
+                    hyle::mem::system_resource(),
+                    output_desc.required_bytes().value(), 64)
+                    .value();
+  ASSERT_TRUE(weight.view().write(fixture.weight).ok());
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(
+      invocation
+          .bind(activation_value,
+                compute::ConstTensorView::create(activation_desc,
+                                                 activation.view())
+                    .value())
+          .ok());
+  ASSERT_TRUE(invocation
+                  .bind(weight_value,
+                        compute::ConstTensorView::create(weight_desc,
+                                                         weight.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(output_value,
+                        compute::TensorView::create(output_desc, output.view())
+                            .value())
+                  .ok());
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (int run = 0; run < 2; ++run) {
+    auto values = fixture.activation;
+    if (run != 0) {
+      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden;
+           ++index)
+        values[index * 2 + 1] ^= std::byte{0x80};
+    }
+    ASSERT_TRUE(activation.view().write(values).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<hyle::simd::bfloat16_t>(output);
+    ASSERT_EQ(actual.size(), fixture.expected.size());
+    for (std::size_t index = 0; index < actual.size(); ++index)
+      half_test::expect_near(actual[index],
+                             run == 0 ? fixture.expected[index]
+                                      : -fixture.expected[index]);
   }
 }
 #endif

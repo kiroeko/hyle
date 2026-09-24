@@ -1,13 +1,16 @@
 """Small offline input-contract tests; never import Torch or load model weights."""
 
 import hashlib
+import io
 import json
 from pathlib import Path
+import struct
 import tempfile
 import unittest
 import importlib.util
 
 from local_inputs import copy_local, read_inventory, verify
+from prepare_d5_qwen35 import checked_header, safe_name
 
 
 class LocalInputsTest(unittest.TestCase):
@@ -105,6 +108,19 @@ class LocalInputsTest(unittest.TestCase):
         for finding in qualifications["findings"]:
             for branch in finding.get("branches", [finding]):
                 self.assertTrue(set(branch["models"]) <= model_ids)
+
+    def test_d5_safetensors_header_is_bounded_and_named_deterministically(self):
+        header = json.dumps({"weight": {"dtype": "BF16", "shape": [2, 2],
+                                         "data_offsets": [0, 8]}}).encode()
+        payload = struct.pack("<Q", len(header)) + header + b"\0" * 8
+        base, parsed = checked_header(io.BytesIO(payload), len(payload))
+        self.assertEqual(base, 8 + len(header))
+        self.assertEqual(parsed["weight"]["shape"], [2, 2])
+        self.assertEqual(safe_name("model.layers.0.weight"),
+                         "model_layers_0_weight.bin")
+        for damaged in (b"", struct.pack("<Q", 0), struct.pack("<Q", 100) + b"{}"):
+            with self.assertRaises(ValueError):
+                checked_header(io.BytesIO(damaged), len(damaged))
 
 
 @unittest.skipUnless(importlib.util.find_spec("numpy"), "quantization is generated on canonical Windows with NumPy")
