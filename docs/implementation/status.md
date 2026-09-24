@@ -48,7 +48,7 @@
 | graph_provider_onednn | AUDITED | — | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR AUDITED：graph_provider_onednn 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。 |
 | compute_ops | AUDITED | — | [record](tasks/compute/llm-moe-m3-model-chain-acceptance.md) | M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。 |
 | compute_backend_cpu | CLOSED | P0 / [PASS](tasks/build/vulkan-r6-product-delivery.md) | [record](tasks/build/vulkan-r6-product-delivery.md) | R6 Vulkan 交付 CLOSED：D1–D3、Windows/Air 最终三交付、relocation/隐藏 producer/offline/DLL 邻置及全部 111 个 selected gates 完成；十三旧 owner 的 C++/API 不变，原运行时/P1、限定域与 CPU 例外继承。 |
-| compute_backend_cuda | SCOPED | — | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR SCOPED：CUDA backend 只迁移已捕获的硬件/driver/runtime/toolkit typed facts；资源、stream、数学、执行和完成不重审。 |
+| compute_backend_cuda | AUDITED | — | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR AUDITED：CUDA backend 的真实硬件/driver/runtime/toolkit snapshot 只迁移到 versioned typed facts；其余产品合同冻结。 |
 | compute_provider_native | AUDITED | — | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR AUDITED：compute_provider_native 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。 |
 | compute_sched | QUEUED | — | — | compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。 |
 | compute_route_cpu | AUDITED | — | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR AUDITED：compute_route_cpu 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。 |

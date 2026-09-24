@@ -388,9 +388,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：CUDA backend 只迁移已捕获的硬件/driver/runtime/toolkit typed facts；资源、stream、数学、执行和完成不重审。"
+      "summary": "MR AUDITED：CUDA backend 的真实硬件/driver/runtime/toolkit snapshot 只迁移到 versioned typed facts；其余产品合同冻结。"
     },
     {
       "module": "compute_provider_native",
