@@ -153,6 +153,62 @@ TEST(VulkanManaged,
 }
 
 TEST(VulkanManaged,
+     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = vulkan_test::context().value();
+
+  for (const auto &test : d5_gguf_test::kQwen35PrimaryProjectionCases) {
+    SCOPED_TRACE(test.tensor);
+    const auto input_desc = dense(c::DataType::kFloat32, {1, test.reduction});
+    const auto weight_desc =
+        c::gguf_weight_description(test.type, c::DataType::kFloat32,
+                                   test.reduction, test.columns)
+            .value();
+    const auto physical =
+        d5_gguf_test::values(test.columns, test.reduction, test.seed);
+    const auto packed = d5_gguf_test::pack(
+        test.type, physical, test.columns, test.reduction,
+        weight_desc.required_bytes().value());
+    const auto weight = upload(context, weight_desc, packed.bytes);
+    const auto workload = d5_qwen35_fixture::workload(
+        d5_qwen35_fixture::kPrimaryGgufProfile,
+        c::WorkloadPhase::kDecode, test.region);
+    auto call = prepare(context, workload, c::Operation(c::MatMul{}),
+                        input_desc, weight);
+    const auto &dispatches = d::Access::program(call.program)->dispatches;
+    EXPECT_EQ(std::ranges::count_if(dispatches,
+                                    [](const auto &dispatch) {
+                                      return dispatch.region != nullptr;
+                                    }),
+              1);
+
+    auto invocation = call.program.create_invocation().value();
+    auto activation_values =
+        d5_gguf_test::activation(test.reduction, test.seed);
+    for (int replay = 0; replay < 2; ++replay) {
+      if (replay != 0) {
+        for (auto &value : activation_values)
+          value = value * -0.75F + 0.001F;
+      }
+      const auto activation =
+          upload(context, input_desc, std::span(activation_values));
+      ASSERT_TRUE(invocation.bind(activation).ok());
+      auto result = invocation.submit().value().wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto actual = values(context, result->get()->tensors()[0]);
+      std::vector<float> actual_f32(actual.size());
+      std::ranges::transform(actual, actual_f32.begin(), [](double value) {
+        return static_cast<float>(value);
+      });
+      const auto expected =
+          d5_gguf_test::matmul(activation_values, packed.decoded, test.columns,
+                               test.reduction);
+      d5_gguf_test::expect_quantized_matmul_close(actual_f32, expected);
+    }
+  }
+}
+
+TEST(VulkanManaged,
      D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls) {
   const auto fixture_root = d5_qwen35_fixture::root();
   if (!fixture_root)
