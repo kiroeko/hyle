@@ -1,6 +1,7 @@
 #include "metadata_arena.h"
 #include "native_device.h"
 #include "native_graph.h"
+#include "region.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,15 +14,18 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
+#include "hyle/compute/low_precision.h"
 
 #if defined(_WIN32)
 #include <windows.h>
 #endif
 
 namespace {
+namespace c = hyle::compute;
 using hyle::compute::ggml_vulkan::detail::MetadataArena;
 using hyle::compute::ggml_vulkan::detail::NativeDevice;
 using hyle::compute::ggml_vulkan::detail::NativeGraph;
+using hyle::compute::ggml_vulkan::detail::region_supports;
 
 // A native producer uses the exported device and the same upstream queue lock.
 // Its write is made visible before the original ggml region consumes the buffer.
@@ -99,6 +103,43 @@ hyle::Status native_fill(const NativeDevice &owner, VkBuffer buffer,
 // Internal admission: the CMake-owned complete upstream GPU implementation,
 // independent scalar arithmetic, and the HYLE metadata owner. This is not an
 // ordinary HYLE Direct/Graph acceptance or a performance comparison.
+TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
+  const auto ids =
+      c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{2})
+          .value();
+  for (const auto type :
+       {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K,
+        c::GgufQuantizedType::kQ8_0}) {
+    const auto stored =
+        c::gguf_weight_description(type, c::DataType::kFloat32, 256, 3).value();
+    const auto table = stored.transposed().value();
+    const std::array inputs{table, ids};
+    const std::array outputs{
+        c::infer_single_output(c::Operation(c::Gather{}), inputs).value()};
+    EXPECT_TRUE(region_supports(
+        c::Operation(c::Gather{0, c::IndexBoundsPolicy::kUnchecked}), inputs,
+        outputs));
+    EXPECT_TRUE(region_supports(
+        c::Operation(c::Gather{-2, c::IndexBoundsPolicy::kUnchecked}), inputs,
+        outputs));
+    EXPECT_FALSE(region_supports(c::Operation(c::Gather{}), inputs, outputs));
+    EXPECT_FALSE(region_supports(
+        c::Operation(c::Gather{1, c::IndexBoundsPolicy::kUnchecked}), inputs,
+        outputs));
+  }
+  const auto other = c::gguf_weight_description(c::GgufQuantizedType::kQ5K,
+                                                c::DataType::kFloat32, 256, 3)
+                         .value()
+                         .transposed()
+                         .value();
+  const std::array other_inputs{other, ids};
+  const std::array other_outputs{
+      c::infer_single_output(c::Operation(c::Gather{}), other_inputs).value()};
+  EXPECT_FALSE(region_supports(
+      c::Operation(c::Gather{0, c::IndexBoundsPolicy::kUnchecked}),
+      other_inputs, other_outputs));
+}
+
 TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
 #if defined(_WIN32)
   SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |

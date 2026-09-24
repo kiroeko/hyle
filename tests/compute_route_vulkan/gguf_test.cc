@@ -1,6 +1,9 @@
 #include "gguf_test_support.h"
 #include "vulkan_program_internal.h"
 
+#include <algorithm>
+#include <utility>
+
 namespace {
 using namespace vulkan_gguf_test;
 
@@ -33,6 +36,93 @@ TEST(VulkanGguf, EveryCatalogFormatUsesNativeDirectRegionAndReplays) {
       expect_close(context, result->get()->tensors()[0],
                    matmul(values, packed.decoded, m, n, k));
     }
+  }
+}
+
+TEST(VulkanGguf, TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication) {
+  QuantizerCleanup cleanup;
+  auto context = vulkan_test::context().value();
+  constexpr int rows = 3;
+  constexpr int width = 256;
+  const auto ids_desc = vulkan_tensor_test::dense(c::DataType::kInt32, {2});
+  for (const auto type :
+       {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K,
+        c::GgufQuantizedType::kQ8_0}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const auto stored =
+        c::gguf_weight_description(type, c::DataType::kFloat32, width, rows)
+            .value();
+    const auto table_desc = stored.transposed().value();
+    const auto physical = weights(rows, width, static_cast<int>(type));
+    const auto packed =
+        pack(type, physical, rows, width, *table_desc.required_bytes());
+    auto table_result = context.upload(table_desc, packed.bytes);
+    ASSERT_TRUE(table_result) << table_result.error().message();
+    const auto table = std::move(*table_result);
+    auto program = v::prepare(context, c::Gather{}, table, ids_desc);
+    ASSERT_TRUE(program) << program.error().message();
+    const auto &dispatches = v::detail::Access::program(*program)->dispatches;
+    EXPECT_EQ(std::ranges::count_if(dispatches,
+                                    [](const auto &dispatch) {
+                                      return dispatch.region != nullptr;
+                                    }),
+              1);
+    auto invocation_result = program->create_invocation();
+    ASSERT_TRUE(invocation_result) << invocation_result.error().message();
+    auto invocation = std::move(*invocation_result);
+    constexpr std::array<std::array<std::int32_t, 2>, 2> selections{
+        {{{2, 0}}, {{1, 2}}}};
+    v::Tensor retained;
+    for (std::size_t replay = 0; replay < selections.size(); ++replay) {
+      const auto &selection = selections[replay];
+      auto ids_result =
+          context.upload(ids_desc, std::as_bytes(std::span(selection)));
+      ASSERT_TRUE(ids_result) << ids_result.error().message();
+      const auto ids = std::move(*ids_result);
+      ASSERT_TRUE(invocation.bind(ids).ok());
+      auto work = invocation.submit();
+      ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto output = result->get()->tensors()[0];
+      std::vector<double> expected;
+      expected.reserve(2 * width);
+      for (const auto row : selection)
+        for (int column = 0; column < width; ++column)
+          expected.push_back(packed.decoded[row * width + column]);
+      expect_close(context, output, expected);
+      if (replay + 1 == selections.size())
+        retained = output;
+    }
+    const auto before = vulkan_tensor_test::bytes(context, retained);
+    constexpr std::array<std::int32_t, 2> invalid{0, rows};
+    auto bad_result =
+        context.upload(ids_desc, std::as_bytes(std::span(invalid)));
+    ASSERT_TRUE(bad_result) << bad_result.error().message();
+    const auto bad = std::move(*bad_result);
+    auto failed_invocation_result = program->create_invocation();
+    ASSERT_TRUE(failed_invocation_result)
+        << failed_invocation_result.error().message();
+    auto failed_invocation = std::move(*failed_invocation_result);
+    ASSERT_TRUE(failed_invocation.bind(bad).ok());
+    auto failed_work = failed_invocation.submit();
+    ASSERT_TRUE(failed_work) << failed_work.error().message();
+    auto failure = failed_work->wait();
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().IsOutOfRange());
+    EXPECT_EQ(vulkan_tensor_test::bytes(context, retained), before);
+
+    auto good_result =
+        context.upload(ids_desc, std::as_bytes(std::span(selections.front())));
+    ASSERT_TRUE(good_result) << good_result.error().message();
+    const auto good = std::move(*good_result);
+    auto recovered_result = program->create_invocation();
+    ASSERT_TRUE(recovered_result) << recovered_result.error().message();
+    auto recovered = std::move(*recovered_result);
+    ASSERT_TRUE(recovered.bind(good).ok());
+    auto recovered_work = recovered.submit();
+    ASSERT_TRUE(recovered_work) << recovered_work.error().message();
+    EXPECT_TRUE(recovered_work->wait().has_value());
   }
 }
 

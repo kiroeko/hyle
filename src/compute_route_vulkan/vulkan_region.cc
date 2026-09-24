@@ -230,6 +230,21 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   }
   if (step.operation.get_if<Gather>()) {
     const auto &limits = program.runtime->device->properties.limits;
+    if (quantized_gather_operation(program, step)) {
+      const auto provider_output = append(output);
+      Plan local;
+      local.outputs = {provider_output};
+      local.steps.push_back(
+          {Operation(Gather{gather.axis, IndexBoundsPolicy::kUnchecked}),
+           {step.inputs[0], safe},
+           {provider_output},
+           {},
+           {1, 1, 1},
+           {}});
+      const std::vector<std::size_t> last_uses(program.values.size(), 0);
+      HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+      return lower_checked_copy(program, provider_output, step.outputs[0]);
+    }
     if (limits.maxComputeWorkGroupInvocations < 512 ||
         limits.maxComputeWorkGroupSize[0] < 512 ||
         static_cast<std::uint64_t>(inputs[0].dimensions()[1]) >
@@ -270,6 +285,26 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
   return region_operation(program, step, false);
+}
+
+bool quantized_gather_operation(const ProgramState &program,
+                                const PlanStep &step) noexcept {
+  const auto *gather = step.operation.get_if<Gather>();
+  if (!gather || gather->bounds != IndexBoundsPolicy::kChecked ||
+      step.inputs.size() != 2 || step.outputs.size() != 1)
+    return false;
+  const std::array inputs{program.values[step.inputs[0]].description,
+                          program.values[step.inputs[1]].description};
+  const std::array outputs{program.values[step.outputs[0]].description};
+  const Operation unchecked(
+      Gather{gather->axis, IndexBoundsPolicy::kUnchecked});
+  if (!provider::region_supports(unchecked, inputs, outputs))
+    return false;
+  const auto &limits = program.runtime->device->properties.limits;
+  return limits.maxComputeWorkGroupInvocations >= 512 &&
+         limits.maxComputeWorkGroupSize[0] >= 512 &&
+         static_cast<std::uint64_t>(inputs[0].dimensions()[1]) <=
+             std::uint64_t{limits.maxComputeWorkGroupCount[0]} * 512;
 }
 
 bool bfloat_region_operation(const ProgramState &program,

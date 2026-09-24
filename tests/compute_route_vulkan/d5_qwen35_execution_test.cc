@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "gate_norm_test_support.h"
 #include "hyle/compute/model_ops.h"
@@ -81,6 +82,74 @@ template <class... Inputs>
 std::vector<v::Tensor> run(Call &call, const Inputs &...inputs) {
   const std::array<v::Tensor, sizeof...(Inputs)> values{inputs...};
   return run(call, std::span<const v::Tensor>(values));
+}
+
+TEST(VulkanManaged,
+     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto stored = c::gguf_weight_description(
+      c::GgufQuantizedType::kQ6K, c::DataType::kFloat32, hidden, rows);
+  ASSERT_TRUE(stored) << stored.error().message();
+  const auto table_desc = stored->transposed().value();
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x010f);
+  const auto physical = d5_gguf_test::values(rows, hidden, 43);
+  const auto packed =
+      d5_gguf_test::pack(c::GgufQuantizedType::kQ6K, physical, rows, hidden,
+                         table_desc.required_bytes().value());
+  auto context = vulkan_test::context().value();
+  const auto table = upload(context, table_desc, packed.bytes);
+  auto call =
+      prepare(context, workload, c::Operation(c::Gather{}), table, ids_desc);
+  const auto &dispatches = d::Access::program(call.program)->dispatches;
+  EXPECT_EQ(std::ranges::count_if(dispatches,
+                                  [](const auto &dispatch) {
+                                    return dispatch.region != nullptr;
+                                  }),
+            1);
+
+  auto invocation = call.program.create_invocation().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  v::Tensor retained;
+  for (std::size_t replay = 0; replay < selections.size(); ++replay) {
+    const auto &selection = selections[replay];
+    const auto ids = upload(context, ids_desc, std::span(selection));
+    ASSERT_TRUE(invocation.bind(ids).ok());
+    auto result = invocation.submit().value().wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto output = result->get()->tensors()[0];
+    const auto actual = values(context, output);
+    const auto expected =
+        d5_gguf_test::selected_rows(packed.decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i],
+                  3.0e-3 + 3.0e-4 * std::abs(expected[i]))
+          << i;
+    if (replay + 1 == selections.size())
+      retained = output;
+  }
+
+  const auto before = bytes(context, retained);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const auto bad = upload(context, ids_desc, std::span(invalid));
+  auto failed_invocation = call.program.create_invocation().value();
+  ASSERT_TRUE(failed_invocation.bind(bad).ok());
+  auto failure = failed_invocation.submit().value().wait();
+  ASSERT_FALSE(failure);
+  EXPECT_TRUE(failure.error().IsOutOfRange());
+  EXPECT_EQ(bytes(context, retained), before);
+
+  const auto good = upload(context, ids_desc, std::span(selections.front()));
+  auto recovered = call.program.create_invocation().value();
+  ASSERT_TRUE(recovered.bind(good).ok());
+  EXPECT_TRUE(recovered.submit().value().wait().has_value());
 }
 
 TEST(VulkanManaged,

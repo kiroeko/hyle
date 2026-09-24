@@ -77,9 +77,26 @@ bool quantized_grouped_weight_domain(const TensorDesc &description) noexcept {
       *type, description.data_type(), shape[0], shape[1], shape[2]);
   return canonical && *canonical == description;
 }
+bool native_embedding_table(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type ||
+      (*type != GgufQuantizedType::kQ4K && *type != GgufQuantizedType::kQ6K &&
+       *type != GgufQuantizedType::kQ8_0) ||
+      description.data_type() != DataType::kFloat32 ||
+      description.rank() != 2 || description.block_axis() != 1)
+    return false;
+  const auto stored = gguf_weight_description(*type, DataType::kFloat32,
+                                              description.dimensions()[1],
+                                              description.dimensions()[0]);
+  if (!stored)
+    return false;
+  const auto natural = stored->transposed();
+  return natural && *natural == description;
+}
 bool tensor_domain(const TensorDesc &description) noexcept {
   return description.valid() &&
-         (quantized_weight_domain(description) ||
+         (native_embedding_table(description) ||
+          quantized_weight_domain(description) ||
           quantized_grouped_weight_domain(description) ||
           (description.is_plain() && description.is_dense() &&
            (floating(description.data_type()) ||
@@ -284,8 +301,10 @@ bool region_supports(const Operation &operation,
     return false;
   const bool grouped =
       operation.custom_as<model_ops::GroupedMatMul>().has_value();
-  if (!operation.get_if<MatMul>() &&
-      !grouped && (!std::ranges::all_of(inputs, [](const auto &input) {
+  const bool embedding =
+      operation.get_if<Gather>() && native_embedding_table(inputs[0]);
+  if (!operation.get_if<MatMul>() && !grouped &&
+      !embedding && (!std::ranges::all_of(inputs, [](const auto &input) {
         return input.is_plain();
       }) || !std::ranges::all_of(outputs, [](const auto &output) {
         return output.is_plain();
@@ -445,13 +464,26 @@ bool region_supports(const Operation &operation,
            outputs[1].data_type() == DataType::kInt32 &&
            (topk->axis == -1 ||
             topk->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
-  if (const auto *gather = operation.get_if<Gather>())
+  if (const auto *gather = operation.get_if<Gather>()) {
+    if (native_embedding_table(inputs[0]))
+      return inputs.size() == 2 && outputs.size() == 1 &&
+             gather->bounds == IndexBoundsPolicy::kUnchecked &&
+             (gather->axis == 0 || gather->axis == -2) &&
+             inputs[1].is_plain() && inputs[1].is_dense() &&
+             inputs[1].data_type() == DataType::kInt32 &&
+             inputs[1].rank() == 1 && outputs[0].is_plain() &&
+             outputs[0].is_dense() &&
+             outputs[0].data_type() == DataType::kFloat32 &&
+             outputs[0].rank() == 2 &&
+             outputs[0].dimensions()[0] == inputs[1].dimensions()[0] &&
+             outputs[0].dimensions()[1] == inputs[0].dimensions()[1];
     return inputs.size() == 2 && outputs.size() == 1 &&
            gather->bounds == IndexBoundsPolicy::kUnchecked &&
            (gather->axis == 0 || gather->axis == -2) &&
            inputs[0].data_type() == DataType::kInt32 && inputs[0].rank() == 2 &&
            inputs[1].data_type() == DataType::kInt32 && inputs[1].rank() == 1 &&
            outputs[0].data_type() == DataType::kInt32;
+  }
   if (const auto *scatter = operation.get_if<Scatter>())
     return inputs.size() == 3 && outputs.size() == 1 &&
            scatter->kind == ScatterKind::kAdd &&
