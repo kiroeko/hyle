@@ -179,6 +179,19 @@ Graph consumer 在普通 CPU 路线准备成功后，于固定 ggml CPU 的 `ggm
 
 不修改公共 RoPE schema、ggml 源码、路由优先级或其它路线，也不新增 HYLE 数学、fallback 或热选择。
 
+**D5-F4 CANDIDATE（`f340b0d4`）**：CPU adapter 以固定 ggml 的既有 Cast/RoPE 图执行 BF16，F16/F32
+保持原生类型域；BF16/F32 Provider 回归、Qwen3.5 精确 GQA 8/2×256 Graph、ggml CPU 34/34、CPU
+Direct 12/12、CPU Graph 34/34 与普通 cpu-executor 全部通过。未修改公共 schema、上游源码或路由顺序。
+失败与修复边界收据见 [R04 admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-r04-cpu-rope-admission-audit/README.md)。
+
+### CPU Qwen3.5 official Graph 完整格
+
+不可变 candidate `f340b0d4` 已用本地 checkpoint 的 embedding slice、layer-0 norm/FFN/conv/GDN/out-proj、
+layer-3 Q/K norm 与 MTP 权重，完成 R01-R05、R13-R15 的普通 CPU Graph 两次 replay、独立 oracle、
+成熟 Provider identity、资源与失败检查；既有 R03 收据并入同一格。完整收据见
+[CPU Qwen3.5 official Graph](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-graph/README.md)。
+ledger 首次得到 1 个 `RUN_PASS`；CPU Direct、其它路线、三交付和 P1 仍未由该格代签。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、
