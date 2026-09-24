@@ -227,6 +227,29 @@ ggml SwiGLU 与 MatMul 承载；每个 prepared call 两次变化输入 replay�
 [CPU Qwen3.5 official Direct](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-direct/README.md)。
 ledger 现有 2 个 `RUN_PASS`；其它路线、三交付和 P1 未由这两格代签。
 
+### D5-F6：Qwen3.5 CUDA BF16 SwiGLU 成熟接线
+
+官方 Qwen3.5-2B R02 的普通 CUDA Direct 路径对精确 BF16 `[1,6144]` separate
+`GatedActivation(SiLU)` 冷准备成功，但绑定的是已经冻结的 `hyle-cuda` fallback。固定 ggml
+0.24.0 CUDA backend 已提供 `ggml_swiglu`/`ggml_swiglu_split`，原生执行 F16/F32；其 adapter 当前既不
+资格化也不 lower 公共 `GatedActivation`。普通入口复现和固定上游源码边界见
+[Qwen3.5 CUDA R02 gate admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-r02-cuda-gate-admission-audit/README.md)。
+
+因此 `compute_provider_ggml_cuda` 从 D5-F3 candidate 退回本卡 AUDITED。有限 FIX 只有：
+
+1. CUDA adapter 接纳公共 `GatedActivation` 的 SiLU packed/separate 两种形状，lower 到固定上游
+   `ggml_swiglu`/`ggml_swiglu_split`；F16/F32 保持原生，BF16 在同一 ggml CUDA 图内 Cast 到 F32，
+   再由现有输出边界 Cast 回 BF16；
+2. Provider 回归覆盖 F16/BF16/F32、packed/separate、变化输入与非 SiLU 拒绝；真实 Qwen3.5 R02
+   使用精确 2048/6144 权重、两次 replay、独立 BF16 边界 oracle 和成熟 Provider identity；
+3. 同一批完成 Qwen3.5 official CUDA Direct/Graph 的 R01-R05、R13-R15 普通入口验收；只运行
+   `compute_provider_ggml_cuda`、`compute_route_cuda`、`graph_route_cuda` 及 selector 公共检查，三交付和
+   P1 继续并入 D5 路线批次。
+
+不修改公共 schema、ggml 源码、路由优先级、其它 activation 或其它路线；不新增 HYLE 数学、kernel、
+fallback、热选择或性能竞速。若固定上游拒绝精确类型/形状，则记录 `BACKEND_REJECTED`，不恢复 native
+作为 D5 成熟覆盖证据。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

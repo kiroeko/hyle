@@ -575,10 +575,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml CUDA adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，RTX 4070 普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
-      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
+      "summary": "M3-D5-F6 AUDITED：官方 Qwen3.5 CUDA R02 证明独立 BF16 SwiGLU 仍落到冻结 hyle-cuda；固定 ggml CUDA 已有成熟 SwiGLU，有限 FIX 只补 SiLU GatedActivation adapter 与 BF16 上游 Cast 接线。"
     },
     {
       "module": "graph_provider_ggml_cuda",

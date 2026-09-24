@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "baseline": "8b9dc42abe47439317d61dd733474bc0cf119b50",
+  "verdict": "MATURE_PROVIDER_ADAPTER_GAP",
+  "profile": "qwen35_2b:official:official-bf16",
+  "route": "cuda",
+  "entry": "direct",
+  "region": "R02",
+  "shape": {
+    "hidden": 2048,
+    "ffn": 6144,
+    "activation": "BF16",
+    "gated_inputs": "separate"
+  },
+  "observed_binding": "hyle-cuda",
+  "required_binding": "ggml-cuda",
+  "fixed_upstream": {
+    "name": "ggml",
+    "version": "0.24.0",
+    "revision": "456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "native_operations": ["ggml_swiglu", "ggml_swiglu_split"],
+    "cuda_native_types": ["F16", "F32"]
+  },
+  "machine": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "cuda_toolkit": "13.3.73"
+  },
+  "test_elapsed_ms": 80,
+  "product_change_at_baseline": false
+}
