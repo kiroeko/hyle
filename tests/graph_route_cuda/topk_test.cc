@@ -105,7 +105,7 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
           auto compiled = graph::cuda::compile(
               logical, owner, resource.ref(),
               {.provider_replay =
-                   graph::ProviderReplayPolicy::kRequirePrepared});
+                   graph::ProviderReplayPolicy::kAllowAny});
           ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
           // Ordinary preparation must skip providers of other families. A
           // multi-output TopK must not be treated as a malformed gated op.
@@ -149,11 +149,11 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
             ASSERT_TRUE(slots[lane].bind(weights_id, weights[lane].view).ok());
             const auto status = graph::cuda::prepare_replay(
                 slots[lane], queues[lane],
-                {.mode = graph::ReplayMode::kRequireCapture,
-                 .host_wait = graph::HostWaitPolicy::kReject});
+                {.mode = graph::ReplayMode::kCommands,
+                 .host_wait = graph::HostWaitPolicy::kAllow});
             ASSERT_TRUE(status.ok()) << status.message();
             EXPECT_EQ(slots[lane].replay_route(),
-                      graph::ReplayRoute::kCaptured);
+                      graph::ReplayRoute::kCommands);
           }
           ASSERT_TRUE(queues[0].reserve_completions(2).ok());
           const auto before = stats.snapshot();
@@ -229,9 +229,9 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
                     direct_values.view, direct_indices.view);
                 ASSERT_TRUE(direct_done.has_value());
                 ASSERT_TRUE(direct_done->wait().ok());
-                // Ordinary Direct can bind managed ggml while this graph
-                // requires a prepared capture program. Check both against
-                // the same independent oracle and its existing tolerance.
+                // Direct and Graph use their already prepared provider
+                // programs. Check both against the same independent oracle
+                // and its existing tolerance.
                 const auto direct_actual = direct_values.read<float>();
                 for (std::size_t i = 0; i < direct_actual.size(); ++i)
                   EXPECT_NEAR(direct_actual[i], expected_values[i],

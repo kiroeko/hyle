@@ -240,7 +240,6 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     for (std::size_t index = 0; index < plan.steps.size(); ++index)
       for (const auto input : plan.steps[index].inputs)
         last_uses[input] = index;
-    std::vector<std::pair<std::uint32_t, std::uint32_t>> packs;
     for (std::size_t index = 0; index < plan.steps.size();) {
       const auto &step = plan.steps[index];
       if (iree_operation(*program, step)) {
@@ -289,7 +288,7 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         }
         continue;
       }
-      auto status = lower_operation(*program, step, packs);
+      auto status = lower_operation(*program, step);
       if (!status.ok())
         return std::unexpected(status);
     }

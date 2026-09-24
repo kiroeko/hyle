@@ -114,9 +114,7 @@ descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
 Status encode_commands(Run &run, std::span<const Dispatch> dispatches) noexcept;
 bool origins_changed(const Run &run,
                      std::span<const Dispatch> dispatches) noexcept;
-Status lower_operation(
-    ProgramState &program, const PlanStep &step,
-    std::vector<std::pair<std::uint32_t, std::uint32_t>> &packs) noexcept;
+Status lower_operation(ProgramState &program, const PlanStep &step) noexcept;
 bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
 bool bfloat_region_operation(const ProgramState &, const PlanStep &) noexcept;
 Status lower_bfloat_region(ProgramState &, const PlanStep &) noexcept;

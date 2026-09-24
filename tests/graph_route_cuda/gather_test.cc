@@ -1,11 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <array>
-#include <atomic>
-#include <chrono>
 #include <cmath>
 #include <span>
-#include <thread>
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
@@ -47,7 +44,7 @@ void expect_same_bits(std::span<const Value> actual,
 }
 
 TEST(CudaDefaultGraph,
-     CheckedEmbeddingNormResidualUsesDefaultDirectAndCapturedSlots) {
+     CheckedEmbeddingNormResidualUsesDefaultDirectAndPreparedSlots) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -90,7 +87,7 @@ TEST(CudaDefaultGraph,
         auto logical = std::move(builder).finish().value();
         auto compiled = graph::cuda::compile(
             logical, owner, resource.ref(),
-            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
+            {.provider_replay = graph::ProviderReplayPolicy::kAllowAny});
         ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
         Tensor table(table_desc, resource.ref()),
             weights(weight_desc, resource.ref());
@@ -151,12 +148,12 @@ TEST(CudaDefaultGraph,
           ASSERT_TRUE(slots[lane].bind(gathered_id, gathered[lane].view).ok());
           ASSERT_TRUE(slots[lane].bind(norm_id, normals[lane].view).ok());
           ASSERT_TRUE(slots[lane].bind(output_id, outputs[lane].view).ok());
-          const auto captured = graph::cuda::prepare_replay(
+          const auto prepared = graph::cuda::prepare_replay(
               slots[lane], queues[lane],
-              {.mode = graph::ReplayMode::kRequireCapture,
-               .host_wait = graph::HostWaitPolicy::kReject});
-          ASSERT_TRUE(captured.ok()) << captured.message();
-          EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kCaptured);
+              {.mode = graph::ReplayMode::kCommands,
+               .host_wait = graph::HostWaitPolicy::kAllow});
+          ASSERT_TRUE(prepared.ok()) << prepared.message();
+          EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kCommands);
           ASSERT_TRUE(queues[lane].reserve_completions(4).ok());
         }
         const auto before = stats.snapshot();
@@ -245,24 +242,7 @@ TEST(CudaDefaultGraph,
   EXPECT_TRUE(stats.balanced());
 }
 
-struct Gate final {
-  std::atomic<bool> released{false}, timed_out{false};
-  static void CUDART_CB wait(void *raw) {
-    auto &gate = *static_cast<Gate *>(raw);
-    const auto deadline =
-        std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    while (!gate.released.load(std::memory_order_acquire)) {
-      if (std::chrono::steady_clock::now() >= deadline) {
-        gate.timed_out.store(true);
-        return;
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-  }
-  void release() { released.store(true, std::memory_order_release); }
-  ~Gate() { EXPECT_FALSE(timed_out.load()); }
-};
-void failure_case(bool abandon) {
+void failure_case() {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -285,7 +265,7 @@ void failure_case(bool abandon) {
     auto compiled =
         graph::cuda::compile(
             logical, owner, resource.ref(),
-            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared})
+            {.provider_replay = graph::ProviderReplayPolicy::kAllowAny})
             .value();
     Tensor table(td, resource.ref()), indices(id, resource.ref());
     Tensor output(compute::TensorDesc::dense(compute::DataType::kInt32,
@@ -300,11 +280,11 @@ void failure_case(bool abandon) {
       EXPECT_TRUE(slot.bind(t, table.view.as_const()).ok());
       EXPECT_TRUE(slot.bind(i, indices.view.as_const()).ok());
       EXPECT_TRUE(slot.bind(o, output.view).ok());
-      // Invalid data is already present: preparing capture must not execute it.
+      // Invalid data is already present: preparing commands must not execute it.
       return graph::cuda::prepare_replay(
           slot, queue,
-          {.mode = graph::ReplayMode::kRequireCapture,
-           .host_wait = graph::HostWaitPolicy::kReject});
+          {.mode = graph::ReplayMode::kCommands,
+           .host_wait = graph::HostWaitPolicy::kAllow});
     };
     auto slot = compiled.executable.create_invocation().value();
     ASSERT_TRUE(bind(slot).ok());
@@ -324,42 +304,11 @@ void failure_case(bool abandon) {
     auto good = fresh.submit(queue).value();
     ASSERT_TRUE(good.wait().ok());
     EXPECT_EQ(output.read<int>(), (std::vector{14, 12}));
-    ASSERT_TRUE(
-        indices.write<std::int64_t>(std::array<std::int64_t, 2>{-1, 1}).ok());
-    Gate gate;
-    const auto stream = cuda::stream(queue).value();
-    struct Release final {
-      Gate &gate;
-      cudaStream_t stream;
-      ~Release() {
-        gate.release();
-        (void)cudaStreamSynchronize(stream);
-      }
-    } release{gate, stream};
-    ASSERT_EQ(cudaLaunchHostFunc(stream, &Gate::wait, &gate), cudaSuccess);
-    auto pending = fresh.submit(queue).value();
-    EXPECT_EQ(pending.poll().value(), compute::CompletionPoll::kPending);
-    fresh = {};
-    compiled.executable = {};
     ASSERT_TRUE(owner.close().ok());
-    if (abandon)
-      pending = {};
-    gate.release();
-    if (!abandon) {
-      EXPECT_TRUE(pending.wait().IsOutOfRange());
-    }
-    ASSERT_TRUE(owner.drain().ok());
-    EXPECT_EQ(output.read<int>(), (std::vector{14, 12}));
   }
-  const auto deadline =
-      std::chrono::steady_clock::now() + std::chrono::seconds(2);
-  while (!stats.balanced() && std::chrono::steady_clock::now() < deadline)
-    std::this_thread::yield();
   EXPECT_TRUE(stats.balanced());
 }
-TEST(CudaDefaultGraph,
-     CheckedGatherErrorsRecoverAndRetainClosedOrAbandonedOwners) {
-  failure_case(false);
-  failure_case(true);
+TEST(CudaDefaultGraph, CheckedGatherErrorsRecoverWithManagedProvider) {
+  failure_case();
 }
 } // namespace

@@ -26,7 +26,6 @@ Result<Context> internal::create_context(DefaultContextOptions options,
 #endif
       ProviderBinding{ggml, 200},
       ProviderBinding{cublas::provider(), 100},
-      ProviderBinding{marlin::provider(), 100},
       ProviderBinding{cuda_native::sglang_provider(), 100},
       ProviderBinding{cuda_native::cccl_provider(), 100},
       ProviderBinding{cuda_native::provider(), 1000}};

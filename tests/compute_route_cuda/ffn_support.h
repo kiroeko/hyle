@@ -72,78 +72,39 @@ struct Tensor final {
   }
 };
 
-// CPU oracle stores mathematical [K,N] values, including the public carrier's
-// FP16 scale and dequantization rounding. It never calls a GPU implementation.
+// CPU oracle stores the mathematical [K,N] values. It never calls a GPU
+// implementation.
 struct Linear final {
   compute::DataType type;
   std::size_t k, n;
-  bool quantized;
   std::vector<float> values;
   mem::Buffer dense;
-  cuda::QuantizedWeights compressed;
   compute::ConstTensorView weights;
-  compute::ConstTensorView scales;
 
-  Linear(const compute::Context &context, mem::MemoryResourceRef resource,
-         compute::DataType dtype, std::size_t inner, std::size_t columns,
-         bool q4, int seed)
-      : type(dtype), k(inner), n(columns), quantized(q4), values(k * n) {
-    if (q4) {
-      std::vector<std::int8_t> q(n * k);
-      std::vector<float> s(n * (k / 128));
-      for (std::size_t col = 0; col < n; ++col) {
-        for (std::size_t group = 0; group < k / 128; ++group)
-          s[col * (k / 128) + group] =
-              0.00317f * static_cast<float>(1 + (col + group) % 5);
-        for (std::size_t i = 0; i < k; ++i) {
-          const int raw =
+  Linear(mem::MemoryResourceRef resource, compute::DataType dtype,
+         std::size_t inner, std::size_t columns, int seed)
+      : type(dtype), k(inner), n(columns), values(k * n) {
+    for (std::size_t i = 0; i < k * n; ++i)
+      values[i] = rounded(
+          static_cast<float>(
               static_cast<int>(
-                  (col * 7 + i * 13 + static_cast<std::size_t>(seed)) % 16) -
-              8;
-          q[col * k + i] = static_cast<std::int8_t>(raw);
-          values[i * n + col] =
-              rounded(static_cast<float>(raw) *
-                          rounded(s[col * (k / 128) + i / 128], type),
-                      type);
-        }
-      }
-      compressed = cuda::QuantizedWeights::pack(
-                       context, resource, static_cast<std::int64_t>(n),
-                       static_cast<std::int64_t>(k), q, s)
-                       .value();
-      weights = compressed.weights();
-      scales = compressed.scales();
-      EXPECT_EQ(compressed.resident_bytes(), n * k / 2 + n * (k / 128) * 2);
-    } else {
-      for (std::size_t i = 0; i < k * n; ++i)
-        values[i] = rounded(
-            static_cast<float>(
-                static_cast<int>(
-                    (i * 11 + i / n + static_cast<std::size_t>(seed)) % 23) -
-                11) *
-                0.00871f,
-            type);
-      Tensor temporary(matrix(type, static_cast<std::int64_t>(k),
-                              static_cast<std::int64_t>(n)),
-                       resource);
-      temporary.write(values);
-      weights = temporary.view.as_const();
-      dense = std::move(temporary.storage);
-    }
+                  (i * 11 + i / n + static_cast<std::size_t>(seed)) % 23) -
+              11) *
+              0.00871f,
+          type);
+    Tensor temporary(matrix(type, static_cast<std::int64_t>(k),
+                            static_cast<std::int64_t>(n)),
+                     resource);
+    temporary.write(values);
+    weights = temporary.view.as_const();
+    dense = std::move(temporary.storage);
   }
 
-  compute::Operation operation() const {
-    return quantized ? compute::Operation(cuda::QuantizedWeights::operation())
-                     : compute::Operation(compute::MatMul{});
-  }
-  compute::ProviderId provider() const {
-    return quantized ? compute::marlin::kProviderId
-                     : compute::cublas::kProviderId;
-  }
-  std::size_t arity() const { return quantized ? 3U : 2U; }
-  std::array<compute::ConstTensorView, 3>
+  compute::Operation operation() const { return compute::Operation(compute::MatMul{}); }
+  compute::ProviderId provider() const { return compute::cublas::kProviderId; }
+  std::array<compute::ConstTensorView, 2>
   inputs(compute::ConstTensorView activation) const {
-    return {activation, weights, scales};
+    return {activation, weights};
   }
 
   std::vector<float> reference(std::span<const float> input) const {

@@ -45,16 +45,17 @@ inline hyle::Status run() {
                                            context, cuda::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto input, tensor(resource.ref(), 1, 128));
+  HYLE_ASSIGN_OR_RETURN(auto gate_up_weights,
+                        tensor(resource.ref(), 128, 256));
   HYLE_ASSIGN_OR_RETURN(auto down, tensor(resource.ref(), 128, 64));
   HYLE_ASSIGN_OR_RETURN(auto output, tensor(resource.ref(), 1, 64));
-  std::vector<std::int8_t> q(256 * 128);
-  for (std::size_t n = 0; n < 256; ++n)
-    for (std::size_t k = 0; k < 128; ++k)
-      q[n * 128 + k] = static_cast<std::int8_t>(n < 128 ? 1 : 2);
-  const std::vector<float> scales(256, 1.0f / 32);
-  HYLE_ASSIGN_OR_RETURN(auto weights,
-                        cuda::QuantizedWeights::pack(context, resource.ref(),
-                                                     256, 128, q, scales));
+  std::vector<__half> gate_up_values(128 * 256);
+  for (std::size_t k = 0; k < 128; ++k)
+    for (std::size_t n = 0; n < 256; ++n)
+      gate_up_values[k * 256 + n] =
+          __float2half(n < 128 ? 1.0f / 32 : 1.0f / 16);
+  HYLE_RETURN_IF_ERROR(gate_up_weights.storage.view().write(
+      std::as_bytes(std::span(gate_up_values))));
   const std::vector<__half> down_values(128 * 64, __float2half(1.0f / 64));
   HYLE_RETURN_IF_ERROR(
       down.storage.view().write(std::as_bytes(std::span(down_values))));
@@ -62,19 +63,17 @@ inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto builder, graph::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto x, builder.input(input.view.description()));
   HYLE_ASSIGN_OR_RETURN(auto w,
-                        builder.constant(weights.weights().description()));
-  HYLE_ASSIGN_OR_RETURN(auto s,
-                        builder.constant(weights.scales().description()));
+                        builder.constant(gate_up_weights.view.description()));
   HYLE_ASSIGN_OR_RETURN(auto d, builder.constant(down.view.description()));
-  HYLE_ASSIGN_OR_RETURN(
-      auto gate_up, builder.add(cuda::QuantizedWeights::operation(), x, w, s));
+  HYLE_ASSIGN_OR_RETURN(auto gate_up,
+                        builder.add(compute::MatMul{}, x, w));
   HYLE_ASSIGN_OR_RETURN(auto activated,
                         builder.add(compute::GatedActivation{}, gate_up));
   HYLE_ASSIGN_OR_RETURN(auto y, builder.add(compute::MatMul{}, activated, d));
   HYLE_RETURN_IF_ERROR(builder.publish(y));
   HYLE_ASSIGN_OR_RETURN(auto logical, std::move(builder).finish());
-  const std::array constants{graph::ConstantBinding{w, weights.weights()},
-                             graph::ConstantBinding{s, weights.scales()},
+  const std::array constants{
+                             graph::ConstantBinding{w, gate_up_weights.view.as_const()},
                              graph::ConstantBinding{d, down.view.as_const()}};
   HYLE_ASSIGN_OR_RETURN(auto compiled,
                         graph::cuda::compile(logical, context, resource.ref(),

@@ -7,16 +7,13 @@
 #include <utility>
 
 #include "concat_provider.h"
-#include "gather_provider.h"
 #include "native_context.h"
 #include "native_kernel.h"
 #include "norm_provider.h"
 #include "provider_internal.h"
 #include "reduction_provider.h"
-#include "scan_provider.h"
 #include "scatter_provider.h"
 #include "tensor_provider.h"
-#include "topk_provider.h"
 
 namespace hyle::compute::cuda_native {
 namespace {
@@ -143,16 +140,10 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
   if constexpr (!Sglang) {
-    if (request.operation.kind() == OperationKind::kScan)
-      return scanning::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kScatter)
       return scattering::propose(request, inputs, outputs, proposal);
-    if (request.operation.kind() == OperationKind::kGather)
-      return gathering::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kConcat)
       return concatenation::propose(request, inputs, outputs, proposal);
-    if (request.operation.kind() == OperationKind::kTopK)
-      return selection::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kReduce ||
         request.operation.kind() == OperationKind::kSoftmax)
       return reduction::propose(request, inputs, outputs, proposal);
@@ -288,16 +279,10 @@ ProviderPrepareOutcome prepare(void *state,
       return normalization::sglang_prepare(state, request, allocator, output);
   }
   if constexpr (!Sglang) {
-    if (request.route == scanning::kRoute && request.shape.exact())
-      return scanning::prepare(state, request, allocator, output);
     if (request.route == scattering::kRoute && request.shape.exact())
       return scattering::prepare(state, request, allocator, output);
-    if (request.route == gathering::kRoute && request.shape.exact())
-      return gathering::prepare(state, request, allocator, output);
     if (request.route == concatenation::kRoute && request.shape.exact())
       return concatenation::prepare(state, request, allocator, output);
-    if (request.route == selection::kRoute && request.shape.exact())
-      return selection::prepare(state, request, allocator, output);
     if (request.route == reduction::kRoute && request.shape.exact())
       return reduction::prepare(state, request, allocator, output);
     if (request.route == normalization::kRoute && request.shape.exact())

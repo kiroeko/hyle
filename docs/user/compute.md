@@ -4,7 +4,7 @@
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入已支持的 oneDNN 能力。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
-> command capture 基础运行时。R4 已接入 cuBLASLt、Marlin、SGLang 与 HYLE SwiGLU 的独立 Provider，
+> command capture 基础运行时。普通路线已接入 ggml CUDA、cuBLASLt、SGLang、CCCL 与有限 HYLE CUDA Provider，
 > 普通 CUDA Direct/Graph 入口、真实 FFN/capture、Win/WSL 三交付与当前 SM89 工程性能验收已完成。
 > Apple MLX/Metal 的原生 Direct/Graph、三交付和 M4 限定性能验收已完成；
 > Vulkan/SPIR-V 的 R6 也已完成真实计算、三交付与已测设备/版本域的有限性能验收。
@@ -158,7 +158,7 @@ auto prepared = hyle::compute::prepare(
 ```
 
 后续依 `workspace_requirement()` 分配 CUDA workspace，为每个并发槽创建 invocation；绑定同设备
-tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → dense down 样例见
+tensor，submit 后显式检查 Completion。完整 dense gate/up → SwiGLU → dense down 样例见
 [CUDA Direct FFN](../../samples/package/compute/cpp/cuda_ffn.h)。该样例连续执行三组变化输入，
 没有 Provider 列表、计时资料或用户 kernel callback。
 
@@ -168,7 +168,6 @@ tensor，submit 后显式检查 Completion。完整 Q4 gate/up → SwiGLU → de
 | ggml CUDA 张量片段 | SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean与无mask/浮点additive mask的Softmax；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
 | ggml CUDA causal GQA | Windows默认、Linux可显式组合；SM89，dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
-| Marlin QuantizedMatMul | `cuda::QuantizedWeights` 的 signed symmetric group128 Q4；FP16 activation/output、FP32 reduction；SM80+，M=1..64、K 为 128 倍数、N 为 64 倍数、N*K<=INT32_MAX |
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
 | SGLang RMSNorm | dense 同类型 F16/BF16 输入和必需 scale，F32 累加、输出最终 RNE；宽度64/128/256、256倍数至8192、512倍数至16384；16字节对齐、允许精确 input0 原位；混合F32参数不先窄化，继续由下一合法候选承载 |
 | SGLang Unary | dense F32/F16/BF16 SiLU/GELU/GELU-tanh，完整16字节向量、对齐16字节、允许精确原位；普通 Unary 的稳定尾值和 -Inf 极限合同由明确数学适配保留；输出元素数<=INT32_MAX |
@@ -235,8 +234,6 @@ TopK 在上述已资格化环境通过普通入口绑定原版CCCL，返回原�
 返回有序结果。原版DeviceRadixSort对逻辑行与分数稳定排序，再通过库Transform提取原值/下标，
 没有4096列限制。按`workspace_requirement()`分配每个invocation的独立CUDA工作区；其大小随
 输入元素数增长，包括两份keys/indices及SDK临时区。默认managed执行不接受外部capture。
-expert `cuda_native::provider()`和Graph明确要求prepared的既有路径仍保留原范围：F32/F16/BF16，
-k=1或k>1且列数≤4096，无caller workspace，允许原生capture；这不是新增性能裁决。
 Concat 支持同类型的任意数量 plain 1/2/4/8 字节输入、任意轴/byte stride 和 dense output，
 逐位保留数据，无输入输出重叠，输出元素数≤INT32_MAX。每最多四个输入一组原生 kernel，常见
 双输入一次提交；空组不取指针或启动 kernel，程序元数据按输入数量冷分配，无 caller workspace
@@ -248,8 +245,7 @@ OutOfRange，整个Gather output保持不变，失败Invocation需重建。tenso
 output不能与source或indices重叠；output/indices元素数各≤INT32_MAX，存储跨度≤PTRDIFF_MAX，
 source轴与地址计算保留64位。每个checked invocation需要独立caller workspace，按查询的大小和
 对齐分配并保活到Completion；Graph自动规划。unchecked由caller保证索引有效，省略检查及工作区。
-空output不访问payload；默认managed路径不接受外部capture。既有expert/prepared-only Gather
-保留原生capture、连续后缀搬运与无caller workspace的原范围，冻结实现未作性能裁决。
+空output不访问payload；默认managed路径不接受外部capture。
 CUDA `Scatter` 的 assign 保留1/2/4/8字节storage原始位，add支持F32/F16/BF16。当前过渡实现按
 updates逻辑行主序处理、半精度每次F32求值后舍入；这是该实现特征，公共add合同允许重结合及
 存储精度或更宽的累加。支持I32/I64、任意axis/byte stride、dense输出，
@@ -267,16 +263,15 @@ Reduce检查全部前缀（包括exclusive最后总和），仅两个验证标�
 返回OutOfRange，所有用户output保持原值。检查包含一次host等待，不能声称整条路径不阻塞host。
 Direct必须提供独立caller workspace，不接受输入/输出别名；Graph规划同一工作区。caller的
 tensor、workspace和Queue须活到Completion结束，即使PreparedOperation/Invocation句柄已释放。
-既有expert/prepared-only Scan仍保留其原生capture和精确原位范围；默认CCCL不声明这些能力。
 CCCL这些接线的Windows开发验证与尚未运行的跨平台/三交付/P1见
 [当前接入卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda-collectives.md)，不代表完整模型覆盖。
 整数/FP8 Cast 与算术等
 尚未由这批 CUDA 接线覆盖。新增 BF16/门控模式及基本 tensor 的完整性能资格仍待 C1 bundle；
 下述 R4 性能结论只签原有 FFN 域。
 
-权重用 `cuda::QuantizedWeights::pack()` 冷准备，owner 只保留 Q4 payload 与 FP16 scales；
-`weights()/scales()` 借用 owner，搭配 `QuantizedWeights::operation()` 使用。普通用户无需认识
-vendor permutation。其余 dtype/shape/operation 明确拒绝；prepare 绑定规则与 vendor tactic，
+GGUF 量化权重用 `gguf_weight_description()` 描述，并把已有模型制品中的原生 packed bytes 直接绑定给
+普通 `MatMul`；ggml CUDA Provider 在冷准备解释格式，不建立 Marlin 专用 carrier 或重复 packing。
+其余 dtype/shape/operation 明确拒绝；prepare 绑定规则与 vendor tactic，
 执行期不搜索、计时或重新 packing。向量域在 prepare 固定16字节对齐合同，运行绑定不满足时明确拒绝，
 不会热切换或隐藏 copy；专家可用 `cuda_native::provider()` 保留2/4字节对齐的 HYLE 路径。
 默认激活规则依据完整 FFN 比较：HYLE 未呈现跨实验顺序成立的明确优势，采用合格成熟实现。
@@ -359,12 +354,10 @@ CUDA `Buffer/View` 的 `write/fill/copy_from/read` 是同步存储操作：返�
 第三方源码出现在 dependency cache 或最终链接中，不表示其算子已经自动成为 HYLE route。HYLE
 `Operation` 只描述公共语义；一个已交付 Provider 必须在 `prepare()`/Graph compile 冷路径把它翻译成
 第三方 plan、kernel 或 graph artifact。叶函数型 provider 可以产生 `PreparedOperation`；自己 host 图的
-runtime 可经 delegated Direct 或 Graph region 保留原生执行。当前没有已交付 ggml provider，合法的
-block-Q4 `TensorDesc` 只证明格式可表达；未绑定支持该格式的 Provider 时仍返回 `Unimplemented`，
-不会把压缩 bytes 当普通 scalar、偷偷反量化或因为 ggml 已下载就调用私有 kernel。
+runtime 可经 delegated Direct 或 Graph region 保留原生执行。当前 CPU、CUDA、Metal 与 Vulkan 的 ggml
+Provider 已接入明确有限域；合法的 block-Q4 `TensorDesc` 仍须匹配对应 Provider，否则返回
+`Unimplemented`，不会把压缩 bytes 当普通 scalar 或偷偷反量化。
 
-CUDA 的 Marlin 接入使用具名 compressed carrier，普通入口通过 `cuda::QuantizedWeights` 提供冷
-packing 与所有权。它供 `QuantizedMatMul` 使用，不能推断普通 `MatMul` 有量化 fallback。
 不同 Q4 格式、activation 临时量化
 与累加类型不是同一件事。当前
 `MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
@@ -381,7 +374,7 @@ Direct/Graph FFN、完整 CUDA 三交付与当前支持域 P1 已验收；单个
 | factor / 公共头 | 工厂 / owner | 当前有限域 |
 |---|---|---|
 | `compute_provider_cublas` / `compute/providers/cublas.h` | `cublas::provider()` | FP16/FP32 rank-2 MatMul；输入 row/column-major、输出 dense row-major；FP32 累加；冷绑定算法，每槽独立 handle/workspace |
-| `compute_provider_marlin` / `compute/providers/marlin.h` | `marlin::provider()`、`marlin::QuantizedWeights::pack()` | FP16 activation/output、signed symmetric group128 Q4、FP32 累加；M=1..64、K%128=0、N%64=0、N*K<=INT32_MAX；冷 packing 后只常驻 Q4/scales |
+| `compute_provider_ggml_cuda` / `compute/providers/ggml_cuda.h` | `ggml_cuda::provider()` | 原生 GGUF block MatMul/GroupedMatMul 及已登记张量/注意力有限域；直接消费 caller-owned packed bytes，不建立全量浮点副本 |
 | `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::sglang_provider()` | 锁定 SGLang precise packed 门控片段，支持域与16字节对齐要求见默认规则；不引入 TVM/Python runtime |
 | `compute_provider_cuda` / `compute/providers/cuda.h` | `cuda_native::provider()` | dense FP16/BF16/FP32 SiLU/GELU/GELU-tanh 门控，packed halves 或 separate 输入；FP32 中间计算、输出一次舍入；输出元素数<=INT32_MAX；不允许输入输出重叠 |
 
@@ -402,8 +395,8 @@ float32 或 float64 逻辑 dtype，输出保留该 dtype；累加类型显式声
 
 普通 Graph 可直接 `builder.add(QuantizedMatMul{...}, input, weight, scales, biases)`；signed 形态
 省去最后一项。权重的 `StorageFormatId` 仍须由具体路线的 packing factory 给出；仅凭 4 bit 无法
-推断物理编码或可否无损换格式。当前 CUDA Marlin 只解释前述 group128 carrier；其它路线/格式需要
-具备相应 Provider，公共描述和校验不等于有可执行实现。
+推断物理编码或可否无损换格式。各路线只解释其已登记的 carrier；其它格式需要具备相应 Provider，
+公共描述和校验不等于有可执行实现。
 已有 19 族 CPU kernel 不因此多出 Q4 fallback；数值资格也不保证与先物化权重的逐位结果相同。
 
 ## Queue、byte transfer 与 Completion
@@ -546,7 +539,7 @@ auto normalized = prepare(context, LayerNorm{.epsilon = 1.0e-5F},
                           input_desc, scale_desc, bias_desc);
 ```
 
-Native 半精度 `Softmax`/`TopK` 的 workspace 按一行 F32 临时值复用；TopK 另有候选索引空间。
+Native 半精度 `Softmax` 的 workspace 按一行 F32 临时值复用。
 调用 `workspace_requirement()` 取得大小/对齐，并在 `create_invocation(workspace)` 时绑定；Graph
 按同一要求管理每个 invocation 的独立工作区。空 output 的需求为零。数据和 mask 内容可在完成后更新，
 重复执行不重新准备或重新选择 Provider。

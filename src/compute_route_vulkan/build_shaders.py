@@ -1,4 +1,4 @@
-"""Compile admitted ggml F32 and HYLE tensor shaders into the native artifact.
+"""Compile the residual HYLE tensor shaders into the native artifact.
 
 This build step has no runtime cache, device probe or algorithm selection.
 The dependency lock authenticates inputs before CMake reaches this command.
@@ -18,21 +18,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    common = dict(DATA_A_F32='1', FLOAT_TYPE='float', FLOAT_TYPEV2='vec2',
-                  FLOAT_TYPEV4='vec4', FLOAT_TYPEV8='mat2x4', B_TYPE='float',
-                  B_TYPEV2='vec2', B_TYPEV4='vec4', D_TYPE='float')
-    matrix = dict(common, LOAD_VEC_A='4', LOAD_VEC_B='4', B_TYPE='vec4',
-                  B_TYPE_SCALAR='float', ACC_TYPE='float', ACC_TYPEV2='vec2')
     variants = [
-        ('mm_f32', 'mul_mm.comp', matrix, {1}),
-        ('mv_f32', 'mul_mat_vec.comp', common, {1}),
-        ('mv_f32_hybrid', 'mul_mat_vec.comp', dict(common, USE_SUBGROUP_ADD='1'),
-         {1, 61, 63}),
-        ('mv_f32_subgroup', 'mul_mat_vec.comp',
-         dict(common, USE_SUBGROUP_ADD_NO_SHMEM='1'), {1, 61, 63}),
-        ('swiglu_f32', str((args.tensor_source / 'swiglu.comp').resolve()),
-         dict(A_TYPE='float', D_TYPE='float'), {1}),
-        ('copy_f32', 'copy.comp', dict(A_TYPE='float', D_TYPE='float', DATA_A_F32='1'), {1}),
         ('tensor', str((args.tensor_source / 'tensor.comp').resolve()), {}, {1}),
         ('checked_tensor', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_CHECKED='1'), {1}),

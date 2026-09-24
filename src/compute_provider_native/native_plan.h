@@ -214,9 +214,6 @@ Status prepare_reduction(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,
                          NativePlan &plan) noexcept;
-Status prepare_scan(Operation operation, std::span<const TensorDesc> inputs,
-                    std::span<const TensorDesc> outputs,
-                    NativePlan &plan) noexcept;
 Status prepare_normalization(Operation operation,
                              std::span<const TensorDesc> inputs,
                              std::span<const TensorDesc> outputs,

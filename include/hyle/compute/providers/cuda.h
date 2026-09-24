@@ -45,13 +45,6 @@ inline constexpr ProviderId kCcclProviderId{0x48594c4500000001ULL,
 // memory; longer rows read their input three times. Input/output count <=
 // INT32_MAX.
 //
-// TopK returns original FP32/FP16/BF16 values and I32 indices, with arbitrary
-// axis/byte strides and dense outputs. Same scores (including signed zeros)
-// prefer the lower column; NaNs follow all non-NaNs. Results are sorted even
-// when not required. No overlaps. k=1 uses a CUDA SDK collective; k>1 uses CUB
-// block radix sort for rows <=4096 columns. Both use one launch, no caller
-// workspace/slot state; native on-chip scratch and code storage are not zero.
-//
 // Concat accepts variadic plain 1/2/4/8-byte scalar inputs and dense output,
 // arbitrary axis/byte strides, and preserves storage bits exactly. No input/
 // output overlap. Up to four inputs per native kernel (one for the common two

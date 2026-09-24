@@ -6,7 +6,7 @@
 > exact symbolic specialization，execution target / storage domain / execution lane
 > 三轴 placement，真实跨 storage copy，partial-order workspace、显式的硬预算序列化取舍，shared Queue 与
 > delegated provider island、segment 调度及显式 replay 准备。CUDA target/storage/lane、同 Context 双 stream
-> event import 与 single-queue capture 已真机资格化；普通 CUDA dense/Q4 FFN 已通过 W1 实际
+> event import 与 single-queue capture 已真机资格化；普通 CUDA dense FFN 与原生 GGUF 量化 MatMul 已通过实际
 > Provider 组合与 captured replay 验证，完整 R4 三交付及当前 SM89 工程性能验收已完成。
 
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md) 分别完成 R5/R6 的真实计算、
@@ -72,7 +72,7 @@ return done->wait();
 
 默认 PreferCapture + RejectHostWait；通过 `replay_route()/replay_report()` 查看实际 capture 或
 command 路线，也可显式 RequireCapture。Graph 规划中间值与 workspace，Provider 保持自己的
-cuBLASLt/Marlin/kernel artifact；captured 热执行直接重放原生程序。改变同地址 buffer 的内容可
+cuBLASLt/ggml CUDA/kernel artifact；captured 热执行直接重放原生程序。改变同地址 buffer 的内容可
 重复执行；bind/reset 改变绑定会使 preparation 失效，需要重新冷准备。两个并发 run 各有独立
 scratch/captured pointers，外部 input/output 不应产生未排序的冲突访问。
 
@@ -83,7 +83,7 @@ CUDA13.3/CCCL3.3.4/SM89的普通Scan/TopK/Gather由原版CCCL承载，Graph为�
 `HostWaitPolicy`控制跨队列依赖的host等待，不取消Provider内部的必要检查；普通单队列入口仍可
 使用默认选项。执行期不临时改选Provider。
 
-完整同图三 Provider 的 Q4 FFN 与变化输入示例见
+完整 dense FFN 与变化输入示例见
 [CUDA Graph FFN](../../samples/package/graph/cpp/cuda_ffn.h)；支持域见
 [CUDA 默认规则](compute.md#普通-cuda-入口)。资源和常量 owner 借用至最后在途 Completion 的
 真实终态；失败槽需要重建。高级同 GPU 多 lane 使用既有 `CompileEnvironment`，普通 helper
@@ -803,7 +803,7 @@ submission admission 时等待上游。`ReplayReport` 提供四类 dependency �
 `kCaptured` 或 `kHybrid`；`kRequireCapture` 遇到任一 delegated 或不能 capture 的 command segment 就失败。
 当前 RTX 4070 纵切已验证：同一 CUDA target 的 compute/transfer lane 共用一个 device storage identity，只有
 实际产生 segment 的 lane 要求 Queue；兼容 CUDA stream 可用 event 非阻塞导入前缀，单 Queue 的兼容 copy
-segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt/Marlin/HYLE kernel 的
+segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt/HYLE kernel 的
 同 Queue 计算 capture；这些单 Queue 证据不承诺一般 multi-stream capture。
 
 ## 冷路径、热路径与调度取舍

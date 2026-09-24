@@ -791,12 +791,6 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
-  case OperationKind::kScan: {
-    Status status = internal::prepare_scan(operation, inputs, outputs, plan);
-    if (!status.ok())
-      return status;
-    break;
-  }
   case OperationKind::kLayerNorm: {
     Status status =
         internal::prepare_normalization(operation, inputs, outputs, plan);
@@ -958,8 +952,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kRoPE:
-  case OperationKind::kSoftmax:
-  case OperationKind::kTopK: {
+  case OperationKind::kSoftmax: {
     Status status =
         internal::prepare_transformer(operation, inputs, outputs, plan);
     if (!status.ok())

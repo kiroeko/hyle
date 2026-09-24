@@ -84,6 +84,19 @@ bool scan_limits(const ProgramState &program,
          ((width + 127) / 128 <= limits.maxComputeWorkGroupCount[0] &&
           rows <= limits.maxComputeWorkGroupCount[1]);
 }
+bool transposed_dense_matrix(const TensorDesc &description) noexcept {
+  if (!description.is_plain() || description.rank() != 2 ||
+      description.is_dense())
+    return false;
+  const std::array physical_dimensions{description.dimensions()[1],
+                                       description.dimensions()[0]};
+  const auto physical =
+      TensorDesc::dense(description.data_type(), physical_dimensions);
+  if (!physical)
+    return false;
+  const auto transposed = physical->transposed();
+  return transposed && *transposed == description;
+}
 bool region_operation(const ProgramState &program, const PlanStep &step,
                       bool promote_bfloat) noexcept {
   if (step.custom || step.inputs.size() > 6 || step.outputs.size() > 2)
@@ -100,15 +113,6 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   std::array<TensorDesc, 2> outputs;
   for (std::size_t i = 0; i < step.outputs.size(); ++i)
     outputs[i] = program.values[step.outputs[i]].description;
-  // Keep the qualified native/packed rank-2 F32 route ahead of the mature
-  // provider. B2 extends the route with half, bfloat and batched domains; it
-  // must not change the lifetime and packing contract of the existing path.
-  if (!promote_bfloat && step.operation.get_if<MatMul>() && input_count == 2 &&
-      inputs[0].rank() == 2 && inputs[1].rank() == 2 &&
-      inputs[0].data_type() == DataType::kFloat32 &&
-      inputs[1].data_type() == DataType::kFloat32 && inputs[0].is_plain() &&
-      inputs[1].is_plain())
-    return false;
   if (const auto *softmax = step.operation.get_if<Softmax>();
       softmax && softmax->mask == MaskKind::kAdditive && input_count == 2 &&
       inputs[0].data_type() != inputs[1].data_type())
@@ -144,6 +148,18 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     if (!wide)
       return false;
     outputs[0] = *wide;
+  }
+  // ggml Vulkan imports canonical external ports. Preserve HYLE's natural
+  // transposed-weight API by qualifying the exact contiguous matrix view
+  // against the canonical description that lower_managed_region materializes.
+  // This does not introduce another MatMul implementation or a runtime route.
+  if (step.operation.get_if<MatMul>() && input_count == 2 &&
+      transposed_dense_matrix(inputs[1])) {
+    const auto canonical =
+        TensorDesc::dense(inputs[1].data_type(), inputs[1].dimensions());
+    if (!canonical)
+      return false;
+    inputs[1] = *canonical;
   }
   if (!provider::region_supports(step.operation,
                                  std::span(inputs).first(input_count),
@@ -579,6 +595,27 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         // descriptor alignment, checked before binding; no scalar Copy can
         // interpret a block encoding as its logical F16 elements.
         dispatch.values.push_back(value);
+        continue;
+      }
+      // ggml external ports describe canonical dense storage.  HYLE also
+      // treats a permuted contiguous tensor as dense, so materialize only that
+      // exact residual layout before entering the mature region.  The MatMul
+      // itself remains owned by ggml; this is the ordinary byte-addressed
+      // boundary adapter already used for other non-native layouts.
+      HYLE_ASSIGN_OR_RETURN(
+          auto canonical,
+          TensorDesc::dense(program.values[value].description.data_type(),
+                            program.values[value].description.dimensions()));
+      if (canonical != program.values[value].description) {
+        const auto adapted =
+            static_cast<std::uint32_t>(program.values.size());
+        program.values.push_back({canonical, {}});
+        program.aliases.push_back({adapted, 0});
+        HYLE_RETURN_IF_ERROR(lower_tensor(
+            program,
+            {Operation(Copy{}), {value}, {adapted}, {}, {1, 1, 1}, {}}));
+        recipe->values[input] = canonical;
+        dispatch.values.push_back(adapted);
         continue;
       }
       const auto alignment =

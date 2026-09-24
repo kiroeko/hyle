@@ -734,11 +734,7 @@ void metadata_failures_rollback(
 
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
   pending_completion_retains_program(compute::cuda_native::provider(),
-                                     compute::Operation(compute::Scan{}));
-  pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Scatter{}));
-  pending_completion_retains_program(compute::cuda_native::provider(),
-                                     compute::Operation(compute::Gather{}));
   pending_completion_retains_program(compute::cuda_native::provider());
   pending_completion_retains_program(compute::cuda_native::sglang_provider());
   pending_completion_retains_program(compute::cuda_native::sglang_provider(),
@@ -757,20 +753,13 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
                                      compute::Operation(compute::Reduce{}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Softmax{}));
-  pending_completion_retains_program(
-      compute::cuda_native::provider(),
-      compute::Operation(compute::TopK{.count = 6}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Concat{}));
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
   metadata_failures_rollback(compute::cuda_native::provider(),
-                             compute::Operation(compute::Scan{}));
-  metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Scatter{}));
-  metadata_failures_rollback(compute::cuda_native::provider(),
-                             compute::Operation(compute::Gather{}));
   metadata_failures_rollback(compute::cuda_native::provider());
   metadata_failures_rollback(compute::cuda_native::sglang_provider());
   metadata_failures_rollback(compute::cuda_native::sglang_provider(),
@@ -789,8 +778,6 @@ TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
                              compute::Operation(compute::Reduce{}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Softmax{}));
-  metadata_failures_rollback(compute::cuda_native::provider(),
-                             compute::Operation(compute::TopK{.count = 6}));
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Concat{}));
 }

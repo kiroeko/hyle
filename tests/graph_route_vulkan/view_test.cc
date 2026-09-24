@@ -148,7 +148,7 @@ TEST(VulkanGraph, InputAliasChainsRebindOddOriginsAndKeepOldInputStorage) {
   EXPECT_EQ(bits(context, retained), saved);
 }
 
-TEST(VulkanGraph, ConstantViewsShareColdWeightPackingAndDropUnusedRoots) {
+TEST(VulkanGraph, ConstantViewsShareMatureRegionBindingAndRetainItsRoot) {
   auto context = vulkan_test::context().value();
   constexpr int rows = 3, k = 17, n = 33;
   const auto host_weights = vulkan_test::data(k * n, 2);
@@ -182,12 +182,12 @@ TEST(VulkanGraph, ConstantViewsShareColdWeightPackingAndDropUnusedRoots) {
     auto program =
         gv::compile(context, graph, std::array{weights}, {.report = &report});
     ASSERT_TRUE(program) << program.error().message();
-    EXPECT_EQ(report.native_dispatch_count, 2U); // Only the two matmuls replay.
-    EXPECT_EQ(report.invocation_storage_block_bytes.size(), 2U);
-    EXPECT_EQ(report.retained_constant_owner_count, publish_view ? 2U : 1U);
+    EXPECT_EQ(report.native_dispatch_count, 1U); // One mature fused region.
+    EXPECT_EQ(report.invocation_storage_block_bytes.size(), 3U);
+    EXPECT_EQ(report.retained_constant_owner_count, 1U);
     graph = {};
     weights = {};
-    EXPECT_EQ(original_owner.expired(), !publish_view);
+    EXPECT_FALSE(original_owner.expired());
     auto slot = program->create_invocation().value();
     for (int phase = 0; phase < 2; ++phase) {
       const auto host_input = vulkan_test::data(rows * k, phase + 3);

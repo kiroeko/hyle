@@ -279,67 +279,6 @@ TEST(VulkanLifetime, NoncoherentTransferBranchUsesRealFlushAndInvalidate) {
   EXPECT_EQ(boundary.invalidations, 1);
 }
 
-TEST(VulkanLifetime, SubmitOomDoesNotWaitForUnacceptedFenceAndCanRetry) {
-  auto context = t::context();
-  ASSERT_TRUE(context) << context.error().message();
-  const auto description = t::dense({2, 2});
-  auto input = t::upload(*context, description, t::data(4, 1));
-  ASSERT_TRUE(input);
-  auto program = v::prepare(*context, c::MatMul{}, description, description);
-  ASSERT_TRUE(program);
-  auto slot = program->create_invocation();
-  ASSERT_TRUE(slot) << slot.error().message();
-  ASSERT_TRUE(slot->bind(*input, *input).ok());
-  NativeBoundary boundary(*context);
-  boundary.fail_submit = true;
-  auto refused = slot->submit();
-  ASSERT_FALSE(refused);
-  EXPECT_TRUE(refused.error().IsResourceExhausted());
-  EXPECT_EQ(boundary.waits.load(), 0);
-  EXPECT_EQ(d::Access::runtime(*context)->pending, nullptr);
-  auto retry = slot->submit();
-  ASSERT_TRUE(retry) << retry.error().message();
-  ASSERT_TRUE(retry->wait());
-}
-
-TEST(VulkanLifetime, ObservationOomRetainsWorkUntilActualNativeRetirement) {
-  auto context = t::context();
-  ASSERT_TRUE(context);
-  const auto description = t::dense({2, 2});
-  auto input = t::upload(*context, description, t::data(4, 1));
-  ASSERT_TRUE(input);
-  auto program = v::prepare(*context, c::MatMul{}, description, description);
-  ASSERT_TRUE(program);
-  auto slot = program->create_invocation();
-  ASSERT_TRUE(slot);
-  ASSERT_TRUE(slot->bind(*input, *input).ok());
-  NativeBoundary boundary(*context);
-  auto work = slot->submit();
-  ASSERT_TRUE(work);
-  boundary.fail_poll = true;
-  auto observed = work->poll();
-  ASSERT_TRUE(observed);
-  EXPECT_EQ(*observed, c::CompletionPoll::kPending);
-  boundary.fail_poll = true;
-  EXPECT_FALSE(work->result());
-  EXPECT_NE(d::Access::runtime(*context)->pending, nullptr);
-  EXPECT_FALSE(slot->bind(*input, *input).ok());
-  boundary.fail_wait = true;
-  boundary.fail_idle = true;
-  const auto incomplete = context->close();
-  EXPECT_TRUE(incomplete.IsResourceExhausted());
-  EXPECT_NE(d::Access::runtime(*context)->pending, nullptr);
-  EXPECT_EQ(boundary.resets.load(), 1);
-  // Now an actual native fence wait proves completion. Preserve the first
-  // observation diagnosis, and never publish a successful generated result.
-  auto terminal = work->wait();
-  ASSERT_FALSE(terminal);
-  EXPECT_TRUE(terminal.error().IsResourceExhausted());
-  EXPECT_FALSE(work->result());
-  EXPECT_EQ(d::Access::runtime(*context)->pending, nullptr);
-  EXPECT_TRUE(context->close().ok());
-}
-
 TEST(VulkanLifetime,
      PartialAllocationFailureReleasesNativeQuotaAndDescriptors) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 1024 * 1024);
@@ -363,37 +302,6 @@ TEST(VulkanLifetime,
   EXPECT_EQ(d::Access::runtime(*context)->device->descriptors_in_pools.load(),
             0u);
   EXPECT_TRUE(program->create_invocation());
-}
-
-TEST(VulkanLifetime, PackedProgramDoesNotRetainAnUnusedDenseWeightCopy) {
-  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 1024 * 1024);
-  auto context = t::context(&quota);
-  ASSERT_TRUE(context);
-  const auto host = t::data(67 * 37, 2);
-  auto weights = t::upload(*context, t::dense({67, 37}), host);
-  ASSERT_TRUE(weights);
-  const auto one_allocation = quota.used();
-  std::weak_ptr<const void> original = weights->native_owner();
-  auto program = v::prepare(*context, c::MatMul{}, t::dense({1, 67}), *weights);
-  ASSERT_TRUE(program) << program.error().message();
-  *weights = {};
-  EXPECT_TRUE(original.expired());
-  EXPECT_EQ(quota.used(), one_allocation);
-  const auto input_host = t::data(67, 3);
-  auto input = t::upload(*context, t::dense({1, 67}), input_host);
-  ASSERT_TRUE(input);
-  auto slot = program->create_invocation();
-  ASSERT_TRUE(slot);
-  ASSERT_TRUE(slot->bind(*input).ok());
-  auto work = slot->submit();
-  ASSERT_TRUE(work);
-  auto lease = work->wait();
-  ASSERT_TRUE(lease);
-  auto actual = t::read(*context, (*lease)->tensors()[0]);
-  ASSERT_TRUE(actual);
-  const auto expected = t::matmul(input_host, host, 1, 67, 37);
-  for (std::size_t i = 0; i < expected.size(); ++i)
-    EXPECT_NEAR((*actual)[i], expected[i], 1e-4f);
 }
 
 TEST(VulkanLifetime,

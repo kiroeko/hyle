@@ -1,8 +1,8 @@
 if(HYLE_COMPUTE_APPLE_ENABLED)
   configure_file(apple_build.h.in apple_build.h @ONLY)
   hyle_add_module(compute_route_apple TRACE SOURCES
-    apple_context.cc apple_operations.cc apple_tensor.cc apple_reduction.cc apple_indexing.cc
-    apple_scatter.cc apple_environment.mm apple_recurrent.cc apple_mature_indexing.cc
+    apple_context.cc apple_operations.cc apple_tensor.cc
+    apple_environment.mm apple_recurrent.cc apple_mature_indexing.cc
     apple_mature_reduction.cc)
   target_include_directories(hyle_compute_route_apple PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute" "${CMAKE_CURRENT_BINARY_DIR}")

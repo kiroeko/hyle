@@ -3,7 +3,6 @@
 #include <cstddef>
 
 #include "hyle/compute/device.h"
-#include "hyle/compute/providers/marlin.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -23,14 +22,10 @@ struct DefaultContextOptions final {
 };
 
 #if defined(HYLE_COMPUTE_CUDA)
-// The route's persistent signed group128 Q4 carrier and cold packing owner.
-// FP16 activation/output, K % 128 == 0, N % 64 == 0, M in [1,64], SM80+.
-using QuantizedWeights = marlin::QuantizedWeights;
-
 // Fixed development rules: qualified Linux head256 GQA uses FlashInfer;
 // SM89 dense rank-2 F32 plain RMSNorm/Add use original ggml CUDA programs.
-// Dense FP16/FP32 MatMul uses cuBLASLt; the exact Q4
-// carrier uses Marlin. Packed FP16/FP32 SwiGLU uses pinned precise SGLang for
+// Dense FP16/FP32 MatMul uses cuBLASLt; native GGUF weights use ggml CUDA.
+// Packed FP16/FP32 SwiGLU uses pinned precise SGLang for
 // complete 16-byte vectors (hidden % 8/4 == 0), with 16-byte tensor alignment.
 // Separate inputs and non-vector tails use HYLE CUDA kernels.
 // Prepare binds these implementations once. Unsupported domains are errors;

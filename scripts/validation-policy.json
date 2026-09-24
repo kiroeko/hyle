@@ -16,9 +16,6 @@
     "compute_provider_cublas": {
       "HYLE_COMPUTE_CUDA": "ON"
     },
-    "compute_provider_marlin": {
-      "HYLE_COMPUTE_CUDA": "ON"
-    },
     "compute_provider_cuda": {
       "HYLE_COMPUTE_CUDA": "ON"
     },
@@ -58,7 +55,6 @@
     "graph_provider_ggml_cuda": ["Windows", "Linux"],
     "compute_backend_cuda": ["Windows", "Linux"],
     "compute_provider_cublas": ["Windows", "Linux"],
-    "compute_provider_marlin": ["Windows", "Linux"],
     "compute_provider_cuda": ["Windows", "Linux"],
     "compute_route_cuda": ["Windows", "Linux"],
     "graph_route_cuda": ["Windows", "Linux"],

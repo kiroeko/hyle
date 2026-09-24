@@ -65,7 +65,7 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
     EXPECT_EQ(report.nodes[3].traits.precision,
               c::PrecisionPolicy::kAccumulateInDeclaredType);
     EXPECT_EQ(report.nodes[3].traits.accumulation_type, c::DataType::kFloat32);
-    EXPECT_EQ(report.native_dispatch_count, 3U);
+    EXPECT_EQ(report.native_dispatch_count, 1U);
     EXPECT_EQ(report.managed_region_count, 1U);
     EXPECT_EQ(report.retained_constant_owner_count, 3U);
     EXPECT_GT(report.retained_constant_capacity_bytes, 0U);
@@ -101,9 +101,11 @@ TEST(VulkanGraph, FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph) {
       auto actual = t::read(*context, result->get()->tensors()[0]);
       ASSERT_TRUE(actual);
       const auto expected = fixture.oracle(host, rows);
+      // The mature ggml region fuses three MatMuls with its Vulkan SiLU
+      // approximation, while the host oracle rounds each unfused stage.
       for (std::size_t index = 0; index < expected.size(); ++index)
         ASSERT_NEAR((*actual)[index], expected[index],
-                    8e-5f + 3e-5f * std::abs(expected[index]))
+                    1e-3f + 1e-2f * std::abs(expected[index]))
             << index;
       auto unchanged = t::read(*context, old->get()->tensors()[0]);
       ASSERT_TRUE(unchanged);

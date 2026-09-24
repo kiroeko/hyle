@@ -33,7 +33,9 @@
   [实际 P0 证据](README.md)。
 - [当前比较边界](../../../bench/comparison-boundaries.md)、
   [CPU fixture](../../../bench/graph_route_cpu/region_p1_bench.cc)、
-  [CUDA fixture](../../../bench/compute_route_cuda/route_p1_bench.cc)、
+  CUDA 历史 fixture `bench/compute_route_cuda/route_p1_bench.cc`（已由
+  [M3-D4](../../../docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md)
+  随专用 Marlin 路线退场）、
   [Apple fixture](../../../bench/compute_route_apple/route_p1_bench.cc)、
   [Vulkan fixture](../../../bench/compute_route_vulkan/route_p1_bench.cc)。
 - [Apple 指南](../../../docs/user/apple-compute.md)、[Vulkan 指南](../../../docs/user/vulkan-compute.md)、

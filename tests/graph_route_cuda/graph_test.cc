@@ -110,13 +110,6 @@ struct FfnGraph final {
     auto linear = [&](const Linear &weights, graph::ValueId activation) {
       const auto w = builder.constant(weights.weights.description()).value();
       constants.push_back({w, weights.weights});
-      if (weights.quantized) {
-        const auto s = builder.constant(weights.scales.description()).value();
-        constants.push_back({s, weights.scales});
-        return builder
-            .add(cuda::QuantizedWeights::operation(), activation, w, s)
-            .value();
-      }
       return builder.add(compute::MatMul{}, activation, w).value();
     };
     const auto gate_up = linear(first, input);
@@ -128,8 +121,7 @@ struct FfnGraph final {
   }
 };
 
-void run_graph(compute::DataType type, std::int64_t rows, bool first_q4,
-               bool second_q4, bool commands) {
+void run_graph(compute::DataType type, std::int64_t rows, bool commands) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -137,8 +129,8 @@ void run_graph(compute::DataType type, std::int64_t rows, bool first_q4,
             .value();
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
-    Linear first(owner, resource.ref(), type, 128, 256, first_q4, 1);
-    Linear second(owner, resource.ref(), type, 128, 128, second_q4, 4);
+    Linear first(resource.ref(), type, 128, 256, 1);
+    Linear second(resource.ref(), type, 128, 128, 4);
     FfnGraph logical(matrix(type, rows, 128), first, second, stats.get());
     auto workload =
         workload_test::known(rows == 1 ? compute::WorkloadPhase::kDecode
@@ -233,7 +225,7 @@ void run_graph(compute::DataType type, std::int64_t rows, bool first_q4,
     auto final = slots[0].submit(queues[0]);
     ASSERT_TRUE(final.has_value()) << final.error().message();
     EXPECT_TRUE(slots[0].in_flight());
-    // Captured native artifact and per-slot cuBLAS/Marlin scratch must survive.
+    // Captured native artifact and per-slot cuBLAS scratch must survive.
     slots[0] = {};
     compiled = graph::CompiledGraph{};
     ASSERT_TRUE(owner.close().ok());
@@ -246,18 +238,16 @@ void run_graph(compute::DataType type, std::int64_t rows, bool first_q4,
   EXPECT_TRUE(stats.balanced());
 }
 
-TEST(CudaDefaultGraph, DenseAndQ4FfnCaptureTwoSlotsAndChangingInputs) {
+TEST(CudaDefaultGraph, DenseFfnCapturesTwoSlotsAndChangingInputs) {
   for (const auto rows : {1, 17}) {
     SCOPED_TRACE(rows);
-    run_graph(compute::DataType::kFloat32, rows, false, false, false);
-    run_graph(compute::DataType::kFloat16, rows, false, false, false);
-    run_graph(compute::DataType::kFloat16, rows, true, false, false);
-    run_graph(compute::DataType::kFloat16, rows, true, true, false);
+    run_graph(compute::DataType::kFloat32, rows, false);
+    run_graph(compute::DataType::kFloat16, rows, false);
   }
 }
 
 TEST(CudaDefaultGraph, ExplicitCommandsUseTheSameNumericalChain) {
-  run_graph(compute::DataType::kFloat16, 7, true, false, true);
+  run_graph(compute::DataType::kFloat16, 7, true);
 }
 
 TEST(CudaDefaultGraph, DefaultRulesCaptureSeparateAndPackedTailCapability) {

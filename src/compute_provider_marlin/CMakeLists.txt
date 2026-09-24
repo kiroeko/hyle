@@ -1,47 +1,6 @@
-if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_audit_in_tree_dependencies(marlin)
-  # Distributable SM80 PTX plus the qualified SM89 native image. Callers may
-  # explicitly select a different architecture set for their CUDA toolchain.
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
-    set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
-  endif()
-  enable_language(CUDA)
-  hyle_add_module(compute_provider_marlin SOURCES
-    marlin_provider.cc quantized_weights.cc native_kernel.cu)
-  set_target_properties(hyle_compute_provider_marlin PROPERTIES
-    CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
-  target_include_directories(hyle_compute_provider_marlin PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda"
-    "${PROJECT_SOURCE_DIR}/third_party/marlin")
-  target_link_libraries(hyle_compute_provider_marlin PRIVATE CUDA::cudart)
-  target_compile_options(hyle_compute_provider_marlin PRIVATE
-    "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
-  if(MSVC)
-    # CUDA-generated stubs intentionally change a kernel's storage class.
-    target_compile_options(hyle_compute_provider_marlin PRIVATE
-      "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
-  endif()
-  if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")
-    # Sanitizer flags instrument the CUDA TU's host adapter, not device code.
-    # nvcc forwards the ordinary HYLE host flags during compilation and link.
-    target_compile_options(hyle_compute_provider_marlin PRIVATE
-      "$<$<COMPILE_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
-    target_link_options(hyle_compute_provider_marlin PRIVATE
-      "$<$<LINK_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
-  endif()
-  target_compile_definitions(hyle_compute_provider_marlin
-    PUBLIC HYLE_COMPUTE_CUDA=1)
-  hyle_register_package_dependency(
-    NAME marlin
-    OWNER compute_provider_marlin
-    FEATURES compute_cuda
-    LOCKED_DEPENDENCIES marlin
-    RUNTIME_FILE_SPECS
-      "${PROJECT_SOURCE_DIR}/third_party/marlin/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|marlin-LICENSE"
-      "${PROJECT_SOURCE_DIR}/third_party/marlin/NOTICE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|marlin-NOTICE")
-else()
-  hyle_add_module(compute_provider_marlin OPTIONAL_ABSENT)
-  set_property(TARGET hyle_compute_provider_marlin PROPERTY
-    HYLE_INTERNAL_ONLY_ABSENT TRUE)
-endif()
+# The implementation was retired by M3-D4.  Keep only an internal absent
+# target so the append-only component/status identity remains auditable; no
+# product facade or route depends on it and it is never exported.
+hyle_add_module(compute_provider_marlin OPTIONAL_ABSENT)
+set_property(TARGET hyle_compute_provider_marlin PROPERTY
+  HYLE_INTERNAL_ONLY_ABSENT TRUE)

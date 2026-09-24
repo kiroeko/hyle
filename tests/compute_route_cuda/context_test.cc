@@ -6,8 +6,7 @@
 namespace {
 using namespace cuda_route_test;
 
-void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
-             bool second_q4) {
+void run_ffn(compute::DataType type, std::int64_t rows) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -18,7 +17,6 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
 #endif
         compute::ggml_cuda::kProviderId,
         compute::cublas::kProviderId,
-        compute::marlin::kProviderId,
         compute::cuda_native::kSglangProviderId,
         compute::cuda_native::kCcclProviderId,
         compute::cuda_native::kProviderId};
@@ -27,8 +25,8 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
       EXPECT_EQ(owner.provider_identity(i)->id, expected[i]);
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
-    Linear first(owner, resource.ref(), type, 128, 256, first_q4, 1);
-    Linear second(owner, resource.ref(), type, 128, 128, second_q4, 4);
+    Linear first(resource.ref(), type, 128, 256, 1);
+    Linear second(resource.ref(), type, 128, 128, 4);
     struct Lane final {
       Tensor input, gate_up, activated, output;
       std::array<mem::Buffer, 3> workspace;
@@ -48,7 +46,7 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
         workload_test::known(rows == 1 ? compute::WorkloadPhase::kDecode
                                        : compute::WorkloadPhase::kPrefill);
     auto a = compute::prepare(
-        owner, first.operation(), std::span(a_inputs).first(first.arity()),
+        owner, first.operation(), a_inputs,
         std::array{lanes[0].gate_up.view}, resource.ref(), workload);
     ASSERT_TRUE(a.has_value()) << a.error().message();
     auto b = compute::prepare(owner, compute::GatedActivation{},
@@ -56,7 +54,7 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
                               resource.ref(), workload);
     ASSERT_TRUE(b.has_value()) << b.error().message();
     auto c = compute::prepare(
-        owner, second.operation(), std::span(b_inputs).first(second.arity()),
+        owner, second.operation(), b_inputs,
         std::array{lanes[0].output.view}, resource.ref(), workload);
     ASSERT_TRUE(c.has_value()) << c.error().message();
     std::array programs{std::move(*a), std::move(*b), std::move(*c)};
@@ -98,7 +96,7 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
         const auto first_inputs = first.inputs(run.input.view.as_const());
         const auto second_inputs = second.inputs(run.activated.view.as_const());
         auto done_a = run.invocations[0].submit(
-            queues[lane], std::span(first_inputs).first(first.arity()),
+            queues[lane], first_inputs,
             std::array{run.gate_up.view});
         ASSERT_TRUE(done_a.has_value()) << done_a.error().message();
         completed[lane][0] = std::move(*done_a);
@@ -107,7 +105,7 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
         ASSERT_TRUE(done_b.has_value()) << done_b.error().message();
         completed[lane][1] = std::move(*done_b);
         auto done_c = run.invocations[2].submit(
-            queues[lane], std::span(second_inputs).first(second.arity()),
+            queues[lane], second_inputs,
             std::array{run.output.view});
         ASSERT_TRUE(done_c.has_value()) << done_c.error().message();
         completed[lane][2] = std::move(*done_c);
@@ -124,14 +122,11 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
   EXPECT_TRUE(stats.balanced());
 }
 
-TEST(CudaDefaultCompute,
-     DenseAndCompressedFfnUseFixedRulesAndIndependentSlots) {
+TEST(CudaDefaultCompute, DenseFfnUsesFixedRulesAndIndependentSlots) {
   for (const auto rows : {1, 17}) {
     SCOPED_TRACE(rows);
-    run_ffn(compute::DataType::kFloat32, rows, false, false);
-    run_ffn(compute::DataType::kFloat16, rows, false, false);
-    run_ffn(compute::DataType::kFloat16, rows, true, false);
-    run_ffn(compute::DataType::kFloat16, rows, true, true);
+    run_ffn(compute::DataType::kFloat32, rows);
+    run_ffn(compute::DataType::kFloat16, rows);
   }
 }
 

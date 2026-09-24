@@ -432,10 +432,10 @@ _hyle_declare_component(compute_provider_cublas
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/cublas.h)
-_hyle_declare_component(compute_provider_marlin
-  PRIVATE_DEPS compute_backend_cuda
-  PUBLIC_DEPS core compute compute_ops error mem
-  SPLIT_PUBLIC_HEADERS hyle/compute/providers/marlin.h)
+# Append-only identity tombstone.  The Marlin implementation, public carrier
+# and product route were retired by M3-D4; this entry only preserves the
+# registry's historical component order and never enters a product closure.
+_hyle_declare_component(compute_provider_marlin)
 _hyle_declare_component(compute_provider_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute
@@ -444,7 +444,7 @@ _hyle_declare_component(compute_provider_cuda
 _hyle_declare_component(compute_route_cuda
   PRIVATE_DEPS compute_backend_cuda compute_provider_cublas compute_provider_cuda
                compute_provider_flashinfer compute_provider_ggml_cuda
-  PUBLIC_DEPS core compute compute_provider_marlin
+  PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h)
 _hyle_declare_component(graph_route_cuda
   PRIVATE_DEPS compute_backend_cuda graph_provider_ggml_cuda

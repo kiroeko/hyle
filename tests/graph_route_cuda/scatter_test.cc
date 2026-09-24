@@ -45,7 +45,7 @@ void expect_bits(std::span<const Value> actual,
     ASSERT_EQ(actual[index].bits, expected[index].bits) << index;
 }
 TEST(CudaDefaultGraph,
-     OrderedScatterStateRoundTripsThroughCapturedGatherNormResidual) {
+     OrderedScatterStateRoundTripsThroughPreparedGatherNormResidual) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
     auto owner =
@@ -91,7 +91,7 @@ TEST(CudaDefaultGraph,
         auto logical = std::move(builder).finish().value();
         auto compiled = graph::cuda::compile(
             logical, owner, resource.ref(),
-            {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
+            {.provider_replay = graph::ProviderReplayPolicy::kAllowAny});
         ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
         auto direct =
             compute::prepare(
@@ -147,12 +147,12 @@ TEST(CudaDefaultGraph,
           ASSERT_TRUE(slots[lane].bind(gathered, gathers[lane].view).ok());
           ASSERT_TRUE(slots[lane].bind(norm, norms[lane].view).ok());
           ASSERT_TRUE(slots[lane].bind(residual, outputs[lane].view).ok());
-          auto captured = graph::cuda::prepare_replay(
+          auto prepared = graph::cuda::prepare_replay(
               slots[lane], queues[lane],
-              {.mode = graph::ReplayMode::kRequireCapture,
-               .host_wait = graph::HostWaitPolicy::kReject});
-          ASSERT_TRUE(captured.ok()) << captured.message();
-          EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kCaptured);
+              {.mode = graph::ReplayMode::kCommands,
+               .host_wait = graph::HostWaitPolicy::kAllow});
+          ASSERT_TRUE(prepared.ok()) << prepared.message();
+          EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kCommands);
           ASSERT_TRUE(queues[lane].reserve_completions(4).ok());
         }
         const auto before = stats.snapshot();
@@ -231,7 +231,7 @@ TEST(CudaDefaultGraph,
             ASSERT_TRUE(direct_done.wait().ok());
             expect_bits(direct_output.read<Value>(), expected[lane]);
             // Carry the actual device result into the next state step, with the
-            // same bindings/captured program and no host state reconstruction.
+            // same bindings/prepared program and no host state reconstruction.
             auto copied =
                 advance_slot
                     .submit(queues[lane], states[lane].view.as_const(),
