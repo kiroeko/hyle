@@ -289,6 +289,10 @@ Windows baseline `0c7293ff38ac078c095e623062398087a5a89ba1` 上，普通 CPU Dir
 因此 `compute_provider_ggml`、`compute_provider_ggml_cuda`、`compute_provider_ggml_metal` 和
 `compute_provider_ggml_vulkan` 从各自 candidate 精确退回本卡 AUDITED。有限 FIX 只有：
 
+Apple 的普通 Direct 与 Graph 还各有一层 GGUF carrier/region 准入，因此本路线实施前另将
+`compute_route_apple` 与 `graph_route_apple` 从旧 CLOSED 精确重开为 SCOPED；审计只检查如何把同一
+checked embedding 域交给 `compute_provider_ggml_metal`，不扩张其它 Apple 运算或 MLX region。
+
 1. 四个 adapter 只接纳 rank-2 Q4_K/Q6_K/Q8_0 embedding table、axis `0/-2`、I32 indices、dense
    F32 output，调用固定上游 `ggml_get_rows`；不写 HYLE 解量化器、kernel 或 shader；
 2. 保留公共 checked Gather 语义：越界在结果发布前失败且输出不变；prepared program 以变化 indices
