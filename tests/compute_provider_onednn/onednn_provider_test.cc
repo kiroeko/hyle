@@ -605,7 +605,7 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
     ASSERT_FALSE(failed_wrapper.has_value());
     EXPECT_TRUE(failed_wrapper.error().IsResourceExhausted());
     EXPECT_EQ(failed_wrapper.error().message(),
-              "oneDNN prepared wrapper allocation failed");
+              "onednn: oneDNN prepared wrapper allocation failed");
     probe.fail_at_attempt = 0;
 
     PreparedOperation prepared =
