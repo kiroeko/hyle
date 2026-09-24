@@ -1,6 +1,6 @@
 # MR 真实模型画像路由系统重构
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -201,3 +201,13 @@ CPU+GPU 联合推理、HIP、分布式或跨进程 plan cache。只有真实 con
 
 本卡进入 `CANDIDATE`。产品/API/算法已经冻结；下一步只执行候选后独立终审、closure/docs/diff 检查和
 合法 `CANDIDATE -> CLOSED` 状态迁移，不再改产品实现或扩大验证。
+
+## CLOSED
+
+候选状态已由 `37a860c618fff79e7ffdbd509d52b56ea599bea3` 单独固定。候选后终审确认旧路由类型在
+`include/src/samples/bench` 为零命中，全部 matcher 调用仍限于冷 construction/propose/prepare/compile
+路径，Direct/Graph submit 没有规则解释、Provider 搜索或设备查询；`compute_ops` 与 M3 记录没有产品
+漂移。以该 revision 检查 `CANDIDATE -> CLOSED`，本卡七门全部通过并停止。
+
+本次真实模型路由基础架构重构完成。此结论只关闭本卡的路由表达、绑定、四路线迁移与交付；不把 M3
+尚未完成的 operator/provider 覆盖、模型加载或推理引擎记为完成，也不授权继续扩张自研算子。

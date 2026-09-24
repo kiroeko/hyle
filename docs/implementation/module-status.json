@@ -271,17 +271,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -355,24 +363,36 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_onednn 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_onednn 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_ggml 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_ggml 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph_provider_onednn 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph_provider_onednn 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_ops",
@@ -393,17 +413,25 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_backend_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_backend_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_native 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_native 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -412,87 +440,135 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_route_cpu 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_route_cpu 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph_route_cpu 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph_route_cpu 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_cublas",
-      "state": "CANDIDATE",
-      "summary": "MR CANDIDATE：compute_provider_cublas 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "state": "CLOSED",
+      "summary": "MR CLOSED：compute_provider_cublas 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_marlin",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_marlin 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_marlin 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_route_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_route_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph_route_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph_route_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_route_apple 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_route_apple 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph_route_apple 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph_route_apple 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_route_vulkan 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_route_vulkan 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph_route_vulkan 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph_route_vulkan 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_ggml_vulkan 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_ggml_vulkan 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_ggml_runtime",
@@ -507,24 +583,36 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_ggml_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_ggml_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：graph_provider_ggml_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：graph_provider_ggml_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CANDIDATE：compute_provider_flashinfer 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
+      "summary": "MR CLOSED：compute_provider_flashinfer 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_metal",
