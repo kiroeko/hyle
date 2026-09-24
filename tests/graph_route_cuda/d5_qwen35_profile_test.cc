@@ -187,6 +187,91 @@ TEST(CudaDefaultGraph,
 }
 
 TEST(CudaDefaultGraph,
+     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = g::cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto queue = context.create_queue().value();
+
+  for (const auto &test : d5_gguf_test::kQwen35PrimaryProjectionCases) {
+    SCOPED_TRACE(test.tensor);
+    const auto input_desc = dense(c::DataType::kFloat32, {1, test.reduction});
+    const auto weight_desc =
+        c::gguf_weight_description(test.type, c::DataType::kFloat32,
+                                   test.reduction, test.columns)
+            .value();
+    const auto output_desc = dense(c::DataType::kFloat32, {1, test.columns});
+    const auto physical =
+        d5_gguf_test::values(test.columns, test.reduction, test.seed);
+    const auto packed = d5_gguf_test::pack(
+        test.type, physical, test.columns, test.reduction,
+        weight_desc.required_bytes().value());
+    auto activation_values =
+        d5_gguf_test::activation(test.reduction, test.seed);
+    auto activation_buffer = values_buffer<float>(resource, activation_values);
+    auto weight_buffer = bytes_buffer(resource, packed.bytes);
+    auto result_buffer = output_buffer(resource, output_desc);
+
+    auto builder = g::GraphBuilder::create().value();
+    const auto activation = builder.input(input_desc).value();
+    const auto weight = builder.constant(weight_desc).value();
+    const auto product = builder.add(c::MatMul{}, activation, weight).value();
+    ASSERT_TRUE(builder.publish(product).ok());
+    auto logical = std::move(builder).finish().value();
+    const std::array constants{g::ConstantBinding{
+        weight,
+        c::ConstTensorView::create(weight_desc, weight_buffer.view()).value()}};
+    const auto workload = d5_qwen35_fixture::workload(
+        d5_qwen35_fixture::kPrimaryGgufProfile,
+        c::WorkloadPhase::kDecode, test.region);
+    auto result = g::cuda::compile(
+        logical, context, resource,
+        {.constants = constants, .workload = workload});
+    ASSERT_TRUE(result) << result.error().message();
+    auto compiled = std::move(*result);
+    EXPECT_EQ(compiled.executable.workload(), workload);
+    ASSERT_EQ(compiled.report.step_count(), 1U);
+    EXPECT_EQ(compiled.report.step(0)->provider.id,
+              c::ggml_cuda::kProviderId);
+
+    auto invocation = compiled.executable.create_invocation().value();
+    ASSERT_TRUE(invocation
+                    .bind(activation,
+                          c::ConstTensorView::create(
+                              input_desc, activation_buffer.view())
+                              .value())
+                    .ok());
+    ASSERT_TRUE(invocation
+                    .bind(product,
+                          c::TensorView::create(output_desc,
+                                                result_buffer.view())
+                              .value())
+                    .ok());
+    ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
+
+    for (int replay = 0; replay < 2; ++replay) {
+      if (replay != 0) {
+        for (auto &value : activation_values)
+          value = value * -0.75F + 0.001F;
+        ASSERT_TRUE(activation_buffer.view()
+                        .write(std::as_bytes(std::span(activation_values)))
+                        .ok());
+      }
+      auto completion = invocation.submit(queue);
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual = half_test::read<float>(result_buffer);
+      const auto expected =
+          d5_gguf_test::matmul(activation_values, packed.decoded, test.columns,
+                               test.reduction);
+      d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+    }
+  }
+}
+
+TEST(CudaDefaultGraph,
      D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph) {
   const auto fixture_root = d5_qwen35_fixture::root();
   if (!fixture_root)
