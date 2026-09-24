@@ -327,6 +327,20 @@ Q8_0。固定上游 Metal Q4_K 的独立解码资格界为实测 `0.4% + 2e-4`�
 AppleClang 21、Release/WERROR selector 的 docs、closure、configure、Provider、Direct 与 Graph 全部
 PASS；收据见 [Apple Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-r01/README.md)。
 
+#### D5-F8 Vulkan route reopen audit
+
+Windows baseline `65138ac77` 的固定路径仍不能把量化 embedding 交给成熟实现：
+`compute_provider_ggml_vulkan::region_supports` 只接纳 plain I32 unchecked Gather，导致 GGUF table 不能
+成为 managed region；随后 `prepare_plan` 会在 native `lower_gather` 前以“compressed storage requires a
+matching mature region”拒绝。既有 `lower_gather` 的 GPU bounds check、safe indices 和 checked publication
+适用于公共失败语义，但它后续按逻辑 `data_type_size` 把 plain tensor 重排成 raw I32 rows，不能解释 GGUF
+block storage。固定 ggml Vulkan 已有目标 Q4_K/Q6_K/Q8_0 GET_ROWS，因此这是精确的 route/provider
+adapter seam，不是算子或 shader 缺口。
+
+本事实满足 `compute_route_vulkan` 的 reopen trigger；该 owner 从旧 D4 CLOSED 只为 D5-F8 量化
+embedding 边界进入 SCOPED。`graph_route_vulkan` 不需要新的产品 lowering，它继续复用同一 Compute plan，
+只在候选上完成 Graph 普通入口验收。
+
 ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU、CUDA 与 Apple 共六个 primary GGUF
 cell 只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
 
