@@ -7,6 +7,7 @@
 
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
@@ -27,6 +28,19 @@ void check(std::span<const mx::array> actual,
                                        expected[port][i]));
     EXPECT_LT(max_error, 3e-6);
   }
+}
+
+std::vector<mx::array>
+qwen38_inputs(const d5_qwen38_gdn_fixture::Fixture &fixture) {
+  std::vector<mx::array> inputs;
+  inputs.reserve(fixture.inputs.size());
+  for (std::size_t port = 0; port < fixture.inputs.size(); ++port) {
+    mx::Shape shape;
+    for (const auto extent : fixture.inputs[port].dimensions())
+      shape.push_back(static_cast<int>(extent));
+    inputs.emplace_back(fixture.data[port].data(), std::move(shape));
+  }
+  return inputs;
 }
 
 TEST(AppleRecurrent, OrdinaryPreparationInterleavedRequestsAndOldOutputOwner) {
@@ -72,6 +86,29 @@ TEST(AppleRecurrent, OrdinaryPreparationInterleavedRequestsAndOldOutputOwner) {
     ASSERT_TRUE(context->close().ok());
     check(arrays, first.oracle());
     EXPECT_FALSE(right->submit());
+  }
+}
+
+TEST(AppleRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const auto inputs = qwen38_inputs(fixture);
+  const auto workload = d5_qwen38_gdn_fixture::workload(
+      c::WorkloadPhase::kDecode);
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto program = context->prepare(c::GatedDeltaNet{}, inputs, workload);
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation) << invocation.error().message();
+  const auto expected = fixture.oracle();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    ASSERT_TRUE(invocation->bind(inputs).ok());
+    auto work = invocation->submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    check(result->get()->arrays(), expected);
   }
 }
 

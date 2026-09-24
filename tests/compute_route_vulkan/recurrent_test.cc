@@ -3,12 +3,46 @@
 #include "vulkan_program_internal.h"
 
 #include "../model_fragment_test_support.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../sparse_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
 
 namespace {
 using namespace vulkan_recurrent_test;
+
+TEST(VulkanRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  auto context = vulkan_test::context().value();
+  std::vector<v::Argument> arguments;
+  arguments.reserve(fixture.inputs.size());
+  for (const auto &description : fixture.inputs)
+    arguments.emplace_back(description);
+  const auto workload = d5_qwen38_gdn_fixture::workload(
+      c::WorkloadPhase::kDecode);
+  auto program = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
+                            arguments, workload);
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  std::array<v::Tensor, 6> resident;
+  for (std::size_t port = 0; port < resident.size(); ++port)
+    resident[port] =
+        vulkan_test::upload(context, fixture.inputs[port], fixture.data[port])
+            .value();
+  auto invocation = program->create_invocation().value();
+  ASSERT_TRUE(invocation.bind(resident).ok());
+  const auto expected = fixture.oracle();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto outputs = result->get()->tensors();
+    ASSERT_EQ(outputs.size(), expected.size());
+    for (std::size_t port = 0; port < outputs.size(); ++port)
+      expect(context, outputs[port], expected[port]);
+  }
+}
 
 TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),

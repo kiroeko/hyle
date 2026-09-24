@@ -12,6 +12,7 @@
 
 #include "../compute/workload_fixture.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
@@ -307,6 +308,79 @@ TEST(CpuDefaultGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
       half_test::expect_near(actual[index],
                              run == 0 ? fixture.expected[index]
                                       : -fixture.expected[index]);
+  }
+}
+
+TEST(CpuDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  auto builder = graph::GraphBuilder::create().value();
+  std::array<graph::ValueId, 6> inputs;
+  for (std::size_t port = 0; port < inputs.size(); ++port)
+    inputs[port] = builder.input(fixture.inputs[port]).value();
+  const auto node =
+      builder.add_node(compute::Operation(compute::GatedDeltaNet{}), inputs)
+          .value();
+  const std::array outputs{builder.result(node, 0).value(),
+                           builder.result(node, 1).value()};
+  ASSERT_TRUE(builder.publish(outputs[0]).ok());
+  ASSERT_TRUE(builder.publish(outputs[1]).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = graph::cpu::create_context().value();
+  const auto workload = d5_qwen38_gdn_fixture::workload(
+      compute::WorkloadPhase::kDecode);
+  auto compiled = graph::compile(logical, context, {.workload = workload});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.workload(), workload);
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+
+  std::array<hyle::mem::Buffer, 6> input_storage;
+  std::array<hyle::mem::Buffer, 2> output_storage;
+  auto invocation = compiled->executable.create_invocation().value();
+  for (std::size_t port = 0; port < inputs.size(); ++port) {
+    input_storage[port] = hyle::mem::Buffer::create(
+                              hyle::mem::system_resource(),
+                              fixture.inputs[port].required_bytes().value(), 64)
+                              .value();
+    ASSERT_TRUE(input_storage[port]
+                    .view()
+                    .write(std::as_bytes(std::span(fixture.data[port])))
+                    .ok());
+    ASSERT_TRUE(invocation
+                    .bind(inputs[port],
+                          compute::ConstTensorView::create(
+                              fixture.inputs[port], input_storage[port].view())
+                              .value())
+                    .ok());
+  }
+  for (std::size_t port = 0; port < outputs.size(); ++port) {
+    output_storage[port] = hyle::mem::Buffer::create(
+                               hyle::mem::system_resource(),
+                               fixture.outputs[port].required_bytes().value(), 64)
+                               .value();
+    ASSERT_TRUE(invocation
+                    .bind(outputs[port],
+                          compute::TensorView::create(
+                              fixture.outputs[port], output_storage[port].view())
+                              .value())
+                    .ok());
+  }
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto expected = fixture.oracle();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    for (std::size_t port = 0; port < outputs.size(); ++port) {
+      const auto actual = half_test::read<float>(output_storage[port]);
+      ASSERT_EQ(actual.size(), expected[port].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[port][i], 4.e-6) << port << ':' << i;
+    }
   }
 }
 #endif

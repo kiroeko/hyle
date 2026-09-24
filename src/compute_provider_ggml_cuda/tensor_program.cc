@@ -321,7 +321,7 @@ bool tensor_operation_supports(Operation operation,
       return false;
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
-    return q[2] == v[2] && q[3] == v[3] &&
+    return v[2] % q[2] == 0 && q[3] == v[3] &&
            *outputs[0].element_count() + *outputs[1].element_count() <=
                std::size_t{INT32_MAX};
   }

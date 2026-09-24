@@ -1,4 +1,5 @@
 #include "hyle/graph/vulkan.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_route_vulkan/recurrent_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
@@ -7,6 +8,49 @@ namespace {
 using namespace vulkan_recurrent_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
+
+TEST(VulkanGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  auto context = vulkan_test::context().value();
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId, 6> inputs;
+  for (std::size_t port = 0; port < inputs.size(); ++port)
+    inputs[port] = builder.input(fixture.inputs[port]).value();
+  const auto node = builder.add_node(c::Operation(c::GatedDeltaNet{}), inputs)
+                        .value();
+  const std::array outputs{builder.result(node, 0).value(),
+                           builder.result(node, 1).value()};
+  ASSERT_TRUE(builder.publish(outputs[0]).ok());
+  ASSERT_TRUE(builder.publish(outputs[1]).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  const auto workload = d5_qwen38_gdn_fixture::workload(
+      c::WorkloadPhase::kDecode);
+  auto program = gv::compile(context, graph, {},
+                             {.report = &report, .workload = workload});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  EXPECT_EQ(report.managed_region_count, 1U);
+  std::array<c::vulkan::Tensor, 6> resident;
+  for (std::size_t port = 0; port < resident.size(); ++port)
+    resident[port] =
+        context.upload(fixture.inputs[port],
+                       std::as_bytes(std::span(fixture.data[port])))
+            .value();
+  auto invocation = program->create_invocation().value();
+  ASSERT_TRUE(invocation.bind(resident).ok());
+  const auto expected = fixture.oracle();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto values = result->get()->tensors();
+    ASSERT_EQ(values.size(), expected.size());
+    for (std::size_t port = 0; port < values.size(); ++port)
+      expect(context, values[port], expected[port]);
+  }
+}
 
 TEST(VulkanGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
   auto context = vulkan_test::context().value();

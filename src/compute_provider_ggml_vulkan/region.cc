@@ -430,7 +430,7 @@ bool region_supports(const Operation &operation,
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
     const auto depth = q[3];
-    return q[2] == v[2] && depth == v[3] &&
+    return v[2] % q[2] == 0 && depth == v[3] &&
            (depth == 16 || depth == 32 || depth == 64 || depth == 128) &&
            outputs[0].data_type() == DataType::kFloat32 &&
            outputs[1].data_type() == DataType::kFloat32 &&

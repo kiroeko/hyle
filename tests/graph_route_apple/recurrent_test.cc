@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "../compute_route_apple/recurrent_fixture.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
@@ -15,6 +16,33 @@ namespace a = c::apple;
 namespace g = hyle::graph;
 namespace ga = g::apple;
 namespace mx = mlx::core;
+
+std::vector<mx::array>
+qwen38_inputs(const d5_qwen38_gdn_fixture::Fixture &fixture) {
+  std::vector<mx::array> inputs;
+  inputs.reserve(fixture.inputs.size());
+  for (std::size_t port = 0; port < fixture.inputs.size(); ++port) {
+    mx::Shape shape;
+    for (const auto extent : fixture.inputs[port].dimensions())
+      shape.push_back(static_cast<int>(extent));
+    inputs.emplace_back(fixture.data[port].data(), std::move(shape));
+  }
+  return inputs;
+}
+
+void check_qwen38(std::span<const mx::array> actual,
+                  const std::array<std::vector<double>, 2> &expected) {
+  ASSERT_EQ(actual.size(), expected.size());
+  for (std::size_t port = 0; port < expected.size(); ++port) {
+    ASSERT_EQ(actual[port].size(), expected[port].size());
+    double max_error = 0;
+    for (std::size_t i = 0; i < expected[port].size(); ++i)
+      max_error =
+          std::max(max_error, std::abs(double(actual[port].data<float>()[i]) -
+                                       expected[port][i]));
+    EXPECT_LT(max_error, 4e-6) << port;
+  }
+}
 
 TEST(AppleGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
   auto context = a::Context::create();
@@ -104,6 +132,44 @@ TEST(AppleGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
     for (std::size_t i = 0; i < test.expected.size(); ++i)
       EXPECT_NEAR(arrays[0].data<float>()[i], test.expected[i], 2.0e-5F)
           << i;
+  }
+}
+
+TEST(AppleGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId, 6> inputs;
+  for (std::size_t port = 0; port < inputs.size(); ++port)
+    inputs[port] = builder.input(fixture.inputs[port]).value();
+  const auto node = builder.add_node(c::Operation(c::GatedDeltaNet{}), inputs)
+                        .value();
+  const std::array outputs{builder.result(node, 0).value(),
+                           builder.result(node, 1).value()};
+  ASSERT_TRUE(builder.publish(outputs[0]).ok());
+  ASSERT_TRUE(builder.publish(outputs[1]).ok());
+  auto graph = std::move(builder).finish().value();
+  ga::CompileReport report;
+  const auto workload = d5_qwen38_gdn_fixture::workload(
+      c::WorkloadPhase::kDecode);
+  auto program = ga::compile(*context, graph, {},
+                             {.report = &report, .workload = workload});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  EXPECT_NE(report.implementation_policy.find("ggml Metal"),
+            std::string::npos);
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation) << invocation.error().message();
+  const auto resident = qwen38_inputs(fixture);
+  const auto expected = fixture.oracle();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    ASSERT_TRUE(invocation->bind(resident).ok());
+    auto work = invocation->submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    check_qwen38(result->get()->arrays(), expected);
   }
 }
 

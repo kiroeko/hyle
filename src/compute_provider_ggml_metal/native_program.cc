@@ -185,10 +185,10 @@ Status NativeProgram::validate(Operation operation,
   if (operation.get_if<GatedDeltaNet>()) {
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
-    if (q[2] != v[2] || q[3] != v[3] ||
+    if (v[2] % q[2] != 0 || q[3] != v[3] ||
         (q[3] != 32 && q[3] != 64 && q[3] != 128) || q[1] > 32767)
       return Status::Unimplemented(
-          "ggml Metal GatedDeltaNet requires equal heads, D32/64/128 and T<=32767");
+          "ggml Metal GatedDeltaNet requires grouped heads, equal D32/64/128 and T<=32767");
   }
   const bool matmul = operation.get_if<MatMul>() != nullptr;
   const bool grouped = operation.custom_as<model_ops::GroupedMatMul>().has_value();

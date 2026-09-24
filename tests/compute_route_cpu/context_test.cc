@@ -12,6 +12,7 @@
 
 #include "../compute/workload_fixture.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 
 #include "hyle/compute/cpu.h"
@@ -490,6 +491,66 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
       half_test::expect_near(actual[index],
                              run == 0 ? fixture.expected[index]
                                       : -fixture.expected[index]);
+  }
+}
+
+TEST(CpuDefaultContext, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  std::vector<hyle::mem::Buffer> input_storage;
+  std::vector<ConstTensorView> inputs;
+  input_storage.reserve(fixture.inputs.size());
+  inputs.reserve(fixture.inputs.size());
+  for (std::size_t port = 0; port < fixture.inputs.size(); ++port) {
+    input_storage.push_back(hyle::mem::Buffer::create(
+                                hyle::mem::system_resource(),
+                                fixture.inputs[port].required_bytes().value(), 64)
+                                .value());
+    ASSERT_TRUE(input_storage.back()
+                    .view()
+                    .write(std::as_bytes(std::span(fixture.data[port])))
+                    .ok());
+    inputs.push_back(ConstTensorView::create(fixture.inputs[port],
+                                             input_storage.back().view())
+                         .value());
+  }
+  std::array output_storage{
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                fixture.outputs[0].required_bytes().value(), 64)
+          .value(),
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                fixture.outputs[1].required_bytes().value(), 64)
+          .value()};
+  const std::array outputs{
+      TensorView::create(fixture.outputs[0], output_storage[0].view()).value(),
+      TensorView::create(fixture.outputs[1], output_storage[1].view()).value()};
+  const auto workload =
+      d5_qwen38_gdn_fixture::workload(WorkloadPhase::kDecode);
+  auto context = create_context().value();
+  auto prepared = prepare(context, Operation(GatedDeltaNet{}), inputs, outputs,
+                          hyle::mem::system_resource(), workload);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  EXPECT_EQ(prepared->workload(), workload);
+  const auto requirement = prepared->workspace_requirement();
+  auto workspace =
+      requirement.size == 0
+          ? hyle::mem::Buffer{}
+          : hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                      requirement.size, requirement.alignment)
+                .value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  auto queue = context.create_queue().value();
+  const auto expected = fixture.oracle();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    for (std::size_t port = 0; port < outputs.size(); ++port) {
+      const auto actual = half_test::read<float>(output_storage[port]);
+      ASSERT_EQ(actual.size(), expected[port].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[port][i], 4.e-6) << port << ':' << i;
+    }
   }
 }
 #endif
