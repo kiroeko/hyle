@@ -11,7 +11,11 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
+#include <ggml.h>
+
 #include "../../src/compute_provider_ggml_metal/native_program.h"
+#include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
 
 namespace {
@@ -33,6 +37,60 @@ std::array<c::TensorDesc, 6> schema(int tokens, int heads, int depth) {
   const auto q = tensor({2, tokens, heads, depth});
   const auto gate = tensor({2, tokens, heads, 1});
   return {q, q, q, gate, gate, tensor({2, heads, depth, depth})};
+}
+
+ggml_type native_type(c::GgufQuantizedType type) {
+  switch (type) {
+  case c::GgufQuantizedType::kQ3K:
+    return GGML_TYPE_Q3_K;
+  case c::GgufQuantizedType::kQ4K:
+    return GGML_TYPE_Q4_K;
+  case c::GgufQuantizedType::kQ5K:
+    return GGML_TYPE_Q5_K;
+  case c::GgufQuantizedType::kQ6K:
+    return GGML_TYPE_Q6_K;
+  case c::GgufQuantizedType::kQ8_0:
+    return GGML_TYPE_Q8_0;
+  case c::GgufQuantizedType::kIq3Xxs:
+    return GGML_TYPE_IQ3_XXS;
+  case c::GgufQuantizedType::kIq3S:
+    return GGML_TYPE_IQ3_S;
+  case c::GgufQuantizedType::kIq4Nl:
+    return GGML_TYPE_IQ4_NL;
+  case c::GgufQuantizedType::kIq4Xs:
+    return GGML_TYPE_IQ4_XS;
+  case c::GgufQuantizedType::kMxfp4:
+    return GGML_TYPE_MXFP4;
+  }
+  return GGML_TYPE_COUNT;
+}
+
+std::vector<std::byte> quantize(c::GgufQuantizedType type,
+                                std::span<const float> values, int rows,
+                                int width, std::size_t bytes) {
+  std::vector<std::byte> result(bytes);
+  const auto native = native_type(type);
+  std::vector<float> importance(width, 1.0F);
+  const auto written = ggml_quantize_chunk(
+      native, values.data(), result.data(), 0, rows, width,
+      ggml_quantize_requires_imatrix(native) ? importance.data() : nullptr);
+  EXPECT_EQ(written, bytes);
+  return result;
+}
+
+std::vector<float> dequantize(c::GgufQuantizedType type,
+                              std::span<const std::byte> values, int rows,
+                              int width) {
+  const auto native = native_type(type);
+  const auto *traits = ggml_get_type_traits(native);
+  EXPECT_NE(traits, nullptr);
+  EXPECT_NE(traits->to_float, nullptr);
+  const auto row_bytes = ggml_row_size(native, width);
+  std::vector<float> result(static_cast<std::size_t>(rows * width));
+  for (int row = 0; row < rows; ++row)
+    traits->to_float(values.data() + row * row_bytes,
+                     result.data() + row * width, width);
+  return result;
 }
 
 // Independent double recurrence in logical [value,key] orientation. This is
@@ -126,6 +184,146 @@ TEST(GgmlMetalProgram, OriginalRecurrentRealModelShapeAndUnlabelledDomain) {
   run_case(17, 16, 128);
   run_case(1, 16, 128);
   run_case(5, 2, 32);
+}
+
+TEST(GgmlMetalProgram, EveryCatalogFormatRunsPackedMatMulAndReplays) {
+  @autoreleasepool {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    ASSERT_NE(device, nil);
+    constexpr int k = 256;
+    constexpr int n = 8;
+    constexpr int m = 2;
+    constexpr std::array types{
+        c::GgufQuantizedType::kQ3K,   c::GgufQuantizedType::kQ4K,
+        c::GgufQuantizedType::kQ5K,   c::GgufQuantizedType::kQ6K,
+        c::GgufQuantizedType::kQ8_0,  c::GgufQuantizedType::kIq3Xxs,
+        c::GgufQuantizedType::kIq3S,  c::GgufQuantizedType::kIq4Nl,
+        c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kMxfp4};
+    std::vector<float> weights(n * k);
+    for (std::size_t i = 0; i < weights.size(); ++i)
+      weights[i] = 0.25F * std::sin(0.031F * static_cast<float>(i + 1));
+    for (const auto type : types) {
+      SCOPED_TRACE(static_cast<int>(type));
+      const auto weight =
+          c::gguf_weight_description(type, c::DataType::kFloat32, k, n)
+              .value();
+      const std::array descriptions{
+          c::TensorDesc::dense(c::DataType::kFloat32,
+                               std::array<std::int64_t, 2>{m, k})
+              .value(),
+          weight};
+      auto program =
+          metal::NativeProgram::create(c::Operation(c::MatMul{}), descriptions);
+      ASSERT_TRUE(program) << program.error().message();
+      auto packed = quantize(type, weights, n, k,
+                             weight.required_bytes().value());
+      const auto decoded = dequantize(type, packed, n, k);
+      std::vector<float> activation(m * k);
+      std::array<Buffer, 3> owners;
+      std::array<metal::BufferView, 3> ports;
+      const std::array bytes{activation.size() * sizeof(float), packed.size(),
+                             (*program)->output_bytes()};
+      for (std::size_t i = 0; i < owners.size(); ++i) {
+        owners[i].value = [device newBufferWithLength:bytes[i]
+                                             options:MTLResourceStorageModeShared];
+        ASSERT_NE(owners[i].value, nil);
+        ports[i] = {(__bridge void *)owners[i].value, 0};
+      }
+      std::memcpy(owners[1].value.contents, packed.data(), packed.size());
+      for (int replay = 1; replay <= 2; ++replay) {
+        for (std::size_t i = 0; i < activation.size(); ++i)
+          activation[i] = replay *
+                          (0.2F * std::cos(0.017F * static_cast<float>(i + 3)));
+        std::memcpy(owners[0].value.contents, activation.data(), bytes[0]);
+        ASSERT_TRUE((*program)->run(ports).ok());
+        const auto *actual = static_cast<const float *>(owners[2].value.contents);
+        for (int row = 0; row < m; ++row)
+          for (int column = 0; column < n; ++column) {
+            double expected = 0;
+            for (int inner = 0; inner < k; ++inner)
+              expected += double(activation[row * k + inner]) *
+                          decoded[column * k + inner];
+            EXPECT_NEAR(actual[row * n + column], expected, 2.0e-4)
+                << row << ' ' << column;
+          }
+      }
+      auto invalid = ports;
+      invalid[1].offset = 1;
+      EXPECT_TRUE((*program)->run(invalid).IsInvalidArgument());
+      EXPECT_TRUE((*program)->run(ports).ok());
+    }
+    ggml_quantize_free();
+    [device release];
+  }
+}
+
+TEST(GgmlMetalProgram, PackedIq4XsGroupedExpertsUseNativeMulMatId) {
+  @autoreleasepool {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    ASSERT_NE(device, nil);
+    constexpr int experts = 4;
+    constexpr int n = 8;
+    constexpr int k = 256;
+    constexpr int tokens = 2;
+    constexpr int slots = 2;
+    const auto weight = c::gguf_grouped_weight_description(
+                            c::GgufQuantizedType::kIq4Xs,
+                            c::DataType::kFloat32, experts, n, k)
+                            .value();
+    const std::array descriptions{
+        weight,
+        c::TensorDesc::dense(
+            c::DataType::kFloat32,
+            std::array<std::int64_t, 3>{tokens, slots, k})
+            .value(),
+        c::TensorDesc::dense(c::DataType::kInt32,
+                             std::array<std::int64_t, 2>{tokens, slots})
+            .value()};
+    auto program = metal::NativeProgram::create(c::model_ops::grouped_matmul(),
+                                                 descriptions);
+    ASSERT_TRUE(program) << program.error().message();
+    std::vector<float> weights(experts * n * k);
+    for (std::size_t i = 0; i < weights.size(); ++i)
+      weights[i] = 0.2F * std::sin(0.019F * static_cast<float>(i + 7));
+    auto packed = quantize(c::GgufQuantizedType::kIq4Xs, weights, experts * n,
+                           k, weight.required_bytes().value());
+    const auto decoded = dequantize(c::GgufQuantizedType::kIq4Xs, packed,
+                                    experts * n, k);
+    std::vector<float> activation(tokens * slots * k);
+    for (std::size_t i = 0; i < activation.size(); ++i)
+      activation[i] = 0.15F * std::cos(0.013F * static_cast<float>(i + 5));
+    const std::array<std::int32_t, tokens * slots> ids{0, 3, 1, 2};
+    std::array<Buffer, 4> owners;
+    std::array<metal::BufferView, 4> ports;
+    const std::array bytes{packed.size(), activation.size() * sizeof(float),
+                           ids.size() * sizeof(std::int32_t),
+                           (*program)->output_bytes()};
+    for (std::size_t i = 0; i < owners.size(); ++i) {
+      owners[i].value = [device newBufferWithLength:bytes[i]
+                                           options:MTLResourceStorageModeShared];
+      ASSERT_NE(owners[i].value, nil);
+      ports[i] = {(__bridge void *)owners[i].value, 0};
+    }
+    std::memcpy(owners[0].value.contents, packed.data(), packed.size());
+    std::memcpy(owners[1].value.contents, activation.data(), bytes[1]);
+    std::memcpy(owners[2].value.contents, ids.data(), bytes[2]);
+    for (int replay = 0; replay < 2; ++replay) {
+      ASSERT_TRUE((*program)->run(ports).ok());
+      const auto *actual = static_cast<const float *>(owners[3].value.contents);
+      for (int token = 0; token < tokens * slots; ++token)
+        for (int column = 0; column < n; ++column) {
+          double expected = 0;
+          const auto row = (ids[token] * n + column) * k;
+          for (int inner = 0; inner < k; ++inner)
+            expected += double(activation[token * k + inner]) *
+                        decoded[row + inner];
+          EXPECT_NEAR(actual[token * n + column], expected, 2.0e-4)
+              << token << ' ' << column;
+        }
+    }
+    ggml_quantize_free();
+    [device release];
+  }
 }
 
 TEST(GgmlMetalProgram, DeclinesUnqualifiedShapesAndMetadataOomIsRecoverable) {

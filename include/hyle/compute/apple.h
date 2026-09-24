@@ -52,6 +52,12 @@ struct InputSpec final {
   mlx::core::Shape shape;
   mlx::core::Dtype dtype = mlx::core::float32;
   TensorDesc logical_description;
+
+  InputSpec() = default;
+  InputSpec(mlx::core::Shape native_shape, mlx::core::Dtype native_type,
+            TensorDesc logical = {})
+      : shape(std::move(native_shape)), dtype(native_type),
+        logical_description(std::move(logical)) {}
 };
 
 // Maps a checked logical tensor description to its actual MLX carrier. GGUF

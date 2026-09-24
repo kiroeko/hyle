@@ -9,6 +9,8 @@
 
 #include "../compute/workload_fixture.h"
 #include "ffn_fixture.h"
+#include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -188,6 +190,88 @@ TEST(AppleTyped, AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes) {
   bad[1] = mx::array({1.f});
   EXPECT_FALSE(context->prepare(qmm, bad));
   EXPECT_FALSE(a::affine_q4_description(1, 63));
+}
+
+TEST(AppleTyped, GgufPackedMatMulAndGroupedExpertsUseOrdinaryPreparation) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  constexpr int k = 256;
+  constexpr int n = 8;
+  constexpr int m = 2;
+  const std::array activation{
+      a::InputSpec{{m, k}, mx::float32}};
+  for (const auto type : {c::GgufQuantizedType::kQ4K,
+                          c::GgufQuantizedType::kIq4Xs,
+                          c::GgufQuantizedType::kMxfp4}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const auto weight =
+        c::gguf_weight_description(type, c::DataType::kFloat32, k, n)
+            .value();
+    const auto packed_spec = a::input_spec(weight);
+    ASSERT_TRUE(packed_spec) << packed_spec.error().message();
+    const std::array specs{activation[0], *packed_spec};
+    auto program = context->prepare(c::MatMul{}, specs);
+    ASSERT_TRUE(program) << program.error().message();
+    std::vector<float> host(m * k, 0.25F);
+    std::vector<std::uint8_t> bytes(weight.required_bytes().value());
+    const std::array inputs{
+        mx::array(host.data(), mx::Shape{m, k}),
+        mx::array(bytes.data(), mx::Shape{static_cast<int>(bytes.size())},
+                  mx::uint8)};
+    EXPECT_FALSE(context->prepare(c::MatMul{}, inputs));
+    auto invocation = program->create_invocation();
+    ASSERT_TRUE(invocation);
+    for (int replay = 0; replay < 2; ++replay) {
+      ASSERT_TRUE(invocation->bind(inputs).ok());
+      auto work = invocation->submit();
+      ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait();
+      ASSERT_TRUE(result) << result.error().message();
+      ASSERT_EQ(result->get()->arrays()[0].shape(), (mx::Shape{m, n}));
+      for (std::size_t i = 0; i < result->get()->arrays()[0].size(); ++i)
+        EXPECT_NEAR(result->get()->arrays()[0].data<float>()[i], 0.0F,
+                    1.0e-12F);
+    }
+    auto wrong = inputs;
+    wrong[1] = mx::array(bytes.data(),
+                         mx::Shape{static_cast<int>(bytes.size() - 1)},
+                         mx::uint8);
+    EXPECT_TRUE(invocation->bind(wrong).IsInvalidArgument());
+  }
+
+  constexpr int experts = 4;
+  constexpr int tokens = 2;
+  constexpr int slots = 2;
+  const auto grouped_weight = c::gguf_grouped_weight_description(
+                                  c::GgufQuantizedType::kIq4Xs,
+                                  c::DataType::kFloat32, experts, n, k)
+                                  .value();
+  const auto grouped_spec = a::input_spec(grouped_weight).value();
+  const std::array grouped_specs{
+      grouped_spec, a::InputSpec{{tokens, slots, k}, mx::float32},
+      a::InputSpec{{tokens, slots}, mx::int32}};
+  auto grouped =
+      context->prepare(c::model_ops::grouped_matmul(), grouped_specs);
+  ASSERT_TRUE(grouped) << grouped.error().message();
+  std::vector<std::uint8_t> packed(grouped_weight.required_bytes().value());
+  std::vector<float> samples(tokens * slots * k, 0.5F);
+  const std::array<std::int32_t, tokens * slots> ids{0, 3, 1, 2};
+  const std::array grouped_inputs{
+      mx::array(packed.data(), mx::Shape{static_cast<int>(packed.size())},
+                mx::uint8),
+      mx::array(samples.data(), mx::Shape{tokens, slots, k}),
+      mx::array(ids.data(), mx::Shape{tokens, slots})};
+  auto invocation = grouped->create_invocation();
+  ASSERT_TRUE(invocation);
+  ASSERT_TRUE(invocation->bind(grouped_inputs).ok());
+  auto work = invocation->submit();
+  ASSERT_TRUE(work) << work.error().message();
+  auto result = work->wait();
+  ASSERT_TRUE(result) << result.error().message();
+  ASSERT_EQ(result->get()->arrays()[0].shape(),
+            (mx::Shape{tokens, slots, n}));
+  for (std::size_t i = 0; i < result->get()->arrays()[0].size(); ++i)
+    EXPECT_NEAR(result->get()->arrays()[0].data<float>()[i], 0.0F, 1.0e-12F);
 }
 
 TEST(AppleTyped, MetadataPreparationAndCheckedRegionError) {

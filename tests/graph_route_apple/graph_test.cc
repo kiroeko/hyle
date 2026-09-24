@@ -15,6 +15,8 @@
 
 #include "../compute/workload_fixture.h"
 #include "../compute_route_apple/ffn_fixture.h"
+#include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -242,6 +244,92 @@ TEST(AppleGraph, MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce) {
         return std::vector<mx::array>{mx::array({1.f})};
       }});
   EXPECT_FALSE(wrong);
+}
+
+TEST(AppleGraph, GgufPackedMatMulAndGroupedExpertsUseNativeRegions) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  constexpr int k = 256;
+  constexpr int n = 8;
+  constexpr int m = 2;
+  for (const auto type : {c::GgufQuantizedType::kQ4K,
+                          c::GgufQuantizedType::kIq4Xs,
+                          c::GgufQuantizedType::kMxfp4}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const auto weight =
+        c::gguf_weight_description(type, c::DataType::kFloat32, k, n)
+            .value();
+    auto builder = g::GraphBuilder::create().value();
+    const auto input = builder.input(dense({m, k})).value();
+    const auto weights = builder.constant(weight).value();
+    const auto output = builder.add(c::MatMul{}, input, weights).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    std::vector<std::uint8_t> packed(weight.required_bytes().value());
+    const std::array constants{
+        mx::array(packed.data(), mx::Shape{static_cast<int>(packed.size())},
+                  mx::uint8)};
+    ga::CompileReport report;
+    auto program = ga::compile(*context, graph, constants, {.report = &report});
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_NE(report.implementation_policy.find("ggml Metal"),
+              std::string::npos);
+    std::vector<float> host(m * k, 0.25F);
+    const std::array inputs{mx::array(host.data(), mx::Shape{m, k})};
+    auto invocation = program->create_invocation().value();
+    for (int replay = 0; replay < 2; ++replay) {
+      ASSERT_TRUE(invocation.bind(inputs).ok());
+      auto work = invocation.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      ASSERT_EQ(result->get()->arrays()[0].shape(), (mx::Shape{m, n}));
+      for (std::size_t i = 0; i < result->get()->arrays()[0].size(); ++i)
+        EXPECT_NEAR(result->get()->arrays()[0].data<float>()[i], 0.0F,
+                    1.0e-12F);
+    }
+  }
+
+  constexpr int experts = 4;
+  constexpr int tokens = 2;
+  constexpr int slots = 2;
+  const auto grouped_weight = c::gguf_grouped_weight_description(
+                                  c::GgufQuantizedType::kIq4Xs,
+                                  c::DataType::kFloat32, experts, n, k)
+                                  .value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto weights = builder.constant(grouped_weight).value();
+  const auto samples = builder.input(dense({tokens, slots, k})).value();
+  const auto ids_description =
+      c::TensorDesc::dense(c::DataType::kInt32,
+                           std::array<std::int64_t, 2>{tokens, slots})
+          .value();
+  const auto ids = builder.input(ids_description).value();
+  const std::array ports{weights, samples, ids};
+  const auto node =
+      builder.add_node(c::model_ops::grouped_matmul(), ports).value();
+  const auto output = builder.result(node).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  std::vector<std::uint8_t> packed(grouped_weight.required_bytes().value());
+  const std::array constants{
+      mx::array(packed.data(), mx::Shape{static_cast<int>(packed.size())},
+                mx::uint8)};
+  auto program = ga::compile(*context, graph, constants);
+  ASSERT_TRUE(program) << program.error().message();
+  std::vector<float> host(tokens * slots * k, 0.5F);
+  const std::array<std::int32_t, tokens * slots> selected{0, 3, 1, 2};
+  const std::array inputs{
+      mx::array(host.data(), mx::Shape{tokens, slots, k}),
+      mx::array(selected.data(), mx::Shape{tokens, slots})};
+  auto invocation = program->create_invocation().value();
+  ASSERT_TRUE(invocation.bind(inputs).ok());
+  auto work = invocation.submit().value();
+  auto result = work.wait();
+  ASSERT_TRUE(result) << result.error().message();
+  ASSERT_EQ(result->get()->arrays()[0].shape(),
+            (mx::Shape{tokens, slots, n}));
+  for (std::size_t i = 0; i < result->get()->arrays()[0].size(); ++i)
+    EXPECT_NEAR(result->get()->arrays()[0].data<float>()[i], 0.0F, 1.0e-12F);
 }
 
 TEST(AppleGraph, RejectsMissingPendingAndMismatchedConstants) {
