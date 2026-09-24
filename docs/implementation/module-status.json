@@ -527,9 +527,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 AUDITED：只以既有 GPU bounds check、安全 indices、固定 ggml Vulkan GET_ROWS region 和 checked publication 接通 Q4_K/Q6_K/Q8_0 embedding；无新 shader 或数学。"
+      "summary": "M3-D5-F8 Vulkan CANDIDATE 8af3a29d：既有 GPU bounds check 与 checked publication 已把 Q4_K/Q6_K/Q8_0 embedding 交给固定 ggml Vulkan GET_ROWS；Qwen3.5 primary GGUF R01 Direct/Graph replay、失败/恢复与 WERROR selector 通过，等待其余 region 和完整验收。",
+      "candidate": "8af3a29da32243748fdd0bfab407097b3fcb8059"
     },
     {
       "module": "graph_route_vulkan",
@@ -544,9 +545,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
+      "summary": "M3-D5-F8 Vulkan CANDIDATE 8af3a29d：固定 ggml Vulkan GET_ROWS 已接纳 exact Q4_K/Q6_K/Q8_0 internal embedding region；Qwen3.5 primary GGUF R01 的 Direct/Graph replay、checked 失败/恢复与 WERROR selector 通过，等待其余 region 和完整验收。",
+      "candidate": "8af3a29da32243748fdd0bfab407097b3fcb8059"
     },
     {
       "module": "compute_ggml_runtime",

@@ -1380,7 +1380,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R01"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-r01/receipt.json"
+        }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:vulkan:graph",
@@ -1389,7 +1398,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R01"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-r01/receipt.json"
+        }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:cpu:direct",

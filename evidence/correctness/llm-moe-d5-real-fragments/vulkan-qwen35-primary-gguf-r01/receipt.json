@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "candidate": "8af3a29da32243748fdd0bfab407097b3fcb8059",
+  "candidate_tree": "2102c653d7cbcfe5cb55dd6e2fd2e3759eb37195",
+  "verdict": "PARTIAL_RUN_PASS_R01_ONLY",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "region": "R01",
+    "route": "vulkan",
+    "entries": ["direct", "graph"],
+    "not_claimed": [
+      "R02-R05",
+      "R13-R15",
+      "complete profile cell",
+      "three deliveries",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "format": "Q6_K",
+    "payload": "format-valid deterministic nonzero bytes with independent ggml dequantization oracle"
+  },
+  "consumer": {
+    "operation": "checked Gather axis 0",
+    "table_shape": [7, 2048],
+    "indices_shape": [2],
+    "output_shape": [2, 2048],
+    "provider": "ggml-vulkan 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "replay": "same prepared artifact, two changed device-resident I32 index sets",
+    "failure": "GPU bounds check produces safe indices; native GET_ROWS writes a private temporary; checked publication returns OutOfRange, preserves the retained public result, and a fresh valid invocation succeeds",
+    "owner_formats": ["Q4_K", "Q6_K", "Q8_0"],
+    "native_operation": "GGML_OP_GET_ROWS"
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "VulkanManaged.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "graph",
+      "test": "VulkanGraphD5.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "route-format-qualification",
+      "test": "VulkanGguf.TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication",
+      "result": "PASS"
+    },
+    {
+      "entry": "provider-admission",
+      "test": "GgmlVulkanRegion.TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows",
+      "result": "PASS"
+    }
+  ],
+  "selector": {
+    "baseline": "cce7e0f42a749d0d9351cffe910df53643fb70bc",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_ggml_vulkan",
+      "factor:compute_provider_iree_vulkan",
+      "factor:compute_route_vulkan",
+      "factor:graph_route_vulkan"
+    ],
+    "skipped_or_reused": 125,
+    "toolchain": "MSVC 19.50.35728",
+    "flags": "/EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K, NVIDIA GeForce RTX 4070",
+    "vulkan": "Vulkan SDK 1.4.357.0, driver 610.62"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts after the complete route fragment is immutable."
+  }
+}

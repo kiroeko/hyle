@@ -358,8 +358,19 @@ embedding 边界进入 SCOPED。`graph_route_vulkan` 不需要新的产品 lower
 若固定上游在 RTX 4070 上拒绝任一精确格式，记录具名 `BACKEND_REJECTED`；不得回接冻结的自研
 Vulkan shader 或把量化 bytes 当普通标量 storage。
 
-ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU、CUDA 与 Apple 共六个 primary GGUF
-cell 只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
+实施前 ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU、CUDA 与 Apple 共六个
+primary GGUF cell 只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
+
+**D5-F8 Vulkan CANDIDATE（`8af3a29d`）**：Provider 只为 exact Q4_K/Q6_K/Q8_0 embedding
+开放内部 unchecked `ggml_get_rows` region；普通路线先运行既有 GPU bounds check，把 safe indices 与原始
+量化 table 交给固定上游，再由既有 checked publication 决定是否发布结果。Qwen3.5 primary GGUF 的
+Q6_K `[7,2048]` R01 已在 RTX 4070 上通过普通 Direct/Graph 的两次变化 indices replay、独立
+packed-byte oracle、越界不发布、保留既有结果及 fresh invocation 恢复；owner suite 同时运行三个目标
+格式。Vulkan SDK 1.4.357.0、driver 610.62、MSVC 19.50、Release/WERROR selector 的 docs、closure、
+configure、ggml/IREE Vulkan Provider、Direct 与 Graph 全部 PASS；收据见
+[Vulkan Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-r01/README.md)。
+ledger 计数仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`，但四路线共八个 primary GGUF cell
+现均有 R01 partial receipt；完整 cell、三交付与 P1 仍未代签。
 
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
