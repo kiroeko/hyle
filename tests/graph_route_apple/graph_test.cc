@@ -335,12 +335,9 @@ TEST(AppleGraph, GgufPackedMatMulAndGroupedExpertsUseNativeRegions) {
 
   auto invalid_builder = g::GraphBuilder::create().value();
   const auto packed_input = invalid_builder.input(grouped_weight).value();
-  const auto copied = invalid_builder.add(c::Copy{}, packed_input).value();
-  ASSERT_TRUE(invalid_builder.publish(copied).ok());
-  auto invalid_graph = std::move(invalid_builder).finish().value();
-  auto rejected = ga::compile(*context, invalid_graph);
-  ASSERT_FALSE(rejected);
-  EXPECT_TRUE(rejected.error().IsUnimplemented());
+  const auto copied = invalid_builder.add(c::Copy{}, packed_input);
+  ASSERT_FALSE(copied);
+  EXPECT_TRUE(copied.error().IsUnimplemented());
 }
 
 TEST(AppleGraph, RejectsMissingPendingAndMismatchedConstants) {
