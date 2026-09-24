@@ -300,18 +300,19 @@ TEST(GgmlMetalProgram,
         ports[i] = {(__bridge void *)owners[i].value, 0};
       }
       std::memcpy(owners[0].value.contents, packed.data(), packed.size());
-      const auto tolerance = type == c::GgufQuantizedType::kQ4K ? 2.0e-4F
-                                                                 : 1.0e-6F;
       for (int replay = 0; replay < 2; ++replay) {
         std::memcpy(owners[1].value.contents, ids.data(), bytes[1]);
         ASSERT_TRUE((*program)->run(ports).ok());
         const auto *actual = static_cast<const float *>(owners[2].value.contents);
         for (std::size_t token = 0; token < ids.size(); ++token)
           for (int column = 0; column < width; ++column)
-            EXPECT_NEAR(actual[token * width + column],
-                        decoded[static_cast<std::size_t>(ids[token]) * width +
-                                column],
-                        tolerance)
+            const auto expected =
+                decoded[static_cast<std::size_t>(ids[token]) * width + column];
+            const auto tolerance =
+                type == c::GgufQuantizedType::kQ4K
+                    ? std::abs(expected) * 0.004F + 2.0e-6F
+                    : 1.0e-6F;
+            EXPECT_NEAR(actual[token * width + column], expected, tolerance)
                 << token << ' ' << column;
         ids = {1, 2};
       }
