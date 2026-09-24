@@ -1,5 +1,6 @@
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
@@ -108,6 +109,50 @@ TEST(GgmlCudaTensor, MatureKdaPublishesScoresAndStateIndependently) {
   EXPECT_EQ(half_test::read<float>(output_storage[0]),
             std::vector<float>(*output_desc[0].element_count(), 0.F));
   EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
+}
+
+TEST(GgmlCudaTensor, D5Qwen38GroupedHeadsUseMatureGatedDeltaNet) {
+  const d5_qwen38_gdn_fixture::Fixture fixture;
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  std::vector<Buffer> storage;
+  std::vector<ConstTensorView> inputs;
+  storage.reserve(fixture.inputs.size());
+  inputs.reserve(fixture.inputs.size());
+  for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
+    storage.push_back(upload<float>(resource, fixture.data[i]));
+    inputs.push_back(
+        ConstTensorView::create(fixture.inputs[i], storage.back().view())
+            .value());
+  }
+  std::array output_storage{output_buffer(resource, fixture.outputs[0]),
+                            output_buffer(resource, fixture.outputs[1])};
+  const std::array outputs{
+      TensorView::create(fixture.outputs[0], output_storage[0].view()).value(),
+      TensorView::create(fixture.outputs[1], output_storage[1].view()).value()};
+  const auto workload =
+      d5_qwen38_gdn_fixture::workload(WorkloadPhase::kDecode);
+  auto prepared = prepare(ctx, Operation(GatedDeltaNet{}), inputs, outputs,
+                          resource, workload);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  EXPECT_EQ(prepared->workload(), workload);
+  const auto expected = fixture.oracle();
+  auto queue = ctx.create_queue().value();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto invocation = prepared->create_invocation().value();
+    auto completion = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    for (std::size_t port = 0; port < outputs.size(); ++port) {
+      const auto actual = half_test::read<float>(output_storage[port]);
+      ASSERT_EQ(actual.size(), expected[port].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[port][i], 4.e-6) << port << ':' << i;
+    }
+  }
 }
 
 TEST(GgmlCudaTensor, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {

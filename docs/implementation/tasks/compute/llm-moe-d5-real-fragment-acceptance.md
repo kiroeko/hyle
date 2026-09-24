@@ -128,6 +128,31 @@ Direct/Graph 两次 submit、ggml/IREE Provider 检查、Compute/Graph owner sui
 [Apple Qwen3.5 R03](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-r03/README.md)。
 两格仍只覆盖 R03，不提前宣称完整 profile 或 P1；`compute_ops` 继续持有 D5 AUDITED 总验收。
 
+### D5-F3：Qwen3.8 Gated DeltaNet grouped-head Provider 接线
+
+Qwen3.8-27B 官方 profile 的 R05 真实形状是 K16/V48×128。公共 `GatedDeltaNet` schema 已要求 V heads
+为 K heads 的整数倍，但四个 ggml adapter 都额外要求 K/V heads 相等。固定 ggml
+`456172ec733a135778adcd32d00e576a58232e45-hyle` 的 op 与 backend 将该比例作为正式能力：上游
+`test_gated_delta_net` 有 `v_repeat` 维度，CUDA kernel 用独立 Q stride 和 V head dispatch，Metal/Vulkan
+supports-op 也没有等头限制。Windows baseline 的精确 K16/V48×128、T=1 consumer 在 CPU prepare
+阶段稳定返回 `ggml CPU operation domain is not admitted`；失败收据见
+[Qwen3.8 R05 admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-admission-audit/README.md)。
+
+因此 `compute_provider_ggml`、`compute_provider_ggml_cuda`、`compute_provider_ggml_metal` 与
+`compute_provider_ggml_vulkan` 从各自 D3/D5 candidate 退回本卡 AUDITED。有限 FIX 只有：
+
+1. 四个 adapter 在既有 F32 dense/depth/token/size 边界内接纳 `V_heads % K_heads == 0` 且 K/V depth
+   相同的 Gated DeltaNet；继续调用同一个上游 `ggml_gated_delta_net`，不新增 HYLE math、kernel、shader、
+   fallback 或热路径搜索；
+2. 共享测试 fixture 固定 `Qwen/Qwen3.8-27B@1d4bf0f`、官方 safetensors index digest、R05、
+   K16/V48×128 与 decode T=1，以非零数据和独立 double oracle 覆盖头复用、state output 和两次 submit；
+3. 每条路线在自己的 Direct/Graph 普通入口验证 Provider identity、workload identity、数值、状态、失败不发布
+   与资源回收；Apple 在 formal Air 上运行，Windows 运行 CPU/CUDA/Vulkan；
+4. 复用 D5 的每路线 source/shared/static 外部 consumer 和最终 P1 批次，不为本修复另造交付或性能仪器。
+
+不改变公共 schema、route 顺序、GDN 状态布局或 KDA gate 语义。若某个固定上游 backend 实际拒绝该精确
+比例，则该路线记录 `BACKEND_REJECTED` 和原生拒绝，不在 D5 内实现替代算子。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

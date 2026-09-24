@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "verdict": "RUN_FAIL_ADAPTER_ADMISSION",
+  "product_head": "9e6d433b336f",
+  "profile": {
+    "id": "qwen38_27b:official:official-bf16",
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "variant": "official-bf16",
+    "config_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "manifest": "model.safetensors.index.json",
+    "manifest_bytes": 112216,
+    "manifest_sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df"
+  },
+  "consumer": {
+    "region": "R05",
+    "phase": "decode",
+    "batch": 1,
+    "tokens": 1,
+    "key_heads": 16,
+    "value_heads": 48,
+    "head_depth": 128,
+    "dtype": "F32 recurrent math/state",
+    "payload": "deterministic nonzero",
+    "oracle": "independent double grouped-head recurrence"
+  },
+  "run": {
+    "machine": "W1-WIN",
+    "test": "GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet",
+    "elapsed_ms_reported": 5,
+    "result": "FAIL",
+    "message": "ggml-cpu: ggml CPU operation domain is not admitted",
+    "stage": "cold prepare before backend execution",
+    "log": ".scratch/d5-qwen38-gdn-cpu-baseline.log"
+  },
+  "upstream": {
+    "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "evidence": [
+      "tests/test-backend-ops.cpp test_gated_delta_net v_repeat",
+      "src/ggml-cuda/gated_delta_net.cu independent Q stride and V-head dispatch",
+      "src/ggml-metal GATED_DELTA_NET pipeline",
+      "src/ggml-vulkan GATED_DELTA_NET supports-op"
+    ]
+  },
+  "scope": {
+    "owners": [
+      "compute_provider_ggml",
+      "compute_provider_ggml_cuda",
+      "compute_provider_ggml_metal",
+      "compute_provider_ggml_vulkan"
+    ],
+    "acceptance_cell_changed": false,
+    "performance": "NOT_RUN"
+  }
+}

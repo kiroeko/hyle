@@ -374,10 +374,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml CPU adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并完成真实 Direct/Graph 资格。"
     },
     {
       "module": "graph_provider_onednn",
@@ -557,10 +556,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "candidate": "958b9d69fba9b6bc4479aa3fe693cdab2ef119b0",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F2 CANDIDATE 958b9d69：真实 Qwen3.5 BF16 R03 的 ggml Vulkan small-matvec 边界已限定；Direct/Graph、1–4 行回归、Provider/owner suite 与三交付通过，继续等待完整 D5 profile 验收。"
+      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml Vulkan adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并完成真实 Direct/Graph 资格。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -575,10 +573,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
-      "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml CUDA adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并完成真实 Direct/Graph 资格。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -600,10 +597,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "CANDIDATE",
-      "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "M3-D5-F3 AUDITED：Qwen3.8 R05 K16/V48×128 暴露 ggml Metal adapter 的错误等头门；仅放宽到固定上游已实现的 grouped-head F32 域并在 formal Air 完成真实 Direct/Graph 资格。"
     },
     {
       "module": "compute_provider_iree_vulkan",
