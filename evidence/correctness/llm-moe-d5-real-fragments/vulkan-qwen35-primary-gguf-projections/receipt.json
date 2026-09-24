@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "candidate": "e31a6e7d35c9b72c58bfd839adb953857d4287ff",
+  "candidate_tree": "a934c0ae3f3bacc33034a525f08834421221ab55",
+  "verdict": "PARTIAL_RUN_PASS_R03_R14",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "regions": ["R03", "R14"],
+    "route": "vulkan",
+    "entries": ["direct", "graph"],
+    "not_claimed": [
+      "R02",
+      "R04",
+      "R05",
+      "R13",
+      "R15",
+      "complete profile cell",
+      "three deliveries",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "payload": "exact audited tensor names, shapes and formats with deterministic format-valid nonzero packed bytes",
+    "tensors": [
+      {"name": "blk.0.ffn_gate.weight", "format": "Q4_K", "shape": [2048, 6144]},
+      {"name": "blk.0.ffn_down.weight", "format": "Q6_K", "shape": [6144, 2048]},
+      {"name": "blk.3.attn_k.weight", "format": "Q5_K", "shape": [2048, 512]},
+      {"name": "blk.8.ffn_gate.weight", "format": "IQ4_XS", "shape": [2048, 6144]},
+      {"name": "blk.0.ssm_out.weight", "format": "Q8_0", "shape": [2048, 2048]}
+    ]
+  },
+  "consumer": {
+    "operation": "quantized rank-2 MatMul with device-resident dense F32 activation and output",
+    "provider": "ggml-vulkan 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "batch_rows": 1,
+    "preserved": ["model reduction width", "model output width", "GGUF block format", "tensor role", "profile and region identity"],
+    "replay": "same prepared invocation or Graph program, two changed device-resident activation rows",
+    "graph": "single MatMul compiled through the mature ggml Vulkan managed-region path with the constant captured at compile",
+    "oracle": "independent stored-weight decode followed by F32 dot; max abs <= 8e-3 and RMSE <= 2e-3 account for native quantized activation-row dot"
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "VulkanManaged.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+      "result": "PASS"
+    },
+    {
+      "entry": "graph",
+      "test": "VulkanGraphD5.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+      "result": "PASS"
+    }
+  ],
+  "selector": {
+    "baseline": "0bd6330b556fd83e47e39baf4070c97811753b7d",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_route_vulkan",
+      "factor:graph_route_vulkan"
+    ],
+    "skipped_or_reused": 127,
+    "toolchain": "MSVC 19.50.35728, Vulkan SDK 1.4.357.0",
+    "flags": "/DWIN32 /D_WINDOWS /GR /EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K, NVIDIA GeForce RTX 4070, driver 610.62"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts after the complete route fragment is immutable."
+  }
+}

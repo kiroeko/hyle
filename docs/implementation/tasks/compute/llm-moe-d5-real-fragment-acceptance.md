@@ -397,6 +397,14 @@ Release/WERROR 的不可变 selector 通过单架构 configure、Direct 与 Grap
 [CUDA primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-projections/README.md)。
 本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
 
+**D5-F9 Vulkan partial（`e31a6e7d`）**：同一组五个精确 tensor 已在 RTX 4070 的普通 Vulkan
+Direct/Graph 上运行，均冷绑定固定 `ggml-vulkan`；两次变化的 device activation 匹配独立
+packed-weight decode oracle，Direct 每项观察到一个成熟 region，Graph 的单 MatMul 通过成熟 managed
+region 编译。Vulkan SDK 1.4.357.0、driver 610.62、MSVC 19.50、Release/WERROR 的不可变 selector
+通过 docs、closure、configure、Direct 与 Graph；没有新增 HYLE Vulkan shader 或 fallback。收据见
+[Vulkan primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-projections/README.md)。
+本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
