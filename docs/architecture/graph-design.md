@@ -1,5 +1,8 @@
 # Graph：逻辑计算与路线专属执行计划
 
+Graph 使用的模型制品画像、canonical boundary 条件、Provider 完整 DAG 资格化和确定性默认优选见
+[冷路由系统](compute-routing-system.md)。Graph 继续拥有边界与 whole-plan 规划，不复制第二套路由 IR。
+
 本文定义目标设计，不保留旧实现兼容要求，不签产品完成或 SOTA。当前接口见[用户指南](../user/graph.md)，
 状态见 [registry](../implementation/module-status.json)，证据与未完成项见[六项复核](../implementation/tasks/compute/six-point-architecture-review.md)。
 

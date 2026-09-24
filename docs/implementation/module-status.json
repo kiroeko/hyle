@@ -399,14 +399,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-cuda-gqa-semantics.md",
-      "summary": "M1-C7 CLOSED：S1–S3 GQA/MQA公共语义与旧CPU不支持域隔离完成；四环境语义/回归、适用host插桩及M1-C普通attention三交付通过；未改变旧attention数学。",
-      "candidate": "43732241adf81ad2bad9f64594e72d752b900b37",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-cuda-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：Native Provider 的实现身份与显式默认 preference 将迁移到新冷路由合同；现有 CPU 数学与执行保持冻结。"
     },
     {
       "module": "compute_sched",

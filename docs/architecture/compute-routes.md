@@ -1,5 +1,9 @@
 # Compute/Graph：四条原生路线
 
+四路线共同的环境、模型制品画像、真实计算 subject、确定性 policy、绑定与缓存合同见
+[冷路由系统](compute-routing-system.md)。本文只说明各路线的原生构建、资源和执行差异；若旧字段名或
+旧 matcher 说明与该合同冲突，以冷路由系统为准，并在当前 MR 重构中删除旧双轨。
+
 本文持有路线隔离、native owner 和 Provider 接入决策；共同语义见 [Compute](compute-design.md) 与
 [Graph](graph-design.md)。这是设计，不是已交付能力表。具名源码版本、实验覆盖和未证明项见
 [六项复核](../implementation/tasks/compute/six-point-architecture-review.md)。

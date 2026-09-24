@@ -5,8 +5,11 @@
 ## Closure card
 
 - component / owner：`compute`、`graph` 为共同合同 owner；实际迁移 owner 为
-  `compute_provider_cuda`、`compute_provider_flashinfer`、`compute_provider_marlin`、
-  `compute_provider_ggml_cuda`、`compute_provider_ggml_vulkan`、`compute_route_apple`、
+  `compute_provider_native`、`compute_provider_onednn`、`compute_provider_ggml`、
+  `graph_provider_onednn`、`compute_provider_cublas`、`compute_provider_cuda`、
+  `compute_provider_flashinfer`、`compute_provider_marlin`、`compute_provider_ggml_cuda`、
+  `graph_provider_ggml_cuda`、`compute_provider_ggml_vulkan`、`compute_route_cpu`、
+  `graph_route_cpu`、`compute_route_cuda`、`graph_route_cuda`、`compute_route_apple`、
   `compute_route_vulkan`、`graph_route_apple`、`graph_route_vulkan`。
 - baseline commit：`af8a42e4c`（M3 错误候选已纠正，目标模型/权重/算子审计已固化）。
 - trigger 与证据：
@@ -99,6 +102,73 @@
   身份进入重新准备/缓存失效，哪些只属于单次 compile；
 - Direct 与 Graph 的自然 C++ 调用草图，以及 source/static/shared 的同一公开合同；
 - 设计冻结后再列全部旧产品调用者和有限 `KEEP/FIX/BORROW/REJECT`，不能按旧实现反推新 API。
+
+## 从真实需求冻结的公开形状
+
+下列形状由[长期路由合同](../../../architecture/compute-routing-system.md)持有；本卡不以现有类名作兼容：
+
+1. `ModelArtifactProfileDescription` 分开保存 model repository/family/name/fixed revision/configuration
+   digest 与 artifact repository/fixed revision/variant/manifest digest/format family；
+   `ModelArtifactProfile` 在一次 allocator allocation 中拥有这些字段，空 handle 表示模型无关调用。
+2. `WorkloadContext` 持有 profile、phase 和 versioned region semantic。profile 不是 tensor 格式表，也不
+   读取模型文件；旧 model-only identity 删除，不留 alias 或双轨。
+3. `RouteEnvironment` 是 Context 捕获的 immutable native facts；`RouteSubject` 借用一次冷调用的真实
+   operation、全部端口或 Graph region。规则不保存这些借用。
+4. `RouteSelector` 分开保存 environment predicates、profile predicates、operation semantic predicates
+   和任意 `input/output + index` 的 tensor predicate。端口支持 dtype、format、rank 与 axis 的
+   inclusive range/multiple；量化 mode/group/accumulation 来自 operation schema 的 typed facts。
+5. `RoutePolicyEntry` 有 versioned rule identity、显式 preference、目标 Provider 和稳定
+   `ProviderImplementationId`。普通路线 façade 提供 HYLE 固定 policy；低层自定义 Context 属于专家
+   入口。匹配相同 preference 的不同 Direct 目标返回 ambiguity，不用注册顺序选中。
+6. Direct prepare 收集 hard-eligible proposals 后按 policy preference 绑定；只有 capability/resource
+   decline 可试下一条。Graph 把同一 preference 纳入既有 whole-plan 有界规划，Provider 仍从真实 DAG
+   校验 region。submit 不携带 selector/policy，也不调用 matcher。
+
+## 审计覆盖图
+
+| 真实纵切 | 设计如何表达 | 反证结论 |
+|---|---|---|
+| Qwen3.5-2B 官方 BF16 vs Unsloth UD-Q4_K_XL | model identity 相同、artifact identity 不同；实际 MatMul/GDN 端口分别检查 BF16 与 mixed Q/IQ formats | 不需要也不能有 profile-wide Q4 枚举 |
+| Qwen3.8-2.4T UD-IQ4_XS MoE | exact artifact + region semantic；boundary 任意端口；Provider 从真实 DAG 检查 expert/router 内部的 IQ4/Q4/Q5/Q6/F32 | 共同层不能复制 512-expert 图 DSL |
+| Kimi/DeepSeek official 与 Q8 GGUF | artifact 区分官方 packed FP4/FP8 与 GGUF；Provider 同时检查 MXFP4 expert、BF16/Q8 projection、F32 state/router | 模型名或 GGUF 文件标签均不足以资格化 |
+| 空 profile 的渲染/工程 Direct 计算 | selector 不要求 profile，仍按环境、operation 和端口命中成熟通用路线 | 公共 API 没有过拟合 LLM loader |
+| CUDA/Apple/Vulkan 原生路线 | typed environment fact 的 namespace 固定解释，policy 只在路线内选择 Provider | 不引入跨路线万能 executor/Queue |
+
+## 产品调用者审计
+
+| 边界 | 当前事实 | 本轮处置 |
+|---|---|---|
+| Compute workload owner 与 prepared artifact | model-only owner 已能保活字符串，但没有 artifact/manifest；artifact 已持有 workload | `FIX-MR1` 替换为单一 model-artifact profile owner并贯通 prepared 生命周期 |
+| common route matcher | 固定 input0/input1/output0 和一个量化结构；仅返回首 mismatch | `FIX-MR2` 全量替换为 selector、typed semantic facts 和任意端口/shape matcher |
+| Provider implementation identity | `ProviderRouteKey/profile_key` 实际表示实现，不是 model profile | `FIX-MR3` 重命名为 `ProviderImplementationId/implementation`，删除歧义旧名 |
+| Direct Provider 选择 | 默认 façade 隐式依赖 provider array 顺序，prepare 遇首个成功即返回 | `FIX-MR4` 冻结显式 HYLE preference，收集冷 proposal 后确定性绑定和诊断歧义 |
+| Graph leaf/region 选择 | 已有真实 DAG、canonical boundary、effects、cost 与有界 plan search | `KEEP-MR1` 保留 owner/规划；`FIX-MR5` 加入 profile 与 explicit policy preference |
+| CUDA/Apple/Vulkan 的八处旧 rule 调用 | 已有真实 hardware/operation/format facts，但形状受旧 matcher 限制 | `FIX-MR6` 迁移到新 selector；Provider 数学、资源、kernel/shader 保持不变 |
+| CPU/Graph Provider 与路线 façade | 已有成熟 default roster 与 implementation key | `FIX-MR7` 把既有开发裁决写成显式 preference，不重做性能比较 |
+| model/DAG loader 与跨进程 cache | 不属于 HYLE Compute/Graph | `REJECT-MR1` 不新增 loader、模型脚本、全局 registry 或持久化 cache |
+| 新算子/kernel/Provider | MR 没有数学缺口 | `REJECT-MR2` 保持冻结，覆盖分子不变 |
+
+## 有限 FIX ledger
+
+1. **FIX-MR1 profile owner**：实现 description/owned handle/校验/OOM/copy/move/concurrent-read，替换
+   model-only workload；manifest/config digest 接受规范 lowercase 64-hex，空 profile 零 allocation。
+2. **FIX-MR2 selector**：实现 typed environment 与 operation facts、profile predicate、任意端口的
+   dtype/format/rank/dimension range+multiple、完整 mismatch location 和非法规则检查；删除旧 rule API。
+3. **FIX-MR3 implementation identity**：单轨重命名 Compute proposal、Graph proposal/report 和 custom
+   Provider 字段；identity 仍只在同一 provider build/config 内解释。
+4. **FIX-MR4 Direct binding**：默认 CPU/CUDA roster 使用显式 preference；prepare 冷收集、排序、
+   ambiguity、unsupported/resource decline/fatal-stop；prepared submit 路径不变。
+5. **FIX-MR5 Graph binding**：operation/region proposal 携带显式 preference，whole-plan search 先服从
+   hard constraints 和用户 target，再使用已验证 preference/cost；compile request 持有 exact profile。
+6. **FIX-MR6 rule migration**：迁移 collectives、FlashInfer、Marlin、ggml CUDA/Vulkan、Apple、Vulkan
+   的旧 rule，覆盖高索引 ports、shape 与 mixed profile；不改计算实现。
+7. **FIX-MR7 route integration**：CPU、CUDA、Apple、Vulkan 默认 façade 交付各自 immutable environment
+   与 policy；Graph 四路线复用同一 Context/profile，不复制 policy。
+8. **FIX-MR8 validation/docs**：定向 correctness、两组真实画像纵切、Direct/Graph 两次 submit 插桩、
+   source/static/shared、适用 Windows/WSL/Apple/Vulkan/CUDA 门、用户文档和 P0 成本账单。
+
+ledger 之外的算子、Provider、kernel、性能调优、模型加载和公共治理改动全部拒绝。任何新事实要求新增
+数学、执行期选优或第二套 Graph 表达时，停止实现并退回 `AUDITED` 重新定界。
 
 ## 当前状态
 

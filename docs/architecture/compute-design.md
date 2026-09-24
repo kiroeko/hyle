@@ -1,5 +1,9 @@
 # Compute：计算语义、原生执行与提供方
 
+Compute 与 Graph 的环境、模型制品画像、真实端口/DAG 条件、确定性默认优选及 prepare/submit 分界由
+[冷路由系统](compute-routing-system.md)统一定义；路线原生资源和执行差异仍见
+[四路线](compute-routes.md)。
+
 本文只定义目标设计，不签发实现或性能状态。当前接口见[用户指南](../user/compute.md)，当前组件状态
 见 [registry](../implementation/module-status.json)，研究与未证明项见[六项复核](../implementation/tasks/compute/six-point-architecture-review.md)。
 旧代码、类名、测试和 factor 划分都不是本次重构的前提；设计先由真实消费与原生 runtime 决定，再盘点迁移。
