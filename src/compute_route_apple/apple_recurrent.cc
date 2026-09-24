@@ -69,8 +69,12 @@ Result<std::vector<mx::array>>
 Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
   std::vector<mx::array> dense(inputs.begin(), inputs.end());
   bool copied = false;
-  for (auto &input : dense) {
+  for (std::size_t i = 0; i < dense.size(); ++i) {
+    auto &input = dense[i];
     if (!input.flags().row_contiguous) {
+      if (program->input_is_packed(i))
+        return std::unexpected(Status::InvalidArgument(
+            "Apple packed GGUF input must be row-contiguous"));
       input = mx::contiguous(input, false, stream);
       copied = true;
     }

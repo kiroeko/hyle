@@ -696,17 +696,11 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
             region.operation, region.native_inputs, outputs));
         auto match = [&](const TensorDesc &desc, std::size_t id) {
           const auto &spec = plan.values[id];
-          if ((desc.data_type() == DataType::kFloat32 &&
-               spec.dtype != mx::float32) ||
-              (desc.data_type() == DataType::kFloat16 &&
-               spec.dtype != mx::float16) ||
-              (desc.data_type() == DataType::kInt32 &&
-               spec.dtype != mx::int32) ||
-              (desc.data_type() != DataType::kFloat32 &&
-               desc.data_type() != DataType::kFloat16 &&
-               desc.data_type() != DataType::kInt32))
-            return false;
-          return std::ranges::equal(desc.dimensions(), spec.shape);
+          const auto expected = input_spec(desc);
+          return expected.has_value() && expected->shape == spec.shape &&
+                 expected->dtype == spec.dtype &&
+                 (!spec.logical_description.valid() ||
+                  spec.logical_description == desc);
         };
         for (std::size_t port = 0; port < region.inputs.size(); ++port)
           if (!match(region.native_inputs[port], region.inputs[port]))

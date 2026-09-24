@@ -14,6 +14,7 @@
 #include <ggml-metal.h>
 
 #include "metadata_arena.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
 // Private, locked resource seams. These symbols never form an installed C API.
@@ -67,8 +68,69 @@ ggml_type native_type(DataType type) noexcept {
   }
 }
 
+ggml_type native_quantized_type(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type)
+    return GGML_TYPE_COUNT;
+  switch (*type) {
+  case GgufQuantizedType::kQ3K:
+    return GGML_TYPE_Q3_K;
+  case GgufQuantizedType::kQ4K:
+    return GGML_TYPE_Q4_K;
+  case GgufQuantizedType::kQ5K:
+    return GGML_TYPE_Q5_K;
+  case GgufQuantizedType::kQ6K:
+    return GGML_TYPE_Q6_K;
+  case GgufQuantizedType::kQ8_0:
+    return GGML_TYPE_Q8_0;
+  case GgufQuantizedType::kIq3Xxs:
+    return GGML_TYPE_IQ3_XXS;
+  case GgufQuantizedType::kIq3S:
+    return GGML_TYPE_IQ3_S;
+  case GgufQuantizedType::kIq4Nl:
+    return GGML_TYPE_IQ4_NL;
+  case GgufQuantizedType::kIq4Xs:
+    return GGML_TYPE_IQ4_XS;
+  case GgufQuantizedType::kMxfp4:
+    return GGML_TYPE_MXFP4;
+  }
+  return GGML_TYPE_COUNT;
+}
+
+ggml_type native_type(const TensorDesc &description) noexcept {
+  const auto quantized = native_quantized_type(description);
+  return quantized == GGML_TYPE_COUNT ? native_type(description.data_type())
+                                      : quantized;
+}
+
+bool native_quantized(const TensorDesc &description) noexcept {
+  return native_quantized_type(description) != GGML_TYPE_COUNT;
+}
+
+ggml_tensor *native_tensor(ggml_context *context,
+                           const TensorDesc &description) noexcept {
+  std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+  if (native_quantized(description)) {
+    const auto blocked = description.block_axis();
+    if (!blocked || description.rank() > GGML_MAX_DIMS)
+      return nullptr;
+    shape[0] = description.dimensions()[*blocked];
+    std::size_t target = 1;
+    for (std::size_t axis = description.rank(); axis-- > 0;)
+      if (axis != *blocked)
+        shape[target++] = description.dimensions()[axis];
+    return ggml_new_tensor(context, native_type(description),
+                           static_cast<int>(description.rank()), shape.data());
+  }
+  const auto dims = description.dimensions();
+  std::reverse_copy(dims.begin(), dims.end(), shape.begin());
+  return ggml_new_tensor(
+      context, native_type(description.data_type()),
+      static_cast<int>((std::max)(std::size_t{1}, dims.size())), shape.data());
+}
+
 bool mature_model_operation(Operation operation) noexcept {
-  return operation.get_if<GatedDeltaNet>() ||
+  return operation.get_if<MatMul>() || operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
@@ -85,6 +147,8 @@ struct NativeProgram::State {
   std::array<BufferOwner, 7> buffers;
   std::array<void *, 7> native_buffers{};
   std::array<std::size_t, 7> bytes{};
+  std::array<std::size_t, 7> alignments{};
+  std::array<bool, 7> packed{};
   std::vector<TensorDesc> outputs;
   std::vector<std::size_t> output_offsets;
   std::size_t port_count = 0;
@@ -126,11 +190,32 @@ Status NativeProgram::validate(Operation operation,
       return Status::Unimplemented(
           "ggml Metal GatedDeltaNet requires equal heads, D32/64/128 and T<=32767");
   }
-  for (const auto &input : inputs) {
-    if (native_type(input.data_type()) == GGML_TYPE_COUNT || !input.is_dense() ||
-        input.rank() > GGML_MAX_DIMS)
+  const bool matmul = operation.get_if<MatMul>() != nullptr;
+  const bool grouped = operation.custom_as<model_ops::GroupedMatMul>().has_value();
+  if (matmul &&
+      (inputs.size() != 2 || inputs[0].data_type() != DataType::kFloat32 ||
+       !inputs[0].is_plain() || !inputs[0].is_dense() || inputs[0].rank() != 2 ||
+       !native_quantized(inputs[1]) || inputs[1].data_type() != DataType::kFloat32 ||
+       inputs[1].rank() != 2 || inputs[1].block_axis() != std::size_t{0}))
+    return Status::Unimplemented(
+        "ggml Metal MatMul requires dense F32 [M,K] and GGUF F32 [K,N]");
+  if (grouped && native_quantized(inputs[0]) &&
+      (inputs[0].data_type() != DataType::kFloat32 || inputs[0].rank() != 3 ||
+       inputs[0].block_axis() != std::size_t{2}))
+    return Status::Unimplemented(
+        "ggml Metal grouped weight requires GGUF F32 [E,N,K]");
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    if (native_quantized(inputs[i]) &&
+        ((!matmul && !grouped) || (matmul && i != 1) || (grouped && i != 0)))
       return Status::Unimplemented(
-          "ggml Metal model region requires dense F32/I32 inputs within rank four");
+          "ggml Metal admits GGUF storage only on a matrix weight port");
+  for (const auto &input : inputs) {
+    const bool quantized = native_quantized(input);
+    if ((!input.is_plain() && !quantized) ||
+        (!quantized && native_type(input.data_type()) == GGML_TYPE_COUNT) ||
+        (!quantized && !input.is_dense()) || input.rank() > GGML_MAX_DIMS)
+      return Status::Unimplemented(
+          "ggml Metal model region requires dense native inputs or exact GGUF blocks within rank four");
     HYLE_ASSIGN_OR_RETURN(auto bytes, input.required_bytes());
     if (bytes > std::size_t{INT32_MAX} * sizeof(float))
       return Status::OutOfRange("ggml Metal model input indexing exceeds I32");
@@ -161,20 +246,23 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
     if (state->backend == nullptr)
       return std::unexpected(Status::Unavailable("ggml Metal backend unavailable"));
     for (std::size_t i = 0; i < inputs.size(); ++i) {
-      const auto dims = inputs[i].dimensions();
-      std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
-      std::reverse_copy(dims.begin(), dims.end(), shape.begin());
-      state->tensors[i] = ggml_new_tensor(
-          state->arena.get(), native_type(inputs[i].data_type()),
-          static_cast<int>((std::max)(std::size_t{1}, dims.size())),
-          shape.data());
+      state->tensors[i] = native_tensor(state->arena.get(), inputs[i]);
       if (state->tensors[i] == nullptr)
         return std::unexpected(Status::ResourceExhausted("ggml Metal tensor metadata exhausted"));
       HYLE_ASSIGN_OR_RETURN(state->bytes[i], inputs[i].required_bytes());
+      state->packed[i] = native_quantized(inputs[i]);
+      state->alignments[i] = state->packed[i]
+                                 ? std::size_t{1}
+                                 : data_type_size(inputs[i].data_type());
     }
     auto &t = state->tensors;
     ggml_tensor *result = nullptr;
-    if (operation.get_if<GatedDeltaNet>()) {
+    if (operation.get_if<MatMul>()) {
+      result = ggml_mul_mat(state->arena.get(), t[1], t[0]);
+      if (result != nullptr && !ggml_prec_set_acc(result, GGML_PREC_F32))
+        return std::unexpected(Status::Unimplemented(
+            "ggml Metal MatMul cannot apply F32 accumulation"));
+    } else if (operation.get_if<GatedDeltaNet>()) {
       result = ggml_gated_delta_net(state->arena.get(), t[0], t[1], t[2],
                                     t[3], t[4], t[5], 1);
     } else if (operation.custom_as<model_ops::GroupedMatMul>()) {
@@ -209,6 +297,7 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
                         ? state->output_offsets[1]
                         : total;
     state->bytes[state->output_port] = total;
+    state->alignments[state->output_port] = sizeof(float);
     if (!ggml_backend_supports_op(state->backend, result))
       return std::unexpected(Status::Unimplemented("ggml Metal model capability unavailable"));
     // Original specialization/cache, cold and shape-only; no user data or
@@ -236,6 +325,9 @@ NativeProgram::output_description(std::size_t index) const noexcept {
 std::size_t NativeProgram::output_offset(std::size_t index) const noexcept {
   return state_->output_offsets[index];
 }
+bool NativeProgram::input_is_packed(std::size_t index) const noexcept {
+  return index < state_->output_port && state_->packed[index];
+}
 std::size_t NativeProgram::score_bytes() const noexcept { return state_->scores; }
 std::size_t NativeProgram::output_bytes() const noexcept {
   return state_->bytes[state_->output_port];
@@ -250,7 +342,9 @@ Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
   try {
     std::array<BufferOwner, 7> replacements;
     for (std::size_t i = 0; i < ports.size(); ++i) {
-      if (ports[i].metal_buffer == nullptr || ports[i].offset % sizeof(float) != 0)
+      if (ports[i].metal_buffer == nullptr ||
+          (s.packed[i] ? ports[i].offset != 0
+                       : ports[i].offset % s.alignments[i] != 0))
         return Status::InvalidArgument("ggml Metal requires an aligned native buffer");
       auto buffer = s.buffers[i].value;
       if (ports[i].metal_buffer != s.native_buffers[i]) {

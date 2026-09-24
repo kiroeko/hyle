@@ -45,12 +45,21 @@ struct ContextAccess;
 using RegionFunction = std::function<Result<std::vector<mlx::core::array>>(
     const std::vector<mlx::core::array> &, mlx::core::Stream)>;
 
-// Shape/dtype only; Graph and other metadata-driven consumers do not need a
-// dummy host payload. Preparation creates its own isolated native inputs.
+// Shape/dtype describe the actual MLX carrier. logical_description is empty
+// for ordinary MLX tensors and carries the checked logical/storage contract
+// when provider-native bytes cannot be described by an MLX dtype.
 struct InputSpec final {
   mlx::core::Shape shape;
   mlx::core::Dtype dtype = mlx::core::float32;
+  TensorDesc logical_description;
 };
+
+// Maps a checked logical tensor description to its actual MLX carrier. GGUF
+// block encodings use a one-dimensional uint8 array of required_bytes(); MLX
+// affine Q4 keeps its existing uint32 [N,K/8] carrier. This describes existing
+// bytes and never quantizes, decodes or copies them.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<InputSpec>
+input_spec(const TensorDesc &description) noexcept;
 
 // Captured once when creating the native Context. Apple driver/runtime is
 // shipped with macOS; its OS build is distinct from the compiled SDK/Metal

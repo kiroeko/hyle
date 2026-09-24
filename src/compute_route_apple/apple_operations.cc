@@ -2,13 +2,16 @@
 #include "hyle/compute/detail/apple_plan.h"
 #include "hyle/compute/model_ops.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
 
 #include <mlx/ops.h>
 
 #include "apple_internal.h"
 #include "apple_tensor.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/route_policy.h"
 
 namespace hyle::compute::apple {
@@ -76,13 +79,50 @@ Result<TensorDesc> float_description(const mx::array &input) noexcept {
   return TensorDesc::dense(DataType::kFloat32, {shape.data(), input.ndim()});
 }
 
-bool ggml_model_operation(const Operation &operation) noexcept {
+bool fixed_ggml_model_operation(const Operation &operation) noexcept {
   return operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
          operation.custom_as<model_ops::HyperConnectionPost>() ||
          operation.custom_as<model_ops::LightningIndexer>();
+}
+
+bool ggml_model_operation(const Operation &operation,
+                          std::span<const TensorDesc> inputs) noexcept {
+  return fixed_ggml_model_operation(operation) ||
+         (operation.get_if<MatMul>() && inputs.size() == 2 &&
+          gguf_quantized_type(inputs[1].storage_format()).has_value());
+}
+
+Result<DataType> logical_type(mx::Dtype type) noexcept {
+  if (type == mx::float32)
+    return DataType::kFloat32;
+  if (type == mx::float16)
+    return DataType::kFloat16;
+  if (type == mx::bfloat16)
+    return DataType::kBFloat16;
+  if (type == mx::int32)
+    return DataType::kInt32;
+  if (type == mx::int64)
+    return DataType::kInt64;
+  if (type == mx::bool_)
+    return DataType::kBool;
+  return std::unexpected(Status::Unimplemented(
+      "Apple input admits F32/F16/BF16/I32/I64/Bool logical storage"));
+}
+
+Result<TensorDesc> logical_description(const InputSpec &spec) noexcept {
+  if (spec.logical_description.valid()) {
+    HYLE_ASSIGN_OR_RETURN(auto expected, input_spec(spec.logical_description));
+    if (expected.shape != spec.shape || expected.dtype != spec.dtype)
+      return std::unexpected(Status::InvalidArgument(
+          "Apple input carrier disagrees with its logical description"));
+    return spec.logical_description;
+  }
+  HYLE_ASSIGN_OR_RETURN(auto type, logical_type(spec.dtype));
+  std::vector<std::int64_t> shape(spec.shape.begin(), spec.shape.end());
+  return TensorDesc::dense(type, shape);
 }
 } // namespace
 
@@ -94,6 +134,70 @@ Result<TensorDesc> affine_q4_description(std::int64_t output_channels,
   const auto format = StorageFormat::blocked(kAffineQ4Format, 8, 4, 4);
   const std::array shape{output_channels, input_channels};
   return TensorDesc::blocked_dense(DataType::kFloat32, shape, *format);
+}
+
+Result<InputSpec> input_spec(const TensorDesc &description) noexcept {
+  if (!description.valid())
+    return std::unexpected(
+        Status::InvalidArgument("Apple input requires a valid description"));
+  InputSpec result;
+  result.logical_description = description;
+  if (gguf_quantized_type(description.storage_format())) {
+    HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+    if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
+      return std::unexpected(
+          Status::OutOfRange("Apple packed input exceeds native shape range"));
+    result.shape = {static_cast<int>(bytes)};
+    result.dtype = mx::uint8;
+    return result;
+  }
+  switch (description.data_type()) {
+  case DataType::kFloat32:
+    result.dtype = mx::float32;
+    break;
+  case DataType::kFloat16:
+    result.dtype = mx::float16;
+    break;
+  case DataType::kBFloat16:
+    result.dtype = mx::bfloat16;
+    break;
+  case DataType::kInt32:
+    result.dtype = mx::int32;
+    break;
+  case DataType::kInt64:
+    result.dtype = mx::int64;
+    break;
+  case DataType::kBool:
+    result.dtype = mx::bool_;
+    break;
+  default:
+    return std::unexpected(Status::Unimplemented(
+        "Apple input requires F32/F16/BF16/I32/I64/Bool logical storage"));
+  }
+  for (auto dimension : description.dimensions()) {
+    if (dimension > (std::numeric_limits<int>::max)())
+      return std::unexpected(
+          Status::OutOfRange("Apple input dimension exceeds native range"));
+    result.shape.push_back(static_cast<int>(dimension));
+  }
+  if (!description.is_plain()) {
+    if (!description.is_dense() ||
+        description.data_type() != DataType::kFloat32 ||
+        description.rank() != 2 ||
+        description.storage_format().id() != kAffineQ4Format)
+      return std::unexpected(
+          Status::Unimplemented("Apple input storage encoding is not admitted"));
+    HYLE_ASSIGN_OR_RETURN(
+        auto expected,
+        affine_q4_description(description.dimensions()[0],
+                              description.dimensions()[1]));
+    if (description != expected)
+      return std::unexpected(Status::InvalidArgument(
+          "Apple affine Q4 layout disagrees with native packing"));
+    result.shape.back() /= 8;
+    result.dtype = mx::uint32;
+  }
+  return result;
 }
 
 Result<std::vector<mx::array>> lower(const Operation &operation,
@@ -157,9 +261,9 @@ Result<std::vector<mx::array>> lower(const Operation &operation,
 Result<Program>
 Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
-                 const WorkloadContext &workload) const noexcept {
+  const WorkloadContext &workload) const noexcept {
   try {
-    if (ggml_model_operation(operation)) {
+    if (fixed_ggml_model_operation(operation)) {
       std::vector<InputSpec> specs;
       specs.reserve(examples.size());
       for (const auto &input : examples) {
@@ -184,25 +288,20 @@ Result<Program>
 Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
                  const WorkloadContext &workload) const noexcept {
   try {
-    if (ggml_model_operation(operation)) {
+    std::vector<TensorDesc> descriptions;
+    descriptions.reserve(inputs.size());
+    for (const auto &input : inputs) {
+      HYLE_ASSIGN_OR_RETURN(auto description, logical_description(input));
+      descriptions.push_back(std::move(description));
+    }
+    if (ggml_model_operation(operation, descriptions)) {
       detail::RegionPlan plan;
       plan.workload = workload;
       detail::Region region;
       region.kind = detail::RegionKind::kGgml;
       region.operation = operation;
       for (std::size_t i = 0; i < inputs.size(); ++i) {
-        const auto data_type =
-            inputs[i].dtype == mx::float32   ? DataType::kFloat32
-            : inputs[i].dtype == mx::float16 ? DataType::kFloat16
-            : inputs[i].dtype == mx::int32   ? DataType::kInt32
-                                             : DataType::kUnknown;
-        if (data_type == DataType::kUnknown)
-          return std::unexpected(Status::Unimplemented(
-              "Apple original model region admits F32/F16/I32 inputs"));
-        std::vector<std::int64_t> shape(inputs[i].shape.begin(),
-                                        inputs[i].shape.end());
-        HYLE_ASSIGN_OR_RETURN(auto desc, TensorDesc::dense(data_type, shape));
-        region.native_inputs.push_back(desc);
+        region.native_inputs.push_back(descriptions[i]);
         region.inputs.push_back(i);
         plan.inputs.push_back(i);
         plan.values.push_back(inputs[i]);
@@ -214,15 +313,17 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
         const auto id = plan.values.size();
         region.outputs.push_back(id);
         plan.outputs.push_back(id);
-        InputSpec spec;
-        spec.dtype = mx::float32;
-        for (auto d : output.dimensions())
-          spec.shape.push_back(static_cast<int>(d));
+        HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(output));
         plan.values.push_back(std::move(spec));
       }
       plan.regions.push_back(std::move(region));
       return detail::ContextAccess::compile(*this, std::move(plan));
     }
+    if (std::ranges::any_of(descriptions, [](const auto &description) {
+          return gguf_quantized_type(description.storage_format()).has_value();
+        }))
+      return std::unexpected(Status::Unimplemented(
+          "Apple GGUF carrier is only admitted by native MatMul or GroupedMatMul"));
     return compile(
         [operation, workload](const auto &values, mx::Stream stream) {
           return lower(operation, values, stream, workload);

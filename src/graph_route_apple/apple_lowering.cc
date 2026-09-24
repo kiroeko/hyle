@@ -1,4 +1,5 @@
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
 
@@ -8,7 +9,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <limits>
 #include <memory>
 #include <new>
 #include <optional>
@@ -36,7 +36,7 @@ struct Plan {
   CustomLowering custom;
 };
 
-bool ggml_model_operation(const compute::Operation &operation) noexcept {
+bool fixed_ggml_model_operation(const compute::Operation &operation) noexcept {
   return operation.get_if<compute::GatedDeltaNet>() ||
          operation.custom_as<compute::model_ops::GroupedMatMul>() ||
          operation.custom_as<
@@ -47,56 +47,15 @@ bool ggml_model_operation(const compute::Operation &operation) noexcept {
 }
 
 Result<ca::InputSpec> native_spec(const compute::TensorDesc &description) {
-  if (!description.valid())
-    return std::unexpected(Status::InvalidArgument(
-        "Apple Graph requires a valid logical tensor description"));
-  ca::InputSpec result;
-  switch (description.data_type()) {
-  case compute::DataType::kFloat32:
-    result.dtype = mx::float32;
-    break;
-  case compute::DataType::kFloat16:
-    result.dtype = mx::float16;
-    break;
-  case compute::DataType::kBFloat16:
-    result.dtype = mx::bfloat16;
-    break;
-  case compute::DataType::kInt32:
-    result.dtype = mx::int32;
-    break;
-  case compute::DataType::kInt64:
-    result.dtype = mx::int64;
-    break;
-  case compute::DataType::kBool:
-    result.dtype = mx::bool_;
-    break;
-  default:
-    return std::unexpected(Status::Unimplemented(
-        "Apple Graph admits F32/F16/BF16/I32/I64/Bool logical tensors"));
-  }
-  for (auto dimension : description.dimensions()) {
-    if (dimension > (std::numeric_limits<int>::max)())
-      return std::unexpected(Status::InvalidArgument(
-          "Apple Graph dimension is outside native range"));
-    result.shape.push_back(static_cast<int>(dimension));
-  }
-  if (!description.is_plain()) {
-    if (!description.is_dense() ||
-        description.data_type() != compute::DataType::kFloat32 ||
-        description.rank() != 2 ||
-        description.storage_format().id() != ca::kAffineQ4Format)
-      return std::unexpected(Status::Unimplemented(
-          "Apple Graph storage encoding is not admitted"));
-    HYLE_ASSIGN_OR_RETURN(
-        auto expected, ca::affine_q4_description(description.dimensions()[0],
-                                                 description.dimensions()[1]));
-    if (description != expected)
-      return std::unexpected(Status::InvalidArgument(
-          "Apple Q4 layout disagrees with native packing"));
-    result.shape.back() /= 8;
-    result.dtype = mx::uint32;
-  }
-  return result;
+  return ca::input_spec(description);
+}
+
+bool ggml_model_operation(const Plan &plan, const Node &node) noexcept {
+  return fixed_ggml_model_operation(node.operation) ||
+         (node.operation.get_if<compute::MatMul>() && node.inputs.size() == 2 &&
+          compute::gguf_quantized_type(
+              plan.descriptions[node.inputs[1]].storage_format())
+              .has_value());
 }
 
 Status match(const compute::TensorDesc &description, const mx::array &value) {
@@ -178,7 +137,7 @@ Result<ca::Program> compile_regions(const ca::Context &context,
   for (std::size_t begin = 0; begin < plan->nodes.size();) {
     ca::detail::Region region;
     const auto &first = plan->nodes[begin];
-    if (ggml_model_operation(first.operation)) {
+    if (ggml_model_operation(*plan, first)) {
       region.kind = ca::detail::RegionKind::kGgml;
       region.operation = first.operation;
       region.inputs = first.inputs;
@@ -191,7 +150,7 @@ Result<ca::Program> compile_regions(const ca::Context &context,
     }
     auto end = begin + 1;
     while (end < plan->nodes.size() &&
-           !ggml_model_operation(plan->nodes[end].operation))
+           !ggml_model_operation(*plan, plan->nodes[end]))
       ++end;
     std::vector<bool> internal(native.values.size(), false);
     std::vector<bool> argument(native.values.size(), false);
@@ -337,7 +296,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         continue;
       if (operation.kind() == compute::OperationKind::kCustom &&
           !operation.custom_as<compute::model_ops::CausalConv1d>() &&
-          !ggml_model_operation(operation) &&
+          !fixed_ggml_model_operation(operation) &&
           !plan->custom)
         return std::unexpected(Status::Unimplemented(
             "Apple custom operation needs a cold native lowering"));
@@ -367,9 +326,19 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       for (const auto output : plan->outputs)
         report->outputs.push_back(plan->descriptions[output]);
     }
+    for (const auto &node : plan->nodes) {
+      const bool has_gguf = std::ranges::any_of(node.inputs, [&](auto id) {
+        return compute::gguf_quantized_type(
+                   plan->descriptions[id].storage_format())
+            .has_value();
+      });
+      if (has_gguf && !ggml_model_operation(*plan, node))
+        return std::unexpected(Status::Unimplemented(
+            "Apple Graph GGUF carrier requires native MatMul or GroupedMatMul"));
+    }
     const bool has_native_model_region =
-        std::ranges::any_of(plan->nodes, [](const auto &node) {
-          return ggml_model_operation(node.operation);
+        std::ranges::any_of(plan->nodes, [&](const auto &node) {
+          return ggml_model_operation(*plan, node);
         });
     if (has_native_model_region) {
       if (report != nullptr) {

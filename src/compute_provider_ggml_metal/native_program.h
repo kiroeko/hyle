@@ -55,6 +55,8 @@ public:
   output_description(std::size_t index) const noexcept;
   HYLE_GGML_METAL_INTERNAL_API std::size_t
   output_offset(std::size_t index) const noexcept;
+  HYLE_GGML_METAL_INTERNAL_API bool
+  input_is_packed(std::size_t index) const noexcept;
   HYLE_GGML_METAL_INTERNAL_API std::size_t score_bytes() const noexcept;
   HYLE_GGML_METAL_INTERNAL_API std::size_t output_bytes() const noexcept;
 
