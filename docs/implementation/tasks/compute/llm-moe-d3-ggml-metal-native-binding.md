@@ -1,12 +1,13 @@
 # M3-D3：ggml Metal 原生压缩权重接缝
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
 - owners：`compute_route_apple`、`graph_route_apple`、`compute_provider_ggml_metal`；公共
   GGUF storage catalog 仍由 `compute_ops` 的 M3 主卡持有。
 - baseline：`f18bf7b2dad9b903bea06bfe8e14b60d1f023d8c`；审计提交前 Windows canonical 工作树干净。
+- candidate：`5a1b61fbfc7a3f131fa3c6e801fc6458ca507804`。
 - reopen trigger：固定 ggml `456172ec` 已含目标 Q/K/IQ/Q8/MXFP4 Metal kernel，公共十格式
   descriptor 已冻结到 `08b8e2f1`；但 `NativeProgram` 仍把 blocked payload 当逻辑浮点 tensor，普通
   Apple `InputSpec`/binding 也不能同时表达逻辑 tensor 与物理 packed bytes，真实 GGUF 权重因此从
@@ -112,5 +113,29 @@ OOM/Metal import/command-buffer failure沿现有 `Status`/terminal invocation �
 
 ## Candidate / 验证 / 红队
 
-尚未形成 candidate。有限改动完成并在两台 Mac 取得预声明 verdict 后填写 immutable commit、逐 gate
-证据、LOC、限制和最终状态；未运行项保持 `UNPROVEN`，不借 CPU/CUDA 或静态 kernel 名称代签。
+有限改动已冻结到上述 candidate。公共 `InputSpec` 现在同时保存实际 MLX carrier 和 checked logical
+description；十种 GGUF storage 统一映射为精确 byte carrier。ggml Metal provider 按公共 catalog 映射
+原生 type/axis，MatMul 与 GroupedMatMul 直接导入 carrier；Direct 和 Graph 按 operation 加输入描述固定
+region，dense/MLX affine Q4 保持原路线，packed value 不会误入 Copy/MLX region。重复 submit 不解码、
+重排或重新选 Provider。
+
+MacBook Air `Mac16,12` 与 Mac mini `Mac16,10` 上，`compute_provider_ggml_metal`、
+`compute_route_apple`、`graph_route_apple` 三个完整目标均通过。provider 在两台机器实际创建并运行
+Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS、MXFP4 的 Metal pipeline；
+Q4_K、IQ4_XS、MXFP4、grouped expert 取得数值 oracle 和重复执行，Direct/Graph 与跨 Provider
+MLX → ggml Metal → MLX 组合、carrier/schema 错误也通过。
+
+Air 的精确 Git source archive、搬移 static SDK 和搬移 shared SDK 均由同一个独立消费者执行 Q4_K
+Direct 与 IQ4_XS Graph 两次 replay。安装消费者运行时完整 source 和三个 producer build 已隐藏；
+shared 进程加载搬移 prefix 的 `libmlx`，static executable 不依赖 HYLE/MLX dylib。`mlx.metallib`、
+许可证、公开 `input_spec` 导出与 CMake 路径卫生通过。Windows selector 的 docs、closure、Apple-OFF
+configure、两个公开头及 Compute/Graph 各三交付七门全部 PASS。
+
+完整收据见[证据](../../../../evidence/correctness/llm-moe-d3-ggml-metal-binding/README.md)。P0 源码账单
+确认 packed bytes 只在 prepare 建立 metadata/pipeline 并在 submit 原生 import，无热 decode/repack/
+Provider search。本卡不运行 P1；D5 仍须在不可变真实 profile 片段上计算准备、上传、同步和融合成本。
+统一 Compute+Graph 实现量为 **60,881 行 / 252 文件**，不含测试/vendor/docs/samples。
+
+三个 owner 进入 `CANDIDATE`，等待 D5 真实模型片段验收与主卡终审；这些后续门没有被本卡提前写成
+PASS。一次外部交付消费者遗漏公开 `low_precision.h` include，只修正该 fixture 并从失败目标续跑；
+产品 candidate 未改变。候选复核未发现需要退回 AUDITED 的产品缺陷。

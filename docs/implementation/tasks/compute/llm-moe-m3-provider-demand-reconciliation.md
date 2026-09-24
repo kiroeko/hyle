@@ -134,6 +134,10 @@ DeepSeek V4 Pro preview 的 0813 GGUF sibling 只保留为格式证据，不计�
 - [CPU/CUDA ggml native storage 接缝](llm-moe-d3-ggml-native-binding.md)
 - [Apple ggml Metal native storage 接缝](llm-moe-d3-ggml-metal-native-binding.md)
 
+CPU/CUDA 子批已形成 `08b8e2f1` candidate；Apple 子批已形成 `5a1b61fb` candidate。两者都完成各自
+普通 Direct/Graph、原生资源/失败、代表数值与 source/static/shared 接线门，仍等待 D5 真实 profile
+片段的完整成本与覆盖验收。D3 下一子批是 Vulkan ggml/IREE；不得借前两条路线的 verdict 代签。
+
 ## AUDITED
 
 D1/D2 已完成，以上六项是本轮全部产品 FIX。后续只有表中具名 owner 可以重开；先按合法状态迁移

@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "task": "M3-D3 ggml Metal native packed-weight binding",
+  "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
+  "baseline": "f18bf7b2dad9b903bea06bfe8e14b60d1f023d8c",
+  "ggml_revision": "456172ec733a135778adcd32d00e576a58232e45-hyle",
+  "formats": [
+    "Q3_K",
+    "Q4_K",
+    "Q5_K",
+    "Q6_K",
+    "Q8_0",
+    "IQ3_XXS",
+    "IQ3_S",
+    "IQ4_NL",
+    "IQ4_XS",
+    "MXFP4"
+  ],
+  "native_correctness": {
+    "air": {
+      "machine": "MacBook Air Mac16,12 / Apple M4 / 16 GB",
+      "os": "macOS 27.0 (26A428)",
+      "compiler": "Apple clang 21.0.0 (2100.3.34.2)",
+      "tests": {
+        "compute_route_apple": "PASS 1.63s",
+        "graph_route_apple": "PASS 2.85s",
+        "compute_provider_ggml_metal": "PASS 0.27s"
+      },
+      "all_ten_formats_real_metal": "PASS",
+      "q4k_iq4xs_mxfp4_grouped_numerical_replay": "PASS"
+    },
+    "mini": {
+      "machine": "Mac mini Mac16,10 / Apple M4 / 32 GB",
+      "os": "macOS 26.6.2 (25G83)",
+      "compiler": "Apple clang 21.0.0 (2100.1.1.101)",
+      "tests": {
+        "compute_route_apple": "PASS 7.63s",
+        "graph_route_apple": "PASS 4.06s",
+        "compute_provider_ggml_metal": "PASS 0.83s"
+      },
+      "role": "correctness/portability only"
+    }
+  },
+  "delivery": {
+    "machine": "MacBook Air Mac16,12",
+    "source_archive_sha256": "c9473ed3946b6a82b06e045ab482a0cc40b6eac8d92cf041d7644a70f99e54b2",
+    "source_archive_commit": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
+    "consumer_cmake_sha256": "238a69a01bd2bcdcdde25906334d8dd58018584ab83a2013b27416f258142d14",
+    "consumer_source_sha256": "7c9488b3e792e355b44963e4e139c34cea2265f06a5fd34157f07987d5299448",
+    "journey": "Q4_K Direct + IQ4_XS Graph, two replays each, real ggml Metal",
+    "source": "PASS",
+    "relocated_static": "PASS",
+    "relocated_shared": "PASS",
+    "producer_source_and_builds_hidden_for_installed_execution": true,
+    "relocated_shared_mlx_loaded": true,
+    "static_consumer_sha256": "809e3f2c8c0cb2b1b67ff8dd2fcc83a481495e9c89cfb78b75c68c511c8c4254",
+    "shared_consumer_sha256": "1066be1a4ef4dabee51670448c0c24cc0ebe85954100eb5ae14250c2acc66eb1",
+    "input_spec_export": "PASS",
+    "metallib": "PASS",
+    "licenses": "PASS",
+    "installed_cmake_path_hygiene": "PASS",
+    "fixture_correction": "Initial external consumer omitted public low_precision.h; include was added and only the failed consumer target reran. Product candidate unchanged."
+  },
+  "windows_selector": {
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "headers:compute_route_apple",
+      "headers:graph_route_apple",
+      "delivery:compute",
+      "delivery:graph"
+    ],
+    "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
+    "apple_native": "NOT_APPLICABLE on Windows; Apple-OFF/config/header only",
+    "performance": "P1 not selected by task; P0 structural gate only"
+  },
+  "p0": {
+    "packed_payload_import": "direct native buffer import",
+    "hot_decode_or_repack": false,
+    "hot_provider_search": false,
+    "scope": "prepare-time metadata/pipeline; checked submit completion"
+  },
+  "loc": {
+    "implementation_lines": 60881,
+    "files": 252,
+    "excludes": "tests, bench, docs, vendor and build/cache/scratch",
+    "self_check": "PASS"
+  },
+  "result": "PASS"
+}

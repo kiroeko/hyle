@@ -513,15 +513,17 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 AUDITED：冻结 logical TensorDesc 到 MLX byte carrier、ggml Metal MatMul/GroupedMatMul 与 Graph 分区的五项有限改动；自研数学保持冻结。"
+      "summary": "M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 AUDITED：冻结 logical TensorDesc 到 MLX byte carrier、ggml Metal MatMul/GroupedMatMul 与 Graph 分区的五项有限改动；自研数学保持冻结。"
+      "summary": "M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "compute_route_vulkan",
@@ -594,9 +596,10 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 AUDITED：固定 ggml 456172ec 的十格式 Metal kernel 证据与逐格式实机 verdict 边界；只接线原生 carrier/MatMul，不新增 HYLE codec 或 kernel。"
+      "summary": "M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "compute_provider_iree_vulkan",
