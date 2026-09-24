@@ -1,0 +1,19 @@
+Start testing: Sep 24 17:41 中国标准时间
+----------------------------------------------------------
+1/1 Testing: hyle_vulkan_gguf_delivery
+1/1 Test: hyle_vulkan_gguf_delivery
+Command: "C:/public/project-hyle/hyle/.scratch/d3vk/bs/hyle_vulkan_gguf_delivery.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/d3vk/bs
+"hyle_vulkan_gguf_delivery" start time: Sep 24 17:41 中国标准时间
+Output:
+----------------------------------------------------------
+NVIDIA GeForce RTX 4070
+<end of output>
+Test time =   0.66 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_vulkan_gguf_delivery" end time: Sep 24 17:41 中国标准时间
+"hyle_vulkan_gguf_delivery" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 24 17:41 中国标准时间

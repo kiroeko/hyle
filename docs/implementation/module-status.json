@@ -527,21 +527,24 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 AUDITED：冻结十格式 ggml Vulkan type/shape import、MatMul/GroupedMatMul、Direct/Graph 与资源/交付的五项有限改动；自研数学保持冻结。"
+      "summary": "M3-D3 CANDIDATE 2757ecc：十种 GGUF storage 的 ggml Vulkan Direct/Graph、GroupedMatMul、RTX 数值/资源/失败与三交付通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 AUDITED：冻结十格式 ggml Vulkan type/shape import、MatMul/GroupedMatMul、Direct/Graph 与资源/交付的五项有限改动；自研数学保持冻结。"
+      "summary": "M3-D3 CANDIDATE 2757ecc：十种 GGUF storage 的 ggml Vulkan Direct/Graph、GroupedMatMul、RTX 数值/资源/失败与三交付通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 AUDITED：固定 ggml 456172ec 十格式 Vulkan MUL_MAT/MUL_MAT_ID 能力证据；只补原生接缝和实机 verdict，不新增 HYLE codec 或 shader。"
+      "summary": "M3-D3 CANDIDATE 2757ecc：固定 ggml 456172ec 的十格式 MUL_MAT/MUL_MAT_ID 已从普通入口实机可达并通过三交付；无 HYLE codec 或 shader。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -588,9 +591,10 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 AUDITED：IREE Vulkan 保留 checked I32 Scan、BF16 conversion 和具名 FP8 MatMul 限定域；不将 legalization 或相近格式登记为 GGUF/MXFP4 覆盖，本批无预定产品改动。"
+      "summary": "M3-D3 CANDIDATE 2757ecc：IREE Vulkan 的 checked Scan、BF16 conversion 与具名 FP8 MatMul 限定域回归通过；仍不将 legalization 或相近格式登记为 GGUF/MXFP4 覆盖。"
     }
   ]
 }

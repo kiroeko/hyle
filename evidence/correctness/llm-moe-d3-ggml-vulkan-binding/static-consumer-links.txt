@@ -1,0 +1,35 @@
+Microsoft (R) COFF/PE Dumper Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file C:\public\project-hyle\hyle\.scratch\d3vk\cs\hyle_vulkan_gguf_delivery.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    ADVAPI32.dll
+    MSVCP140.dll
+    api-ms-win-core-synch-l1-2-0.dll
+    WS2_32.dll
+    VCRUNTIME140.dll
+    VCRUNTIME140_1.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-filesystem-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+
+  Summary
+
+       19000 .data
+       14000 .pdata
+     28F6000 .rdata
+        2000 .reloc
+        1000 .rsrc
+      232000 .text

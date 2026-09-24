@@ -1,6 +1,6 @@
 # M3-D3：ggml Vulkan 原生压缩权重接缝
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -120,5 +120,25 @@ offset/capacity 在 prepare/bind 失败。独立 invocation 保持并行，单 i
 
 ## Candidate / 验证 / 红队
 
-尚未形成 candidate。完成 A1-A5 后填写 immutable commit、逐 gate 收据、LOC、限制与状态；未运行格保持
-`UNPROVEN`，不借 CPU/CUDA/Apple、静态 shader 名称或已有 MXFP4 probe 代签。
+产品 candidate 为 `2757ecc96815fd12c3050faab176cc2ddad02ccd`。A1-A5 已全部完成：公共十格式
+批量映射到原版 ggml Vulkan type/shape/import，MatMul 和 GroupedMatMul 分别进入原生 `MUL_MAT` 与
+`MUL_MAT_ID`；旧 route gate 已从“保留全部 rank-2 F32 MatMul”收窄为只保留 plain/plain F32，packed
+descriptor 因而能从普通 Direct/Graph 入口到达成熟 region。prepare 固定 Provider、device
+`supports_op` 与 workspace，submit 不解码、重排、计时或重新选路。
+
+Windows RTX 4070 的 candidate-bound 测试逐一运行十格式非零量化数值 oracle 与两次 submit；Q4_K、
+IQ4_XS、MXFP4、IQ4_XS grouped experts、Graph captured constants、错误端口/格式/accumulation、资源和
+terminal failure 均通过。正式 selector verdict 为 `PASS`，selected gates 为 docs、closure、configure、
+`compute_provider_ggml_vulkan`、限定域未改动的 `compute_provider_iree_vulkan`、
+`compute_route_vulkan` 与 `graph_route_vulkan`。P1 按合同未选择，完整 profile 成本仍由 D5 负责。
+
+同一 candidate 的精确 Git archive 已通过 source 嵌入、迁移后的 installed static SDK 和迁移后的
+installed shared SDK。三个 consumer 都从公开 API 执行 Q4_K Direct 与 IQ4_XS Graph 各两次；installed
+消费前已隐藏 source 与三个 producer build。shared 所需 HYLE DLL 全部在 EXE 同目录，consumer 使用
+非交互 Windows error mode；static EXE 无 HYLE DLL dependency。安装头、CMake relocation 和 ggml/IREE/
+Vulkan 许可证均通过。
+
+[完整收据](../../../../evidence/correctness/llm-moe-d3-ggml-vulkan-binding/README.md)保存 selector、三交付、
+hash、链接边界和限制。统一脚本在 immutable candidate 上统计 Compute + Graph 全实现为 **60,923 行 /
+252 文件**，排除 tests/bench/docs/vendor/build/cache/scratch，self-check `PASS`。本批不宣称模型加载、
+整模推理、D5 真实 profile P1 或未运行的 MoltenVK portability；IREE 仍只保留精确限定域，不代签 GGUF。
