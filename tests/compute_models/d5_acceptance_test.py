@@ -63,6 +63,7 @@ def main() -> None:
     assert len(cells) == len(profiles) * len(ROUTES) * len(ENTRIES) == 176
     assert len({item["id"] for item in cells}) == len(cells)
     profile_ids = {item["id"] for item in profiles}
+    profile_regions = {item["id"]: set(item["regions"]) for item in profiles}
     observed = set()
     states: Counter[str] = Counter()
     for item in cells:
@@ -74,6 +75,16 @@ def main() -> None:
         assert key not in observed
         observed.add(key)
         states[item["status"]] += 1
+        partial_regions = set()
+        for partial in item.get("partial_receipts", []):
+            assert partial["verdict"] in {"RUN_PASS", "BACKEND_REJECTED",
+                                           "UPSTREAM_MISSING"}
+            regions = set(partial["regions"])
+            assert regions and regions <= profile_regions[item["profile"]]
+            assert not (partial_regions & regions)
+            partial_regions |= regions
+            local = ROOT / partial["receipt"].split("#", 1)[0]
+            assert local.is_file(), partial["receipt"]
         if item["status"] == "VALIDATION_NOT_RUN":
             assert item["receipt"] is None
             assert not item["region_verdicts"]
