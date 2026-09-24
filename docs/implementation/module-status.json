@@ -396,9 +396,13 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-m3-provider-demand-reconciliation.md",
+      "summary": "M3 旧范围已停止：先按真实模型算子/权重角色重建 Provider 可达矩阵，再批量补接与清理无用接线；自研数学继续冻结。",
+      "blocked_from": "AUDITED",
+      "blocker": "旧 M3 把源码/target/注册与实际接入混同，且 256 格仍有 134 格未运行，不能在错误前提下继续模型链验收。",
+      "blocker_owner": "/root",
+      "resume_condition": "新 Provider 需求对账卡独立提交，旧矩阵只作历史输入，并确认 D1/D2 审计阶段不修改产品。"
     },
     {
       "module": "compute_backend_cpu",
