@@ -389,6 +389,14 @@ IQ4_XS `[2048,6144]` 和 `blk.0.ssm_out.weight` Q8_0 `[2048,2048]`。两条入�
 [CPU primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/README.md)。
 本 partial 只签 R03/R14；R02、R04、R05、R13、R15 和完整 cell 仍未代签，ledger 总计数不变。
 
+**D5-F9 CUDA partial（`9dc37c98`）**：同一参数化 consumer 已在 RTX 4070/SM89 的普通 CUDA
+Direct/Graph 上运行全部五个精确 tensor，均冷绑定固定 `ggml-cuda`；设备 activation 变化两次，结果匹配
+独立 packed-weight decode oracle，Graph 每项只有一个成熟 region。CUDA 13.3.73、MSVC 19.50、
+Release/WERROR 的不可变 selector 通过单架构 configure、Direct 与 Graph，docs/closure 从相同合同复用；
+没有新增 CUDA kernel 或 fallback。收据见
+[CUDA primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-projections/README.md)。
+本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
