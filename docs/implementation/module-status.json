@@ -574,9 +574,10 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
+      "summary": "M3-D5-F8 CUDA CANDIDATE 889bb81a：固定 ggml GET_ROWS 已接管 Q4_K/Q6_K/Q8_0 checked embedding；Qwen3.5 primary GGUF R01 的 CUDA Direct/Graph、replay、失败、owner suite 与 WERROR selector 通过，等待其余路线和完整验收。",
+      "candidate": "889bb81a26b08c962af7e5adde0076f202c6b38e"
     },
     {
       "module": "graph_provider_ggml_cuda",

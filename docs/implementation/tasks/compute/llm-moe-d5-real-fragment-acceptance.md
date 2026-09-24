@@ -305,8 +305,18 @@ Windows baseline `0c7293ff38ac078c095e623062398087a5a89ba1` 上，普通 CPU Dir
 oracle、checked 失败不发布和 Graph 零 replay metadata 分配。i9-13900K/RTX 4070、MSVC 19.50、
 WERROR 的 selector 对 docs、closure、configure、Provider、CPU Direct 与 CPU Graph 全部 PASS；收据见
 [CPU Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-r01/README.md)。
-ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；两个 CPU cell 只新增 R01 partial receipt，
-其余 region 未运行，因此不提前把完整 cell 写成 PASS。
+
+**D5-F8 CUDA CANDIDATE（`889bb81a`）**：CUDA adapter 复用同一固定上游
+`ggml_get_rows`，接纳完全相同的 Q4_K/Q6_K/Q8_0 embedding 域；checked indices 在任何 native graph
+写输出前验证，失败不发布，invocation 的验证存储在准备时一次分配。Qwen3.5 primary GGUF 的 Q6_K
+`[7,2048]` R01 已在 RTX 4070 上通过普通 Direct/Graph 的两次变化 indices replay、独立 packed-byte
+oracle、checked 失败输出保持和 Graph 零 replay metadata 分配。CUDA 13.3.73、driver 610.62、SM89、
+MSVC 19.50、WERROR 的不可变 selector 对 docs、closure、configure、Provider、CUDA Direct、
+ggml CUDA Graph provider 与 CUDA Graph 全部 PASS；收据见
+[CUDA Qwen3.5 primary GGUF R01](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-r01/README.md)。
+
+ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU 与 CUDA 共四个 primary GGUF cell
+只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
 
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 

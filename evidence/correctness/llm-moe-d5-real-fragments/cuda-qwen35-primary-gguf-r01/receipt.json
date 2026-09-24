@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "candidate": "889bb81a26b08c962af7e5adde0076f202c6b38e",
+  "candidate_tree": "c1235e043cf4007564e3cd99da96aeca9fa2e176",
+  "verdict": "PARTIAL_RUN_PASS_R01_ONLY",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "region": "R01",
+    "route": "cuda",
+    "entries": ["direct", "graph"],
+    "not_claimed": [
+      "R02-R05",
+      "R13-R15",
+      "complete profile cell",
+      "three deliveries",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "format": "Q6_K",
+    "payload": "format-valid deterministic nonzero bytes with independent ggml dequantization oracle"
+  },
+  "consumer": {
+    "operation": "checked Gather axis 0",
+    "table_shape": [7, 2048],
+    "indices_shape": [2],
+    "output_shape": [2, 2048],
+    "provider": "ggml-cuda",
+    "replay": "same prepared artifact, two changed device-resident I32 index sets",
+    "failure": "out-of-range index fails completion before native graph execution and preserves output",
+    "owner_formats": ["Q4_K", "Q6_K", "Q8_0"]
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "CudaDefaultCompute.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "graph",
+      "test": "CudaDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesOneNativeStepAndReplays",
+      "result": "PASS"
+    },
+    {
+      "entry": "provider",
+      "test": "GgmlCudaTensor.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds",
+      "result": "PASS"
+    }
+  ],
+  "selector": {
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_provider_ggml_cuda",
+      "factor:compute_route_cuda",
+      "factor:graph_provider_ggml_cuda",
+      "factor:graph_route_cuda"
+    ],
+    "toolchain": "MSVC 19.50.35728",
+    "flags": "/EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K, NVIDIA GeForce RTX 4070",
+    "cuda": "CUDA 13.3.73, driver 610.62, sm_89"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts after the complete route fragment is immutable."
+  }
+}
