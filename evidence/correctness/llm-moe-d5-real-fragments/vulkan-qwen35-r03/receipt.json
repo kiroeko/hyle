@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "candidate": "958b9d69fba9b6bc4479aa3fe693cdab2ef119b0",
+  "candidate_tree": "8ce0ec7e1f0f748b5109c82c2575678584e8aa49",
+  "verdict": "PARTIAL_RUN_PASS_R03_ONLY",
+  "scope": {
+    "profile": "qwen35_2b:official:official-bf16",
+    "region": "R03",
+    "route": "vulkan",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "not_claimed": [
+      "remaining Qwen3.5 regions",
+      "complete profile cell",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "shard": "model.safetensors-00001-of-00001.safetensors",
+    "expected_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "verified_inventory_reused": true,
+    "selected_tensors": [
+      {
+        "name": "model.language_model.layers.0.input_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "source_data_offsets": [
+          1017129088,
+          1017133184
+        ],
+        "bytes": 4096,
+        "file": "tensors/model_language_model_layers_0_input_layernorm_weight.bin",
+        "sha256": "e3bfb63b03722ec637ed4ea2cc552d68a87e661bbba1e889f721858b34162877"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.A_log",
+        "dtype": "F32",
+        "shape": [
+          16
+        ],
+        "source_data_offsets": [
+          0,
+          64
+        ],
+        "bytes": 64,
+        "file": "tensors/model_language_model_layers_0_linear_attn_A_log.bin",
+        "sha256": "4482c77a3cbbb4d1f3c777090048fa1e7abd89ac4e8055bf6a04c1596fdfb500"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.conv1d.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          1,
+          4
+        ],
+        "source_data_offsets": [
+          1017133184,
+          1017182336
+        ],
+        "bytes": 49152,
+        "file": "tensors/model_language_model_layers_0_linear_attn_conv1d_weight.bin",
+        "sha256": "0dbb863f97d7ac62ca2e452e0fe1487edb5d954e2380192102aa1ace8f40642a"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.dt_bias",
+        "dtype": "BF16",
+        "shape": [
+          16
+        ],
+        "source_data_offsets": [
+          1017182336,
+          1017182368
+        ],
+        "bytes": 32,
+        "file": "tensors/model_language_model_layers_0_linear_attn_dt_bias.bin",
+        "sha256": "e636c88bee625312e5f3dc657e1ac60c1f5fbd5ef2d35ad4a82f0fc7dd7a1aa1"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.out_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          2048
+        ],
+        "source_data_offsets": [
+          1050867872,
+          1059256480
+        ],
+        "bytes": 8388608,
+        "file": "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin",
+        "sha256": "e0f911be79a8903db2418e802c0bbb77a21b87e978b292dfb9a0c515fdc9e7cb"
+      },
+      {
+        "name": "model.language_model.layers.3.self_attn.q_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096,
+          2048
+        ],
+        "source_data_offsets": [
+          3051765280,
+          3068542496
+        ],
+        "bytes": 16777216,
+        "file": "tensors/model_language_model_layers_3_self_attn_q_proj_weight.bin",
+        "sha256": "17bd3cd9059fbc52c07bbcbf23c01493e3ead9103d61f7de3744267ce2a9d664"
+      },
+      {
+        "name": "mtp.fc.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          4096
+        ],
+        "source_data_offsets": [
+          4426488512,
+          4443265728
+        ],
+        "bytes": 16777216,
+        "file": "tensors/mtp_fc_weight.bin",
+        "sha256": "04a296fcc7c41188d9551afc386a38ae75b2ade3ccefe0a75d85f7472f04b60c"
+      }
+    ],
+    "fixture_bytes": 41996384,
+    "oracle": {
+      "operation": "BF16 [1,2048] x transpose(BF16 [2048,2048])",
+      "region": "R03",
+      "activation": "activation_1x2048.bf16",
+      "activation_sha256": "971cd82cdbda1035894d96550a48c0d14fb552dd224c538371db39a0599e1fb8",
+      "expected": "expected_out_proj_1x2048.f32",
+      "expected_sha256": "1988918337846e42f50a1bf4fa113f4cf1aa2a6d7672bd9efba0b52ac86b9265",
+      "accumulation": "NumPy float32 matrix-vector product after exact BF16 decode"
+    }
+  },
+  "consumer": {
+    "shape": {
+      "activation": [
+        1,
+        2048
+      ],
+      "checkpoint_weight": [
+        2048,
+        2048
+      ],
+      "logical_weight": [
+        2048,
+        2048
+      ],
+      "output": [
+        1,
+        2048
+      ]
+    },
+    "dtype": "BF16 input/weight/output with F32 accumulation oracle",
+    "weight_layout": "complete checkpoint [N,K] storage exposed as zero-copy logical transpose [K,N]",
+    "workload": {
+      "phase": "decode",
+      "region_namespace": "0x48594c454d4f444c",
+      "region_id": 3,
+      "version": 1
+    },
+    "provider": "ggml Vulkan 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle; fixed default route",
+    "replay": "same prepared artifact, two submits; second activation flips every BF16 sign bit and expects the negated result"
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays",
+      "result": "PASS",
+      "elapsed_ms_reported": 166,
+      "suite": "full Compute Vulkan route suite PASS (29.96 s)"
+    },
+    {
+      "entry": "graph",
+      "test": "VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays",
+      "result": "PASS",
+      "elapsed_ms_reported": 161,
+      "suite": "full Graph Vulkan route suite PASS (6.60 s)"
+    },
+    {
+      "entry": "direct-boundary",
+      "test": "VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary",
+      "result": "PASS",
+      "elapsed_ms_reported": 84,
+      "suite": "rows 1-4 warm targeted regression"
+    }
+  ],
+  "maintenance": {
+    "ggml_vulkan_provider_label": "3/3 PASS including source contract, provider suite, and MASM composition",
+    "iree_vulkan_provider_label": "2/2 PASS",
+    "d5_ledger_self_check": "PASS",
+    "module_closure": "PASS",
+    "docs": "PASS",
+    "diff_check": "PASS",
+    "vulkan_delivery": "source/shared/static/relocated consumers PASS; BF16 Direct plus Q4_K Direct and IQ4_XS Graph",
+    "delivery_consumer_elapsed": "source 0.59 s; relocated shared 0.29 s; relocated static 0.22 s"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts only after the full Vulkan route fragment is immutable; reported GoogleTest elapsed time is correctness context only."
+  },
+  "machine": {
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "processor_identifier": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "vram_mib_reported": 12282,
+    "driver": "610.62",
+    "vulkan_sdk": "1.4.357.0",
+    "ggml": "0.24.0 / 456172ec733a135778adcd32d00e576a58232e45-hyle"
+  },
+  "defect_and_fix": {
+    "initial_result": "pinned ggml Vulkan admitted rank-2 BF16 small MatMul, selected mul_mat_vec, then asserted because that pipeline accepts only F32, F16, or Q8_1 activation",
+    "fix": "for rank-2 BF16 MatMul with 1-4 rows, widen only activation through upstream ggml_cast to F32, then use the same upstream BF16-weight MatMul with FP32 accumulation; no HYLE math, shader, fallback, or runtime search added",
+    "boundary_regression": "rows 1-4 PASS with changing BF16 activations"
+  }
+}

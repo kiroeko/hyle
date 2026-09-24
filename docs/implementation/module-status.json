@@ -557,9 +557,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "958b9d69fba9b6bc4479aa3fe693cdab2ef119b0",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F2 AUDITED：真实 Qwen3.5 R03 证明固定 ggml Vulkan 的 BF16 rank-2 small-matvec 会错误接纳后触发 b_type 断言；有限修复只在既有成熟 region 内将 1–4 行 BF16 activation 转为 F32。"
+      "summary": "M3-D5-F2 CANDIDATE 958b9d69：真实 Qwen3.5 BF16 R03 的 ggml Vulkan small-matvec 边界已限定；Direct/Graph、1–4 行回归、Provider/owner suite 与三交付通过，继续等待完整 D5 profile 验收。"
     },
     {
       "module": "compute_ggml_runtime",

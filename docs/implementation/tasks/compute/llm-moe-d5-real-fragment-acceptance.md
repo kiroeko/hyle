@@ -112,6 +112,13 @@ decode 分支。这是 HYLE 适配器对固定上游能力域限定不足，不�
 大于 4 行或量化 MatMul。若 F32 activation 边界仍被固定上游拒绝，则记录精确
 `BACKEND_REJECTED`，不在 D5 内扩张数学实现。
 
+**D5-F2 CANDIDATE（`958b9d69f`）**：固定 ggml Vulkan 0.24.0 在 RTX 4070 上通过 activation-only
+上游 cast 承载 BF16 rank-2 decode MatMul。1–4 行边界回归、完整 `[2048,2048]` Qwen R03 的
+Direct/Graph 两次 submit、ggml/IREE Provider 检查、Compute/Graph owner suite，以及源码、共享、静态和
+搬迁外部 consumer 均通过；未增加 HYLE 数学、shader、fallback 或热路径选择。收据见
+[Vulkan Qwen3.5 R03](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-r03/README.md)。
+两格仍只覆盖 R03，不提前宣称完整 profile 或 P1；Provider 回到 D5 总验收所需的 CANDIDATE 状态。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、
