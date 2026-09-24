@@ -2,6 +2,7 @@ hyle_add_header_self_contained_test(compute_route_cuda
   HEADER_DIR compute HEADERS cuda.h)
 if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_test(compute_route_cuda SOURCES context_test.cc ggml_test.cc
+    d5_qwen35_profile_test.cc d5_qwen35_execution_test.cc
     DEPS hyle_compute_backend_cuda)
   target_link_libraries(hyle_compute_route_cuda_test PRIVATE ggml)
 endif()

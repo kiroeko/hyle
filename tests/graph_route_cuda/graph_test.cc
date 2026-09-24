@@ -11,7 +11,7 @@ namespace {
 using namespace cuda_route_test;
 namespace graph = hyle::graph;
 
-TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndCapturedGraphEntries) {
+TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndPreparedGraphEntries) {
   using Value = hyle::simd::bfloat16_t;
   auto owner = graph::cuda::create_context().value();
   auto resource =
@@ -44,6 +44,8 @@ TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndCapturedGraphEntries) {
       ASSERT_TRUE(direct.has_value()) << direct.error().message();
       const auto selected = width % 8 == 0
                                 ? compute::cuda_native::kSglangProviderId
+                            : kind == compute::GatedActivationKind::kSilu
+                                ? compute::ggml_cuda::kProviderId
                                 : compute::cuda_native::kProviderId;
       EXPECT_EQ(direct->provider().id, selected);
       auto direct_slot = direct->create_invocation().value();
@@ -63,7 +65,10 @@ TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndCapturedGraphEntries) {
                                            .value())
                       .ok());
       ASSERT_TRUE(graph::cuda::prepare_replay(graph_slot, queue).ok());
-      EXPECT_EQ(graph_slot.replay_route(), graph::ReplayRoute::kCaptured);
+      EXPECT_EQ(graph_slot.replay_route(),
+                selected == compute::ggml_cuda::kProviderId
+                    ? graph::ReplayRoute::kCommands
+                    : graph::ReplayRoute::kCaptured);
       std::vector<Value> values(static_cast<std::size_t>(4 * width));
       for (int seed : {1, 3, 7}) {
         for (std::size_t i = 0; i < values.size(); ++i)
@@ -415,7 +420,7 @@ TEST(CudaDefaultGraph, ExplicitCommandsUseTheSameNumericalChain) {
   run_graph(compute::DataType::kFloat16, 7, true);
 }
 
-TEST(CudaDefaultGraph, DefaultRulesCaptureSeparateAndPackedTailCapability) {
+TEST(CudaDefaultGraph, DefaultRulesPrepareSeparateAndPackedTailCapability) {
   auto owner = graph::cuda::create_context().value();
   auto resource =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
@@ -446,7 +451,7 @@ TEST(CudaDefaultGraph, DefaultRulesCaptureSeparateAndPackedTailCapability) {
     ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
     ASSERT_EQ(compiled->report.step_count(), 1U);
     EXPECT_EQ(compiled->report.step(0)->provider.id,
-              compute::cuda_native::kProviderId);
+              compute::ggml_cuda::kProviderId);
     auto slot = compiled->executable.create_invocation().value();
     ASSERT_TRUE(slot.bind(input, first.view.as_const()).ok());
     if (!packed) {
@@ -454,7 +459,7 @@ TEST(CudaDefaultGraph, DefaultRulesCaptureSeparateAndPackedTailCapability) {
     }
     ASSERT_TRUE(slot.bind(result, output.view).ok());
     ASSERT_TRUE(graph::cuda::prepare_replay(slot, queue).ok());
-    EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCaptured);
+    EXPECT_EQ(slot.replay_route(), graph::ReplayRoute::kCommands);
     for (const float value : {1.0F, 2.0F}) {
       first.write(std::vector<float>(
           static_cast<std::size_t>(hidden) * (packed ? 2 : 1), value));

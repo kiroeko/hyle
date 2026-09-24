@@ -7,6 +7,7 @@
 #include <ggml.h>
 
 #include <algorithm>
+#include <cmath>
 
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
@@ -19,12 +20,192 @@ Context context() {
       .value();
 }
 
+template <class T> void swiglu(Context &ctx) {
+  constexpr std::size_t rows = 2;
+  constexpr std::size_t width = 7;
+  const auto description = dense(half_test::data_type<T>(), {rows, width});
+  const auto packed_description =
+      dense(half_test::data_type<T>(), {rows, width * 2});
+  std::vector<T> gate(rows * width), value(rows * width),
+      packed(rows * width * 2);
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto gate_buffer = upload<T>(memory.ref(), gate);
+  auto value_buffer = upload<T>(memory.ref(), value);
+  auto packed_buffer = upload<T>(memory.ref(), packed);
+  auto separate_output = output_buffer(memory.ref(), description);
+  auto packed_output = output_buffer(memory.ref(), description);
+  const GatedActivation separate{.activation = GatedActivationKind::kSilu,
+                                 .inputs = GatedInputKind::kSeparate};
+  const GatedActivation packed_halves{.activation = GatedActivationKind::kSilu,
+                                      .inputs = GatedInputKind::kPackedHalves};
+  const auto gate_view =
+      ConstTensorView::create(description, gate_buffer.view()).value();
+  const auto value_view =
+      ConstTensorView::create(description, value_buffer.view()).value();
+  const auto packed_view =
+      ConstTensorView::create(packed_description, packed_buffer.view()).value();
+  const auto separate_result =
+      TensorView::create(description, separate_output.view()).value();
+  const auto packed_result =
+      TensorView::create(description, packed_output.view()).value();
+  const std::array separate_inputs{gate_view, value_view};
+  auto separate_program = prepare(ctx, Operation(separate), separate_inputs,
+                                  std::span(&separate_result, 1));
+  ASSERT_TRUE(separate_program) << separate_program.error().message();
+  EXPECT_EQ(separate_program->provider().id, ggml_cuda::kProviderId);
+  auto packed_program =
+      prepare(ctx, Operation(packed_halves), std::span(&packed_view, 1),
+              std::span(&packed_result, 1));
+  ASSERT_TRUE(packed_program) << packed_program.error().message();
+  EXPECT_EQ(packed_program->provider().id, ggml_cuda::kProviderId);
+  auto separate_invocation = separate_program->create_invocation().value();
+  auto packed_invocation = packed_program->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  for (int seed : {3, 11}) {
+    for (std::size_t row = 0; row < rows; ++row) {
+      for (std::size_t column = 0; column < width; ++column) {
+        const auto index = row * width + column;
+        gate[index] = half_test::encode<T>(
+            static_cast<double>(static_cast<int>((index * 7 + seed) % 31) -
+                                15) /
+            8.0);
+        value[index] = half_test::encode<T>(
+            static_cast<double>(static_cast<int>((index * 5 + seed) % 23) -
+                                11) /
+            16.0);
+        packed[row * width * 2 + column] = gate[index];
+        packed[row * width * 2 + width + column] = value[index];
+      }
+    }
+    ASSERT_TRUE(gate_buffer.view().write(std::as_bytes(std::span(gate))).ok());
+    ASSERT_TRUE(
+        value_buffer.view().write(std::as_bytes(std::span(value))).ok());
+    ASSERT_TRUE(
+        packed_buffer.view().write(std::as_bytes(std::span(packed))).ok());
+    auto separate_done = separate_invocation.submit(
+        queue, separate_inputs, std::span(&separate_result, 1));
+    ASSERT_TRUE(separate_done) << separate_done.error().message();
+    ASSERT_TRUE(separate_done->wait().ok());
+    auto packed_done = packed_invocation.submit(
+        queue, std::span(&packed_view, 1), std::span(&packed_result, 1));
+    ASSERT_TRUE(packed_done) << packed_done.error().message();
+    ASSERT_TRUE(packed_done->wait().ok());
+    const auto separate_actual = half_test::read<T>(separate_output);
+    const auto packed_actual = half_test::read<T>(packed_output);
+    for (std::size_t i = 0; i < gate.size(); ++i) {
+      const auto x = half_test::decode(gate[i]);
+      const auto expected =
+          x / (1.0 + std::exp(-x)) * half_test::decode(value[i]);
+      half_test::expect_near(separate_actual[i], expected);
+      half_test::expect_near(packed_actual[i], expected);
+    }
+  }
+  auto rejected = prepare(
+      ctx,
+      Operation(GatedActivation{.activation = GatedActivationKind::kGelu,
+                                .inputs = GatedInputKind::kSeparate}),
+      separate_inputs, std::span(&separate_result, 1));
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
+}
+
+template <class Value>
+void rope_type_boundary(Context &ctx, RopeLayout layout) {
+  const auto data_desc = dense(half_test::data_type<Value>(), {1, 2, 1, 8});
+  const auto position_desc = dense(DataType::kInt32, {2});
+  const auto frequency_desc = dense(DataType::kFloat32, {2});
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto resource = memory.ref();
+  std::array<Value, 16> values{};
+  auto data = upload<Value>(resource, values);
+  auto positions =
+      upload<std::int32_t>(resource, std::array<std::int32_t, 2>{0, 2});
+  auto frequencies = upload<float>(resource, std::array<float, 2>{0.5F, 0.25F});
+  auto output = output_buffer(resource, data_desc);
+  const std::array inputs{
+      ConstTensorView::create(data_desc, data.view()).value(),
+      ConstTensorView::create(position_desc, positions.view()).value(),
+      ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+  const auto output_view = TensorView::create(data_desc, output.view()).value();
+  auto prepared = prepare(
+      ctx, RoPE{.rotary_dimensions = 4, .sequence_axis = 1, .layout = layout},
+      data_desc, position_desc, frequency_desc, resource);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  for (const int seed : {0, 7}) {
+    for (std::size_t i = 0; i < values.size(); ++i)
+      values[i] = half_test::encode<Value>(static_cast<double>(i + seed + 1));
+    ASSERT_TRUE(data.view().write(std::as_bytes(std::span(values))).ok());
+    auto completion =
+        invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+
+    std::array<double, 16> expected{};
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      expected[i] = half_test::decode(values[i]);
+    if (layout == RopeLayout::kInterleaved) {
+      expected[8] = half_test::decode(values[8]) * std::cos(1.0) -
+                    half_test::decode(values[9]) * std::sin(1.0);
+      expected[9] = half_test::decode(values[8]) * std::sin(1.0) +
+                    half_test::decode(values[9]) * std::cos(1.0);
+      expected[10] = half_test::decode(values[10]) * std::cos(0.5) -
+                     half_test::decode(values[11]) * std::sin(0.5);
+      expected[11] = half_test::decode(values[10]) * std::sin(0.5) +
+                     half_test::decode(values[11]) * std::cos(0.5);
+    } else {
+      expected[8] = half_test::decode(values[8]) * std::cos(1.0) -
+                    half_test::decode(values[10]) * std::sin(1.0);
+      expected[9] = half_test::decode(values[9]) * std::cos(0.5) -
+                    half_test::decode(values[11]) * std::sin(0.5);
+      expected[10] = half_test::decode(values[8]) * std::sin(1.0) +
+                     half_test::decode(values[10]) * std::cos(1.0);
+      expected[11] = half_test::decode(values[9]) * std::sin(0.5) +
+                     half_test::decode(values[11]) * std::cos(0.5);
+    }
+    const auto actual = half_test::read<Value>(output);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+}
+
 TEST(GgmlCudaTensor, FloatingNormAffineAndUnaryConversions) {
   auto ctx = context();
   norms<float>(ctx);
   norms<hyle::simd::float16_t>(ctx);
   norms<hyle::simd::bfloat16_t>(ctx);
   unary_and_cast(ctx);
+}
+
+TEST(GgmlCudaTensor, MatureSwiGluCoversStorageTypesAndInputLayouts) {
+  auto ctx = context();
+  swiglu<float>(ctx);
+  swiglu<hyle::simd::float16_t>(ctx);
+  swiglu<hyle::simd::bfloat16_t>(ctx);
+}
+
+TEST(GgmlCudaTensor, MatureRopeCoversQualifiedTypesAndLayouts) {
+  auto ctx = context();
+  for (const auto layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
+    rope_type_boundary<float>(ctx, layout);
+    rope_type_boundary<hyle::simd::float16_t>(ctx, layout);
+    rope_type_boundary<hyle::simd::bfloat16_t>(ctx, layout);
+  }
+  const auto data = dense(DataType::kFloat64, {1, 2, 1, 8});
+  const auto positions = dense(DataType::kInt32, {2});
+  const auto frequencies = dense(DataType::kFloat32, {2});
+  auto rejected = prepare(ctx,
+                          RoPE{.rotary_dimensions = 4,
+                               .sequence_axis = 1,
+                               .layout = RopeLayout::kInterleaved},
+                          data, positions, frequencies);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
 }
 
 TEST(GgmlCudaTensor, MatureCausalConvUsesNaturalSequenceLayout) {

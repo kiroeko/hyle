@@ -331,7 +331,7 @@ TEST(CudaDefaultCompute, DefaultRulesRetainSeparateAndPackedTailCapability) {
                              : compute::GatedInputKind::kSeparate}),
         inputs, std::array{output.view});
     ASSERT_TRUE(prepared.has_value());
-    EXPECT_EQ(prepared->provider().id, compute::cuda_native::kProviderId);
+    EXPECT_EQ(prepared->provider().id, compute::ggml_cuda::kProviderId);
     auto lane = prepared->create_invocation().value();
     auto done = lane.submit(queue, inputs, std::array{output.view});
     ASSERT_TRUE(done.has_value());

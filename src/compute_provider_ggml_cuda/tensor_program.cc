@@ -349,6 +349,8 @@ bool tensor_operation_supports(Operation operation,
   if (const auto *binary = operation.get_if<Binary>())
     return binary->kind != BinaryKind::kMinimum &&
            binary->kind != BinaryKind::kMaximum;
+  if (const auto *gate = operation.get_if<GatedActivation>())
+    return gate->activation == GatedActivationKind::kSilu;
   if (const auto *rms = operation.get_if<RmsNorm>())
     return rms->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
@@ -394,7 +396,8 @@ bool tensor_operation_supports(Operation operation,
     return inputs.size() == 3 && inputs[0].rank() == 4 &&
            rope->sequence_axis == 1 && inputs[0].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat16 ||
-            inputs[0].data_type() == DataType::kBFloat16) &&
+            inputs[0].data_type() == DataType::kBFloat16 ||
+            inputs[0].data_type() == DataType::kFloat32) &&
            inputs[1].rank() == 1 && inputs[1].is_dense() &&
            inputs[1].data_type() == DataType::kInt32 && inputs[2].rank() == 1 &&
            inputs[2].is_dense() && inputs[2].data_type() == DataType::kFloat32;
@@ -508,6 +511,18 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     default:
       break; // Rejected by the cold capability predicate.
     }
+  } else if (const auto *gate = node.operation.get_if<GatedActivation>()) {
+    auto *a = input(0);
+    if (a->type == GGML_TYPE_BF16)
+      a = as_float(context, a);
+    if (gate->inputs == GatedInputKind::kPackedHalves) {
+      result = ggml_swiglu(context, a);
+    } else {
+      auto *b = input(1);
+      if (b->type == GGML_TYPE_BF16)
+        b = as_float(context, b);
+      result = ggml_swiglu_split(context, a, b);
+    }
   } else if (const auto *rms = node.operation.get_if<RmsNorm>()) {
     result = ggml_rms_norm(context, fp(0), rms->epsilon);
     if (node.inputs.size() > 1)
@@ -573,7 +588,8 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     result = ggml_mul_mat_id(context, values[node.inputs[0]],
                              values[node.inputs[1]], values[node.inputs[2]]);
   } else if (const auto descriptor =
-                 node.operation.custom_as<model_ops::HyperConnectionCombine>()) {
+                 node.operation
+                     .custom_as<model_ops::HyperConnectionCombine>()) {
     result = ggml_dsv4_hc_comb(context, values[node.inputs[0]],
                                values[node.inputs[1]], values[node.inputs[2]],
                                descriptor->epsilon, descriptor->iterations);
@@ -585,10 +601,9 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
                                values[node.inputs[1]], values[node.inputs[2]],
                                values[node.inputs[3]]);
   } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
-    result = ggml_lightning_indexer(context, values[node.inputs[0]],
-                                    values[node.inputs[1]],
-                                    values[node.inputs[2]],
-                                    values[node.inputs[3]]);
+    result = ggml_lightning_indexer(
+        context, values[node.inputs[0]], values[node.inputs[1]],
+        values[node.inputs[2]], values[node.inputs[3]]);
   } else if (node.operation.get_if<MatMul>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
@@ -602,6 +617,9 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
+    auto *data = values[node.inputs[0]];
+    if (data->type == GGML_TYPE_BF16)
+      data = as_float(context, data);
     auto *positions = values[node.inputs[1]];
     auto *frequencies = values[node.inputs[2]];
     auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
@@ -611,7 +629,7 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     const int mode = rope->layout == RopeLayout::kInterleaved
                          ? GGML_ROPE_TYPE_NORMAL
                          : GGML_ROPE_TYPE_NEOX;
-    result = ggml_rope_ext(context, values[node.inputs[0]], positions, factors,
+    result = ggml_rope_ext(context, data, positions, factors,
                            static_cast<int>(rope->rotary_dimensions), mode, 0,
                            1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
   } else if (node.operation.get_if<Hadamard>()) {
