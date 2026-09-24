@@ -9,7 +9,7 @@
 - 产品基线：`ebe5af5109afb01b029c1ba85484d03be61d6fe6`，Windows `main`，重写前工作树干净。
   保留所有已有实现、提交及合格证据，不回退仓库。旧 C1 尚未完成，不沿用旧百分比。
 - 顺序固定：**模型能力 → 必需算子/融合片段/状态与数值域 → Provider 与接入方式 →
-  四路线成批接入 → 覆盖验收 → 具名剩余缺口 → 最后存量淘汰**。
+  四路线成批接入 → 真实模型画像路由重构 → 覆盖验收 → 具名剩余缺口 → 最后存量淘汰**。
 - 预计新增自研算子为 **0**。先将 ggml/llama.cpp 的现成计算链接入；其它成熟库按必需覆盖
   或具名性能价值准入。不得预排 Native/CUDA/Metal/Vulkan 四份自写 kernel 清单。
 - 所有已有 HYLE 自实现算子冻结至 M5；包含 CPU SIMD 算子 Provider、CUDA、Apple Metal、
@@ -347,6 +347,16 @@ Scatter浮点add按[M2-S公共数值裁决](llm-moe-m2-scatter-numerical-semanti
 允许重结合与存储精度或更宽的中间值；固定模型的F32端口/误差门保持。旧逐次舍入资格失败
 保留历史结论，成熟接法在新合同下仍需独立资格；不把数值档修正当成覆盖或自研授权。
 
+### MR：真实模型画像路由系统重构
+
+目标模型的[权重、量化与算子审计](llm-moe-model-weight-operator-audit.md)证明，同一 checkpoint/profile
+会按 tensor role 混合 BF16/F32、FP8、MXFP4、Q/IQ 等格式。模型级单一 Q4/Q8 标签和固定三端口条件
+无法表达真实资格。按[独立施工卡](llm-moe-model-profile-routing-refactor.md)先从真实用户任务重新设计，
+再全量替换 Compute、Graph 与四路线调用者；旧 API、旧测试和旧 matcher 不作为兼容前提。
+
+MR 只重构冷路径身份、事实、规则、绑定、缓存和诊断，不新增算子、Provider 或自研 kernel，也不改变
+M3 覆盖分子。MR 完成且关闭后才恢复 M3；总顺序为 `M0 → M1 → M2 → MR → M3 → M4 → M5 → M6`。
+
 ### M3：按模型计算链验收，核对真实剩余覆盖
 
 当前施工边界见 [M3 四路线真实模型计算链验收卡](llm-moe-m3-model-chain-acceptance.md)。该卡先审计
@@ -372,7 +382,8 @@ M3 于 2026-09-24 完成[中间审计](llm-moe-m3-terminal.md)：256 格已有�
 `BACKEND_REJECTED`、64 `NUMERIC_INCOMPATIBLE`、4 `UPSTREAM_MISSING`、134
 `VALIDATION_NOT_RUN`。随后审查确认 134 个未运行格不能作为 M3 终局残差；M3 恢复为活动验收，按
 M3-01/02/04/05/06 的五个共享批次执行并回填。已有明确准备期拒绝的 89 格不做无效重测，本地 2B
-完整 HYLE 旅程仍为 0/16；M3 完成前不进入 M4。
+完整 HYLE 旅程仍为 0/16。2026-09-24 的真实权重调查触发 MR，M3 当前暂停；MR 关闭后从现有矩阵
+继续，不重置百分比或把路由文档计入覆盖。M3 完成前不进入 M4。
 
 2026-09-20用户取消M3-01完成后的专门通知与暂停，验收完成后直接继续后续阶段；
 正常工作包进展仍按实际实现与证据报告。不把旧C1文档、测试数量或局部交付算作该里程碑完成。

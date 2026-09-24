@@ -271,25 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification.md",
-      "candidate": "a7b3910835eadf0c75f51554e6ed7b266b66bbd5",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/m2-route-qualification.md"
-      },
-      "summary": "M2 组合路由资格表达 CLOSED：共同稀疏冷匹配、Direct/Graph 消费者和 CCCL 实际迁移完成；25 项 selector 门与 Compute/Graph 三交付通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：按真实模型制品画像重新设计冷路由合同；旧 RouteRule/API 不作兼容前提。M3 暂停，尚未修改产品代码。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-route-binding.md",
-      "summary": "M1-R CLOSED：冷模型/阶段/原生环境接线完成；四环境原生与三交付、Windows/WSL插桩及P0通过。保留真实候选和失败修正记录；新增模型覆盖0，自研算子冻结，旧Provider阻塞不变。",
-      "candidate": "c482ce1b33cefecdb949c8b0ec89f9309c3e86ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-route-binding/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：按真实 DAG、canonical boundary 与模型制品画像重新设计 Graph 冷绑定；M3 暂停，尚未修改产品代码。"
     },
     {
       "module": "container_concurrent",
@@ -443,25 +433,15 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：SM80+ 与 Q4-S128/weight/scale format 静态资格统一；pack、shape、资源和执行不变，真实 CUDA 门、三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：Marlin 将迁移到真实环境、模型制品画像和任意端口路由合同；现有量化实现保持冻结。"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：CCCL 复用 backend 统一事实并保持原优先级、程序和 fallback；真实 CUDA 定向门、三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：CUDA Provider 将迁移到真实环境、模型制品画像和任意端口路由合同；现有执行与数学保持冻结。"
     },
     {
       "module": "compute_route_cuda",
@@ -530,14 +510,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：SM89、Provider、attention operation/dtype 静态资格统一；WSL FP16/BF16 provider、CUDA 交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：FlashInfer 将迁移到真实环境、模型制品画像和任意端口路由合同；现有 attention 实现保持冻结。"
     },
     {
       "module": "compute_provider_ggml_metal",
