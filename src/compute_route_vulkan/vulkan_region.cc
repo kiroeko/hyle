@@ -230,21 +230,6 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   }
   if (step.operation.get_if<Gather>()) {
     const auto &limits = program.runtime->device->properties.limits;
-    if (quantized_gather_operation(program, step)) {
-      const auto provider_output = append(output);
-      Plan local;
-      local.outputs = {provider_output};
-      local.steps.push_back(
-          {Operation(Gather{gather.axis, IndexBoundsPolicy::kUnchecked}),
-           {step.inputs[0], safe},
-           {provider_output},
-           {},
-           {1, 1, 1},
-           {}});
-      const std::vector<std::size_t> last_uses(program.values.size(), 0);
-      HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
-      return lower_checked_copy(program, provider_output, step.outputs[0]);
-    }
     if (limits.maxComputeWorkGroupInvocations < 512 ||
         limits.maxComputeWorkGroupSize[0] < 512 ||
         static_cast<std::uint64_t>(inputs[0].dimensions()[1]) >
@@ -740,6 +725,21 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
     // empty. Never hand an empty source axis to the unchecked vendor kernel.
     if (*input.element_count() == 0 || *output.element_count() == 0)
       return Status::Ok();
+    if (quantized_gather_operation(program, step)) {
+      const auto provider_output = append(output);
+      Plan local;
+      local.outputs = {provider_output};
+      local.steps.push_back(
+          {Operation(Gather{gather.axis, IndexBoundsPolicy::kUnchecked}),
+           {step.inputs[0], safe},
+           {provider_output},
+           {},
+           {1, 1, 1},
+           {}});
+      const std::vector<std::size_t> last_uses(program.values.size(), 0);
+      HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+      return lower_checked_copy(program, provider_output, step.outputs[0]);
+    }
     if (limits.maxComputeWorkGroupInvocations < 512 ||
         limits.maxComputeWorkGroupSize[0] < 512)
       return Status::Unimplemented("ggml Vulkan GetRows requires 512 lanes");
