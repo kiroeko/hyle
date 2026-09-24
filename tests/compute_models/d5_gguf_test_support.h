@@ -4,10 +4,12 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <vector>
 
 #include "hyle/compute/low_precision.h"
@@ -88,6 +90,77 @@ inline std::vector<float> selected_rows(std::span<const float> rows,
                 width,
                 result.begin() + static_cast<std::ptrdiff_t>(i * width));
   return result;
+}
+
+struct Qwen35Projection final {
+  std::string_view tensor;
+  c::GgufQuantizedType type;
+  std::int64_t reduction;
+  std::int64_t columns;
+  std::uint64_t region;
+  int seed;
+};
+
+// Exact representative tensor roles from
+// unsloth/Qwen3.5-2B-GGUF@f6d5376, UD-Q4_K_XL.  The batch/token extent is
+// reduced, while every model reduction/output width and native storage format
+// remains unchanged.
+inline constexpr std::array kQwen35PrimaryProjectionCases{
+    Qwen35Projection{"blk.0.ffn_gate.weight", c::GgufQuantizedType::kQ4K,
+                     2048, 6144, 0x0203, 11},
+    Qwen35Projection{"blk.0.ffn_down.weight", c::GgufQuantizedType::kQ6K,
+                     6144, 2048, 0x0303, 13},
+    Qwen35Projection{"blk.3.attn_k.weight", c::GgufQuantizedType::kQ5K,
+                     2048, 512, 0x0403, 17},
+    Qwen35Projection{"blk.8.ffn_gate.weight", c::GgufQuantizedType::kIq4Xs,
+                     2048, 6144, 0x0803, 19},
+    Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0,
+                     2048, 2048, 0x0503, 23}};
+
+inline std::vector<float> activation(std::int64_t width, int seed) {
+  std::vector<float> result(static_cast<std::size_t>(width));
+  for (std::size_t i = 0; i < result.size(); ++i) {
+    const auto wave = std::cos(static_cast<double>(i + 31 * seed) * 0.017);
+    result[i] = static_cast<float>(wave * 0.0625 +
+                                   double((i + seed) % 7) * 0.002 - 0.006);
+  }
+  return result;
+}
+
+inline std::vector<float> matmul(std::span<const float> input,
+                                 std::span<const float> decoded_weights,
+                                 std::int64_t columns,
+                                 std::int64_t reduction) {
+  std::vector<float> result(static_cast<std::size_t>(columns));
+  for (std::int64_t column = 0; column < columns; ++column) {
+    double sum = 0.0;
+    const auto offset = static_cast<std::size_t>(column * reduction);
+    for (std::int64_t k = 0; k < reduction; ++k)
+      sum += static_cast<double>(input[static_cast<std::size_t>(k)]) *
+             decoded_weights[offset + static_cast<std::size_t>(k)];
+    result[static_cast<std::size_t>(column)] = static_cast<float>(sum);
+  }
+  return result;
+}
+
+inline void expect_quantized_matmul_close(std::span<const float> actual,
+                                          std::span<const float> expected) {
+  ASSERT_EQ(actual.size(), expected.size());
+  double squared_error = 0.0;
+  float max_error = 0.0F;
+  for (std::size_t i = 0; i < actual.size(); ++i) {
+    const auto error = std::abs(actual[i] - expected[i]);
+    max_error = std::max(max_error, error);
+    squared_error += static_cast<double>(error) * error;
+  }
+  const auto rmse =
+      std::sqrt(squared_error / static_cast<double>(actual.size()));
+  // The independent oracle decodes only the stored GGUF weights. ggml's
+  // native quantized MatMul additionally quantizes each activation row for its
+  // Q8 dot-product path, so the implementation error is intentionally judged
+  // separately from the already-applied weight quantization loss.
+  EXPECT_LE(max_error, 8.0e-3F);
+  EXPECT_LE(rmse, 2.0e-3);
 }
 
 struct QuantizerCleanup final {
