@@ -119,6 +119,15 @@ Direct/Graph 两次 submit、ggml/IREE Provider 检查、Compute/Graph owner sui
 [Vulkan Qwen3.5 R03](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-r03/README.md)。
 两格仍只覆盖 R03，不提前宣称完整 profile 或 P1；Provider 回到 D5 总验收所需的 CANDIDATE 状态。
 
+### Apple Qwen3.5 R03 检查点
+
+不可变 tests-only candidate `78561cec7` 在 formal Air `Mac16,12` 上直接由 MLX 0.32.2 Metal 路径
+承载完整 `[2048,2048]` BF16 checkpoint projection；Direct/Graph 两次 submit、独立 oracle、两个
+完整 owner suite，以及源码、共享、静态和搬迁外部 consumer 均通过。未暴露产品缺陷，也未增加 HYLE
+数学、Metal kernel 或 fallback。收据见
+[Apple Qwen3.5 R03](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-r03/README.md)。
+两格仍只覆盖 R03，不提前宣称完整 profile 或 P1；`compute_ops` 继续持有 D5 AUDITED 总验收。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

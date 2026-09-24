@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "candidate": "78561cec7ff729783bcfe71e604eeb10639ef724",
+  "candidate_tree": "5f6acf44eb244dee2331512225900bf54e9e64d6",
+  "verdict": "PARTIAL_RUN_PASS_R03_ONLY",
+  "scope": {
+    "profile": "qwen35_2b:official:official-bf16",
+    "region": "R03",
+    "route": "apple",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "not_claimed": [
+      "remaining Qwen3.5 regions",
+      "complete profile cell",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "shard": "model.safetensors-00001-of-00001.safetensors",
+    "expected_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "verified_inventory_reused": true,
+    "selected_tensors": [
+      {
+        "name": "model.language_model.layers.0.input_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "source_data_offsets": [
+          1017129088,
+          1017133184
+        ],
+        "bytes": 4096,
+        "file": "tensors/model_language_model_layers_0_input_layernorm_weight.bin",
+        "sha256": "e3bfb63b03722ec637ed4ea2cc552d68a87e661bbba1e889f721858b34162877"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.A_log",
+        "dtype": "F32",
+        "shape": [
+          16
+        ],
+        "source_data_offsets": [
+          0,
+          64
+        ],
+        "bytes": 64,
+        "file": "tensors/model_language_model_layers_0_linear_attn_A_log.bin",
+        "sha256": "4482c77a3cbbb4d1f3c777090048fa1e7abd89ac4e8055bf6a04c1596fdfb500"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.conv1d.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          1,
+          4
+        ],
+        "source_data_offsets": [
+          1017133184,
+          1017182336
+        ],
+        "bytes": 49152,
+        "file": "tensors/model_language_model_layers_0_linear_attn_conv1d_weight.bin",
+        "sha256": "0dbb863f97d7ac62ca2e452e0fe1487edb5d954e2380192102aa1ace8f40642a"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.dt_bias",
+        "dtype": "BF16",
+        "shape": [
+          16
+        ],
+        "source_data_offsets": [
+          1017182336,
+          1017182368
+        ],
+        "bytes": 32,
+        "file": "tensors/model_language_model_layers_0_linear_attn_dt_bias.bin",
+        "sha256": "e636c88bee625312e5f3dc657e1ac60c1f5fbd5ef2d35ad4a82f0fc7dd7a1aa1"
+      },
+      {
+        "name": "model.language_model.layers.0.linear_attn.out_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          2048
+        ],
+        "source_data_offsets": [
+          1050867872,
+          1059256480
+        ],
+        "bytes": 8388608,
+        "file": "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin",
+        "sha256": "e0f911be79a8903db2418e802c0bbb77a21b87e978b292dfb9a0c515fdc9e7cb"
+      },
+      {
+        "name": "model.language_model.layers.3.self_attn.q_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096,
+          2048
+        ],
+        "source_data_offsets": [
+          3051765280,
+          3068542496
+        ],
+        "bytes": 16777216,
+        "file": "tensors/model_language_model_layers_3_self_attn_q_proj_weight.bin",
+        "sha256": "17bd3cd9059fbc52c07bbcbf23c01493e3ead9103d61f7de3744267ce2a9d664"
+      },
+      {
+        "name": "mtp.fc.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          4096
+        ],
+        "source_data_offsets": [
+          4426488512,
+          4443265728
+        ],
+        "bytes": 16777216,
+        "file": "tensors/mtp_fc_weight.bin",
+        "sha256": "04a296fcc7c41188d9551afc386a38ae75b2ade3ccefe0a75d85f7472f04b60c"
+      }
+    ],
+    "fixture_bytes": 41996384,
+    "oracle": {
+      "operation": "BF16 [1,2048] x transpose(BF16 [2048,2048])",
+      "region": "R03",
+      "activation": "activation_1x2048.bf16",
+      "activation_sha256": "971cd82cdbda1035894d96550a48c0d14fb552dd224c538371db39a0599e1fb8",
+      "expected": "expected_out_proj_1x2048.f32",
+      "expected_sha256": "1988918337846e42f50a1bf4fa113f4cf1aa2a6d7672bd9efba0b52ac86b9265",
+      "accumulation": "NumPy float32 matrix-vector product after exact BF16 decode"
+    }
+  },
+  "consumer": {
+    "shape": {
+      "activation": [
+        1,
+        2048
+      ],
+      "checkpoint_weight": [
+        2048,
+        2048
+      ],
+      "logical_weight": [
+        2048,
+        2048
+      ],
+      "output": [
+        1,
+        2048
+      ]
+    },
+    "dtype": "BF16 input/weight/output with F32 accumulation oracle",
+    "weight_layout": "complete checkpoint [N,K] storage exposed as zero-copy logical transpose [K,N]",
+    "workload": {
+      "phase": "decode",
+      "region_namespace": "0x48594c454d4f444c",
+      "region_id": 3,
+      "version": 1
+    },
+    "provider": "MLX 0.32.2 Metal backend; fixed Apple route",
+    "replay": "same prepared artifact, two submits; second activation flips every BF16 sign bit and expects the negated result"
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "AppleTyped.D5RealQwenProjectionUsesExactProfileAndReplays",
+      "result": "PASS",
+      "elapsed_ms_reported": 315,
+      "suite": "full Compute Apple route owner suite PASS (42.68 s)"
+    },
+    {
+      "entry": "graph",
+      "test": "AppleGraph.D5RealQwenProjectionUsesExactProfileAndReplays",
+      "result": "PASS",
+      "elapsed_ms_reported": 37,
+      "suite": "full Graph Apple route owner suite PASS (6.49 s)"
+    }
+  ],
+  "maintenance": {
+    "windows_selector": "READY; tests-only candidate selected docs, closure, and Apple-OFF configure",
+    "windows_apple_off_configure": "PASS",
+    "compute_route_apple": "PASS (42.68 s)",
+    "graph_route_apple": "PASS (6.49 s)",
+    "d5_ledger_self_check": "PASS",
+    "module_closure": "PASS",
+    "docs": "PASS",
+    "diff_check": "PASS",
+    "apple_delivery": "source/shared/static/relocated consumers PASS; actual BF16 R03 Direct plus Q4_K Direct and IQ4_XS Graph",
+    "delivery_consumer_elapsed": "source 4.61 s; relocated shared cold run 18.44 s; relocated static 0.51 s"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts only after the full Apple route fragment is immutable; reported GoogleTest and delivery elapsed time are correctness context only."
+  },
+  "machine": {
+    "system": "macOS",
+    "version": "27.0",
+    "build": "26A428",
+    "model": "MacBook Air",
+    "model_identifier": "Mac16,12",
+    "chip": "Apple M4",
+    "memory": "16 GB",
+    "metal_compiler": "32023.883",
+    "mlx": "0.32.2",
+    "ggml": "0.24.0 / 456172ec733a135778adcd32d00e576a58232e45-hyle"
+  },
+  "route_result": {
+    "initial_result": "PASS through the existing MLX Metal MatMul path; no Provider seam or product defect exposed",
+    "implementation_change": "none; D5 adds only ordinary Direct/Graph consumer coverage",
+    "binding": "exact model/artifact profile, decode phase, and R03 semantic identity are fixed during prepare/compile; replay changes activation without rerouting"
+  }
+}
