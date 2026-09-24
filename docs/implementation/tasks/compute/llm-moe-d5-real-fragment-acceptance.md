@@ -309,6 +309,22 @@ ledger 现有 6 个 `RUN_PASS`、170 个 `VALIDATION_NOT_RUN`。本批共享 WER
 D5-A5 要求的 relocated external source/static/shared consumer；D5-A5 与 D5-A6 P1 仍随稳定 Vulkan
 路线批次执行。
 
+### Apple Qwen3.5 official Direct/Graph 完整格
+
+不可变 tests-only candidate `e99c2bf929bbee747dbb8a392ab3ff813299be3f` 在 formal Air
+`Mac16,12` 上复用同一真实 checkpoint fixture，通过普通 Apple Direct `prepare`/bind/submit 和
+Graph build/compile/bind/submit 覆盖 R01-R05、R13-R15。MLX 0.32.2 保留原生 Metal region，
+Gated DeltaNet 保留完整 ggml Metal region；Graph compile report 逐项确认成熟实现策略，Program 持有
+捕获常量。变化输入/token/state、独立 invocation、失败不发布和 BF16/F32 边界均实际运行。
+
+定向 Direct 5/5、Graph 5/5，完整 Direct owner 52/52、Graph owner 25/25 在 AppleClang 21、WERROR
+下通过；Windows 不可变 selector 的 docs、closure 与 Apple-OFF exact-factor configure 也通过。完整收据见
+[Apple Qwen3.5 official Direct](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-official-direct/README.md)
+和
+[Apple Qwen3.5 official Graph](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-official-graph/README.md)。
+ledger 现有 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`。已有 R03 三交付证明继续有效，但不提前代签
+D5-A5 的最终稳定 Apple 路线批次；D5-A6 P1 也仍未运行。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

@@ -394,7 +394,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：八个真实模型、22 个固定 profile 与 15 个语义 region 已冻结为 176 个四路线 Direct/Graph 验收格；批量复用成熟 Provider，真实宽度不缩小，自研数学继续冻结。"
+      "summary": "M3-D5 AUDITED：官方 Qwen3.5-2B BF16 已在 CPU/CUDA/Apple/Vulkan Direct/Graph 的 8 个完整格通过真实权重、replay、失败与 owner 回归；其余 168 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",

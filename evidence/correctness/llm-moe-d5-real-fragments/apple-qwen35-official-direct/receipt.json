@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "candidate": "e99c2bf929bbee747dbb8a392ab3ff813299be3f",
+  "candidate_tree": "8d27c28754bc6df0473b55835dc6265c1ac03d3c",
+  "verdict": "RUN_PASS",
+  "source": {
+    "repository": "Qwen/Qwen3.5-2B",
+    "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "shard": "model.safetensors-00001-of-00001.safetensors",
+    "expected_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "fixture_bytes": 117523552,
+    "fixture_tensors": 12,
+    "embedding_slice_sha256": "3924223432b46b6dd5463a5872d76ad674ba377bf76e27c1a56ce5625ee62945",
+    "checkpoint_parameters": [
+      "embed_tokens selected rows",
+      "layer-0 input norm",
+      "layer-0 gate/up/down FFN",
+      "layer-0 conv1d/A_log/dt_bias/out projection",
+      "layer-3 q_norm/k_norm/q projection",
+      "MTP fc"
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "providers": [
+      "MLX 0.32.2 Metal native region",
+      "ggml Metal 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle for GatedDeltaNet"
+    ],
+    "provider_assertion": "ordinary Apple cold prepare/compile fixes each call to MLX or the admitted ggml Metal region; Graph compile reports the exact operation and a nonempty mature implementation policy",
+    "replay": "each prepared program creates independent invocation slots for changed activation/token/state; routing stays cold-bound, Graph retains captured constants, and a failed Gather publishes no result",
+    "oracles": "independent BF16 decoding, NumPy F32/BF16-boundary projection/FFN outputs, and C++ double attention/conv/recurrent calculations"
+  },
+  "selected_validation": {
+    "candidate": "e99c2bf929bbee747dbb8a392ab3ff813299be3f",
+    "candidate_tree": "8d27c28754bc6df0473b55835dc6265c1ac03d3c",
+    "verdict": "PASS",
+    "windows_selector": {
+      "scope": "test-only Apple change: docs, closure, and Apple-OFF exact-factor configure",
+      "werror": true,
+      "compiler": "MSVC 19.50.35728",
+      "gates": {
+        "docs": "f561740591e8a56645f3ccb1bbd3c35893b406aaeb966666e5ca3f4fb7a9451f",
+        "closure": "9f0a3f3e6be15f9e9d16aa9ce1f03a150ce84c13174a2ba7d9562794f409e95e",
+        "configure": "8ecef97428f631f6ba3912661c21eb6b931b0b97c20f0df9a958b3843d965f58"
+      },
+      "skipped_or_reused": 129
+    },
+    "formal_apple": {
+      "werror": true,
+      "focused_direct": "5/5 PASS in 164 ms",
+      "focused_graph": "5/5 PASS in 153 ms",
+      "owner_suites": {
+        "direct": "52/52 PASS in 1.746 s",
+        "graph": "25/25 PASS in 2.993 s"
+      }
+    }
+  },
+  "delivery": {
+    "status": "PRIOR_PARTIAL_PASS_NOT_D5_A5",
+    "reason": "the unchanged Apple product previously passed source/shared/static and relocated consumers with real BF16 R03 plus Q4_K Direct and IQ4_XS Graph; D5-A5 remains a final stable-route batch obligation"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 starts only from the stable Apple route batch with an explicit frozen P1 card"
+  },
+  "machine": {
+    "profile": "M1-MAC",
+    "system": "macOS 27.0 (26A428)",
+    "model": "MacBook Air Mac16,12",
+    "chip": "Apple M4",
+    "memory": "16 GB",
+    "compiler": "AppleClang 21.0.0.21000334",
+    "deployment_target": "14.4",
+    "metal_compiler": "32023.883",
+    "mlx": "0.32.2",
+    "ggml": "0.24.0 / 456172ec733a135778adcd32d00e576a58232e45-hyle"
+  },
+  "scope": {
+    "profile": "qwen35_2b:official:official-bf16",
+    "route": "apple",
+    "entry": "direct",
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "other profiles",
+      "D5-A5 final stable-route delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialFfnUsesMaturePreparedCalls"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-r03/receipt.json"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "test": "AppleD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls"
+    }
+  ]
+}
