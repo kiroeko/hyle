@@ -1,6 +1,6 @@
 # M3 真实需求到成熟 Provider 的重新对账、补接与退场
 
-<!-- MODULE REVIEW: BLOCKED -->
+<!-- MODULE REVIEW: SCOPED -->
 
 ## Closure card
 
@@ -86,8 +86,9 @@
 5. SIMD 基础库、四路线 backend/resource/completion 设施，以及有非 LLM 真实 consumer 的通用 Compute
    能力不因模型矩阵删除。
 
-## 当前阻塞检查点
+## SCOPED
 
-旧 M3 的施工前提已被新的真实画像路由和用户明确顺序替代，原 `AUDITED` 范围不能继续实施。当前先将
-`compute_ops` 依法从 `AUDITED` 进入 `BLOCKED`；恢复条件是本卡作为新范围单独提交、保留旧 256 格
-收据为历史输入，并确认 D1/D2 只做审计、不修改产品。随后以独立提交进入 `SCOPED`。
+旧 M3 已在 `b5843f1d9f3eca4edd86889b210da5116fc708b6` 停止，原 256 格和收据只保留为历史输入。本卡的
+需求单元、Provider 层级、工作包、删除判据、预算与停止条件已冻结，`compute_ops` 依法恢复为
+`SCOPED`。下一步只执行 D1/D2 表驱动审计，固定有限 `KEEP/BORROW/FIX/DEFER/REJECT`；在进入
+`AUDITED` 前不修改产品、Provider、route、CMake 或自研算子。
