@@ -213,13 +213,19 @@ TEST(CpuDefaultGraph,
 
 TEST(CpuDefaultGraph,
      D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay) {
+  const auto fixture_root = d5_qwen35_fixture::root();
+  if (!fixture_root)
+    GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
+  d5_qwen35_fixture::AttentionNorms fixture;
+  ASSERT_NO_THROW(
+      fixture = d5_qwen35_fixture::load_attention_norms(*fixture_root));
   constexpr std::int64_t query_heads = 8;
   constexpr std::int64_t kv_heads = 2;
   constexpr std::int64_t depth = 256;
   const auto query_desc =
       dense(c::DataType::kBFloat16, {1, 1, query_heads, depth});
   const auto kv_desc = dense(c::DataType::kBFloat16, {1, 1, kv_heads, depth});
-  const auto scale_desc = dense(c::DataType::kFloat32, {depth});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {depth});
   const auto position_desc = dense(c::DataType::kInt32, {1});
   const auto frequency_desc = dense(c::DataType::kFloat32, {depth / 2});
 
@@ -227,11 +233,14 @@ TEST(CpuDefaultGraph,
   const auto query = builder.input(query_desc).value();
   const auto key = builder.input(kv_desc).value();
   const auto value = builder.input(kv_desc).value();
-  const auto scale = builder.constant(scale_desc).value();
+  const auto query_scale = builder.constant(scale_desc).value();
+  const auto key_scale = builder.constant(scale_desc).value();
   const auto position = builder.constant(position_desc).value();
   const auto frequency = builder.constant(frequency_desc).value();
-  const auto normalized_query = builder.add(c::RmsNorm{}, query, scale).value();
-  const auto normalized_key = builder.add(c::RmsNorm{}, key, scale).value();
+  const auto normalized_query =
+      builder.add(c::RmsNorm{}, query, query_scale).value();
+  const auto normalized_key =
+      builder.add(c::RmsNorm{}, key, key_scale).value();
   const c::RoPE rope{.rotary_dimensions = depth,
                      .sequence_axis = 1,
                      .layout = c::RopeLayout::kHalfSplit};
@@ -251,12 +260,12 @@ TEST(CpuDefaultGraph,
   ASSERT_TRUE(builder.publish(output).ok());
   auto logical = std::move(builder).finish().value();
 
-  std::vector<float> scales(depth, 1.0F);
   std::vector<float> frequencies(depth / 2);
   for (std::size_t i = 0; i < frequencies.size(); ++i)
     frequencies[i] = 1.0F / static_cast<float>(i + 1);
   const std::array<std::int32_t, 1> positions{0};
-  auto scale_buffer = half_test::buffer<float>(scales);
+  auto query_scale_buffer = bytes_buffer(fixture.query);
+  auto key_scale_buffer = bytes_buffer(fixture.key);
   auto position_buffer = half_test::buffer<std::int32_t>(positions);
   auto frequency_buffer = half_test::buffer<float>(frequencies);
   std::vector<BF16> queries(query_desc.element_count().value());
@@ -269,9 +278,14 @@ TEST(CpuDefaultGraph,
 
   auto context = g::cpu::create_context().value();
   const std::array constants{
-      g::ConstantBinding{scale, c::ConstTensorView::create(
-                                   scale_desc, scale_buffer.view())
-                                   .value()},
+      g::ConstantBinding{query_scale,
+                         c::ConstTensorView::create(
+                             scale_desc, query_scale_buffer.view())
+                             .value()},
+      g::ConstantBinding{key_scale,
+                         c::ConstTensorView::create(
+                             scale_desc, key_scale_buffer.view())
+                             .value()},
       g::ConstantBinding{position, c::ConstTensorView::create(
                                       position_desc, position_buffer.view())
                                       .value()},

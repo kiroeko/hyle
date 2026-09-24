@@ -23,6 +23,8 @@ TENSORS = (
     "model.language_model.layers.0.linear_attn.conv1d.weight",
     "model.language_model.layers.0.linear_attn.dt_bias",
     "model.language_model.layers.0.linear_attn.out_proj.weight",
+    "model.language_model.layers.3.self_attn.k_norm.weight",
+    "model.language_model.layers.3.self_attn.q_norm.weight",
     "model.language_model.layers.3.self_attn.q_proj.weight",
     "mtp.fc.weight",
 )

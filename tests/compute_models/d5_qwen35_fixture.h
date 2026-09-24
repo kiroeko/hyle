@@ -43,6 +43,11 @@ struct MtpProjection final {
   std::array<std::vector<float>, 2> expected;
 };
 
+struct AttentionNorms final {
+  std::vector<std::byte> query;
+  std::vector<std::byte> key;
+};
+
 inline std::optional<std::filesystem::path> root() {
 #if defined(_WIN32)
   char *value = nullptr;
@@ -120,6 +125,20 @@ inline MtpProjection load_mtp(const std::filesystem::path &directory) {
     result.expected[i].resize(kHidden);
     std::memcpy(result.expected[i].data(), expected.data(), expected.size());
   }
+  return result;
+}
+
+inline AttentionNorms
+load_attention_norms(const std::filesystem::path &directory) {
+  AttentionNorms result;
+  result.query = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_3_self_attn_q_norm_weight.bin",
+      256 * 2);
+  result.key = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_3_self_attn_k_norm_weight.bin",
+      256 * 2);
   return result;
 }
 
