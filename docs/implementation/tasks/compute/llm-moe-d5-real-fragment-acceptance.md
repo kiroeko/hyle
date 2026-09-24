@@ -372,6 +372,23 @@ configure、ggml/IREE Vulkan Provider、Direct 与 Graph 全部 PASS；收据见
 ledger 计数仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`，但四路线共八个 primary GGUF cell
 现均有 R01 partial receipt；完整 cell、三交付与 P1 仍未代签。
 
+### D5-F9：Qwen3.5 primary GGUF 混合投影批量验收
+
+权重审计固定的 `UD-Q4_K_XL` 不是单一 Q4 文件：FFN、full attention 与 Gated DeltaNet projection
+实际混合 Q4_K、Q5_K、Q6_K、Q8_0 和 IQ4_XS。D5-F9 不新增产品实现，而是用同一参数化 consumer
+批量验证每条路线既有 ggml adapter 是否真正承载这些精确 tensor role、内宽和物理格式；只有实际失败
+才按本卡规则重新打开对应 owner。
+
+**D5-F9 CPU partial（`6834a6c9`）**：普通 CPU Direct/Graph 已运行五个精确代表 tensor：
+`blk.0.ffn_gate.weight` Q4_K `[2048,6144]`、`blk.0.ffn_down.weight` Q6_K
+`[6144,2048]`、`blk.3.attn_k.weight` Q5_K `[2048,512]`、`blk.8.ffn_gate.weight`
+IQ4_XS `[2048,6144]` 和 `blk.0.ssm_out.weight` Q8_0 `[2048,2048]`。两条入口均冷绑定
+固定 ggml CPU，以两个变化 activation 重放并匹配独立 packed-weight decode oracle；Graph 每项只有一个
+成熟 region。不可变 MSVC 19.50/WERROR selector 的 docs、closure、fixture 工具、Direct 与 Graph
+全部 PASS，未暴露产品缺陷，也没有新增 HYLE 数学。收据见
+[CPU primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/README.md)。
+本 partial 只签 R03/R14；R02、R04、R05、R13、R15 和完整 cell 仍未代签，ledger 总计数不变。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

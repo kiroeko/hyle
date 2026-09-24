@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "candidate": "6834a6c940b5501775e6fbbceeb9c2f0596d02c0",
+  "candidate_tree": "29aeb30fd094921ec7e1df8f63ffbca71f52e71b",
+  "verdict": "PARTIAL_RUN_PASS_R03_R14",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "regions": ["R03", "R14"],
+    "route": "cpu",
+    "entries": ["direct", "graph"],
+    "not_claimed": [
+      "R02",
+      "R04",
+      "R05",
+      "R13",
+      "R15",
+      "complete profile cell",
+      "three deliveries",
+      "P1",
+      "other routes",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "payload": "exact audited tensor names, shapes and formats with deterministic format-valid nonzero packed bytes",
+    "tensors": [
+      {"name": "blk.0.ffn_gate.weight", "format": "Q4_K", "shape": [2048, 6144]},
+      {"name": "blk.0.ffn_down.weight", "format": "Q6_K", "shape": [6144, 2048]},
+      {"name": "blk.3.attn_k.weight", "format": "Q5_K", "shape": [2048, 512]},
+      {"name": "blk.8.ffn_gate.weight", "format": "IQ4_XS", "shape": [2048, 6144]},
+      {"name": "blk.0.ssm_out.weight", "format": "Q8_0", "shape": [2048, 2048]}
+    ]
+  },
+  "consumer": {
+    "operation": "quantized rank-2 MatMul with dense F32 activation and output",
+    "provider": "ggml-cpu 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "batch_rows": 1,
+    "preserved": ["model reduction width", "model output width", "GGUF block format", "tensor role", "profile and region identity"],
+    "replay": "same prepared invocation or Graph program, two changed activation rows",
+    "graph": "one mature ggml region per projection; constants captured at compile and prepare_replay called once",
+    "oracle": "independent stored-weight decode followed by F32 dot; max abs <= 8e-3 and RMSE <= 2e-3 account for native Q8 activation-row quantization"
+  },
+  "runs": [
+    {
+      "entry": "direct",
+      "test": "CpuDefaultDirect.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+      "result": "PASS"
+    },
+    {
+      "entry": "graph",
+      "test": "CpuDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+      "result": "PASS"
+    }
+  ],
+  "selector": {
+    "baseline": "2437ec373abe376b024ad6edff9bae6c8e6afaa2",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "tool:tests/compute_models/inputs_test.py",
+      "configure",
+      "factor:compute_route_cpu",
+      "factor:graph_route_cpu"
+    ],
+    "skipped_or_reused": 127,
+    "toolchain": "MSVC 19.50.35728",
+    "flags": "/DWIN32 /D_WINDOWS /GR /EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5 P1 starts after the complete route fragment is immutable."
+  }
+}

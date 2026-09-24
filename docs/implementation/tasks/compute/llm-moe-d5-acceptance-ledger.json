@@ -1280,6 +1280,14 @@
           ],
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-r01/receipt.json"
+        },
+        {
+          "regions": [
+            "R03",
+            "R14"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/receipt.json"
         }
       ]
     },
@@ -1298,6 +1306,14 @@
           ],
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-r01/receipt.json"
+        },
+        {
+          "regions": [
+            "R03",
+            "R14"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/receipt.json"
         }
       ]
     },
