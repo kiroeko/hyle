@@ -2,20 +2,79 @@
 
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <vector>
 
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
 
 #include "../compute/workload_fixture.h"
+#include "../compute_models/d5_qwen35_fixture.h"
 #include "ffn_fixture.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
+#include "tensor_test_support.h"
 
 namespace {
 namespace c = hyle::compute;
 namespace a = c::apple;
 namespace mx = mlx::core;
+
+mx::array bf16_array(std::span<const std::byte> bytes, mx::Shape shape) {
+  std::vector<std::uint16_t> bits(bytes.size() / sizeof(std::uint16_t));
+  std::memcpy(bits.data(), bytes.data(), bytes.size());
+  return apple_tensor_test::ready(
+      mx::view(mx::array(bits.data(), std::move(shape), mx::uint16),
+               mx::bfloat16, apple_tensor_test::stream()));
+}
+
+TEST(AppleTyped, D5RealQwenProjectionUsesExactProfileAndReplays) {
+  const auto fixture_root = d5_qwen35_fixture::root();
+  if (!fixture_root)
+    GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
+  d5_qwen35_fixture::Projection fixture;
+  ASSERT_NO_THROW(fixture = d5_qwen35_fixture::load_projection(*fixture_root));
+
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  auto stored_weight = bf16_array(
+      fixture.weight,
+      {d5_qwen35_fixture::kHidden, d5_qwen35_fixture::kHidden});
+  auto weight = apple_tensor_test::ready(
+      mx::transpose(stored_weight, apple_tensor_test::stream()));
+  auto activation = bf16_array(fixture.activation,
+                               {1, d5_qwen35_fixture::kHidden});
+  const std::array initial{activation, weight};
+  const auto workload =
+      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode);
+  auto program = context->prepare(c::MatMul{}, initial, workload);
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  auto invocation = program->create_invocation();
+  ASSERT_TRUE(invocation);
+
+  for (int run = 0; run < 2; ++run) {
+    auto payload = fixture.activation;
+    if (run != 0) {
+      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden; ++index)
+        payload[index * 2 + 1] ^= std::byte{0x80};
+    }
+    activation = bf16_array(payload, {1, d5_qwen35_fixture::kHidden});
+    const std::array inputs{activation, weight};
+    ASSERT_TRUE(invocation->bind(inputs).ok());
+    auto work = invocation->submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual =
+        apple_tensor_test::values(result->get()->arrays().front());
+    ASSERT_EQ(actual.size(), fixture.expected.size());
+    for (std::size_t index = 0; index < actual.size(); ++index)
+      half_test::expect_near(
+          half_test::encode<apple_tensor_test::B16>(actual[index]),
+          run == 0 ? fixture.expected[index] : -fixture.expected[index]);
+  }
+}
 
 TEST(AppleTyped, MatMulAndSiluGatesUseOrdinaryPreparation) {
   auto context = a::Context::create();
