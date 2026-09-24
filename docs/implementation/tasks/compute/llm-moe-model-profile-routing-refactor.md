@@ -1,6 +1,6 @@
 # MR 真实模型画像路由系统重构
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -172,4 +172,5 @@ ledger 之外的算子、Provider、kernel、性能调优、模型加载和公�
 
 ## 当前状态
 
-本卡仅进入 `SCOPED`。目标模型调查已完成；产品实现、公开 API、测试和覆盖结论尚未因本卡改变。
+本卡已进入 `AUDITED`：真实需求、长期公开形状、调用者覆盖图与 `FIX-MR1`--`FIX-MR8` 已冻结。
+下一步按 ledger 修改产品代码；公开 API、测试和覆盖结论尚未因本卡改变，M3 覆盖仍保持原数值。

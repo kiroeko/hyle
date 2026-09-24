@@ -271,15 +271,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：按真实模型制品画像重新设计冷路由合同；旧 RouteRule/API 不作兼容前提。M3 暂停，尚未修改产品代码。"
+      "summary": "MR AUDITED：compute 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：按真实 DAG、canonical boundary 与模型制品画像重新设计 Graph 冷绑定；M3 暂停，尚未修改产品代码。"
+      "summary": "MR AUDITED：graph 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "container_concurrent",
@@ -354,20 +354,20 @@
     {
       "module": "compute_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_provider_onednn 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_provider_ggml 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph_provider_onednn",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：graph_provider_onednn 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_ops",
@@ -399,9 +399,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：Native Provider 的实现身份与显式默认 preference 将迁移到新冷路由合同；现有 CPU 数学与执行保持冻结。"
+      "summary": "MR AUDITED：compute_provider_native 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_sched",
@@ -411,74 +411,74 @@
     {
       "module": "compute_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_route_cpu 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：graph_route_cpu 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_provider_cublas",
       "state": "AUDITED",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md"
+      "summary": "MR AUDITED：compute_provider_cublas 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：Marlin 将迁移到真实环境、模型制品画像和任意端口路由合同；现有量化实现保持冻结。"
+      "summary": "MR AUDITED：compute_provider_marlin 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：CUDA Provider 将迁移到真实环境、模型制品画像和任意端口路由合同；现有执行与数学保持冻结。"
+      "summary": "MR AUDITED：compute_provider_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_route_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：graph_route_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_route_apple 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：graph_route_apple 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_route_vulkan 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：graph_route_vulkan 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_provider_ggml_vulkan 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -494,20 +494,20 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：compute_provider_ggml_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR AUDITED：graph_provider_ggml_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR SCOPED：FlashInfer 将迁移到真实环境、模型制品画像和任意端口路由合同；现有 attention 实现保持冻结。"
+      "summary": "MR AUDITED：compute_provider_flashinfer 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
     },
     {
       "module": "compute_provider_ggml_metal",
