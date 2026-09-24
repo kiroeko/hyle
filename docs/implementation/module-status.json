@@ -271,15 +271,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "container_concurrent",
@@ -353,21 +355,24 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_onednn 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_onednn 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_ggml 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_ggml 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph_provider_onednn 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph_provider_onednn 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_ops",
@@ -388,15 +393,17 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：CUDA backend 的真实硬件/driver/runtime/toolkit snapshot 只迁移到 versioned typed facts；其余产品合同冻结。"
+      "summary": "MR CANDIDATE：compute_backend_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_native 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_native 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_sched",
@@ -405,75 +412,87 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_route_cpu 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_route_cpu 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph_route_cpu 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph_route_cpu 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_cublas",
-      "state": "AUDITED",
-      "summary": "MR AUDITED：compute_provider_cublas 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md"
+      "state": "CANDIDATE",
+      "summary": "MR CANDIDATE：compute_provider_cublas 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_marlin",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_marlin 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_marlin 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_route_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_route_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph_route_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph_route_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_route_apple 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_route_apple 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph_route_apple 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph_route_apple 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_route_vulkan 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_route_vulkan 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph_route_vulkan 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph_route_vulkan 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_ggml_vulkan 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_ggml_vulkan 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_ggml_runtime",
@@ -488,21 +507,24 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_ggml_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_ggml_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：graph_provider_ggml_cuda 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：graph_provider_ggml_cuda 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR AUDITED：compute_provider_flashinfer 已按真实模型制品画像和确定性冷路由合同冻结有限迁移；数学/执行保持冻结，M3 暂停。"
+      "summary": "MR CANDIDATE：compute_provider_flashinfer 已完成真实模型制品画像、任意端口规则、确定性 prepare/compile 绑定及四路线单轨迁移；候选后只做终审，M3 覆盖不变。",
+      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89"
     },
     {
       "module": "compute_provider_ggml_metal",

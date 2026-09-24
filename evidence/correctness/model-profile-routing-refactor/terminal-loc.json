@@ -1,0 +1,157 @@
+{
+  "schema": 3,
+  "repository": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "commit": "2ada22a89821d20b312407c9575df8f9a923df89",
+    "dirty": false,
+    "tracked_regular_files": 6173,
+    "tracked_missing_files": []
+  },
+  "policy": {
+    "snapshot": "immutable Git commit tree",
+    "untracked": "not applicable to immutable commit tree",
+    "self_written_languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ],
+    "self_written_excludes": [
+      "bench",
+      "docs",
+      "third_party",
+      "samples",
+      "cmake/build/package scripts",
+      "all build/cache/scratch directories"
+    ],
+    "module_excludes": [
+      "tests",
+      "bench",
+      "docs",
+      "third_party",
+      "CMake"
+    ]
+  },
+  "tool": {
+    "cloc": "2.08"
+  },
+  "module": {
+    "name": "compute_graph",
+    "boundary": "explicit",
+    "paths": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute",
+      "src/compute_backend_cpu",
+      "src/compute_backend_cuda",
+      "src/compute_ggml_runtime",
+      "src/compute_ops",
+      "src/compute_provider_cublas",
+      "src/compute_provider_cuda",
+      "src/compute_provider_flashinfer",
+      "src/compute_provider_ggml",
+      "src/compute_provider_ggml_cuda",
+      "src/compute_provider_ggml_metal",
+      "src/compute_provider_ggml_vulkan",
+      "src/compute_provider_iree_vulkan",
+      "src/compute_provider_marlin",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn",
+      "src/compute_route_apple",
+      "src/compute_route_cpu",
+      "src/compute_route_cuda",
+      "src/compute_route_vulkan",
+      "src/graph",
+      "src/graph_provider_ggml_cuda",
+      "src/graph_provider_onednn",
+      "src/graph_route_apple",
+      "src/graph_route_cpu",
+      "src/graph_route_cuda",
+      "src/graph_route_vulkan"
+    ],
+    "modules": null
+  },
+  "metrics": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 1115613,
+      "files": 3169,
+      "selected_files": 6173,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 155607,
+      "files": 603,
+      "selected_files": 669,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation (compute_graph)",
+      "code": 60422,
+      "files": 252,
+      "selected_files": 286,
+      "paths": [
+        "include/hyle/compute",
+        "include/hyle/graph",
+        "src/compute",
+        "src/compute_backend_cpu",
+        "src/compute_backend_cuda",
+        "src/compute_ggml_runtime",
+        "src/compute_ops",
+        "src/compute_provider_cublas",
+        "src/compute_provider_cuda",
+        "src/compute_provider_flashinfer",
+        "src/compute_provider_ggml",
+        "src/compute_provider_ggml_cuda",
+        "src/compute_provider_ggml_metal",
+        "src/compute_provider_ggml_vulkan",
+        "src/compute_provider_iree_vulkan",
+        "src/compute_provider_marlin",
+        "src/compute_provider_native",
+        "src/compute_provider_onednn",
+        "src/compute_route_apple",
+        "src/compute_route_cpu",
+        "src/compute_route_cuda",
+        "src/compute_route_vulkan",
+        "src/graph",
+        "src/graph_provider_ggml_cuda",
+        "src/graph_provider_onednn",
+        "src/graph_route_apple",
+        "src/graph_route_cpu",
+        "src/graph_route_cuda",
+        "src/graph_route_vulkan"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "self_check": "pass"
+}

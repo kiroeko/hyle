@@ -1,6 +1,6 @@
 # MR 真实模型画像路由系统重构
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -175,7 +175,29 @@
 ledger 之外的算子、Provider、kernel、性能调优、模型加载和公共治理改动全部拒绝。任何新事实要求新增
 数学、执行期选优或第二套 Graph 表达时，停止实现并退回 `AUDITED` 重新定界。
 
-## 当前状态
+## CANDIDATE 验收
 
-本卡已进入 `AUDITED`：真实需求、长期公开形状、调用者覆盖图与 `FIX-MR1`--`FIX-MR8` 已冻结。
-下一步按 ledger 修改产品代码；公开 API、测试和覆盖结论尚未因本卡改变，M3 覆盖仍保持原数值。
+产品候选 `c9c11001419059068e3497b6eac10fcb70cb6e87` 完成 `FIX-MR1`--`FIX-MR8`；验收候选
+`2ada22a89821d20b312407c9575df8f9a923df89` 只迁移一条 oneDNN OOM 测试的结构化诊断预期，产品实现
+不变。完整收据见[终端证据](../../../../evidence/correctness/model-profile-routing-refactor/README.md)。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS：只替换冷路由合同并迁移既有四路线调用者；未新增算子、Provider、kernel/shader，M3 覆盖不变 |
+| architecture | PASS：owned exact profile、任意端口 selector、versioned route facts、显式 policy/preference 与 Graph 完整 DAG 资格化均按冻结设计落地；四路线执行 owner 保持独立 |
+| correctness | PASS：Windows Compute/Graph/CPU/oneDNN/CUDA/Vulkan 定向及 selected factors 全过；WSL GCC/Clang 各 9/9；Air Apple 44/44+17/17；Mini portability 4/4 |
+| delivery | PASS：Windows Compute/Graph source/static/shared relocation consumer 全过；Air 三交付 Compute/Graph consumer 全过 |
+| usability_docs | PASS：普通用户仍只选路线并提供真实 workload/profile；公开架构、示例和诊断已迁移，selector plan READY |
+| red_team | PASS：旧 API 产品扫描无命中；matcher 只在 cold construction/propose/prepare/compile；mismatch、歧义、合法 fallback 与 fatal-stop 已反证 |
+| engineering_performance | PASS（P0）：submit 不解释规则、不查询设备、不搜索/计时/重选；新增成本限于 profile 创建、冷匹配和 prepared/plan metadata，P1 不适用 |
+
+统一 LOC：Compute+Graph 实现 **60,422** 行 / **252** 文件；自实现不含测试 **155,607** 行 / **603**
+文件；全库 **1,115,613** 行，固定候选统计自检通过。
+
+限制与 reopen：本轮不提供模型加载/tokenizer/采样/推理 engine，不增加 operator/provider 数学覆盖，不做
+CPU+GPU 联合推理、HIP、分布式或跨进程 plan cache。只有真实 consumer 证明现有 profile/selector/DAG
+资格合同无法表达必要部署，或已绑定 submit 出现重新选路/生命周期回归时才重开本卡；M3 缺口继续由其
+独立任务处理。
+
+本卡进入 `CANDIDATE`。产品/API/算法已经冻结；下一步只执行候选后独立终审、closure/docs/diff 检查和
+合法 `CANDIDATE -> CLOSED` 状态迁移，不再改产品实现或扩大验证。
