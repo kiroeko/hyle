@@ -420,14 +420,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute_provider_native 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "compute_sched",
@@ -436,25 +431,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute_route_cpu 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：graph_route_cpu 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "compute_provider_cublas",
@@ -469,47 +454,27 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute_provider_marlin 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute_provider_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute_route_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：graph_route_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
     },
     {
       "module": "compute_route_apple",

@@ -81,8 +81,9 @@
    删除，不能作为 Provider 覆盖。
 3. 成熟实现完整覆盖同一需求域且旧 adapter 没有不同 consumer、语义或有效默认规则时，删除冗余接线；
    不为其制造性能课题。
-4. HYLE 自研算子继续按[冻结合同](llm-moe-self-operator-freeze.md)留到后续统一裁决；本卡不得借清理
-   Provider 接线提前研究、优化或删除这些算法。
+4. HYLE 自研算子原按[冻结合同](llm-moe-self-operator-freeze.md)留到后续统一裁决；用户现已明确授权在
+   D4 按[批量退场卡](llm-moe-d4-self-operator-retirement.md)一次性清退错误自实现。不得新增、优化或为
+   每个算子重开性能研究；完整成熟替代且无既有合格领先证据者直接退场，精确缺口才保留。
 5. SIMD 基础库、四路线 backend/resource/completion 设施，以及有非 LLM 真实 consumer 的通用 Compute
    能力不因模型矩阵删除。
 
