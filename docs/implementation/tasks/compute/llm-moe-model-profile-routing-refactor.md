@@ -5,13 +5,16 @@
 ## Closure card
 
 - component / owner：`compute`、`graph` 为共同合同 owner；实际迁移 owner 为
-  `compute_provider_native`、`compute_provider_onednn`、`compute_provider_ggml`、
+  `compute_backend_cuda`、`compute_provider_native`、`compute_provider_onednn`、`compute_provider_ggml`、
   `graph_provider_onednn`、`compute_provider_cublas`、`compute_provider_cuda`、
   `compute_provider_flashinfer`、`compute_provider_marlin`、`compute_provider_ggml_cuda`、
   `graph_provider_ggml_cuda`、`compute_provider_ggml_vulkan`、`compute_route_cpu`、
   `graph_route_cpu`、`compute_route_cuda`、`graph_route_cuda`、`compute_route_apple`、
   `compute_route_vulkan`、`graph_route_apple`、`graph_route_vulkan`。
 - baseline commit：`af8a42e4c`（M3 错误候选已纠正，目标模型/权重/算子审计已固化）。
+- superseded records：旧 [B2 route identity](m2-b2-route-identity.md)、
+  [共同 matcher](m2-route-qualification.md)与
+  [旧调用者迁移](m2-route-qualification-complete-migration.md)只作历史证据；本轮不继承其 API 或完成结论。
 - trigger 与证据：
   [目标模型权重、量化与算子审计](llm-moe-model-weight-operator-audit.md)逐 header 证明：同一模型
   revision 有官方 checkpoint、动态 4-bit、Q8 等多个部署画像；单个画像又按 tensor role 混用
@@ -139,6 +142,7 @@
 | 边界 | 当前事实 | 本轮处置 |
 |---|---|---|
 | Compute workload owner 与 prepared artifact | model-only owner 已能保活字符串，但没有 artifact/manifest；artifact 已持有 workload | `FIX-MR1` 替换为单一 model-artifact profile owner并贯通 prepared 生命周期 |
+| CUDA environment producer | backend Context 已捕获真实 device/SM/driver/runtime/toolkit，但使用旧 fact 类型 | `FIX-MR2` 只迁移 typed fact schema；backend 资源、stream、执行和完成不变 |
 | common route matcher | 固定 input0/input1/output0 和一个量化结构；仅返回首 mismatch | `FIX-MR2` 全量替换为 selector、typed semantic facts 和任意端口/shape matcher |
 | Provider implementation identity | `ProviderRouteKey/profile_key` 实际表示实现，不是 model profile | `FIX-MR3` 重命名为 `ProviderImplementationId/implementation`，删除歧义旧名 |
 | Direct Provider 选择 | 默认 façade 隐式依赖 provider array 顺序，prepare 遇首个成功即返回 | `FIX-MR4` 冻结显式 HYLE preference，收集冷 proposal 后确定性绑定和诊断歧义 |

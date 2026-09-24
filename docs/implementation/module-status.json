@@ -388,14 +388,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/m2-route-qualification-complete-migration.md",
-      "summary": "M2 组合路由完整迁移 CLOSED：CUDA Environment 统一投影 device/SM/driver/runtime/toolkit 冷事实；真实 CUDA 定向门、三交付与 P0 通过。",
-      "candidate": "3d7e212972e27f8f532cb084f5eb5c4656b45016",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-m2-route-complete/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
+      "summary": "MR SCOPED：CUDA backend 只迁移已捕获的硬件/driver/runtime/toolkit typed facts；资源、stream、数学、执行和完成不重审。"
     },
     {
       "module": "compute_provider_native",
