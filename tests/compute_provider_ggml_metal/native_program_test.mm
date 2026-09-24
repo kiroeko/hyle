@@ -305,7 +305,7 @@ TEST(GgmlMetalProgram,
         ASSERT_TRUE((*program)->run(ports).ok());
         const auto *actual = static_cast<const float *>(owners[2].value.contents);
         for (std::size_t token = 0; token < ids.size(); ++token)
-          for (int column = 0; column < width; ++column)
+          for (int column = 0; column < width; ++column) {
             const auto expected =
                 decoded[static_cast<std::size_t>(ids[token]) * width + column];
             const auto tolerance =
@@ -314,6 +314,7 @@ TEST(GgmlMetalProgram,
                     : 1.0e-6F;
             EXPECT_NEAR(actual[token * width + column], expected, tolerance)
                 << token << ' ' << column;
+          }
         ids = {1, 2};
       }
 
