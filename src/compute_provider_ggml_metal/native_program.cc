@@ -107,6 +107,16 @@ bool native_quantized(const TensorDesc &description) noexcept {
   return native_quantized_type(description) != GGML_TYPE_COUNT;
 }
 
+bool native_embedding_table(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  return type &&
+         (*type == GgufQuantizedType::kQ4K ||
+          *type == GgufQuantizedType::kQ6K ||
+          *type == GgufQuantizedType::kQ8_0) &&
+         description.data_type() == DataType::kFloat32 &&
+         description.rank() == 2 && description.block_axis() == 1;
+}
+
 ggml_tensor *native_tensor(ggml_context *context,
                            const TensorDesc &description) noexcept {
   std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
@@ -130,7 +140,8 @@ ggml_tensor *native_tensor(ggml_context *context,
 }
 
 bool mature_model_operation(Operation operation) noexcept {
-  return operation.get_if<MatMul>() || operation.get_if<GatedDeltaNet>() ||
+  return operation.get_if<MatMul>() || operation.get_if<Gather>() ||
+         operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
@@ -154,6 +165,9 @@ struct NativeProgram::State {
   std::size_t port_count = 0;
   std::size_t output_port = 0;
   std::size_t scores = 0;
+  std::size_t checked_index_port = std::numeric_limits<std::size_t>::max();
+  std::size_t checked_index_count = 0;
+  std::int64_t checked_index_extent = 0;
   bool failed = false;
 
   ~State() {
@@ -191,6 +205,7 @@ Status NativeProgram::validate(Operation operation,
           "ggml Metal GatedDeltaNet requires grouped heads, equal D32/64/128 and T<=32767");
   }
   const bool matmul = operation.get_if<MatMul>() != nullptr;
+  const auto *gather = operation.get_if<Gather>();
   const bool grouped = operation.custom_as<model_ops::GroupedMatMul>().has_value();
   if (matmul &&
       (inputs.size() != 2 || inputs[0].data_type() != DataType::kFloat32 ||
@@ -204,11 +219,21 @@ Status NativeProgram::validate(Operation operation,
        inputs[0].block_axis() != std::size_t{2}))
     return Status::Unimplemented(
         "ggml Metal grouped weight requires GGUF F32 [E,N,K]");
+  if (gather &&
+      (inputs.size() != 2 ||
+       gather->bounds != IndexBoundsPolicy::kChecked ||
+       (gather->axis != 0 && gather->axis != -2) ||
+       !native_embedding_table(inputs[0]) ||
+       inputs[1].data_type() != DataType::kInt32 || !inputs[1].is_plain() ||
+       !inputs[1].is_dense() || inputs[1].rank() != 1))
+    return Status::Unimplemented(
+        "ggml Metal Gather requires checked axis-0 I32 indices and a Q4_K/Q6_K/Q8_0 F32 embedding table");
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (native_quantized(inputs[i]) &&
-        ((!matmul && !grouped) || (matmul && i != 1) || (grouped && i != 0)))
+        ((!matmul && !grouped && !gather) || (matmul && i != 1) ||
+         (grouped && i != 0) || (gather && i != 0)))
       return Status::Unimplemented(
-          "ggml Metal admits GGUF storage only on a matrix weight port");
+          "ggml Metal admits GGUF storage only on a qualified weight port");
   for (const auto &input : inputs) {
     const bool quantized = native_quantized(input);
     if ((!input.is_plain() && !quantized) ||
@@ -262,6 +287,11 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       if (result != nullptr && !ggml_prec_set_acc(result, GGML_PREC_F32))
         return std::unexpected(Status::Unimplemented(
             "ggml Metal MatMul cannot apply F32 accumulation"));
+    } else if (operation.get_if<Gather>()) {
+      result = ggml_get_rows(state->arena.get(), t[0], t[1]);
+      state->checked_index_port = 1;
+      state->checked_index_count = inputs[1].element_count().value();
+      state->checked_index_extent = inputs[0].dimensions()[0];
     } else if (operation.get_if<GatedDeltaNet>()) {
       result = ggml_gated_delta_net(state->arena.get(), t[0], t[1], t[2],
                                     t[3], t[4], t[5], 1);
@@ -356,6 +386,15 @@ Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
       const auto capacity = ggml_backend_buffer_get_size(buffer);
       if (ports[i].offset > capacity || s.bytes[i] > capacity - ports[i].offset)
         return Status::OutOfRange("ggml Metal tensor exceeds its native buffer");
+      if (i == s.checked_index_port) {
+        const auto *indices = reinterpret_cast<const std::int32_t *>(
+            static_cast<const std::byte *>(ggml_backend_buffer_get_base(buffer)) +
+            ports[i].offset);
+        for (std::size_t index = 0; index < s.checked_index_count; ++index)
+          if (indices[index] < 0 || indices[index] >= s.checked_index_extent)
+            return Status::OutOfRange(
+                "ggml Metal Gather index out of range; output unchanged");
+      }
     }
     for (std::size_t i = 0; i < ports.size(); ++i) {
       if (replacements[i].value != nullptr) {

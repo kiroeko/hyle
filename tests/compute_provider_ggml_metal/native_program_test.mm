@@ -257,6 +257,79 @@ TEST(GgmlMetalProgram, EveryCatalogFormatRunsPackedMatMulAndReplays) {
   }
 }
 
+TEST(GgmlMetalProgram,
+     TargetEmbeddingFormatsUseNativeGetRowsAndCheckBoundsBeforeSubmit) {
+  @autoreleasepool {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    ASSERT_NE(device, nil);
+    constexpr int rows = 3;
+    constexpr int width = 256;
+    constexpr std::array types{c::GgufQuantizedType::kQ4K,
+                               c::GgufQuantizedType::kQ6K,
+                               c::GgufQuantizedType::kQ8_0};
+    const auto ids_desc =
+        c::TensorDesc::dense(c::DataType::kInt32,
+                             std::array<std::int64_t, 1>{2})
+            .value();
+    std::vector<float> weights(rows * width);
+    for (std::size_t i = 0; i < weights.size(); ++i)
+      weights[i] = 0.125F * std::sin(0.023F * static_cast<float>(i + 11));
+
+    for (const auto type : types) {
+      SCOPED_TRACE(static_cast<int>(type));
+      const auto stored =
+          c::gguf_weight_description(type, c::DataType::kFloat32, width, rows)
+              .value();
+      const auto table_desc = stored.transposed().value();
+      const std::array descriptions{table_desc, ids_desc};
+      auto program =
+          metal::NativeProgram::create(c::Operation(c::Gather{}), descriptions);
+      ASSERT_TRUE(program) << program.error().message();
+      auto packed = quantize(type, weights, rows, width,
+                             table_desc.required_bytes().value());
+      const auto decoded = dequantize(type, packed, rows, width);
+      std::array<std::int32_t, 2> ids{2, 0};
+      std::array<Buffer, 3> owners;
+      std::array<metal::BufferView, 3> ports;
+      const std::array bytes{packed.size(), ids.size() * sizeof(std::int32_t),
+                             (*program)->output_bytes()};
+      for (std::size_t i = 0; i < owners.size(); ++i) {
+        owners[i].value = [device newBufferWithLength:bytes[i]
+                                             options:MTLResourceStorageModeShared];
+        ASSERT_NE(owners[i].value, nil);
+        ports[i] = {(__bridge void *)owners[i].value, 0};
+      }
+      std::memcpy(owners[0].value.contents, packed.data(), packed.size());
+      for (int replay = 0; replay < 2; ++replay) {
+        std::memcpy(owners[1].value.contents, ids.data(), bytes[1]);
+        ASSERT_TRUE((*program)->run(ports).ok());
+        const auto *actual = static_cast<const float *>(owners[2].value.contents);
+        for (std::size_t token = 0; token < ids.size(); ++token)
+          for (int column = 0; column < width; ++column)
+            EXPECT_NEAR(actual[token * width + column],
+                        decoded[static_cast<std::size_t>(ids[token]) * width +
+                                column],
+                        1.0e-6F)
+                << token << ' ' << column;
+        ids = {1, 2};
+      }
+
+      std::vector<std::byte> before(bytes[2]);
+      std::memcpy(before.data(), owners[2].value.contents, before.size());
+      ids = {0, rows};
+      std::memcpy(owners[1].value.contents, ids.data(), bytes[1]);
+      EXPECT_TRUE((*program)->run(ports).IsOutOfRange());
+      EXPECT_EQ(std::memcmp(before.data(), owners[2].value.contents, before.size()),
+                0);
+      ids = {2, 0};
+      std::memcpy(owners[1].value.contents, ids.data(), bytes[1]);
+      EXPECT_TRUE((*program)->run(ports).ok());
+    }
+    ggml_quantize_free();
+    [device release];
+  }
+}
+
 TEST(GgmlMetalProgram, PackedIq4XsGroupedExpertsUseNativeMulMatId) {
   @autoreleasepool {
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();

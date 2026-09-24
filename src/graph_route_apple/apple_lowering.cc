@@ -55,6 +55,10 @@ bool ggml_model_operation(const Plan &plan, const Node &node) noexcept {
          (node.operation.get_if<compute::MatMul>() && node.inputs.size() == 2 &&
           compute::gguf_quantized_type(
               plan.descriptions[node.inputs[1]].storage_format())
+              .has_value()) ||
+         (node.operation.get_if<compute::Gather>() && node.inputs.size() == 2 &&
+          compute::gguf_quantized_type(
+              plan.descriptions[node.inputs[0]].storage_format())
               .has_value());
 }
 
@@ -334,7 +338,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       });
       if (has_gguf && !ggml_model_operation(*plan, node))
         return std::unexpected(Status::Unimplemented(
-            "Apple Graph GGUF carrier requires native MatMul or GroupedMatMul"));
+            "Apple Graph GGUF carrier requires a qualified native model operation"));
     }
     const bool has_native_model_region =
         std::ranges::any_of(plan->nodes, [&](const auto &node) {
@@ -346,7 +350,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
             "Original ggml Metal model regions and maximal MLX "
             "compiled regions; fixed cold binding";
         report->numerical_policy +=
-            "; provider-owned GGUF MatMul/grouped expert and mHC/recurrent "
+            "; provider-owned GGUF MatMul/grouped expert/checked embedding and mHC/recurrent "
             "F32 regions, explicit non-mutating initial/final state";
         report->boundary_policy +=
             "; checked host completion at runtime boundaries; native MTLBuffer "

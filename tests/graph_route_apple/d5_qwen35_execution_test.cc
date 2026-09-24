@@ -14,6 +14,7 @@
 
 #include <mlx/ops.h>
 
+#include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_route_apple/tensor_test_support.h"
 #include "hyle/compute/model_ops.h"
@@ -86,6 +87,14 @@ Tensor upload(const a::Context &, const c::TensorDesc &description,
   if (transposed)
     result = mx::transpose(result, stream());
   return {description, ready(std::move(result))};
+}
+
+mx::array packed_array(std::span<const std::byte> bytes) {
+  std::vector<std::uint8_t> storage(bytes.size());
+  std::memcpy(storage.data(), bytes.data(), bytes.size());
+  return ready(mx::array(storage.data(),
+                         mx::Shape{static_cast<int>(storage.size())},
+                         mx::uint8));
 }
 
 template <class T, std::size_t Extent>
@@ -173,6 +182,79 @@ template <class... Inputs>
 std::vector<mx::array> run(Call &call, const Inputs &...inputs) {
   const std::array<mx::array, sizeof...(Inputs)> values{native(inputs)...};
   return run(call, std::span<const mx::array>(values));
+}
+
+TEST(AppleGraphD5,
+     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto stored = c::gguf_weight_description(
+      c::GgufQuantizedType::kQ6K, c::DataType::kFloat32, hidden, rows);
+  ASSERT_TRUE(stored) << stored.error().message();
+  const auto table_desc = stored->transposed().value();
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x010f);
+  const auto physical = d5_gguf_test::values(rows, hidden, 41);
+  const auto packed =
+      d5_gguf_test::pack(c::GgufQuantizedType::kQ6K, physical, rows, hidden,
+                         table_desc.required_bytes().value());
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto table = builder.constant(table_desc).value();
+  const auto ids = builder.input(ids_desc).value();
+  const auto embedded = builder.add(c::Gather{}, table, ids).value();
+  ASSERT_TRUE(builder.publish(embedded).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array constants{packed_array(packed.bytes)};
+  auto context = a::Context::create().value();
+  ga::CompileReport report;
+  auto program =
+      ga::compile(context, graph, constants,
+                  {.report = &report, .workload = workload});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_NE(report.implementation_policy.find("ggml Metal"),
+            std::string::npos);
+  EXPECT_EQ(program->workload(), workload);
+
+  auto invocation = program->create_invocation().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  std::optional<mx::array> retained;
+  for (const auto &selection : selections) {
+    const auto native_ids = upload(context, ids_desc, std::span(selection));
+    const std::array inputs{native(native_ids)};
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    ASSERT_EQ(result->get()->arrays().size(), 1U);
+    const auto &output = result->get()->arrays()[0];
+    const auto actual = values(output);
+    const auto expected =
+        d5_gguf_test::selected_rows(packed.decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+    retained = output;
+  }
+
+  ASSERT_TRUE(retained.has_value());
+  const auto before_failure = bits(*retained);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const auto bad_ids = upload(context, ids_desc, std::span(invalid));
+  const std::array bad_inputs{native(bad_ids)};
+  ASSERT_TRUE(invocation.bind(bad_inputs).ok());
+  auto failed = invocation.submit();
+  ASSERT_TRUE(failed) << failed.error().message();
+  auto failure = failed->wait();
+  ASSERT_FALSE(failure);
+  EXPECT_TRUE(failure.error().IsOutOfRange());
+  EXPECT_EQ(bits(*retained), before_failure);
 }
 
 TEST(AppleGraphD5,

@@ -92,7 +92,9 @@ bool ggml_model_operation(const Operation &operation,
                           std::span<const TensorDesc> inputs) noexcept {
   return fixed_ggml_model_operation(operation) ||
          (operation.get_if<MatMul>() && inputs.size() == 2 &&
-          gguf_quantized_type(inputs[1].storage_format()).has_value());
+          gguf_quantized_type(inputs[1].storage_format()).has_value()) ||
+         (operation.get_if<Gather>() && inputs.size() == 2 &&
+          gguf_quantized_type(inputs[0].storage_format()).has_value());
 }
 
 Result<DataType> logical_type(mx::Dtype type) noexcept {
@@ -323,7 +325,7 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
           return gguf_quantized_type(description.storage_format()).has_value();
         }))
       return std::unexpected(Status::Unimplemented(
-          "Apple GGUF carrier is only admitted by native MatMul or GroupedMatMul"));
+          "Apple GGUF carrier is only admitted by qualified native model operations"));
     return compile(
         [operation, workload](const auto &values, mx::Stream stream) {
           return lower(operation, values, stream, workload);
