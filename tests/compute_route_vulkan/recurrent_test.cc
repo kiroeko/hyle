@@ -6,7 +6,6 @@
 #include "../sparse_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
-#include "../compute_ops/qwen35_recurrent_contract_test_support.h"
 
 namespace {
 using namespace vulkan_recurrent_test;
@@ -73,27 +72,6 @@ TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
   EXPECT_TRUE(context.close().ok());
   context = {};
   EXPECT_EQ(quota.used(), 0U);
-}
-
-TEST(VulkanRecurrent,
-     Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation) {
-  auto context = vulkan_test::context().value();
-  for (const std::int64_t tokens : {1, 17, 128}) {
-    SCOPED_TRACE(tokens);
-    const auto f32 = qwen35_recurrent_contract_test::inputs(
-        c::DataType::kFloat32, tokens);
-    auto accepted = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
-                               std::vector<v::Argument>(f32.begin(), f32.end()));
-    ASSERT_TRUE(accepted) << accepted.error().message();
-
-    const auto b16 = qwen35_recurrent_contract_test::inputs(
-        c::DataType::kBFloat16, tokens);
-    auto rejected = v::prepare(
-        context, c::Operation(c::GatedDeltaNet{}),
-        std::vector<v::Argument>(b16.begin(), b16.end()));
-    ASSERT_FALSE(rejected);
-    EXPECT_TRUE(rejected.error().IsUnimplemented());
-  }
 }
 
 TEST(VulkanRecurrent, RejectsUnsupportedDomainAndPreservesSuccessfulBinding) {

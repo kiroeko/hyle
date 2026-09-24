@@ -2016,10 +2016,12 @@
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2077,17 +2079,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2102,10 +2108,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2152,10 +2160,12 @@
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2170,10 +2180,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2211,17 +2223,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2236,10 +2252,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2426,10 +2444,12 @@
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2444,10 +2464,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2484,17 +2506,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2509,10 +2535,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2558,10 +2586,12 @@
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2576,10 +2606,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2616,17 +2648,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2641,10 +2677,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2676,17 +2714,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2701,10 +2743,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2741,17 +2785,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2766,10 +2814,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2806,17 +2856,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2831,10 +2885,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2872,17 +2928,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2897,10 +2957,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -2938,17 +3000,21 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -2963,10 +3029,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3080,10 +3148,12 @@
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -3098,10 +3168,12 @@
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b1-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3138,31 +3210,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3199,31 +3279,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3260,31 +3348,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3321,31 +3417,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3382,10 +3486,12 @@
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
@@ -3456,10 +3562,12 @@
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3560,24 +3668,30 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3624,24 +3738,30 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3682,24 +3802,30 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3741,24 +3867,30 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3801,24 +3933,30 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3858,24 +3996,30 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b2-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
@@ -3923,30 +4067,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -3987,30 +4139,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4050,30 +4210,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4113,30 +4281,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4169,30 +4345,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4225,30 +4409,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The route now has an actual Qwen3.5 real-shape prepare receipt: F32 is admitted where applicable and BF16 is rejected at the first GatedDeltaNet boundary for T=1/17/128. The B16 model chain is therefore numerically incompatible before payload execution.",
+          "reason": "The real Qwen3.5-2B chain supplies BF16 convolution/recurrent values with F32 recurrent state, while the qualified mature route accepts this recurrent region only as dense F32.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b3-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4282,31 +4474,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4340,31 +4540,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4394,31 +4602,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4455,30 +4671,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4515,30 +4739,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4568,31 +4800,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common grouped-expert schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4625,30 +4865,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4678,31 +4926,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4734,31 +4990,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4789,31 +5053,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common hyper-connection schema actually rejects BF16 while the route executes the admitted F32 provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4845,31 +5117,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "The common sparse-index schema actually rejects BF16 while the route executes the admitted F32/F16-mask provider fragment. The required row includes BF16/F16 model storage, so the complete fragment cannot be signed PASS.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b4-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4903,31 +5183,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -4961,31 +5249,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5020,30 +5316,38 @@
       "route_coverage": {
         "cpu": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
           "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Actual common-schema execution rejects the required BF16 model domain while the named route receipts execute the admitted F32 mature fragment. The exact row remains numerically incompatible.",
+          "reason": "The qualified mature fragment is dense F32 (with its named auxiliary ports), while this row also requires the checkpoint BF16/F16 domain; primitive success cannot sign the whole row.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5073,31 +5377,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5128,31 +5440,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5183,31 +5503,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5239,31 +5567,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5295,31 +5631,39 @@
       },
       "route_coverage": {
         "cpu": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CPU; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "cuda": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on CUDA; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "apple_mlx_metal": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Apple MLX/Metal; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         },
         "vulkan": {
-          "state": "PASS",
-          "reason": "M3 second-pass execution binds this requirement to named passing Direct and Graph tests on the current route. The receipts cover the declared typed fragment, replay/resource lifetime and consumer-owned composition edges; this is not a full-model inference claim.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "M2 bound mature primitives or regions, but M3 did not execute this requirement complete real-model Direct/Graph chain on Vulkan; no PASS is inferred.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b5-terminal.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5376,10 +5720,12 @@
           ]
         },
         "vulkan": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Exact IREE FP8 direct and graph regions execute, but the same route actually rejects the real-shape BF16 recurrent boundary required by the complete 2B/profile chain.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "IREE Vulkan accepts the exact dense FP8 format and passed its provider region, but the complete 24-layer/profile chain was not run.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5435,10 +5781,12 @@
           ]
         },
         "vulkan": {
-          "state": "NUMERIC_INCOMPATIBLE",
-          "reason": "Exact IREE FP8 direct and graph regions execute, but the same route actually rejects the real-shape BF16 recurrent boundary required by the complete 2B/profile chain.",
+          "state": "VALIDATION_NOT_RUN",
+          "reason": "IREE Vulkan accepts the exact dense FP8 format and passed its provider region, but the complete 24-layer/profile chain was not run.",
           "evidence": [
-            "evidence/correctness/compute-llm-moe-m3/execution-map.json"
+            "docs/implementation/tasks/compute/llm-moe-m2-b6-low-precision.md",
+            "evidence/correctness/compute-llm-moe-m3/audit.json",
+            "evidence/correctness/compute-llm-moe-m3/acceptance.json"
           ]
         }
       }
@@ -5921,10 +6269,10 @@
     "provider_admission_and_work_packages": "llm-moe-provider-integration-ledger.md"
   },
   "m3_adjudication": {
-    "state": "CANDIDATE",
+    "state": "IN_PROGRESS",
     "date": "2026-09-24",
     "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
     "acceptance": "evidence/correctness/compute-llm-moe-m3/acceptance.json",
-    "meaning": "All 256 cells have actual receipts or named executed rejection boundaries; validation is complete and the immutable M3 candidate awaits terminal closure. M4 has not started."
+    "meaning": "Initial classification is complete; 134 VALIDATION_NOT_RUN cells remain M3 execution work and are not M4 inputs or product support claims."
   }
 }

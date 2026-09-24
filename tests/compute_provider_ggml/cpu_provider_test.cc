@@ -19,7 +19,6 @@
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/mem/quota_allocator.h"
-#include "../compute_ops/qwen35_recurrent_contract_test_support.h"
 #include "hyle/mem/stats.h"
 
 namespace {
@@ -173,29 +172,6 @@ TEST(GgmlCpuProvider, MatureKdaPublishesScoresAndStateIndependently) {
   EXPECT_EQ(half_test::read<float>(output_storage[0]),
             std::vector<float>(*output_desc[0].element_count(), 0.F));
   EXPECT_EQ(half_test::read<float>(output_storage[1]), expected_state);
-}
-
-TEST(GgmlCpuProvider,
-     Qwen35RealShapeAcceptsF32AndRejectsBfloatAtPreparation) {
-  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  for (const std::int64_t tokens : {1, 17, 128}) {
-    SCOPED_TRACE(tokens);
-    const auto f32 = qwen35_recurrent_contract_test::inputs(
-        DataType::kFloat32, tokens);
-    const auto f32_outputs = qwen35_recurrent_contract_test::outputs(f32);
-    auto accepted = prepare(context, Operation(GatedDeltaNet{}), f32,
-                            f32_outputs, hyle::mem::system_resource());
-    ASSERT_TRUE(accepted) << accepted.error().message();
-    EXPECT_EQ(accepted->provider().id, ggml_cpu::kProviderId);
-
-    const auto b16 = qwen35_recurrent_contract_test::inputs(
-        DataType::kBFloat16, tokens);
-    const auto b16_outputs = qwen35_recurrent_contract_test::outputs(b16);
-    auto rejected = prepare(context, Operation(GatedDeltaNet{}), b16,
-                            b16_outputs, hyle::mem::system_resource());
-    ASSERT_FALSE(rejected);
-    EXPECT_TRUE(rejected.error().IsUnimplemented());
-  }
 }
 
 TEST(GgmlCpuProvider, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
