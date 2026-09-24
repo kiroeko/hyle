@@ -900,7 +900,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R03"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-r03/receipt.json"
+        }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:cuda:graph",
@@ -909,7 +918,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R03"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-r03/receipt.json"
+        }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:apple:direct",
