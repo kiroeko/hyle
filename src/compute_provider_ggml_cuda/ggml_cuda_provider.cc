@@ -55,11 +55,20 @@ struct Context final {
   Extension extension;
 };
 struct Program final {
+  struct IndexCheck final {
+    std::uint32_t input = 0;
+    std::size_t offset = 0;
+    std::size_t count = 0;
+    std::int64_t extent = 0;
+  };
+
   CUcontext primary = nullptr;
   int device = -1;
   internal::Recipe recipe;
   std::vector<std::size_t> alignments;
   std::vector<std::vector<float>> hadamards;
+  std::vector<IndexCheck> index_checks;
+  std::size_t index_value_count = 0;
 };
 
 // Called only from catch blocks; native namespaces and numbers survive the
@@ -106,6 +115,7 @@ struct Invocation final {
   std::vector<internal::DenseConstant> dense_constants;
   std::vector<ggml_tensor *> views;
   std::vector<void *> pointers;
+  std::vector<std::int32_t> index_values;
   bool failed = false;
 
   Invocation() = default;
@@ -227,6 +237,7 @@ struct Invocation final {
     roots.resize(count, nullptr);
     buffers.resize(count, nullptr);
     pointers.resize(recipe.inputs.size() + recipe.outputs.size());
+    index_values.resize(program.index_value_count);
     backend = ggml_backend_cuda_init(program.device);
     if (!backend)
       return Status::ResourceExhausted("ggml CUDA backend allocation failed");
@@ -442,7 +453,31 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
     bind(recipe.outputs[i], invocation.pointers[inputs.size() + i]);
   invocation.bind_views();
 
-  Status terminal = cuda::status(cudaEventRecord(invocation.entry, *stream));
+  Status terminal = Status::Ok();
+  for (const auto &check : program.index_checks) {
+    terminal = cuda::status(cudaMemcpyAsync(
+        invocation.index_values.data() + check.offset,
+        invocation.pointers[check.input], check.count * sizeof(std::int32_t),
+        cudaMemcpyDeviceToHost, *stream));
+    if (!terminal.ok())
+      break;
+  }
+  if (terminal.ok() && !program.index_checks.empty())
+    terminal = cuda::status(cudaStreamSynchronize(*stream));
+  if (!terminal.ok())
+    return detail::EnqueueResult::accepted_command(std::move(terminal));
+  for (const auto &check : program.index_checks) {
+    const auto begin = invocation.index_values.begin() +
+                       static_cast<std::ptrdiff_t>(check.offset);
+    const auto end = begin + static_cast<std::ptrdiff_t>(check.count);
+    if (std::ranges::any_of(begin, end, [&](const auto index) {
+          return index < 0 || index >= check.extent;
+        }))
+      return detail::EnqueueResult::accepted_command(Status::OutOfRange(
+          "ggml CUDA Gather index out of range; output unchanged"));
+  }
+
+  terminal = cuda::status(cudaEventRecord(invocation.entry, *stream));
   if (terminal.ok())
     terminal =
         cuda::status(cudaStreamWaitEvent(invocation.root, invocation.entry, 0));
@@ -606,6 +641,8 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   const auto &context = *static_cast<Context *>(value);
   std::vector<std::size_t> alignments;
   std::vector<std::vector<float>> hadamards;
+  std::vector<Program::IndexCheck> index_checks;
+  std::size_t index_value_count = 0;
   try {
     alignments.resize(recipe.values.size(), 1);
     hadamards.resize(recipe.nodes.size());
@@ -621,6 +658,23 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         require(id);
       for (const auto id : node.outputs)
         require(id);
+      if (const auto *gather = node.operation.get_if<Gather>();
+          gather && gather->bounds == IndexBoundsPolicy::kChecked) {
+        const auto input = std::ranges::find(recipe.inputs, node.inputs[1]);
+        if (input == recipe.inputs.end())
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+              "ggml CUDA checked Gather indices must be a dynamic input"));
+        const auto count =
+            recipe.values[node.inputs[1]].element_count().value();
+        if (count > SIZE_MAX - index_value_count)
+          return ProviderPrepareOutcome::error(
+              Status::OutOfRange("ggml CUDA index-check size overflows"));
+        index_checks.push_back(
+            {static_cast<std::uint32_t>(input - recipe.inputs.begin()),
+             index_value_count, count,
+             recipe.values[node.inputs[0]].dimensions()[0]});
+        index_value_count += count;
+      }
       if (node.operation.get_if<Hadamard>()) {
         const auto width = recipe.values[node.outputs[0]].dimensions().back();
         if (width <= 0 || width > 4096 ||
@@ -651,7 +705,8 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   *output = {.vtable = &kPrepared,
              .state = ::new (storage)
                  Program{context.primary, context.device, std::move(recipe),
-                         std::move(alignments), std::move(hadamards)},
+                         std::move(alignments), std::move(hadamards),
+                         std::move(index_checks), index_value_count},
              .workspace = {},
              .runtime = kRuntime,
              .persistent_bytes = std::nullopt,

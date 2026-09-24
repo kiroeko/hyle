@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
@@ -110,6 +111,76 @@ void run(DirectCall &call, c::Queue &queue,
   auto completion = call.invocation.submit(queue, inputs, outputs);
   ASSERT_TRUE(completion) << completion.error().message();
   ASSERT_TRUE(completion->wait().ok());
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto stored = c::gguf_weight_description(
+      c::GgufQuantizedType::kQ6K, c::DataType::kFloat32, hidden, rows);
+  ASSERT_TRUE(stored) << stored.error().message();
+  const auto table_desc = stored->transposed().value();
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto output_desc = dense(c::DataType::kFloat32, {tokens, hidden});
+  const std::array input_descs{table_desc, ids_desc};
+  const std::array output_descs{output_desc};
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x010f);
+
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto prepared = c::prepare(context, c::Operation(c::Gather{}), input_descs,
+                             output_descs, resource, workload);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, c::ggml_cuda::kProviderId);
+  EXPECT_EQ(prepared->workload(), workload);
+
+  const auto physical = d5_gguf_test::values(rows, hidden, 17);
+  const auto packed =
+      d5_gguf_test::pack(c::GgufQuantizedType::kQ6K, physical, rows, hidden,
+                         table_desc.required_bytes().value());
+  auto table_buffer = bytes_buffer(resource, packed.bytes);
+  auto ids_buffer = output_buffer(resource, ids_desc);
+  auto result_buffer = output_buffer(resource, output_desc);
+  const auto table =
+      c::ConstTensorView::create(table_desc, table_buffer.view()).value();
+  const auto ids =
+      c::ConstTensorView::create(ids_desc, ids_buffer.view()).value();
+  const auto result =
+      c::TensorView::create(output_desc, result_buffer.view()).value();
+  const std::array inputs{table, ids};
+  const std::array outputs{result};
+  auto invocation = prepared->create_invocation().value();
+  auto queue = context.create_queue().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  for (const auto &selection : selections) {
+    ASSERT_TRUE(
+        ids_buffer.view().write(std::as_bytes(std::span(selection))).ok());
+    auto done = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(result_buffer);
+    const auto expected =
+        d5_gguf_test::selected_rows(packed.decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6F) << i;
+  }
+
+  const auto before_failure = read_bytes(result_buffer);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
+  auto failed = invocation.submit(queue, inputs, outputs);
+  ASSERT_TRUE(failed) << failed.error().message();
+  EXPECT_FALSE(failed->wait().ok());
+  EXPECT_EQ(read_bytes(result_buffer), before_failure);
 }
 
 TEST(CudaDefaultCompute,

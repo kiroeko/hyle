@@ -1,8 +1,9 @@
-#include "softmax_test_support.h"
-#include "tensor_test_support.h"
+#include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
+#include "softmax_test_support.h"
+#include "tensor_test_support.h"
 
 #include <ggml.h>
 
@@ -313,8 +314,7 @@ TEST(GgmlCudaTensor, D5Qwen38GroupedHeadsUseMatureGatedDeltaNet) {
   const std::array outputs{
       TensorView::create(fixture.outputs[0], output_storage[0].view()).value(),
       TensorView::create(fixture.outputs[1], output_storage[1].view()).value()};
-  const auto workload =
-      d5_qwen38_gdn_fixture::workload(WorkloadPhase::kDecode);
+  const auto workload = d5_qwen38_gdn_fixture::workload(WorkloadPhase::kDecode);
   auto prepared = prepare(ctx, Operation(GatedDeltaNet{}), inputs, outputs,
                           resource, workload);
   ASSERT_TRUE(prepared) << prepared.error().message();
@@ -350,12 +350,13 @@ TEST(GgmlCudaTensor, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
     for (std::size_t i = 0; i < test.inputs.size(); ++i) {
       storage.push_back(upload<std::byte>(resource, test.payloads[i]));
       inputs.push_back(
-          ConstTensorView::create(test.inputs[i], storage.back().view()).value());
+          ConstTensorView::create(test.inputs[i], storage.back().view())
+              .value());
     }
     auto output = output_buffer(resource, test.output);
-    const auto status = execute(
-        ctx, test.operation, inputs,
-        TensorView::create(test.output, output.view()).value());
+    const auto status =
+        execute(ctx, test.operation, inputs,
+                TensorView::create(test.output, output.view()).value());
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<float>(output);
     ASSERT_EQ(actual.size(), test.expected.size());
@@ -626,6 +627,67 @@ TEST(GgmlCudaTensor, NativeQ4KMatMulImportsGgufBytesAndReplays) {
       ASSERT_TRUE(
           left.view().write(std::as_bytes(std::span(left_values))).ok());
     }
+  }
+}
+
+TEST(GgmlCudaTensor, NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr std::int64_t rows = 3;
+  constexpr std::int64_t width = 256;
+  constexpr std::array formats{GgufQuantizedType::kQ4K, GgufQuantizedType::kQ6K,
+                               GgufQuantizedType::kQ8_0};
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+
+  for (const auto format : formats) {
+    SCOPED_TRACE(static_cast<int>(format));
+    const auto stored =
+        gguf_weight_description(format, DataType::kFloat32, width, rows);
+    ASSERT_TRUE(stored) << stored.error().message();
+    const auto table_desc = stored->transposed().value();
+    const auto ids_desc = dense(DataType::kInt32, {2});
+    const auto output_desc = dense(DataType::kFloat32, {2, width});
+    const auto physical = d5_gguf_test::values(rows, width, 29);
+    const auto packed = d5_gguf_test::pack(format, physical, rows, width,
+                                           table_desc.required_bytes().value());
+    auto table = upload<std::byte>(memory.ref(), packed.bytes);
+    std::array<std::int32_t, 2> selected{2, 0};
+    auto ids = upload<std::int32_t>(memory.ref(), selected);
+    auto output = output_buffer(memory.ref(), output_desc);
+    const std::array inputs{
+        ConstTensorView::create(table_desc, table.view()).value(),
+        ConstTensorView::create(ids_desc, ids.view()).value()};
+    auto output_view = TensorView::create(output_desc, output.view()).value();
+    auto prepared =
+        prepare(ctx, Operation(Gather{}), inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+    auto invocation = prepared->create_invocation().value();
+    auto queue = ctx.create_queue().value();
+
+    for (int replay = 0; replay < 2; ++replay) {
+      ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+      auto completion =
+          invocation.submit(queue, inputs, std::span(&output_view, 1));
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual = half_test::read<float>(output);
+      const auto expected =
+          d5_gguf_test::selected_rows(packed.decoded, width, selected);
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[i], 1.0e-6F) << i;
+      selected = {1, 2};
+    }
+
+    const auto before_failure = half_test::read<float>(output);
+    selected = {0, static_cast<std::int32_t>(rows)};
+    ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+    auto failed = invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(failed) << failed.error().message();
+    EXPECT_FALSE(failed->wait().ok());
+    EXPECT_EQ(half_test::read<float>(output), before_failure);
   }
 }
 

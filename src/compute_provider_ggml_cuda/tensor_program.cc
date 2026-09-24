@@ -59,6 +59,15 @@ ggml_type native_type(const TensorDesc &description) noexcept {
 bool native_quantized(const TensorDesc &description) noexcept {
   return native_quantized_type(description) != GGML_TYPE_COUNT;
 }
+bool native_embedding_table(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  return type &&
+         (*type == GgufQuantizedType::kQ4K ||
+          *type == GgufQuantizedType::kQ6K ||
+          *type == GgufQuantizedType::kQ8_0) &&
+         description.data_type() == DataType::kFloat32 &&
+         description.rank() == 2 && description.block_axis() == 1;
+}
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -263,6 +272,7 @@ bool tensor_operation_supports(Operation operation,
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (!representable(inputs[i]) &&
         !((operation.get_if<RoPE>() && i == 1 ||
+           operation.get_if<Gather>() && i == 1 ||
            operation.custom_as<model_ops::GroupedMatMul>() && i == 2) &&
           inputs[i].valid() && inputs[i].is_plain() && inputs[i].is_dense() &&
           inputs[i].data_type() == DataType::kInt32 &&
@@ -271,7 +281,8 @@ bool tensor_operation_supports(Operation operation,
       return false;
   const bool has_quantized = std::ranges::any_of(inputs, native_quantized);
   if (has_quantized && !operation.get_if<MatMul>() &&
-      !operation.custom_as<model_ops::GroupedMatMul>())
+      !operation.custom_as<model_ops::GroupedMatMul>() &&
+      !operation.get_if<Gather>())
     return false;
   std::vector<TensorDesc> inferred(outputs.size());
   if (!infer_output_descriptions(operation, inputs, inferred).ok() ||
@@ -296,11 +307,13 @@ bool tensor_operation_supports(Operation operation,
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
     return outputs.size() == 1 &&
-           std::ranges::all_of(inputs, [](const auto &description) {
-             return description.is_dense() &&
-                    (description.data_type() == DataType::kFloat32 ||
-                     description.data_type() == DataType::kInt32);
-           }) &&
+           std::ranges::all_of(
+               inputs,
+               [](const auto &description) {
+                 return description.is_dense() &&
+                        (description.data_type() == DataType::kFloat32 ||
+                         description.data_type() == DataType::kInt32);
+               }) &&
            outputs[0].data_type() == DataType::kFloat32;
   if (operation.custom_as<model_ops::LightningIndexer>())
     return outputs.size() == 1 && inputs.size() == 4 &&
@@ -308,9 +321,10 @@ bool tensor_operation_supports(Operation operation,
            inputs[1].data_type() == DataType::kFloat32 &&
            inputs[2].data_type() == DataType::kFloat32 &&
            inputs[3].data_type() == DataType::kFloat16 &&
-           std::ranges::all_of(inputs, [](const auto &description) {
-             return description.is_dense();
-           }) &&
+           std::ranges::all_of(inputs,
+                               [](const auto &description) {
+                                 return description.is_dense();
+                               }) &&
            outputs[0].data_type() == DataType::kFloat32;
   if (operation.get_if<GatedDeltaNet>()) {
     if (outputs.size() != 2 || inputs.size() != 6 ||
@@ -364,6 +378,14 @@ bool tensor_operation_supports(Operation operation,
     return softmax->kind == SoftmaxKind::kSoftmax &&
            softmax->mask != MaskKind::kBoolean &&
            softmax->accumulation_type == DataType::kFloat32;
+  if (const auto *gather = operation.get_if<Gather>())
+    return inputs.size() == 2 &&
+           gather->bounds == IndexBoundsPolicy::kChecked &&
+           (gather->axis == 0 || gather->axis == -2) &&
+           native_embedding_table(inputs[0]) && inputs[1].rank() == 1 &&
+           inputs[1].is_dense() && inputs[1].data_type() == DataType::kInt32 &&
+           output.rank() == 2 && output.is_dense() &&
+           output.data_type() == DataType::kFloat32;
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const bool quantized_rhs = native_quantized(inputs[1]);
     if (inputs.size() != 2 || inputs[0].rank() < 2 || inputs[0].rank() > 4 ||
@@ -580,6 +602,9 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       result = result ? ggml_concat(context, result, part, 1)
                       : ggml_dup(context, part);
     }
+  } else if (node.operation.get_if<Gather>()) {
+    result =
+        ggml_get_rows(context, values[node.inputs[0]], values[node.inputs[1]]);
   } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
     auto *samples = ggml_cont(
         context, ggml_permute(context, values[node.inputs[0]], 1, 0, 2, 3));
