@@ -513,25 +513,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute_route_apple 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
+      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Apple packed carrier 与 ggml Metal MatMul/GroupedMatMul 普通入口不可达；当前只审计三 owner 的有限接缝。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：graph_route_apple 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
+      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Apple packed carrier 与 ggml Metal MatMul/GroupedMatMul 普通入口不可达；当前只审计三 owner 的有限接缝。"
     },
     {
       "module": "compute_route_vulkan",

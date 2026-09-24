@@ -129,6 +129,11 @@ DeepSeek V4 Pro preview 的 0813 GGUF sibling 只保留为格式证据，不计�
 施工顺序固定为：公共 catalog → CPU/CUDA ggml → Apple Metal/MLX → Vulkan ggml/IREE → 旧接线退场 →
 真实片段与三交付。相同 Provider 的 storage/lowering/receipt 按路线整批完成，不再逐算子开卡。
 
+当前 D3 路线子批：
+
+- [CPU/CUDA ggml native storage 接缝](llm-moe-d3-ggml-native-binding.md)
+- [Apple ggml Metal native storage 接缝](llm-moe-d3-ggml-metal-native-binding.md)
+
 ## AUDITED
 
 D1/D2 已完成，以上六项是本轮全部产品 FIX。后续只有表中具名 owner 可以重开；先按合法状态迁移
