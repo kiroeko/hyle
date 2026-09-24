@@ -689,6 +689,19 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_lightning_indexer(context, arguments[0], arguments[1],
                                         arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>()) {
+        // The fixed upstream Vulkan small-matvec selector admits a BF16
+        // activation for one to four rank-2 rows, but its selected pipeline
+        // accepts only F32/F16/Q8_1 on that port. Keep the BF16 weight and
+        // FP32 accumulation while widening only the tiny activation boundary;
+        // otherwise the backend aborts instead of returning unsupported.
+        const auto &activation = recipe.values[node.inputs[0]];
+        const auto elements = activation.element_count();
+        const bool small_matvec =
+            activation.rank() == 2 && activation.dimensions().back() > 0 &&
+            elements && *elements > 0 &&
+            *elements / activation.dimensions().back() <= 4;
+        if (left->type == GGML_TYPE_BF16 && small_matvec)
+          left = ggml_cast(context, left, GGML_TYPE_F32);
         auto *right = arguments[1];
         const bool quantized =
             quantized_weight_domain(recipe.values[node.inputs[1]]);

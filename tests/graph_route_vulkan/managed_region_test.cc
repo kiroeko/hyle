@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute/workload_fixture.h"
 #include "../compute_route_vulkan/gate_norm_test_support.h"
 #include "hyle/graph/vulkan.h"
@@ -8,6 +9,60 @@ namespace {
 using namespace vulkan_gate_norm_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
+
+TEST(VulkanGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
+  const auto fixture_root = d5_qwen35_fixture::root();
+  if (!fixture_root)
+    GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
+  d5_qwen35_fixture::Projection fixture;
+  ASSERT_NO_THROW(fixture = d5_qwen35_fixture::load_projection(*fixture_root));
+
+  auto context = vulkan_test::context().value();
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, d5_qwen35_fixture::kHidden});
+  const auto stored_weight_desc =
+      dense(c::DataType::kBFloat16,
+            {d5_qwen35_fixture::kHidden, d5_qwen35_fixture::kHidden});
+  const auto weight_desc = stored_weight_desc.transposed().value();
+  auto weight = context.upload(weight_desc, fixture.weight).value();
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto activation_value = builder.input(activation_desc).value();
+  const auto weight_value = builder.constant(weight_desc).value();
+  const auto output_value =
+      builder.add(c::MatMul{}, activation_value, weight_value).value();
+  ASSERT_TRUE(builder.publish(output_value).ok());
+  auto graph = std::move(builder).finish().value();
+  const auto workload =
+      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode);
+  gv::CompileReport report;
+  auto program = gv::compile(context, graph, std::array{weight},
+                             {.report = &report, .workload = workload});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  EXPECT_EQ(report.managed_region_count, 1U);
+
+  auto invocation = program->create_invocation().value();
+  for (int run = 0; run < 2; ++run) {
+    auto payload = fixture.activation;
+    if (run != 0) {
+      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden; ++index)
+        payload[index * 2 + 1] ^= std::byte{0x80};
+    }
+    auto activation = context.upload(activation_desc, payload).value();
+    ASSERT_TRUE(invocation.bind(activation).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual = values(context, result->get()->tensors()[0]);
+    ASSERT_EQ(actual.size(), fixture.expected.size());
+    for (std::size_t index = 0; index < actual.size(); ++index)
+      half_test::expect_near(
+          half_test::encode<B16>(actual[index]),
+          run == 0 ? fixture.expected[index] : -fixture.expected[index]);
+  }
+}
 
 TEST(VulkanGraph,
      ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks) {

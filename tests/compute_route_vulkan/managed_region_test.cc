@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute/workload_fixture.h"
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
@@ -9,6 +10,93 @@
 namespace {
 using namespace vulkan_gate_norm_test;
 namespace d = v::detail;
+
+TEST(VulkanManaged, D5RealQwenProjectionUsesExactProfileAndReplays) {
+  const auto fixture_root = d5_qwen35_fixture::root();
+  if (!fixture_root)
+    GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
+  d5_qwen35_fixture::Projection fixture;
+  ASSERT_NO_THROW(fixture = d5_qwen35_fixture::load_projection(*fixture_root));
+
+  auto context = vulkan_test::context().value();
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, d5_qwen35_fixture::kHidden});
+  const auto stored_weight_desc =
+      dense(c::DataType::kBFloat16,
+            {d5_qwen35_fixture::kHidden, d5_qwen35_fixture::kHidden});
+  const auto weight_desc = stored_weight_desc.transposed().value();
+  auto weight = context.upload(weight_desc, fixture.weight).value();
+  const auto workload =
+      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode);
+  auto program =
+      v::prepare(context, workload, c::MatMul{}, activation_desc, weight);
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->workload(), workload);
+  EXPECT_EQ(std::ranges::count_if(
+                d::Access::program(*program)->dispatches,
+                [](const auto &dispatch) { return !!dispatch.region; }),
+            1);
+
+  auto invocation = program->create_invocation().value();
+  for (int run = 0; run < 2; ++run) {
+    auto payload = fixture.activation;
+    if (run != 0) {
+      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden; ++index)
+        payload[index * 2 + 1] ^= std::byte{0x80};
+    }
+    auto activation = context.upload(activation_desc, payload).value();
+    ASSERT_TRUE(invocation.bind(activation).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual = values(context, result->get()->tensors()[0]);
+    ASSERT_EQ(actual.size(), fixture.expected.size());
+    for (std::size_t index = 0; index < actual.size(); ++index)
+      half_test::expect_near(
+          half_test::encode<B16>(actual[index]),
+          run == 0 ? fixture.expected[index] : -fixture.expected[index]);
+  }
+}
+
+TEST(VulkanManaged, BfloatRank2SmallMatvecWidensActivationBoundary) {
+  auto context = vulkan_test::context().value();
+  constexpr std::int64_t depth = 64;
+  constexpr std::int64_t columns = 8;
+  const auto stored_weight_desc =
+      dense(c::DataType::kBFloat16, {columns, depth});
+  const auto weight_desc = stored_weight_desc.transposed().value();
+  std::vector<double> weight_values(depth * columns);
+  for (std::size_t i = 0; i < weight_values.size(); ++i)
+    weight_values[i] = (static_cast<int>(i % 31) - 15) / 32.0;
+  auto weight = make(context, weight_desc, weight_values);
+
+  for (std::int64_t rows = 1; rows <= 4; ++rows) {
+    SCOPED_TRACE(rows);
+    const auto activation_desc =
+        dense(c::DataType::kBFloat16, {rows, depth});
+    auto program = v::prepare(context, c::MatMul{}, activation_desc, weight);
+    ASSERT_TRUE(program) << program.error().message();
+    auto invocation = program->create_invocation().value();
+    std::vector<double> activation_values(rows * depth);
+    for (std::size_t i = 0; i < activation_values.size(); ++i)
+      activation_values[i] = (static_cast<int>(i % 23) - 11) / 16.0;
+    auto activation = make(context, activation_desc, activation_values);
+    ASSERT_TRUE(invocation.bind(activation).ok());
+    auto result = invocation.submit().value().wait();
+    ASSERT_TRUE(result) << result.error().message();
+    std::vector<double> expected(rows * columns, 0.0);
+    for (std::int64_t row = 0; row < rows; ++row)
+      for (std::int64_t column = 0; column < columns; ++column)
+        for (std::int64_t inner = 0; inner < depth; ++inner)
+          expected[row * columns + column] +=
+              rounded(activation_values[row * depth + inner],
+                      c::DataType::kBFloat16) *
+              rounded(weight_values[inner * columns + column],
+                      c::DataType::kBFloat16);
+    expect(context, result->get()->tensors()[0], expected);
+  }
+}
 
 TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
