@@ -160,6 +160,25 @@ Windows CPU/CUDA/Vulkan 和 formal Air Apple M4 的普通 Direct/Graph 入口全
 shader、fallback 或热选择。收据见 [Qwen3.8 R05 grouped-head](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-grouped-head/README.md)。
 该收据仍只覆盖 R05；其余 region、三交付与 P1 未完成，所以 176-cell ledger 不提前改变任何 cell。
 
+### D5-F4：Qwen3.5 CPU BF16 RoPE 类型边界
+
+本地 Qwen3.5-2B 官方 profile 的 R04 使用 BF16 activation、GQA 8/2×256 和 F32 accumulation。批量
+Graph consumer 在普通 CPU 路线准备成功后，于固定 ggml CPU 的 `ggml_compute_forward_rope` 中触发
+`fatal error`：HYLE adapter 的资格函数接受 BF16 RoPE，但该上游 CPU 入口只执行 F16/F32；同一资格
+函数反而拒绝上游原生支持的 F32。源代码条件与实际失败一致，收据见
+[Qwen3.5 CPU R04 RoPE admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-r04-cpu-rope-admission-audit/README.md)。
+
+因此 `compute_provider_ggml` 从 D5-F3 candidate 退回本卡 AUDITED。有限 FIX 只有：
+
+1. CPU adapter 的 RoPE 资格域与固定上游对齐为 F16/F32，并继续接纳 Qwen 官方 BF16；BF16 在冷准备的
+   ggml 图内使用上游 `ggml_cast` 转成 F32，执行同一上游 RoPE，再由既有输出边界转回 BF16；
+2. Provider 回归覆盖 BF16/F32、两种 RoPE layout 和变化输入；真实 Qwen3.5 R04 的普通 Graph 入口
+   覆盖精确 8/2×256、两次 submit、Provider/workload identity 和独立 decode oracle；
+3. 只运行 `compute_provider_ggml`、`graph_route_cpu` 及 selector 选择的公共检查；三交付和 P1 继续并入
+   D5 路线批次，不为本缺陷新增仪器。
+
+不修改公共 RoPE schema、ggml 源码、路由优先级或其它路线，也不新增 HYLE 数学、fallback 或热选择。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

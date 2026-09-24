@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "kind": "d5-provider-admission-failure",
+  "candidate": "d12388f70f5c1183eacedcd53e28623e75a8d376",
+  "profile": "qwen35_2b:official:official-bf16",
+  "route": "cpu",
+  "entry": "graph",
+  "region": "R04",
+  "shape": {
+    "query_heads": 8,
+    "kv_heads": 2,
+    "head_dim": 256,
+    "tokens": 1
+  },
+  "input_dtype": "BF16",
+  "accumulation_dtype": "F32",
+  "provider": "ggml-cpu",
+  "upstream": "ggml-0.24.0-456172ec733a135778adcd32d00e576a58232e45-hyle",
+  "outcome": "EXECUTION_ABORT",
+  "failure": "ggml_compute_forward_rope fatal error: BF16 admitted by adapter but fixed CPU implementation accepts only F16/F32",
+  "source_anchor": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+  "upstream_source_anchor": "src/ggml-cpu/ops.cpp:6257"
+}

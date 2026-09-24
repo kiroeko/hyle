@@ -374,10 +374,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml CPU adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
-      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
+      "summary": "M3-D5-F4 AUDITED：Qwen3.5 官方 BF16 R04 暴露 ggml CPU RoPE 资格/执行类型域不一致；仅以固定上游 cast 对齐 BF16/F16/F32 并完成真实 Graph 资格。"
     },
     {
       "module": "graph_provider_onednn",
