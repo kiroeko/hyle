@@ -271,6 +271,25 @@ GQA 8/2×256 RoPE 则在普通入口 prepare 成功后，于 invocation 初始�
 不修改公共 RoPE schema、ggml 源码、路由优先级或其它路线；不新增 HYLE 数学、kernel、fallback 或热
 选择。固定上游若拒绝 Cast 后的精确图，则记录 `BACKEND_REJECTED`，不绕回 native。
 
+**D5-F6/F7 CANDIDATE（`9917438b`）**：固定 ggml CUDA adapter 已用上游
+`ggml_swiglu`/`ggml_swiglu_split` 接管 F16/BF16/F32 packed/separate SiLU，并以同一 ggml CUDA 图内
+Cast 衔接 BF16 RoPE。Provider 24/24、CUDA Direct 18/18、CUDA Graph 35/35 在静态与共享树通过；
+共享树启用 WERROR，DLL 与 EXE 同目录。不可变 SM89 candidate 的 selector 又完成 configure、四个选中
+factor 并得到 PASS；没有新增 HYLE 数学、kernel、fallback 或执行期选择。
+
+### CUDA Qwen3.5 official Direct/Graph 完整格
+
+不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
+通过普通 CUDA Direct `prepare`/submit 和 Graph compile/bind/replay 覆盖 R01-R05、R13-R15。每个
+prepared call/graph 使用变化输入至少执行两次，成熟 Provider 在冷准备时固定；R02 SwiGLU 与 R04
+RoPE 不再落入冻结的 `hyle-cuda`。CUDA 首次执行允许固定上游建立一次 graph metadata，稳定性从第一轮
+warm replay 到第二轮 replay 验证；失败路径不发布输出。完整收据见
+[CUDA Qwen3.5 official Direct](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-official-direct/README.md)
+和
+[CUDA Qwen3.5 official Graph](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-official-graph/README.md)。
+ledger 现有 4 个 `RUN_PASS`、172 个 `VALIDATION_NOT_RUN`。本批静态/共享 owner suite 不代签 D5-A5
+要求的 relocated external source/static/shared consumer；D5-A5 与 D5-A6 P1 仍随稳定 CUDA 路线批次执行。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

@@ -575,9 +575,10 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F6/F7 AUDITED：官方 Qwen3.5 CUDA 执行暴露 BF16 SwiGLU 未接线及 BF16 RoPE 资格过宽；有限 FIX 只用固定 ggml CUDA 的 SwiGLU 与 Cast/RoPE 图对齐成熟能力。"
+      "summary": "M3-D5-F6/F7 CANDIDATE 9917438b：固定 ggml CUDA 已接管 F16/BF16/F32 packed/separate SwiGLU 与 BF16 Cast/RoPE 边界；Provider、CUDA Direct/Graph owner suite 及官方 Qwen3.5 完整 CUDA Direct/Graph 两格通过。",
+      "candidate": "9917438bb44ebc29f647f2b0ce2919a73342fa3e"
     },
     {
       "module": "graph_provider_ggml_cuda",

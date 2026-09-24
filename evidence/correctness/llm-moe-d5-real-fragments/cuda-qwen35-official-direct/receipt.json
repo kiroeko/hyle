@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "candidate": "9917438bb44ebc29f647f2b0ce2919a73342fa3e",
+  "candidate_tree": "7983453105ab44d43f8c31f25fe0b8603aa72277",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:official:official-bf16",
+    "route": "cuda",
+    "entry": "direct",
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.5-2B",
+    "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "shard": "model.safetensors-00001-of-00001.safetensors",
+    "expected_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "fixture_bytes": 117523552,
+    "fixture_tensors": 12,
+    "embedding_slice_sha256": "3924223432b46b6dd5463a5872d76ad674ba377bf76e27c1a56ce5625ee62945",
+    "checkpoint_parameters": [
+      "embed_tokens selected rows",
+      "layer-0 input norm",
+      "layer-0 gate/up/down FFN",
+      "layer-0 conv1d/A_log/dt_bias/out projection",
+      "layer-3 q_norm/k_norm/q projection",
+      "MTP fc"
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "providers": [
+      "ggml CUDA 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "cuBLASLt from CUDA Toolkit 13.3",
+      "qualified SGLang, CCCL and FlashInfer bounded providers"
+    ],
+    "provider_assertion": "every cold prepare binds a qualified mature provider; frozen hyle-cuda is rejected",
+    "replay": "each prepared call or graph submits twice with changed activation/token/state; routing stays cold-bound",
+    "oracles": "independent BF16 decoding, NumPy F32/BF16-boundary projection/FFN outputs, and C++ double attention/conv/recurrent calculations"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialFfnUsesMaturePreparedCalls"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-r03/receipt.json"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "test": "CudaDefaultCompute.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls"
+    }
+  ],
+  "selected_validation": {
+    "candidate": "9917438bb44ebc29f647f2b0ce2919a73342fa3e",
+    "candidate_tree": "7983453105ab44d43f8c31f25fe0b8603aa72277",
+    "verdict": "PASS",
+    "cuda_architectures": "89-real",
+    "werror": true,
+    "gates": {
+      "compute_provider_ggml_cuda": "9bfc016491026e1dd87ce9dcff6dc77eb58e74666922df81180d9f79dbfebae6",
+      "compute_route_cuda": "c83d0638664f7babe92023854e40e0eae9dad5b09060b7b7907bacc151c0c0ff",
+      "graph_provider_ggml_cuda": "f07e612640623b800efced0d8762973fc385b60ca49fec33eddfb13282cde01e",
+      "graph_route_cuda": "e10e265fd16b9da829e55fb0fc5da7ffaed299a553881afb9a83f9925fd7fdaa"
+    },
+    "owner_suites": {
+      "provider": "24/24 PASS",
+      "direct": "18/18 PASS",
+      "graph": "35/35 PASS",
+      "static": "provider/direct/graph PASS",
+      "shared_werror": "provider/direct/graph PASS; DLL and EXE colocated"
+    },
+    "skipped_or_reused": 127
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "static/shared owner suites passed, but D5-A5 still requires relocated external source/static/shared consumers"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 starts only from the stable route batch with an explicit frozen P1 card"
+  },
+  "machine": {
+    "profile": "W1-WIN",
+    "system": "Windows 11",
+    "machine": "AMD64",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "driver": "610.62",
+    "cuda_umd": "13.3",
+    "cuda_toolkit": "13.3.73",
+    "compiler": "MSVC 19.50.35728"
+  }
+}
