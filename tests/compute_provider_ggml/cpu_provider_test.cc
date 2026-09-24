@@ -113,6 +113,99 @@ TEST(GgmlCpuProvider, NormsUseIndependentOracleAcrossStorageTypes) {
   norms<hyle::simd::bfloat16_t>();
 }
 
+template <class T> void swiglu() {
+  constexpr std::size_t rows = 2;
+  constexpr std::size_t width = 7;
+  const auto description = dense(half_test::data_type<T>(), {rows, width});
+  const auto packed_description =
+      dense(half_test::data_type<T>(), {rows, width * 2});
+  std::vector<T> gate(rows * width), value(rows * width),
+      packed(rows * width * 2);
+  auto gate_buffer = half_test::buffer<T>(gate);
+  auto value_buffer = half_test::buffer<T>(value);
+  auto packed_buffer = half_test::buffer<T>(packed);
+  auto separate_output = output_buffer(description);
+  auto packed_output = output_buffer(description);
+  const GatedActivation separate{
+      .activation = GatedActivationKind::kSilu,
+      .inputs = GatedInputKind::kSeparate};
+  const GatedActivation packed_halves{
+      .activation = GatedActivationKind::kSilu,
+      .inputs = GatedInputKind::kPackedHalves};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto separate_program = prepare(context, separate, description, description);
+  ASSERT_TRUE(separate_program) << separate_program.error().message();
+  EXPECT_EQ(separate_program->provider().id, ggml_cpu::kProviderId);
+  auto packed_program = prepare(context, packed_halves, packed_description);
+  ASSERT_TRUE(packed_program) << packed_program.error().message();
+  EXPECT_EQ(packed_program->provider().id, ggml_cpu::kProviderId);
+  auto separate_invocation = separate_program->create_invocation().value();
+  auto packed_invocation = packed_program->create_invocation().value();
+  auto queue = context.create_queue().value();
+  const auto gate_view =
+      ConstTensorView::create(description, gate_buffer.view()).value();
+  const auto value_view =
+      ConstTensorView::create(description, value_buffer.view()).value();
+  const auto packed_view =
+      ConstTensorView::create(packed_description, packed_buffer.view()).value();
+  const auto separate_result =
+      TensorView::create(description, separate_output.view()).value();
+  const auto packed_result =
+      TensorView::create(description, packed_output.view()).value();
+  for (int seed : {3, 11}) {
+    for (std::size_t row = 0; row < rows; ++row) {
+      for (std::size_t column = 0; column < width; ++column) {
+        const auto index = row * width + column;
+        gate[index] = half_test::encode<T>(
+            static_cast<double>(static_cast<int>((index * 7 + seed) % 31) -
+                                15) /
+            8.0);
+        value[index] = half_test::encode<T>(
+            static_cast<double>(static_cast<int>((index * 5 + seed) % 23) -
+                                11) /
+            16.0);
+        packed[row * width * 2 + column] = gate[index];
+        packed[row * width * 2 + width + column] = value[index];
+      }
+    }
+    ASSERT_TRUE(gate_buffer.view().write(std::as_bytes(std::span(gate))).ok());
+    ASSERT_TRUE(
+        value_buffer.view().write(std::as_bytes(std::span(value))).ok());
+    ASSERT_TRUE(
+        packed_buffer.view().write(std::as_bytes(std::span(packed))).ok());
+    auto separate_done =
+        separate_invocation.submit(queue, gate_view, value_view, separate_result);
+    ASSERT_TRUE(separate_done) << separate_done.error().message();
+    ASSERT_TRUE(separate_done->wait().ok());
+    auto packed_done =
+        packed_invocation.submit(queue, packed_view, packed_result);
+    ASSERT_TRUE(packed_done) << packed_done.error().message();
+    ASSERT_TRUE(packed_done->wait().ok());
+    const auto separate_actual = half_test::read<T>(separate_output);
+    const auto packed_actual = half_test::read<T>(packed_output);
+    for (std::size_t i = 0; i < gate.size(); ++i) {
+      const auto x = half_test::decode(gate[i]);
+      const auto expected =
+          x / (1.0 + std::exp(-x)) * half_test::decode(value[i]);
+      half_test::expect_near(separate_actual[i], expected);
+      half_test::expect_near(packed_actual[i], expected);
+    }
+  }
+  auto rejected = prepare(
+      context,
+      GatedActivation{.activation = GatedActivationKind::kGelu,
+                      .inputs = GatedInputKind::kSeparate},
+      description, description);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
+}
+
+TEST(GgmlCpuProvider, MatureSwiGluCoversStorageTypesAndInputLayouts) {
+  swiglu<float>();
+  swiglu<hyle::simd::float16_t>();
+  swiglu<hyle::simd::bfloat16_t>();
+}
+
 TEST(GgmlCpuProvider, MatureCausalConvUsesNaturalSequenceLayout) {
   const auto samples_desc = dense(DataType::kFloat32, {1, 5, 2});
   const auto weights_desc = dense(DataType::kFloat32, {2, 3});

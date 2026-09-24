@@ -434,6 +434,18 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     default:
       break; // Rejected by the cold capability predicate.
     }
+  } else if (const auto *gate = node.operation.get_if<GatedActivation>()) {
+    auto *a = input(0);
+    if (a->type == GGML_TYPE_BF16)
+      a = as_float(context, a);
+    if (gate->inputs == GatedInputKind::kPackedHalves) {
+      result = ggml_swiglu(context, a);
+    } else {
+      auto *b = input(1);
+      if (b->type == GGML_TYPE_BF16)
+        b = as_float(context, b);
+      result = ggml_swiglu_split(context, a, b);
+    }
   } else if (const auto *rms = node.operation.get_if<RmsNorm>()) {
     result = ggml_rms_norm(context, fp(0), rms->epsilon);
     if (node.inputs.size() > 1)
@@ -1113,6 +1125,8 @@ bool supports(void *context, Operation operation,
   if (const auto *binary = operation.get_if<Binary>())
     return binary->kind != BinaryKind::kMinimum &&
            binary->kind != BinaryKind::kMaximum;
+  if (const auto *gate = operation.get_if<GatedActivation>())
+    return gate->activation == GatedActivationKind::kSilu;
   if (const auto *rms = operation.get_if<RmsNorm>())
     return rms->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
@@ -1199,6 +1213,7 @@ bool supports(void *context, Operation operation,
 bool region_operation(Operation operation) noexcept {
   return operation.get_if<Copy>() || operation.get_if<Cast>() ||
          operation.get_if<Unary>() || operation.get_if<Binary>() ||
+         operation.get_if<GatedActivation>() ||
          operation.get_if<RmsNorm>() || operation.get_if<LayerNorm>() ||
          operation.get_if<Reduce>() || operation.get_if<Concat>() ||
          operation.get_if<Scatter>() || operation.get_if<MatMul>() ||

@@ -183,6 +183,13 @@ def extract(model_dir: Path, output: Path) -> dict:
         raw = np.fromfile(output / record["file"], dtype="<u2").reshape(shape)
         return (raw.astype(np.uint32) << 16).view(np.float32)
 
+    def round_bf16(values):
+        values = np.asarray(values, dtype=np.float32)
+        bits = values.view(np.uint32)
+        rounding = ((bits >> 16) & 1) + np.uint32(0x7FFF)
+        rounded = ((bits + rounding) >> 16).astype("<u2")
+        return (rounded.astype(np.uint32) << 16).view(np.float32)
+
     gate_weight = load_bf16_tensor(
         "model.language_model.layers.0.mlp.gate_proj.weight", (6144, 2048))
     up_weight = load_bf16_tensor(
@@ -208,16 +215,30 @@ def extract(model_dir: Path, output: Path) -> dict:
         up = up_weight @ normalized
         gated = (gate / (np.float32(1.0) + np.exp(-gate))) * up
         ffn_expected = (down_weight @ gated).astype("<f4")
+        direct_normalized = round_bf16(normalized)
+        direct_gate = round_bf16(gate_weight @ direct_normalized)
+        direct_up = round_bf16(up_weight @ direct_normalized)
+        direct_gated = round_bf16(
+            (direct_gate /
+             (np.float32(1.0) + np.exp(-direct_gate))) * direct_up)
+        direct_expected = round_bf16(
+            down_weight @ direct_gated).astype("<f4")
         activation_file = output / f"ffn_activation_seed{seed}_1x2048.bf16"
         expected_file = output / f"ffn_expected_seed{seed}_1x2048.f32"
+        direct_expected_file = (
+            output / f"ffn_direct_expected_seed{seed}_1x2048.f32")
         activation_bits.tofile(activation_file)
         ffn_expected.tofile(expected_file)
+        direct_expected.tofile(direct_expected_file)
         ffn_oracles.append({
             "seed": seed,
             "activation": activation_file.name,
             "activation_sha256": sha256(activation_file),
             "expected": expected_file.name,
             "expected_sha256": sha256(expected_file),
+            "direct_expected": direct_expected_file.name,
+            "direct_expected_sha256": sha256(direct_expected_file),
+            "direct_boundaries": "BF16 after norm, both input projections, SwiGLU, and down projection",
         })
 
     receipt = {

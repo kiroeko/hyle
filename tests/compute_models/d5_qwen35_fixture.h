@@ -64,6 +64,7 @@ struct Ffn final {
   std::vector<std::byte> norm_scale;
   std::array<std::vector<std::byte>, 2> activations;
   std::array<std::vector<float>, 2> expected;
+  std::array<std::vector<float>, 2> direct_expected;
 };
 
 inline std::optional<std::filesystem::path> root() {
@@ -203,6 +204,13 @@ inline Ffn load_ffn(const std::filesystem::path &directory) {
         kExpectedBytes);
     result.expected[i].resize(kHidden);
     std::memcpy(result.expected[i].data(), expected.data(), expected.size());
+    const auto direct_expected = read_bytes(
+        directory / ("ffn_direct_expected_seed" + std::to_string(seeds[i]) +
+                     "_1x2048.f32"),
+        kExpectedBytes);
+    result.direct_expected[i].resize(kHidden);
+    std::memcpy(result.direct_expected[i].data(), direct_expected.data(),
+                direct_expected.size());
   }
   return result;
 }
