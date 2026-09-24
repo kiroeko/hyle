@@ -513,15 +513,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Apple packed carrier 与 ggml Metal MatMul/GroupedMatMul 普通入口不可达；当前只审计三 owner 的有限接缝。"
+      "summary": "M3-D3 AUDITED：冻结 logical TensorDesc 到 MLX byte carrier、ggml Metal MatMul/GroupedMatMul 与 Graph 分区的五项有限改动；自研数学保持冻结。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Apple packed carrier 与 ggml Metal MatMul/GroupedMatMul 普通入口不可达；当前只审计三 owner 的有限接缝。"
+      "summary": "M3-D3 AUDITED：冻结 logical TensorDesc 到 MLX byte carrier、ggml Metal MatMul/GroupedMatMul 与 Graph 分区的五项有限改动；自研数学保持冻结。"
     },
     {
       "module": "compute_route_vulkan",
@@ -595,8 +595,8 @@
     {
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
+      "summary": "M3-D3 AUDITED：固定 ggml 456172ec 的十格式 Metal kernel 证据与逐格式实机 verdict 边界；只接线原生 carrier/MatMul，不新增 HYLE codec 或 kernel。"
     },
     {
       "module": "compute_provider_iree_vulkan",
