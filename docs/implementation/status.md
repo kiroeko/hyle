@@ -60,15 +60,15 @@
 | graph_route_cuda | CLOSED | P0 / [PASS](../../evidence/correctness/model-profile-routing-refactor/README.md) | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR CLOSED：graph_route_cuda 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。 |
 | compute_route_apple | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-metal-native-binding.md) | M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。 |
 | graph_route_apple | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-metal-native-binding.md) | M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。 |
-| compute_route_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Vulkan managed region 除 MXFP4 外不能导入 K/IQ/Q8 原生权重；当前只审计三个 ggml Vulkan/route owner 的有限接缝。 |
-| graph_route_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Vulkan managed region 除 MXFP4 外不能导入 K/IQ/Q8 原生权重；当前只审计三个 ggml Vulkan/route owner 的有限接缝。 |
-| compute_provider_ggml_vulkan | SCOPED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Vulkan managed region 除 MXFP4 外不能导入 K/IQ/Q8 原生权重；当前只审计三个 ggml Vulkan/route owner 的有限接缝。 |
+| compute_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 AUDITED：冻结十格式 ggml Vulkan type/shape import、MatMul/GroupedMatMul、Direct/Graph 与资源/交付的五项有限改动；自研数学保持冻结。 |
+| graph_route_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 AUDITED：冻结十格式 ggml Vulkan type/shape import、MatMul/GroupedMatMul、Direct/Graph 与资源/交付的五项有限改动；自研数学保持冻结。 |
+| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 AUDITED：固定 ggml 456172ec 十格式 Vulkan MUL_MAT/MUL_MAT_ID 能力证据；只补原生接缝和实机 verdict，不新增 HYLE codec 或 shader。 |
 | compute_ggml_runtime | CLOSED | P0 / [PASS](../../evidence/correctness/compute-llm-moe-m1-apple-admission/README.md) | [record](tasks/compute/llm-moe-m1-apple-admission.md) | M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。 |
 | compute_provider_ggml_cuda | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-native-binding.md) | M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。 |
 | graph_provider_ggml_cuda | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-native-binding.md) | M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。 |
 | compute_provider_flashinfer | CLOSED | P0 / [PASS](../../evidence/correctness/model-profile-routing-refactor/README.md) | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR CLOSED：compute_provider_flashinfer 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。 |
 | compute_provider_ggml_metal | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-metal-native-binding.md) | M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。 |
-| compute_provider_iree_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-m3-model-chain-acceptance.md) | M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。 |
+| compute_provider_iree_vulkan | AUDITED | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 AUDITED：IREE Vulkan 保留 checked I32 Scan、BF16 conversion 和具名 FP8 MatMul 限定域；不将 legalization 或相近格式登记为 GGUF/MXFP4 覆盖，本批无预定产品改动。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

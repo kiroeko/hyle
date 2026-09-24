@@ -527,21 +527,21 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Vulkan managed region 除 MXFP4 外不能导入 K/IQ/Q8 原生权重；当前只审计三个 ggml Vulkan/route owner 的有限接缝。"
+      "summary": "M3-D3 AUDITED：冻结十格式 ggml Vulkan type/shape import、MatMul/GroupedMatMul、Direct/Graph 与资源/交付的五项有限改动；自研数学保持冻结。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Vulkan managed region 除 MXFP4 外不能导入 K/IQ/Q8 原生权重；当前只审计三个 ggml Vulkan/route owner 的有限接缝。"
+      "summary": "M3-D3 AUDITED：冻结十格式 ggml Vulkan type/shape import、MatMul/GroupedMatMul、Direct/Graph 与资源/交付的五项有限改动；自研数学保持冻结。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 SCOPED：公共十格式 ggml storage 已冻结，但 Vulkan managed region 除 MXFP4 外不能导入 K/IQ/Q8 原生权重；当前只审计三个 ggml Vulkan/route owner 的有限接缝。"
+      "summary": "M3-D3 AUDITED：固定 ggml 456172ec 十格式 Vulkan MUL_MAT/MUL_MAT_ID 能力证据；只补原生接缝和实机 verdict，不新增 HYLE codec 或 shader。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -589,8 +589,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m3-model-chain-acceptance.md",
-      "summary": "M3 AUDITED/ACTIVE：初次 64×4 分类与 Provider 门已完成；134 个 VALIDATION_NOT_RUN 格仍按五个共享批次实跑，89 个具名准备期反例保留。产品数学冻结，M3 完成前不进入 M4。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
+      "summary": "M3-D3 AUDITED：IREE Vulkan 保留 checked I32 Scan、BF16 conversion 和具名 FP8 MatMul 限定域；不将 legalization 或相近格式登记为 GGUF/MXFP4 覆盖，本批无预定产品改动。"
     }
   ]
 }
