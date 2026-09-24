@@ -277,6 +277,28 @@ Cast 衔接 BF16 RoPE。Provider 24/24、CUDA Direct 18/18、CUDA Graph 35/35 �
 共享树启用 WERROR，DLL 与 EXE 同目录。不可变 SM89 candidate 的 selector 又完成 configure、四个选中
 factor 并得到 PASS；没有新增 HYLE 数学、kernel、fallback 或执行期选择。
 
+### D5-F8：GGUF 量化 embedding 原生行读取接线
+
+Qwen3.5 `UD-Q4_K_XL` 的精确 embedding 权重为 Q6_K；目标 GGUF 画像还要求 Q4_K 与 Q8_0。
+Windows baseline `0c7293ff38ac078c095e623062398087a5a89ba1` 上，普通 CPU Direct 以真实隐藏宽度
+`[7,2048]` 准备 Q6_K table 时被 adapter 的通用 GGUF 端口门拒绝，最终落到 native provider 的
+`plain scalar tensor storage` 拒绝。固定 ggml `b9d43bc809551dde` 的 CPU、CUDA、Metal 和 Vulkan
+源码均已有 Q4_K/Q6_K/Q8_0 GET_ROWS；这是 adapter 接线缺陷，不是上游算子或 HYLE 数学缺口。收据见
+[GGUF embedding admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-gguf-embedding-admission-audit/README.md)。
+
+因此 `compute_provider_ggml`、`compute_provider_ggml_cuda`、`compute_provider_ggml_metal` 和
+`compute_provider_ggml_vulkan` 从各自 candidate 精确退回本卡 AUDITED。有限 FIX 只有：
+
+1. 四个 adapter 只接纳 rank-2 Q4_K/Q6_K/Q8_0 embedding table、axis `0/-2`、I32 indices、dense
+   F32 output，调用固定上游 `ggml_get_rows`；不写 HYLE 解量化器、kernel 或 shader；
+2. 保留公共 checked Gather 语义：越界在结果发布前失败且输出不变；prepared program 以变化 indices
+   重放两次，不重新选路、解码权重或分配持久 workspace；
+3. 以 Qwen3.5 `UD-Q4_K_XL` 的 Q6_K `[7,2048]` 纵切在四路线普通 Direct/Graph 实际运行；后续
+   Q4_K/Q8_0 profile 复用同一参数化 fixture，不手写路线乘画像测试；
+4. 只运行四个 provider owner suite、对应 Direct/Graph factor 与 D5 最终三交付/P1。其它格式、轴、
+   路由顺序和自研数学继续冻结；固定上游若在具体设备拒绝精确域，按合同记录
+   `BACKEND_REJECTED`。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

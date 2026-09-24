@@ -374,10 +374,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F5 CANDIDATE 3798fd11：ggml CPU adapter 已用固定上游 SwiGLU 接管 F16/BF16/F32 packed/separate SiLU；Provider、CPU Direct/Graph owner suite 和官方 Qwen3.5 完整 CPU Direct/Graph 两格通过。",
-      "candidate": "3798fd1129323c53c373dbdf7bd628b1a1f6365d"
+      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
     },
     {
       "module": "graph_provider_onednn",
@@ -557,10 +556,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 CANDIDATE 1fa67a8f：固定 ggml Vulkan/IREE 限定成熟路线已通过 Qwen3.5-2B official BF16 全 R01-R05/R13-R15 的真实权重 Direct/Graph、变化输入 replay、失败路径与 WERROR owner suite；等待 D5 其余真实 profile、三交付与适用 P1。",
-      "candidate": "1fa67a8facf76feb78f66b5576aee45ac7d16d99"
+      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -575,10 +573,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F6/F7 CANDIDATE 9917438b：固定 ggml CUDA 已接管 F16/BF16/F32 packed/separate SwiGLU 与 BF16 Cast/RoPE 边界；Provider、CUDA Direct/Graph owner suite 及官方 Qwen3.5 完整 CUDA Direct/Graph 两格通过。",
-      "candidate": "9917438bb44ebc29f647f2b0ce2919a73342fa3e"
+      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -600,10 +597,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml Metal adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，formal Air Apple M4 普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
-      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
+      "summary": "M3-D5-F8 AUDITED：Qwen3.5 Q6_K 真实宽度 embedding 暴露 GGUF GET_ROWS 接线缺口；只接入固定 ggml 的 Q4_K/Q6_K/Q8_0 checked 行读取并完成四路线 Direct/Graph replay，自研数学继续冻结。"
     },
     {
       "module": "compute_provider_iree_vulkan",

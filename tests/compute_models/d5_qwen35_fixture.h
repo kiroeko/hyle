@@ -31,6 +31,37 @@ inline constexpr std::int64_t kConvKernel = 4;
 inline constexpr std::array<std::int32_t, kEmbeddingRows> kEmbeddingRowIds{
     0, 42, 151643, 151644, 151645, 248318, 248319};
 
+// Fixed deployment artifacts from the model/weight audit.  The manifest
+// digests bind the reduced D5 fixture manifests rather than claiming to be
+// Hugging Face object hashes.
+inline constexpr c::ModelArtifactProfileDescription kPrimaryGgufProfile{
+    .model_publisher = "Qwen",
+    .model_repository = "Qwen/Qwen3.5-2B",
+    .model_family = "qwen3_5",
+    .model_name = "qwen3.5-2b",
+    .model_revision = "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    .configuration_digest = workload_test::kModel.configuration_digest,
+    .artifact_repository = "unsloth/Qwen3.5-2B-GGUF",
+    .artifact_revision = "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    .variant = "UD-Q4_K_XL",
+    .manifest_digest =
+        "c1dab0d3b4bec7704a4dbabff36aca0638ec10ce8e0dc2e8362441d25d29e3fc",
+    .format_family = "gguf"};
+
+inline constexpr c::ModelArtifactProfileDescription kFidelityGgufProfile{
+    .model_publisher = "Qwen",
+    .model_repository = "Qwen/Qwen3.5-2B",
+    .model_family = "qwen3_5",
+    .model_name = "qwen3.5-2b",
+    .model_revision = "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    .configuration_digest = workload_test::kModel.configuration_digest,
+    .artifact_repository = "unsloth/Qwen3.5-2B-GGUF",
+    .artifact_revision = "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    .variant = "UD-Q8_K_XL",
+    .manifest_digest =
+        "984823c386e1fd17a05b97d49a6416cd25940415d8f7f77182596533f3e5ab92",
+    .format_family = "gguf"};
+
 struct Projection final {
   std::vector<std::byte> activation;
   std::vector<std::byte> weight;
@@ -218,6 +249,13 @@ inline Ffn load_ffn(const std::filesystem::path &directory) {
 inline c::WorkloadContext workload(c::WorkloadPhase phase,
                                    std::uint64_t region = 3) {
   return {c::ModelArtifactProfile::create(workload_test::kModel).value(), phase,
+          {0x48594c454d4f444cULL, region, 1}};
+}
+
+inline c::WorkloadContext
+workload(const c::ModelArtifactProfileDescription &profile,
+         c::WorkloadPhase phase, std::uint64_t region) {
+  return {c::ModelArtifactProfile::create(profile).value(), phase,
           {0x48594c454d4f444cULL, region, 1}};
 }
 
