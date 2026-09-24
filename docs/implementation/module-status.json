@@ -527,9 +527,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 SCOPED：Vulkan checked Gather 已有 GPU 越界保护，但 GGUF block table 无法进入成熟 region；只重开量化 embedding 的 route/provider adapter seam。"
+      "summary": "M3-D5-F8 AUDITED：只以既有 GPU bounds check、安全 indices、固定 ggml Vulkan GET_ROWS region 和 checked publication 接通 Q4_K/Q6_K/Q8_0 embedding；无新 shader 或数学。"
     },
     {
       "module": "graph_route_vulkan",

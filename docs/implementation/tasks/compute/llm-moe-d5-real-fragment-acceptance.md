@@ -341,6 +341,23 @@ adapter seam，不是算子或 shader 缺口。
 embedding 边界进入 SCOPED。`graph_route_vulkan` 不需要新的产品 lowering，它继续复用同一 Compute plan，
 只在候选上完成 Graph 普通入口验收。
 
+有限 FIX 固定为：
+
+1. `compute_provider_ggml_vulkan` 只新增 exact rank-2 Q4_K/Q6_K/Q8_0 F32 embedding table、axis
+   `0/-2`、dense rank-1 I32 indices 和 dense F32 output 的 unchecked native region 资格，仍只 lower 到
+   固定上游 `ggml_get_rows`；unchecked 是 provider 内部边界，不成为公共 API；
+2. `compute_route_vulkan::lower_gather` 只对该 exact GGUF 域复用既有 GPU `lower_index_check`，把 safe
+   indices 和原量化 table 交给一个 provider region，再用既有 checked publication 决定是否发布 F32
+   output；不做 raw-word 重排、host readback、新 shader、新数学或 fallback；
+3. Provider owner suite 运行 Q4_K/Q6_K/Q8_0、两次 replay 和错误域拒绝；Qwen3.5 primary GGUF Q6_K
+   `[7,2048]` 在普通 Vulkan Direct/Graph 运行两次变化 indices、独立 packed-byte oracle、越界输出保持
+   与恢复，并确认一个 managed region；
+4. 只运行 `compute_provider_ggml_vulkan`、`compute_route_vulkan`、`graph_route_vulkan` 与 selector 选中的
+   公共检查。本 partial R01 不启动 D5-A5 三交付或 D5-A6 P1，也不改变其它 Gather、格式、轴或路线。
+
+若固定上游在 RTX 4070 上拒绝任一精确格式，记录具名 `BACKEND_REJECTED`；不得回接冻结的自研
+Vulkan shader 或把量化 bytes 当普通标量 storage。
+
 ledger 仍为 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`；CPU、CUDA 与 Apple 共六个 primary GGUF
 cell 只新增 R01 partial receipt，其余 region 未运行，因此不提前把完整 cell 写成 PASS。
 
