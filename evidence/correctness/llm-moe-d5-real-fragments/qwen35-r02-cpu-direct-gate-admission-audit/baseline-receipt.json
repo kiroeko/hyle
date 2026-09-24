@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "baseline": "4dd37f0a0b5dabad3925b85f02993742cb4d9fb4",
+  "baseline_tree": "ad9fc3d73eb546f6240896f98860690a7d59218a",
+  "verdict": "MATURE_PROVIDER_ADAPTER_GAP",
+  "profile": "qwen35_2b:official:official-bf16",
+  "route": "cpu",
+  "entry": "direct",
+  "region": "R02",
+  "shape": {
+    "hidden": 2048,
+    "ffn": 6144,
+    "activation": "BF16"
+  },
+  "observed_bindings": {
+    "rms_norm": "mature provider",
+    "gate_matmul": "mature provider",
+    "up_matmul": "mature provider",
+    "gated_activation": "hyle-native",
+    "down_matmul": "mature provider"
+  },
+  "fixed_upstream": {
+    "name": "ggml",
+    "version": "0.24.0",
+    "revision": "456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "native_operations": ["ggml_swiglu", "ggml_swiglu_split"],
+    "cpu_native_types": ["F16", "F32"]
+  },
+  "product_change_at_baseline": false
+}

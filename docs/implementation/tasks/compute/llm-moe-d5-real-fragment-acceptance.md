@@ -184,6 +184,27 @@ Graph consumer 在普通 CPU 路线准备成功后，于固定 ggml CPU 的 `ggm
 Direct 12/12、CPU Graph 34/34 与普通 cpu-executor 全部通过。未修改公共 schema、上游源码或路由顺序。
 失败与修复边界收据见 [R04 admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-r04-cpu-rope-admission-audit/README.md)。
 
+### D5-F5：Qwen3.5 CPU Direct BF16 SwiGLU 成熟接线
+
+官方 Qwen3.5-2B R02 的普通 CPU Direct 路径按 BF16 存储边界逐算子准备：RmsNorm 与三次 MatMul
+均绑定固定 ggml CPU，独立 `GatedActivation(SiLU, separate)` 却落到已冻结的 `hyle-native`。固定 ggml
+0.24.0 已提供 `ggml_swiglu` 与 `ggml_swiglu_split`；其 CPU 实现原生执行 F16/F32，BF16 可在同一上游
+图内 Cast 到 F32 并由既有输出边界 Cast 回 BF16。源代码与普通入口复现见
+[Qwen3.5 CPU Direct R02 gate admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-r02-cpu-direct-gate-admission-audit/README.md)。
+
+因此 `compute_provider_ggml` 从 D5-F4 candidate 退回本卡 AUDITED。有限 FIX 只有：
+
+1. CPU adapter 接纳公共 `GatedActivation` 的 SiLU packed/separate 两种形状，lower 到固定上游
+   `ggml_swiglu`/`ggml_swiglu_split`；F16/F32 保持原生，BF16 通过上游 Cast 执行；
+2. Provider 回归覆盖 F16/BF16/F32、packed/separate、变化输入与非 SiLU 拒绝；真实 Qwen3.5 R02
+   使用真实 2048/6144 权重、两次 Direct replay、独立 BF16 边界 oracle 和成熟 Provider identity；
+3. 只运行 `compute_provider_ggml`、`compute_route_cpu` 及 selector 选择的公共检查；三交付和 P1 继续并入
+   D5 路线批次。
+
+不修改公共 schema、ggml 源码、路由优先级、其它 activation 或其它路线；不新增 HYLE 数学、fallback、
+热选择或性能竞速。若固定上游不能正确执行该精确域，则记录 `BACKEND_REJECTED`，不恢复 native 作为
+D5 成熟覆盖证据。
+
 ### CPU Qwen3.5 official Graph 完整格
 
 不可变 candidate `f340b0d4` 已用本地 checkpoint 的 embedding slice、layer-0 norm/FFN/conv/GDN/out-proj、

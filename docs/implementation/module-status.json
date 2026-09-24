@@ -374,10 +374,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F4 CANDIDATE f340b0d4：ggml CPU RoPE 的 BF16/F32 类型域已与固定上游对齐，Provider/Direct/Graph owner suite 及官方 Qwen3.5 完整 CPU Graph region 格通过；等待 D5 其余格。",
-      "candidate": "f340b0d4e627fde765197ead290cda92102c506e"
+      "summary": "M3-D5-F5 AUDITED：官方 Qwen3.5 CPU Direct R02 证明独立 BF16 SwiGLU 仍落到冻结 native；固定 ggml CPU 已有成熟 SwiGLU，有限 FIX 只补 SiLU GatedActivation adapter 与 BF16 上游 Cast 接线。"
     },
     {
       "module": "graph_provider_onednn",
