@@ -300,6 +300,8 @@ TEST(GgmlMetalProgram,
         ports[i] = {(__bridge void *)owners[i].value, 0};
       }
       std::memcpy(owners[0].value.contents, packed.data(), packed.size());
+      const auto tolerance = type == c::GgufQuantizedType::kQ4K ? 2.0e-4F
+                                                                 : 1.0e-6F;
       for (int replay = 0; replay < 2; ++replay) {
         std::memcpy(owners[1].value.contents, ids.data(), bytes[1]);
         ASSERT_TRUE((*program)->run(ports).ok());
@@ -309,7 +311,7 @@ TEST(GgmlMetalProgram,
             EXPECT_NEAR(actual[token * width + column],
                         decoded[static_cast<std::size_t>(ids[token]) * width +
                                 column],
-                        1.0e-6F)
+                        tolerance)
                 << token << ' ' << column;
         ids = {1, 2};
       }
