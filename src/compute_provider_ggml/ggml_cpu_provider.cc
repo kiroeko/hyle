@@ -107,6 +107,14 @@ ggml_type native_type(const TensorDesc &description) noexcept {
 bool native_quantized(const TensorDesc &description) noexcept {
   return native_quantized_type(description) != GGML_TYPE_COUNT;
 }
+bool native_embedding_table(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  return type && (*type == GgufQuantizedType::kQ4K ||
+                  *type == GgufQuantizedType::kQ6K ||
+                  *type == GgufQuantizedType::kQ8_0) &&
+         description.data_type() == DataType::kFloat32 &&
+         description.rank() == 2 && description.block_axis() == 1;
+}
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -1038,7 +1046,8 @@ bool supports(void *context, Operation operation,
       return false;
   const bool has_quantized = std::ranges::any_of(inputs, native_quantized);
   if (has_quantized && !operation.get_if<MatMul>() &&
-      !operation.custom_as<model_ops::GroupedMatMul>())
+      !operation.custom_as<model_ops::GroupedMatMul>() &&
+      !operation.get_if<Gather>())
     return false;
   std::vector<TensorDesc> inferred(outputs.size());
   if (!infer_output_descriptions(operation, inputs, inferred).ok() ||
@@ -1136,8 +1145,17 @@ bool supports(void *context, Operation operation,
             reduce->kind == ReductionKind::kMean) &&
            (reduce->accumulation_type == DataType::kUnknown ||
             reduce->accumulation_type == DataType::kFloat32);
-  if (operation.get_if<Gather>())
+  if (const auto *gather = operation.get_if<Gather>()) {
+    if (native_quantized(inputs[0]))
+      return inputs.size() == 2 && gather->bounds == IndexBoundsPolicy::kChecked &&
+             (gather->axis == 0 || gather->axis == -2) &&
+             native_embedding_table(inputs[0]) && inputs[1].rank() == 1 &&
+             inputs[1].is_dense() &&
+             inputs[1].data_type() == DataType::kInt32 &&
+             output.rank() == 2 && output.is_dense() &&
+             output.data_type() == DataType::kFloat32;
     return inputs[1].data_type() == DataType::kInt32;
+  }
   if (const auto *scatter = operation.get_if<Scatter>())
     return inputs.size() == 3 && scatter->kind == ScatterKind::kAdd &&
            inputs[1].data_type() == DataType::kInt32 &&

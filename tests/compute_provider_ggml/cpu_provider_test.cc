@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../model_fragment_test_support.h"
@@ -1606,6 +1607,70 @@ TEST(GgmlCpuProvider, NativeQ4KMatMulImportsGgufBytesAndReplays) {
       ASSERT_TRUE(
           left.view().write(std::as_bytes(std::span(left_values))).ok());
     }
+  }
+}
+
+TEST(GgmlCpuProvider,
+     NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr std::int64_t rows = 3;
+  constexpr std::int64_t width = 256;
+  constexpr std::array formats{GgufQuantizedType::kQ4K,
+                               GgufQuantizedType::kQ6K,
+                               GgufQuantizedType::kQ8_0};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+
+  for (const auto format : formats) {
+    SCOPED_TRACE(static_cast<int>(format));
+    const auto stored =
+        gguf_weight_description(format, DataType::kFloat32, width, rows);
+    ASSERT_TRUE(stored) << stored.error().message();
+    const auto table_desc = stored->transposed().value();
+    const auto ids_desc = dense(DataType::kInt32, {2});
+    const auto output_desc = dense(DataType::kFloat32, {2, width});
+    const auto physical = d5_gguf_test::values(rows, width, 29);
+    const auto packed = d5_gguf_test::pack(
+        format, physical, rows, width, table_desc.required_bytes().value());
+    auto table = output_buffer(table_desc);
+    ASSERT_TRUE(table.view().write(packed.bytes).ok());
+    std::array<std::int32_t, 2> selected{2, 0};
+    auto ids = half_test::buffer<std::int32_t>(selected);
+    auto output = output_buffer(output_desc);
+    const std::array input_descs{table_desc, ids_desc};
+    const std::array output_descs{output_desc};
+    auto prepared = prepare(context, Operation(Gather{}), input_descs,
+                            output_descs, hyle::mem::system_resource());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+    auto invocation = prepared->create_invocation().value();
+    auto queue = context.create_queue().value();
+    const std::array inputs{
+        ConstTensorView::create(table_desc, table.view()).value(),
+        ConstTensorView::create(ids_desc, ids.view()).value()};
+    const std::array outputs{
+        TensorView::create(output_desc, output.view()).value()};
+
+    for (int replay = 0; replay < 2; ++replay) {
+      ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+      auto completion = invocation.submit(queue, inputs, outputs);
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual = half_test::read<float>(output);
+      const auto expected =
+          d5_gguf_test::selected_rows(packed.decoded, width, selected);
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[i], 1.0e-6F) << i;
+      selected = {1, 2};
+    }
+
+    const auto before_failure = half_test::read<float>(output);
+    selected = {0, static_cast<std::int32_t>(rows)};
+    ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+    auto failed = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(failed) << failed.error().message();
+    EXPECT_FALSE(failed->wait().ok());
+    EXPECT_EQ(half_test::read<float>(output), before_failure);
   }
 }
 

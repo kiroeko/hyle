@@ -120,13 +120,7 @@ TEST(CpuDefaultDirect,
   auto prepared = c::prepare(context, c::Operation(c::Gather{}), input_descs,
                              output_descs, hyle::mem::system_resource(),
                              workload);
-  if (!prepared) {
-    EXPECT_TRUE(prepared.error().IsUnimplemented());
-    EXPECT_EQ(prepared.error().message(),
-              "hyle-native: native indexing requires plain scalar tensor "
-              "storage");
-    return;
-  }
+  ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, c::ggml_cpu::kProviderId);
   EXPECT_EQ(prepared->workload(), workload);
 
