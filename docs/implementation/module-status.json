@@ -458,8 +458,8 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "SCOPED",
-      "summary": "M3-D5-F1 SCOPED：真实 Qwen3.5-2B R03 暴露 cuBLASLt adapter 未接纳 BF16 rank-2 dense MatMul；只审计 CUDA_R_16BF/FP32 accumulation 映射、Provider 布局测试和普通 Direct/Graph 纵切。",
+      "state": "AUDITED",
+      "summary": "M3-D5-F1 AUDITED：真实 Qwen3.5-2B R03 暴露 cuBLASLt adapter 未接纳 BF16 rank-2 dense MatMul；有限修复只增加 CUDA_R_16BF/FP32 accumulation 映射、Provider 布局测试和普通 Direct/Graph 纵切。",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md"
     },
     {

@@ -73,7 +73,7 @@ block/group 与逐 tensor role 的混合格式。官方与 GGUF 是不同 profil
 `cuBLASLt`，所以合法的 BF16 `[1,2048] × [2048,2048]` 在 prepare 阶段被全部成熟 Provider 拒绝，
 最终只显示末位 tensor Provider 的 unsupported 原因。
 
-本缺陷把 `compute_provider_cublas` 从既有 CLOSED 精确重开为 SCOPED；审计后固定的 FIX 只有：
+本缺陷把 `compute_provider_cublas` 从既有 CLOSED 经 SCOPED 精确重开为 AUDITED，固定的 FIX 只有：
 
 1. 让现有 cuBLASLt adapter 接纳 plain rank-2 BF16 row/column-major 输入和 dense 输出，以
    `CUDA_R_16BF` 存储、FP32 accumulation 运行；不新增 HYLE kernel、fallback 或热路径搜索；
