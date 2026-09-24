@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <utility>
@@ -169,7 +170,7 @@ TEST(AppleD5, D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls) {
   const auto scale_values = decode_bfloat(fixture.scale);
   const std::array<std::array<std::int32_t, tokens>, 2> selections{
       {{{0, 1}}, {{5, 6}}}};
-  mx::array retained_embedding;
+  std::optional<mx::array> retained_embedding;
   for (const auto &selected : selections) {
     const auto ids = upload(context, ids_desc, std::span(selected));
     auto embedded = run(gather, table, ids);
@@ -214,7 +215,8 @@ TEST(AppleD5, D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls) {
     retained_embedding = embedded[0];
   }
 
-  const auto before_failure = bits(retained_embedding);
+  ASSERT_TRUE(retained_embedding.has_value());
+  const auto before_failure = bits(*retained_embedding);
   const std::array<std::int32_t, tokens> invalid{0, 7};
   const auto bad_ids = upload(context, ids_desc, std::span(invalid));
   auto failed_invocation = gather.program.create_invocation().value();
@@ -223,7 +225,7 @@ TEST(AppleD5, D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls) {
   auto failed = failed_invocation.submit();
   ASSERT_TRUE(failed) << failed.error().message();
   EXPECT_FALSE(failed->wait().has_value());
-  EXPECT_EQ(bits(retained_embedding), before_failure);
+  EXPECT_EQ(bits(*retained_embedding), before_failure);
 }
 
 TEST(AppleD5, D5Qwen35OfficialFfnUsesMaturePreparedCalls) {
@@ -419,9 +421,11 @@ TEST(AppleD5, D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls) {
                         0.0005F;
     const auto samples =
         upload(context, conv_samples_desc, std::span(conv_samples));
-    std::array<mx::array, 3> qkv;
-    for (std::size_t port = 0; port < qkv.size(); ++port)
-      qkv[port] = upload(context, qkv_desc, std::span(qkv_values[port]));
+    std::array qkv{
+        upload(context, qkv_desc, std::span(qkv_values[0])),
+        upload(context, qkv_desc, std::span(qkv_values[1])),
+        upload(context, qkv_desc, std::span(qkv_values[2])),
+    };
     const auto state = upload(context, state_desc, std::span(state_values));
     const auto conv_output = run(convolution, samples, conv_weight);
     const auto gdn_output =
