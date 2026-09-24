@@ -1,4 +1,6 @@
 #include "../compute/workload_fixture.h"
+#include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_provider_native/half_test_support.h"
 #include "ffn_support.h"
 #include "hyle/compute/providers/flashinfer.h"
 #include "hyle/compute/providers/ggml_cuda.h"
@@ -127,6 +129,76 @@ TEST(CudaDefaultCompute, DenseFfnUsesFixedRulesAndIndependentSlots) {
     SCOPED_TRACE(rows);
     run_ffn(compute::DataType::kFloat32, rows);
     run_ffn(compute::DataType::kFloat16, rows);
+  }
+}
+
+TEST(CudaDefaultCompute, D5RealQwenProjectionUsesExactProfileAndReplays) {
+  const auto fixture_root = d5_qwen35_fixture::root();
+  if (!fixture_root)
+    GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
+  d5_qwen35_fixture::Projection fixture;
+  ASSERT_NO_THROW(fixture = d5_qwen35_fixture::load_projection(*fixture_root));
+
+  const auto activation_desc =
+      matrix(compute::DataType::kBFloat16, 1,
+             d5_qwen35_fixture::kHidden);
+  const auto stored_weight_desc =
+      matrix(compute::DataType::kBFloat16, d5_qwen35_fixture::kHidden,
+             d5_qwen35_fixture::kHidden);
+  const auto weight_desc = stored_weight_desc.transposed().value();
+  const auto workload = d5_qwen35_fixture::workload(
+      compute::WorkloadPhase::kDecode);
+  auto owner = cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto prepared = compute::prepare(owner, compute::MatMul{}, activation_desc,
+                                   weight_desc, resource.ref(), workload);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, compute::cublas::kProviderId);
+  EXPECT_EQ(prepared->workload(), workload);
+
+  auto activation = mem::Buffer::create(resource.ref(), fixture.activation.size(),
+                                        256)
+                        .value();
+  auto weight =
+      mem::Buffer::create(resource.ref(), fixture.weight.size(), 256).value();
+  const auto output_desc = prepared->output_description().value();
+  auto output = mem::Buffer::create(resource.ref(),
+                                    output_desc.required_bytes().value(), 256)
+                    .value();
+  ASSERT_TRUE(weight.view().write(fixture.weight).ok());
+  const std::array inputs{
+      compute::ConstTensorView::create(activation_desc, activation.view())
+          .value(),
+      compute::ConstTensorView::create(weight_desc, weight.view()).value()};
+  const std::array outputs{
+      compute::TensorView::create(output_desc, output.view()).value()};
+  const auto requirement = prepared->workspace_requirement();
+  auto workspace =
+      requirement.size == 0
+          ? mem::Buffer{}
+          : mem::Buffer::create(resource.ref(), requirement.size,
+                                requirement.alignment)
+                .value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  auto queue = owner.create_queue().value();
+  for (int run = 0; run < 2; ++run) {
+    auto values = fixture.activation;
+    if (run != 0) {
+      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden;
+           ++index)
+        values[index * 2 + 1] ^= std::byte{0x80};
+    }
+    ASSERT_TRUE(activation.view().write(values).ok());
+    auto done = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<hyle::simd::bfloat16_t>(output);
+    ASSERT_EQ(actual.size(), fixture.expected.size());
+    for (std::size_t index = 0; index < actual.size(); ++index)
+      half_test::expect_near(actual[index],
+                             run == 0 ? fixture.expected[index]
+                                      : -fixture.expected[index]);
   }
 }
 

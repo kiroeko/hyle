@@ -119,8 +119,10 @@ Status matrix_layout(const TensorDesc &description,
   if (!description.valid() || !description.is_plain() ||
       description.rank() != 2 ||
       (description.data_type() != DataType::kFloat16 &&
+       description.data_type() != DataType::kBFloat16 &&
        description.data_type() != DataType::kFloat32)) {
-    return Status::Unimplemented("cuBLAS requires plain rank-2 FP16/FP32");
+    return Status::Unimplemented(
+        "cuBLAS requires plain rank-2 FP16/BF16/FP32");
   }
   const auto dimensions = description.dimensions();
   const auto strides = description.byte_strides();
@@ -248,10 +250,12 @@ Status configure(CublasPrepared &prepared, DataType type,
   HYLE_RETURN_IF_ERROR(
       translate(cublasLtCreate(&cold.handle), "cublasLtCreate"));
   const cudaDataType_t data_type =
-      type == DataType::kFloat16 ? CUDA_R_16F : CUDA_R_32F;
-  const cublasComputeType_t compute_type = type == DataType::kFloat16
-                                               ? CUBLAS_COMPUTE_32F
-                                               : CUBLAS_COMPUTE_32F_PEDANTIC;
+      type == DataType::kFloat16
+          ? CUDA_R_16F
+          : (type == DataType::kBFloat16 ? CUDA_R_16BF : CUDA_R_32F);
+  const cublasComputeType_t compute_type = type == DataType::kFloat32
+                                               ? CUBLAS_COMPUTE_32F_PEDANTIC
+                                               : CUBLAS_COMPUTE_32F;
   HYLE_RETURN_IF_ERROR(translate(
       cublasLtMatmulDescCreate(&prepared.operation, compute_type, CUDA_R_32F),
       "cublasLtMatmulDescCreate"));
@@ -275,9 +279,10 @@ Status configure(CublasPrepared &prepared, DataType type,
                     cold.preference, CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
                     &kMaximumWorkspaceBytes, sizeof(kMaximumWorkspaceBytes)),
                 "cublasLtMatmulPreferenceSetAttribute(workspace)"));
-  if (type == DataType::kFloat16) {
-    // Split-K must not round partial sums to the FP16 output type. The NONE
-    // scheme remains available; a separate reduction must retain FP32 scratch.
+  if (type != DataType::kFloat32) {
+    // Split-K must not round partial sums to the FP16/BF16 output type. The
+    // NONE scheme remains available; a separate reduction must retain FP32
+    // scratch.
     const std::uint32_t reduction = CUBLASLT_REDUCTION_SCHEME_COMPUTE_TYPE;
     HYLE_RETURN_IF_ERROR(translate(
         cublasLtMatmulPreferenceSetAttribute(

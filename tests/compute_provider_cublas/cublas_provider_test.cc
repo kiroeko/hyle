@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 #include <cuda_fp16.h>
@@ -15,6 +16,7 @@
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
+#include "hyle/simd/dtype.h"
 
 namespace {
 
@@ -59,8 +61,14 @@ std::size_t offset(const compute::TensorDesc &desc, std::size_t row,
 
 template <class T> float to_float(T value) { return static_cast<float>(value); }
 template <> float to_float(__half value) { return __half2float(value); }
+template <> float to_float(hyle::simd::bfloat16_t value) {
+  return hyle::simd::bf16_to_f32(value);
+}
 template <class T> T from_float(float value) { return static_cast<T>(value); }
 template <> __half from_float(float value) { return __float2half(value); }
+template <> hyle::simd::bfloat16_t from_float(float value) {
+  return hyle::simd::f32_to_bf16(value);
+}
 
 template <class T>
 std::vector<T> values(const compute::TensorDesc &desc, int seed) {
@@ -95,9 +103,12 @@ void check_product(const Matrix &left, const std::vector<T> &a,
         expected += static_cast<double>(
                         to_float(a[offset(left.description, row, inner)])) *
                     to_float(b[offset(right.description, inner, col)]);
-      const double tolerance = sizeof(T) == 2
-                                   ? 0.0007 * std::abs(expected) + 0.00004
-                                   : 0.000001 * std::abs(expected) + 0.000001;
+      const double tolerance =
+          std::is_same_v<T, hyle::simd::bfloat16_t>
+              ? 0.008 * std::abs(expected) + 0.0001
+              : (sizeof(T) == 2
+                     ? 0.0007 * std::abs(expected) + 0.00004
+                     : 0.000001 * std::abs(expected) + 0.000001);
       EXPECT_NEAR(to_float(result[offset(output.description, row, col)]),
                   expected, tolerance)
           << row << "," << col;
@@ -171,6 +182,16 @@ TEST(CublasProvider, HalfDecodeAndPrefillUseIndependentLanes) {
                        128, 64);
     run_matrix<__half>(compute::DataType::kFloat16, false, true, false, rows,
                        128, 64);
+  }
+}
+
+TEST(CublasProvider, Bfloat16DecodeAndPrefillUseIndependentLanes) {
+  for (const auto rows : {1, 17}) {
+    SCOPED_TRACE(rows);
+    run_matrix<hyle::simd::bfloat16_t>(
+        compute::DataType::kBFloat16, false, false, false, rows, 128, 64);
+    run_matrix<hyle::simd::bfloat16_t>(
+        compute::DataType::kBFloat16, false, true, false, rows, 128, 64);
   }
 }
 
