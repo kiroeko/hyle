@@ -17,4 +17,3 @@ cell through ordinary compile and replay entry points.
 The immutable candidate passed the complete ggml CPU Provider, CPU Direct and
 CPU Graph selected suites. Delivery and P1 remain route-level D5 work and are
 not claimed by this correctness receipt.
-
