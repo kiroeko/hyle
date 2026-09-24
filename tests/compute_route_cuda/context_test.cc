@@ -63,7 +63,7 @@ void run_ffn(compute::DataType type, std::int64_t rows, bool first_q4,
     for (const auto &program : programs)
       EXPECT_EQ(program.workload(), workload);
     workload = {};
-    EXPECT_TRUE(programs[0].workload().model.matches(workload_test::kModel));
+    EXPECT_TRUE(programs[0].workload().profile.matches(workload_test::kModel));
     EXPECT_EQ(programs[0].provider().id, first.provider());
     EXPECT_EQ(programs[1].provider().id,
               compute::cuda_native::kSglangProviderId);

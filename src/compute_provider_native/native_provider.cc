@@ -93,13 +93,13 @@ void run_gated_activation(const float *first, const float *second,
   if (hidden == 0)
     return;
   for (std::size_t row = 0; row < rows; ++row) {
-    const float *gate = first + row * hidden *
-                                   (Inputs == GatedInputKind::kPackedHalves
-                                        ? std::size_t{2}
-                                        : std::size_t{1});
-    const float *value =
-        Inputs == GatedInputKind::kPackedHalves ? gate + hidden
-                                                : second + row * hidden;
+    const float *gate =
+        first + row * hidden *
+                    (Inputs == GatedInputKind::kPackedHalves ? std::size_t{2}
+                                                             : std::size_t{1});
+    const float *value = Inputs == GatedInputKind::kPackedHalves
+                             ? gate + hidden
+                             : second + row * hidden;
     float *destination = output + row * hidden;
     if constexpr (Activation == GatedActivationKind::kSilu) {
       simd::swiglu_f32_batch(gate, value, destination, hidden);
@@ -113,12 +113,12 @@ void run_gated_activation(const float *first, const float *second,
 
 Route select_gated_activation(GatedActivationKind activation,
                               GatedInputKind inputs) noexcept {
-#define HYLE_NATIVE_GATED_CASE(kind)                                         \
-  case GatedActivationKind::kind:                                            \
-    return inputs == GatedInputKind::kPackedHalves                           \
-               ? &run_gated_activation<GatedActivationKind::kind,            \
-                                       GatedInputKind::kPackedHalves>         \
-               : &run_gated_activation<GatedActivationKind::kind,            \
+#define HYLE_NATIVE_GATED_CASE(kind)                                           \
+  case GatedActivationKind::kind:                                              \
+    return inputs == GatedInputKind::kPackedHalves                             \
+               ? &run_gated_activation<GatedActivationKind::kind,              \
+                                       GatedInputKind::kPackedHalves>          \
+               : &run_gated_activation<GatedActivationKind::kind,              \
                                        GatedInputKind::kSeparate>
   switch (activation) {
     HYLE_NATIVE_GATED_CASE(kSilu);
@@ -209,8 +209,7 @@ Status validate_dense_f32(const TensorDesc &description) noexcept {
 }
 
 bool has_row_major_matrix_layout(const TensorDesc &description) noexcept {
-  if (!description.valid() || !description.is_plain() ||
-      description.rank() < 2)
+  if (!description.valid() || !description.is_plain() || description.rank() < 2)
     return false;
   const auto dimensions = description.dimensions();
   const auto strides = description.byte_strides();
@@ -225,8 +224,7 @@ bool has_row_major_matrix_layout(const TensorDesc &description) noexcept {
 }
 
 bool has_transposed_weight_layout(const TensorDesc &description) noexcept {
-  if (!description.valid() || !description.is_plain() ||
-      description.rank() < 2)
+  if (!description.valid() || !description.is_plain() || description.rank() < 2)
     return false;
   const auto dimensions = description.dimensions();
   const auto strides = description.byte_strides();
@@ -240,8 +238,7 @@ bool has_transposed_weight_layout(const TensorDesc &description) noexcept {
          strides[rank - 1] == *column_bytes;
 }
 
-Result<std::size_t>
-matrix_batch_count(const TensorDesc &description) noexcept {
+Result<std::size_t> matrix_batch_count(const TensorDesc &description) noexcept {
   std::size_t result = 1;
   const auto dimensions = description.dimensions();
   for (std::size_t axis = 0; axis + 2 < dimensions.size(); ++axis) {
@@ -251,7 +248,8 @@ matrix_batch_count(const TensorDesc &description) noexcept {
           Status::OutOfRange("MatMul batch dimension exceeds size_t"));
     auto next = math::try_multiply(result, *extent);
     if (!next)
-      return std::unexpected(Status::OutOfRange("MatMul batch count overflows"));
+      return std::unexpected(
+          Status::OutOfRange("MatMul batch count overflows"));
     result = *next;
   }
   return result;
@@ -276,7 +274,8 @@ std::size_t matrix_batch_byte_offset(const TensorDesc &input,
       continue;
     const std::size_t input_axis = input_batch_rank - 1 - reverse;
     if (input_dimensions[input_axis] != 1) {
-      offset += coordinate * static_cast<std::size_t>(input_strides[input_axis]);
+      offset +=
+          coordinate * static_cast<std::size_t>(input_strides[input_axis]);
     }
   }
   return offset;
@@ -515,9 +514,10 @@ submit_float(const NativePlan &plan, std::span<const ConstTensorView> inputs,
   return completed(std::move(terminal));
 }
 
-detail::EnqueueResult submit_zero_inner_matmul(
-    const NativePlan &plan, std::span<const ConstTensorView> inputs,
-    std::span<const TensorView> outputs) noexcept {
+detail::EnqueueResult
+submit_zero_inner_matmul(const NativePlan &plan,
+                         std::span<const ConstTensorView> inputs,
+                         std::span<const TensorView> outputs) noexcept {
   if (plan.parameters[1] != 0 || inputs.size() != 2 || outputs.size() != 1) {
     return completed(
         Status::Internal("native zero-inner MatMul plan is invalid"));
@@ -567,8 +567,7 @@ struct BatchedMatMulEpisode final {
   float *output = nullptr;
 };
 
-void run_batched_matmul_range(void *context, std::size_t,
-                              std::size_t begin,
+void run_batched_matmul_range(void *context, std::size_t, std::size_t begin,
                               std::size_t end) noexcept {
   auto &episode = *static_cast<BatchedMatMulEpisode *>(context);
   const NativePlan &plan = *episode.plan;
@@ -581,28 +580,27 @@ void run_batched_matmul_range(void *context, std::size_t,
   while (begin < end) {
     const std::size_t batch = begin / rows;
     const std::size_t first_row = begin % rows;
-    const std::size_t run_rows =
-        (std::min)(end - begin, rows - first_row);
+    const std::size_t run_rows = (std::min)(end - begin, rows - first_row);
     const std::size_t left_batch_offset = matrix_batch_byte_offset(
         *episode.left_description, *episode.output_description, batch);
     const std::size_t right_batch_offset = matrix_batch_byte_offset(
         *episode.right_description, *episode.output_description, batch);
-    const auto *left = reinterpret_cast<const float *>(
-                           episode.left + left_batch_offset) +
-                       first_row * inner;
-    const auto *right = reinterpret_cast<const float *>(
-        episode.right + right_batch_offset);
-    float *output =
-        episode.output + (batch * rows + first_row) * columns;
+    const auto *left =
+        reinterpret_cast<const float *>(episode.left + left_batch_offset) +
+        first_row * inner;
+    const auto *right =
+        reinterpret_cast<const float *>(episode.right + right_batch_offset);
+    float *output = episode.output + (batch * rows + first_row) * columns;
     const Parameters parameters{run_rows, inner, columns};
     plan.route(left, right, output, parameters, plan.scalar);
     begin += run_rows;
   }
 }
 
-detail::EnqueueResult submit_batched_matmul(
-    const NativePlan &plan, std::span<const ConstTensorView> inputs,
-    std::span<const TensorView> outputs) noexcept {
+detail::EnqueueResult
+submit_batched_matmul(const NativePlan &plan,
+                      std::span<const ConstTensorView> inputs,
+                      std::span<const TensorView> outputs) noexcept {
   if (plan.route == nullptr || inputs.size() != 2 || outputs.size() != 1)
     return completed(Status::Internal("native batched MatMul plan is invalid"));
 
@@ -666,7 +664,8 @@ detail::EnqueueResult submit_batched_matmul(
     return completed(std::move(output_bytes).error());
   }
   auto *output = reinterpret_cast<float *>(output_bytes->data());
-  if (!aligned_for_storage(left, inputs[0].description().required_alignment()) ||
+  if (!aligned_for_storage(left,
+                           inputs[0].description().required_alignment()) ||
       !aligned_for_storage(right,
                            inputs[1].description().required_alignment()) ||
       !aligned_for_storage(output,
@@ -971,10 +970,12 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     const auto *attention = operation.get_if<ScaledDotProductAttention>();
     const std::size_t head_axis =
         attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 2 : 1;
-    if (inputs.size() < 3 || inputs[0].rank() != 4 ||
-        inputs[1].rank() != 4 || inputs[2].rank() != 4 ||
-        inputs[0].dimensions()[head_axis] != inputs[1].dimensions()[head_axis] ||
-        inputs[0].dimensions()[head_axis] != inputs[2].dimensions()[head_axis]) {
+    if (inputs.size() < 3 || inputs[0].rank() != 4 || inputs[1].rank() != 4 ||
+        inputs[2].rank() != 4 ||
+        inputs[0].dimensions()[head_axis] !=
+            inputs[1].dimensions()[head_axis] ||
+        inputs[0].dimensions()[head_axis] !=
+            inputs[2].dimensions()[head_axis]) {
       return Status::Unimplemented("native SDPA requires equal Q/K/V heads");
     }
     Status status =
@@ -1228,8 +1229,8 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
       .shape_coverage = request.shape.exact()
                             ? detail::ProviderShapeCoverage::kExactPoint
                             : detail::ProviderShapeCoverage::kEntireDomain,
-      .profile_key =
-          ProviderRouteKey{
+      .implementation =
+          ProviderImplementationId{
               static_cast<std::uint64_t>(operation.kind()) + 1 +
               (request.shape.exact() ? 0 : (std::uint64_t{1} << 32))},
   };

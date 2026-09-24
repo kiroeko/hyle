@@ -13,6 +13,10 @@ namespace hyle::graph::ggml_cuda {
 namespace native = compute::ggml_cuda::internal;
 namespace {
 
+inline constexpr compute::RoutePolicyId kGgmlCudaRegionPolicy{
+    0x48594c4547474355ULL, 1, 1};
+inline constexpr std::uint32_t kGgmlCudaRegionPreference = 200;
+
 Result<bool> supported_node(void *context, const Graph &graph,
                             NodeId node) noexcept {
   auto operation = graph.operation(node);
@@ -89,7 +93,9 @@ Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
                   .dispatch_count = 1},
          .route = 1,
          .replay_class = compute::ProviderReplayClass::kManaged,
-         .profile_key = compute::ProviderRouteKey{2}});
+         .implementation = compute::ProviderImplementationId{2},
+         .policy = kGgmlCudaRegionPolicy,
+         .preference = kGgmlCudaRegionPreference});
   };
   // A third-party node inserted between two related ggml nodes does not
   // break their region. The DAG contraction check, not insertion adjacency,

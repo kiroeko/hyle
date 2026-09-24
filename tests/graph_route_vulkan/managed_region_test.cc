@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
+#include "../compute/workload_fixture.h"
 #include "../compute_route_vulkan/gate_norm_test_support.h"
 #include "hyle/graph/vulkan.h"
-#include "../compute/workload_fixture.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
@@ -29,16 +29,15 @@ TEST(VulkanGraph,
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
   auto workload = workload_test::known(c::WorkloadPhase::kPrefill);
-  auto program =
-      gv::compile(context, graph, std::array{input},
-                   {.report = &report, .workload = workload});
+  auto program = gv::compile(context, graph, std::array{input},
+                             {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
   EXPECT_EQ(program->workload(), workload);
   workload.region.version = 0;
-  EXPECT_FALSE(gv::compile(context, graph, std::array{input},
-                            {.workload = workload}));
+  EXPECT_FALSE(
+      gv::compile(context, graph, std::array{input}, {.workload = workload}));
   workload = {};
-  EXPECT_TRUE(program->workload().model.matches(workload_test::kModel));
+  EXPECT_TRUE(program->workload().profile.matches(workload_test::kModel));
   EXPECT_EQ(report.managed_region_count, 1U);
   EXPECT_EQ(report.native_dispatch_count, 1U); // Descriptor alignment adapter.
   auto slot = program->create_invocation().value();
@@ -197,7 +196,8 @@ TEST(VulkanGraph, ManagedSiluKeepsTheCommonInfinityAndNanSemantics) {
   expect(context, result.get()->tensors()[0], expected);
 }
 
-TEST(VulkanGraph, PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds) {
+TEST(VulkanGraph,
+     PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds) {
   auto context = vulkan_test::context().value();
   for (int width : {129, 2048}) {
     const auto desc = dense(c::DataType::kFloat32, {17, width});
@@ -206,24 +206,32 @@ TEST(VulkanGraph, PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds) 
     const auto x = builder.input(desc).value();
     const auto scale = builder.constant(scalar).value();
     const auto absolute = builder.add(c::Unary{c::UnaryKind::kAbs}, x).value();
-    const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, absolute).value();
-    const auto exponent = builder.add(c::Unary{c::UnaryKind::kExp}, negative).value();
-    const auto bounded = builder.add(c::Unary{c::UnaryKind::kTanh}, exponent).value();
-    const auto sigmoid = builder.add(c::Unary{c::UnaryKind::kSigmoid}, bounded).value();
+    const auto negative =
+        builder.add(c::Unary{c::UnaryKind::kNeg}, absolute).value();
+    const auto exponent =
+        builder.add(c::Unary{c::UnaryKind::kExp}, negative).value();
+    const auto bounded =
+        builder.add(c::Unary{c::UnaryKind::kTanh}, exponent).value();
+    const auto sigmoid =
+        builder.add(c::Unary{c::UnaryKind::kSigmoid}, bounded).value();
     const auto difference =
-        builder.add(c::Binary{c::BinaryKind::kSubtract}, scale, sigmoid).value();
+        builder.add(c::Binary{c::BinaryKind::kSubtract}, scale, sigmoid)
+            .value();
     const auto output =
-        builder.add(c::Binary{c::BinaryKind::kDivide}, scale, difference).value();
+        builder.add(c::Binary{c::BinaryKind::kDivide}, scale, difference)
+            .value();
     ASSERT_TRUE(builder.publish(exponent).ok());
     ASSERT_TRUE(builder.publish(difference).ok());
     ASSERT_TRUE(builder.publish(output).ok());
     auto graph = std::move(builder).finish().value();
     const auto parameter = make(context, scalar, std::array{2.0});
     gv::CompileReport report;
-    auto program = gv::compile(context, graph, std::array{parameter},
-                               {.report = &report}).value();
+    auto program =
+        gv::compile(context, graph, std::array{parameter}, {.report = &report})
+            .value();
     EXPECT_EQ(report.managed_region_count, 1U);
-    EXPECT_EQ(report.native_dispatch_count, 1U); // Dynamic input origin adapter.
+    EXPECT_EQ(report.native_dispatch_count,
+              1U); // Dynamic input origin adapter.
     graph = {};
     auto first = program.create_invocation().value();
     auto second = program.create_invocation().value();

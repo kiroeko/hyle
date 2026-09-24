@@ -107,13 +107,14 @@ create_context_state(Device device, ContextOptions options,
   state->backend_initialized = true;
 
   ContextState::ProviderSlot *slots = state->providers();
-  for (const Provider &provider : options.providers) {
+  for (const ProviderBinding &binding : options.providers) {
+    const Provider &provider = binding.provider;
     const ProviderVTable *table = ProviderAccess::vtable(provider);
     if (table != nullptr &&
         table->contract_version != kProviderContractVersion) {
       detail::release(state);
-      return std::unexpected(
-          Status::InvalidArgument("compute provider contract version mismatch"));
+      return std::unexpected(Status::InvalidArgument(
+          "compute provider contract version mismatch"));
     }
     if (table == nullptr || !table->identity.valid() ||
         table->create_context == nullptr || table->destroy_context == nullptr ||
@@ -131,7 +132,8 @@ create_context_state(Device device, ContextOptions options,
           "compute provider instance IDs are exhausted"));
     }
     std::construct_at(&slot,
-                      ContextState::ProviderSlot{provider, nullptr, instance});
+                      ContextState::ProviderSlot{provider, nullptr, instance,
+                                                 binding.preference});
     status = table->create_context(slot.provider, device, state->backend_state,
                                    allocator, &slot.state);
     if (!status.ok()) {
@@ -601,8 +603,8 @@ Result<Context> Context::create(Device device,
       table->fill_async == nullptr || table->wait_completion == nullptr ||
       table->completion_endpoint == nullptr ||
       table->can_wait_endpoint == nullptr ||
-      table->query_extension == nullptr ||
-      table->drain_context == nullptr || table->drain_queue == nullptr) {
+      table->query_extension == nullptr || table->drain_context == nullptr ||
+      table->drain_queue == nullptr) {
     return std::unexpected(Status::InvalidArgument(
         "device backend has an incomplete runtime contract"));
   }
@@ -616,7 +618,7 @@ Result<Context> Context::create(Device device, Provider provider) noexcept {
   if (!provider.valid())
     return std::unexpected(
         Status::InvalidArgument("compute provider is invalid"));
-  const Provider providers[]{provider};
+  const ProviderBinding providers[]{{provider, kUnrankedProviderPreference}};
   return create(device, ContextOptions{.providers = providers});
 }
 
@@ -647,6 +649,17 @@ Context::provider_identity(std::size_t index) const noexcept {
   const detail::ProviderVTable *table =
       detail::ProviderAccess::vtable(state_->providers()[index].provider);
   return table->identity;
+}
+
+Result<std::uint32_t>
+Context::provider_preference(std::size_t index) const noexcept {
+  if (state_ == nullptr)
+    return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  if (index >= state_->provider_count) {
+    return std::unexpected(
+        Status::OutOfRange("compute provider index is out of range"));
+  }
+  return state_->providers()[index].preference;
 }
 
 Result<ProviderInstanceId>
@@ -823,8 +836,7 @@ Status Context::drain() noexcept {
     if (terminal.ok() && !candidate.ok())
       terminal = std::move(candidate);
   }
-  Status backend =
-      state_->backend_vtable->drain_context(state_->backend_state);
+  Status backend = state_->backend_vtable->drain_context(state_->backend_state);
   if (terminal.ok() && !backend.ok())
     terminal = std::move(backend);
   return terminal;
@@ -1005,8 +1017,7 @@ detail::QueueSequence::completion_endpoint(const Queue &queue) noexcept {
   if (!properties)
     return std::unexpected(std::move(properties).error());
   const CompletionEndpoint endpoint =
-      state->context->backend_vtable->completion_endpoint(
-          state->backend_state);
+      state->context->backend_vtable->completion_endpoint(state->backend_state);
   if (properties->asynchronous_queues && !endpoint.valid()) {
     return std::unexpected(Status::Internal(
         "asynchronous compute Queue has no completion endpoint"));
@@ -1014,8 +1025,9 @@ detail::QueueSequence::completion_endpoint(const Queue &queue) noexcept {
   return endpoint;
 }
 
-Result<bool> detail::QueueSequence::can_import_endpoint(
-    const Queue &destination, CompletionEndpoint source) noexcept {
+Result<bool>
+detail::QueueSequence::can_import_endpoint(const Queue &destination,
+                                           CompletionEndpoint source) noexcept {
   detail::QueueState *state = detail::ContextAccess::state(destination);
   if (state == nullptr || !destination.is_open()) {
     return std::unexpected(
@@ -1023,8 +1035,8 @@ Result<bool> detail::QueueSequence::can_import_endpoint(
   }
   if (!source.valid())
     return false;
-  return state->context->backend_vtable->can_wait_endpoint(
-      state->backend_state, source);
+  return state->context->backend_vtable->can_wait_endpoint(state->backend_state,
+                                                           source);
 }
 
 void detail::QueueSequence::record(EnqueueResult result) noexcept {

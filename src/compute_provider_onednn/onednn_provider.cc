@@ -161,12 +161,10 @@ detail::EnqueueResult accepted(Status terminal) noexcept {
 }
 
 detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
-                             Queue &,
-                             std::span<const ConstTensorView> inputs,
+                             Queue &, std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 2 || outputs.size() != 1) {
-    return accepted(
-        Status::Internal("oneDNN binding count is invalid"));
+    return accepted(Status::Internal("oneDNN binding count is invalid"));
   }
 
   const mem::ConstBufferView left_storage = inputs[0].storage();
@@ -272,8 +270,7 @@ Status select_route(void *context_value, Operation operation,
         "oneDNN provider does not implement this operation");
   }
   if (operation.get_if<MatMul>()->accumulation_type != DataType::kFloat32)
-    return Status::Unimplemented(
-        "oneDNN MatMul supports float32 accumulation");
+    return Status::Unimplemented("oneDNN MatMul supports float32 accumulation");
   if (!is_row_major_f32_matrix(inputs[0]) ||
       !is_row_major_f32_matrix(inputs[1]) ||
       !is_row_major_f32_matrix(outputs[0])) {
@@ -317,11 +314,11 @@ host_requirement(const TensorDesc &description) noexcept {
   };
 }
 
-Status propose(
-    void *context_value, const detail::ProviderOperationRequest &request,
-    std::span<detail::ResourceBindingRequirement> input_requirements,
-    std::span<detail::ResourceBindingRequirement> output_requirements,
-    detail::ProviderOperationProposal *proposal) noexcept {
+Status
+propose(void *context_value, const detail::ProviderOperationRequest &request,
+        std::span<detail::ResourceBindingRequirement> input_requirements,
+        std::span<detail::ResourceBindingRequirement> output_requirements,
+        detail::ProviderOperationProposal *proposal) noexcept {
   if (proposal == nullptr)
     return Status::InvalidArgument("oneDNN proposal output is null");
   *proposal = {};
@@ -382,9 +379,9 @@ Status propose(
               .synchronization_count = 0,
               .dispatch_count = 1,
           },
-      .profile_key = ProviderRouteKey{tensor          ? 3U
-                                      : normalization ? 2U
-                                                      : 1U},
+      .implementation = ProviderImplementationId{tensor          ? 3U
+                                                 : normalization ? 2U
+                                                                 : 1U},
   };
   return Status::Ok();
 }
@@ -426,8 +423,8 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
         prepared_output);
   }
   OneDnnRoute route{};
-  Status status = select_route(context_value, request.operation,
-                               request.inputs, request.outputs, route);
+  Status status = select_route(context_value, request.operation, request.inputs,
+                               request.outputs, route);
   if (!status.ok()) {
     return status.IsUnimplemented()
                ? ProviderPrepareOutcome::unsupported(std::move(status))

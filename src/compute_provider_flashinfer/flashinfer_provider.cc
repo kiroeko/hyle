@@ -9,7 +9,7 @@
 #include <limits>
 #include <new>
 
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 #include "native_attention.h"
 #include "native_context.h"
 #include "provider_internal.h"
@@ -20,24 +20,83 @@ namespace {
 constexpr std::size_t kAlignment = 16;
 inline constexpr std::string_view kProviderVersion = "0.6.18+69ff11fc";
 inline constexpr std::array kHardwarePredicates{
-    RouteAttributePredicate::number(route_attribute::kArchitectureMajor, 8),
-    RouteAttributePredicate::number(route_attribute::kArchitectureMinor, 9)};
-inline constexpr RouteRule kHardwareRule{.route = NativeRoute::kCuda,
-                                         .provider = kProviderId,
-                                         .provider_version = kProviderVersion,
-                                         .attributes = kHardwarePredicates};
-inline constexpr RouteRule kFloat16AttentionRule{
+    RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
+    RouteFactPredicate::number(route_fact::kArchitectureMinor, 9)};
+inline constexpr RouteSelector kHardwareRule{
     .route = NativeRoute::kCuda,
-    .operation = OperationKind::kScaledDotProductAttention,
-    .input0_type = DataType::kFloat16,
-    .input1_type = DataType::kFloat16,
-    .output0_type = DataType::kFloat16};
-inline constexpr RouteRule kBFloat16AttentionRule{
-    .route = NativeRoute::kCuda,
-    .operation = OperationKind::kScaledDotProductAttention,
-    .input0_type = DataType::kBFloat16,
-    .input1_type = DataType::kBFloat16,
-    .output0_type = DataType::kBFloat16};
+    .provider = kProviderId,
+    .provider_version = kProviderVersion,
+    .environment = kHardwarePredicates};
+inline constexpr std::array kFloat16AttentionPorts{
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 0,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 1,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 2,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4},
+    RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
+                         .index = 0,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4}};
+inline constexpr std::array kBFloat16AttentionPorts{
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 0,
+                         .data_type = DataType::kBFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 1,
+                         .data_type = DataType::kBFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 2,
+                         .data_type = DataType::kBFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4},
+    RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
+                         .index = 0,
+                         .data_type = DataType::kBFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 4,
+                         .maximum_rank = 4}};
+inline constexpr RoutePolicyEntry kFloat16AttentionPolicy{
+    .id = {0x48594c45464c5348ULL, 1, 1},
+    .preference = 100,
+    .provider = kProviderId,
+    .implementation = ProviderImplementationId{1},
+    .selector = {.route = NativeRoute::kCuda,
+                 .provider = kProviderId,
+                 .provider_version = kProviderVersion,
+                 .operation = OperationKind::kScaledDotProductAttention,
+                 .ports = kFloat16AttentionPorts}};
+inline constexpr RoutePolicyEntry kBFloat16AttentionPolicy{
+    .id = {0x48594c45464c5348ULL, 2, 1},
+    .preference = 100,
+    .provider = kProviderId,
+    .implementation = ProviderImplementationId{1},
+    .selector = {.route = NativeRoute::kCuda,
+                 .provider = kProviderId,
+                 .provider_version = kProviderVersion,
+                 .operation = OperationKind::kScaledDotProductAttention,
+                 .ports = kBFloat16AttentionPorts}};
 constexpr ProviderRuntimeProperties kRuntime{
     .mode = ProviderRuntimeMode::kSharedQueue,
     .workspace_owner = ProviderWorkspaceOwner::kCaller,
@@ -81,8 +140,9 @@ Status create_context(const Provider &provider, Device device,
   const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
                                     .route = NativeRoute::kCuda,
                                     .provider = provider.identity(),
-                                    .attributes = facts.attributes};
-  const bool qualified = match_route_rule(kHardwareRule, route_input).matched();
+                                    .environment = facts.environment};
+  const bool qualified =
+      match_route_selector(kHardwareRule, route_input).matched();
   std::uint64_t maximum_grid = 0;
   if (qualified) {
     cuda::detail::ScopedPrimaryContext scope(primary);
@@ -123,14 +183,16 @@ Status describe(const ProviderContext &context, Operation operation,
                 std::span<const TensorDesc> outputs,
                 Prepared &prepared) noexcept {
   const auto *attention = operation.get_if<ScaledDotProductAttention>();
-  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
-                                    .route = NativeRoute::kCuda,
-                                    .operation = operation,
-                                    .inputs = inputs,
-                                    .outputs = outputs};
+  const RouteMatchInput route_input{
+      .platform = kBuildRoutePlatform,
+      .route = NativeRoute::kCuda,
+      .provider = {kProviderId, "flashinfer", kProviderVersion},
+      .operation = operation,
+      .inputs = inputs,
+      .outputs = outputs};
   const bool typed_attention =
-      match_route_rule(kFloat16AttentionRule, route_input).matched() ||
-      match_route_rule(kBFloat16AttentionRule, route_input).matched();
+      match_route_policy(kFloat16AttentionPolicy, route_input).matched() ||
+      match_route_policy(kBFloat16AttentionPolicy, route_input).matched();
   if (context.maximum_grid == 0 || !typed_attention || attention == nullptr ||
       inputs.size() != 3 || outputs.size() != 1 || !attention->causal ||
       attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
@@ -218,7 +280,11 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
                .repack_bytes = 0,
                .synchronization_count = 0,
                .dispatch_count = std::nullopt},
-      .profile_key = ProviderRouteKey{1}};
+      .implementation = ProviderImplementationId{1}};
+  proposal->policy = request.inputs.front().data_type() == DataType::kFloat16
+                         ? kFloat16AttentionPolicy.id
+                         : kBFloat16AttentionPolicy.id;
+  proposal->preference = kFloat16AttentionPolicy.preference;
   return Status::Ok();
 }
 

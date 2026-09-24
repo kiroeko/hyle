@@ -110,9 +110,10 @@ selector 是稀疏合取；未写的轴是 wildcard，写出的轴必须有真�
 6. 只对最终选择创建重型 artifact，并把 rule/implementation identity 写入冷诊断；
 7. submit 调用固定 artifact，不解释 policy、不枚举 Provider、不查设备、不计时。
 
-preference 是 HYLE 产品数据，不是“规则越具体自动越快”。两个同时匹配且同 preference、但目标不同的
-候选构成歧义；表的静态检查能证明时在构建/测试期拒绝，否则在 prepare 时返回结构化错误。注册顺序
-不能破除歧义。
+preference 是 HYLE 产品数据，不是“规则越具体自动越快”。Direct 中两个同时匹配且同 preference、但
+目标不同的候选构成歧义；表的静态检查能证明时在构建/测试期拒绝，否则在 prepare 时返回结构化错误。
+Graph 的同 preference 候选继续按完整计划的融合覆盖和已声明成本选择。两条路径都不能用注册顺序冒充
+研发裁决。
 
 Provider 在接纳工作前返回 `unsupported` 或明确的 resource-budget decline，才允许尝试 decision table
 中下一条已声明的成熟 fallback。无 fallback 时明确拒绝。创建 artifact、提交或接纳工作后的任何错误
@@ -124,15 +125,16 @@ Provider 在接纳工作前返回 `unsupported` 或明确的 resource-budget dec
 
 ```cpp
 auto profile = hyle::compute::ModelArtifactProfile::create({
+    .model_publisher = "Qwen",
     .model_repository = "Qwen/Qwen3.5-2B",
     .model_family = "qwen3_5",
     .model_name = "qwen3.5-2b",
-    .model_revision = "15852e8c...",
-    .configuration_digest = "...64 hex...",
+    .model_revision = "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    .configuration_digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
     .artifact_repository = "unsloth/Qwen3.5-2B-GGUF",
-    .artifact_revision = "f6d5376b...",
+    .artifact_revision = "f6d5376be1edb4d416d56da11e5397a961aca8ae",
     .variant = "UD-Q4_K_XL",
-    .manifest_digest = "...64 hex...",
+    .manifest_digest = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
     .format_family = "gguf",
 });
 ```

@@ -230,7 +230,7 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   auto exact = propose();
   ASSERT_TRUE(exact.has_value()) << exact.error().message();
   EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);
-  EXPECT_EQ(exact->profile_key, hyle::compute::ProviderRouteKey{1});
+  EXPECT_EQ(exact->implementation, hyle::compute::ProviderImplementationId{1});
 }
 
 TEST(OneDnnProvider, InternalPlanExecutesSharedLeftPairInOneEpisode) {
@@ -585,7 +585,8 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
   {
     ContextOptions options;
     options.metadata_allocator = allocator(probe);
-    const std::array providers{hyle::compute::onednn::provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{hyle::compute::onednn::provider(), 100}};
     options.providers = providers;
     Context context =
         Context::create(hyle::compute::cpu::device(), options).value();
@@ -630,7 +631,8 @@ TEST(OneDnnProvider, ReportsMetadataOomWithoutLeakingOwnedState) {
 TEST(OneDnnProvider, NormalizationPartialOwnersRollbackOnMetadataOom) {
   AllocatorProbe probe;
   {
-    const std::array providers{hyle::compute::onednn::provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{hyle::compute::onednn::provider(), 100}};
     auto context = Context::create(hyle::compute::cpu::device(),
                                    {.metadata_allocator = allocator(probe),
                                     .providers = providers})

@@ -12,8 +12,8 @@
 
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
-#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #if defined(HYLE_COMPUTE_ONEDNN)
 #include "hyle/compute/providers/onednn.h"
 #endif
@@ -84,8 +84,9 @@ TEST(CpuDefaultContext, StandardIndexProgramsBindThroughOrdinaryFactory) {
   ASSERT_TRUE(topk) << topk.error().message();
   EXPECT_EQ(topk->provider().id, ggml_cpu::kProviderId);
   EXPECT_EQ(topk->output_count(), 2U);
-  const auto counts = TensorDesc::dense(DataType::kInt32,
-      std::array<std::int64_t, 1>{9}).value();
+  const auto counts =
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{9})
+          .value();
   auto scan = prepare(context, Scan{.exclusive = true}, counts);
   ASSERT_TRUE(scan) << scan.error().message();
   EXPECT_EQ(scan->provider().id, ggml_cpu::kProviderId);
@@ -94,23 +95,20 @@ TEST(CpuDefaultContext, StandardIndexProgramsBindThroughOrdinaryFactory) {
 
 TEST(CpuDefaultContext, MatureScatterAddBindsThroughOrdinaryFactory) {
   auto context = create_context().value();
-  const auto base = TensorDesc::dense(
-                        DataType::kFloat16,
-                        std::array<std::int64_t, 3>{2, 4, 8})
+  const auto base = TensorDesc::dense(DataType::kFloat16,
+                                      std::array<std::int64_t, 3>{2, 4, 8})
                         .value();
-  const auto indices = TensorDesc::dense(
-                           DataType::kInt32,
-                           std::array<std::int64_t, 1>{3})
-                           .value();
-  const auto updates = TensorDesc::dense(
-                           DataType::kFloat16,
-                           std::array<std::int64_t, 3>{2, 3, 8})
+  const auto indices =
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{3})
+          .value();
+  const auto updates = TensorDesc::dense(DataType::kFloat16,
+                                         std::array<std::int64_t, 3>{2, 3, 8})
                            .value();
   const std::array inputs{base, indices, updates};
   const std::array outputs{base};
-  auto prepared = prepare(
-      context, Operation(Scatter{.axis = 1, .kind = ScatterKind::kAdd}),
-      inputs, outputs, hyle::mem::system_resource());
+  auto prepared =
+      prepare(context, Operation(Scatter{.axis = 1, .kind = ScatterKind::kAdd}),
+              inputs, outputs, hyle::mem::system_resource());
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
   EXPECT_EQ(prepared->runtime_properties().replay_class,
@@ -196,15 +194,17 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
         const auto right_desc =
             transposed ? matrix(columns, inner).transposed().value()
                        : matrix(inner, columns);
-        auto workload = rows < 16 ? WorkloadContext{}
-                                 : workload_test::known(WorkloadPhase::kPrefill);
+        auto workload = rows < 16
+                            ? WorkloadContext{}
+                            : workload_test::known(WorkloadPhase::kPrefill);
         auto prepared = prepare(context, MatMul{}, left_desc, right_desc,
                                 hyle::mem::system_resource(), workload);
         ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
         EXPECT_EQ(prepared->workload(), workload);
         workload = {};
         if (rows >= 16) {
-          EXPECT_TRUE(prepared->workload().model.matches(workload_test::kModel));
+          EXPECT_TRUE(
+              prepared->workload().profile.matches(workload_test::kModel));
         }
         ProviderId expected = native::kProviderId;
 #if defined(HYLE_COMPUTE_ONEDNN)
@@ -304,8 +304,7 @@ TEST(CpuDefaultContext, B2MatureDomainsBindThroughDefaultRuleSet) {
                         std::array<std::int64_t, 3>{2, 17, 64})
           .value();
   const auto f16_weight =
-      TensorDesc::dense(DataType::kFloat16,
-                        std::array<std::int64_t, 2>{64, 96})
+      TensorDesc::dense(DataType::kFloat16, std::array<std::int64_t, 2>{64, 96})
           .value();
   auto linear = prepare(context, MatMul{}, f16_left, f16_weight);
   ASSERT_TRUE(linear) << linear.error().message();
@@ -316,12 +315,10 @@ TEST(CpuDefaultContext, B2MatureDomainsBindThroughDefaultRuleSet) {
                         std::array<std::int64_t, 4>{1, 17, 8, 256})
           .value();
   const auto positions =
-      TensorDesc::dense(DataType::kInt32,
-                        std::array<std::int64_t, 1>{17})
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{17})
           .value();
   const auto frequencies =
-      TensorDesc::dense(DataType::kFloat32,
-                        std::array<std::int64_t, 1>{128})
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{128})
           .value();
   auto rope = prepare(context,
                       RoPE{.rotary_dimensions = 256,
@@ -347,14 +344,14 @@ TEST(CpuDefaultContext, B2MatureDomainsBindThroughDefaultRuleSet) {
       TensorDesc::dense(DataType::kFloat32,
                         std::array<std::int64_t, 4>{1, 31, 2, 256})
           .value();
-  auto attention = prepare(
-      context,
-      ScaledDotProductAttention{
-          .layout = AttentionLayout::kBatchSequenceHeadDepth,
-          .scale = 0.0625F,
-          .causal = true,
-          .accumulation_type = DataType::kFloat32},
-      query, key_value, key_value);
+  auto attention =
+      prepare(context,
+              ScaledDotProductAttention{
+                  .layout = AttentionLayout::kBatchSequenceHeadDepth,
+                  .scale = 0.0625F,
+                  .causal = true,
+                  .accumulation_type = DataType::kFloat32},
+              query, key_value, key_value);
   ASSERT_TRUE(attention) << attention.error().message();
   EXPECT_EQ(attention->provider().id, ggml_cpu::kProviderId);
 }

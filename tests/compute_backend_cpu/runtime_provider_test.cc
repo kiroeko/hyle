@@ -74,11 +74,12 @@ void destroy_provider_context(void *context, hyle::mem::AllocatorRef) noexcept {
   payload.probe->destroyed[payload.probe->destroy_count++] = payload.index;
 }
 
-hyle::Status propose_provider(
-    void *context, const hyle::compute::detail::ProviderOperationRequest &,
-    std::span<hyle::compute::detail::ResourceBindingRequirement>,
-    std::span<hyle::compute::detail::ResourceBindingRequirement>,
-    hyle::compute::detail::ProviderOperationProposal *) noexcept {
+hyle::Status
+propose_provider(void *context,
+                 const hyle::compute::detail::ProviderOperationRequest &,
+                 std::span<hyle::compute::detail::ResourceBindingRequirement>,
+                 std::span<hyle::compute::detail::ResourceBindingRequirement>,
+                 hyle::compute::detail::ProviderOperationProposal *) noexcept {
   const auto &provider = *static_cast<hyle::compute::Provider *>(context);
   const auto payload =
       hyle::compute::detail::ProviderAccess::payload<ProviderPayload>(provider);
@@ -168,6 +169,8 @@ struct AsyncOperationProbe final {
   hyle::compute::detail::ProviderShapeRange observed_shape_range{};
   hyle::compute::detail::ProviderShapeCoverage shape_coverage =
       hyle::compute::detail::ProviderShapeCoverage::kExactPoint;
+  hyle::compute::ProviderImplementationId implementation{};
+  hyle::compute::RoutePolicyId policy{};
   hyle::compute::ProviderReplayClass proposed_replay =
       hyle::compute::ProviderReplayClass::kUnknown;
   hyle::compute::ProviderReplayClass prepared_replay =
@@ -313,6 +316,8 @@ hyle::Status propose_async_operation(
               .workspace = hyle::compute::WorkspaceRequirement{},
           },
       .shape_coverage = probe.shape_coverage,
+      .implementation = probe.implementation,
+      .policy = probe.policy,
   };
   return hyle::Status::Ok();
 }
@@ -329,15 +334,16 @@ hyle::compute::ProviderPrepareOutcome prepare_async_operation(
   const auto artifact = hyle::compute::detail::ProviderPrepared{
       .vtable = &kAsyncPreparedVTable,
       .state = context,
-      .runtime = hyle::compute::ProviderRuntimeProperties{
-          .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
-          .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
-          .replay_class = probe.prepared_replay,
-          .blocks_host = false,
-          .uses_private_threads = false,
-          .supports_concurrent_invocations = true,
-          .capture_compatible = false,
-      },
+      .runtime =
+          hyle::compute::ProviderRuntimeProperties{
+              .mode = hyle::compute::ProviderRuntimeMode::kSharedQueue,
+              .workspace_owner = hyle::compute::ProviderWorkspaceOwner::kCaller,
+              .replay_class = probe.prepared_replay,
+              .blocks_host = false,
+              .uses_private_threads = false,
+              .supports_concurrent_invocations = true,
+              .capture_compatible = false,
+          },
   };
   if (probe.return_partial_artifact)
     *prepared = artifact;
@@ -628,8 +634,8 @@ struct DelegatedProbe final {
 
 constexpr int kDelegatedEndpointAuthority = 0;
 
-hyle::Status delegated_terminal(
-    const DelegatedCompletionState &state) noexcept {
+hyle::Status
+delegated_terminal(const DelegatedCompletionState &state) noexcept {
   if (state.cancelled)
     return hyle::Status::Cancelled("delegated operation cancelled");
   if (state.probe->fail)
@@ -713,9 +719,10 @@ const hyle::compute::detail::CompletionVTable kDelegatedCompletionVTable{
     .request_cancel = &cancel_delegated_completion,
 };
 
-hyle::Status create_delegated_context(
-    const hyle::compute::Provider &provider, hyle::compute::Device,
-    void *, hyle::mem::AllocatorRef allocator, void **output) noexcept {
+hyle::Status create_delegated_context(const hyle::compute::Provider &provider,
+                                      hyle::compute::Device, void *,
+                                      hyle::mem::AllocatorRef allocator,
+                                      void **output) noexcept {
   if (output == nullptr)
     return hyle::Status::InvalidArgument("delegated context output is null");
   *output = nullptr;
@@ -744,16 +751,16 @@ void destroy_delegated_context(void *value,
 void destroy_delegated_prepared(void *, hyle::mem::AllocatorRef) noexcept {}
 
 hyle::compute::AliasSupport delegated_alias_support(void *, std::size_t,
-                                                     std::size_t) noexcept {
+                                                    std::size_t) noexcept {
   return {};
 }
 
-hyle::Status create_delegated_invocation(
-    void *prepared, hyle::mem::AllocatorRef allocator, hyle::mem::BufferView,
-    void **output) noexcept {
+hyle::Status create_delegated_invocation(void *prepared,
+                                         hyle::mem::AllocatorRef allocator,
+                                         hyle::mem::BufferView,
+                                         void **output) noexcept {
   if (output == nullptr)
-    return hyle::Status::InvalidArgument(
-        "delegated invocation output is null");
+    return hyle::Status::InvalidArgument("delegated invocation output is null");
   *output = nullptr;
   void *storage = allocator.allocate(sizeof(DelegatedInvocation),
                                      alignof(DelegatedInvocation));
@@ -765,8 +772,8 @@ hyle::Status create_delegated_invocation(
   return hyle::Status::Ok();
 }
 
-void destroy_delegated_invocation(
-    void *value, hyle::mem::AllocatorRef allocator) noexcept {
+void destroy_delegated_invocation(void *value,
+                                  hyle::mem::AllocatorRef allocator) noexcept {
   auto *invocation = static_cast<DelegatedInvocation *>(value);
   if (invocation == nullptr)
     return;
@@ -804,9 +811,8 @@ hyle::Result<hyle::compute::Completion> submit_delegated(
     return std::unexpected(hyle::Status::ResourceExhausted(
         "delegated completion allocation failed"));
   }
-  auto *state = ::new (storage)
-      DelegatedCompletionState{.probe = &probe,
-                               .allocator = invocation->allocator};
+  auto *state = ::new (storage) DelegatedCompletionState{
+      .probe = &probe, .allocator = invocation->allocator};
   probe.pending = state;
   ++probe.submit_count;
   auto completion = hyle::compute::detail::CompletionAccess::make(
@@ -833,8 +839,8 @@ hyle::Result<hyle::compute::Completion> submit_delegated(
   return completion;
 }
 
-hyle::compute::detail::CompletionEndpoint delegated_endpoint(
-    void *, void *invocation) noexcept {
+hyle::compute::detail::CompletionEndpoint
+delegated_endpoint(void *, void *invocation) noexcept {
   return {&kDelegatedEndpointAuthority, invocation};
 }
 
@@ -854,10 +860,10 @@ const hyle::compute::detail::ProviderPreparedVTable kDelegatedPreparedVTable{
     .can_import_endpoint = &can_import_delegated_endpoint,
 };
 
-hyle::compute::detail::EnqueueResult invalid_shared_submit(
-    void *, void *, hyle::compute::Queue &,
-    std::span<const hyle::compute::ConstTensorView>,
-    std::span<const hyle::compute::TensorView>) noexcept {
+hyle::compute::detail::EnqueueResult
+invalid_shared_submit(void *, void *, hyle::compute::Queue &,
+                      std::span<const hyle::compute::ConstTensorView>,
+                      std::span<const hyle::compute::TensorView>) noexcept {
   return hyle::compute::detail::EnqueueResult::rejected(
       hyle::Status::Internal("invalid mixed runtime artifact executed"));
 }
@@ -893,8 +899,8 @@ hyle::Status propose_delegated(
   const auto operation = request.operation;
   const auto inputs = request.inputs;
   const auto outputs = request.outputs;
-  if (proposal == nullptr || operation.kind() !=
-                                 hyle::compute::OperationKind::kUnary ||
+  if (proposal == nullptr ||
+      operation.kind() != hyle::compute::OperationKind::kUnary ||
       inputs.size() != 1 || outputs.size() != 1 ||
       input_requirements.size() != 1 || output_requirements.size() != 1) {
     return hyle::Status::Unimplemented(
@@ -959,10 +965,10 @@ const hyle::compute::detail::ProviderVTable kDelegatedProviderVTable{
     .drain_context = &drain_delegated_context,
 };
 
-hyle::compute::Provider make_delegated_provider(
-    DelegatedProbe &probe) noexcept {
-  return hyle::compute::detail::ProviderAccess::make(
-      &kDelegatedProviderVTable, &probe);
+hyle::compute::Provider
+make_delegated_provider(DelegatedProbe &probe) noexcept {
+  return hyle::compute::detail::ProviderAccess::make(&kDelegatedProviderVTable,
+                                                     &probe);
 }
 
 hyle::Status observe_backend_extension(void *, const void *interface_value,
@@ -1132,11 +1138,13 @@ TEST(RuntimeProviders, BackendExtensionIsVersionedAndContextLocal) {
                   .IsFailedPrecondition());
 }
 
-TEST(RuntimeProviders, ContextCopiesAnArbitraryOrderedSequence) {
+TEST(RuntimeProviders, ContextCopiesExplicitProviderBindings) {
   ProviderProbe probe;
-  std::array<hyle::compute::Provider, 6> providers{};
-  for (std::size_t index = 0; index < providers.size(); ++index)
-    providers[index] = make_provider(probe, index);
+  std::array<hyle::compute::ProviderBinding, 6> providers{};
+  for (std::size_t index = 0; index < providers.size(); ++index) {
+    providers[index] = {make_provider(probe, index),
+                        static_cast<std::uint32_t>(index)};
+  }
 
   {
     auto created = hyle::compute::Context::create(hyle::compute::cpu::device(),
@@ -1166,7 +1174,9 @@ TEST(RuntimeProviders, InstanceIdsDistinguishSlotsAndSurviveHandleMoves) {
   using hyle::compute::Context;
   using hyle::compute::ProviderInstanceId;
   ProviderProbe probe;
-  const std::array providers{make_provider(probe, 0), make_provider(probe, 1)};
+  const std::array providers{
+      hyle::compute::ProviderBinding{make_provider(probe, 0), 100},
+      hyle::compute::ProviderBinding{make_provider(probe, 1), 200}};
   ProviderInstanceId retained;
   {
     auto context =
@@ -1234,8 +1244,9 @@ TEST(RuntimeProviders, ProposalCannotBeSplicedIntoAnotherSameFamilySlot) {
   using hyle::compute::detail::OperationPreparationAccess;
   AsyncOperationProbe first;
   AsyncOperationProbe second;
-  const std::array providers{make_async_provider(first),
-                             make_async_provider(second)};
+  const std::array providers{
+      hyle::compute::ProviderBinding{make_async_provider(first), 100},
+      hyle::compute::ProviderBinding{make_async_provider(second), 200}};
   auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 {.providers = providers})
                      .value();
@@ -1288,7 +1299,9 @@ TEST(RuntimeProviders, ProviderExtensionRetainsItsExactInstanceIdentity) {
   using hyle::compute::detail::ProviderExtensionAccess;
   using hyle::compute::detail::ProviderExtensionRef;
   ProviderProbe probe;
-  const std::array providers{make_provider(probe, 0), make_provider(probe, 1)};
+  const std::array providers{
+      hyle::compute::ProviderBinding{make_provider(probe, 0), 100},
+      hyle::compute::ProviderBinding{make_provider(probe, 1), 200}};
   auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 {.providers = providers})
                      .value();
@@ -1321,8 +1334,7 @@ TEST(RuntimeProviders,
                      .value();
   const std::array<std::int64_t, 1> shape{8};
   const auto description =
-      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
-                                       shape)
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
           .value();
   const hyle::compute::Operation operation(
       hyle::compute::Unary{hyle::compute::UnaryKind::kNeg});
@@ -1388,7 +1400,8 @@ TEST(RuntimeProviders,
 TEST(RuntimeProviders, ReplayCostIsPreservedAndCannotChangeDuringPreparation) {
   using namespace hyle::compute;
   AsyncOperationProbe probe;
-  auto context = Context::create(cpu::device(), make_async_provider(probe)).value();
+  auto context =
+      Context::create(cpu::device(), make_async_provider(probe)).value();
   const std::array<std::int64_t, 1> shape{8};
   const auto description = TensorDesc::dense(DataType::kFloat32, shape).value();
   const auto make_prepared = [&]() {
@@ -1427,25 +1440,26 @@ TEST(RuntimeProviders, ReplayCostIsPreservedAndCannotChangeDuringPreparation) {
   EXPECT_EQ(probe.submit_count, 0u);
 }
 
-TEST(RuntimeProviders, DirectPreparationRetriesOnlyUnsupportedDeclines) {
+TEST(RuntimeProviders, DirectPreparationRetriesDeclaredSafeDeclines) {
   const std::array<std::int64_t, 1> shape{8};
   const auto description =
-      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
-                                       shape)
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
           .value();
 
   AsyncOperationProbe unsupported_probe;
   AsyncOperationProbe fallback_probe;
   unsupported_probe.prepare_disposition = PrepareDisposition::kUnsupported;
-  const std::array fallback_providers{make_async_provider(unsupported_probe),
-                                      make_async_provider(fallback_probe)};
-  auto fallback_context = hyle::compute::Context::create(
-                              hyle::compute::cpu::device(),
-                              {.providers = fallback_providers})
-                              .value();
+  const std::array fallback_providers{
+      hyle::compute::ProviderBinding{make_async_provider(unsupported_probe),
+                                     100},
+      hyle::compute::ProviderBinding{make_async_provider(fallback_probe), 200}};
+  auto fallback_context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     {.providers = fallback_providers})
+          .value();
   auto prepared = hyle::compute::prepare(
-      fallback_context,
-      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg}, description);
+      fallback_context, hyle::compute::Unary{hyle::compute::UnaryKind::kNeg},
+      description);
   ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
   EXPECT_EQ(unsupported_probe.prepare_count, 1u);
   EXPECT_EQ(fallback_probe.prepare_count, 1u);
@@ -1454,21 +1468,22 @@ TEST(RuntimeProviders, DirectPreparationRetriesOnlyUnsupportedDeclines) {
   AsyncOperationProbe forbidden_fallback_probe;
   resource_probe.prepare_disposition = PrepareDisposition::kResourceBudget;
   resource_probe.return_partial_artifact = true;
-  const std::array resource_providers{make_async_provider(resource_probe),
-                                      make_async_provider(
-                                          forbidden_fallback_probe)};
-  auto resource_context = hyle::compute::Context::create(
-                              hyle::compute::cpu::device(),
-                              {.providers = resource_providers})
-                              .value();
-  auto declined = hyle::compute::prepare(
-      resource_context,
-      hyle::compute::Unary{hyle::compute::UnaryKind::kNeg}, description);
-  ASSERT_FALSE(declined.has_value());
-  EXPECT_TRUE(declined.error().IsResourceExhausted());
+  const std::array resource_providers{
+      hyle::compute::ProviderBinding{make_async_provider(resource_probe), 100},
+      hyle::compute::ProviderBinding{
+          make_async_provider(forbidden_fallback_probe), 200}};
+  auto resource_context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     {.providers = resource_providers})
+          .value();
+  auto resource_fallback = hyle::compute::prepare(
+      resource_context, hyle::compute::Unary{hyle::compute::UnaryKind::kNeg},
+      description);
+  ASSERT_TRUE(resource_fallback.has_value())
+      << resource_fallback.error().message();
   EXPECT_EQ(resource_probe.prepare_count, 1u);
   EXPECT_EQ(resource_probe.prepared_destroy_count, 1u);
-  EXPECT_EQ(forbidden_fallback_probe.prepare_count, 0u);
+  EXPECT_EQ(forbidden_fallback_probe.prepare_count, 1u);
 }
 
 TEST(RuntimeProviders, DirectErrorCodesDoNotBecomeSafeDeclines) {
@@ -1484,8 +1499,9 @@ TEST(RuntimeProviders, DirectErrorCodesDoNotBecomeSafeDeclines) {
     first.prepare_disposition = PrepareDisposition::kError;
     first.prepare_error = error;
     first.return_partial_artifact = true;
-    const std::array providers{make_async_provider(first),
-                               make_async_provider(fallback)};
+    const std::array providers{
+        hyle::compute::ProviderBinding{make_async_provider(first), 100},
+        hyle::compute::ProviderBinding{make_async_provider(fallback), 200}};
     auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                   {.providers = providers})
                        .value();
@@ -1496,16 +1512,59 @@ TEST(RuntimeProviders, DirectErrorCodesDoNotBecomeSafeDeclines) {
     EXPECT_EQ(prepared.error(), error);
     EXPECT_EQ(first.prepare_count, 1u);
     EXPECT_EQ(first.prepared_destroy_count, 1u);
-    EXPECT_EQ(fallback.proposal_count, 0u);
+    EXPECT_EQ(fallback.proposal_count, 1u);
     EXPECT_EQ(fallback.prepare_count, 0u);
   }
+}
+
+TEST(RuntimeProviders, DirectBindingUsesPreferenceAndRejectsTies) {
+  using namespace hyle::compute;
+  const auto description =
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
+          .value();
+
+  AsyncOperationProbe lower_priority;
+  AsyncOperationProbe preferred;
+  preferred.implementation = ProviderImplementationId{17};
+  preferred.policy = {0x54455354524f5554ULL, 3, 1};
+  const std::array ranked{
+      ProviderBinding{make_async_provider(lower_priority), 200},
+      ProviderBinding{make_async_provider(preferred), 100}};
+  auto context = Context::create(cpu::device(), {.providers = ranked}).value();
+  auto prepared = prepare(context, Unary{UnaryKind::kNeg}, description);
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(lower_priority.proposal_count, 1u);
+  EXPECT_EQ(preferred.proposal_count, 1u);
+  EXPECT_EQ(lower_priority.prepare_count, 0u);
+  EXPECT_EQ(preferred.prepare_count, 1u);
+  EXPECT_EQ(prepared->implementation(), preferred.implementation);
+  EXPECT_EQ(prepared->route_policy(), preferred.policy);
+  EXPECT_EQ(prepared->route_preference(), 100u);
+
+  AsyncOperationProbe first;
+  AsyncOperationProbe second;
+  const std::array ambiguous{ProviderBinding{make_async_provider(first), 100},
+                             ProviderBinding{make_async_provider(second), 100}};
+  auto ambiguous_context =
+      Context::create(cpu::device(), {.providers = ambiguous}).value();
+  auto rejected =
+      prepare(ambiguous_context, Unary{UnaryKind::kNeg}, description);
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  EXPECT_EQ(first.proposal_count, 1u);
+  EXPECT_EQ(second.proposal_count, 1u);
+  EXPECT_EQ(first.prepare_count, 0u);
+  EXPECT_EQ(second.prepare_count, 0u);
 }
 
 TEST(RuntimeProviders, ContextCreationRollsBackInReverseOrder) {
   ProviderProbe probe;
   probe.fail_index = 2;
-  const std::array providers{make_provider(probe, 0), make_provider(probe, 1),
-                             make_provider(probe, 2), make_provider(probe, 3)};
+  const std::array providers{
+      hyle::compute::ProviderBinding{make_provider(probe, 0), 100},
+      hyle::compute::ProviderBinding{make_provider(probe, 1), 200},
+      hyle::compute::ProviderBinding{make_provider(probe, 2), 300},
+      hyle::compute::ProviderBinding{make_provider(probe, 3), 400}};
 
   auto created = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 {.providers = providers});
@@ -1524,21 +1583,24 @@ TEST(RuntimeProviders, RejectsProviderWithoutRequiredDrainContract) {
   ProviderProbe probe;
   const auto incomplete = hyle::compute::detail::ProviderAccess::make(
       &kIncompleteProviderVTable, ProviderPayload{&probe, 0});
-  auto created = hyle::compute::Context::create(
-      hyle::compute::cpu::device(), incomplete);
+  auto created =
+      hyle::compute::Context::create(hyle::compute::cpu::device(), incomplete);
   ASSERT_FALSE(created.has_value());
   EXPECT_TRUE(created.error().IsInvalidArgument());
   EXPECT_EQ(probe.create_count, 0u);
 }
 
-TEST(RuntimeProviders, RejectsPrivateContractMismatchAndUnwindsEarlierContexts) {
+TEST(RuntimeProviders,
+     RejectsPrivateContractMismatchAndUnwindsEarlierContexts) {
   ProviderProbe probe;
   auto incompatible_table = kProviderVTable;
   incompatible_table.contract_version =
       hyle::compute::detail::kProviderContractVersion + 1;
   const auto incompatible = hyle::compute::detail::ProviderAccess::make(
       &incompatible_table, ProviderPayload{&probe, 1});
-  const std::array providers{make_provider(probe, 0), incompatible};
+  const std::array providers{
+      hyle::compute::ProviderBinding{make_provider(probe, 0), 100},
+      hyle::compute::ProviderBinding{incompatible, 200}};
   auto context = hyle::compute::Context::create(
       hyle::compute::cpu::device(),
       hyle::compute::ContextOptions{.providers = providers});
@@ -1554,7 +1616,8 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   using namespace hyle::compute;
   using namespace hyle::compute::detail;
   AsyncOperationProbe probe;
-  auto context = Context::create(cpu::device(), make_async_provider(probe)).value();
+  auto context =
+      Context::create(cpu::device(), make_async_provider(probe)).value();
   const std::array<std::int64_t, 1> upper_shape{8};
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, upper_shape).value()};
@@ -2144,14 +2207,12 @@ TEST(RuntimeProviders, AbandonedDelegatedFailureRetiresOnlyItsOwnSlot) {
 TEST(RuntimeProviders,
      DelegatedCompletionOwnsEndpointCancellationDrainAndAbandonment) {
   DelegatedProbe probe;
-  auto context = hyle::compute::Context::create(
-                     hyle::compute::cpu::device(),
-                     make_delegated_provider(probe))
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                make_delegated_provider(probe))
                      .value();
   const std::array<std::int64_t, 1> shape{4};
   const auto description =
-      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
-                                       shape)
+      hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
           .value();
   const hyle::compute::Operation operation(
       hyle::compute::Unary{hyle::compute::UnaryKind::kNeg});
@@ -2206,9 +2267,9 @@ TEST(RuntimeProviders,
   auto output_buffer =
       hyle::mem::Buffer::create(hyle::mem::system_resource(), 4 * sizeof(float))
           .value();
-  const auto input = hyle::compute::ConstTensorView::create(
-                         description, input_buffer.view())
-                         .value();
+  const auto input =
+      hyle::compute::ConstTensorView::create(description, input_buffer.view())
+          .value();
   const auto output =
       hyle::compute::TensorView::create(description, output_buffer.view())
           .value();
@@ -2229,14 +2290,13 @@ TEST(RuntimeProviders,
   const std::array inputs{input};
   const std::array outputs{output};
   auto completion = hyle::compute::detail::OperationInvocationAccess::
-                        submit_delegated_prevalidated(invocation, {}, inputs,
-                                                      outputs);
+      submit_delegated_prevalidated(invocation, {}, inputs, outputs);
   ASSERT_TRUE(completion.has_value()) << completion.error().message();
   EXPECT_TRUE(invocation.in_flight());
   EXPECT_TRUE(hyle::compute::detail::OperationInvocationAccess::
                   submit_delegated_prevalidated(invocation, {}, inputs, outputs)
-                  .error()
-                  .IsFailedPrecondition());
+                      .error()
+                      .IsFailedPrecondition());
   EXPECT_EQ(completion->poll().value(),
             hyle::compute::CompletionPoll::kPending);
   EXPECT_TRUE(completion->wait().ok());
@@ -2244,8 +2304,7 @@ TEST(RuntimeProviders,
   EXPECT_EQ(probe.pending, nullptr);
 
   completion = hyle::compute::detail::OperationInvocationAccess::
-                   submit_delegated_prevalidated(invocation, {}, inputs,
-                                                 outputs);
+      submit_delegated_prevalidated(invocation, {}, inputs, outputs);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->request_cancel().ok());
   EXPECT_TRUE(completion->wait().IsCancelled());
@@ -2258,16 +2317,14 @@ TEST(RuntimeProviders,
   invocation = prepared.create_invocation().value();
   probe.fail = true;
   completion = hyle::compute::detail::OperationInvocationAccess::
-                   submit_delegated_prevalidated(invocation, {}, inputs,
-                                                 outputs);
+      submit_delegated_prevalidated(invocation, {}, inputs, outputs);
   ASSERT_TRUE(completion.has_value());
   EXPECT_TRUE(completion->wait().IsDataLoss());
   probe.fail = false;
 
   invocation = prepared.create_invocation().value();
   completion = hyle::compute::detail::OperationInvocationAccess::
-                   submit_delegated_prevalidated(invocation, {}, inputs,
-                                                 outputs);
+      submit_delegated_prevalidated(invocation, {}, inputs, outputs);
   ASSERT_TRUE(completion.has_value());
   invocation = {};
   EXPECT_EQ(probe.invocation_destroy_count, 2u);

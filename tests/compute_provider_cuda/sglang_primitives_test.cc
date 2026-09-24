@@ -33,7 +33,8 @@ struct Tensor {
 template <class T> void rms_shapes() {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
-    const std::array providers{compute::cuda_native::sglang_provider()};
+    const std::array providers{hyle::compute::ProviderBinding{
+        compute::cuda_native::sglang_provider(), 100}};
     auto owner = compute::Context::create(cuda::device(0).value(),
                                           {.metadata_allocator = stats.get(),
                                            .providers = providers})

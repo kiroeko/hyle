@@ -19,20 +19,27 @@ Result<compute::Context>
 create_context(compute::cpu::DefaultContextOptions options) noexcept {
   const std::array providers{
 #if defined(HYLE_COMPUTE_GGML_CPU)
-      internal::ggml_regions({.executor = options.executor,
-                              .native_threads = options.native_threads}),
+      compute::ProviderBinding{
+          internal::ggml_regions({.executor = options.executor,
+                                  .native_threads = options.native_threads}),
+          100},
 #endif
 #if defined(HYLE_GRAPH_ONEDNN)
-      onednn::provider({.executor = options.executor}),
+      compute::ProviderBinding{onednn::provider({.executor = options.executor}),
+                               150},
 #endif
 #if defined(HYLE_COMPUTE_ONEDNN)
-      compute::onednn::provider({.executor = options.executor}),
+      compute::ProviderBinding{
+          compute::onednn::provider({.executor = options.executor}), 200},
 #endif
 #if defined(HYLE_COMPUTE_GGML_CPU)
-      compute::ggml_cpu::provider({.executor = options.executor,
-                                   .native_threads = options.native_threads}),
+      compute::ProviderBinding{compute::ggml_cpu::provider(
+                                   {.executor = options.executor,
+                                    .native_threads = options.native_threads}),
+                               300},
 #endif
-      compute::native::provider({.executor = options.executor})};
+      compute::ProviderBinding{
+          compute::native::provider({.executor = options.executor}), 1000}};
   return compute::Context::create(
       compute::cpu::device(), {.metadata_allocator = options.metadata_allocator,
                                .providers = providers});

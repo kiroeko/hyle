@@ -47,7 +47,8 @@ TEST(OneDnnGraph, PlansProviderScratchpadAndExecutesWithoutHiddenFallback) {
   ASSERT_TRUE(builder.publish(output).ok());
   auto graph = std::move(builder).finish().value();
 
-  const std::array providers{hyle::compute::onednn::provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{hyle::compute::onednn::provider(), 100}};
   Context context =
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();

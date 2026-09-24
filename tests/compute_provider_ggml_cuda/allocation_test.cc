@@ -66,7 +66,8 @@ void check_oom(MetadataAllocator &allocator, Create create) {
 
 TEST(GgmlCuda, ColdAllocationsRollBackWithoutRetainingNativeResources) {
   MetadataAllocator allocator;
-  const std::array providers{compute::ggml_cuda::provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{compute::ggml_cuda::provider(), 100}};
   const auto device = cuda::device(0).value();
   auto create = [&] {
     return compute::Context::create(

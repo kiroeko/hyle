@@ -10,36 +10,31 @@
 #include "../compute_provider_ggml_vulkan/region.h"
 #include "../compute_provider_iree_vulkan/native_device.h"
 #include "hyle/compute/detail/completion_access.h"
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 #include "hyle/compute/vulkan.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace cd = hyle::compute::detail;
 
-inline constexpr RouteAttributeId kSubgroupArithmeticAttribute{
-    0x48594c45564b5254ULL, 1};
+inline constexpr RouteFactId kSubgroupArithmeticAttribute{0x48594c45564b5254ULL,
+                                                          1, 1};
 
 struct RouteFacts final {
-  std::array<RouteAttribute, 8> attributes;
+  std::array<RouteFact, 8> environment;
 };
 
 inline RouteFacts route_facts(const Environment &environment) noexcept {
   return {{
-      RouteAttribute::number(route_attribute::kDeviceVendorId,
-                             environment.vendor_id),
-      RouteAttribute::number(route_attribute::kDeviceId, environment.device_id),
-      RouteAttribute::string(route_attribute::kDeviceName,
-                             environment.device_name),
-      RouteAttribute::number(route_attribute::kDriverVersion,
-                             environment.driver_version),
-      RouteAttribute::number(route_attribute::kApiVersion,
-                             environment.api_version),
-      RouteAttribute::number(route_attribute::kSubgroupSize,
-                             environment.subgroup_size),
-      RouteAttribute::number(route_attribute::kSharedMemoryBytes,
-                             environment.shared_memory_bytes),
-      RouteAttribute::number(kSubgroupArithmeticAttribute,
-                             environment.subgroup_arithmetic ? 1u : 0u),
+      RouteFact::number(route_fact::kDeviceVendorId, environment.vendor_id),
+      RouteFact::number(route_fact::kDeviceId, environment.device_id),
+      RouteFact::string(route_fact::kDeviceName, environment.device_name),
+      RouteFact::number(route_fact::kDriverVersion, environment.driver_version),
+      RouteFact::number(route_fact::kApiVersion, environment.api_version),
+      RouteFact::number(route_fact::kSubgroupSize, environment.subgroup_size),
+      RouteFact::number(route_fact::kSharedMemoryBytes,
+                        environment.shared_memory_bytes),
+      RouteFact::number(kSubgroupArithmeticAttribute,
+                        environment.subgroup_arithmetic ? 1u : 0u),
   }};
 }
 

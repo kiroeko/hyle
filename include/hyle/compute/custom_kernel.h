@@ -71,7 +71,7 @@ struct KernelProposal final {
   ProviderRouteCostFacts cost{};
   // Optional stable implementation key; independent of the prepare token.
   // Leaving this unknown never disables an otherwise valid execution route.
-  ProviderRouteKey profile_key{};
+  ProviderImplementationId implementation{};
 };
 
 struct KernelPrepareRequest final {

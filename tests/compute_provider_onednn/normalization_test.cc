@@ -167,7 +167,8 @@ template <class T> bool native_half_available() {
   {
     const auto description =
         TensorDesc::dense(type<T>(), std::array<std::int64_t, 2>{2, 7}).value();
-    const std::array providers{onednn::provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{onednn::provider(), 100}};
     auto context =
         Context::create(cpu::device(), {.metadata_allocator = stats.get(),
                                         .providers = providers})
@@ -267,7 +268,8 @@ TEST(OneDnnNormalization, IndependentInvocationsShareCodeAndRebindData) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   {
-    const std::array providers{onednn::provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{onednn::provider(), 100}};
     auto context =
         Context::create(cpu::device(), {.metadata_allocator = stats.get(),
                                         .providers = providers})

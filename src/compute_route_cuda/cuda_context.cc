@@ -22,14 +22,14 @@ Result<Context> internal::create_context(DefaultContextOptions options,
     return std::unexpected(std::move(selected).error());
   const std::array providers{
 #if defined(HYLE_COMPUTE_FLASHINFER)
-      flashinfer::provider(),
+      ProviderBinding{flashinfer::provider(), 100},
 #endif
-      ggml,
-      cublas::provider(),
-      marlin::provider(),
-      cuda_native::sglang_provider(),
-      cuda_native::cccl_provider(),
-      cuda_native::provider()};
+      ProviderBinding{ggml, 200},
+      ProviderBinding{cublas::provider(), 100},
+      ProviderBinding{marlin::provider(), 100},
+      ProviderBinding{cuda_native::sglang_provider(), 100},
+      ProviderBinding{cuda_native::cccl_provider(), 100},
+      ProviderBinding{cuda_native::provider(), 1000}};
   return Context::create(*selected,
                          {.metadata_allocator = options.metadata_allocator,
                           .providers = providers});

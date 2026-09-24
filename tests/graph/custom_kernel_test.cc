@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "../compute/custom_kernel_fixture.h"
+#include "../compute/workload_fixture.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/quota_allocator.h"
 
@@ -34,24 +35,25 @@ TEST(GraphCustomKernel, WorkloadReachesColdOperationsAndOutlivesCallerFacts) {
   Tensors tensors;
   ASSERT_TRUE(tensors.fill().ok());
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
-  constexpr ModelDescription model{"qwen3_5", "qwen3.5-2b", "snapshot-b",
-                                   "configuration-b"};
-  WorkloadContext expected{ModelIdentity::create(model, quota.get()).value(),
-                           WorkloadPhase::kPrefill, {1, 2, 1}};
+  constexpr auto profile = workload_test::kModel;
+  WorkloadContext expected{
+      ModelArtifactProfile::create(profile, quota.get()).value(),
+      WorkloadPhase::kPrefill,
+      {1, 2, 1}};
   auto provider_value = make_custom_provider(
       identity, cpu::kBackendId,
       WorkloadFactory{Factory{std::make_unique<Config>(probe)}, &expected});
   ASSERT_TRUE(provider_value);
   auto context = Context::create(cpu::device(), *provider_value).value();
   auto queue = context.create_queue().value();
-  auto compiled = hyle::graph::compile(logical.graph, context,
-                                       {.workload = expected});
+  auto compiled =
+      hyle::graph::compile(logical.graph, context, {.workload = expected});
   ASSERT_TRUE(compiled) << compiled.error().message();
   EXPECT_EQ(compiled->executable.workload(), expected);
   const auto proposals = probe.proposals.load();
   const auto prepares = probe.preparations.load();
   expected = {};
-  EXPECT_EQ(compiled->executable.workload().model.description(), model);
+  EXPECT_EQ(compiled->executable.workload().profile.description(), profile);
   auto invocation = compiled->executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(logical.input, tensors.in).ok());
   ASSERT_TRUE(invocation.bind(logical.output, tensors.out).ok());
@@ -69,8 +71,8 @@ TEST(GraphCustomKernel, WorkloadReachesColdOperationsAndOutlivesCallerFacts) {
   EXPECT_EQ(quota.used(), 0u);
   auto invalid = expected;
   invalid.region = {1, 2, 0};
-  auto rejected = hyle::graph::compile(logical.graph, context,
-                                        {.workload = invalid});
+  auto rejected =
+      hyle::graph::compile(logical.graph, context, {.workload = invalid});
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
   EXPECT_EQ(probe.proposals, proposals);
@@ -143,10 +145,12 @@ TEST(GraphCompilationStorage,
     if (kind == 3)
       first.compilation_storage.peak_bytes.reset();
     const std::array factories{
-        provider(first).value(),
-        make_custom_provider(second_id, cpu::kBackendId,
-                             Factory{std::make_unique<Config>(second)})
-            .value()};
+        hyle::compute::ProviderBinding{provider(first).value(), 100},
+        hyle::compute::ProviderBinding{
+            make_custom_provider(second_id, cpu::kBackendId,
+                                 Factory{std::make_unique<Config>(second)})
+                .value(),
+            200}};
     auto context =
         Context::create(cpu::device(), {.providers = factories}).value();
     hyle::graph::CompileOptions options{
@@ -233,10 +237,12 @@ TEST(GraphInvocationStorage,
   Probe unknown, known;
   known.invocation_private_bytes = 0;
   const std::array factories{
-      provider(unknown).value(),
-      make_custom_provider(known_id, cpu::kBackendId,
-                           Factory{std::make_unique<Config>(known)})
-          .value()};
+      hyle::compute::ProviderBinding{provider(unknown).value(), 100},
+      hyle::compute::ProviderBinding{
+          make_custom_provider(known_id, cpu::kBackendId,
+                               Factory{std::make_unique<Config>(known)})
+              .value(),
+          200}};
   auto context =
       Context::create(cpu::device(), {.providers = factories}).value();
   auto compiled = hyle::graph::compile(
@@ -258,10 +264,12 @@ TEST(GraphProviderPolicy, GlobalFamilyFiltersPrecedeOperationCallbacks) {
   for (int mode = 0; mode < 5; ++mode) {
     Probe first, second;
     const std::array factories{
-        provider(first).value(),
-        make_custom_provider(alternative, cpu::kBackendId,
-                             Factory{std::make_unique<Config>(second)})
-            .value()};
+        hyle::compute::ProviderBinding{provider(first).value(), 100},
+        hyle::compute::ProviderBinding{
+            make_custom_provider(alternative, cpu::kBackendId,
+                                 Factory{std::make_unique<Config>(second)})
+                .value(),
+            200}};
     auto context =
         Context::create(cpu::device(), {.providers = factories}).value();
     // Unsorted/repeated lists deliberately exceed inline policy storage.
@@ -306,8 +314,9 @@ TEST(GraphProviderPolicy, GlobalFamilyFiltersPrecedeOperationCallbacks) {
 TEST(GraphProviderPolicy, NodesCanSelectDifferentInstancesOfOneFamily) {
   const auto logical = policy_graph(2);
   std::array<Probe, 2> probes;
-  const std::array factories{provider(probes[0]).value(),
-                             provider(probes[1]).value()};
+  const std::array factories{
+      hyle::compute::ProviderBinding{provider(probes[0]).value(), 100},
+      hyle::compute::ProviderBinding{provider(probes[1]).value(), 200}};
   auto context =
       Context::create(cpu::device(), {.providers = factories}).value();
   std::array constraints{hyle::graph::NodeProviderConstraint{
@@ -407,8 +416,9 @@ TEST(GraphProviderPolicy, LeafResourceDeclineCannotEscapeRequiredInstance) {
   for (auto fault : {Fault::kUnsupported, Fault::kResourceDecline}) {
     Probe first, second;
     first.fault = fault;
-    const std::array factories{provider(first).value(),
-                               provider(second).value()};
+    const std::array factories{
+        hyle::compute::ProviderBinding{provider(first).value(), 100},
+        hyle::compute::ProviderBinding{provider(second).value(), 200}};
     auto context =
         Context::create(cpu::device(), {.providers = factories}).value();
     const std::array constraints{hyle::graph::NodeProviderConstraint{
@@ -429,7 +439,9 @@ TEST(GraphProviderPolicy, LeafResourceDeclineCannotEscapeRequiredInstance) {
 TEST(GraphDiscovery, CollectsLaterLeafCandidatesWithoutPreparingThem) {
   const auto logical = policy_graph(2);
   Probe first, second;
-  const std::array factories{provider(first).value(), provider(second).value()};
+  const std::array factories{
+      hyle::compute::ProviderBinding{provider(first).value(), 100},
+      hyle::compute::ProviderBinding{provider(second).value(), 200}};
   auto context =
       Context::create(cpu::device(), {.providers = factories}).value();
   auto compiled = hyle::graph::compile(logical.graph, context,
@@ -448,8 +460,9 @@ TEST(GraphDiscovery, ProposalStorageBudgetIsSeparateFromPreparation) {
   for (auto policy : {hyle::graph::CompileSearchPolicy::kAllowLimited,
                       hyle::graph::CompileSearchPolicy::kRequireUnexhausted}) {
     Probe first, second;
-    const std::array factories{provider(first).value(),
-                               provider(second).value()};
+    const std::array factories{
+        hyle::compute::ProviderBinding{provider(first).value(), 100},
+        hyle::compute::ProviderBinding{provider(second).value(), 200}};
     auto context =
         Context::create(cpu::device(), {.providers = factories}).value();
     auto compiled = hyle::graph::compile(logical.graph, context,
@@ -528,7 +541,9 @@ TEST(GraphDiscovery, FatalLaterProposalStopsBeforeAnyArtifactPreparation) {
   const auto logical = policy_graph();
   Probe first, second;
   second.fault = Fault::kProposalError;
-  const std::array factories{provider(first).value(), provider(second).value()};
+  const std::array factories{
+      hyle::compute::ProviderBinding{provider(first).value(), 100},
+      hyle::compute::ProviderBinding{provider(second).value(), 200}};
   auto context =
       Context::create(cpu::device(), {.providers = factories}).value();
   auto compiled = hyle::graph::compile(logical.graph, context);
@@ -687,9 +702,10 @@ TEST(GraphCustomKernel, ReportDistinguishesTextOfSameFamilyInstances) {
 
 TEST(GraphCustomKernel, StableKeyDoesNotUseTheTransientPrepareToken) {
   const auto logical = policy_graph();
-  for (const auto key : {ProviderRouteKey{}, ProviderRouteKey{42}}) {
+  for (const auto key :
+       {ProviderImplementationId{}, ProviderImplementationId{42}}) {
     Probe probe;
-    probe.profile_key = key;
+    probe.implementation = key;
     auto context =
         Context::create(cpu::device(), provider(probe).value()).value();
     std::array<hyle::graph::CompileReport, 2> reports;
@@ -698,7 +714,7 @@ TEST(GraphCustomKernel, StableKeyDoesNotUseTheTransientPrepareToken) {
       auto compiled = hyle::graph::compile(logical.graph, context);
       ASSERT_TRUE(compiled) << compiled.error().message();
       reports[index] = compiled->report;
-      EXPECT_EQ(reports[index].step(0)->profile_key, key);
+      EXPECT_EQ(reports[index].step(0)->implementation, key);
       Tensors tensors;
       ASSERT_TRUE(tensors.fill().ok());
       auto run = compiled->executable.create_invocation().value();
@@ -711,17 +727,20 @@ TEST(GraphCustomKernel, StableKeyDoesNotUseTheTransientPrepareToken) {
     context = {};
     EXPECT_EQ(probe.configurations, 0);
     EXPECT_EQ(probe.kernels, 0);
-    EXPECT_EQ(reports[0].step(0)->profile_key, reports[1].step(0)->profile_key);
+    EXPECT_EQ(reports[0].step(0)->implementation,
+              reports[1].step(0)->implementation);
   }
 }
 
 TEST(GraphCustomKernel, ARejectedRouteKeyDoesNotLeakIntoTheFinalReport) {
   const auto logical = policy_graph();
   Probe first, second;
-  first.profile_key = ProviderRouteKey{11};
-  second.profile_key = ProviderRouteKey{22};
+  first.implementation = ProviderImplementationId{11};
+  second.implementation = ProviderImplementationId{22};
   first.fault = Fault::kUnsupported;
-  const std::array providers{provider(first).value(), provider(second).value()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{provider(first).value(), 100},
+      hyle::compute::ProviderBinding{provider(second).value(), 200}};
   auto context =
       Context::create(cpu::device(), {.providers = providers}).value();
   auto compiled = hyle::graph::compile(logical.graph, context);
@@ -729,7 +748,7 @@ TEST(GraphCustomKernel, ARejectedRouteKeyDoesNotLeakIntoTheFinalReport) {
   EXPECT_EQ(first.preparations, 1);
   EXPECT_EQ(first.kernels, 0);
   EXPECT_EQ(second.preparations, 1);
-  EXPECT_EQ(compiled->report.step(0)->profile_key, second.profile_key);
+  EXPECT_EQ(compiled->report.step(0)->implementation, second.implementation);
   EXPECT_EQ(compiled->report.step(0)->provider_instance,
             context.provider_instance_id(1).value());
   EXPECT_EQ(compiled->report.search().operation_route_rejections, 1u);

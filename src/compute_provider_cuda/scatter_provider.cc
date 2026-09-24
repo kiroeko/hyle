@@ -243,7 +243,7 @@ Status propose(const detail::ProviderOperationRequest &request,
                    sorting || layout.elements == 0
                        ? std::optional<std::uint32_t>{}
                        : std::optional<std::uint32_t>{checked ? 2U : 1U}},
-      .profile_key = ProviderRouteKey{kRoute}};
+      .implementation = ProviderImplementationId{kRoute}};
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *state,

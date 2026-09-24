@@ -99,6 +99,9 @@ struct PreparedState final : util::RefCounted<PreparedState> {
   Operation operation{};
   ProviderIdentity provider{};
   ProviderInstanceId provider_instance{};
+  ProviderImplementationId implementation{};
+  RoutePolicyId policy{};
+  std::uint32_t preference = 0;
   std::size_t allocation_size = 0;
   std::size_t descriptor_offset = 0;
   std::size_t resource_offset = 0;

@@ -1,8 +1,8 @@
 #include "hyle/graph/cuda.h"
 
+#include "../compute/workload_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_route_cuda/ffn_support.h"
-#include "../compute/workload_fixture.h"
 
 namespace {
 using namespace cuda_route_test;
@@ -140,17 +140,17 @@ void run_graph(compute::DataType type, std::int64_t rows, bool first_q4,
     Linear first(owner, resource.ref(), type, 128, 256, first_q4, 1);
     Linear second(owner, resource.ref(), type, 128, 128, second_q4, 4);
     FfnGraph logical(matrix(type, rows, 128), first, second, stats.get());
-    auto workload = workload_test::known(rows == 1
-                                            ? compute::WorkloadPhase::kDecode
-                                            : compute::WorkloadPhase::kPrefill);
-    auto compiled = graph::cuda::compile(logical.logical, owner, resource.ref(),
-                                         {.constants = logical.constants,
-                                          .workload = workload});
+    auto workload =
+        workload_test::known(rows == 1 ? compute::WorkloadPhase::kDecode
+                                       : compute::WorkloadPhase::kPrefill);
+    auto compiled = graph::cuda::compile(
+        logical.logical, owner, resource.ref(),
+        {.constants = logical.constants, .workload = workload});
     ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
     EXPECT_EQ(compiled->executable.workload(), workload);
     workload = {};
     EXPECT_TRUE(
-        compiled->executable.workload().model.matches(workload_test::kModel));
+        compiled->executable.workload().profile.matches(workload_test::kModel));
     EXPECT_EQ(compiled->report.step_count(), 3U);
     EXPECT_EQ(compiled->report.target_count(), 1U);
     EXPECT_EQ(compiled->report.lane_count(), 1U);

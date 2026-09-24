@@ -145,8 +145,8 @@ struct Model {
           {.metadata_allocator = allocator, .executor = executor.ref()}));
     } else {
       // Explicit Native is the independent implementation comparison only.
-      const std::array providers{
-          compute::native::provider({.executor = executor.ref()})};
+      const std::array providers{hyle::compute::ProviderBinding{
+          compute::native::provider({.executor = executor.ref()}), 100}};
       context = take(compute::Context::create(
           compute::cpu::device(),
           {.metadata_allocator = allocator, .providers = providers}));

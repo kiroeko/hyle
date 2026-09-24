@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
+#include "../compute/workload_fixture.h"
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
-#include "../compute/workload_fixture.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
@@ -23,15 +23,15 @@ TEST(VulkanManaged, DirectNormRebindsIndependentSlotsAndRetainsOldResults) {
   for (int rows : {1, 17, 128}) {
     SCOPED_TRACE(rows);
     const auto desc = dense(c::DataType::kFloat32, {rows, width});
-    auto workload = workload_test::known(rows == 1 ? c::WorkloadPhase::kDecode
-                                                  : c::WorkloadPhase::kPrefill);
+    auto workload = workload_test::known(
+        rows == 1 ? c::WorkloadPhase::kDecode : c::WorkloadPhase::kPrefill);
     auto prepared = v::prepare(context, workload, c::RmsNorm{}, desc, weight);
     ASSERT_TRUE(prepared) << prepared.error().message();
     EXPECT_EQ(prepared->workload(), workload);
     workload.region.version = 0;
     EXPECT_FALSE(v::prepare(context, workload, c::RmsNorm{}, desc, weight));
     workload = {};
-    EXPECT_TRUE(prepared->workload().model.matches(workload_test::kModel));
+    EXPECT_TRUE(prepared->workload().profile.matches(workload_test::kModel));
     const auto &plan = d::Access::program(*prepared);
     ASSERT_EQ(plan->dispatches.size(), 2U); // Origin adapter + original region.
     ASSERT_TRUE(plan->dispatches.back().region);
@@ -144,13 +144,12 @@ TEST(VulkanManaged, PointwiseFamilyUsesRealProviderWithoutNormAnchor) {
                          c::UnaryKind::kSigmoid, c::UnaryKind::kSilu,
                          c::UnaryKind::kLog,     c::UnaryKind::kSqrt,
                          c::UnaryKind::kRsqrt,   c::UnaryKind::kSoftplus};
-  const std::array descriptions{
-      dense(c::DataType::kFloat32, {}),
-      dense(c::DataType::kFloat32, {129}),
-      dense(c::DataType::kFloat32, {17, 257}),
-      dense(c::DataType::kFloat32, {2, 1, 3, 43})};
-  const std::array<double, 12> edges{-0.0, NAN, -INFINITY, INFINITY,
-                                     0.0, -90, 90, -1e-7, 1e-7, -1, 1, 3};
+  const std::array descriptions{dense(c::DataType::kFloat32, {}),
+                                dense(c::DataType::kFloat32, {129}),
+                                dense(c::DataType::kFloat32, {17, 257}),
+                                dense(c::DataType::kFloat32, {2, 1, 3, 43})};
+  const std::array<double, 12> edges{-0.0, NAN,   -INFINITY, INFINITY, 0.0, -90,
+                                     90,   -1e-7, 1e-7,      -1,       1,   3};
   for (auto kind : kinds) {
     for (const auto &desc : descriptions) {
       SCOPED_TRACE(::testing::Message()
@@ -178,7 +177,8 @@ TEST(VulkanManaged, PointwiseFamilyUsesRealProviderWithoutNormAnchor) {
         ASSERT_TRUE(slot.bind(input).ok());
         auto work = slot.submit().value();
         auto result = work.wait().value();
-        const bool exact = kind == c::UnaryKind::kAbs || kind == c::UnaryKind::kNeg;
+        const bool exact =
+            kind == c::UnaryKind::kAbs || kind == c::UnaryKind::kNeg;
         expect(context, result.get()->tensors()[0], expected, exact);
         EXPECT_EQ(bits(context, input), original);
         if (phase == 0) {
@@ -205,7 +205,8 @@ TEST(VulkanManaged, SubtractDividePreserveBothBroadcastOrdersAndScalar) {
         SCOPED_TRACE(::testing::Message()
                      << static_cast<int>(kind) << '/' << parameter.rank() << '/'
                      << small_first);
-        std::vector<double> data(rows * width), small(*parameter.element_count());
+        std::vector<double> data(rows * width),
+            small(*parameter.element_count());
         for (std::size_t i = 0; i < data.size(); ++i)
           data[i] = 0.25 + (i % 19) * 0.125;
         for (std::size_t i = 0; i < small.size(); ++i)
@@ -219,21 +220,23 @@ TEST(VulkanManaged, SubtractDividePreserveBothBroadcastOrdersAndScalar) {
         const auto input = make(context, full, data);
         const auto broadcast = make(context, parameter, small);
         const std::array arguments = small_first ? std::array{broadcast, input}
-                                                : std::array{input, broadcast};
-        auto program = v::prepare(context, c::Binary{kind},
-                                  arguments[0].description(),
-                                  arguments[1].description()).value();
+                                                 : std::array{input, broadcast};
+        auto program =
+            v::prepare(context, c::Binary{kind}, arguments[0].description(),
+                       arguments[1].description())
+                .value();
         ASSERT_TRUE(d::Access::program(program)->dispatches.back().region);
         auto slot = program.create_invocation().value();
         ASSERT_TRUE(slot.bind(arguments).ok());
         std::vector<double> expected(data.size());
         for (std::size_t i = 0; i < data.size(); ++i) {
-          const auto index = parameter.rank() == 0 ? 0
-                             : parameter.rank() == 1 ? i % width : i / width;
+          const auto index = parameter.rank() == 0   ? 0
+                             : parameter.rank() == 1 ? i % width
+                                                     : i / width;
           const double left = small_first ? small[index] : data[i];
           const double right = small_first ? data[i] : small[index];
-          expected[i] = kind == c::BinaryKind::kSubtract ? left - right
-                                                       : left / right;
+          expected[i] =
+              kind == c::BinaryKind::kSubtract ? left - right : left / right;
         }
         {
           auto work = slot.submit().value();
@@ -242,7 +245,8 @@ TEST(VulkanManaged, SubtractDividePreserveBothBroadcastOrdersAndScalar) {
         }
         const auto output = context.allocate(full).value();
         auto recorder = v::Recorder::create(context).value();
-        ASSERT_TRUE(recorder.append(program, arguments, std::array{output}).ok());
+        ASSERT_TRUE(
+            recorder.append(program, arguments, std::array{output}).ok());
         auto recorded = recorder.finish().value();
         for (int repeat = 0; repeat < 2; ++repeat) {
           auto completion = recorded.submit().value();
@@ -461,8 +465,8 @@ TEST(VulkanManaged, B2MatureLinearPositionAndTransformReplay) {
   for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
     const auto left_desc = dense(type, {2, 2, 3});
     const auto right_desc = dense(type, {1, 3, 4});
-    const std::array<double, 12> right_values{1,  2,  3,  4, 5,  6,
-                                               7,  8,  9, 10, 11, 12};
+    const std::array<double, 12> right_values{1, 2, 3, 4,  5,  6,
+                                              7, 8, 9, 10, 11, 12};
     const auto right = make(context, right_desc, right_values);
     auto program = v::prepare(context, c::MatMul{}, left_desc, right);
     ASSERT_TRUE(program) << program.error().message();
@@ -498,33 +502,35 @@ TEST(VulkanManaged, B2MatureLinearPositionAndTransformReplay) {
   const std::array<std::int32_t, 2> positions{0, 2};
   const auto rope_data = make(context, rope_desc, rope_values);
   const auto position =
-      context.upload(position_desc, std::as_bytes(std::span(positions))).value();
+      context.upload(position_desc, std::as_bytes(std::span(positions)))
+          .value();
   const auto frequency = make(context, frequency_desc, std::array{0.5, 0.25});
-  auto rope = v::prepare(
-      context,
-      c::RoPE{.rotary_dimensions = 4,
-              .sequence_axis = 1,
-              .layout = c::RopeLayout::kInterleaved},
-      rope_desc, position_desc, frequency_desc);
+  auto rope = v::prepare(context,
+                         c::RoPE{.rotary_dimensions = 4,
+                                 .sequence_axis = 1,
+                                 .layout = c::RopeLayout::kInterleaved},
+                         rope_desc, position_desc, frequency_desc);
   ASSERT_TRUE(rope) << rope.error().message();
   auto rope_slot = rope->create_invocation().value();
   ASSERT_TRUE(rope_slot.bind(rope_data, position, frequency).ok());
   auto rope_work = rope_slot.submit().value();
   auto rope_result = rope_work.wait().value();
-  const std::array<double, 8> rotated{
-      1, 2, 3, 4,
-      5 * std::cos(1.0) - 6 * std::sin(1.0),
-      5 * std::sin(1.0) + 6 * std::cos(1.0),
-      7 * std::cos(0.5) - 8 * std::sin(0.5),
-      7 * std::sin(0.5) + 8 * std::cos(0.5)};
+  const std::array<double, 8> rotated{1,
+                                      2,
+                                      3,
+                                      4,
+                                      5 * std::cos(1.0) - 6 * std::sin(1.0),
+                                      5 * std::sin(1.0) + 6 * std::cos(1.0),
+                                      7 * std::cos(0.5) - 8 * std::sin(0.5),
+                                      7 * std::sin(0.5) + 8 * std::cos(0.5)};
   expect(context, rope_result.get()->tensors()[0], rotated);
 
   const auto transform_desc = dense(c::DataType::kFloat32, {1, 64});
   std::array<double, 64> ones{};
   ones.fill(1.0);
   const auto transform_input = make(context, transform_desc, ones);
-  auto transform =
-      execute(context, c::Operation(c::Hadamard{}), std::array{transform_input});
+  auto transform = execute(context, c::Operation(c::Hadamard{}),
+                           std::array{transform_input});
   ASSERT_TRUE(transform) << transform.error().message();
   std::array<double, 64> transformed{};
   transformed[0] = 8.0;
@@ -535,14 +541,14 @@ TEST(VulkanManaged, B2MatureCausalGqaRetainsReplayResults) {
   auto context = vulkan_test::context().value();
   const auto query_desc = dense(c::DataType::kFloat32, {1, 1, 2, 1});
   const auto key_value_desc = dense(c::DataType::kFloat32, {1, 3, 1, 1});
-  auto program = v::prepare(
-      context,
-      c::ScaledDotProductAttention{
-          .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
-          .scale = 1.0F,
-          .causal = true,
-          .accumulation_type = c::DataType::kFloat32},
-      query_desc, key_value_desc, key_value_desc);
+  auto program =
+      v::prepare(context,
+                 c::ScaledDotProductAttention{
+                     .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+                     .scale = 1.0F,
+                     .causal = true,
+                     .accumulation_type = c::DataType::kFloat32},
+                 query_desc, key_value_desc, key_value_desc);
   ASSERT_TRUE(program) << program.error().message();
   auto first = program->create_invocation();
   auto second = program->create_invocation();

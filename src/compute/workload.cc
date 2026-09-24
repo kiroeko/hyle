@@ -10,50 +10,82 @@
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::compute {
+namespace {
+
+constexpr bool is_lower_hex_digest(std::string_view value) noexcept {
+  if (value.size() != 64)
+    return false;
+  for (const char character : value) {
+    if (!((character >= '0' && character <= '9') ||
+          (character >= 'a' && character <= 'f')))
+      return false;
+  }
+  return true;
+}
+
+constexpr bool
+valid_description(ModelArtifactProfileDescription description) noexcept {
+  if (description.empty())
+    return true;
+  return description.complete() &&
+         is_lower_hex_digest(description.configuration_digest) &&
+         is_lower_hex_digest(description.manifest_digest);
+}
+
+} // namespace
+
 namespace detail {
 
-struct ModelIdentityState final : util::RefCounted<ModelIdentityState> {
+struct ModelArtifactProfileState final
+    : util::RefCounted<ModelArtifactProfileState> {
   mem::AllocatorRef allocator;
   std::size_t bytes = 0;
-  ModelDescription description;
+  ModelArtifactProfileDescription description;
 
   void destroy() noexcept {
     const auto owner = allocator;
     const auto allocation_bytes = bytes;
-    this->~ModelIdentityState();
-    owner.deallocate(this, allocation_bytes, alignof(ModelIdentityState));
+    this->~ModelArtifactProfileState();
+    owner.deallocate(this, allocation_bytes,
+                     alignof(ModelArtifactProfileState));
   }
 };
 
 } // namespace detail
 
-Result<ModelIdentity>
-ModelIdentity::create(ModelDescription description,
-                       mem::AllocatorRef allocator) noexcept {
-  if (!allocator.valid() ||
-      (description.family.empty() &&
-       (!description.name.empty() || !description.revision.empty() ||
-        !description.configuration.empty())) ||
-      (description.name.empty() &&
-       (!description.revision.empty() || !description.configuration.empty())))
-    return std::unexpected(Status::InvalidArgument("model identity"));
-  if (description.family.empty())
-    return ModelIdentity{};
+Result<ModelArtifactProfile>
+ModelArtifactProfile::create(ModelArtifactProfileDescription description,
+                             mem::AllocatorRef allocator) noexcept {
+  if (!allocator.valid() || !valid_description(description))
+    return std::unexpected(Status::InvalidArgument("model artifact profile"));
+  if (description.empty())
+    return ModelArtifactProfile{};
 
-  using State = detail::ModelIdentityState;
+  using State = detail::ModelArtifactProfileState;
   constexpr auto maximum =
       static_cast<std::size_t>((std::numeric_limits<std::ptrdiff_t>::max)());
+  const std::array fields{description.model_publisher,
+                          description.model_repository,
+                          description.model_family,
+                          description.model_name,
+                          description.model_revision,
+                          description.configuration_digest,
+                          description.artifact_repository,
+                          description.artifact_revision,
+                          description.variant,
+                          description.manifest_digest,
+                          description.format_family};
   std::size_t bytes = sizeof(State);
-  for (const auto field :
-       std::array{description.family, description.name, description.revision,
-                  description.configuration}) {
+  for (const auto field : fields) {
     if (field.size() > maximum - bytes)
-      return std::unexpected(Status::ResourceExhausted("model identity size"));
+      return std::unexpected(
+          Status::ResourceExhausted("model artifact profile size"));
     bytes += field.size();
   }
   auto *storage = allocator.allocate(bytes, alignof(State));
   if (storage == nullptr)
-    return std::unexpected(Status::ResourceExhausted("model identity allocation"));
+    return std::unexpected(
+        Status::ResourceExhausted("model artifact profile allocation"));
   auto *state = ::new (storage) State;
   state->allocator = allocator;
   state->bytes = bytes;
@@ -65,19 +97,29 @@ ModelIdentity::create(ModelDescription description,
     destination += source.size();
     return result;
   };
-  state->description = {copy(description.family), copy(description.name),
-                        copy(description.revision),
-                        copy(description.configuration)};
-  return ModelIdentity(state);
+  state->description = {copy(description.model_publisher),
+                        copy(description.model_repository),
+                        copy(description.model_family),
+                        copy(description.model_name),
+                        copy(description.model_revision),
+                        copy(description.configuration_digest),
+                        copy(description.artifact_repository),
+                        copy(description.artifact_revision),
+                        copy(description.variant),
+                        copy(description.manifest_digest),
+                        copy(description.format_family)};
+  return ModelArtifactProfile(state);
 }
 
-ModelIdentity::ModelIdentity(const ModelIdentity &other) noexcept
+ModelArtifactProfile::ModelArtifactProfile(
+    const ModelArtifactProfile &other) noexcept
     : state_(other.state_) {
   if (state_ != nullptr)
     state_->incref();
 }
 
-ModelIdentity &ModelIdentity::operator=(const ModelIdentity &other) noexcept {
+ModelArtifactProfile &
+ModelArtifactProfile::operator=(const ModelArtifactProfile &other) noexcept {
   if (state_ != other.state_) {
     if (other.state_ != nullptr)
       other.state_->incref();
@@ -88,10 +130,12 @@ ModelIdentity &ModelIdentity::operator=(const ModelIdentity &other) noexcept {
   return *this;
 }
 
-ModelIdentity::ModelIdentity(ModelIdentity &&other) noexcept
+ModelArtifactProfile::ModelArtifactProfile(
+    ModelArtifactProfile &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 
-ModelIdentity &ModelIdentity::operator=(ModelIdentity &&other) noexcept {
+ModelArtifactProfile &
+ModelArtifactProfile::operator=(ModelArtifactProfile &&other) noexcept {
   if (this != &other) {
     if (state_ != nullptr)
       state_->decref();
@@ -100,34 +144,26 @@ ModelIdentity &ModelIdentity::operator=(ModelIdentity &&other) noexcept {
   return *this;
 }
 
-ModelIdentity::~ModelIdentity() {
+ModelArtifactProfile::~ModelArtifactProfile() {
   if (state_ != nullptr)
     state_->decref();
 }
 
-ModelDescription ModelIdentity::description() const noexcept {
-  return state_ != nullptr ? state_->description : ModelDescription{};
+ModelArtifactProfileDescription
+ModelArtifactProfile::description() const noexcept {
+  return state_ != nullptr ? state_->description
+                           : ModelArtifactProfileDescription{};
 }
 
-bool ModelIdentity::matches_family(
-    std::string_view required_family) const noexcept {
-  return !required_family.empty() &&
-         description().family == required_family;
+bool ModelArtifactProfile::matches(
+    ModelArtifactProfileDescription expected) const noexcept {
+  return expected.complete() && description() == expected;
 }
 
-bool ModelIdentity::matches_model(std::string_view required_family,
-                                  std::string_view required_name) const noexcept {
-  const auto actual = description();
-  return !required_family.empty() && !required_name.empty() &&
-         actual.family == required_family && actual.name == required_name;
-}
-
-bool ModelIdentity::matches(ModelDescription required) const noexcept {
-  return required.complete() && description() == required;
-}
-
-bool operator==(const ModelIdentity &left, const ModelIdentity &right) noexcept {
-  return left.state_ == right.state_ || left.description() == right.description();
+bool operator==(const ModelArtifactProfile &left,
+                const ModelArtifactProfile &right) noexcept {
+  return left.state_ == right.state_ ||
+         left.description() == right.description();
 }
 
 } // namespace hyle::compute

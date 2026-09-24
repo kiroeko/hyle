@@ -306,8 +306,8 @@ int main() {
   *context = {};
   if (compiled->report.provider().name != provider_name ||
       compiled->report.step(0)->provider.version != provider_version ||
-      compiled->report.step(0)->profile_key !=
-          hyle::compute::ProviderRouteKey{1} ||
+      compiled->report.step(0)->implementation !=
+          hyle::compute::ProviderImplementationId{1} ||
       compiled->report.constant()->policy !=
           hyle::graph::ConstantPolicy::kMaterialize)
     return 18;

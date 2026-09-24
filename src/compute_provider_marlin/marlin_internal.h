@@ -3,7 +3,7 @@
 #include <climits>
 #include <limits>
 
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 #include "native_context.h"
 #include "native_kernel.h"
 
@@ -15,11 +15,11 @@ struct Hardware final {
   int shared_bytes = 0;
 };
 
-inline constexpr std::array kHardwarePredicates{RouteAttributePredicate::range(
-    route_attribute::kArchitectureMajor, 8,
-    (std::numeric_limits<std::uint64_t>::max)())};
-inline constexpr RouteRule kHardwareRule{.route = NativeRoute::kCuda,
-                                         .attributes = kHardwarePredicates};
+inline constexpr std::array kHardwarePredicates{
+    RouteFactPredicate::range(route_fact::kArchitectureMajor, 8,
+                              (std::numeric_limits<std::uint64_t>::max)())};
+inline constexpr RouteSelector kHardwareRule{
+    .route = NativeRoute::kCuda, .environment = kHardwarePredicates};
 
 inline Result<Hardware>
 hardware(Device device, CUcontext primary,
@@ -33,8 +33,8 @@ hardware(Device device, CUcontext primary,
   const auto facts = cuda::detail::route_facts(environment);
   const RouteMatchInput input{.platform = kBuildRoutePlatform,
                               .route = NativeRoute::kCuda,
-                              .attributes = facts.attributes};
-  if (!match_route_rule(kHardwareRule, input).matched())
+                              .environment = facts.environment};
+  if (!match_route_selector(kHardwareRule, input).matched())
     return std::unexpected(
         Status::Unimplemented("Marlin requires SM80 or newer"));
   Hardware result{.primary = primary};

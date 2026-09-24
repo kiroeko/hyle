@@ -185,7 +185,7 @@ Status propose(const detail::ProviderOperationRequest &request,
                         .dispatch_count = selection.dispatches == 0
                                               ? std::optional<std::uint32_t>{}
                                               : selection.dispatches},
-               .profile_key = ProviderRouteKey{kRoute}};
+               .implementation = ProviderImplementationId{kRoute}};
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *state,

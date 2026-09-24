@@ -8,8 +8,9 @@
 #include <thread>
 
 #include "custom_kernel_fixture.h"
-#include "provider_internal.h"
 #include "hyle/mem/quota_allocator.h"
+#include "provider_internal.h"
+#include "workload_fixture.h"
 
 namespace {
 using namespace custom_test;
@@ -19,25 +20,26 @@ TEST(CustomKernel, WorkloadIsBoundOnceAndRetainedThroughInvocation) {
   Tensors tensors;
   ASSERT_TRUE(tensors.fill().ok());
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator());
-  constexpr ModelDescription model{"qwen3_5", "qwen3.5-2b", "snapshot-a",
-                                   "configuration-a"};
-  WorkloadContext expected{ModelIdentity::create(model, quota.get()).value(),
-                           WorkloadPhase::kDecode, {1, 2, 1}};
+  constexpr auto profile = workload_test::kModel;
+  WorkloadContext expected{
+      ModelArtifactProfile::create(profile, quota.get()).value(),
+      WorkloadPhase::kDecode,
+      {1, 2, 1}};
   auto provider_value = make_custom_provider(
       identity, cpu::kBackendId,
       WorkloadFactory{Factory{std::make_unique<Config>(probe)}, &expected});
   ASSERT_TRUE(provider_value);
   auto context = Context::create(cpu::device(), *provider_value).value();
   auto queue = context.create_queue().value();
-  auto prepared = prepare(context, Operation::custom(Affine{3}),
-                          std::array{tensors.in}, std::array{tensors.out}, {},
-                          expected);
+  auto prepared =
+      prepare(context, Operation::custom(Affine{3}), std::array{tensors.in},
+              std::array{tensors.out}, {}, expected);
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->workload(), expected);
   EXPECT_EQ(probe.proposals, 1);
   EXPECT_EQ(probe.preparations, 1);
   expected = {};
-  EXPECT_EQ(prepared->workload().model.description(), model);
+  EXPECT_EQ(prepared->workload().profile.description(), profile);
   EXPECT_EQ(prepared->workload().phase, WorkloadPhase::kDecode);
   auto invocation = prepared->create_invocation().value();
   *prepared = {};
@@ -54,14 +56,14 @@ TEST(CustomKernel, WorkloadIsBoundOnceAndRetainedThroughInvocation) {
   EXPECT_EQ(quota.used(), 0u);
   auto invalid = expected;
   invalid.phase = static_cast<WorkloadPhase>(255);
-  auto rejected = prepare(context, Operation::custom(Affine{3}),
-                           std::array{tensors.in}, std::array{tensors.out}, {},
-                           invalid);
+  auto rejected =
+      prepare(context, Operation::custom(Affine{3}), std::array{tensors.in},
+              std::array{tensors.out}, {}, invalid);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
   EXPECT_EQ(probe.proposals, 1);
   auto generic = prepare(context, Operation::custom(Affine{3}),
-                          std::array{tensors.in}, std::array{tensors.out});
+                         std::array{tensors.in}, std::array{tensors.out});
   ASSERT_TRUE(generic);
   EXPECT_EQ(generic->workload(), WorkloadContext{});
 }
@@ -366,8 +368,7 @@ TEST(CustomKernel,
   }
 }
 
-TEST(CustomKernel,
-     PreparationFailuresDestroyPartialKernelsAndDoNotGuessFallback) {
+TEST(CustomKernel, PreparationDeclinesFallbackButFatalFailuresStopBinding) {
   for (auto fault :
        {Fault::kUnsupported, Fault::kResourceDecline, Fault::kFatalUnsupported,
         Fault::kInvalidOutcome, Fault::kMissingKernel, Fault::kRuntimeMismatch,
@@ -375,23 +376,23 @@ TEST(CustomKernel,
     SCOPED_TRACE(static_cast<int>(fault));
     Probe first, fallback;
     first.fault = fault;
-    const std::array providers{provider(first).value(),
-                               provider(fallback).value()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{provider(first).value(), 100},
+        hyle::compute::ProviderBinding{provider(fallback).value(), 200}};
     auto context =
         Context::create(cpu::device(), {.providers = providers}).value();
     const std::array descriptions{description()};
     auto result = prepare(context, Operation::custom(Affine{}), descriptions,
                           descriptions, hyle::mem::system_resource());
-    EXPECT_EQ(result.has_value(), fault == Fault::kUnsupported);
-    EXPECT_EQ(fallback.preparations, fault == Fault::kUnsupported ? 1 : 0);
+    const bool safe_decline =
+        fault == Fault::kUnsupported || fault == Fault::kResourceDecline;
+    EXPECT_EQ(result.has_value(), safe_decline);
+    EXPECT_EQ(fallback.preparations, safe_decline ? 1 : 0);
     EXPECT_EQ(first.kernels, 0);
     if (fault == Fault::kFatalUnsupported) {
       EXPECT_TRUE(result.error().IsUnimplemented());
       EXPECT_EQ(result.error().message(), "fatal");
-      EXPECT_EQ(fallback.proposals, 0);
-    }
-    if (fault == Fault::kResourceDecline) {
-      EXPECT_TRUE(result.error().IsResourceExhausted());
+      EXPECT_EQ(fallback.proposals, 1);
     }
   }
 }
@@ -401,7 +402,9 @@ TEST(CustomKernel, DescriptorPreparationPreservesQualifiedDeclineDiagnostics) {
     Probe first, last;
     first.fault = qualified ? Fault::kUnsupported : Fault::kProposalUnsupported;
     last.fault = Fault::kProposalUnsupported;
-    const std::array providers{provider(first).value(), provider(last).value()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{provider(first).value(), 100},
+        hyle::compute::ProviderBinding{provider(last).value(), 200}};
     auto context =
         Context::create(cpu::device(), {.providers = providers}).value();
     const std::array descriptions{description()};
@@ -457,7 +460,8 @@ TEST(CustomKernel, EveryColdAllocationFailureReleasesAllOwnedObjects) {
     auto factory = provider(probe, allocator.ref());
     if (!factory)
       return std::move(factory).error();
-    const std::array providers{std::move(*factory)};
+    const std::array providers{
+        hyle::compute::ProviderBinding{std::move(*factory), 100}};
     auto context =
         Context::create(cpu::device(), {.metadata_allocator = allocator.ref(),
                                         .providers = providers});

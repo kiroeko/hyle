@@ -40,8 +40,8 @@ using hyle::compute::Provider;
 using hyle::compute::RmsNorm;
 using hyle::compute::TensorDesc;
 using hyle::compute::TensorView;
-using hyle::graph::CompileOptions;
 using hyle::graph::CompileFallbackReason;
+using hyle::graph::CompileOptions;
 using hyle::graph::CompileStepKind;
 using hyle::graph::ConstantBinding;
 using hyle::graph::Graph;
@@ -213,9 +213,10 @@ std::vector<float> rms_norm(std::span<const float> activation,
   return output;
 }
 
-std::array<Provider, 3> provider_sequence() {
-  return {hyle::graph::onednn::provider(), hyle::compute::onednn::provider(),
-          hyle::compute::native::provider()};
+std::array<hyle::compute::ProviderBinding, 3> provider_sequence() {
+  return {{{hyle::graph::onednn::provider(), 100},
+           {hyle::compute::onednn::provider(), 200},
+           {hyle::compute::native::provider(), 1000}}};
 }
 
 struct ParallelProbe final {
@@ -427,7 +428,9 @@ TEST(OneDnnRegionProvider, ExecutesExactGatedMlpAndReportsItsCosts) {
   auto step = compiled.report.step(0);
   ASSERT_TRUE(step.has_value());
   EXPECT_EQ(step->provider_instance, context.provider_instance_id(0).value());
-  EXPECT_TRUE(step->profile_key.valid());
+  EXPECT_TRUE(step->implementation.valid());
+  EXPECT_TRUE(step->policy.valid());
+  EXPECT_EQ(step->preference, 150U);
   EXPECT_EQ(step->node_count, 4U);
   EXPECT_EQ(step->dispatch_count, 2U);
   EXPECT_TRUE(step->runtime.blocks_host);
@@ -671,8 +674,9 @@ void run_mixed_mlp_workspace(std::size_t rows, MlpOrder order) {
   // The region uses oneDNN's real scratch but hides intermediate values from
   // Graph; Native leaves avoid BRGEMM scratch but expose their intermediates.
   // Compare actual complete plans, without assuming either is always smaller.
-  const std::array providers{hyle::graph::onednn::provider(),
-                             hyle::compute::native::provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{hyle::graph::onednn::provider(), 100},
+      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 200}};
   AllocatorProbe probe;
   auto stats =
       hyle::mem::StatsAllocator::create(probe_allocator(probe)).value();
@@ -910,11 +914,13 @@ TEST(OneDnnRegionProvider, BorrowedNestedExecutorRunsTwoEpisodes) {
   ParallelProbe probe;
   const ParallelExecutorRef executor(&probe, 4, &probe_parallel_for,
                                      &probe_in_parallel);
-  const std::array<Provider, 3> providers{
-      hyle::graph::onednn::provider({.executor = executor}),
-      hyle::compute::onednn::provider({.executor = executor}),
-      hyle::compute::native::provider({.executor = executor}),
-  };
+  const std::array<hyle::compute::ProviderBinding, 3> providers{
+      hyle::compute::ProviderBinding{
+          hyle::graph::onednn::provider({.executor = executor}), 100},
+      hyle::compute::ProviderBinding{
+          hyle::compute::onednn::provider({.executor = executor}), 200},
+      hyle::compute::ProviderBinding{
+          hyle::compute::native::provider({.executor = executor}), 300}};
   Context context =
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();

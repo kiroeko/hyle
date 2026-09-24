@@ -15,13 +15,15 @@ namespace hyle::compute::cpu {
 Result<Context> create_context(DefaultContextOptions options) noexcept {
   const std::array providers{
 #if defined(HYLE_COMPUTE_ONEDNN)
-      onednn::provider({.executor = options.executor}),
+      ProviderBinding{onednn::provider({.executor = options.executor}), 100},
 #endif
 #if defined(HYLE_COMPUTE_GGML_CPU)
-      ggml_cpu::provider({.executor = options.executor,
-                          .native_threads = options.native_threads}),
+      ProviderBinding{
+          ggml_cpu::provider({.executor = options.executor,
+                              .native_threads = options.native_threads}),
+          200},
 #endif
-      native::provider({.executor = options.executor})};
+      ProviderBinding{native::provider({.executor = options.executor}), 1000}};
   return Context::create(device(),
                          {.metadata_allocator = options.metadata_allocator,
                           .providers = providers});

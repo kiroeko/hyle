@@ -1733,7 +1733,16 @@ struct RegionCandidate final {
   std::uint32_t provider_index = 0;
   std::uint32_t proposal_order = 0;
   ExecutionTargetId target{};
-  compute::ProviderRouteKey profile_key{};
+  compute::ProviderId provider_family{};
+  compute::ProviderImplementationId implementation{};
+  compute::RoutePolicyId policy{};
+  std::uint32_t preference = 0;
+};
+
+struct RouteDiagnostic final {
+  compute::ProviderImplementationId implementation{};
+  compute::RoutePolicyId policy{};
+  std::uint32_t preference = 0;
 };
 
 constexpr bool replay_allowed(ProviderReplayPolicy policy,
@@ -1807,7 +1816,11 @@ public:
     std::uint32_t count = 1;
     std::uint32_t target = 0;
     std::uint32_t provider = 0;
+    compute::ProviderId provider_family{};
+    compute::ProviderImplementationId implementation{};
+    compute::RoutePolicyId policy{};
     std::uint32_t preference_misses = 0;
+    std::uint32_t policy_preference = 0;
     std::optional<std::uint32_t> dispatches{};
     bool region = false;
   };
@@ -1847,10 +1860,14 @@ public:
                   .target = target,
                   .provider = static_cast<std::uint32_t>(
                       proposal.proposal.provider_index),
+                  .provider_family = proposal.proposal.provider.id,
+                  .implementation = proposal.proposal.implementation,
+                  .policy = proposal.proposal.policy,
                   .preference_misses = preferred[node] != detail::kNoNode &&
                                                preferred[node] != target
                                            ? 1u
                                            : 0u,
+                  .policy_preference = proposal.proposal.preference,
                   .dispatches = proposal.proposal.cost.dispatch_count}))
             return plan_allocation_failure();
         }
@@ -1875,7 +1892,11 @@ public:
                     .count = candidate.node_count,
                     .target = candidate.target.ordinal(),
                     .provider = candidate.provider_index,
+                    .provider_family = candidate.provider_family,
+                    .implementation = candidate.implementation,
+                    .policy = candidate.policy,
                     .preference_misses = misses,
+                    .policy_preference = candidate.preference,
                     .dispatches = candidate.cost.dispatch_count,
                     .region = true}))
         return plan_allocation_failure();
@@ -1884,24 +1905,46 @@ public:
         routes_.begin(), routes_.end(), [](const Route &route) noexcept {
           return route.dispatches.has_value();
         });
-    std::sort(routes_.begin(), routes_.end(),
-              [&](const Route &left, const Route &right) noexcept {
-                if (left.first != right.first)
-                  return left.first < right.first;
-                if (left.preference_misses != right.preference_misses)
-                  return left.preference_misses < right.preference_misses;
-                if (left.target != right.target)
-                  return left.target < right.target;
-                if (left.provider != right.provider)
-                  return left.provider < right.provider;
-                if (left.count != right.count)
-                  return left.count > right.count;
-                if (compare_dispatches && left.dispatches != right.dispatches)
-                  return left.dispatches < right.dispatches;
-                if (left.region != right.region)
-                  return left.region;
-                return left.proposal < right.proposal;
-              });
+    std::sort(
+        routes_.begin(), routes_.end(),
+        [&](const Route &left, const Route &right) noexcept {
+          if (left.first != right.first)
+            return left.first < right.first;
+          if (left.preference_misses != right.preference_misses)
+            return left.preference_misses < right.preference_misses;
+          if (left.policy_preference != right.policy_preference)
+            return left.policy_preference < right.policy_preference;
+          if (left.count != right.count)
+            return left.count > right.count;
+          if (compare_dispatches && left.dispatches != right.dispatches)
+            return left.dispatches < right.dispatches;
+          if (left.region != right.region)
+            return left.region;
+          if (left.policy.namespace_id != right.policy.namespace_id)
+            return left.policy.namespace_id < right.policy.namespace_id;
+          if (left.policy.policy_id != right.policy.policy_id)
+            return left.policy.policy_id < right.policy.policy_id;
+          if (left.policy.version != right.policy.version)
+            return left.policy.version < right.policy.version;
+          if (left.provider_family.namespace_id !=
+              right.provider_family.namespace_id) {
+            return left.provider_family.namespace_id <
+                   right.provider_family.namespace_id;
+          }
+          if (left.provider_family.provider_id !=
+              right.provider_family.provider_id) {
+            return left.provider_family.provider_id <
+                   right.provider_family.provider_id;
+          }
+          if (left.implementation.value() != right.implementation.value()) {
+            return left.implementation.value() < right.implementation.value();
+          }
+          if (left.target != right.target)
+            return left.target < right.target;
+          if (left.provider != right.provider)
+            return left.provider < right.provider;
+          return left.proposal < right.proposal;
+        });
     for (const auto &route : routes_)
       ++begins_[route.first + 1];
     for (std::size_t node = 1; node < begins_.size(); ++node)
@@ -2160,6 +2203,7 @@ Status discover_operation_candidates(
             .synchronization_count = 0,
             .dispatch_count = 0,
             .compilation_storage = {.resident_bytes = 0, .peak_bytes = 0}};
+        facts.preference = 0;
         if (!discovery.candidates.try_push_back(
                 {.proposal = facts, .metadata_view = true}))
           return plan_allocation_failure();
@@ -4011,7 +4055,7 @@ Status finalize_placed_steps(detail::PlanState &plan,
 
 Result<CompileReport>
 build_report(const detail::PlanState &plan, const detail::GraphState &graph,
-             std::span<const compute::ProviderRouteKey> profile_keys) noexcept;
+             std::span<const RouteDiagnostic> routes) noexcept;
 
 Result<CompiledStorageReport>
 compiled_storage(const detail::PlanState &plan) noexcept {
@@ -4110,16 +4154,13 @@ Status check_invocation_storage(const detail::PlanState &plan,
 // specialization and aggregate search counters stay in plan. No Invocation
 // exists yet; moving these vectors cannot invalidate a submitted command.
 // The retained snapshot is destroyed before plan's canonical constants.
-Status prepare_placed_steps(detail::PlanState &plan,
-                            const Graph &published_graph,
-                            const detail::GraphState &graph,
-                            CompileEnvironment environment,
-                            CompileOptions options,
-                            const ProviderPolicy &provider_policy,
-                            ConstantPreparation &constants,
-                            std::span<compute::ProviderRouteKey> profile_keys,
-                            CompileReport &selected_report,
-                            detail::ConstantArtifactCache &packing) noexcept {
+Status prepare_placed_steps(
+    detail::PlanState &plan, const Graph &published_graph,
+    const detail::GraphState &graph, CompileEnvironment environment,
+    CompileOptions options, const ProviderPolicy &provider_policy,
+    ConstantPreparation &constants, std::span<RouteDiagnostic> routes,
+    CompileReport &selected_report,
+    detail::ConstantArtifactCache &packing) noexcept {
   RegionDiscovery discovery(plan.allocator);
   const std::size_t configured_lane_count = plan.lanes.size();
   bool attempted = false;
@@ -4189,17 +4230,26 @@ Status prepare_placed_steps(detail::PlanState &plan,
       if (status.ok()) {
         for (const auto &frame : discovery.routes.frames()) {
           const auto &route = discovery.routes.route(frame.chosen);
-          const auto key =
-              route.region ? discovery.candidates[route.proposal].profile_key
-                           : discovery.operations.candidates[route.proposal]
-                                 .proposal.profile_key;
+          const auto diagnostic =
+              route.region
+                  ? RouteDiagnostic{discovery.candidates[route.proposal]
+                                        .implementation,
+                                    discovery.candidates[route.proposal].policy,
+                                    discovery.candidates[route.proposal]
+                                        .preference}
+                  : RouteDiagnostic{
+                        discovery.operations.candidates[route.proposal]
+                            .proposal.implementation,
+                        discovery.operations.candidates[route.proposal]
+                            .proposal.policy,
+                        discovery.operations.candidates[route.proposal]
+                            .proposal.preference};
           discovery.routes.for_each_node(
               route,
-              [&](std::uint32_t node) noexcept { profile_keys[node] = key; });
+              [&](std::uint32_t node) noexcept { routes[node] = diagnostic; });
         }
         ++plan.search.feasible_plans;
-        HYLE_ASSIGN_OR_RETURN(auto report,
-                              build_report(plan, graph, profile_keys));
+        HYLE_ASSIGN_OR_RETURN(auto report, build_report(plan, graph, routes));
         auto &report_state = *detail::CompileReportAccess::state(report);
         report_state.compiled_storage = storage_report;
         report_state.total_compiled_storage = storage_report;
@@ -4384,6 +4434,11 @@ Status discover_region_candidates(
         return Status::Internal(
             "region provider declared invalid structural cost facts");
       }
+      if ((!proposal.policy.empty() && !proposal.policy.valid()) ||
+          (proposal.policy.valid() && !proposal.implementation.valid())) {
+        return Status::Internal(
+            "region provider declared an invalid route identity");
+      }
       if (!replay_allowed(options.provider_replay, proposal.replay_class))
         continue;
       // The current region SPI prepares exact graphs only. An exact envelope
@@ -4422,6 +4477,14 @@ Status discover_region_candidates(
         return Status::Internal(
             "graph region proposal node storage is not writer-owned");
       }
+      auto binding_preference = context.provider_preference(
+          extensions[extension_index].provider_index);
+      if (!binding_preference)
+        return std::move(binding_preference).error();
+      const std::uint32_t preference =
+          proposal.preference == (std::numeric_limits<std::uint32_t>::max)()
+              ? *binding_preference
+              : proposal.preference;
       if (!candidates.try_push_back(RegionCandidate{
               .cost = proposal.cost,
               .route = proposal.route,
@@ -4432,7 +4495,10 @@ Status discover_region_candidates(
               .provider_index = extensions[extension_index].provider_index,
               .proposal_order = proposal_order,
               .target = target,
-              .profile_key = proposal.profile_key,
+              .provider_family = extension.provider().id,
+              .implementation = proposal.implementation,
+              .policy = proposal.policy,
+              .preference = preference,
           })) {
         return plan_allocation_failure();
       }
@@ -5725,7 +5791,7 @@ std::size_t step_constant_count(const detail::PlanState &plan,
 
 Result<CompileReport>
 build_report(const detail::PlanState &plan, const detail::GraphState &graph,
-             std::span<const compute::ProviderRouteKey> profile_keys) noexcept {
+             std::span<const RouteDiagnostic> routes) noexcept {
   using ProviderTexts =
       container::FlatHashMap<std::uint64_t, compute::ProviderIdentity,
                              container::Hash<std::uint64_t>, std::equal_to<>,
@@ -6014,9 +6080,15 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
         .input_count = step.input_count,
         .output_count = step.output_count,
         .runtime = step.runtime_properties(),
-        .profile_key = step.kind == detail::PlanStepKind::kCopy
-                           ? compute::ProviderRouteKey{}
-                           : profile_keys[step.node_begin],
+        .implementation = step.kind == detail::PlanStepKind::kCopy
+                              ? compute::ProviderImplementationId{}
+                              : routes[step.node_begin].implementation,
+        .policy = step.kind == detail::PlanStepKind::kCopy
+                      ? compute::RoutePolicyId{}
+                      : routes[step.node_begin].policy,
+        .preference = step.kind == detail::PlanStepKind::kCopy
+                          ? 0
+                          : routes[step.node_begin].preference,
     };
     if (step_report.provider.valid()) {
       const auto *owned = providers.find(step_report.provider_instance.value());
@@ -6036,7 +6108,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     if (step.kind == detail::PlanStepKind::kView) {
       step_report.kind = CompileStepKind::kView;
       step_report.persistent_bytes = 0;
-      step_report.profile_key = {};
+      step_report.implementation = {};
     }
     if (step.kind == detail::PlanStepKind::kRegion) {
       const RegionArtifactProperties properties = step.region.properties();
@@ -8234,9 +8306,9 @@ Result<CompiledGraph> compile_plan(
     return std::unexpected(std::move(lanes));
   }
 
-  container::SmallVector<compute::ProviderRouteKey, 16, mem::AllocatorRef>
-      profile_keys(allocator);
-  if (!profile_keys.try_resize(concrete->nodes.size())) {
+  container::SmallVector<RouteDiagnostic, 16, mem::AllocatorRef> routes(
+      allocator);
+  if (!routes.try_resize(concrete->nodes.size())) {
     detail::release(plan);
     return std::unexpected(plan_allocation_failure());
   }
@@ -8252,8 +8324,8 @@ Result<CompiledGraph> compile_plan(
     status = bind_effect_resources(*plan, *concrete, options);
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
-                                  options, provider_policy, constants,
-                                  profile_keys, report, packing);
+                                  options, provider_policy, constants, routes,
+                                  report, packing);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));

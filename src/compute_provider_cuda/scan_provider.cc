@@ -147,7 +147,7 @@ Status propose(const detail::ProviderOperationRequest &request,
                                                     DataType::kInt32
                                                 ? 2U
                                                 : 1U}},
-      .profile_key = ProviderRouteKey{kRoute}};
+      .implementation = ProviderImplementationId{kRoute}};
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *state,

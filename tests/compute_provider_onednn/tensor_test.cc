@@ -254,7 +254,8 @@ TEST(OneDnnTensor, SelectBroadcastsStorageBitsAndReusesIndependentRequests) {
     const auto width = data_type_size(type);
     const auto step = static_cast<std::int64_t>(width + 3);
     {
-      const std::array providers{onednn::provider()};
+      const std::array providers{
+          hyle::compute::ProviderBinding{onednn::provider(), 100}};
       auto context =
           Context::create(cpu::device(), {.metadata_allocator = stats.get(),
                                           .providers = providers})
@@ -420,8 +421,9 @@ TEST(OneDnnTensor, OverlapIsRejectedBeforeOutputChanges) {
     auto rejected = invocation.submit(queue, value.view.as_const(), value.view);
     ASSERT_FALSE(rejected);
     std::array<std::uint32_t, 4> after{};
-    ASSERT_TRUE(
-        value.buffer.view().read(std::as_writable_bytes(std::span(after))).ok());
+    ASSERT_TRUE(value.buffer.view()
+                    .read(std::as_writable_bytes(std::span(after)))
+                    .ok());
     EXPECT_EQ(after, bits);
   }
 }

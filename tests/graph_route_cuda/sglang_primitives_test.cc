@@ -9,7 +9,6 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/cuda.h"
-#include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/mem/stats.h"
 
@@ -94,7 +93,10 @@ TEST(CudaDefaultGraph,
             std::array{inputs[0].view.as_const(), weight.view.as_const()},
             std::array{direct.view})
             .value();
-    EXPECT_EQ(direct_program.provider().id, compute::ggml_cuda::kProviderId);
+    EXPECT_EQ(direct_program.provider().id,
+              compute::cuda_native::kSglangProviderId);
+    EXPECT_TRUE(direct_program.implementation().valid());
+    EXPECT_EQ(direct_program.route_preference(), 100U);
     auto direct_slot = direct_program.create_invocation().value();
     for (std::size_t lane = 0; lane < lanes.size(); ++lane) {
       ASSERT_TRUE(

@@ -118,15 +118,25 @@ private:
   alignas(void *) std::array<std::byte, kInlineBytes> payload_{};
 };
 
+// One explicitly ranked Provider in a low-level Context. Smaller values are
+// preferred. Route facades publish HYLE-owned bindings; ordinary consumers do
+// not construct or reorder them. Expert integrations may build custom lists.
+struct ProviderBinding final {
+  Provider provider{};
+  std::uint32_t preference = 0;
+};
+
+inline constexpr std::uint32_t kUnrankedProviderPreference = 1000;
+
 struct ContextOptions final {
   // Empty selects mem::system_allocator(). This allocation is cold context
   // metadata, never a submit-path fallback. The backing must outlive Context
   // and every retained Queue/artifact/invocation created from it.
   mem::AllocatorRef metadata_allocator{};
-  // Borrowed only for create(). Context copies the exact sequence into one
-  // cold allocation. An empty sequence is valid for raw backend/host work but
-  // cannot prepare an Operation.
-  std::span<const Provider> providers{};
+  // Borrowed only for create(). Context copies the bindings into one cold
+  // allocation. An empty sequence is valid for raw backend/host work but
+  // cannot prepare an Operation. Array position is never a preference.
+  std::span<const ProviderBinding> providers{};
 };
 
 struct QueueOptions final {};
@@ -154,6 +164,7 @@ public:
   mem::AllocatorRef metadata_allocator() const noexcept;
   std::size_t provider_count() const noexcept;
   Result<ProviderIdentity> provider_identity(std::size_t index) const noexcept;
+  Result<std::uint32_t> provider_preference(std::size_t index) const noexcept;
   // Same family at two slots/Contexts still has two distinct instances. This
   // cold observation does not reopen a closed Context or retain its resources.
   Result<ProviderInstanceId>

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -47,7 +48,11 @@ struct ProviderOperationProposal final {
   ResourceBindingRequirement workspace_resource{};
   ProviderRouteCostFacts cost{};
   ProviderShapeCoverage shape_coverage = ProviderShapeCoverage::kExactPoint;
-  ProviderRouteKey profile_key{};
+  ProviderImplementationId implementation{};
+  RoutePolicyId policy{};
+  // A route-specific HYLE rule may refine the Context binding. The sentinel
+  // inherits the binding preference and is resolved before planning.
+  std::uint32_t preference = (std::numeric_limits<std::uint32_t>::max)();
   // Compute fixes this after propose; exact prepare consumes the same facts.
   WorkloadContext workload{};
 };
@@ -129,7 +134,8 @@ struct ProviderVTable final {
   const void *(*query_extension)(void *context,
                                  ProviderExtensionId id) noexcept = nullptr;
   // Optional owning configuration. Only Provider copy/destroy use these cold
-  // hooks; builtin inline configurations and every prepared submit are unchanged.
+  // hooks; builtin inline configurations and every prepared submit are
+  // unchanged.
   void (*retain_configuration)(const Provider &provider) noexcept = nullptr;
   void (*release_configuration)(const Provider &provider) noexcept = nullptr;
 };

@@ -88,7 +88,8 @@ Status propose(void *state, const ProviderOperationRequest &request,
         "custom kernel factory requires an exact shape");
   const auto &context = *static_cast<FactoryContext *>(state);
   const KernelRequest public_request{context.device, request.operation,
-                                     request.inputs, request.outputs, request.workload};
+                                     request.inputs, request.outputs,
+                                     request.workload};
   auto result = context.owner->callbacks->propose(
       context.owner->object(), public_request, inputs, outputs);
   if (!result)
@@ -104,7 +105,7 @@ Status propose(void *state, const ProviderOperationRequest &request,
   proposal->workspace_resource = result->workspace_resource;
   proposal->cost = result->cost;
   proposal->shape_coverage = ProviderShapeCoverage::kExactPoint;
-  proposal->profile_key = result->profile_key;
+  proposal->implementation = result->implementation;
   return Status::Ok();
 }
 

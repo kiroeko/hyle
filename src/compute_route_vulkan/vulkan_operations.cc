@@ -13,29 +13,49 @@ namespace hyle::compute::vulkan::detail {
 namespace {
 
 inline constexpr std::array kNvidiaSubgroupPredicates{
-    RouteAttributePredicate::number(route_attribute::kDeviceVendorId, 0x10de),
-    RouteAttributePredicate::number(route_attribute::kDeviceId, 0x2786),
-    RouteAttributePredicate::number(route_attribute::kSubgroupSize, 32),
-    RouteAttributePredicate::number(kSubgroupArithmeticAttribute, 1)};
-inline constexpr RouteRule kNvidiaSubgroupRule{
+    RouteFactPredicate::number(route_fact::kDeviceVendorId, 0x10de),
+    RouteFactPredicate::number(route_fact::kDeviceId, 0x2786),
+    RouteFactPredicate::number(route_fact::kSubgroupSize, 32),
+    RouteFactPredicate::number(kSubgroupArithmeticAttribute, 1)};
+inline constexpr std::array kF32MatMulFacts{
+    RouteFactPredicate::number(operation_route_fact::kAccumulationDataType,
+                               static_cast<std::uint64_t>(DataType::kFloat32))};
+inline constexpr std::array kF32MatMulPorts{
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 0,
+                         .data_type = DataType::kFloat32,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 1,
+                         .data_type = DataType::kFloat32,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
+                         .index = 0,
+                         .data_type = DataType::kFloat32,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2}};
+inline constexpr RouteSelector kNvidiaSubgroupRule{
     .route = NativeRoute::kVulkan,
-    .attributes = kNvidiaSubgroupPredicates,
+    .environment = kNvidiaSubgroupPredicates,
     .operation = OperationKind::kMatMul,
-    .input0_type = DataType::kFloat32,
-    .input1_type = DataType::kFloat32,
-    .output0_type = DataType::kFloat32};
+    .operation_facts = kF32MatMulFacts,
+    .ports = kF32MatMulPorts};
 inline constexpr std::array kAppleSubgroupPredicates{
-    RouteAttributePredicate::number(route_attribute::kDeviceVendorId, 0x106b),
-    RouteAttributePredicate::string(route_attribute::kDeviceName, "Apple M4"),
-    RouteAttributePredicate::number(route_attribute::kSubgroupSize, 32),
-    RouteAttributePredicate::number(kSubgroupArithmeticAttribute, 1)};
-inline constexpr RouteRule kAppleSubgroupRule{
+    RouteFactPredicate::number(route_fact::kDeviceVendorId, 0x106b),
+    RouteFactPredicate::string(route_fact::kDeviceName, "Apple M4"),
+    RouteFactPredicate::number(route_fact::kSubgroupSize, 32),
+    RouteFactPredicate::number(kSubgroupArithmeticAttribute, 1)};
+inline constexpr RouteSelector kAppleSubgroupRule{
     .route = NativeRoute::kVulkan,
-    .attributes = kAppleSubgroupPredicates,
+    .environment = kAppleSubgroupPredicates,
     .operation = OperationKind::kMatMul,
-    .input0_type = DataType::kFloat32,
-    .input1_type = DataType::kFloat32,
-    .output0_type = DataType::kFloat32};
+    .operation_facts = kF32MatMulFacts,
+    .ports = kF32MatMulPorts};
 
 // Push layouts, fast division and non-cooperative F32 tile recipes follow
 // ggml 456172ec733a. See third_party/ggml_vulkan_shaders/NOTICE.md and LICENSE.
@@ -243,21 +263,21 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     const auto facts = route_facts(device.environment);
     const std::array route_inputs{a, b};
     const std::array route_outputs{program.values[step.outputs[0]].description};
-    const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
-                                      .route = NativeRoute::kVulkan,
-                                      .attributes = facts.attributes,
-                                      .model =
-                                          program.workload.model.description(),
-                                      .phase = program.workload.phase,
-                                      .region = program.workload.region,
-                                      .operation = step.operation,
-                                      .inputs = route_inputs,
-                                      .outputs = route_outputs};
+    const RouteMatchInput route_input{
+        .platform = kBuildRoutePlatform,
+        .route = NativeRoute::kVulkan,
+        .environment = facts.environment,
+        .profile = program.workload.profile.description(),
+        .phase = program.workload.phase,
+        .region = program.workload.region,
+        .operation = step.operation,
+        .inputs = route_inputs,
+        .outputs = route_outputs};
     const bool nvidia_subgroup =
-        match_route_rule(kNvidiaSubgroupRule, route_input).matched();
+        match_route_selector(kNvidiaSubgroupRule, route_input).matched();
     const bool known_subgroup =
         nvidia_subgroup ||
-        match_route_rule(kAppleSubgroupRule, route_input).matched();
+        match_route_selector(kAppleSubgroupRule, route_input).matched();
     const bool large = nvidia_subgroup && n <= 8192 && k >= 1024;
     const std::uint32_t block = large ? 128u : 32u;
     const auto shader = !known_subgroup ? shaders::mv_f32()
@@ -306,18 +326,19 @@ lower_matmul(ProgramState &program, const PlanStep &step,
     const bool aligned =
         m % tile == 0 && n % tile == 0 && k % tile == 0 &&
         device.properties.limits.minStorageBufferOffsetAlignment >= 16;
-    const std::array<std::uint32_t, 12> recipe{block,
-                                               tile,
-                                               tile,
-                                               16, // Upstream ID3; inactive for F32.
-                                               tile == 128 ? 64u : 32u,
-                                               tile == 128 ? 64u : 32u,
-                                               2,
-                                               tile == 32 ? 2u : 4u,
-                                               tile == 128 ? 4u : 2u,
-                                               1,
-                                               32,
-                                               aligned ? 1u : 0u};
+    const std::array<std::uint32_t, 12> recipe{
+        block,
+        tile,
+        tile,
+        16, // Upstream ID3; inactive for F32.
+        tile == 128 ? 64u : 32u,
+        tile == 128 ? 64u : 32u,
+        2,
+        tile == 32 ? 2u : 4u,
+        tile == 128 ? 4u : 2u,
+        1,
+        32,
+        aligned ? 1u : 0u};
     std::array<SpecializationConstant, 12> specialization{};
     for (std::uint32_t index = 0; index < specialization.size(); ++index)
       specialization[index] = {index, recipe[index]};
@@ -327,8 +348,8 @@ lower_matmul(ProgramState &program, const PlanStep &step,
       return std::move(pipeline).error();
     // One Z workgroup owns the entire reduction. ggml's k_split is the
     // reduction span, not the number of partitions; 1 would compute one term.
-    const std::array<std::uint32_t, 16> push{
-        n, m, k, k, k, n, k * n, k * m, n * m, 0, 1, k, 1, 1, 1, 1};
+    const std::array<std::uint32_t, 16> push{n,     m, k, k, k, n, k * n, k * m,
+                                             n * m, 0, 1, k, 1, 1, 1,     1};
     dispatch.pipeline = std::move(*pipeline);
     dispatch.values = {weights, step.inputs[0], step.outputs[0]};
     dispatch.push = push_bytes(push);

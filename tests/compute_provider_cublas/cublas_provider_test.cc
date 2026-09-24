@@ -301,7 +301,8 @@ struct MetadataAllocator final {
 TEST(CublasProvider,
      ColdMetadataFailuresRollBackAndReservedReplayDoesNotAllocate) {
   MetadataAllocator allocator;
-  const std::array providers{compute::cublas::provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{compute::cublas::provider(), 100}};
   const auto device = cuda::device(0).value();
   const auto create = [&] {
     return compute::Context::create(

@@ -35,6 +35,21 @@ struct ProviderIdentity final {
   }
 };
 
+struct RoutePolicyId final {
+  std::uint64_t namespace_id = 0;
+  std::uint64_t policy_id = 0;
+  std::uint32_t version = 0;
+
+  constexpr bool empty() const noexcept {
+    return namespace_id == 0 && policy_id == 0 && version == 0;
+  }
+  constexpr bool valid() const noexcept {
+    return (namespace_id != 0 || policy_id != 0) && version != 0;
+  }
+  friend constexpr bool operator==(RoutePolicyId,
+                                   RoutePolicyId) noexcept = default;
+};
+
 // Provider-declared implementation identity, stable for equal complete request
 // metadata within one provider build/configuration. Zero means unknown. This is
 // NOT the opaque propose-to-prepare token: never use an address, discovery
@@ -43,16 +58,16 @@ struct ProviderIdentity final {
 // alone qualifies no timing: build/config, device/driver, semantics,
 // shape/layout/precision, resources, workload and completion boundary must also
 // match.
-class ProviderRouteKey final {
+class ProviderImplementationId final {
 public:
-  constexpr ProviderRouteKey() noexcept = default;
-  constexpr explicit ProviderRouteKey(std::uint64_t value) noexcept
+  constexpr ProviderImplementationId() noexcept = default;
+  constexpr explicit ProviderImplementationId(std::uint64_t value) noexcept
       : value_(value) {}
   constexpr bool valid() const noexcept { return value_ != 0; }
   constexpr explicit operator bool() const noexcept { return valid(); }
   constexpr std::uint64_t value() const noexcept { return value_; }
-  friend constexpr bool operator==(ProviderRouteKey,
-                                   ProviderRouteKey) noexcept = default;
+  friend constexpr bool operator==(ProviderImplementationId,
+                                   ProviderImplementationId) noexcept = default;
 
 private:
   std::uint64_t value_ = 0;
@@ -94,7 +109,8 @@ enum class ProviderWorkspaceOwner : std::uint8_t {
 
 // The provider's successful replay cost, independent of runtime ownership.
 // Caller-supplied executors/callbacks and failure diagnostics retain their own
-// cost contracts. Neither a provider name nor capture compatibility proves this.
+// cost contracts. Neither a provider name nor capture compatibility proves
+// this.
 enum class ProviderReplayClass : std::uint8_t {
   kUnknown = 0,
   // Already-prepared commands: no graph/shape inference, heap allocation, JIT,
@@ -130,9 +146,9 @@ struct ProviderRuntimeProperties final {
             replay_class == ProviderReplayClass::kManaged) &&
            (!capture_compatible || mode == ProviderRuntimeMode::kSharedQueue);
   }
-  friend constexpr bool operator==(const ProviderRuntimeProperties &,
-                                   const ProviderRuntimeProperties &) noexcept =
-      default;
+  friend constexpr bool
+  operator==(const ProviderRuntimeProperties &,
+             const ProviderRuntimeProperties &) noexcept = default;
 };
 
 // Stable identity for an optional provider-owned capability. The version is

@@ -7,7 +7,7 @@
 #include "device_status_kernel.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/detail/queue_sequence.h"
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 
 namespace hyle::compute::cuda::detail {
 
@@ -26,25 +26,25 @@ borrow_environment(void *backend_state) noexcept;
 // returned strings only while the Environment lives and keep no matcher state
 // in prepared artifacts or submissions.
 struct RouteFacts final {
-  std::array<RouteAttribute, 6> attributes;
+  std::array<RouteFact, 6> environment;
 };
 
 inline RouteFacts route_facts(const Environment &environment) noexcept {
   return {{
-      RouteAttribute::string(route_attribute::kDeviceName,
-                             environment.device_name.data()),
-      RouteAttribute::number(route_attribute::kArchitectureMajor,
-                             static_cast<std::uint64_t>(environment.sm_major)),
-      RouteAttribute::number(route_attribute::kArchitectureMinor,
-                             static_cast<std::uint64_t>(environment.sm_minor)),
-      RouteAttribute::number(
-          route_attribute::kDriverVersion,
+      RouteFact::string(route_fact::kDeviceName,
+                        environment.device_name.data()),
+      RouteFact::number(route_fact::kArchitectureMajor,
+                        static_cast<std::uint64_t>(environment.sm_major)),
+      RouteFact::number(route_fact::kArchitectureMinor,
+                        static_cast<std::uint64_t>(environment.sm_minor)),
+      RouteFact::number(
+          route_fact::kDriverVersion,
           static_cast<std::uint64_t>(environment.driver_cuda_version)),
-      RouteAttribute::number(
-          route_attribute::kRuntimeVersion,
+      RouteFact::number(
+          route_fact::kRuntimeVersion,
           static_cast<std::uint64_t>(environment.runtime_version)),
-      RouteAttribute::number(
-          route_attribute::kToolkitVersion,
+      RouteFact::number(
+          route_fact::kToolkitVersion,
           static_cast<std::uint64_t>(environment.build_toolkit_version)),
   }};
 }

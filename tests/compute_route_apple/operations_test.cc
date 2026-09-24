@@ -7,8 +7,8 @@
 #include <gtest/gtest.h>
 #include <mlx/ops.h>
 
-#include "ffn_fixture.h"
 #include "../compute/workload_fixture.h"
+#include "ffn_fixture.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -27,7 +27,7 @@ TEST(AppleTyped, MatMulAndSiluGatesUseOrdinaryPreparation) {
   workload.region.version = 0;
   EXPECT_FALSE(context->prepare(c::MatMul{}, inputs, workload));
   workload = {};
-  EXPECT_TRUE(matmul->workload().model.matches(workload_test::kModel));
+  EXPECT_TRUE(matmul->workload().profile.matches(workload_test::kModel));
   auto slot = matmul->create_invocation();
   ASSERT_TRUE(slot);
   ASSERT_TRUE(slot->bind(inputs).ok());
@@ -67,8 +67,7 @@ TEST(AppleTyped, MlxBatchedLinearPositionAndGqaAttentionReplay) {
   ASSERT_TRUE(context);
 
   const std::vector<mx::array> linear_inputs{
-      mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 2.f, 1.f, 0.f, 3.f, 2.f,
-                 1.f},
+      mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 2.f, 1.f, 0.f, 3.f, 2.f, 1.f},
                 {2, 2, 3}, mx::float16),
       mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f}, {1, 3, 2}, mx::float16)};
   auto linear = context->prepare(c::MatMul{}, linear_inputs);
@@ -80,8 +79,7 @@ TEST(AppleTyped, MlxBatchedLinearPositionAndGqaAttentionReplay) {
   ASSERT_TRUE(linear_work);
   auto linear_result = linear_work->wait();
   ASSERT_TRUE(linear_result);
-  auto linear_f32 =
-      mx::astype(linear_result->get()->arrays()[0], mx::float32);
+  auto linear_f32 = mx::astype(linear_result->get()->arrays()[0], mx::float32);
   linear_f32.eval();
   EXPECT_EQ(linear_f32.shape(), (mx::Shape{2, 2, 2}));
   EXPECT_NEAR(linear_f32.data<float>()[0], 22.f, 1.e-2f);
@@ -90,13 +88,11 @@ TEST(AppleTyped, MlxBatchedLinearPositionAndGqaAttentionReplay) {
 
   const std::vector<mx::array> rope_inputs{
       mx::array({1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f}, {1, 2, 1, 4}),
-      mx::array({0, 2}, {2}, mx::int32),
-      mx::array({0.5f, 0.25f})};
-  auto rope = context->prepare(
-      c::RoPE{.rotary_dimensions = 4,
-              .sequence_axis = 1,
-              .layout = c::RopeLayout::kInterleaved},
-      rope_inputs);
+      mx::array({0, 2}, {2}, mx::int32), mx::array({0.5f, 0.25f})};
+  auto rope = context->prepare(c::RoPE{.rotary_dimensions = 4,
+                                       .sequence_axis = 1,
+                                       .layout = c::RopeLayout::kInterleaved},
+                               rope_inputs);
   ASSERT_TRUE(rope) << rope.error().message();
   auto rope_slot = rope->create_invocation();
   ASSERT_TRUE(rope_slot);

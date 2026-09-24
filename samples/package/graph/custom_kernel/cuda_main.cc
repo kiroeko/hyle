@@ -91,7 +91,7 @@ struct Factory final {
                                    .repack_bytes = 0,
                                    .synchronization_count = 0,
                                    .dispatch_count = 1},
-                          .profile_key = ProviderRouteKey{1}};
+                          .implementation = ProviderImplementationId{1}};
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,
                             hyle::mem::AllocatorRef allocator) const noexcept {
@@ -225,7 +225,7 @@ Status exercise(bool report_after_launch) {
         for (std::size_t index = 0; index < compiled.report.step_count();
              ++index) {
           HYLE_ASSIGN_OR_RETURN(auto step, compiled.report.step(index));
-          if (step.profile_key != ProviderRouteKey{1})
+          if (step.implementation != ProviderImplementationId{1})
             return Status::Internal("custom CUDA implementation key changed");
         }
         HYLE_ASSIGN_OR_RETURN(auto invocation,
@@ -271,9 +271,9 @@ Status exercise_transfer_pipeline() {
   namespace graph = hyle::graph;
   auto configuration = std::make_shared<Configuration>();
   HYLE_ASSIGN_OR_RETURN(
-      auto provider,
-      make_custom_provider({{0x4558414d504c45ULL, 3}, "example-affine-cuda", "1"},
-                           cuda::kBackendId, Factory{configuration}));
+      auto provider, make_custom_provider(
+                         {{0x4558414d504c45ULL, 3}, "example-affine-cuda", "1"},
+                         cuda::kBackendId, Factory{configuration}));
   HYLE_ASSIGN_OR_RETURN(auto device, cuda::device(0));
   HYLE_ASSIGN_OR_RETURN(auto context,
                         Context::create(device, std::move(provider)));

@@ -49,7 +49,8 @@ struct FaultAllocator {
 TEST(CudaCccl, EveryMetadataAllocationFailureReleasesPartialConstruction) {
   FaultAllocator allocator;
   const auto device = cuda::device(0).value();
-  const std::array providers{cuda_native::cccl_provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{cuda_native::cccl_provider(), 100}};
   const auto create = [&] {
     return Context::create(device, {.metadata_allocator = allocator.ref(),
                                     .providers = providers});
@@ -255,7 +256,8 @@ TEST(CudaCccl, FloatingSpecialPrefixesAndInvalidDescriptions) {
 TEST(CudaCccl, PendingCompletionRetainsPreparedOwnersWithCallerWorkspace) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
   {
-    const std::array providers{cuda_native::cccl_provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{cuda_native::cccl_provider(), 100}};
     auto owner = Context::create(cuda::device(0).value(),
                                  {.metadata_allocator = stats.get(),
                                   .providers = providers})

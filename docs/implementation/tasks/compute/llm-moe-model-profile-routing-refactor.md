@@ -33,10 +33,11 @@
 - 正交反偏置纵切：Qwen3.8-2.4T `UD-IQ4_XS` 的 mixed IQ4/Q4/Q5/Q6/F32 MoE，以及 Kimi/DeepSeek
   的 MXFP4 expert + BF16/Q8 projection + F32 state/router。只使用容量缩小的真实结构和 header
   shape/format，不下载或冒充执行 2.4T checkpoint。
-- 跨模块 public journey 与每段 owner：consumer 创建 owned `ModelIdentity` 和 owned weight/deployment
-  profile identity（Compute）→ Direct `prepare` 或 Graph `compile` 携带 `WorkloadContext`
+- 跨模块 public journey 与每段 owner：consumer 创建 owned `ModelArtifactProfile`（Compute）→ Direct
+  `prepare` 或 Graph `compile` 携带 `WorkloadContext`
   （Compute/Graph）→ common matcher 合取环境、模型/profile、operation 与任意 tensor port
-  （Compute）→ Provider 检查真实完整 DAG/region 并返回 `ProviderRouteKey`（各 Provider/Graph）→
+  （Compute）→ Provider 检查真实完整 DAG/region 并返回 `ProviderImplementationId`、policy 与 preference
+  （各 Provider/Graph）→
   prepared artifact 重复 submit（四路线既有 owner）。
 - scope：
   1. 从用户任务重新设计路由合同，不以现有 `RouteRule`、`WorkloadContext`、测试或 Provider 调用形状为

@@ -340,7 +340,8 @@ TEST(MarlinProvider,
      ColdAllocationFailuresRollBackAndReplayDoesNotAllocateMetadata) {
   MetadataAllocator allocator;
   {
-    const std::array providers{marlin::provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{marlin::provider(), 100}};
     auto owner =
         compute::Context::create(
             cuda::device(0).value(),

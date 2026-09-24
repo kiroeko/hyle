@@ -440,24 +440,25 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                              invocation.values[node.inputs[1]],
                              invocation.values[node.inputs[2]]);
   } else if (const auto descriptor =
-                 node.operation.custom_as<model_ops::HyperConnectionCombine>()) {
-    result = ggml_dsv4_hc_comb(
-        context, invocation.values[node.inputs[0]],
-        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
-        descriptor->epsilon, descriptor->iterations);
+                 node.operation
+                     .custom_as<model_ops::HyperConnectionCombine>()) {
+    result = ggml_dsv4_hc_comb(context, invocation.values[node.inputs[0]],
+                               invocation.values[node.inputs[1]],
+                               invocation.values[node.inputs[2]],
+                               descriptor->epsilon, descriptor->iterations);
   } else if (node.operation.custom_as<model_ops::HyperConnectionPre>()) {
     result = ggml_dsv4_hc_pre(context, invocation.values[node.inputs[0]],
                               invocation.values[node.inputs[1]]);
   } else if (node.operation.custom_as<model_ops::HyperConnectionPost>()) {
-    result = ggml_dsv4_hc_post(
-        context, invocation.values[node.inputs[0]],
-        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
-        invocation.values[node.inputs[3]]);
+    result = ggml_dsv4_hc_post(context, invocation.values[node.inputs[0]],
+                               invocation.values[node.inputs[1]],
+                               invocation.values[node.inputs[2]],
+                               invocation.values[node.inputs[3]]);
   } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
-    result = ggml_lightning_indexer(
-        context, invocation.values[node.inputs[0]],
-        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
-        invocation.values[node.inputs[3]]);
+    result = ggml_lightning_indexer(context, invocation.values[node.inputs[0]],
+                                    invocation.values[node.inputs[1]],
+                                    invocation.values[node.inputs[2]],
+                                    invocation.values[node.inputs[3]]);
   } else if (const auto *matmul = node.operation.get_if<MatMul>()) {
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
     // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
@@ -869,8 +870,8 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
                       .repack_bytes = 0,
                       .synchronization_count = 0,
                       .dispatch_count = 1},
-             .profile_key =
-                 ProviderRouteKey{standard ? standard_index::kRoute : 1}};
+             .implementation = ProviderImplementationId{
+                 standard ? standard_index::kRoute : 1}};
   if (standard)
     output->cost = standard_index::costs();
   else if (request.operation.get_if<MatMul>() != nullptr &&
@@ -969,11 +970,13 @@ bool supports(void *context, Operation operation,
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
     return outputs.size() == 1 &&
-           std::ranges::all_of(inputs, [](const auto &description) {
-             return description.is_dense() &&
-                    (description.data_type() == DataType::kFloat32 ||
-                     description.data_type() == DataType::kInt32);
-           }) &&
+           std::ranges::all_of(
+               inputs,
+               [](const auto &description) {
+                 return description.is_dense() &&
+                        (description.data_type() == DataType::kFloat32 ||
+                         description.data_type() == DataType::kInt32);
+               }) &&
            outputs[0].data_type() == DataType::kFloat32;
   if (operation.custom_as<model_ops::LightningIndexer>())
     return outputs.size() == 1 && inputs.size() == 4 && inputs[0].is_dense() &&

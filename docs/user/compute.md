@@ -43,24 +43,37 @@ factor seam，也不要把单个 family 的域支持当成整个算子目录都�
 
 ## 可选模型与阶段信息
 
-已知模型身份的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。
-HYLE 不加载模型文件；`family`、`revision` 和 `configuration` 是调用方声明的独立身份，
-配置字段应覆盖可能影响计算规则的选项，例如消费方生成的完整配置摘要。
+已知模型与固定部署制品的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。
+HYLE 不加载模型文件；调用方先核对实际 checkpoint/GGUF/safetensors，再提供模型 revision、配置摘要、
+制品仓库/revision/variant、manifest 摘要和 container format。画像只绑定部署制品；每个 tensor 的真实
+dtype、物理格式和 shape 仍由本次 operation 的 `TensorDesc` 证明。
 
 ```cpp
-auto identity = hyle::compute::ModelIdentity::create(
-    {"my_model_family", "local-artifact-revision", "configuration-digest"});
-if (!identity) return identity.error();
+auto profile = hyle::compute::ModelArtifactProfile::create({
+    .model_publisher = "Qwen",
+    .model_repository = "Qwen/Qwen3.5-2B",
+    .model_family = "qwen3_5",
+    .model_name = "qwen3.5-2b",
+    .model_revision = "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    .configuration_digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    .artifact_repository = "unsloth/Qwen3.5-2B-GGUF",
+    .artifact_revision = "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    .variant = "UD-Q4_K_XL",
+    .manifest_digest = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    .format_family = "gguf",
+});
+if (!profile) return profile.error();
 hyle::compute::WorkloadContext workload{
-    .model = *identity,
+    .profile = *profile,
     .phase = hyle::compute::WorkloadPhase::kDecode,
 };
 auto program = hyle::compute::prepare(
     context, hyle::compute::MatMul{}, left_desc, right_desc, resource, workload);
 ```
 
-身份创建时一次拷贝拥有字符串，源字符串随后可销毁；多个程序共享同一个不可变身份。
-自定义 allocator 的 backing 必须活到最后一个身份/程序释放。`program.workload()` 返回
+画像创建时一次拷贝拥有字符串，源字符串随后可销毁；多个程序共享同一个不可变画像。完整画像的两个
+digest 必须是规范的 64 位小写十六进制文本；空画像不分配，部分画像会被拒绝。自定义 allocator 的
+backing 必须活到最后一个画像/程序释放。`program.workload()` 返回
 保有所有权的冷诊断副本。阶段或版本变化需要重新准备，不能给运行中的程序换标签。
 可选的 `region` 是带版本的片段语义标识，不替代实际 operation/DAG、精度、资源和状态检查。
 
@@ -660,8 +673,10 @@ return done->wait();                  // terminal failure
 准备时匹配适用条件和资源约束，执行时复用已绑定制品，不计时、不重选。各路线当前能力以其
 公开入口及验收记录为准；本节不把旧 Provider 顺序当作已完成的四路线优选规则。
 
-`ProviderRouteKey` 仍标识 Provider 内部实现，供诊断报告使用；单个 key 不证明性能资格。
-旧 `RouteProfile`、matcher 和 Graph 多计划性能竞赛接口已经移除。
+`PreparedOperation::implementation()` 返回 Provider 声明的稳定 `ProviderImplementationId`；
+`route_policy()` 与 `route_preference()` 返回本次绑定的版本化规则及优先级。空 policy 表示通用、尚未具名的
+基线路线。单个实现 ID 或 preference 都不证明性能资格；完整资格还包括 build、设备/驱动、模型制品、
+operation、全部端口、资源和完成边界。旧 `RouteProfile`、运行时计时和 Graph 多计划性能竞赛接口已移除。
 
 ## CPU 默认规则与显式实现约束
 
@@ -865,7 +880,8 @@ Native FFI，也不承诺跨工具链 C++ ABI。
   成功查询不分配：使用调用方的输出 span 与有界栈 scratch；错误 Status 的诊断存储不属此成功合同。
   按算法真正需要的属性声明；静态链接到不同 code image 的 `system_resource()` 可能不是同一个实例，
   不能用它代替通用 host-accessible 要求。确需精确实例时从实际资源 owner 传入句柄。
-- `KernelProposal::route` 是本次 propose→prepare 的临时 token；可选 `profile_key = ProviderRouteKey{1}`
+- `KernelProposal::route` 是本次 propose→prepare 的临时 token；可选
+  `implementation = ProviderImplementationId{1}`
   则是同一 build/configuration 下的稳定实现键，不得填指针、发现序号或随机值。默认 unknown 不影响
   正常执行。键仅是未来完整性能资料身份的一部分，不能代替 build、设备/驱动、语义、shape/layout、资源、
   workload 与完成边界；当前 Graph 只把它保留到 step report，不据此改顺序或声称自动择优。

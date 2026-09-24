@@ -13,8 +13,8 @@
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 
-#include "../compute_route_apple/ffn_fixture.h"
 #include "../compute/workload_fixture.h"
+#include "../compute_route_apple/ffn_fixture.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -68,15 +68,14 @@ TEST(AppleGraph, WholeQ4FfnChangedInputsLeasesAndDestroyedGraph) {
     auto graph = ffn_graph(rows);
     ASSERT_TRUE(graph) << graph.error().message();
     ga::CompileReport report;
-    auto workload = workload_test::known(rows == 1 ? c::WorkloadPhase::kDecode
-                                                  : c::WorkloadPhase::kPrefill);
-    auto program =
-        ga::compile(*context, *graph, fixture.constants,
-                    {.report = &report, .workload = workload});
+    auto workload = workload_test::known(
+        rows == 1 ? c::WorkloadPhase::kDecode : c::WorkloadPhase::kPrefill);
+    auto program = ga::compile(*context, *graph, fixture.constants,
+                               {.report = &report, .workload = workload});
     ASSERT_TRUE(program) << program.error().message();
     EXPECT_EQ(program->workload(), workload);
     workload = {};
-    EXPECT_TRUE(program->workload().model.matches(workload_test::kModel));
+    EXPECT_TRUE(program->workload().profile.matches(workload_test::kModel));
     EXPECT_TRUE(report.status.ok());
     EXPECT_FALSE(report.environment.device_name.empty());
     ASSERT_EQ(report.nodes.size(), 4U); // unsupported dead node is absent
@@ -155,8 +154,8 @@ TEST(AppleGraph, BatchedLinearAndHadamardStayInOneCompiledRegion) {
   ASSERT_TRUE(slot);
   for (int replay = 1; replay <= 2; ++replay) {
     const float base = static_cast<float>(replay);
-    const std::array inputs{mx::array(
-        {base, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f}, {2, 2, 2})};
+    const std::array inputs{
+        mx::array({base, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f}, {2, 2, 2})};
     ASSERT_TRUE(slot->bind(inputs).ok());
     auto work = slot->submit();
     ASSERT_TRUE(work);
@@ -260,7 +259,8 @@ TEST(AppleGraph, RejectsMissingPendingAndMismatchedConstants) {
   EXPECT_FALSE(ga::compile(*context, *graph, wrong));
 }
 
-TEST(AppleGraph, CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms) {
+TEST(AppleGraph,
+     CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms) {
   auto context = a::Context::create();
   ASSERT_TRUE(context);
   auto builder = g::GraphBuilder::create();
@@ -276,10 +276,10 @@ TEST(AppleGraph, CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms) 
   for (int failure = 0; failure < 3; ++failure) {
     auto refused = ga::compile(
         *context, *graph, {},
-        {.custom = [failure](const c::Operation &,
-                             std::span<const mx::array> inputs,
-                             mx::Stream stream)
-             -> hyle::Result<std::vector<mx::array>> {
+        {.custom =
+             [failure](
+                 const c::Operation &, std::span<const mx::array> inputs,
+                 mx::Stream stream) -> hyle::Result<std::vector<mx::array>> {
           if (failure == 0)
             return std::vector<mx::array>{};
           if (failure == 1)
@@ -292,18 +292,18 @@ TEST(AppleGraph, CustomSchemaAndPreparationFailuresDoNotPublishPartialPrograms) 
       EXPECT_TRUE(refused.error().IsInvalidArgument());
     else {
       EXPECT_TRUE(refused.error().IsResourceExhausted());
-      EXPECT_EQ(refused.error().message(), "custom lowering allocation refused");
+      EXPECT_EQ(refused.error().message(),
+                "custom lowering allocation refused");
     }
   }
 
   auto program = ga::compile(
       *context, *graph, {},
       {.custom = [](const c::Operation &, std::span<const mx::array> inputs,
-                    mx::Stream stream)
-           -> hyle::Result<std::vector<mx::array>> {
-        return std::vector{mx::add(
-            mx::multiply(inputs[0], mx::array(2.f), stream), mx::array(1.f),
-            stream)};
+                    mx::Stream stream) -> hyle::Result<std::vector<mx::array>> {
+        return std::vector{
+            mx::add(mx::multiply(inputs[0], mx::array(2.f), stream),
+                    mx::array(1.f), stream)};
       }});
   ASSERT_TRUE(program) << program.error().message();
   auto slot = program->create_invocation();
@@ -332,8 +332,7 @@ TEST(AppleGraph, ReportOutlivesConstantsCustomPayloadAndContext) {
     const auto x = builder.input(dense({2, 2})).value();
     const auto w = builder.constant(dense({2, 2})).value();
     const auto mm = builder.add(c::MatMul{}, x, w).value();
-    const auto out =
-        builder.add(c::Operation::custom(Affine{}), mm).value();
+    const auto out = builder.add(c::Operation::custom(Affine{}), mm).value();
     ASSERT_TRUE(builder.publish(out).ok());
     auto graph = std::move(builder).finish().value();
     auto program = ga::compile(

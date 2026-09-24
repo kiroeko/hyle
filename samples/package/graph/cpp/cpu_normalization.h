@@ -65,9 +65,12 @@ inline hyle::Status run() {
   for (bool qualify_region : {false, true}) {
     c::Context context;
     if (qualify_region) {
-      const std::array providers{g::onednn::provider(), c::native::provider()};
+      const std::array providers{
+          hyle::compute::ProviderBinding{g::onednn::provider(), 100},
+          hyle::compute::ProviderBinding{c::native::provider(), 200}};
       HYLE_ASSIGN_OR_RETURN(
-          context, c::Context::create(c::cpu::device(), {.providers = providers}));
+          context,
+          c::Context::create(c::cpu::device(), {.providers = providers}));
     } else {
       HYLE_ASSIGN_OR_RETURN(context, g::cpu::create_context());
     }
@@ -79,7 +82,8 @@ inline hyle::Status run() {
           compiled.report.step_count() != 2 || prefix.node_count != 2 ||
           prefix.provider.id != g::onednn::kProviderId ||
           !compiled.report.mixed_providers())
-        return hyle::Status::Internal("installed normalization prefix is absent");
+        return hyle::Status::Internal(
+            "installed normalization prefix is absent");
     }
     HYLE_ASSIGN_OR_RETURN(auto invocation,
                           compiled.executable.create_invocation());

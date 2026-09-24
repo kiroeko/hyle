@@ -43,6 +43,13 @@ using compute::onednn::internal::BrgemmTaskRange;
 
 inline constexpr std::uint64_t kGatedMlpRoute = 1;
 inline constexpr std::uint64_t kNormalizationRoute = 2;
+inline constexpr std::uint64_t kRoutePolicyNamespace = 0x48594c454f4e4544ULL;
+inline constexpr compute::RoutePolicyId kGatedMlpPolicy{kRoutePolicyNamespace,
+                                                        1, 1};
+inline constexpr compute::RoutePolicyId kNormalizationPolicy{
+    kRoutePolicyNamespace, 2, 1};
+inline constexpr std::uint32_t kGatedMlpPreference = 150;
+inline constexpr std::uint32_t kNormalizationPreference = 150;
 namespace norm = compute::onednn::internal;
 inline constexpr std::size_t kWorkspaceAlignment =
     compute::onednn::internal::kBrgemmWorkspaceAlignment;
@@ -562,7 +569,10 @@ Status propose_norms(const Graph &graph, std::span<const ValueUse> uses,
                   .dispatch_count = 1},
          .route = kNormalizationRoute,
          .replay_class = norm::kNormRuntime.replay_class,
-         .profile_key = compute::ProviderRouteKey{kNormalizationRoute}});
+         .implementation =
+             compute::ProviderImplementationId{kNormalizationRoute},
+         .policy = kNormalizationPolicy,
+         .preference = kNormalizationPreference});
     if (!added)
       return std::move(added).error();
     if (!*added)
@@ -604,7 +614,9 @@ Status propose_regions(void *context_value, const Graph &graph,
                  .dispatch_count = 2},
         .route = kGatedMlpRoute,
         .replay_class = kRuntimeProperties.replay_class,
-        .profile_key = compute::ProviderRouteKey{kGatedMlpRoute},
+        .implementation = compute::ProviderImplementationId{kGatedMlpRoute},
+        .policy = kGatedMlpPolicy,
+        .preference = kGatedMlpPreference,
     });
     if (!added)
       return std::move(added).error();
@@ -832,8 +844,7 @@ submit(void *prepared_value, void *invocation_value, Queue &,
   preserve_first_error(terminal, output_mapping.close());
   for (std::size_t index = input_mappings.size(); index != 0; --index)
     preserve_first_error(terminal, input_mappings[index - 1].close());
-  return compute::detail::EnqueueResult::accepted_command(
-      std::move(terminal));
+  return compute::detail::EnqueueResult::accepted_command(std::move(terminal));
 }
 
 const ProviderRegionPreparedVTable kPreparedVTable{
@@ -1017,18 +1028,17 @@ Status propose_region_resources(
         "oneDNN region resource proposal request is invalid");
   }
   for (auto &requirement : input_requirements) {
-    requirement = {.required_properties =
-                       mem::MemoryProperty::kHostAccessible};
+    requirement = {.required_properties = mem::MemoryProperty::kHostAccessible};
   }
   for (auto &requirement : output_requirements) {
-    requirement = {.required_properties =
-                       mem::MemoryProperty::kHostAccessible};
+    requirement = {.required_properties = mem::MemoryProperty::kHostAccessible};
   }
   *proposal = RegionResourceProposal{
       .runtime = kRuntimeProperties,
-      .workspace_resource = {
-          .required_properties = mem::MemoryProperty::kHostAccessible,
-      },
+      .workspace_resource =
+          {
+              .required_properties = mem::MemoryProperty::kHostAccessible,
+          },
   };
   return Status::Ok();
 }
@@ -1214,11 +1224,10 @@ void destroy_context(void *context_value,
   allocator.deallocate(context, sizeof(RegionContext), alignof(RegionContext));
 }
 
-Status propose_single(
-    void *, const compute::detail::ProviderOperationRequest &,
-    std::span<compute::detail::ResourceBindingRequirement>,
-    std::span<compute::detail::ResourceBindingRequirement>,
-    compute::detail::ProviderOperationProposal *) noexcept {
+Status propose_single(void *, const compute::detail::ProviderOperationRequest &,
+                      std::span<compute::detail::ResourceBindingRequirement>,
+                      std::span<compute::detail::ResourceBindingRequirement>,
+                      compute::detail::ProviderOperationProposal *) noexcept {
   return Status::Unimplemented(
       "oneDNN graph region provider has no single-operation route");
 }

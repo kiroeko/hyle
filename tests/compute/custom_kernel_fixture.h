@@ -11,7 +11,7 @@
 
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/custom_kernel.h"
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 
 namespace custom_test {
 
@@ -64,7 +64,7 @@ struct Probe final {
   Fault fault = Fault::kNone;
   bool concurrent = true;
   std::uint64_t prepare_token = 7;
-  ProviderRouteKey profile_key{};
+  ProviderImplementationId implementation{};
   std::optional<std::size_t> invocation_private_bytes{};
   ProviderCompilationStorage compilation_storage{};
 };
@@ -182,7 +182,7 @@ struct alignas(128) Factory final {
                  .synchronization_count = 0,
                  .dispatch_count = 1,
                  .compilation_storage = config->probe->compilation_storage},
-        .profile_key = config->probe->profile_key};
+        .implementation = config->probe->implementation};
   }
   KernelPreparation prepare(const KernelPrepareRequest &request,
                             hyle::mem::AllocatorRef allocator) const noexcept {
@@ -247,28 +247,34 @@ struct WorkloadFactory final {
   Result<KernelProposal>
   propose(const KernelRequest &request, std::span<ResourceRequirement> inputs,
           std::span<ResourceRequirement> outputs) const noexcept {
-    const RouteRule rule{
+    const std::array ports{
+        RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                             .index = 0,
+                             .data_type = DataType::kFloat32},
+        RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
+                             .index = 0,
+                             .data_type = DataType::kFloat32}};
+    const RouteSelector selector{
         .platform = kBuildRoutePlatform,
         .route = NativeRoute::kCpu,
         .provider = identity.id,
         .provider_version = identity.version,
-        .model = expected->model.description(),
+        .profile = exact_profile_selector(expected->profile.description()),
         .phase = expected->phase,
         .region = expected->region,
         .operation = OperationKind::kCustom,
-        .input0_type = DataType::kFloat32,
-        .output0_type = DataType::kFloat32,
-        .quantization = {.presence = RouteQuantizationPresence::kNone}};
+        .ports = ports};
     const RouteMatchInput facts{.platform = kBuildRoutePlatform,
                                 .route = NativeRoute::kCpu,
                                 .provider = identity,
-                                .model = request.workload.model.description(),
+                                .profile =
+                                    request.workload.profile.description(),
                                 .phase = request.workload.phase,
                                 .region = request.workload.region,
                                 .operation = request.operation,
                                 .inputs = request.inputs,
                                 .outputs = request.outputs};
-    if (!match_route_rule(rule, facts))
+    if (!match_route_selector(selector, facts))
       return std::unexpected(
           Status::Unimplemented("cold workload route is not qualified"));
     return base.propose(request, inputs, outputs);

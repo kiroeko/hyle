@@ -11,20 +11,47 @@
 #include "ggml.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
-inline constexpr RouteRule kMxfp4TensorRule{.route = NativeRoute::kVulkan,
-                                            .input0_format = kMxfp4Weight};
-inline constexpr RouteRule kMxfp4MatMulRule{
+inline constexpr std::array kMxfp4TensorPorts{
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 0,
+                         .storage_kind = RouteStorageKind::kBlocked,
+                         .storage_format = kMxfp4Weight,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2}};
+inline constexpr RouteSelector kMxfp4TensorRule{.route = NativeRoute::kVulkan,
+                                                .ports = kMxfp4TensorPorts};
+inline constexpr std::array kMxfp4MatMulFacts{
+    RouteFactPredicate::number(operation_route_fact::kAccumulationDataType,
+                               static_cast<std::uint64_t>(DataType::kFloat32))};
+inline constexpr std::array kMxfp4MatMulPorts{
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 0,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 1,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kBlocked,
+                         .storage_format = kMxfp4Weight,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
+                         .index = 0,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2}};
+inline constexpr RouteSelector kMxfp4MatMulRule{
     .route = NativeRoute::kVulkan,
     .operation = OperationKind::kMatMul,
-    .input0_type = DataType::kFloat16,
-    .input1_type = DataType::kFloat16,
-    .output0_type = DataType::kFloat16,
-    .input1_format = kMxfp4Weight,
-    .quantization = {.presence = RouteQuantizationPresence::kNone}};
+    .operation_facts = kMxfp4MatMulFacts,
+    .ports = kMxfp4MatMulPorts};
 
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
@@ -43,7 +70,7 @@ bool mxfp4_domain(const TensorDesc &description) noexcept {
                                     .route = NativeRoute::kVulkan,
                                     .inputs = inputs};
   if (description.rank() != 2 ||
-      !match_route_rule(kMxfp4TensorRule, route_input).matched())
+      !match_route_selector(kMxfp4TensorRule, route_input).matched())
     return false;
   const auto canonical = mxfp4_weight_description(description.dimensions()[0],
                                                   description.dimensions()[1]);
@@ -264,16 +291,18 @@ bool region_supports(const Operation &operation,
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
     return outputs.size() == 1 &&
-           std::ranges::all_of(inputs, [](const auto &description) {
-             return description.is_dense() &&
-                    (description.data_type() == DataType::kFloat32 ||
-                     description.data_type() == DataType::kInt32);
-           }) &&
+           std::ranges::all_of(
+               inputs,
+               [](const auto &description) {
+                 return description.is_dense() &&
+                        (description.data_type() == DataType::kFloat32 ||
+                         description.data_type() == DataType::kInt32);
+               }) &&
            outputs[0].data_type() == DataType::kFloat32;
   if (operation.custom_as<model_ops::LightningIndexer>())
-    return outputs.size() == 1 && inputs.size() == 4 &&
-           inputs[0].is_dense() && inputs[1].is_dense() &&
-           inputs[2].is_dense() && inputs[3].is_dense() &&
+    return outputs.size() == 1 && inputs.size() == 4 && inputs[0].is_dense() &&
+           inputs[1].is_dense() && inputs[2].is_dense() &&
+           inputs[3].is_dense() &&
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32 &&
            inputs[2].data_type() == DataType::kFloat32 &&
@@ -285,7 +314,7 @@ bool region_supports(const Operation &operation,
                                       .operation = operation,
                                       .inputs = inputs,
                                       .outputs = outputs};
-    if (match_route_rule(kMxfp4MatMulRule, route_input).matched())
+    if (match_route_selector(kMxfp4MatMulRule, route_input).matched())
       return inputs.size() == 2 && outputs.size() == 1 &&
              matmul->accumulation_type == DataType::kFloat32 &&
              inputs[0].rank() == 2 && inputs[0].is_plain() &&
@@ -611,11 +640,11 @@ Result<Region> Region::create(NativeDevice device,
         output =
             ggml_mul_mat_id(context, arguments[0], arguments[1], arguments[2]);
       } else if (const auto descriptor =
-                     node.operation.custom_as<
-                         model_ops::HyperConnectionCombine>()) {
-        output = ggml_dsv4_hc_comb(context, arguments[0], arguments[1],
-                                   arguments[2], descriptor->epsilon,
-                                   descriptor->iterations);
+                     node.operation
+                         .custom_as<model_ops::HyperConnectionCombine>()) {
+        output =
+            ggml_dsv4_hc_comb(context, arguments[0], arguments[1], arguments[2],
+                              descriptor->epsilon, descriptor->iterations);
       } else if (node.operation.custom_as<model_ops::HyperConnectionPre>()) {
         output = ggml_dsv4_hc_pre(context, arguments[0], arguments[1]);
       } else if (node.operation.custom_as<model_ops::HyperConnectionPost>()) {

@@ -13,18 +13,52 @@ namespace hyle::compute::marlin {
 namespace {
 
 inline constexpr std::string_view kProviderVersion = "vllm-51918e252af4";
-inline constexpr RouteRule kQuantizedMatMulRule{
-    .route = NativeRoute::kCuda,
-    .operation = OperationKind::kQuantizedMatMul,
-    .input0_type = DataType::kFloat16,
-    .input1_type = DataType::kFloat16,
-    .output0_type = DataType::kFloat16,
-    .input1_format = kWeightFormat,
-    .quantization = {.presence = RouteQuantizationPresence::kQuantizedMatMul,
-                     .mode = QuantizedWeightMode::kSignedSymmetric4,
-                     .group_size = 128,
-                     .weight_format = kWeightFormat,
-                     .scale_format = kScaleFormat}};
+inline constexpr std::array kQuantizedMatMulFacts{
+    RouteFactPredicate::number(
+        operation_route_fact::kQuantizedWeightMode,
+        static_cast<std::uint64_t>(QuantizedWeightMode::kSignedSymmetric4)),
+    RouteFactPredicate::number(operation_route_fact::kQuantizationGroupSize,
+                               128),
+    RouteFactPredicate::number(operation_route_fact::kAccumulationDataType,
+                               static_cast<std::uint64_t>(DataType::kFloat32))};
+inline constexpr std::array kQuantizedMatMulPorts{
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 0,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 1,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kOpaque,
+                         .storage_format = kWeightFormat,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
+                         .index = 2,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kOpaque,
+                         .storage_format = kScaleFormat,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2},
+    RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
+                         .index = 0,
+                         .data_type = DataType::kFloat16,
+                         .storage_kind = RouteStorageKind::kPlain,
+                         .minimum_rank = 2,
+                         .maximum_rank = 2}};
+inline constexpr RoutePolicyEntry kQuantizedMatMulPolicy{
+    .id = {0x48594c454d41524cULL, 1, 1},
+    .preference = 100,
+    .provider = kProviderId,
+    .implementation = ProviderImplementationId{1},
+    .selector = {.route = NativeRoute::kCuda,
+                 .provider = kProviderId,
+                 .provider_version = kProviderVersion,
+                 .operation = OperationKind::kQuantizedMatMul,
+                 .operation_facts = kQuantizedMatMulFacts,
+                 .ports = kQuantizedMatMulPorts}};
 
 struct Prepared final {
   CUcontext primary = nullptr;
@@ -73,18 +107,16 @@ Status select_shape(Operation operation, std::span<const TensorDesc> inputs,
   if (inputs.size() != 3 || outputs.size() != 1)
     return Status::Unimplemented(
         "Marlin implements three-input Q4 MatMul only");
-  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
-                                    .route = NativeRoute::kCuda,
-                                    .operation = operation,
-                                    .inputs = inputs,
-                                    .outputs = outputs};
-  if (!match_route_rule(kQuantizedMatMulRule, route_input).matched())
+  const RouteMatchInput route_input{
+      .platform = kBuildRoutePlatform,
+      .route = NativeRoute::kCuda,
+      .provider = {kProviderId, "marlin", kProviderVersion},
+      .operation = operation,
+      .inputs = inputs,
+      .outputs = outputs};
+  if (!match_route_policy(kQuantizedMatMulPolicy, route_input).matched())
     return Status::Unimplemented(
         "Marlin requires symmetric group128 FP16 Q4 storage");
-  const auto *quantized = operation.get_if<QuantizedMatMul>();
-  if (quantized->accumulation_type != DataType::kFloat32)
-    return Status::Unimplemented(
-        "Marlin implements symmetric group128 FP32-accumulating Q4 only");
   for (const auto &input : inputs) {
     if (!input.valid() || input.rank() != 2 ||
         input.data_type() != DataType::kFloat16)
@@ -165,7 +197,9 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
                .repack_bytes = 0,
                .synchronization_count = 0,
                .dispatch_count = 1},
-      .profile_key = ProviderRouteKey{1},
+      .implementation = ProviderImplementationId{1},
+      .policy = kQuantizedMatMulPolicy.id,
+      .preference = kQuantizedMatMulPolicy.preference,
   };
   return Status::Ok();
 }

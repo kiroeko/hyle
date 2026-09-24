@@ -238,9 +238,10 @@ private:
 class GraphRoute final {
 public:
   GraphRoute(Problem &problem, bool vendor) : output_(problem.data_desc) {
-    const std::array providers{graph::onednn::provider(),
-                               compute::onednn::provider(),
-                               compute::native::provider()};
+    const std::array providers{
+        compute::ProviderBinding{graph::onednn::provider(), 100},
+        compute::ProviderBinding{compute::onednn::provider(), 200},
+        compute::ProviderBinding{compute::native::provider(), 1000}};
     context_ = take(compute::Context::create(
                         compute::cpu::device(),
                         {.providers = vendor ? std::span(providers)
@@ -285,7 +286,8 @@ public:
     const auto first = take(compiled.report.step(0), "inspect Graph prefix");
     const bool split_residual = vendor && problem.rows > 1;
     if (compiled.report.region_count() != (vendor ? 1U : 0U) ||
-        compiled.report.step_count() != (vendor ? (split_residual ? 2U : 1U) : 3U) ||
+        compiled.report.step_count() !=
+            (vendor ? (split_residual ? 2U : 1U) : 3U) ||
         first.node_count != (vendor ? (split_residual ? 2U : 3U) : 1U) ||
         first.provider.id != (vendor ? graph::onednn::kProviderId
                                      : compute::native::kProviderId) ||

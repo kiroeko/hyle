@@ -61,6 +61,7 @@ struct ContextState final : util::RefCounted<ContextState> {
     Provider provider{};
     void *state = nullptr;
     ProviderInstanceId instance{};
+    std::uint32_t preference = 0;
   };
 
   ContextState(Device device_value, mem::AllocatorRef allocator_value,
@@ -115,9 +116,10 @@ struct QueueState final : util::RefCounted<QueueState> {
 };
 
 struct ContextAccess final {
-  using BackendQueueCreateFn = Status (*)(
-      void *backend_context, mem::AllocatorRef allocator,
-      void *call_context, void **backend_queue) noexcept;
+  using BackendQueueCreateFn = Status (*)(void *backend_context,
+                                          mem::AllocatorRef allocator,
+                                          void *call_context,
+                                          void **backend_queue) noexcept;
 
   static ContextState *state(const Context &context) noexcept {
     return context.state_;

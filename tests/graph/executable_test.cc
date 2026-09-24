@@ -2813,9 +2813,8 @@ TEST(Invocation, RunsBroadcastMatMulIntoSeparateGatedActivation) {
   const ValueId product_id = builder.add(MatMul{}, left_id, right_id).value();
   const ValueId output_id =
       builder
-          .add(GatedActivation{
-                   .activation = GatedActivationKind::kGeluTanh,
-                   .inputs = GatedInputKind::kSeparate},
+          .add(GatedActivation{.activation = GatedActivationKind::kGeluTanh,
+                               .inputs = GatedInputKind::kSeparate},
                product_id, value_id)
           .value();
   ASSERT_TRUE(builder.publish(output_id).ok());
@@ -2823,8 +2822,7 @@ TEST(Invocation, RunsBroadcastMatMulIntoSeparateGatedActivation) {
 
   const std::array<float, 4> left_values{1, 2, 3, -1};
   const std::array<float, 16> right_values{
-      1, 0, -1, 2, 0.5F, 2, 1, -1,
-      2, 1, 0, -1, 1, -2, 3, 0.5F,
+      1, 0, -1, 2, 0.5F, 2, 1, -1, 2, 1, 0, -1, 1, -2, 3, 0.5F,
   };
   std::array<float, 16> value_values{};
   for (std::size_t index = 0; index < value_values.size(); ++index)
@@ -3296,7 +3294,7 @@ TEST(GraphViews, MetadataOnlyChainNeedsNoProviderOrPreparationBudget) {
     EXPECT_EQ(step.kind, hyle::graph::CompileStepKind::kView);
     EXPECT_FALSE(step.provider.valid());
     EXPECT_FALSE(step.provider_instance.valid());
-    EXPECT_FALSE(step.profile_key.valid());
+    EXPECT_FALSE(step.implementation.valid());
     EXPECT_EQ(step.persistent_bytes, 0u);
     EXPECT_EQ(step.dispatch_count, 0u);
   }
@@ -3649,7 +3647,7 @@ TEST(Invocation, CrossStoragePublishedViewUsesItsExplicitOutputBinding) {
   EXPECT_TRUE(compiled.report.lane(1)->queue_required);
   EXPECT_EQ(compiled.report.step(1)->kind, hyle::graph::CompileStepKind::kCopy);
   EXPECT_FALSE(compiled.report.step(1)->provider_instance.valid());
-  EXPECT_FALSE(compiled.report.step(1)->profile_key.valid());
+  EXPECT_FALSE(compiled.report.step(1)->implementation.valid());
   EXPECT_EQ(compiled.report.step(1)->synchronization_count, 0u);
   EXPECT_EQ(compiled.report.synchronization_count(), 0u);
 

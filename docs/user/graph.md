@@ -844,9 +844,10 @@ segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt
 - provider/version、实际配置实例 `provider_instance`、dispatch、workspace、persistent/packed/borrowed
   bytes、blocking/threading 与 replay 类别。
 
-`step(...)->profile_key` 保留 Provider 自行声明的稳定实现键，与临时 prepare token、配置实例编号都
-不同；unknown 不会被自动补成上述编号，Graph 插入的 copy 也没有 Provider key。它用于识别实际
-绑定的实现，不代表合格计时或性能排名。
+`step(...)->implementation` 保留 Provider 自行声明的稳定实现键，与临时 prepare token、配置实例编号都
+不同；`policy` 和 `preference` 记录这次冷绑定采用的版本化 HYLE 规则。unknown 不会被自动补成上述编号，
+Graph 插入的 copy 和未融合 View 也没有 Provider implementation/policy。它们用于识别实际绑定的实现和
+决策，不代表单独完成了合格计时或性能排名。
 
 Provider 名称/版本文本由报告复制，释放 Context、factory 或 Executable 不会令报告悬空。
 `provider()` / `step()` 返回值中的文本 view 借用报告共享状态，不能活过最后一个报告 handle；复制/移动
@@ -865,7 +866,8 @@ DAG/control 依赖和 alias lifetime。它不要求 host 可访问存储；纯 V
 这些元数据步骤。Graph copy 由 backend 负责，两者都不能用 Provider replay 字段替代自身成本合同。
 
 `step(...)->provider_instance` 区分同一 Provider 家族的多个配置槽位：operation 来自 PreparedOperation，
-region 来自实际绑定的 Provider extension，Graph copy 与未融合 View 没有 Provider 实例或 profile key。
+region 来自实际绑定的 Provider extension，Graph copy 与未融合 View 没有 Provider 实例、implementation
+或 policy。
 ID 本身不保活 Context/artifact；报告可留作诊断，不能用
 旧 ID 授权提交或当成跨进程、跨构建的完整性能 key。详见 [Compute 的身份与成本说明](compute.md)。
 

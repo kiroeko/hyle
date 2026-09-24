@@ -81,7 +81,8 @@ void check_oom(MetadataAllocator &allocator, Create create) {
 
 TEST(Flashinfer, ColdAllocationFailuresRollBack) {
   MetadataAllocator allocator;
-  const std::array providers{compute::flashinfer::provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{compute::flashinfer::provider(), 100}};
   const auto device = cuda::device(0).value();
   auto create = [&] {
     return compute::Context::create(

@@ -34,10 +34,10 @@ TEST(CpuDefaultGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
     storage.reserve(test.inputs.size());
     inputs.reserve(test.inputs.size());
     for (std::size_t i = 0; i < test.inputs.size(); ++i) {
-      storage.push_back(hyle::mem::Buffer::create(
-                            hyle::mem::system_resource(),
-                            test.inputs[i].required_bytes().value(), 64)
-                            .value());
+      storage.push_back(
+          hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                    test.inputs[i].required_bytes().value(), 64)
+              .value());
       ASSERT_TRUE(storage.back().view().write(test.payloads[i]).ok());
       inputs.push_back(builder.input(test.inputs[i]).value());
     }
@@ -57,15 +57,16 @@ TEST(CpuDefaultGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
                                            test.inputs[i], storage[i].view())
                                            .value())
                       .ok());
-    auto result = hyle::mem::Buffer::create(
-                      hyle::mem::system_resource(),
-                      test.output.required_bytes().value(), 64)
-                      .value();
-    ASSERT_TRUE(invocation
-                    .bind(output, compute::TensorView::create(
-                                      test.output, result.view())
-                                      .value())
-                    .ok());
+    auto result =
+        hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                  test.output.required_bytes().value(), 64)
+            .value();
+    ASSERT_TRUE(
+        invocation
+            .bind(
+                output,
+                compute::TensorView::create(test.output, result.view()).value())
+            .ok());
     const std::array queues{graph::QueueBinding{
         .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
     ASSERT_TRUE(invocation.prepare_replay(queues).ok());
@@ -88,10 +89,10 @@ TEST(CpuDefaultGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
   std::array<hyle::mem::Buffer, 4> storage;
   for (std::size_t i = 0; i < inputs.size(); ++i) {
     inputs[i] = builder.input(test.inputs[i]).value();
-    storage[i] = hyle::mem::Buffer::create(
-                     hyle::mem::system_resource(),
-                     test.inputs[i].required_bytes().value(), 64)
-                     .value();
+    storage[i] =
+        hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                  test.inputs[i].required_bytes().value(), 64)
+            .value();
     ASSERT_TRUE(storage[i].view().write(test.payloads[i]).ok());
   }
   const auto node = builder.add_node(test.operation, inputs).value();
@@ -109,17 +110,17 @@ TEST(CpuDefaultGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
                                          test.inputs[i], storage[i].view())
                                          .value())
                     .ok());
-  auto result = hyle::mem::Buffer::create(
-                    hyle::mem::system_resource(),
-                    test.output.required_bytes().value(), 64)
-                    .value();
-  ASSERT_TRUE(invocation
-                  .bind(output, compute::TensorView::create(
-                                    test.output, result.view())
-                                    .value())
-                  .ok());
-  const std::array queues{graph::QueueBinding{
-      .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  auto result =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                test.output.required_bytes().value(), 64)
+          .value();
+  ASSERT_TRUE(
+      invocation
+          .bind(output,
+                compute::TensorView::create(test.output, result.view()).value())
+          .ok());
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   for (int repeat = 0; repeat < 2; ++repeat) {
     auto done = invocation.submit(queue);
@@ -134,15 +135,16 @@ TEST(CpuDefaultGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
 
 #if defined(HYLE_GRAPH_ONEDNN) || defined(HYLE_COMPUTE_GGML_CPU)
 void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
-                             bool multiply_residual) {
+                              bool multiply_residual) {
   constexpr std::int64_t width = 31;
   const auto description =
       compute::TensorDesc::dense(compute::DataType::kFloat32,
                                  std::array{rows, width})
           .value();
   const auto row_description =
-      compute::TensorDesc::dense(compute::DataType::kFloat32,
-                                 std::array<std::int64_t, 1>{scalar ? 1 : width})
+      compute::TensorDesc::dense(
+          compute::DataType::kFloat32,
+          std::array<std::int64_t, 1>{scalar ? 1 : width})
           .value();
   std::vector<float> values(rows * width), scales(scalar ? 1 : width);
   for (std::size_t index = 0; index < values.size(); ++index)
@@ -162,9 +164,10 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
       const auto input = builder.input(description).value();
       const auto scale = builder.input(row_description).value();
       const auto normalized =
-          builder.add(rms ? compute::Operation(compute::RmsNorm{})
-                          : compute::Operation(compute::LayerNorm{}),
-                      input)
+          builder
+              .add(rms ? compute::Operation(compute::RmsNorm{})
+                       : compute::Operation(compute::LayerNorm{}),
+                   input)
               .value();
       const auto weighted =
           builder
@@ -176,8 +179,8 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
       const auto residual =
           builder
               .add(compute::Binary{multiply_residual
-                                      ? compute::BinaryKind::kMultiply
-                                      : compute::BinaryKind::kAdd},
+                                       ? compute::BinaryKind::kMultiply
+                                       : compute::BinaryKind::kAdd},
                    weighted, input)
               .value();
       if (published) {
@@ -185,15 +188,15 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
       }
       ASSERT_TRUE(builder.publish(residual).ok());
       auto logical = std::move(builder).finish().value();
-      auto workload = workload_test::known(rows == 1
-                                              ? compute::WorkloadPhase::kDecode
-                                              : compute::WorkloadPhase::kPrefill);
+      auto workload =
+          workload_test::known(rows == 1 ? compute::WorkloadPhase::kDecode
+                                         : compute::WorkloadPhase::kPrefill);
       auto compiled = graph::compile(logical, context, {.workload = workload});
       ASSERT_TRUE(compiled) << compiled.error().message();
       EXPECT_EQ(compiled->executable.workload(), workload);
       workload = {};
-      EXPECT_TRUE(
-          compiled->executable.workload().model.matches(workload_test::kModel));
+      EXPECT_TRUE(compiled->executable.workload().profile.matches(
+          workload_test::kModel));
 #if defined(HYLE_COMPUTE_GGML_CPU)
       EXPECT_EQ(compiled->report.region_count(), 1U);
 #else
@@ -206,6 +209,9 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
         ASSERT_TRUE(prefix);
         EXPECT_EQ(prefix->provider.id, compute::ggml_cpu::kProviderId);
         EXPECT_EQ(prefix->node_count, 3U);
+        EXPECT_TRUE(prefix->policy.valid());
+        EXPECT_EQ(prefix->preference, 100U);
+        EXPECT_EQ(prefix->implementation, compute::ProviderImplementationId{2});
         EXPECT_FALSE(compiled->report.mixed_providers());
 #else
         ASSERT_EQ(compiled->report.step_count(), rows == 1 ? 1U : 2U);
@@ -213,6 +219,8 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
         ASSERT_TRUE(prefix);
         EXPECT_EQ(prefix->provider.id, graph::onednn::kProviderId);
         EXPECT_EQ(prefix->node_count, rows == 1 ? 3U : 2U);
+        EXPECT_TRUE(prefix->policy.valid());
+        EXPECT_EQ(prefix->preference, 150U);
         EXPECT_EQ(compiled->report.mixed_providers(), rows != 1);
 #endif
       }
@@ -272,9 +280,10 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
         std::vector<float> published_values;
         if (published) {
           published_values.resize(values.size());
-          ASSERT_TRUE(intermediate.view()
-                          .read(std::as_writable_bytes(std::span(published_values)))
-                          .ok());
+          ASSERT_TRUE(
+              intermediate.view()
+                  .read(std::as_writable_bytes(std::span(published_values)))
+                  .ok());
         }
         for (std::int64_t row = 0; row < rows; ++row) {
           double mean = 0;
@@ -293,8 +302,10 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
             const auto index = static_cast<std::size_t>(row * width + col);
             if (published)
               EXPECT_NEAR(published_values[index],
-                          (current[index] - mean) / std::sqrt(squares / width + 1.e-5),
-                          4.e-5) << index;
+                          (current[index] - mean) /
+                              std::sqrt(squares / width + 1.e-5),
+                          4.e-5)
+                  << index;
             const double weighted_value =
                 (current[index] - mean) / std::sqrt(squares / width + 1.e-5) *
                 scales[scalar ? 0 : static_cast<std::size_t>(col)];
@@ -351,8 +362,7 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
   const auto left = builder.input(left_desc).value();
   const auto right = builder.input(right_desc).value();
   const auto projected = builder.add(compute::MatMul{}, left, right).value();
-  const auto transformed =
-      builder.add(compute::Hadamard{}, projected).value();
+  const auto transformed = builder.add(compute::Hadamard{}, projected).value();
   ASSERT_TRUE(builder.publish(transformed).ok());
   auto logical = std::move(builder).finish().value();
   const auto workload = workload_test::known(compute::WorkloadPhase::kDecode);
@@ -384,8 +394,8 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
           .value()};
   std::array invocations{compiled->executable.create_invocation().value(),
                          compiled->executable.create_invocation().value()};
-  const std::array queues{graph::QueueBinding{
-      .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
   for (std::size_t slot = 0; slot < invocations.size(); ++slot) {
     auto &invocation = invocations[slot];
     ASSERT_TRUE(invocation
@@ -399,10 +409,9 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
                                      .value())
                     .ok());
     ASSERT_TRUE(invocation
-                    .bind(transformed,
-                          compute::TensorView::create(output_desc,
-                                                      outputs[slot].view())
-                              .value())
+                    .bind(transformed, compute::TensorView::create(
+                                           output_desc, outputs[slot].view())
+                                           .value())
                     .ok());
     ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   }
@@ -413,7 +422,7 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
   };
   run(0);
   const auto first = half_test::read<F16>(outputs[0]);
-  const std::array first_expected{94.0, -6.0, -12.0, 0.0,
+  const std::array first_expected{94.0,  -6.0,  -12.0, 0.0,
                                   211.0, -15.0, -30.0, 0.0};
   ASSERT_EQ(first.size(), first_expected.size());
   for (std::size_t i = 0; i < first.size(); ++i)
@@ -421,21 +430,20 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
 
   for (std::size_t i = 0; i < left_values.size(); ++i)
     left_values[i] = half_test::encode<F16>(static_cast<double>(i + 2));
-  ASSERT_TRUE(left_buffer.view()
-                  .write(std::as_bytes(std::span(left_values)))
-                  .ok());
+  ASSERT_TRUE(
+      left_buffer.view().write(std::as_bytes(std::span(left_values))).ok());
   run(1);
   const auto second = half_test::read<F16>(outputs[1]);
-  const std::array second_expected{133.0, -9.0, -18.0, 0.0,
+  const std::array second_expected{133.0, -9.0,  -18.0, 0.0,
                                    250.0, -18.0, -36.0, 0.0};
   ASSERT_EQ(second.size(), second_expected.size());
   for (std::size_t i = 0; i < second.size(); ++i)
     half_test::expect_near(second[i], second_expected[i]);
   const auto retained = half_test::read<F16>(outputs[0]);
   ASSERT_EQ(retained.size(), first.size());
-  EXPECT_EQ(std::memcmp(retained.data(), first.data(),
-                        first.size() * sizeof(F16)),
-            0);
+  EXPECT_EQ(
+      std::memcmp(retained.data(), first.data(), first.size() * sizeof(F16)),
+      0);
   ASSERT_TRUE(context.close().ok());
   EXPECT_FALSE(invocations[0].submit(queue));
 }
@@ -448,23 +456,23 @@ TEST(CpuDefaultGraph, MatureHalfGqaPrefillUsesOneCausalRegion) {
           compute::DataType::kFloat16,
           std::array<std::int64_t, 4>{1, query_length, 8, 256})
           .value();
-  const auto kv_desc =
-      compute::TensorDesc::dense(
-          compute::DataType::kFloat16,
-          std::array<std::int64_t, 4>{1, key_length, 2, 256})
-          .value();
+  const auto kv_desc = compute::TensorDesc::dense(
+                           compute::DataType::kFloat16,
+                           std::array<std::int64_t, 4>{1, key_length, 2, 256})
+                           .value();
   auto builder = graph::GraphBuilder::create().value();
   const auto query = builder.input(query_desc).value();
   const auto key = builder.input(kv_desc).value();
   const auto value = builder.input(kv_desc).value();
   const auto output =
       builder
-          .add(compute::ScaledDotProductAttention{
-                   .layout = compute::AttentionLayout::kBatchSequenceHeadDepth,
-                   .scale = 0.0625F,
-                   .causal = true,
-                   .accumulation_type = compute::DataType::kFloat32},
-               query, key, value)
+          .add(
+              compute::ScaledDotProductAttention{
+                  .layout = compute::AttentionLayout::kBatchSequenceHeadDepth,
+                  .scale = 0.0625F,
+                  .causal = true,
+                  .accumulation_type = compute::DataType::kFloat32},
+              query, key, value)
           .value();
   ASSERT_TRUE(builder.publish(output).ok());
   auto logical = std::move(builder).finish().value();
@@ -501,8 +509,8 @@ TEST(CpuDefaultGraph, MatureHalfGqaPrefillUsesOneCausalRegion) {
                                    .value())
                   .ok());
   ASSERT_TRUE(invocation
-                  .bind(key, compute::ConstTensorView::create(
-                                 kv_desc, key_buffer.view())
+                  .bind(key, compute::ConstTensorView::create(kv_desc,
+                                                              key_buffer.view())
                                  .value())
                   .ok());
   ASSERT_TRUE(invocation
@@ -528,12 +536,12 @@ TEST(CpuDefaultGraph, MatureHalfGqaPrefillUsesOneCausalRegion) {
         for (std::size_t key_position = 0;
              key_position <= position + key_length - query_length;
              ++key_position)
-          expected += static_cast<double>(key_position * 4 + kv_head * 2 +
-                                          depth % 2);
-        expected /= static_cast<double>(position + key_length - query_length +
-                                        1);
-        half_test::expect_near(
-            actual[(position * 8 + head) * 256 + depth], expected);
+          expected +=
+              static_cast<double>(key_position * 4 + kv_head * 2 + depth % 2);
+        expected /=
+            static_cast<double>(position + key_length - query_length + 1);
+        half_test::expect_near(actual[(position * 8 + head) * 256 + depth],
+                               expected);
       }
 }
 #endif
@@ -561,7 +569,8 @@ TEST(CpuDefaultGraph, NonModelGraphReplaysAndReclaimsItsOwners) {
     EXPECT_EQ(compiled.report.node_count(), 2U);
 #if defined(HYLE_COMPUTE_GGML_CPU)
     EXPECT_EQ(compiled.report.region_count(), 1U);
-    EXPECT_EQ(compiled.report.step(0)->provider.id, compute::ggml_cpu::kProviderId);
+    EXPECT_EQ(compiled.report.step(0)->provider.id,
+              compute::ggml_cpu::kProviderId);
 #else
     EXPECT_EQ(compiled.report.region_count(), 0U);
 #endif
@@ -857,7 +866,8 @@ TEST(CpuDefaultGraph, ExpertCountsBecomeGatherOffsetsWithoutRecompilation) {
 #if defined(HYLE_COMPUTE_GGML_CPU)
   ASSERT_EQ(compiled->report.step_count(), 2U);
   for (std::size_t step = 0; step < 2; ++step)
-    EXPECT_EQ(compiled->report.step(step)->provider.id, compute::ggml_cpu::kProviderId);
+    EXPECT_EQ(compiled->report.step(step)->provider.id,
+              compute::ggml_cpu::kProviderId);
 #endif
   auto invocation = compiled->executable.create_invocation().value();
   ASSERT_TRUE(invocation
@@ -1162,12 +1172,16 @@ TEST(CpuDefaultGraph,
 TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
   auto context = graph::cpu::create_context().value();
   auto queue = context.create_queue().value();
-  const auto description = compute::TensorDesc::dense(compute::DataType::kFloat32,
-      std::array<std::int64_t, 1>{7}).value();
+  const auto description =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 1>{7})
+          .value();
   auto builder = graph::GraphBuilder::create().value();
   const auto input = builder.input(description).value();
   const std::array arguments{input};
-  const auto node = builder.add_node(compute::Operation(compute::TopK{.count = 3}), arguments).value();
+  const auto node =
+      builder.add_node(compute::Operation(compute::TopK{.count = 3}), arguments)
+          .value();
   const auto values = builder.result(node, 0).value();
   const auto indices = builder.result(node, 1).value();
   ASSERT_TRUE(builder.publish(values).ok());
@@ -1175,28 +1189,49 @@ TEST(CpuDefaultGraph, StandardTopKPublishesBothOutputsAcrossReplay) {
   auto logical = std::move(builder).finish().value();
   auto compiled = graph::compile(logical, context).value();
   ASSERT_EQ(compiled.report.step_count(), 1U);
-  EXPECT_EQ(compiled.report.step(0)->provider.id, compute::ggml_cpu::kProviderId);
+  EXPECT_EQ(compiled.report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
   const float nan = std::numeric_limits<float>::quiet_NaN();
-  const std::array<std::array<float, 7>, 2> inputs{{
-      {7, 3, 7, nan, -1, 9, 9}, {7, 9, 7, nan, -1, 3, 9}}};
-  const std::array<std::array<std::int32_t, 3>, 2> expected{{{5, 6, 0}, {1, 6, 0}}};
+  const std::array<std::array<float, 7>, 2> inputs{
+      {{7, 3, 7, nan, -1, 9, 9}, {7, 9, 7, nan, -1, 3, 9}}};
+  const std::array<std::array<std::int32_t, 3>, 2> expected{
+      {{5, 6, 0}, {1, 6, 0}}};
   auto source = half_test::buffer<float>(inputs[0]);
   auto value_buffer = half_test::buffer<float>(std::array<float, 3>{});
-  auto index_buffer = half_test::buffer<std::int32_t>(std::array<std::int32_t, 3>{});
+  auto index_buffer =
+      half_test::buffer<std::int32_t>(std::array<std::int32_t, 3>{});
   auto invocation = compiled.executable.create_invocation().value();
-  ASSERT_TRUE(invocation.bind(input, compute::ConstTensorView::create(description, source.view()).value()).ok());
-  ASSERT_TRUE(invocation.bind(values, compute::TensorView::create(logical.value_description(values).value(), value_buffer.view()).value()).ok());
-  ASSERT_TRUE(invocation.bind(indices, compute::TensorView::create(logical.value_description(indices).value(), index_buffer.view()).value()).ok());
-  const std::array queues{graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation
+                  .bind(input, compute::ConstTensorView::create(description,
+                                                                source.view())
+                                   .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(values, compute::TensorView::create(
+                                    logical.value_description(values).value(),
+                                    value_buffer.view())
+                                    .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(indices, compute::TensorView::create(
+                                     logical.value_description(indices).value(),
+                                     index_buffer.view())
+                                     .value())
+                  .ok());
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   for (std::size_t run = 0; run < inputs.size(); ++run) {
-    ASSERT_TRUE(source.view().write(std::as_bytes(std::span(inputs[run]))).ok());
+    ASSERT_TRUE(
+        source.view().write(std::as_bytes(std::span(inputs[run]))).ok());
     auto done = invocation.submit(queue);
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
-    EXPECT_EQ(half_test::read<std::int32_t>(index_buffer),
-              std::vector<std::int32_t>(expected[run].begin(), expected[run].end()));
-    EXPECT_EQ(half_test::read<float>(value_buffer), (std::vector<float>{9, 9, 7}));
+    EXPECT_EQ(
+        half_test::read<std::int32_t>(index_buffer),
+        std::vector<std::int32_t>(expected[run].begin(), expected[run].end()));
+    EXPECT_EQ(half_test::read<float>(value_buffer),
+              (std::vector<float>{9, 9, 7}));
   }
 }
 
@@ -1204,26 +1239,25 @@ TEST(CpuDefaultGraph,
      MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices) {
   auto context = graph::cpu::create_context().value();
   auto queue = context.create_queue().value();
-  const auto base_desc = compute::TensorDesc::dense(
-                             compute::DataType::kFloat32,
-                             std::array<std::int64_t, 3>{2, 3, 2})
-                             .value();
-  const auto index_desc = compute::TensorDesc::dense(
-                              compute::DataType::kInt32,
-                              std::array<std::int64_t, 1>{4})
-                              .value();
-  const auto update_desc = compute::TensorDesc::dense(
-                               compute::DataType::kFloat32,
-                               std::array<std::int64_t, 3>{2, 4, 2})
-                               .value();
+  const auto base_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 3>{2, 3, 2})
+          .value();
+  const auto index_desc =
+      compute::TensorDesc::dense(compute::DataType::kInt32,
+                                 std::array<std::int64_t, 1>{4})
+          .value();
+  const auto update_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 3>{2, 4, 2})
+          .value();
   auto builder = graph::GraphBuilder::create().value();
   const auto base = builder.input(base_desc).value();
   const auto indices = builder.input(index_desc).value();
   const auto updates = builder.input(update_desc).value();
   const auto result =
       builder
-          .add(compute::Scatter{.axis = 1,
-                                .kind = compute::ScatterKind::kAdd},
+          .add(compute::Scatter{.axis = 1, .kind = compute::ScatterKind::kAdd},
                base, indices, updates)
           .value();
   ASSERT_TRUE(builder.publish(result).ok());
@@ -1265,8 +1299,8 @@ TEST(CpuDefaultGraph,
                                     base_desc, output_buffer.view())
                                     .value())
                   .ok());
-  const std::array queues{graph::QueueBinding{
-      .lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   auto done = invocation.submit(queue);
   ASSERT_TRUE(done) << done.error().message();
@@ -1282,9 +1316,8 @@ TEST(CpuDefaultGraph,
             (std::vector<float>(expected.begin(), expected.end())));
 
   index_values.back() = 3;
-  ASSERT_TRUE(index_buffer.view()
-                  .write(std::as_bytes(std::span(index_values)))
-                  .ok());
+  ASSERT_TRUE(
+      index_buffer.view().write(std::as_bytes(std::span(index_values))).ok());
   done = invocation.submit(queue);
   ASSERT_TRUE(done) << done.error().message();
   EXPECT_TRUE(done->wait().IsOutOfRange());

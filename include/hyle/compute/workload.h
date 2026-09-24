@@ -9,66 +9,80 @@
 
 namespace hyle::compute {
 namespace detail {
-struct ModelIdentityState;
+struct ModelArtifactProfileState;
 }
 
-// Consumer-declared identity, not model contents or a request to load them.
-// Name identifies one model within a family. Revision and configuration must
-// identify every model option relevant to an exact rule (for example, the
-// consumer's checkpoint and canonical configuration digests). Comparisons are
-// byte-exact; a broader identity never qualifies a narrower rule.
-struct ModelDescription final {
-  std::string_view family;
-  std::string_view name;
-  std::string_view revision;
-  std::string_view configuration;
+// Consumer-verified identity of one immutable model artifact. HYLE does not
+// open the repository or manifest and this value never claims a uniform tensor
+// dtype. Digests are canonical lowercase SHA-256 hex. A nonempty description
+// is exact and complete; selectors may independently constrain a subset.
+struct ModelArtifactProfileDescription final {
+  std::string_view model_publisher;
+  std::string_view model_repository;
+  std::string_view model_family;
+  std::string_view model_name;
+  std::string_view model_revision;
+  std::string_view configuration_digest;
 
-  constexpr bool complete() const noexcept {
-    return !family.empty() && !name.empty() && !revision.empty() &&
-           !configuration.empty();
+  std::string_view artifact_repository;
+  std::string_view artifact_revision;
+  std::string_view variant;
+  std::string_view manifest_digest;
+  std::string_view format_family;
+
+  constexpr bool empty() const noexcept {
+    return model_publisher.empty() && model_repository.empty() &&
+           model_family.empty() && model_name.empty() &&
+           model_revision.empty() && configuration_digest.empty() &&
+           artifact_repository.empty() && artifact_revision.empty() &&
+           variant.empty() && manifest_digest.empty() && format_family.empty();
   }
-  friend constexpr bool operator==(const ModelDescription &,
-                                   const ModelDescription &) noexcept = default;
+  constexpr bool complete() const noexcept {
+    return !model_publisher.empty() && !model_repository.empty() &&
+           !model_family.empty() && !model_name.empty() &&
+           !model_revision.empty() && !configuration_digest.empty() &&
+           !artifact_repository.empty() && !artifact_revision.empty() &&
+           !variant.empty() && !manifest_digest.empty() &&
+           !format_family.empty();
+  }
+  friend constexpr bool
+  operator==(const ModelArtifactProfileDescription &,
+             const ModelArtifactProfileDescription &) noexcept = default;
 };
 
-// Optional immutable owner. create() copies the four fields into one cold
-// allocation; its input strings may expire immediately afterwards. Copies
-// share that allocation and are safe to use on independent threads. Mutating
-// one handle concurrently is not supported. The allocator backing must live
-// until the last handle/artifact retaining this identity has been destroyed.
-// Empty identity has no allocation, reference-count work or known-model claim.
-class ModelIdentity final {
+// Optional immutable owner. create() copies all fields into one cold
+// allocation; input views may expire immediately. Copies share the allocation
+// and support concurrent reads. Mutating one handle remains exclusive. The
+// allocator backing must outlive the final retained handle/artifact.
+class ModelArtifactProfile final {
 public:
-  ModelIdentity() noexcept = default;
-  HYLE_COMPUTE_API ModelIdentity(const ModelIdentity &other) noexcept;
-  HYLE_COMPUTE_API ModelIdentity &
-  operator=(const ModelIdentity &other) noexcept;
-  HYLE_COMPUTE_API ModelIdentity(ModelIdentity &&other) noexcept;
-  HYLE_COMPUTE_API ModelIdentity &operator=(ModelIdentity &&other) noexcept;
-  HYLE_COMPUTE_API ~ModelIdentity();
+  ModelArtifactProfile() noexcept = default;
+  HYLE_COMPUTE_API
+  ModelArtifactProfile(const ModelArtifactProfile &other) noexcept;
+  HYLE_COMPUTE_API ModelArtifactProfile &
+  operator=(const ModelArtifactProfile &other) noexcept;
+  HYLE_COMPUTE_API ModelArtifactProfile(ModelArtifactProfile &&other) noexcept;
+  HYLE_COMPUTE_API ModelArtifactProfile &
+  operator=(ModelArtifactProfile &&other) noexcept;
+  HYLE_COMPUTE_API ~ModelArtifactProfile();
 
-  HYLE_COMPUTE_API static Result<ModelIdentity>
-  create(ModelDescription description,
+  HYLE_COMPUTE_API static Result<ModelArtifactProfile>
+  create(ModelArtifactProfileDescription description,
          mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
+
   bool empty() const noexcept { return state_ == nullptr; }
-  // Borrowed from this shared owner, never from create()'s input strings.
-  HYLE_COMPUTE_API ModelDescription description() const noexcept;
-  // Hierarchical cold-rule predicates. Each narrower predicate requires every
-  // preceding field; exact matching requires all four fields. These only check
-  // model identity; operation/region semantics, hardware, precision and
-  // resources still apply.
+  HYLE_COMPUTE_API ModelArtifactProfileDescription description() const noexcept;
   HYLE_COMPUTE_API bool
-  matches_family(std::string_view required_family) const noexcept;
-  HYLE_COMPUTE_API bool matches_model(std::string_view required_family,
-                                      std::string_view required_name) const noexcept;
-  HYLE_COMPUTE_API bool matches(ModelDescription required) const noexcept;
-  friend HYLE_COMPUTE_API bool operator==(const ModelIdentity &left,
-                                         const ModelIdentity &right) noexcept;
+  matches(ModelArtifactProfileDescription expected) const noexcept;
+  friend HYLE_COMPUTE_API bool
+  operator==(const ModelArtifactProfile &left,
+             const ModelArtifactProfile &right) noexcept;
 
 private:
-  explicit ModelIdentity(detail::ModelIdentityState *state) noexcept
+  explicit ModelArtifactProfile(
+      detail::ModelArtifactProfileState *state) noexcept
       : state_(state) {}
-  detail::ModelIdentityState *state_ = nullptr;
+  detail::ModelArtifactProfileState *state_ = nullptr;
 };
 
 enum class WorkloadPhase : std::uint8_t {
@@ -78,8 +92,8 @@ enum class WorkloadPhase : std::uint8_t {
 };
 
 // Optional semantic identity supplied by the consumer of a complete fragment.
-// Version is part of the identity. This is neither a Provider choice nor an
-// alternative to inspecting the actual typed operation/DAG and state effects.
+// Version is part of the identity. This never substitutes for inspecting the
+// actual typed operation/DAG, state, effects or resources.
 struct RegionSemanticId final {
   std::uint64_t namespace_id = 0;
   std::uint64_t region_id = 0;
@@ -95,18 +109,18 @@ struct RegionSemanticId final {
                                    RegionSemanticId) noexcept = default;
 };
 
-// Cold preparation facts. Reuse an immutable ModelIdentity across stages;
-// prepare a new artifact to change these facts. No field is consulted during
-// ordinary submission. Equality is only the workload part of qualification,
-// not a portable plan-cache key or proof of implementation eligibility.
+// Cold preparation facts. Prepare a new artifact to change them. No field is
+// consulted during ordinary submission. Equality is one qualification/cache
+// dimension, not proof that a Provider can execute the actual operation/DAG.
 struct WorkloadContext final {
-  ModelIdentity model;
+  ModelArtifactProfile profile;
   WorkloadPhase phase = WorkloadPhase::kUnspecified;
   RegionSemanticId region;
 
   bool valid() const noexcept {
     return (phase == WorkloadPhase::kUnspecified ||
-            phase == WorkloadPhase::kPrefill || phase == WorkloadPhase::kDecode) &&
+            phase == WorkloadPhase::kPrefill ||
+            phase == WorkloadPhase::kDecode) &&
            (region.empty() || region.valid());
   }
   friend bool operator==(const WorkloadContext &,

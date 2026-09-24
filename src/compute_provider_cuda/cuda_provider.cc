@@ -192,7 +192,7 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
                .dispatch_count = *request.outputs[0].element_count() == 0
                                      ? std::optional<std::uint32_t>{}
                                      : std::optional<std::uint32_t>{1}},
-      .profile_key = ProviderRouteKey{route},
+      .implementation = ProviderImplementationId{route},
   };
   return Status::Ok();
 }

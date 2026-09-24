@@ -143,8 +143,7 @@ class OperationInvocation;
 
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
-        std::span<const TensorDesc> inputs,
-        std::span<const TensorDesc> outputs,
+        std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
         OperationResourceBindings resources,
         const WorkloadContext &workload = {}) noexcept;
 
@@ -152,8 +151,7 @@ prepare(const Context &context, Operation operation,
 // caller-owned workspace is fixed to `resource` during the cold prepare.
 HYLE_COMPUTE_API Result<PreparedOperation>
 prepare(const Context &context, Operation operation,
-        std::span<const TensorDesc> inputs,
-        std::span<const TensorDesc> outputs,
+        std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
         mem::MemoryResourceRef resource,
         const WorkloadContext &workload = {}) noexcept;
 
@@ -179,12 +177,17 @@ public:
 
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  // Immutable facts bound during preparation; this cold query retains their owner.
+  // Immutable facts bound during preparation; this cold query retains their
+  // owner.
   HYLE_COMPUTE_API WorkloadContext workload() const noexcept;
   HYLE_COMPUTE_API OperationKind kind() const noexcept;
   HYLE_COMPUTE_API ProviderIdentity provider() const noexcept;
   HYLE_COMPUTE_API ProviderInstanceId provider_instance_id() const noexcept;
-  HYLE_COMPUTE_API ProviderRuntimeProperties runtime_properties() const noexcept;
+  HYLE_COMPUTE_API ProviderImplementationId implementation() const noexcept;
+  HYLE_COMPUTE_API RoutePolicyId route_policy() const noexcept;
+  HYLE_COMPUTE_API std::uint32_t route_preference() const noexcept;
+  HYLE_COMPUTE_API ProviderRuntimeProperties
+  runtime_properties() const noexcept;
   HYLE_COMPUTE_API WorkspaceRequirement workspace_requirement() const noexcept;
   HYLE_COMPUTE_API std::optional<std::size_t> persistent_bytes() const noexcept;
   // Per-invocation upper bound outside the supplied metadata allocator and

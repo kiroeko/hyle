@@ -10,8 +10,9 @@
 namespace {
 
 TEST(OneDnnComposition, UnsupportedShapeAdvancesToExplicitNativeProvider) {
-  const std::array providers{hyle::compute::onednn::provider(),
-                             hyle::compute::native::provider()};
+  const std::array providers{
+      hyle::compute::ProviderBinding{hyle::compute::onednn::provider(), 100},
+      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 200}};
   auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 {.providers = providers});
   ASSERT_TRUE(context.has_value()) << context.error().message();

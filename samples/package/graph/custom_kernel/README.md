@@ -19,7 +19,7 @@ layout、alias、workspace/replay 与失败合同均显式，不用一个示例�
 改变数值结果的 scale/bias 属于 Operation descriptor；factory 只持有不改变语义的分块配置。这样不同
 Provider 可以对同一个操作竞争，不能让切换 Provider 悄悄改变计算结果。
 
-CPU/CUDA factory 都声明 `ProviderRouteKey{1}`，消费方检查 Graph report 保留该稳定实现键。它不是
+CPU/CUDA factory 都声明 `ProviderImplementationId{1}`，消费方检查 Graph report 保留该稳定实现键。它不是
 临时 prepare token；同一 key 只有和完整 build/config、设备、语义/shape/layout、workload/完成边界
 共同匹配才有性能资料意义。本例只验证传递与生命周期，不提供 profile 或性能胜负。
 Graph 编译只进行能力和硬约束匹配，绑定第一个完整可行制品；执行复用已绑定计划。三种交付

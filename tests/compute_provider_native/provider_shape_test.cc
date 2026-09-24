@@ -302,9 +302,9 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   auto exact = propose();
   ASSERT_TRUE(exact.has_value()) << exact.error().message();
   EXPECT_EQ(exact->shape_coverage, ProviderShapeCoverage::kExactPoint);
-  EXPECT_EQ(
-      exact->profile_key,
-      ProviderRouteKey{static_cast<std::uint64_t>(OperationKind::kUnary) + 1});
+  EXPECT_EQ(exact->implementation,
+            ProviderImplementationId{
+                static_cast<std::uint64_t>(OperationKind::kUnary) + 1});
 }
 
 TEST(NativeProviderShape,
@@ -959,7 +959,8 @@ const ProviderVTable kDomainProvider{
     .drain_context = [](void *) noexcept { return Status::Ok(); }};
 
 Context probe_context(DomainProbe &probe) {
-  const std::array providers{ProviderAccess::make(&kDomainProvider, &probe)};
+  const std::array providers{hyle::compute::ProviderBinding{
+      ProviderAccess::make(&kDomainProvider, &probe), 100}};
   return Context::create(cpu::device(), {.providers = providers}).value();
 }
 

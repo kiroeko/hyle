@@ -615,7 +615,7 @@ void metadata_failures_rollback(
       operation.kind() == compute::OperationKind::kRmsNorm;
   MetadataAllocator allocator;
   {
-    const std::array providers{selected};
+    const std::array providers{hyle::compute::ProviderBinding{selected, 100}};
     auto owner =
         compute::Context::create(
             cuda::device(0).value(),

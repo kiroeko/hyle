@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <span>
 
@@ -114,7 +115,11 @@ struct RegionProposal final {
       compute::ProviderReplayClass::kUnknown;
   // Stable implementation identity, not the temporary prepare token above.
   // Unknown remains an eligible route, but cannot identify a profile entry.
-  compute::ProviderRouteKey profile_key{};
+  compute::ProviderImplementationId implementation{};
+  compute::RoutePolicyId policy{};
+  // UINT32_MAX inherits the Context ProviderBinding preference. A
+  // Provider-specific policy row may supply a more specific HYLE preference.
+  std::uint32_t preference = (std::numeric_limits<std::uint32_t>::max)();
 };
 
 // Fixed-capacity proposal sink owned by Graph compile. Providers cannot grow

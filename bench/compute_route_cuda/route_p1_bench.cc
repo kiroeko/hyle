@@ -232,9 +232,11 @@ class Harness final {
 public:
   Harness(DataSet &data, bool reference) : data_(&data) {
     if (reference) {
-      const std::array providers{compute::cublas::provider(),
-                                 compute::marlin::provider(),
-                                 compute::sglang_reference::provider()};
+      const std::array providers{
+          hyle::compute::ProviderBinding{compute::cublas::provider(), 100},
+          hyle::compute::ProviderBinding{compute::marlin::provider(), 200},
+          hyle::compute::ProviderBinding{compute::sglang_reference::provider(),
+                                         300}};
       context_ = take(
           compute::Context::create(take(cuda::device(0), "select CUDA device"),
                                    {.providers = providers}),

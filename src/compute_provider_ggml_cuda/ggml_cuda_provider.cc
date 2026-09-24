@@ -13,7 +13,7 @@
 #include <ggml-cuda.h>
 #include <ggml.h>
 
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 #include "metadata_arena.h"
 #include "native_bridge.h"
 #include "native_context.h"
@@ -25,12 +25,13 @@ namespace {
 inline constexpr std::string_view kProviderVersion =
     "456172ec+hyle-resource-v1";
 inline constexpr std::array kHardwarePredicates{
-    RouteAttributePredicate::number(route_attribute::kArchitectureMajor, 8),
-    RouteAttributePredicate::number(route_attribute::kArchitectureMinor, 9)};
-inline constexpr RouteRule kHardwareRule{.route = NativeRoute::kCuda,
-                                         .provider = kProviderId,
-                                         .provider_version = kProviderVersion,
-                                         .attributes = kHardwarePredicates};
+    RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
+    RouteFactPredicate::number(route_fact::kArchitectureMinor, 9)};
+inline constexpr RouteSelector kHardwareRule{
+    .route = NativeRoute::kCuda,
+    .provider = kProviderId,
+    .provider_version = kProviderVersion,
+    .environment = kHardwarePredicates};
 
 bool default_cublas_precision() noexcept {
 #if defined(_WIN32)
@@ -352,10 +353,10 @@ Status create_context(const Provider &provider, Device device, void *backend,
     const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
                                       .route = NativeRoute::kCuda,
                                       .provider = provider.identity(),
-                                      .attributes = facts.attributes};
+                                      .environment = facts.environment};
     *output = ::new (storage)
         Context{primary, native_device,
-                match_route_rule(kHardwareRule, route_input).matched(),
+                match_route_selector(kHardwareRule, route_input).matched(),
                 default_cublas_precision(),
                 detail::ProviderAccess::payload<Extension>(provider)};
     return Status::Ok();
@@ -511,7 +512,7 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
                       .repack_bytes = std::nullopt,
                       .synchronization_count = 2,
                       .dispatch_count = std::nullopt},
-             .profile_key = ProviderRouteKey{1}};
+             .implementation = ProviderImplementationId{1}};
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *context,

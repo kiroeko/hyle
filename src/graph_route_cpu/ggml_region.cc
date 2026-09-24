@@ -13,6 +13,10 @@ namespace hyle::graph::cpu::internal {
 namespace native = compute::ggml_cpu::internal;
 namespace {
 
+inline constexpr compute::RoutePolicyId kGgmlCpuRegionPolicy{
+    0x48594c4547474350ULL, 1, 1};
+inline constexpr std::uint32_t kGgmlCpuRegionPreference = 100;
+
 Result<std::size_t>
 matmul_repack_bytes(const Graph &graph,
                     std::span<const NodeId> nodes) noexcept {
@@ -121,7 +125,9 @@ Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
                   .dispatch_count = 1},
          .route = 1,
          .replay_class = compute::ProviderReplayClass::kPrepared,
-         .profile_key = compute::ProviderRouteKey{2}});
+         .implementation = compute::ProviderImplementationId{2},
+         .policy = kGgmlCpuRegionPolicy,
+         .preference = kGgmlCpuRegionPreference});
   };
   // An independent node between two related ggml nodes does not
   // break their region. The DAG contraction check, not insertion adjacency,

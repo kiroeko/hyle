@@ -186,12 +186,13 @@ TEST(GgmlCpuProvider, MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry) {
       storage.push_back(output_buffer(test.inputs[i]));
       ASSERT_TRUE(storage.back().view().write(test.payloads[i]).ok());
       inputs.push_back(
-          ConstTensorView::create(test.inputs[i], storage.back().view()).value());
+          ConstTensorView::create(test.inputs[i], storage.back().view())
+              .value());
     }
     auto output = output_buffer(test.output);
-    const auto status = execute(
-        context, test.operation, inputs,
-        TensorView::create(test.output, output.view()).value());
+    const auto status =
+        execute(context, test.operation, inputs,
+                TensorView::create(test.output, output.view()).value());
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<float>(output);
     ASSERT_EQ(actual.size(), test.expected.size());
@@ -873,8 +874,8 @@ TEST(GgmlCpuProvider, PersistentIndependentSlotsHonorExecutorAndClose) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   {
-    const std::array providers{
-        ggml_cpu::provider({.executor = ref, .native_threads = 2})};
+    const std::array providers{hyle::compute::ProviderBinding{
+        ggml_cpu::provider({.executor = ref, .native_threads = 2}), 100}};
     auto context =
         Context::create(cpu::device(), {.metadata_allocator = stats.get(),
                                         .providers = providers})
@@ -944,7 +945,8 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   {
     hyle::mem::QuotaAllocator quota(stats.get(), 0);
-    const std::array providers{ggml_cpu::provider()};
+    const std::array providers{
+        hyle::compute::ProviderBinding{ggml_cpu::provider(), 100}};
     auto denied =
         Context::create(cpu::device(), {.metadata_allocator = quota.get(),
                                         .providers = providers});
@@ -959,7 +961,8 @@ TEST(GgmlCpuProvider, InvocationAllocationFailureRollsBackAndCanRecover) {
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   hyle::mem::QuotaAllocator quota(stats.get(), 4 * 1024 * 1024);
   {
-    const std::array providers{ggml_cpu::provider({.native_threads = 2})};
+    const std::array providers{hyle::compute::ProviderBinding{
+        ggml_cpu::provider({.native_threads = 2}), 100}};
     auto context =
         Context::create(cpu::device(), {.metadata_allocator = quota.get(),
                                         .providers = providers})
@@ -1124,7 +1127,8 @@ TEST(GgmlCpuProvider, StandardScanReplaysWithoutAllocationsAndHonorsQuota) {
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   hyle::mem::QuotaAllocator quota(stats.get(), 1 << 20);
   {
-    const std::array providers{ggml_cpu::provider({.native_threads = 2})};
+    const std::array providers{hyle::compute::ProviderBinding{
+        ggml_cpu::provider({.native_threads = 2}), 100}};
     auto context =
         Context::create(cpu::device(), {.metadata_allocator = quota.get(),
                                         .providers = providers})

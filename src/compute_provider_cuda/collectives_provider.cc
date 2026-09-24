@@ -7,7 +7,7 @@
 #include <new>
 
 #include "collectives.h"
-#include "hyle/compute/route_rule.h"
+#include "hyle/compute/route_policy.h"
 #include "native_context.h"
 #include "provider_internal.h"
 
@@ -27,10 +27,10 @@ struct Invocation final {
 };
 
 inline constexpr std::array kQualificationPredicates{
-    RouteAttributePredicate::number(route_attribute::kArchitectureMajor, 8),
-    RouteAttributePredicate::number(route_attribute::kArchitectureMinor, 9),
-    RouteAttributePredicate::number(route_attribute::kRuntimeVersion, 13030),
-    RouteAttributePredicate::number(route_attribute::kToolkitVersion, 13030)};
+    RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
+    RouteFactPredicate::number(route_fact::kArchitectureMinor, 9),
+    RouteFactPredicate::number(route_fact::kRuntimeVersion, 13030),
+    RouteFactPredicate::number(route_fact::kToolkitVersion, 13030)};
 
 ProviderRuntimeProperties
 runtime(const collectives::Program &program) noexcept {
@@ -164,16 +164,16 @@ Status create_context(const Provider &provider, Device device, void *backend,
   if (!storage)
     return Status::ResourceExhausted("CCCL context allocation failed");
   const auto facts = cuda::detail::route_facts(*environment);
-  const RouteRule rule{.route = NativeRoute::kCuda,
-                       .provider = kCcclProviderId,
-                       .provider_version = "CCCL-300304",
-                       .attributes = kQualificationPredicates};
+  const RouteSelector rule{.route = NativeRoute::kCuda,
+                           .provider = kCcclProviderId,
+                           .provider_version = "CCCL-300304",
+                           .environment = kQualificationPredicates};
   const RouteMatchInput input{.platform = kBuildRoutePlatform,
                               .route = NativeRoute::kCuda,
                               .provider = provider.identity(),
-                              .attributes = facts.attributes};
-  *output =
-      ::new (storage) Context{primary, match_route_rule(rule, input).matched()};
+                              .environment = facts.environment};
+  *output = ::new (storage)
+      Context{primary, match_route_selector(rule, input).matched()};
   return Status::Ok();
 }
 void destroy_context(void *value, mem::AllocatorRef allocator) noexcept {
@@ -219,7 +219,7 @@ Status propose(void *value, const detail::ProviderOperationRequest &request,
                .repack_bytes = std::nullopt,
                .synchronization_count = properties.blocks_host ? 1u : 0u,
                .dispatch_count = std::nullopt},
-      .profile_key = ProviderRouteKey{1}};
+      .implementation = ProviderImplementationId{1}};
   return Status::Ok();
 }
 void destroy_prepared(void *value, mem::AllocatorRef allocator) noexcept {

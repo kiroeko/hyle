@@ -309,7 +309,9 @@ struct CompileStepReport final {
   // Provider-declared stable implementation identity, retained for diagnostics.
   // Unknown is not filled from the prepare token or provider instance. Graph
   // boundary copies have no Provider key. Nonzero is not timing qualification.
-  compute::ProviderRouteKey profile_key{};
+  compute::ProviderImplementationId implementation{};
+  compute::RoutePolicyId policy{};
+  std::uint32_t preference = 0;
 };
 
 struct CompileTargetReport final {
