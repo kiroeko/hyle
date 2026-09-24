@@ -23,6 +23,11 @@ inline constexpr std::size_t kWeightBytes = kHidden * kHidden * 2;
 inline constexpr std::size_t kExpectedBytes = kHidden * sizeof(float);
 inline constexpr std::int64_t kEmbeddingRows = 7;
 inline constexpr std::int64_t kMtpInput = 4096;
+inline constexpr std::int64_t kFfnHidden = 6144;
+inline constexpr std::int64_t kGdnHeads = 16;
+inline constexpr std::int64_t kGdnDepth = 128;
+inline constexpr std::int64_t kConvChannels = 6144;
+inline constexpr std::int64_t kConvKernel = 4;
 inline constexpr std::array<std::int32_t, kEmbeddingRows> kEmbeddingRowIds{
     0, 42, 151643, 151644, 151645, 248318, 248319};
 
@@ -46,6 +51,19 @@ struct MtpProjection final {
 struct AttentionNorms final {
   std::vector<std::byte> query;
   std::vector<std::byte> key;
+};
+
+struct Recurrent final {
+  std::vector<std::byte> convolution_weight;
+  std::array<float, kGdnHeads> log_decay;
+  std::vector<std::byte> time_bias;
+};
+
+struct Ffn final {
+  std::array<std::vector<std::byte>, 3> weights;
+  std::vector<std::byte> norm_scale;
+  std::array<std::vector<std::byte>, 2> activations;
+  std::array<std::vector<float>, 2> expected;
 };
 
 inline std::optional<std::filesystem::path> root() {
@@ -139,6 +157,53 @@ load_attention_norms(const std::filesystem::path &directory) {
       directory / "tensors" /
           "model_language_model_layers_3_self_attn_k_norm_weight.bin",
       256 * 2);
+  return result;
+}
+
+inline Recurrent load_recurrent(const std::filesystem::path &directory) {
+  Recurrent result;
+  result.convolution_weight = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_0_linear_attn_conv1d_weight.bin",
+      kConvChannels * kConvKernel * 2);
+  const auto decay = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_0_linear_attn_A_log.bin",
+      kGdnHeads * sizeof(float));
+  std::memcpy(result.log_decay.data(), decay.data(), decay.size());
+  result.time_bias = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_0_linear_attn_dt_bias.bin",
+      kGdnHeads * 2);
+  return result;
+}
+
+inline Ffn load_ffn(const std::filesystem::path &directory) {
+  Ffn result;
+  constexpr std::array names{
+      "model_language_model_layers_0_mlp_gate_proj_weight.bin",
+      "model_language_model_layers_0_mlp_up_proj_weight.bin",
+      "model_language_model_layers_0_mlp_down_proj_weight.bin"};
+  for (std::size_t i = 0; i < names.size(); ++i)
+    result.weights[i] = read_bytes(
+        directory / "tensors" / names[i], kHidden * kFfnHidden * 2);
+  result.norm_scale = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_0_input_layernorm_weight.bin",
+      kHidden * 2);
+  constexpr std::array seeds{5, 17};
+  for (std::size_t i = 0; i < seeds.size(); ++i) {
+    result.activations[i] = read_bytes(
+        directory / ("ffn_activation_seed" + std::to_string(seeds[i]) +
+                     "_1x2048.bf16"),
+        kHidden * 2);
+    const auto expected = read_bytes(
+        directory / ("ffn_expected_seed" + std::to_string(seeds[i]) +
+                     "_1x2048.f32"),
+        kExpectedBytes);
+    result.expected[i].resize(kHidden);
+    std::memcpy(result.expected[i].data(), expected.data(), expected.size());
+  }
   return result;
 }
 

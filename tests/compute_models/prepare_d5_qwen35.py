@@ -23,6 +23,9 @@ TENSORS = (
     "model.language_model.layers.0.linear_attn.conv1d.weight",
     "model.language_model.layers.0.linear_attn.dt_bias",
     "model.language_model.layers.0.linear_attn.out_proj.weight",
+    "model.language_model.layers.0.mlp.down_proj.weight",
+    "model.language_model.layers.0.mlp.gate_proj.weight",
+    "model.language_model.layers.0.mlp.up_proj.weight",
     "model.language_model.layers.3.self_attn.k_norm.weight",
     "model.language_model.layers.3.self_attn.q_norm.weight",
     "model.language_model.layers.3.self_attn.q_proj.weight",
@@ -173,6 +176,50 @@ def extract(model_dir: Path, output: Path) -> dict:
             "expected_sha256": sha256(expected_file),
         })
 
+    def load_bf16_tensor(name: str, shape: tuple[int, ...]):
+        record = next(item for item in records if item["name"] == name)
+        if record["dtype"] != "BF16" or record["shape"] != list(shape):
+            raise ValueError(f"Qwen tensor anchor changed: {name}")
+        raw = np.fromfile(output / record["file"], dtype="<u2").reshape(shape)
+        return (raw.astype(np.uint32) << 16).view(np.float32)
+
+    gate_weight = load_bf16_tensor(
+        "model.language_model.layers.0.mlp.gate_proj.weight", (6144, 2048))
+    up_weight = load_bf16_tensor(
+        "model.language_model.layers.0.mlp.up_proj.weight", (6144, 2048))
+    down_weight = load_bf16_tensor(
+        "model.language_model.layers.0.mlp.down_proj.weight", (2048, 6144))
+    norm_scale = load_bf16_tensor(
+        "model.language_model.layers.0.input_layernorm.weight", (2048,))
+    ffn_oracles = []
+    for seed in (5, 17):
+        source = np.array(
+            [((index * 19 + seed * 11) % 149 - 74) / 512.0
+             for index in range(2048)], dtype=np.float32)
+        bits = source.view(np.uint32)
+        rounding = ((bits >> 16) & 1) + np.uint32(0x7FFF)
+        activation_bits = ((bits + rounding) >> 16).astype("<u2")
+        activation = (activation_bits.astype(np.uint32) << 16).view(np.float32)
+        normalized = activation * (
+            np.float32(1.0) /
+            np.sqrt(np.mean(activation * activation, dtype=np.float32) +
+                    np.float32(1.0e-5))) * norm_scale
+        gate = gate_weight @ normalized
+        up = up_weight @ normalized
+        gated = (gate / (np.float32(1.0) + np.exp(-gate))) * up
+        ffn_expected = (down_weight @ gated).astype("<f4")
+        activation_file = output / f"ffn_activation_seed{seed}_1x2048.bf16"
+        expected_file = output / f"ffn_expected_seed{seed}_1x2048.f32"
+        activation_bits.tofile(activation_file)
+        ffn_expected.tofile(expected_file)
+        ffn_oracles.append({
+            "seed": seed,
+            "activation": activation_file.name,
+            "activation_sha256": sha256(activation_file),
+            "expected": expected_file.name,
+            "expected_sha256": sha256(expected_file),
+        })
+
     receipt = {
         "schema_version": 1,
         "kind": "d5-bounded-real-checkpoint-fixture",
@@ -205,6 +252,7 @@ def extract(model_dir: Path, output: Path) -> dict:
             "accumulation": "NumPy float32 matrix-vector product after exact BF16 decode",
         },
         "mtp_oracles": mtp_oracles,
+        "ffn_oracles": ffn_oracles,
     }
     receipt_path = output / "receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
