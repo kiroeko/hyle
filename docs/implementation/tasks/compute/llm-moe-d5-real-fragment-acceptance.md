@@ -66,6 +66,25 @@ block/group 与逐 tensor role 的混合格式。官方与 GGUF 是不同 profil
 以上六项是 D5 全部动作。A2-A4 属于测试消费者和证据；若它们揭示产品缺陷，先停止并重开精确 owner，
 不得在测试内实现 fallback 或新数学。
 
+### D5-F1：CUDA BF16 dense projection 有界修复
+
+本地 Qwen3.5-2B 的首个真实 R03 片段暴露了一个此前合成测试没有覆盖的产品缺陷：默认 CUDA 路线的
+`cuBLASLt` Provider 只接纳 FP16/FP32，`ggml CUDA` 又按既定分工把普通 rank-2 dense MatMul 留给
+`cuBLASLt`，所以合法的 BF16 `[1,2048] × [2048,2048]` 在 prepare 阶段被全部成熟 Provider 拒绝，
+最终只显示末位 tensor Provider 的 unsupported 原因。
+
+本缺陷把 `compute_provider_cublas` 从既有 CLOSED 精确重开为 SCOPED；审计后固定的 FIX 只有：
+
+1. 让现有 cuBLASLt adapter 接纳 plain rank-2 BF16 row/column-major 输入和 dense 输出，以
+   `CUDA_R_16BF` 存储、FP32 accumulation 运行；不新增 HYLE kernel、fallback 或热路径搜索；
+2. 在 Provider 测试中覆盖 BF16 行/列布局、两条独立 invocation 和变化输入；
+3. 让真实 Qwen R03 的普通 CUDA Direct/Graph 入口绑定 `cublasLt`，完成两次 submit 和独立 oracle；
+4. 按 selector 运行 `compute_provider_cublas`、`compute_route_cuda`、`graph_route_cuda` 及公共检查。
+
+除 BF16 数据类型映射、相应合同文字和上述测试外，不改变 cuBLASLt 算法选择、workspace、路由优先级、
+其它 Provider 或任何算子域。若 CUDA 13.3 heuristic 对该真实形状仍拒绝，则记录精确 backend rejection，
+不在 D5 内扩大实现。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、
