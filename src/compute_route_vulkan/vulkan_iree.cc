@@ -110,13 +110,13 @@ void fail_sequence(Run &run, const Status &status) noexcept {
 } // namespace
 
 bool named_compressed_storage(const TensorDesc &description) noexcept {
+  if (gguf_quantized_type(description.storage_format()))
+    return true;
   if (description.rank() != 2)
     return false;
   if (float8_mode(description, false) || float8_mode(description, true))
     return true;
-  auto expected = mxfp4_weight_description(description.dimensions()[0],
-                                           description.dimensions()[1]);
-  return expected && *expected == description;
+  return false;
 }
 
 bool iree_precision_supported(const Device &device,

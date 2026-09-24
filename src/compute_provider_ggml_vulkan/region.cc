@@ -11,48 +11,9 @@
 #include "ggml.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
-#include "hyle/compute/route_policy.h"
 
 namespace hyle::compute::ggml_vulkan::detail {
 namespace {
-inline constexpr std::array kMxfp4TensorPorts{
-    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
-                         .index = 0,
-                         .storage_kind = RouteStorageKind::kBlocked,
-                         .storage_format = kMxfp4Weight,
-                         .minimum_rank = 2,
-                         .maximum_rank = 2}};
-inline constexpr RouteSelector kMxfp4TensorRule{.route = NativeRoute::kVulkan,
-                                                .ports = kMxfp4TensorPorts};
-inline constexpr std::array kMxfp4MatMulFacts{
-    RouteFactPredicate::number(operation_route_fact::kAccumulationDataType,
-                               static_cast<std::uint64_t>(DataType::kFloat32))};
-inline constexpr std::array kMxfp4MatMulPorts{
-    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
-                         .index = 0,
-                         .data_type = DataType::kFloat16,
-                         .storage_kind = RouteStorageKind::kPlain,
-                         .minimum_rank = 2,
-                         .maximum_rank = 2},
-    RouteTensorPredicate{.direction = RoutePortDirection::kInput,
-                         .index = 1,
-                         .data_type = DataType::kFloat16,
-                         .storage_kind = RouteStorageKind::kBlocked,
-                         .storage_format = kMxfp4Weight,
-                         .minimum_rank = 2,
-                         .maximum_rank = 2},
-    RouteTensorPredicate{.direction = RoutePortDirection::kOutput,
-                         .index = 0,
-                         .data_type = DataType::kFloat16,
-                         .storage_kind = RouteStorageKind::kPlain,
-                         .minimum_rank = 2,
-                         .maximum_rank = 2}};
-inline constexpr RouteSelector kMxfp4MatMulRule{
-    .route = NativeRoute::kVulkan,
-    .operation = OperationKind::kMatMul,
-    .operation_facts = kMxfp4MatMulFacts,
-    .ports = kMxfp4MatMulPorts};
-
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -64,21 +25,62 @@ ggml_type native_type(DataType type) noexcept {
     return GGML_TYPE_BF16;
   return type == DataType::kInt32 ? GGML_TYPE_I32 : GGML_TYPE_F32;
 }
-bool mxfp4_domain(const TensorDesc &description) noexcept {
-  const std::array inputs{description};
-  const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
-                                    .route = NativeRoute::kVulkan,
-                                    .inputs = inputs};
-  if (description.rank() != 2 ||
-      !match_route_selector(kMxfp4TensorRule, route_input).matched())
+ggml_type native_quantized_type(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type)
+    return GGML_TYPE_COUNT;
+  switch (*type) {
+  case GgufQuantizedType::kQ3K:
+    return GGML_TYPE_Q3_K;
+  case GgufQuantizedType::kQ4K:
+    return GGML_TYPE_Q4_K;
+  case GgufQuantizedType::kQ5K:
+    return GGML_TYPE_Q5_K;
+  case GgufQuantizedType::kQ6K:
+    return GGML_TYPE_Q6_K;
+  case GgufQuantizedType::kQ8_0:
+    return GGML_TYPE_Q8_0;
+  case GgufQuantizedType::kIq3Xxs:
+    return GGML_TYPE_IQ3_XXS;
+  case GgufQuantizedType::kIq3S:
+    return GGML_TYPE_IQ3_S;
+  case GgufQuantizedType::kIq4Nl:
+    return GGML_TYPE_IQ4_NL;
+  case GgufQuantizedType::kIq4Xs:
+    return GGML_TYPE_IQ4_XS;
+  case GgufQuantizedType::kMxfp4:
+    return GGML_TYPE_MXFP4;
+  }
+  return GGML_TYPE_COUNT;
+}
+bool native_quantized(const TensorDesc &description) noexcept {
+  return native_quantized_type(description) != GGML_TYPE_COUNT;
+}
+bool quantized_weight_domain(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type || description.rank() != 2 ||
+      (description.data_type() != DataType::kFloat32 &&
+       description.data_type() != DataType::kFloat16))
     return false;
-  const auto canonical = mxfp4_weight_description(description.dimensions()[0],
-                                                  description.dimensions()[1]);
+  const auto canonical = gguf_weight_description(*type, description.data_type(),
+                                                 description.dimensions()[0],
+                                                 description.dimensions()[1]);
+  return canonical && *canonical == description;
+}
+bool quantized_grouped_weight_domain(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type || description.rank() != 3 ||
+      description.data_type() != DataType::kFloat32)
+    return false;
+  const auto shape = description.dimensions();
+  const auto canonical = gguf_grouped_weight_description(
+      *type, description.data_type(), shape[0], shape[1], shape[2]);
   return canonical && *canonical == description;
 }
 bool tensor_domain(const TensorDesc &description) noexcept {
   return description.valid() &&
-         (mxfp4_domain(description) ||
+         (quantized_weight_domain(description) ||
+          quantized_grouped_weight_domain(description) ||
           (description.is_plain() && description.is_dense() &&
            (floating(description.data_type()) ||
             description.data_type() == DataType::kInt32))) &&
@@ -104,6 +106,25 @@ native_shape(const TensorDesc &description) noexcept {
         static_cast<std::int64_t>(*description.element_count()) / shape[0];
   }
   return shape;
+}
+ggml_tensor *native_tensor(ggml_context *context,
+                           const TensorDesc &description) noexcept {
+  auto shape = native_shape(description);
+  if (native_quantized(description)) {
+    const auto blocked = description.block_axis();
+    if (!blocked || description.rank() > GGML_MAX_DIMS)
+      return nullptr;
+    shape.fill(1);
+    shape[0] = description.dimensions()[*blocked];
+    std::size_t target = 1;
+    for (std::size_t axis = description.rank(); axis-- > 0;)
+      if (axis != *blocked)
+        shape[target++] = description.dimensions()[axis];
+    return ggml_new_tensor(context, native_quantized_type(description),
+                           static_cast<int>(description.rank()), shape.data());
+  }
+  return ggml_new_tensor(context, native_type(description.data_type()),
+                         GGML_MAX_DIMS, shape.data());
 }
 ggml_tensor *restore_shape(ggml_context *context, ggml_tensor *value,
                            const TensorDesc &description) {
@@ -261,11 +282,14 @@ bool region_supports(const Operation &operation,
       !std::ranges::all_of(outputs, tensor_domain) ||
       !std::ranges::all_of(inputs, tensor_domain))
     return false;
+  const bool grouped =
+      operation.custom_as<model_ops::GroupedMatMul>().has_value();
   if (!operation.get_if<MatMul>() &&
-      (!std::ranges::all_of(
-           inputs, [](const auto &input) { return input.is_plain(); }) ||
-       !std::ranges::all_of(
-           outputs, [](const auto &output) { return output.is_plain(); })))
+      !grouped && (!std::ranges::all_of(inputs, [](const auto &input) {
+        return input.is_plain();
+      }) || !std::ranges::all_of(outputs, [](const auto &output) {
+        return output.is_plain();
+      })))
     return false;
   if (operation.get_if<Copy>())
     return inputs.size() == 1 && outputs.size() == 1 &&
@@ -286,8 +310,27 @@ bool region_supports(const Operation &operation,
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32 &&
            outputs[0].data_type() == DataType::kFloat32;
-  if (operation.custom_as<model_ops::GroupedMatMul>() ||
-      operation.custom_as<model_ops::HyperConnectionCombine>() ||
+  if (grouped) {
+    if (inputs.size() != 3 || outputs.size() != 1)
+      return false;
+    if (quantized_grouped_weight_domain(inputs[0]))
+      return inputs[1].is_plain() && inputs[1].is_dense() &&
+             inputs[1].data_type() == DataType::kFloat32 &&
+             inputs[2].is_plain() && inputs[2].is_dense() &&
+             inputs[2].data_type() == DataType::kInt32 &&
+             outputs[0].is_plain() && outputs[0].is_dense() &&
+             outputs[0].data_type() == DataType::kFloat32;
+    return std::ranges::all_of(
+               inputs,
+               [](const auto &description) {
+                 return description.is_plain() && description.is_dense() &&
+                        (description.data_type() == DataType::kFloat32 ||
+                         description.data_type() == DataType::kInt32);
+               }) &&
+           outputs[0].is_plain() &&
+           outputs[0].data_type() == DataType::kFloat32;
+  }
+  if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
     return outputs.size() == 1 &&
@@ -309,17 +352,16 @@ bool region_supports(const Operation &operation,
            inputs[3].data_type() == DataType::kFloat16 &&
            outputs[0].data_type() == DataType::kFloat32;
   if (const auto *matmul = operation.get_if<MatMul>()) {
-    const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
-                                      .route = NativeRoute::kVulkan,
-                                      .operation = operation,
-                                      .inputs = inputs,
-                                      .outputs = outputs};
-    if (match_route_selector(kMxfp4MatMulRule, route_input).matched())
+    if (inputs.size() == 2 && quantized_weight_domain(inputs[1]))
       return inputs.size() == 2 && outputs.size() == 1 &&
              matmul->accumulation_type == DataType::kFloat32 &&
              inputs[0].rank() == 2 && inputs[0].is_plain() &&
-             mxfp4_domain(inputs[1]) && outputs[0].rank() == 2 &&
-             outputs[0].is_plain();
+             inputs[0].is_dense() && outputs[0].rank() == 2 &&
+             outputs[0].is_plain() && outputs[0].is_dense() &&
+             inputs[0].data_type() == inputs[1].data_type() &&
+             outputs[0].data_type() == inputs[0].data_type() &&
+             (inputs[0].data_type() == DataType::kFloat32 ||
+              inputs[0].data_type() == DataType::kFloat16);
     if (inputs.size() != 2 || outputs.size() != 1 ||
         matmul->accumulation_type != DataType::kFloat32 ||
         inputs[0].rank() < 2 || inputs[0].rank() > GGML_MAX_DIMS ||
@@ -573,17 +615,10 @@ Result<Region> Region::create(NativeDevice device,
     std::vector<ggml_tensor *> tensors(recipe.values.size());
     for (const auto input : recipe.inputs) {
       const auto &description = recipe.values[input];
-      auto shape = native_shape(description);
-      const bool mxfp4 = mxfp4_domain(description);
-      if (mxfp4) {
-        // Public [K,N] describes physical rows [N,K]; ggml puts K first.
-        shape[0] = description.dimensions()[0];
-        shape[1] = description.dimensions()[1];
-      }
-      tensors[input] = ggml_new_tensor(
-          context,
-          mxfp4 ? GGML_TYPE_MXFP4 : native_type(description.data_type()),
-          GGML_MAX_DIMS, shape.data());
+      tensors[input] = native_tensor(context, description);
+      if (tensors[input] == nullptr)
+        return std::unexpected(
+            Status::Unimplemented("ggml Vulkan input tensor description"));
       ggml_set_input(tensors[input]);
       state.ports.push_back(tensors[input]);
     }
@@ -655,8 +690,9 @@ Result<Region> Region::create(NativeDevice device,
                                         arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>()) {
         auto *right = arguments[1];
-        const bool mxfp4 = mxfp4_domain(recipe.values[node.inputs[1]]);
-        if (!mxfp4) {
+        const bool quantized =
+            quantized_weight_domain(recipe.values[node.inputs[1]]);
+        if (!quantized) {
           right = ggml_transpose(context, right);
           if (!ggml_is_contiguous(right))
             right = ggml_cont(context, right);
@@ -1043,7 +1079,7 @@ Region::validate(std::span<const RegionBinding> bindings) const noexcept {
         ggml_backend_buffer_get_base(state_->imports->buffers[i]));
     if (port.handle == VK_NULL_HANDLE || !port.owner ||
         port.offset % sizeof(float) ||
-        (state_->ports[i]->type == GGML_TYPE_MXFP4 &&
+        (ggml_is_quantized(state_->ports[i]->type) &&
          port.offset % state_->device.native().storage_buffer_alignment) ||
         port.capacity < ggml_nbytes(state_->ports[i]) ||
         port.offset > SIZE_MAX - port.capacity ||

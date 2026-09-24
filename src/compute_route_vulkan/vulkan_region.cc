@@ -106,7 +106,8 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   if (!promote_bfloat && step.operation.get_if<MatMul>() && input_count == 2 &&
       inputs[0].rank() == 2 && inputs[1].rank() == 2 &&
       inputs[0].data_type() == DataType::kFloat32 &&
-      inputs[1].data_type() == DataType::kFloat32)
+      inputs[1].data_type() == DataType::kFloat32 && inputs[0].is_plain() &&
+      inputs[1].is_plain())
     return false;
   if (const auto *softmax = step.operation.get_if<Softmax>();
       softmax && softmax->mask == MaskKind::kAdditive && input_count == 2 &&
@@ -150,8 +151,8 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     return false;
   if (step.operation.get_if<MatMul>()) {
     const auto &limits = program.runtime->device->properties.limits;
-    const auto rows = static_cast<std::uint64_t>(
-        *inputs[0].element_count() / inputs[0].dimensions().back());
+    const auto rows = static_cast<std::uint64_t>(*inputs[0].element_count() /
+                                                 inputs[0].dimensions().back());
     const auto columns =
         static_cast<std::uint64_t>(inputs[1].dimensions().back());
     // Original matmul may choose up to eight split-K pieces. Bound both its
@@ -357,10 +358,9 @@ bool mature_scatter_add_operation(const ProgramState &program,
   const auto inner_outer = *base.element_count() / extent;
   const auto &device = *program.runtime->device;
   const auto &limits = device.properties.limits;
-  const auto maximum =
-      (std::min)(std::uint64_t{INT32_MAX},
-                 static_cast<std::uint64_t>(limits.maxStorageBufferRange) /
-                     sizeof(float));
+  const auto maximum = (std::min)(
+      std::uint64_t{INT32_MAX},
+      static_cast<std::uint64_t>(limits.maxStorageBufferRange) / sizeof(float));
   if (extent > INT32_MAX || count > INT32_MAX || inner_outer > INT32_MAX ||
       *base.element_count() > maximum || *updates.element_count() > maximum ||
       *output.element_count() > maximum || count > maximum ||

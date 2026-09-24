@@ -39,7 +39,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
           "Fixed managed ggml dense floating Copy/Cast, F32 Concat, rank0..8 "
           "broadcast/"
           "norm/gate/pointwise and selected-axis Sum/Mean, TopK/recurrent and "
-          "MXFP4 regions, "
+          "native GGUF Q3_K/Q4_K/Q5_K/Q6_K/Q8_0/IQ3_XXS/IQ3_S/IQ4_NL/"
+          "IQ4_XS/MXFP4 MatMul and GroupedMatMul regions, "
           "original IREE checked I32 Scan/FP8/BF16 conversion regions, and "
           "native tensor "
           "shaders plus cold custom "
@@ -50,7 +51,9 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
           "I32/I64/Bool exact storage operations; "
           "original recurrent F32 equal heads D16/32/64/128 with explicit "
           "state; "
-          "MXFP4 weights with F16 activation/output and F32 accumulation; "
+          "exact GGUF packed weights including MXFP4 with matching F32/F16 "
+          "MatMul storage or "
+          "F32 GroupedMatMul activation/output and F32 accumulation; "
           "named FP8 inputs with F32 region workspace/output; I32 Scan checks "
           "every prefix and final total; "
           "custom nodes retain their declared schema contract";
@@ -143,10 +146,11 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       const bool mature_custom =
           node->operation.custom_as<compute::model_ops::CausalConv1d>() ||
           node->operation.custom_as<compute::model_ops::GroupedMatMul>() ||
-          node->operation.custom_as<
-              compute::model_ops::HyperConnectionCombine>() ||
+          node->operation
+              .custom_as<compute::model_ops::HyperConnectionCombine>() ||
           node->operation.custom_as<compute::model_ops::HyperConnectionPre>() ||
-          node->operation.custom_as<compute::model_ops::HyperConnectionPost>() ||
+          node->operation
+              .custom_as<compute::model_ops::HyperConnectionPost>() ||
           node->operation.custom_as<compute::model_ops::LightningIndexer>();
       if (node->operation.kind() == compute::OperationKind::kCustom &&
           !mature_custom) {

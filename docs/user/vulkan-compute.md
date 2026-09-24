@@ -22,8 +22,8 @@ HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph �
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
 当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 已接入原版递归片段、
-MXFP4/FP8 MatMul 和 checked I32 Scan；新增纵切已通过 Windows/Air 普通 Direct/Graph、资源/失败
-与 source/static/shared 交付。验收限下述适用域，完整模型覆盖按 M2/M3 推进。
+FP8 MatMul 和 checked I32 Scan；M3-D3 又接入十种原生 GGUF packed MatMul/GroupedMatMul。
+各纵切的验收限下述适用域，完整模型片段与性能优选仍按 M3 后续阶段推进。
 IREE C runtime 与锁定的参数化程序由同一个 factor 交付；使用二进制 SDK 不需要 Python、MLIR
 或运行编译器。源码构建中的 Python 只用于核对和准备锁定资源。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
@@ -94,14 +94,23 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 
 - 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
   MatMul 保持已有设备/shape 性能资格。
-- 二维 MXFP4 weight MatMul：`<hyle/compute/low_precision.h>` 的
-  `mxfp4_weight_description(k, n)` 描述逻辑 `[K,N]`、物理 `[N,K]` 的32值/17字节块，
-  K须为32的倍数；activation为dense F16，F32累加后输出F16。普通
-  `vk::prepare(context, c::MatMul{}, activation_desc, weight_tensor)` 捕获已上传的压缩权重，
-  Graph使用同一描述和MatMul。初始域要求正尺寸、设备buffer/grid限制及保守split-K暂存上限。
-  原版ggml承担计算和输出Cast；动态activation的对齐Copy、F32暂存及原厂编码计入实际成本。
-  压缩权重不经逻辑F16 Copy；借用端口起点必须满足设备descriptor对齐，非法View在绑定时拒绝。
-  Windows/Air普通入口、重复消费和三交付已通过；本轮为P0成本验证，尚无新P1性能结论。
+- 二维 GGUF packed weight MatMul：`<hyle/compute/low_precision.h>` 的
+  `gguf_weight_description(type, logical_type, k, n)` 接受 Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、
+  IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS 和 MXFP4，描述逻辑 `[K,N]`、原生 ggml `[N,K]`。
+  payload 必须已是对应 GGUF/ggml block bytes；HYLE 不加载模型、不量化，也不在准备或执行时
+  解码/重打包。`logical_type` 可为 F32 或 F16，activation/output 使用相同类型并以 F32 累加。
+  普通 `vk::prepare(context, c::MatMul{}, activation_desc, weight_tensor)` 捕获已上传权重；传
+  `weight_desc` 则每次在 `bind(activation, weight)` 中绑定。Graph 使用同一描述与普通 MatMul。
+  准备期按设备能力、buffer/grid 限制和 ggml Vulkan 原生支持固定 region；submit 不再选格式或
+  Provider。原版 ggml 承担 `MUL_MAT` 与必要输出 Cast，全部内部 workspace/dispatch 均计入成本。
+- MoE grouped packed weight 使用
+  `gguf_grouped_weight_description(type, DataType::kFloat32, experts, n, k)` 描述 `[E,N,K]`，并通过
+  `model_ops::grouped_matmul()` 接受 weights `[E,N,K]`、activation `[T,S,K]`、I32 expert ids
+  `[T,S]`，输出 `[T,S,N]`。十种格式都可表达；M3-D3 的实际 grouped 数值验收使用 IQ4_XS，
+  由原版 ggml Vulkan `MUL_MAT_ID` 执行。Direct 和 Graph 均保持这一自然端口顺序。
+  packed 权重端口必须满足设备 storage-buffer alignment、精确容量和 canonical block/stride；
+  错格式、错端口或不足容量在 prepare/bind 阶段失败。Windows RTX 已完成十格式 MatMul、
+  IQ4_XS grouped、重复消费和 Direct/Graph 正确性；本轮为 P0 接缝验证，尚无新 P1 性能结论。
 - F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
 - 同三浮点类型的 Reduce Sum/Mean/Min/Max（任意合法轴集合/keepdim）和 Softmax/LogSoftmax
