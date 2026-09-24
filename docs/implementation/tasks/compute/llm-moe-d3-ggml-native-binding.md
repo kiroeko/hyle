@@ -1,6 +1,6 @@
 # M3-D3：ggml native storage 与 CPU/CUDA 批量接缝
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -23,3 +23,22 @@
 
 本卡只对 CPU/CUDA 的共同接缝定界。下一步审计物理 block ABI、现有 MatMul/GroupedMatMul shape
 翻译、provider resource import 和 Graph recipe 复用，然后固定有限 FIX；在 `AUDITED` 前不改产品。
+
+## AUDITED
+
+固定 ggml 物理 ABI 与现有 lowering 后，有限 FIX 为：
+
+1. `compute_ops/low_precision` 增加 Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、IQ3_XXS、IQ3_S、
+   IQ4_NL、IQ4_XS 的版本化格式 ID，以及 rank-2 `[K,N]` 和 grouped `[E,N,K]` checked descriptor；
+   block 大小直接固定自 ggml/GGUF ABI，函数只描述已有字节，不量化数据。
+2. CPU/CUDA adapter 以格式 ID 映射 `ggml_type`，只在 MatMul RHS 或 GroupedMatMul weight 端接受；
+   native K 轴成为 ggml `ne0`，不对压缩权重做 `transpose + cont`，其它 operation 继续拒绝量化 storage。
+3. CPU Direct 接受成熟 ggml quant `MUL_MAT` 的精确 F32/F16/BF16 activation 域；CUDA Direct 允许
+   rank-2 quant MatMul。真正 capability 仍由 `ggml_backend_supports_op`/prepare 返回决定。
+4. Graph 复用同一 recipe/compile，不新建逐 kernel Graph adapter；增加普通 Direct/Graph 的 Q4_K、
+   Q8_0、IQ4_XS、MXFP4 代表片段，两次 submit，并检查错误格式在准备期拒绝。
+5. 只运行 selector 选出的 `compute_ops`、ggml CPU/CUDA、对应 Graph/route consumer；候选稳定后再做
+   source/static/shared 与适用 P1。本批不修改任何上游 kernel、自研 kernel 或 Marlin。
+
+以上是本卡全部产品改动。若 grouped schema 或 native resource 无法在该集合内表达，退回主卡重新
+定界；不能增加 decoder 或相近格式 fallback。

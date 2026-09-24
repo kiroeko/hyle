@@ -374,9 +374,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 SCOPED：按真实 GGUF K/IQ/Q8/MXFP4 物理格式重开 ggml CPU/CUDA Direct/Graph 接缝；先审计并固定有限 FIX。"
+      "summary": "M3-D3 AUDITED：ggml/GGUF 九种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
     },
     {
       "module": "graph_provider_onednn",
@@ -578,15 +578,15 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 SCOPED：按真实 GGUF K/IQ/Q8/MXFP4 物理格式重开 ggml CPU/CUDA Direct/Graph 接缝；先审计并固定有限 FIX。"
+      "summary": "M3-D3 AUDITED：ggml/GGUF 九种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 SCOPED：按真实 GGUF K/IQ/Q8/MXFP4 物理格式重开 ggml CPU/CUDA Direct/Graph 接缝；先审计并固定有限 FIX。"
+      "summary": "M3-D3 AUDITED：ggml/GGUF 九种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
     },
     {
       "module": "compute_provider_flashinfer",
