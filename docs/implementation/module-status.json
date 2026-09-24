@@ -513,15 +513,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 SCOPED：真实 Qwen3.5 Q6_K embedding 证明 Apple 普通 Direct 的 GGUF carrier 尚未进入既有 ggml Metal region；重新定界同一 checked Gather 纵切。"
+      "summary": "M3-D5-F8 AUDITED：Apple 普通 Direct 的 GGUF embedding carrier 尚未进入既有 ggml Metal region；只补精确 Q4_K/Q6_K/Q8_0 checked Gather 绑定，自研数学继续冻结。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 SCOPED：真实 Qwen3.5 Q6_K embedding 证明 Apple Graph 的 GGUF constant 尚未切成既有 ggml Metal region；重新定界同一 checked Gather 纵切。"
+      "summary": "M3-D5-F8 AUDITED：Apple Graph 的 GGUF embedding constant 尚未切成既有 ggml Metal region；只补精确 Q4_K/Q6_K/Q8_0 checked Gather 绑定，自研数学继续冻结。"
     },
     {
       "module": "compute_route_vulkan",
