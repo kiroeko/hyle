@@ -3,6 +3,11 @@
 #include "../compute_provider_ggml_cuda/tensor_test_support.h"
 #include "../compute_provider_ggml_cuda/test_support.h"
 #include "hyle/compute/cuda.h"
+#include "hyle/compute/low_precision.h"
+#include <ggml.h>
+
+#include <algorithm>
+#include <vector>
 
 TEST(CudaDefault, OriginalCcclThroughOrdinaryDirectEntry) {
   auto context = hyle::compute::cuda::create_context().value();
@@ -19,6 +24,62 @@ TEST(CudaDefault, OriginalCcclThroughOrdinaryDirectEntry) {
 TEST(CudaDefault, OriginalGgmlThroughOrdinaryDirectEntry) {
   auto context = hyle::compute::cuda::create_context().value();
   ggml_cuda_test::exercise_direct(context);
+}
+
+TEST(CudaDefault, NativeQ8UsesOrdinaryDirectRouteAndReplays) {
+  using namespace hyle::compute;
+  constexpr std::int64_t reduction = 32;
+  constexpr std::int64_t columns = 2;
+  const auto left_desc =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array{std::int64_t{1}, reduction})
+          .value();
+  const auto right_desc = gguf_weight_description(
+      GgufQuantizedType::kQ8_0, DataType::kFloat32, reduction, columns);
+  ASSERT_TRUE(right_desc) << right_desc.error().message();
+  const auto output_desc =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array{std::int64_t{1}, columns})
+          .value();
+  std::vector<float> left_values(static_cast<std::size_t>(reduction), 0.25F);
+  std::vector<float> unpacked(static_cast<std::size_t>(reduction * columns));
+  std::fill_n(unpacked.begin(), reduction, 1.0F);
+  std::fill_n(unpacked.begin() + reduction, reduction, -2.0F);
+  std::vector<std::byte> packed(*right_desc->required_bytes());
+  ASSERT_EQ(ggml_quantize_chunk(GGML_TYPE_Q8_0, unpacked.data(), packed.data(),
+                                0, columns, reduction, nullptr),
+            packed.size());
+
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto left = ggml_cuda_tensor_test::upload<float>(memory.ref(), left_values);
+  auto right = ggml_cuda_tensor_test::upload<std::byte>(memory.ref(), packed);
+  auto output = ggml_cuda_tensor_test::output_buffer(memory.ref(), output_desc);
+  const std::array inputs{
+      ConstTensorView::create(left_desc, left.view()).value(),
+      ConstTensorView::create(*right_desc, right.view()).value()};
+  auto output_view = TensorView::create(output_desc, output.view()).value();
+  auto prepared =
+      prepare(context, Operation(MatMul{}), inputs, std::span(&output_view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = context.create_queue().value();
+  for (int repeat = 1; repeat <= 2; ++repeat) {
+    auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
+    ASSERT_EQ(actual.size(), 2U);
+    EXPECT_NEAR(actual[0], 8.0F * repeat, 0.1F);
+    EXPECT_NEAR(actual[1], -16.0F * repeat, 0.1F);
+    if (repeat == 1) {
+      std::fill(left_values.begin(), left_values.end(), 0.5F);
+      ASSERT_TRUE(
+          left.view().write(std::as_bytes(std::span(left_values))).ok());
+    }
+  }
 }
 
 TEST(CudaDefault, OriginalTensorBatchThroughOrdinaryDirectEntry) {

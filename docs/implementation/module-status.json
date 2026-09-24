@@ -376,7 +376,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 AUDITED：ggml/GGUF 九种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
+      "summary": "M3-D3 AUDITED：ggml/GGUF 十种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
     },
     {
       "module": "graph_provider_onednn",
@@ -580,13 +580,13 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 AUDITED：ggml/GGUF 九种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
+      "summary": "M3-D3 AUDITED：ggml/GGUF 十种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 AUDITED：ggml/GGUF 九种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
+      "summary": "M3-D3 AUDITED：ggml/GGUF 十种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
     },
     {
       "module": "compute_provider_flashinfer",

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
@@ -66,6 +67,55 @@ TEST(ComputeOpsLowPrecision, Mxfp4BlockAxisFollowsLogicalK) {
   EXPECT_EQ(output->dimensions()[1], 5);
 }
 
+TEST(ComputeOpsLowPrecision, GgufCatalogPreservesExactNativeBlocks) {
+  struct Case final {
+    GgufQuantizedType type;
+    StorageFormatId id;
+    std::size_t bytes;
+  };
+  constexpr std::array cases{Case{GgufQuantizedType::kQ3K, kGgufQ3K, 110},
+                             Case{GgufQuantizedType::kQ4K, kGgufQ4K, 144},
+                             Case{GgufQuantizedType::kQ5K, kGgufQ5K, 176},
+                             Case{GgufQuantizedType::kQ6K, kGgufQ6K, 210},
+                             Case{GgufQuantizedType::kIq3Xxs, kGgufIq3Xxs, 98},
+                             Case{GgufQuantizedType::kIq3S, kGgufIq3S, 110},
+                             Case{GgufQuantizedType::kIq4Xs, kGgufIq4Xs, 136}};
+  for (const auto &[type, id, bytes] : cases) {
+    const auto weight =
+        gguf_weight_description(type, DataType::kFloat32, 256, 3);
+    ASSERT_TRUE(weight);
+    EXPECT_EQ(weight->storage_format().id(), id);
+    EXPECT_EQ(*weight->required_bytes(), bytes * 3);
+    EXPECT_EQ(gguf_quantized_type(id), type);
+    EXPECT_EQ(gguf_quantized_type(weight->storage_format()), type);
+    EXPECT_EQ(weight->block_axis(), 0u);
+  }
+  const auto q8 = gguf_weight_description(GgufQuantizedType::kQ8_0,
+                                          DataType::kBFloat16, 64, 3);
+  const auto iq4 = gguf_weight_description(GgufQuantizedType::kIq4Nl,
+                                           DataType::kFloat16, 64, 3);
+  ASSERT_TRUE(q8);
+  ASSERT_TRUE(iq4);
+  EXPECT_EQ(*q8->required_bytes(), 204u);
+  EXPECT_EQ(*iq4->required_bytes(), 108u);
+  const auto malformed = StorageFormat::blocked(kGgufQ4K, 256, 143).value();
+  EXPECT_FALSE(gguf_quantized_type(malformed));
+}
+
+TEST(ComputeOpsLowPrecision, GgufGroupedWeightsKeepExpertRowAndKOrder) {
+  const auto weight = gguf_grouped_weight_description(
+      GgufQuantizedType::kIq4Xs, DataType::kFloat32, 4, 3, 256);
+  ASSERT_TRUE(weight);
+  EXPECT_TRUE(weight->is_dense());
+  constexpr std::array<std::int64_t, 3> dimensions{4, 3, 256};
+  EXPECT_TRUE(std::ranges::equal(weight->dimensions(), dimensions));
+  EXPECT_EQ(weight->block_axis(), 2u);
+  EXPECT_EQ(weight->byte_strides()[2], 136);
+  EXPECT_EQ(weight->byte_strides()[1], 136);
+  EXPECT_EQ(weight->byte_strides()[0], 408);
+  EXPECT_EQ(*weight->required_bytes(), 1632u);
+}
+
 TEST(ComputeOpsLowPrecision, RejectsIncompleteBlocksAndOverflow) {
   const auto block = Float8ScaleMode::kFloat32Block128;
   const auto group = Float8ScaleMode::kUnsignedExponent8Group32;
@@ -78,6 +128,12 @@ TEST(ComputeOpsLowPrecision, RejectsIncompleteBlocksAndOverflow) {
       float8_weight_description(32, 1, static_cast<Float8ScaleMode>(255)));
   EXPECT_FALSE(mxfp4_weight_description(31, 1));
   EXPECT_FALSE(mxfp4_weight_description(32, 0));
+  EXPECT_FALSE(gguf_weight_description(GgufQuantizedType::kQ4K, DataType::kInt8,
+                                       256, 1));
+  EXPECT_FALSE(gguf_weight_description(GgufQuantizedType::kQ4K,
+                                       DataType::kFloat32, 255, 1));
+  EXPECT_FALSE(gguf_grouped_weight_description(GgufQuantizedType::kQ8_0,
+                                               DataType::kFloat32, 0, 1, 32));
   constexpr auto maximum = (std::numeric_limits<std::int64_t>::max)();
   EXPECT_FALSE(float8_activation_description(maximum, 128, block));
   EXPECT_FALSE(float8_weight_description(maximum - 31, 128, group));

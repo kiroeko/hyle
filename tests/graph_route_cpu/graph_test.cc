@@ -1,5 +1,7 @@
+#include <ggml.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
@@ -12,6 +14,7 @@
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
@@ -23,6 +26,88 @@ namespace compute = hyle::compute;
 namespace graph = hyle::graph;
 
 #if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultGraph, NativeQ8GraphImportsGgufBytesAndReplays) {
+  constexpr std::int64_t reduction = 256;
+  constexpr std::int64_t columns = 2;
+  const auto left_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 2>{1, reduction})
+          .value();
+  const auto right_desc = compute::gguf_weight_description(
+      compute::GgufQuantizedType::kQ8_0, compute::DataType::kFloat32, reduction,
+      columns);
+  ASSERT_TRUE(right_desc) << right_desc.error().message();
+  const auto output_desc =
+      compute::TensorDesc::dense(compute::DataType::kFloat32,
+                                 std::array<std::int64_t, 2>{1, columns})
+          .value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto left = builder.input(left_desc).value();
+  const auto right = builder.input(*right_desc).value();
+  const auto output = builder.add(compute::MatMul{}, left, right).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto context = graph::cpu::create_context().value();
+  auto compiled = graph::compile(std::move(builder).finish().value(), context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+
+  std::vector<float> left_values(static_cast<std::size_t>(reduction), 0.25F);
+  std::vector<float> physical_weights(
+      static_cast<std::size_t>(reduction * columns));
+  std::fill_n(physical_weights.begin(), reduction, 1.0F);
+  std::fill_n(physical_weights.begin() + reduction, reduction, -2.0F);
+  std::vector<std::byte> packed(*right_desc->required_bytes());
+  ASSERT_EQ(ggml_quantize_chunk(GGML_TYPE_Q8_0, physical_weights.data(),
+                                packed.data(), 0, columns, reduction, nullptr),
+            packed.size());
+  auto left_buffer = half_test::buffer<float>(left_values);
+  auto right_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), packed.size(), 64)
+          .value();
+  ASSERT_TRUE(right_buffer.view().write(packed).ok());
+  auto output_buffer =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                output_desc.required_bytes().value(), 64)
+          .value();
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(left, compute::ConstTensorView::create(
+                                  left_desc, left_buffer.view())
+                                  .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(right, compute::ConstTensorView::create(
+                                   *right_desc, right_buffer.view())
+                                   .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(output, compute::TensorView::create(
+                                    output_desc, output_buffer.view())
+                                    .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output_buffer);
+    const auto scale = repeat == 0 ? 1.0F : 2.0F;
+    ASSERT_EQ(actual.size(), 2U);
+    EXPECT_NEAR(actual[0], 64.0F * scale, 0.5F);
+    EXPECT_NEAR(actual[1], -128.0F * scale, 0.5F);
+    if (repeat == 0) {
+      std::fill(left_values.begin(), left_values.end(), 0.5F);
+      ASSERT_TRUE(
+          left_buffer.view().write(std::as_bytes(std::span(left_values))).ok());
+    }
+  }
+}
+
 TEST(CpuDefaultGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
   auto context = graph::cpu::create_context().value();
   auto queue = context.create_queue().value();

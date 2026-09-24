@@ -1,5 +1,7 @@
+#include <ggml.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -11,6 +13,7 @@
 #include "../compute/workload_fixture.h"
 
 #include "hyle/compute/cpu.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/native.h"
@@ -75,6 +78,62 @@ TEST(CpuDefaultContext, GgmlBindsThroughOrdinaryFactory) {
   EXPECT_EQ(prepared->runtime_properties().replay_class,
             ProviderReplayClass::kPrepared);
   EXPECT_FALSE(prepared->runtime_properties().uses_private_threads);
+}
+
+TEST(CpuDefaultContext, NativeQ8UsesOrdinaryDirectRouteAndReplays) {
+  constexpr std::int64_t reduction = 32;
+  constexpr std::int64_t columns = 2;
+  const auto left_desc = matrix(1, reduction);
+  const auto right_desc = gguf_weight_description(
+      GgufQuantizedType::kQ8_0, DataType::kFloat32, reduction, columns);
+  ASSERT_TRUE(right_desc) << right_desc.error().message();
+  const auto output_desc = matrix(1, columns);
+  std::vector<float> left_values(static_cast<std::size_t>(reduction), 0.25F);
+  std::vector<float> unpacked(static_cast<std::size_t>(reduction * columns));
+  std::fill_n(unpacked.begin(), reduction, 1.0F);
+  std::fill_n(unpacked.begin() + reduction, reduction, -2.0F);
+  std::vector<std::byte> packed(*right_desc->required_bytes());
+  ASSERT_EQ(ggml_quantize_chunk(GGML_TYPE_Q8_0, unpacked.data(), packed.data(),
+                                0, columns, reduction, nullptr),
+            packed.size());
+  auto left = hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                        left_values.size() * sizeof(float), 64)
+                  .value();
+  auto right =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(), packed.size(), 64)
+          .value();
+  auto output =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                output_desc.required_bytes().value(), 64)
+          .value();
+  ASSERT_TRUE(left.view().write(std::as_bytes(std::span(left_values))).ok());
+  ASSERT_TRUE(right.view().write(packed).ok());
+  const std::array inputs{
+      ConstTensorView::create(left_desc, left.view()).value(),
+      ConstTensorView::create(*right_desc, right.view()).value()};
+  auto output_view = TensorView::create(output_desc, output.view()).value();
+  auto context = create_context().value();
+  auto prepared =
+      prepare(context, Operation(MatMul{}), inputs, std::span(&output_view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = context.create_queue().value();
+  for (int repeat = 1; repeat <= 2; ++repeat) {
+    auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    std::array<float, columns> actual{};
+    ASSERT_TRUE(
+        output.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_NEAR(actual[0], 8.0F * repeat, 0.1F);
+    EXPECT_NEAR(actual[1], -16.0F * repeat, 0.1F);
+    if (repeat == 1) {
+      std::fill(left_values.begin(), left_values.end(), 0.5F);
+      ASSERT_TRUE(
+          left.view().write(std::as_bytes(std::span(left_values))).ok());
+    }
+  }
 }
 
 TEST(CpuDefaultContext, StandardIndexProgramsBindThroughOrdinaryFactory) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 #include "hyle/compute/tensor_desc.h"
 
@@ -23,6 +24,51 @@ inline constexpr StorageFormatId kFloat8ActivationUnsignedExponent8Group32{
 inline constexpr StorageFormatId kFloat8WeightUnsignedExponent8Group32{
     0x48594c454c4f5750ULL, 4};
 inline constexpr StorageFormatId kMxfp4Weight{0x48594c454c4f5750ULL, 5};
+
+// GGUF/ggml native block encodings. These identities describe existing model
+// bytes and are independent of the executing route. They deliberately do not
+// expose a quantizer or promise that every backend accepts every format.
+enum class GgufQuantizedType : std::uint8_t {
+  kQ3K,
+  kQ4K,
+  kQ5K,
+  kQ6K,
+  kQ8_0,
+  kIq3Xxs,
+  kIq3S,
+  kIq4Nl,
+  kIq4Xs,
+  kMxfp4,
+};
+
+inline constexpr StorageFormatId kGgufQ3K{0x48594c4547475546ULL, 1};
+inline constexpr StorageFormatId kGgufQ4K{0x48594c4547475546ULL, 2};
+inline constexpr StorageFormatId kGgufQ5K{0x48594c4547475546ULL, 3};
+inline constexpr StorageFormatId kGgufQ6K{0x48594c4547475546ULL, 4};
+inline constexpr StorageFormatId kGgufQ8_0{0x48594c4547475546ULL, 5};
+inline constexpr StorageFormatId kGgufIq3Xxs{0x48594c4547475546ULL, 6};
+inline constexpr StorageFormatId kGgufIq3S{0x48594c4547475546ULL, 7};
+inline constexpr StorageFormatId kGgufIq4Nl{0x48594c4547475546ULL, 8};
+inline constexpr StorageFormatId kGgufIq4Xs{0x48594c4547475546ULL, 9};
+
+HYLE_COMPUTE_OPS_API std::optional<GgufQuantizedType>
+gguf_quantized_type(StorageFormatId id) noexcept;
+HYLE_COMPUTE_OPS_API std::optional<GgufQuantizedType>
+gguf_quantized_type(const StorageFormat &format) noexcept;
+
+// Logical [K,N], physical ggml [N,K] with K-native blocks. logical_type is the
+// floating activation/output type seen by MatMul; it is not the packed scalar
+// width. The payload must already contain exact GGUF bytes.
+HYLE_COMPUTE_OPS_API Result<TensorDesc>
+gguf_weight_description(GgufQuantizedType type, DataType logical_type,
+                        std::int64_t k, std::int64_t n) noexcept;
+
+// Logical and physical [E,N,K] for ggml MUL_MAT_ID. The expert and row axes
+// remain outside each native K block.
+HYLE_COMPUTE_OPS_API Result<TensorDesc>
+gguf_grouped_weight_description(GgufQuantizedType type, DataType logical_type,
+                                std::int64_t experts, std::int64_t n,
+                                std::int64_t k) noexcept;
 
 // Logical F32 [M,K]. Physical storage is row-major E4M3FN [M,K], followed
 // immediately by row-major scales: F32 [M,K/128] or UE8M0 [M,K/32].

@@ -4,6 +4,7 @@
 #include <array>
 #include <climits>
 
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::ggml_cuda::internal {
@@ -22,6 +23,42 @@ ggml_type native_type(DataType type) noexcept {
     return GGML_TYPE_COUNT;
   }
 }
+ggml_type native_quantized_type(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type)
+    return GGML_TYPE_COUNT;
+  switch (*type) {
+  case GgufQuantizedType::kQ3K:
+    return GGML_TYPE_Q3_K;
+  case GgufQuantizedType::kQ4K:
+    return GGML_TYPE_Q4_K;
+  case GgufQuantizedType::kQ5K:
+    return GGML_TYPE_Q5_K;
+  case GgufQuantizedType::kQ6K:
+    return GGML_TYPE_Q6_K;
+  case GgufQuantizedType::kQ8_0:
+    return GGML_TYPE_Q8_0;
+  case GgufQuantizedType::kIq3Xxs:
+    return GGML_TYPE_IQ3_XXS;
+  case GgufQuantizedType::kIq3S:
+    return GGML_TYPE_IQ3_S;
+  case GgufQuantizedType::kIq4Nl:
+    return GGML_TYPE_IQ4_NL;
+  case GgufQuantizedType::kIq4Xs:
+    return GGML_TYPE_IQ4_XS;
+  case GgufQuantizedType::kMxfp4:
+    return GGML_TYPE_MXFP4;
+  }
+  return GGML_TYPE_COUNT;
+}
+ggml_type native_type(const TensorDesc &description) noexcept {
+  const auto quantized = native_quantized_type(description);
+  return quantized == GGML_TYPE_COUNT ? native_type(description.data_type())
+                                      : quantized;
+}
+bool native_quantized(const TensorDesc &description) noexcept {
+  return native_quantized_type(description) != GGML_TYPE_COUNT;
+}
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -37,14 +74,27 @@ std::int64_t rows(const TensorDesc &description) noexcept {
   return width == 0 ? 0
                     : static_cast<std::int64_t>(elements(description)) / width;
 }
+bool native_matmul_rhs(const TensorDesc &description) noexcept {
+  auto physical = description.transposed();
+  return physical && physical->is_dense();
+}
 bool representable(const TensorDesc &description) noexcept {
   const auto count = description.element_count();
   const auto bytes = description.required_bytes();
   // Native kernels use int element counts and unsigned 32-bit byte strides.
   // Leave room for rounded launch sizes and FP32 conversion intermediates.
-  return description.valid() && description.is_plain() && count && bytes &&
-         *count != 0 && *count <= (INT32_MAX - 1024) / sizeof(float) &&
-         *bytes <= INT32_MAX && floating(description.data_type()) &&
+  if (!description.valid() || !count || !bytes || *count == 0 ||
+      *count > (INT32_MAX - 1024) / sizeof(float) || *bytes > INT32_MAX ||
+      !floating(description.data_type()))
+    return false;
+  if (native_quantized(description))
+    return description.rank() > 0 && description.rank() <= GGML_MAX_DIMS &&
+           description.storage_format().kind() == StorageFormatKind::kBlocked &&
+           description.block_axis().has_value() &&
+           std::ranges::all_of(description.byte_strides(), [](auto stride) {
+             return stride > 0 && stride <= INT32_MAX;
+           });
+  return description.is_plain() &&
          (description.is_dense() || description.rank() <= GGML_MAX_DIMS) &&
          std::ranges::all_of(description.byte_strides(), [&](auto stride) {
            return stride <= INT32_MAX &&
@@ -219,6 +269,10 @@ bool tensor_operation_supports(Operation operation,
           inputs[i].element_count() &&
           *inputs[i].element_count() <= (INT32_MAX - 1024) / sizeof(float)))
       return false;
+  const bool has_quantized = std::ranges::any_of(inputs, native_quantized);
+  if (has_quantized && !operation.get_if<MatMul>() &&
+      !operation.custom_as<model_ops::GroupedMatMul>())
+    return false;
   std::vector<TensorDesc> inferred(outputs.size());
   if (!infer_output_descriptions(operation, inputs, inferred).ok() ||
       !std::ranges::equal(inferred, outputs))
@@ -228,8 +282,17 @@ bool tensor_operation_supports(Operation operation,
     return outputs.size() == 1 && inputs.size() == 2 &&
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32;
-  if (operation.custom_as<model_ops::GroupedMatMul>() ||
-      operation.custom_as<model_ops::HyperConnectionCombine>() ||
+  if (operation.custom_as<model_ops::GroupedMatMul>())
+    return outputs.size() == 1 && inputs.size() == 3 &&
+           (!native_quantized(inputs[0]) ||
+            (inputs[0].rank() == 3 && inputs[0].block_axis() == 2)) &&
+           inputs[0].is_dense() && inputs[1].is_dense() &&
+           inputs[2].is_dense() &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[2].data_type() == DataType::kInt32 &&
+           outputs[0].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
     return outputs.size() == 1 &&
@@ -300,13 +363,18 @@ bool tensor_operation_supports(Operation operation,
            softmax->mask != MaskKind::kBoolean &&
            softmax->accumulation_type == DataType::kFloat32;
   if (const auto *matmul = operation.get_if<MatMul>()) {
+    const bool quantized_rhs = native_quantized(inputs[1]);
     if (inputs.size() != 2 || inputs[0].rank() < 2 || inputs[0].rank() > 4 ||
         inputs[1].rank() < 2 || inputs[1].rank() > 4 ||
-        (inputs[0].rank() == 2 && inputs[1].rank() == 2) ||
-        !inputs[0].is_dense() || !inputs[1].is_dense() ||
+        (!quantized_rhs && inputs[0].rank() == 2 && inputs[1].rank() == 2) ||
+        !inputs[0].is_dense() || (!quantized_rhs && !inputs[1].is_dense()) ||
+        (quantized_rhs &&
+         (inputs[1].rank() != 2 || inputs[1].block_axis() != 0 ||
+          !native_matmul_rhs(inputs[1]) || native_quantized(inputs[0]))) ||
         matmul->accumulation_type != DataType::kFloat32 ||
-        (inputs[0].data_type() != DataType::kFloat16 &&
+        (!quantized_rhs && inputs[0].data_type() != DataType::kFloat16 &&
          inputs[0].data_type() != DataType::kBFloat16) ||
+        (quantized_rhs && !floating(inputs[0].data_type())) ||
         inputs[1].data_type() != inputs[0].data_type() ||
         output.data_type() != inputs[0].data_type())
       return false;
@@ -339,6 +407,17 @@ bool tensor_operation_supports(Operation operation,
 
 ggml_tensor *create_tensor_input(ggml_context *context,
                                  const TensorDesc &description) {
+  if (native_quantized(description)) {
+    std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+    const auto blocked = *description.block_axis();
+    shape[0] = description.dimensions()[blocked];
+    std::size_t target = 1;
+    for (std::size_t axis = description.rank(); axis-- > 0;)
+      if (axis != blocked)
+        shape[target++] = description.dimensions()[axis];
+    return ggml_new_tensor(context, native_type(description),
+                           static_cast<int>(description.rank()), shape.data());
+  }
   if (description.rank() > GGML_MAX_DIMS)
     return ggml_new_tensor_2d(context, native_type(description.data_type()),
                               columns(description), rows(description));
@@ -513,9 +592,12 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
   } else if (node.operation.get_if<MatMul>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
-    auto *right = ggml_transpose(context, values[node.inputs[1]]);
-    if (!ggml_is_contiguous(right))
-      right = ggml_cont(context, right);
+    auto *right = values[node.inputs[1]];
+    if (!native_quantized(recipe.values[node.inputs[1]])) {
+      right = ggml_transpose(context, right);
+      if (!ggml_is_contiguous(right))
+        right = ggml_cont(context, right);
+    }
     result = ggml_mul_mat(context, right, left);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};

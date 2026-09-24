@@ -77,6 +77,40 @@ backing 必须活到最后一个画像/程序释放。`program.workload()` 返�
 保有所有权的冷诊断副本。阶段或版本变化需要重新准备，不能给运行中的程序换标签。
 可选的 `region` 是带版本的片段语义标识，不替代实际 operation/DAG、精度、资源和状态检查。
 
+### GGUF/ggml 原生压缩权重
+
+调用方已经解析 GGUF tensor table 时，用 `<hyle/compute/low_precision.h>` 描述原文件中的压缩字节，
+不需要也不应先展开成常驻浮点权重。`gguf_weight_description()` 接收 Q3_K、Q4_K、Q5_K、Q6_K、
+Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS 或 MXFP4，返回逻辑 `[K,N]`、物理连续 `[N,K]` 的
+checked `TensorDesc`；`K` 必须包含完整原生 block。`logical_type` 是 MatMul activation/output 的
+浮点类型，不是压缩 code 的位宽。
+
+```cpp
+#include <array>
+#include <hyle/compute/low_precision.h>
+
+auto weight_desc = hyle::compute::gguf_weight_description(
+    hyle::compute::GgufQuantizedType::kQ4K,
+    hyle::compute::DataType::kFloat32, k, n);
+if (!weight_desc) return weight_desc.error();
+
+// weight_bytes 是 loader 持有的原始 GGUF payload；HYLE 不读取 GGUF 文件。
+auto weight = hyle::compute::ConstTensorView::create(
+    *weight_desc, weight_bytes);
+if (!weight) return weight.error();
+std::array inputs{activation, *weight};
+std::array outputs{output};
+auto prepared = hyle::compute::prepare(
+    context, hyle::compute::Operation(hyle::compute::MatMul{}), inputs, outputs);
+```
+
+MoE 的连续专家权重使用 `gguf_grouped_weight_description(type, logical_type, experts, n, k)`，其逻辑与
+物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU 与 CUDA 默认路线会在准备期把合格的
+MatMul/GroupedMatMul 绑定到固定 ggml 原生程序；具体设备和上游版本仍可能拒绝某种格式或 shape。
+Graph 使用相同描述器与 Provider recipe，重复 submit 不重新选路、不重新量化，也不复制压缩权重。
+伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 与 Vulkan 的对应原生接线仍以
+当前模块状态和路线任务为准，不能用 CPU/CUDA 收据代签。
+
 固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
 或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
 HYLE 的规则匹配在运行期不读取模型字符串、查询设备版本或重选实现；成熟 Provider 自身的
@@ -728,6 +762,11 @@ Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和任意轴集 Sum/Mean 的
 half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实执行成本。dense 可折叠高 rank，
 非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活等仍等待成熟
 承载，不能由名称相同推导已支持。
+
+同一 Provider 也接受上文十种精确 GGUF/ggml block storage 作为 MatMul RHS，或 `[E,N,K]`
+GroupedMatMul weight；直接把 caller-owned packed bytes 交给原版 `MUL_MAT`/`MUL_MAT_ID`，不经过
+HYLE decoder、全量重排或常驻浮点副本。CPU/CUDA 共用公开格式身份，但各自保留原生 program、
+resource 和完成语义。
 
 Gather 使用 I32 索引，支持标量或多维索引，以及上述已准入的非连续布局；每次运行都先按实际
 索引 stride 检查边界，再调用原版 get_rows。不同 outer 行必要的索引 repeat 保存在每请求工作区。

@@ -8,6 +8,43 @@
 namespace hyle::compute {
 namespace {
 
+struct GgufBlock final {
+  StorageFormatId id;
+  std::size_t elements;
+  std::size_t bytes;
+};
+
+std::optional<GgufBlock> gguf_block(GgufQuantizedType type) noexcept {
+  switch (type) {
+  case GgufQuantizedType::kQ3K:
+    return GgufBlock{kGgufQ3K, 256, 110};
+  case GgufQuantizedType::kQ4K:
+    return GgufBlock{kGgufQ4K, 256, 144};
+  case GgufQuantizedType::kQ5K:
+    return GgufBlock{kGgufQ5K, 256, 176};
+  case GgufQuantizedType::kQ6K:
+    return GgufBlock{kGgufQ6K, 256, 210};
+  case GgufQuantizedType::kQ8_0:
+    return GgufBlock{kGgufQ8_0, 32, 34};
+  case GgufQuantizedType::kIq3Xxs:
+    return GgufBlock{kGgufIq3Xxs, 256, 98};
+  case GgufQuantizedType::kIq3S:
+    return GgufBlock{kGgufIq3S, 256, 110};
+  case GgufQuantizedType::kIq4Nl:
+    return GgufBlock{kGgufIq4Nl, 32, 18};
+  case GgufQuantizedType::kIq4Xs:
+    return GgufBlock{kGgufIq4Xs, 256, 136};
+  case GgufQuantizedType::kMxfp4:
+    return GgufBlock{kMxfp4Weight, 32, 17};
+  }
+  return std::nullopt;
+}
+
+bool gguf_logical_type(DataType type) noexcept {
+  return type == DataType::kFloat32 || type == DataType::kFloat16 ||
+         type == DataType::kBFloat16;
+}
+
 Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
                                       Float8ScaleMode mode,
                                       bool weight) noexcept {
@@ -47,6 +84,82 @@ Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
 
 } // namespace
 
+std::optional<GgufQuantizedType>
+gguf_quantized_type(StorageFormatId id) noexcept {
+  constexpr std::array types{
+      GgufQuantizedType::kQ3K,   GgufQuantizedType::kQ4K,
+      GgufQuantizedType::kQ5K,   GgufQuantizedType::kQ6K,
+      GgufQuantizedType::kQ8_0,  GgufQuantizedType::kIq3Xxs,
+      GgufQuantizedType::kIq3S,  GgufQuantizedType::kIq4Nl,
+      GgufQuantizedType::kIq4Xs, GgufQuantizedType::kMxfp4};
+  for (const auto type : types)
+    if (gguf_block(type)->id == id)
+      return type;
+  return std::nullopt;
+}
+
+std::optional<GgufQuantizedType>
+gguf_quantized_type(const StorageFormat &format) noexcept {
+  const auto type = gguf_quantized_type(format.id());
+  if (!type || format.kind() != StorageFormatKind::kBlocked)
+    return std::nullopt;
+  const auto block = gguf_block(*type);
+  if (format.elements_per_block() != block->elements ||
+      format.bytes_per_block() != block->bytes)
+    return std::nullopt;
+  return type;
+}
+
+Result<TensorDesc> gguf_weight_description(GgufQuantizedType type,
+                                           DataType logical_type,
+                                           std::int64_t k,
+                                           std::int64_t n) noexcept {
+  const auto block = gguf_block(type);
+  if (!block || !gguf_logical_type(logical_type))
+    return std::unexpected(Status::InvalidArgument(
+        "GGUF weight requires a known format and floating logical type"));
+  if (k <= 0 || n <= 0 || k % static_cast<std::int64_t>(block->elements) != 0)
+    return std::unexpected(Status::InvalidArgument(
+        "GGUF weight dimensions do not contain complete K blocks"));
+  const auto blocks = math::try_integer_cast<std::size_t>(
+      k / static_cast<std::int64_t>(block->elements));
+  const auto rows = math::try_integer_cast<std::size_t>(n);
+  const auto row_bytes =
+      blocks ? math::try_multiply(*blocks, block->bytes) : std::nullopt;
+  const auto total_bytes =
+      row_bytes && rows ? math::try_multiply(*row_bytes, *rows) : std::nullopt;
+  if (!total_bytes)
+    return std::unexpected(Status::OutOfRange("GGUF weight size overflows"));
+  const auto stride = math::try_integer_cast<std::int64_t>(*row_bytes);
+  if (!stride)
+    return std::unexpected(Status::OutOfRange("GGUF weight stride overflows"));
+  const auto format =
+      StorageFormat::blocked(block->id, block->elements, block->bytes);
+  const std::array shape{k, n};
+  const std::array strides{static_cast<std::int64_t>(block->bytes), *stride};
+  return TensorDesc::blocked_strided(logical_type, shape, *format, 0, strides);
+}
+
+Result<TensorDesc> gguf_grouped_weight_description(GgufQuantizedType type,
+                                                   DataType logical_type,
+                                                   std::int64_t experts,
+                                                   std::int64_t n,
+                                                   std::int64_t k) noexcept {
+  const auto block = gguf_block(type);
+  if (!block || !gguf_logical_type(logical_type))
+    return std::unexpected(
+        Status::InvalidArgument("grouped GGUF weight requires a known format "
+                                "and floating logical type"));
+  if (experts <= 0 || n <= 0 || k <= 0 ||
+      k % static_cast<std::int64_t>(block->elements) != 0)
+    return std::unexpected(Status::InvalidArgument(
+        "grouped GGUF dimensions do not contain complete K blocks"));
+  const auto format =
+      StorageFormat::blocked(block->id, block->elements, block->bytes);
+  const std::array shape{experts, n, k};
+  return TensorDesc::blocked_dense(logical_type, shape, *format);
+}
+
 Result<TensorDesc>
 float8_activation_description(std::int64_t m, std::int64_t k,
                               Float8ScaleMode mode) noexcept {
@@ -60,17 +173,8 @@ Result<TensorDesc> float8_weight_description(std::int64_t k, std::int64_t n,
 
 Result<TensorDesc> mxfp4_weight_description(std::int64_t k,
                                             std::int64_t n) noexcept {
-  if (k <= 0 || n <= 0 || k % 32 != 0)
-    return std::unexpected(Status::InvalidArgument(
-        "MXFP4 weights require positive N and K divisible by 32"));
-  const auto stride = math::try_multiply(k / 32, std::int64_t{17});
-  if (!stride)
-    return std::unexpected(Status::OutOfRange("MXFP4 row stride overflows"));
-  const auto format = StorageFormat::blocked(kMxfp4Weight, 32, 17);
-  const std::array shape{k, n};
-  const std::array strides{std::int64_t{17}, *stride};
-  return TensorDesc::blocked_strided(DataType::kFloat16, shape, *format, 0,
-                                     strides);
+  return gguf_weight_description(GgufQuantizedType::kMxfp4, DataType::kFloat16,
+                                 k, n);
 }
 
 } // namespace hyle::compute

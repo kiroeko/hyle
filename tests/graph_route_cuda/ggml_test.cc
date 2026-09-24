@@ -1,7 +1,12 @@
 #include "../graph_provider_ggml_cuda/region_test_support.h"
 #include "../graph_provider_ggml_cuda/softmax_test_support.h"
 #include "../graph_provider_ggml_cuda/tensor_test_support.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/graph/cuda.h"
+#include <ggml.h>
+
+#include <algorithm>
+#include <vector>
 
 TEST(CudaDefaultGraph, OriginalTensorRegionThroughOrdinaryEntry) {
   using namespace ggml_cuda_graph_test;
@@ -28,6 +33,79 @@ TEST(CudaDefaultGraph, OriginalGgmlRegionComposesWithCublas) {
            [&](const graph::Graph &logical, mem::MemoryResourceRef resource) {
              return graph::cuda::compile(logical, context, resource);
            });
+}
+
+TEST(CudaDefaultGraph, NativeQ8UsesOrdinaryGraphRouteAndReplays) {
+  using namespace hyle;
+  using namespace hyle::compute;
+  constexpr std::int64_t reduction = 32;
+  constexpr std::int64_t columns = 2;
+  const auto left_desc =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array{std::int64_t{1}, reduction})
+          .value();
+  const auto right_desc = gguf_weight_description(
+      GgufQuantizedType::kQ8_0, DataType::kFloat32, reduction, columns);
+  ASSERT_TRUE(right_desc) << right_desc.error().message();
+  const auto output_desc =
+      TensorDesc::dense(DataType::kFloat32,
+                        std::array{std::int64_t{1}, columns})
+          .value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto left_id = builder.input(left_desc).value();
+  const auto right_id = builder.input(*right_desc).value();
+  const auto output_id = builder.add(MatMul{}, left_id, right_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = graph::cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto compiled = graph::cuda::compile(logical, context, memory.ref());
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id, ggml_cuda::kProviderId);
+
+  std::vector<float> left_values(static_cast<std::size_t>(reduction), 0.25F);
+  std::vector<float> unpacked(static_cast<std::size_t>(reduction * columns));
+  std::fill_n(unpacked.begin(), reduction, 1.0F);
+  std::fill_n(unpacked.begin() + reduction, reduction, -2.0F);
+  std::vector<std::byte> packed(*right_desc->required_bytes());
+  ASSERT_EQ(ggml_quantize_chunk(GGML_TYPE_Q8_0, unpacked.data(), packed.data(),
+                                0, columns, reduction, nullptr),
+            packed.size());
+  auto left = ggml_cuda_tensor_test::upload<float>(memory.ref(), left_values);
+  auto right = ggml_cuda_tensor_test::upload<std::byte>(memory.ref(), packed);
+  auto output = ggml_cuda_tensor_test::output_buffer(memory.ref(), output_desc);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(left_id,
+                        ConstTensorView::create(left_desc, left.view()).value())
+                  .ok());
+  ASSERT_TRUE(
+      invocation
+          .bind(right_id,
+                ConstTensorView::create(*right_desc, right.view()).value())
+          .ok());
+  ASSERT_TRUE(invocation
+                  .bind(output_id,
+                        TensorView::create(output_desc, output.view()).value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(graph::cuda::prepare_replay(invocation, queue).ok());
+  for (int repeat = 1; repeat <= 2; ++repeat) {
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
+    ASSERT_EQ(actual.size(), 2U);
+    EXPECT_NEAR(actual[0], 8.0F * repeat, 0.1F);
+    EXPECT_NEAR(actual[1], -16.0F * repeat, 0.1F);
+    if (repeat == 1) {
+      std::fill(left_values.begin(), left_values.end(), 0.5F);
+      ASSERT_TRUE(
+          left.view().write(std::as_bytes(std::span(left_values))).ok());
+    }
+  }
 }
 
 TEST(CudaDefaultGraph, MatureHalfLinearAndHadamardUseOneGgmlRegion) {

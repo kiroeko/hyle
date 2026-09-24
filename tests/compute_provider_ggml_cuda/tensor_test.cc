@@ -3,6 +3,11 @@
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
+#include <ggml.h>
+
+#include <algorithm>
+
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
 namespace {
@@ -345,6 +350,133 @@ TEST(GgmlCudaTensor, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
     for (std::size_t i = 0; i < actual.size(); ++i)
       half_test::expect_near(actual[i], expected[i]);
   }
+}
+
+TEST(GgmlCudaTensor, NativeQ4KMatMulImportsGgufBytesAndReplays) {
+  constexpr std::int64_t reduction = 256;
+  constexpr std::int64_t columns = 2;
+  const auto left_desc = dense(DataType::kFloat32, {1, reduction});
+  const auto right_desc = gguf_weight_description(
+      GgufQuantizedType::kQ4K, DataType::kFloat32, reduction, columns);
+  ASSERT_TRUE(right_desc) << right_desc.error().message();
+  const auto output_desc = dense(DataType::kFloat32, {1, columns});
+  std::vector<float> left_values(static_cast<std::size_t>(reduction), 0.25F);
+  std::vector<float> physical_weights(
+      static_cast<std::size_t>(reduction * columns));
+  std::fill_n(physical_weights.begin(), reduction, 1.0F);
+  std::fill_n(physical_weights.begin() + reduction, reduction, -2.0F);
+  std::vector<std::byte> packed(*right_desc->required_bytes());
+  ASSERT_EQ(ggml_quantize_chunk(GGML_TYPE_Q4_K, physical_weights.data(),
+                                packed.data(), 0, columns, reduction, nullptr),
+            packed.size());
+
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto left = upload<float>(memory.ref(), left_values);
+  auto right = upload<std::byte>(memory.ref(), packed);
+  auto output = output_buffer(memory.ref(), output_desc);
+  const std::array inputs{
+      ConstTensorView::create(left_desc, left.view()).value(),
+      ConstTensorView::create(*right_desc, right.view()).value()};
+  auto output_view = TensorView::create(output_desc, output.view()).value();
+  auto prepared =
+      prepare(ctx, Operation(MatMul{}), inputs, std::span(&output_view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  for (int repeat = 0; repeat < 2; ++repeat) {
+    auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
+    const auto scale = repeat == 0 ? 1.0F : 2.0F;
+    ASSERT_EQ(actual.size(), 2U);
+    EXPECT_NEAR(actual[0], 64.0F * scale, 1.0F);
+    EXPECT_NEAR(actual[1], -128.0F * scale, 1.0F);
+    if (repeat == 0) {
+      std::fill(left_values.begin(), left_values.end(), 0.5F);
+      ASSERT_TRUE(
+          left.view().write(std::as_bytes(std::span(left_values))).ok());
+    }
+  }
+}
+
+TEST(GgmlCudaTensor, NativeQ8GroupedExpertsUseExactExpertIds) {
+  constexpr std::int64_t experts = 3;
+  constexpr std::int64_t columns = 2;
+  constexpr std::int64_t reduction = 256;
+  const auto weights_desc = gguf_grouped_weight_description(
+      GgufQuantizedType::kQ8_0, DataType::kFloat32, experts, columns,
+      reduction);
+  ASSERT_TRUE(weights_desc) << weights_desc.error().message();
+  const auto activations_desc = dense(DataType::kFloat32, {1, 2, reduction});
+  const auto ids_desc = dense(DataType::kInt32, {1, 2});
+  const std::array descriptions{*weights_desc, activations_desc, ids_desc};
+  const auto output_desc =
+      infer_single_output(model_ops::grouped_matmul(), descriptions).value();
+  constexpr std::array<float, experts * columns> row_values{1.0F, 2.0F,  3.0F,
+                                                            4.0F, -1.0F, 0.5F};
+  std::vector<float> physical_weights(
+      static_cast<std::size_t>(experts * columns * reduction));
+  for (std::size_t row = 0; row < row_values.size(); ++row)
+    std::fill_n(physical_weights.begin() + row * reduction, reduction,
+                row_values[row]);
+  std::vector<std::byte> packed(*weights_desc->required_bytes());
+  ASSERT_EQ(ggml_quantize_chunk(GGML_TYPE_Q8_0, physical_weights.data(),
+                                packed.data(), 0, experts * columns, reduction,
+                                nullptr),
+            packed.size());
+  std::vector<float> activations(static_cast<std::size_t>(2 * reduction),
+                                 0.25F);
+  constexpr std::array<std::int32_t, 2> ids{0, 2};
+
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto weights = upload<std::byte>(memory.ref(), packed);
+  auto activation_buffer = upload<float>(memory.ref(), activations);
+  auto id_buffer = upload<std::int32_t>(memory.ref(), ids);
+  auto output = output_buffer(memory.ref(), output_desc);
+  const std::array inputs{
+      ConstTensorView::create(*weights_desc, weights.view()).value(),
+      ConstTensorView::create(activations_desc, activation_buffer.view())
+          .value(),
+      ConstTensorView::create(ids_desc, id_buffer.view()).value()};
+  const auto status =
+      execute(ctx, model_ops::grouped_matmul(), inputs,
+              TensorView::create(output_desc, output.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message();
+  const auto actual = half_test::read<float>(output);
+  ASSERT_EQ(actual.size(), 4U);
+  EXPECT_NEAR(actual[0], 64.0F, 0.5F);
+  EXPECT_NEAR(actual[1], 128.0F, 0.5F);
+  EXPECT_NEAR(actual[2], -64.0F, 0.5F);
+  EXPECT_NEAR(actual[3], 32.0F, 0.5F);
+}
+
+TEST(GgmlCudaTensor, MalformedNativeGgufFormatIsRejectedAtPrepare) {
+  const auto format = StorageFormat::blocked(kGgufQ4K, 256, 143).value();
+  constexpr std::array<std::int64_t, 2> shape{256, 2};
+  constexpr std::array<std::int64_t, 2> strides{143, 143};
+  const auto weights_desc =
+      TensorDesc::blocked_strided(DataType::kFloat32, shape, format, 0, strides)
+          .value();
+  const auto activations_desc = dense(DataType::kFloat32, {1, 256});
+  const auto output_desc = dense(DataType::kFloat32, {1, 2});
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto activations = output_buffer(memory.ref(), activations_desc);
+  auto weights = output_buffer(memory.ref(), weights_desc);
+  auto output = output_buffer(memory.ref(), output_desc);
+  const std::array inputs{
+      ConstTensorView::create(activations_desc, activations.view()).value(),
+      ConstTensorView::create(weights_desc, weights.view()).value()};
+  auto output_view = TensorView::create(output_desc, output.view()).value();
+  EXPECT_FALSE(
+      prepare(ctx, Operation(MatMul{}), inputs, std::span(&output_view, 1)));
 }
 
 TEST(GgmlCudaTensor, SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias) {

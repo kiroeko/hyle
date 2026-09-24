@@ -14,6 +14,7 @@
 
 #include "cpu_execution.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::ggml_cpu {
@@ -70,6 +71,42 @@ ggml_type native_type(DataType type) noexcept {
     return GGML_TYPE_COUNT;
   }
 }
+ggml_type native_quantized_type(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type)
+    return GGML_TYPE_COUNT;
+  switch (*type) {
+  case GgufQuantizedType::kQ3K:
+    return GGML_TYPE_Q3_K;
+  case GgufQuantizedType::kQ4K:
+    return GGML_TYPE_Q4_K;
+  case GgufQuantizedType::kQ5K:
+    return GGML_TYPE_Q5_K;
+  case GgufQuantizedType::kQ6K:
+    return GGML_TYPE_Q6_K;
+  case GgufQuantizedType::kQ8_0:
+    return GGML_TYPE_Q8_0;
+  case GgufQuantizedType::kIq3Xxs:
+    return GGML_TYPE_IQ3_XXS;
+  case GgufQuantizedType::kIq3S:
+    return GGML_TYPE_IQ3_S;
+  case GgufQuantizedType::kIq4Nl:
+    return GGML_TYPE_IQ4_NL;
+  case GgufQuantizedType::kIq4Xs:
+    return GGML_TYPE_IQ4_XS;
+  case GgufQuantizedType::kMxfp4:
+    return GGML_TYPE_MXFP4;
+  }
+  return GGML_TYPE_COUNT;
+}
+ggml_type native_type(const TensorDesc &description) noexcept {
+  const auto quantized = native_quantized_type(description);
+  return quantized == GGML_TYPE_COUNT ? native_type(description.data_type())
+                                      : quantized;
+}
+bool native_quantized(const TensorDesc &description) noexcept {
+  return native_quantized_type(description) != GGML_TYPE_COUNT;
+}
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
@@ -87,8 +124,20 @@ std::int64_t rows(const TensorDesc &description) noexcept {
 }
 bool representable(const TensorDesc &description) noexcept {
   const auto count = description.element_count();
-  return description.valid() && description.is_plain() && count &&
-         *count <= INT32_MAX &&
+  if (!description.valid() || !count || *count > INT32_MAX)
+    return false;
+  if (native_quantized(description)) {
+    const auto bytes = description.required_bytes();
+    return bytes && *bytes <= INT32_MAX && description.rank() > 0 &&
+           description.rank() <= GGML_MAX_DIMS &&
+           description.storage_format().kind() == StorageFormatKind::kBlocked &&
+           description.block_axis().has_value() &&
+           floating(description.data_type()) &&
+           std::ranges::all_of(description.byte_strides(), [](auto stride) {
+             return stride > 0 && stride <= INT32_MAX;
+           });
+  }
+  return description.is_plain() &&
          native_type(description.data_type()) != GGML_TYPE_COUNT &&
          (description.is_dense() || description.rank() <= GGML_MAX_DIMS) &&
          std::ranges::all_of(description.byte_strides(), [&](auto stride) {
@@ -108,6 +157,43 @@ bool matrix_operand(const TensorDesc &input,
 bool native_matmul_rhs(const TensorDesc &description) noexcept {
   auto physical = description.transposed();
   return physical && physical->is_dense();
+}
+ggml_tensor *create_tensor_input(ggml_context *context,
+                                 const TensorDesc &description) {
+  if (native_quantized(description)) {
+    std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
+    const auto blocked = *description.block_axis();
+    shape[0] = description.dimensions()[blocked];
+    std::size_t target = 1;
+    for (std::size_t axis = description.rank(); axis-- > 0;)
+      if (axis != blocked)
+        shape[target++] = description.dimensions()[axis];
+    return ggml_new_tensor(context, native_type(description),
+                           static_cast<int>(description.rank()), shape.data());
+  }
+  if ((description.is_dense() && description.rank() <= GGML_MAX_DIMS) ||
+      elements(description) == 0) {
+    std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
+    for (std::size_t i = 0; i < description.rank(); ++i)
+      dimensions[i] =
+          (std::max)(description.dimensions()[description.rank() - i - 1],
+                     std::int64_t{1});
+    return ggml_new_tensor(context, native_type(description.data_type()),
+                           GGML_MAX_DIMS, dimensions.data());
+  }
+  if (description.is_dense())
+    return ggml_new_tensor_2d(context, native_type(description.data_type()),
+                              (std::max)(columns(description), std::int64_t{1}),
+                              (std::max)(rows(description), std::int64_t{1}));
+  std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
+  for (std::size_t i = 0; i < description.rank(); ++i)
+    dimensions[i] = description.dimensions()[description.rank() - i - 1];
+  auto *tensor = ggml_new_tensor(context, native_type(description.data_type()),
+                                 GGML_MAX_DIMS, dimensions.data());
+  for (std::size_t i = 0; i < description.rank(); ++i)
+    tensor->nb[i] = static_cast<std::size_t>(
+        description.byte_strides()[description.rank() - i - 1]);
+  return tensor;
 }
 std::int32_t axis(std::int32_t value, std::size_t rank) noexcept {
   return value < 0 ? value + static_cast<std::int32_t>(rank) : value;
@@ -465,9 +551,12 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     // shared RHS across the corresponding activation batches.
     auto *left = native_shape(context, invocation.values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
-    auto *right = ggml_transpose(context, invocation.values[node.inputs[1]]);
-    if (!ggml_is_contiguous(right))
-      right = ggml_cont(context, right);
+    auto *right = invocation.values[node.inputs[1]];
+    if (!native_quantized(recipe.values[node.inputs[1]])) {
+      right = ggml_transpose(context, right);
+      if (!ggml_is_contiguous(right))
+        right = ggml_cont(context, right);
+    }
     result = ggml_mul_mat(context, right, left);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
@@ -597,31 +686,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
     invocation->values.resize(recipe.values.size(), nullptr);
     for (const auto id : recipe.inputs) {
       const auto &description = recipe.values[id];
-      ggml_tensor *tensor = nullptr;
-      if ((description.is_dense() && description.rank() <= GGML_MAX_DIMS) ||
-          elements(description) == 0) {
-        std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
-        for (std::size_t i = 0; i < description.rank(); ++i)
-          dimensions[i] =
-              (std::max)(description.dimensions()[description.rank() - i - 1],
-                         std::int64_t{1});
-        tensor = ggml_new_tensor(context, native_type(description.data_type()),
-                                 GGML_MAX_DIMS, dimensions.data());
-      } else if (description.is_dense()) {
-        tensor = ggml_new_tensor_2d(
-            context, native_type(description.data_type()),
-            (std::max)(columns(description), std::int64_t{1}),
-            (std::max)(rows(description), std::int64_t{1}));
-      } else {
-        std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
-        for (std::size_t i = 0; i < description.rank(); ++i)
-          dimensions[i] = description.dimensions()[description.rank() - i - 1];
-        tensor = ggml_new_tensor(context, native_type(description.data_type()),
-                                 GGML_MAX_DIMS, dimensions.data());
-        for (std::size_t i = 0; i < description.rank(); ++i)
-          tensor->nb[i] = static_cast<std::size_t>(
-              description.byte_strides()[description.rank() - i - 1]);
-      }
+      auto *tensor = create_tensor_input(context, description);
       invocation->values[id] = tensor;
       invocation->input_roots.push_back(tensor);
     }
@@ -956,6 +1021,10 @@ bool supports(void *context, Operation operation,
   for (const auto &description : inputs)
     if (!representable(description))
       return false;
+  const bool has_quantized = std::ranges::any_of(inputs, native_quantized);
+  if (has_quantized && !operation.get_if<MatMul>() &&
+      !operation.custom_as<model_ops::GroupedMatMul>())
+    return false;
   std::vector<TensorDesc> inferred(outputs.size());
   if (!infer_output_descriptions(operation, inputs, inferred).ok() ||
       !std::ranges::equal(inferred, outputs))
@@ -965,8 +1034,18 @@ bool supports(void *context, Operation operation,
     return outputs.size() == 1 && inputs.size() == 2 &&
            inputs[0].data_type() == DataType::kFloat32 &&
            inputs[1].data_type() == DataType::kFloat32;
-  if (operation.custom_as<model_ops::GroupedMatMul>() ||
-      operation.custom_as<model_ops::HyperConnectionCombine>() ||
+  if (operation.custom_as<model_ops::GroupedMatMul>()) {
+    return outputs.size() == 1 && inputs.size() == 3 &&
+           (!native_quantized(inputs[0]) ||
+            (inputs[0].rank() == 3 && inputs[0].block_axis() == 2)) &&
+           inputs[0].is_dense() && inputs[1].is_dense() &&
+           inputs[2].is_dense() &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[2].data_type() == DataType::kInt32 &&
+           outputs[0].data_type() == DataType::kFloat32;
+  }
+  if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
     return outputs.size() == 1 &&
@@ -1049,15 +1128,20 @@ bool supports(void *context, Operation operation,
            inputs[2].data_type() == inputs[0].data_type() &&
            output.data_type() == inputs[0].data_type();
   if (const auto *matmul = operation.get_if<MatMul>()) {
+    const bool quantized_rhs = native_quantized(inputs[1]);
     if (!nonempty || elements(output) == 0 || inputs.size() != 2 ||
         inputs[0].rank() < 2 || inputs[0].rank() > 4 || inputs[1].rank() < 2 ||
         inputs[1].rank() > 4 ||
         (inputs[0].rank() > 2 && !inputs[0].is_dense()) ||
-        (inputs[1].rank() > 2 && !inputs[1].is_dense() &&
+        (!quantized_rhs && inputs[1].rank() > 2 && !inputs[1].is_dense() &&
          !native_matmul_rhs(inputs[1])) ||
+        (quantized_rhs &&
+         (inputs[1].rank() != 2 || !native_matmul_rhs(inputs[1]) ||
+          native_quantized(inputs[0]))) ||
         matmul->accumulation_type != DataType::kFloat32 ||
-        (inputs[0].data_type() != DataType::kFloat16 &&
+        (!quantized_rhs && inputs[0].data_type() != DataType::kFloat16 &&
          inputs[0].data_type() != DataType::kBFloat16) ||
+        (quantized_rhs && !floating(inputs[0].data_type())) ||
         inputs[1].data_type() != inputs[0].data_type() ||
         output.data_type() != inputs[0].data_type())
       return false;
