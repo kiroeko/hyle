@@ -559,8 +559,8 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F3 CANDIDATE d7cb7e01：固定 ggml Vulkan adapter 已接纳官方 Qwen3.8 R05 K16/V48×128 grouped-head 域，RTX 4070 普通 Direct/Graph、独立 oracle、replay 与 owner suite 通过；等待 D5 其余真实 profile 片段验收。",
-      "candidate": "d7cb7e016b3c620ed3fd9e6839a748257cdca42a"
+      "summary": "M3-D5 CANDIDATE 1fa67a8f：固定 ggml Vulkan/IREE 限定成熟路线已通过 Qwen3.5-2B official BF16 全 R01-R05/R13-R15 的真实权重 Direct/Graph、变化输入 replay、失败路径与 WERROR owner suite；等待 D5 其余真实 profile、三交付与适用 P1。",
+      "candidate": "1fa67a8facf76feb78f66b5576aee45ac7d16d99"
     },
     {
       "module": "compute_ggml_runtime",

@@ -290,6 +290,25 @@ warm replay 到第二轮 replay 验证；失败路径不发布输出。完整收
 ledger 现有 4 个 `RUN_PASS`、172 个 `VALIDATION_NOT_RUN`。本批静态/共享 owner suite 不代签 D5-A5
 要求的 relocated external source/static/shared consumer；D5-A5 与 D5-A6 P1 仍随稳定 CUDA 路线批次执行。
 
+### Vulkan Qwen3.5 official Direct/Graph 完整格
+
+不可变 candidate `1fa67a8facf76feb78f66b5576aee45ac7d16d99` 复用同一真实 checkpoint
+fixture，通过普通 Vulkan Direct `prepare`/bind/submit 和 Graph build/compile/bind/submit 覆盖
+R01-R05、R13-R15。embedding/head、FFN、GQA/RoPE/attention、causal conv/GDN 及 MTP/BF16
+边界均使用精确官方 shape 和真实权重；每个 prepared program 以变化输入、token 或 state 建立独立
+invocation 重放，失败 Gather 不发布输出。Direct 冷准备逐项断言固定 ggml Vulkan managed region 或限定
+IREE dispatch，Graph 冷编译逐项断言成熟 managed region；没有回接冻结的 HYLE 自研数学。
+
+不可变 W1-WIN/MSVC 19.50/WERROR selector 的 docs、closure、configure、完整
+`compute_route_vulkan` 与 `graph_route_vulkan` factor 均为 PASS；定向 Direct 6/6、Graph 5/5 也通过。
+完整收据见
+[Vulkan Qwen3.5 official Direct](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-official-direct/README.md)
+和
+[Vulkan Qwen3.5 official Graph](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-official-graph/README.md)。
+ledger 现有 6 个 `RUN_PASS`、170 个 `VALIDATION_NOT_RUN`。本批共享 WERROR owner suite 不代签
+D5-A5 要求的 relocated external source/static/shared consumer；D5-A5 与 D5-A6 P1 仍随稳定 Vulkan
+路线批次执行。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

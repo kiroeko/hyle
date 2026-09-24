@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "candidate": "1fa67a8facf76feb78f66b5576aee45ac7d16d99",
+  "candidate_tree": "7a13b2639f783af298dea23b9299fa2185926545",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:official:official-bf16",
+    "route": "vulkan",
+    "entry": "graph",
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.5-2B",
+    "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "shard": "model.safetensors-00001-of-00001.safetensors",
+    "expected_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "fixture_bytes": 117523552,
+    "fixture_tensors": 12,
+    "embedding_slice_sha256": "3924223432b46b6dd5463a5872d76ad674ba377bf76e27c1a56ce5625ee62945",
+    "checkpoint_parameters": [
+      "embed_tokens selected rows",
+      "layer-0 input norm",
+      "layer-0 gate/up/down FFN",
+      "layer-0 conv1d/A_log/dt_bias/out projection",
+      "layer-3 q_norm/k_norm/q projection",
+      "MTP fc"
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "providers": [
+      "ggml Vulkan 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "IREE Vulkan @ 6ef606b6fa3e12bd2c12d36a07463069eb71185f in its qualified conversion/scan/FP8 domains"
+    ],
+    "provider_assertion": "every one-node natural Graph compiles with at least one fixed mature managed region; no HYLE-owned math is accepted",
+    "replay": "each prepared program creates independent invocation slots for changed activation/token/state; routing stays cold-bound and a failed Gather publishes no result",
+    "oracles": "independent BF16 decoding, NumPy F32/BF16-boundary projection/FFN outputs, and C++ double attention/conv/recurrent calculations"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialFfnUsesMaturePreparedCalls"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-r03/receipt.json"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "test": "VulkanGraphD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls"
+    }
+  ],
+  "selected_validation": {
+    "candidate": "1fa67a8facf76feb78f66b5576aee45ac7d16d99",
+    "candidate_tree": "7a13b2639f783af298dea23b9299fa2185926545",
+    "verdict": "PASS",
+    "vulkan_sdk": "1.4.357.0 shader compiler and headers; system loader 1.4.341",
+    "werror": true,
+    "gates": {
+      "docs": "b37895c2664079d83e049b856d32409f3ac834d0e64e54a3e6c7c95f61df07a0",
+      "closure": "daf8a71c72d23ee56216d9dea8268fb622797e6426bb98d55a5b96b03c48ba56",
+      "configure": "b0e5de331277f695234825e96474a7889386092ef8a82f55267385968577fe07",
+      "compute_route_vulkan": "47e1026b4eefd99fd4abdbbe89f2529e782d2add138e5a2351d40bf637b4ea97",
+      "graph_route_vulkan": "9dbf9063ea134d4c540a140ca390687e949b58d7f0b67fddb32e476b44bbb873"
+    },
+    "focused_direct": "6/6 PASS in 1.017s",
+    "focused_graph": "5/5 PASS in 0.897s",
+    "owner_suites": {
+      "direct": "complete compute_route_vulkan label PASS",
+      "graph": "complete graph_route_vulkan label PASS",
+      "shared_werror": "both selected factors PASS; runtime DLLs beside executables"
+    },
+    "skipped_or_reused": 127
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 still requires relocated external source/static/shared consumers for the stable Vulkan route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 starts only from the stable route batch with an explicit frozen P1 card"
+  },
+  "machine": {
+    "profile": "W1-WIN",
+    "system": "Windows 11",
+    "machine": "AMD64",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "vulkan_api": "1.4.341",
+    "vulkan_driver": "610.62",
+    "vulkan_driver_id": "DRIVER_ID_NVIDIA_PROPRIETARY",
+    "compiler": "MSVC 19.50.35728"
+  }
+}
