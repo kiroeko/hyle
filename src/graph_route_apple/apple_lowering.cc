@@ -346,8 +346,8 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
             "Original ggml Metal model regions and maximal MLX "
             "compiled regions; fixed cold binding";
         report->numerical_policy +=
-            "; provider-owned grouped expert/mHC/recurrent F32 regions, "
-            "explicit non-mutating initial/final state";
+            "; provider-owned GGUF MatMul/grouped expert and mHC/recurrent "
+            "F32 regions, explicit non-mutating initial/final state";
         report->boundary_policy +=
             "; checked host completion at runtime boundaries; native MTLBuffer "
             "import; strided inputs use original MLX contiguous copy";

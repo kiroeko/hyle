@@ -210,6 +210,11 @@ TEST(AppleTyped, GgufPackedMatMulAndGroupedExpertsUseOrdinaryPreparation) {
     const auto packed_spec = a::input_spec(weight);
     ASSERT_TRUE(packed_spec) << packed_spec.error().message();
     const std::array specs{activation[0], *packed_spec};
+    auto invalid_specs = specs;
+    --invalid_specs[1].shape[0];
+    auto invalid_program = context->prepare(c::MatMul{}, invalid_specs);
+    ASSERT_FALSE(invalid_program);
+    EXPECT_TRUE(invalid_program.error().IsInvalidArgument());
     auto program = context->prepare(c::MatMul{}, specs);
     ASSERT_TRUE(program) << program.error().message();
     std::vector<float> host(m * k, 0.25F);

@@ -71,9 +71,11 @@ struct CompileOptions final {
 // order, read native outputs in published order. Graph may be destroyed after
 // this call. Replays neither traverse the HYLE DAG nor call custom lowering.
 //
-// Admits fixed, dense, pure tensors; Q4 constants use apple::kAffineQ4Format.
-// Symbolic dimensions, effects, explicit control edges and other encodings
-// are rejected. Each provider manages its own region's intermediates/fusion;
+// Admits fixed, dense, pure tensors; MLX Q4 constants use
+// apple::kAffineQ4Format. Public GGUF block descriptions are admitted only as
+// native ggml Metal MatMul/GroupedMatMul weights and bind as uint8 carriers.
+// Symbolic dimensions, effects, explicit control edges and other encodings are
+// rejected. Each provider manages its own region's intermediates/fusion;
 // cross-provider boundaries use checked completion waits, no shadow output copy.
 HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::Program>
 compile(const compute::apple::Context &context, const Graph &graph,

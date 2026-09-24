@@ -105,11 +105,12 @@ auto prepared = hyle::compute::prepare(
 ```
 
 MoE 的连续专家权重使用 `gguf_grouped_weight_description(type, logical_type, experts, n, k)`，其逻辑与
-物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU 与 CUDA 默认路线会在准备期把合格的
+物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA 与 Apple 默认路线会在准备期把合格的
 MatMul/GroupedMatMul 绑定到固定 ggml 原生程序；具体设备和上游版本仍可能拒绝某种格式或 shape。
 Graph 使用相同描述器与 Provider recipe，重复 submit 不重新选路、不重新量化，也不复制压缩权重。
-伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 与 Vulkan 的对应原生接线仍以
-当前模块状态和路线任务为准，不能用 CPU/CUDA 收据代签。
+伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 用 `apple::input_spec()` 将逻辑描述
+映射到一维 MLX `uint8` carrier；Vulkan 的对应原生接线仍以当前模块状态和路线任务为准，不能用其它
+路线收据代签。
 
 固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
 或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
@@ -765,8 +766,8 @@ half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实�
 
 同一 Provider 也接受上文十种精确 GGUF/ggml block storage 作为 MatMul RHS，或 `[E,N,K]`
 GroupedMatMul weight；直接把 caller-owned packed bytes 交给原版 `MUL_MAT`/`MUL_MAT_ID`，不经过
-HYLE decoder、全量重排或常驻浮点副本。CPU/CUDA 共用公开格式身份，但各自保留原生 program、
-resource 和完成语义。
+HYLE decoder、全量重排或常驻浮点副本。CPU/CUDA/Apple 共用公开格式身份，但各自保留原生
+program、resource 和完成语义。
 
 Gather 使用 I32 索引，支持标量或多维索引，以及上述已准入的非连续布局；每次运行都先按实际
 索引 stride 检查边界，再调用原版 get_rows。不同 outer 行必要的索引 repeat 保存在每请求工作区。

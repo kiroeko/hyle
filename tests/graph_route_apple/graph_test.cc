@@ -262,7 +262,9 @@ TEST(AppleGraph, GgufPackedMatMulAndGroupedExpertsUseNativeRegions) {
     auto builder = g::GraphBuilder::create().value();
     const auto input = builder.input(dense({m, k})).value();
     const auto weights = builder.constant(weight).value();
-    const auto output = builder.add(c::MatMul{}, input, weights).value();
+    const auto prepared = builder.add(c::Binary{}, input, input).value();
+    const auto product = builder.add(c::MatMul{}, prepared, weights).value();
+    const auto output = builder.add(c::Hadamard{}, product).value();
     ASSERT_TRUE(builder.publish(output).ok());
     auto graph = std::move(builder).finish().value();
     std::vector<std::uint8_t> packed(weight.required_bytes().value());
@@ -330,6 +332,15 @@ TEST(AppleGraph, GgufPackedMatMulAndGroupedExpertsUseNativeRegions) {
             (mx::Shape{tokens, slots, n}));
   for (std::size_t i = 0; i < result->get()->arrays()[0].size(); ++i)
     EXPECT_NEAR(result->get()->arrays()[0].data<float>()[i], 0.0F, 1.0e-12F);
+
+  auto invalid_builder = g::GraphBuilder::create().value();
+  const auto packed_input = invalid_builder.input(grouped_weight).value();
+  const auto copied = invalid_builder.add(c::Copy{}, packed_input).value();
+  ASSERT_TRUE(invalid_builder.publish(copied).ok());
+  auto invalid_graph = std::move(invalid_builder).finish().value();
+  auto rejected = ga::compile(*context, invalid_graph);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
 }
 
 TEST(AppleGraph, RejectsMissingPendingAndMismatchedConstants) {

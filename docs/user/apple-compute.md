@@ -120,11 +120,35 @@ tracing 内调用，才能把设备状态绑定到完成结果；在外部直接
 它不会出现在 `Results::arrays()` 中。GPU 内部临时结果不会在失败时成为成功 lease；输入、共享
 常量与此前结果仍保持不变。
 
-`context.compile(callable, input_specs)` 表达更完整的原生 region。`InputSpec` 只含 shape/dtype；
-也可给 ready examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数组列表或
+`context.compile(callable, input_specs)` 表达更完整的原生 region。普通 `InputSpec` 的 shape/dtype
+描述实际 MLX array；provider-native storage 还会保留一个 logical `TensorDesc`。也可给 ready
+examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数组列表或
 `hyle::Result<std::vector<mlx::core::array>>`。在其中使用 MLX ops 或 `apple::lower(Operation,...)`
 组合 typed 算子。完整 Direct Q4 FFN 见
 [样例](../../samples/package/compute/cpp/apple_ffn.h)，没有 Graph 依赖。
+
+### GGUF/ggml 原生压缩权重
+
+已经解析 GGUF tensor table 的调用方先用公共 `gguf_weight_description()` 或
+`gguf_grouped_weight_description()` 建立逻辑描述，再用 `apple::input_spec()` 得到实际 MLX carrier：
+
+```cpp
+auto logical = gguf_weight_description(GgufQuantizedType::kQ4K,
+                                       DataType::kFloat32, k, n);
+HYLE_ASSIGN_OR_RETURN(auto packed, apple::input_spec(*logical));
+std::array specs{apple::InputSpec{{m, k}, mx::float32}, packed};
+HYLE_ASSIGN_OR_RETURN(auto program, context.prepare(MatMul{}, specs));
+```
+
+`packed.shape` 是一维 `uint8[logical->required_bytes()]`；bind 的 array 必须含原 GGUF bytes、
+row-contiguous 且从自身 Metal buffer 起点开始。Invocation 保有 array owner 到 checked completion。
+HYLE 不加载 GGUF、不量化、不解码成常驻浮点副本，也不在 submit 时重排或重新选 Provider。
+examples overload 只能看到 `uint8`，无法猜出 Q4_K/IQ4_XS 等语义；压缩权重必须用上述 spec overload。
+
+当前 ggml Metal 路线接入 Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、
+IQ4_XS 和 MXFP4 的二维 MatMul，以及相同 storage catalog 的 `[E,N,K]` GroupedMatMul。
+准备期调用固定上游 capability 检查；设备/形状不支持时明确拒绝，不展开到 F32 或转去 CPU。
+这些格式与前述 MLX affine Q4 的 `uint32 + scale/bias` 合同不同，不能交换 carrier。
 
 ## 原版 Gated DeltaNet
 
@@ -171,7 +195,9 @@ Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes
 含递归的图只在原生 region 边界切分，热期按固定区域顺序执行。完整例见
 [Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)。
 
-此 Graph lowering 接受固定 F32/F16/BF16/I32/Bool 逻辑 schema、View 派生描述和上述 Q4 编码。
+此 Graph lowering 接受固定 F32/F16/BF16/I32/Bool 逻辑 schema、View 派生描述、上述 MLX affine Q4，
+以及只作为 MatMul/GroupedMatMul weight 的十种 GGUF block storage。Graph 用同一 `apple::input_spec()`
+映射 constant/input carrier；纯 MLX 区域不会接收 packed GGUF bytes。
 native arrays 的物理 stride、View 和必要布局整理仍由 MLX 管理；布局转换可能有成本，不能从
 HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝。符号维度、资源效果、显式 control edges 和
 未接入的 typed 操作会拒绝；需要这些能力时不能声称 Apple 已覆盖其它 Graph 路线的全部功能。
