@@ -1,6 +1,6 @@
 # M3 真实需求到成熟 Provider 的重新对账、补接与退场
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -92,3 +92,45 @@
 需求单元、Provider 层级、工作包、删除判据、预算与停止条件已冻结，`compute_ops` 依法恢复为
 `SCOPED`。下一步只执行 D1/D2 表驱动审计，固定有限 `KEEP/BORROW/FIX/DEFER/REJECT`；在进入
 `AUDITED` 前不修改产品、Provider、route、CMake 或自研算子。
+
+## D1/D2 审计结果
+
+[真实需求与 Provider 可达矩阵](llm-moe-provider-demand-matrix.json)已经替代旧 64×4 表作为本轮施工
+输入。它固定了八个模型的 22 个可验收 profile、15 个去重语义 region 和 60 个路线语义格；
+DeepSeek V4 Pro preview 的 0813 GGUF sibling 只保留为格式证据，不计验收 profile。旧表中的
+`B16/Q4-S128/Q4-A64/Q8-B32/F8-B128` 只作历史 crosswalk，不能再产生 PASS、缺口或产品设计。
+
+审计没有发现需要 HYLE 新写数学 kernel 的首轮理由，发现的是成熟能力没有穿过产品接缝：
+
+1. 固定 ggml `456172ec` 已含 CPU/CUDA/Metal/Vulkan 的 Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、
+   IQ3/IQ4_XS、MXFP4 `MUL_MAT`/`MUL_MAT_ID` 和 Gated DeltaNet/KDA、Lightning Indexer 等程序；
+   HYLE CPU adapter 的 `representable()` 仍要求 plain storage，CUDA adapter 也只从普通 `DataType`
+   降低，Vulkan 只有 MXFP4 特例，Metal 私有程序只收 dense F32/I32。因此当前状态是
+   `AVAILABLE_UNBOUND` 或 `BOUND_UNREACHABLE`，不是上游缺失。
+2. oneDNN、cuBLASLt、FlashInfer、SGLang/CCCL、MLX 和限定 IREE 的现有合格域继续保留；它们分别
+   承载 plain/fused、attention、indexing 或精确低精度补位，不把相近量化格式写成等价。
+3. Marlin adapter 只实现人工 signed symmetric Q4/group128、M=1..64；真实目标画像没有该物理格式，
+   仓库中除测试和文档外也没有 consumer。它进入 D4 退场候选：先从 CUDA 默认 roster 移除，若
+   owner 审计仍找不到独立 consumer，再删除 factor/public alias/构建与文档。
+4. 四路线基础资源、完成和失败设施及 SIMD 基础库继续保留。全部 HYLE 自研算子仍冻结；D3/D4
+   不用性能比较借机改进或删除它们。
+
+### 有限 FIX
+
+| FIX | owner 批次 | 产品动作 | 完成边界 |
+|---|---|---|---|
+| `FIX-1` | `compute_ops`、`compute_provider_ggml` | 定义一个版本化 ggml-native storage catalog 和 checked descriptor builder | 只描述上游现有 K/IQ/Q8/MXFP4 物理格式，不写 codec |
+| `FIX-2` | 四个 ggml Provider/route owner | CPU、CUDA、Metal、Vulkan 批量导入 native tensor，保留上游 `MUL_MAT`、`MUL_MAT_ID`、模型 region 与资源所有权 | 普通 Direct/Graph 能绑定；不按 kernel 建 vtable |
+| `FIX-3` | 四 route + Graph owner | 用一个表绑定 15 个 region 的 exact model/profile/port signature 与硬件/驱动/toolkit 条件 | prepare 固定，submit 不选路、不计时 |
+| `FIX-4` | 各路线 owner | 官方与 primary GGUF 的 reduced-capacity 真实片段、两次 submit、状态/资源/失败收据 | 不要求加载器或 27B/2.4T 整模常驻 |
+| `FIX-5` | `compute_provider_marlin`、`compute_route_cuda` 及实际发现的死接线 owner | 退场无目标、无独立 consumer、不可达或错误 fallback 的 adapter | 不删除 SIMD/路线设施/冻结自研数学 |
+| `FIX-6` | 对应交付 owner | 稳定后一次 source/static/shared 与适用 P1；汇总精确残余 | 未运行不写 PASS；具名上游缺失另开最小缺口卡 |
+
+施工顺序固定为：公共 catalog → CPU/CUDA ggml → Apple Metal/MLX → Vulkan ggml/IREE → 旧接线退场 →
+真实片段与三交付。相同 Provider 的 storage/lowering/receipt 按路线整批完成，不再逐算子开卡。
+
+## AUDITED
+
+D1/D2 已完成，以上六项是本轮全部产品 FIX。后续只有表中具名 owner 可以重开；先按合法状态迁移
+绑定当前 card，再修改其产品代码。出现需要新自研数学、额外 Provider 或改变路由架构的新事实时，
+退回重新定界，不扩大本 FIX 集。

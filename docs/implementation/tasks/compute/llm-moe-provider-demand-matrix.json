@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "id": "llm-moe-provider-demand-reconciliation-v1",
+  "baseline": "4b74d2b860d5ee864f3e38931124fdd5b9db51cf",
+  "generated_at": "2026-09-24",
+  "authority": {
+    "model_facts": "llm-moe-model-weight-operator-audit.md",
+    "legacy_crosswalk_only": [
+      "llm-moe-coverage-matrix.json",
+      "llm-moe-provider-map.json"
+    ],
+    "rule": "A source symbol, build target, device enumeration or Provider registration is not coverage. RUN_PASS requires an immutable-candidate Direct or Graph receipt for the exact model/profile/region domain."
+  },
+  "status_vocabulary": {
+    "RUN_PASS": "The exact declared domain ran through an ordinary HYLE entry and has a retained receipt.",
+    "BOUND_UNPROVEN": "The mature path is registered and structurally reachable, but the exact real-profile fragment has not run.",
+    "AVAILABLE_UNBOUND": "The pinned mature source has the required native program/type, but HYLE cannot bind it through the ordinary entry.",
+    "BOUND_UNREACHABLE": "A target or registration exists, but public descriptors, policy or lowering reject the declared domain.",
+    "BACKEND_REJECTED": "The mature backend rejects the exact dtype, format, shape or hardware domain.",
+    "NUMERIC_INCOMPATIBLE": "The candidate changes the required numeric/storage semantics.",
+    "UPSTREAM_MISSING": "No admitted mature source implements the exact domain.",
+    "VALIDATION_NOT_RUN": "Reachability is not yet resolved by an execution receipt."
+  },
+  "profile_catalog": [
+    {
+      "model": "qwen35_2b",
+      "official": {"repository": "Qwen/Qwen3.5-2B", "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc", "variant": "official-bf16", "formats": ["BF16", "F32 recurrent"]},
+      "primary_gguf": {"repository": "unsloth/Qwen3.5-2B-GGUF", "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae", "variant": "UD-Q4_K_XL", "formats": ["Q4_K", "Q5_K", "Q6_K", "Q8_0", "IQ4_XS", "F16", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/Qwen3.5-2B-GGUF", "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae", "variant": "UD-Q8_K_XL", "formats": ["Q8_0", "F16", "F32"]}
+    },
+    {
+      "model": "qwen38_27b",
+      "official": {"repository": "Qwen/Qwen3.8-27B", "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0", "variant": "official-bf16", "formats": ["BF16", "F32 recurrent"]},
+      "primary_gguf": {"repository": "unsloth/Qwen3.8-27B-GGUF", "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502", "variant": "UD-Q4_K_M", "formats": ["Q3_K", "Q4_K", "Q5_K", "Q6_K", "Q8_0", "IQ3", "IQ4", "BF16", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/Qwen3.8-27B-GGUF", "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502", "variant": "UD-Q8_K_XL", "formats": ["Q8_0", "BF16", "F32"]}
+    },
+    {
+      "model": "qwen38_24t",
+      "official": {"repository": "Qwen/Qwen3.8-2.4T-A95B", "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996", "variant": "official-bf16", "formats": ["BF16", "F32 recurrent/router"]},
+      "primary_gguf": {"repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF", "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556", "variant": "UD-IQ4_XS", "formats": ["IQ4_XS", "Q4_K", "Q5_K", "Q6_K", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF", "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556", "variant": "Q8_0", "formats": ["Q8_0", "F32"]}
+    },
+    {
+      "model": "kimi_k3",
+      "official": {"repository": "moonshotai/Kimi-K3", "revision": "f831ab66814297da540d832a5235f8e904f29d06", "variant": "official-mxfp4", "formats": ["MXFP4 packed expert", "UE8M0 scale", "BF16", "F32"]},
+      "primary_gguf": {"repository": "unsloth/Kimi-K3-GGUF", "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b", "variant": "UD-Q4_K_XL", "formats": ["MXFP4", "Q8_0", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/Kimi-K3-GGUF", "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b", "variant": "UD-Q8_K_XL", "formats": ["MXFP4", "BF16", "F32"]}
+    },
+    {
+      "model": "deepseek_v4_pro",
+      "official": {"repository": "deepseek-ai/DeepSeek-V4-Pro", "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1", "variant": "official-fp4-fp8", "formats": ["packed FP4 expert", "FP8 E4M3", "UE8M0 scale", "BF16", "F32", "I64"]},
+      "primary_gguf": null,
+      "sibling_format_evidence": {"repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF", "revision": "6d053616d152293da72569f56b861466f10ace7d", "variants": ["UD-Q4_K_XL", "UD-Q8_K_XL"], "acceptance": false}
+    },
+    {
+      "model": "deepseek_v4_flash",
+      "official": {"repository": "deepseek-ai/DeepSeek-V4-Flash", "revision": "60d8d70770c6776ff598c94bb586a859a38244f1", "variant": "official-fp4-fp8", "formats": ["packed FP4 expert", "FP8 E4M3", "UE8M0 scale", "BF16", "F32", "I64"]},
+      "primary_gguf": {"repository": "unsloth/DeepSeek-V4-Flash-GGUF", "revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0", "variant": "UD-Q4_K_XL", "formats": ["MXFP4", "Q8_0", "BF16", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/DeepSeek-V4-Flash-GGUF", "revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0", "variant": "UD-Q8_K_XL", "formats": ["MXFP4", "BF16", "F32"]}
+    },
+    {
+      "model": "glm53",
+      "official": {"repository": "zai-org/GLM-5.3", "revision": "aca966e4e02791568aa6a4ced368624b3d897f42", "variant": "official-fp8", "formats": ["FP8 E4M3 block128", "BF16", "F32"]},
+      "primary_gguf": {"repository": "unsloth/GLM-5.3-GGUF", "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771", "variant": "UD-Q4_K_XL", "formats": ["Q4_K", "Q5_K", "Q6_K", "Q8_0", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/GLM-5.3-GGUF", "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771", "variant": "Q8_0", "formats": ["Q8_0", "F32"]}
+    },
+    {
+      "model": "glm53_flash",
+      "official": {"repository": "zai-org/GLM-5.3-Flash", "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a", "variant": "official-fp8", "formats": ["FP8 E4M3 block128", "BF16", "F32"]},
+      "primary_gguf": {"repository": "unsloth/GLM-5.3-Flash-GGUF", "revision": "621d456e93e926e4b52f85cff5f634358c1828f9", "variant": "UD-Q4_K_XL", "formats": ["Q4_K", "Q5_K", "Q6_K", "Q8_0", "F32"]},
+      "fidelity_gguf": {"repository": "unsloth/GLM-5.3-Flash-GGUF", "revision": "621d456e93e926e4b52f85cff5f634358c1828f9", "variant": "Q8_0", "formats": ["Q8_0", "F32"]}
+    }
+  ],
+  "storage_reachability": [
+    {
+      "domain": "plain-f32-f16-bf16",
+      "required_by": "all official and GGUF profiles",
+      "routes": {
+        "cpu": {"provider": "ggml CPU + oneDNN", "status": "BOUND_UNPROVEN", "reason": "ordinary operations are bound; exact profile fragments remain unrun"},
+        "cuda": {"provider": "ggml CUDA + cuBLASLt", "status": "BOUND_UNPROVEN", "reason": "ordinary operations are bound; exact profile fragments remain unrun"},
+        "apple": {"provider": "MLX + narrow ggml Metal recurrent program", "status": "BOUND_UNPROVEN", "reason": "typed MLX paths are bound; exact profile fragments remain unrun"},
+        "vulkan": {"provider": "ggml Vulkan", "status": "BOUND_UNPROVEN", "reason": "managed region is bound; exact profile fragments remain unrun"}
+      }
+    },
+    {
+      "domain": "gguf-q3-q4-q5-q6-q8-iq",
+      "required_by": "all primary/fidelity GGUF profiles except pure high-precision roles",
+      "upstream_anchor": "ggml GGML_TYPE_Q3_K/Q4_K/Q5_K/Q6_K/Q8_0/IQ3/IQ4_XS and native MUL_MAT/MUL_MAT_ID",
+      "routes": {
+        "cpu": {"provider": "ggml CPU", "status": "BOUND_UNREACHABLE", "reason": "provider representable() requires plain storage and native_type() maps only F32/F16/BF16/I32"},
+        "cuda": {"provider": "ggml CUDA", "status": "BOUND_UNREACHABLE", "reason": "upstream MMQ/MMVQ supports the types, but HYLE lowering exposes only ordinary TensorDesc types"},
+        "apple": {"provider": "ggml Metal", "status": "AVAILABLE_UNBOUND", "reason": "pinned Metal has K/IQ/Q8 kernels; HYLE ggml Metal program is restricted to dense F32/I32 model operations"},
+        "vulkan": {"provider": "ggml Vulkan", "status": "BOUND_UNREACHABLE", "reason": "managed region maps plain types and one MXFP4 special case, not K/IQ/Q8 storage IDs"}
+      }
+    },
+    {
+      "domain": "gguf-mxfp4",
+      "required_by": "Kimi K3 and DeepSeek V4 GGUF routed experts",
+      "upstream_anchor": "ggml GGML_TYPE_MXFP4 MUL_MAT/MUL_MAT_ID on CPU, CUDA, Metal and Vulkan",
+      "routes": {
+        "cpu": {"provider": "ggml CPU", "status": "BOUND_UNREACHABLE", "reason": "public adapter rejects opaque/blocked MXFP4 storage"},
+        "cuda": {"provider": "ggml CUDA", "status": "BOUND_UNREACHABLE", "reason": "upstream kernels exist but HYLE adapter has no native storage mapping"},
+        "apple": {"provider": "ggml Metal", "status": "AVAILABLE_UNBOUND", "reason": "upstream Metal contains MXFP4 matmul and mul_mat_id kernels; route only exposes the dense recurrent program"},
+        "vulkan": {"provider": "ggml Vulkan", "status": "BOUND_UNPROVEN", "reason": "one MXFP4 carrier is mapped, but target grouped-expert/profile entry has no ordinary receipt"}
+      }
+    },
+    {
+      "domain": "official-packed-fp4-fp8",
+      "required_by": "Kimi K3, DeepSeek V4 and GLM-5.3 official profiles",
+      "routes": {
+        "cpu": {"provider": "oneDNN/ggml CPU candidate composition", "status": "AVAILABLE_UNBOUND", "reason": "mature reorder/decode primitives exist, but exact packed profile, scales and activation contract are unbound"},
+        "cuda": {"provider": "cuBLASLt/SGLang/ggml CUDA candidates", "status": "BACKEND_REJECTED", "reason": "the canonical SM89 machine does not qualify the previously tested block-FP8 algorithm; exact fallback remains unbound"},
+        "apple": {"provider": "MLX quantization/ggml Metal candidates", "status": "AVAILABLE_UNBOUND", "reason": "public quantization functions exist, but exact FP4/FP8 codes, scales and block contracts are not bound"},
+        "vulkan": {"provider": "IREE Vulkan/ggml Vulkan candidates", "status": "AVAILABLE_UNBOUND", "reason": "type legalization/native formats are source-visible; exact target program and device execution are unbound"}
+      }
+    }
+  ],
+  "demand_units": [
+    {"id": "R01", "region": "embedding-gather-lm-head", "models": ["all"], "roles": ["token embedding", "row gather", "shared or separate LM head"], "formats": ["BF16", "F16", "Q4_K", "Q6_K", "Q8_0", "MXFP4"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R02", "region": "norm-cast-residual-activation", "models": ["all"], "roles": ["RMSNorm/LayerNorm", "Cast", "Add/Multiply", "SiLU/SwiGLU/SiTU", "stable functions"], "formats": ["F32", "BF16", "F16"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R03", "region": "dense-batched-strided-projection", "models": ["all"], "roles": ["attention projection", "dense FFN", "linear-attention projection"], "formats": ["plain floating", "GGUF mixed", "official FP4/FP8"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R04", "region": "qwen-full-attention", "models": ["qwen35_2b", "qwen38_27b", "qwen38_24t"], "roles": ["GQA", "QK norm", "RoPE/YaRN", "causal mask", "Softmax", "KV cache"], "formats": ["BF16/F16 activations", "F32 accumulation", "mixed projection weights"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R05", "region": "qwen-gated-delta-net", "models": ["qwen35_2b", "qwen38_27b", "qwen38_24t"], "roles": ["causal depthwise conv1d", "gate/decay", "recurrent update", "state output"], "formats": ["mixed projection weights", "F32 conv/state/math"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R06", "region": "kda", "models": ["kimi_k3", "glm53_flash"], "roles": ["three causal convolutions", "gate/decay", "recurrent update", "state"], "formats": ["BF16/FP8/Q8 projection", "F32 conv/state/math"], "route_status": {"cpu": "AVAILABLE_UNBOUND", "cuda": "AVAILABLE_UNBOUND", "apple": "AVAILABLE_UNBOUND", "vulkan": "AVAILABLE_UNBOUND"}},
+    {"id": "R07", "region": "mla", "models": ["kimi_k3", "deepseek_v4_pro", "deepseek_v4_flash", "glm53", "glm53_flash"], "roles": ["low-rank Q/KV", "NoPE/RoPE split", "KV state", "output gate"], "formats": ["BF16", "FP8", "Q8_0", "F32 norm/state"], "route_status": {"cpu": "AVAILABLE_UNBOUND", "cuda": "AVAILABLE_UNBOUND", "apple": "AVAILABLE_UNBOUND", "vulkan": "AVAILABLE_UNBOUND"}},
+    {"id": "R08", "region": "dsa-lightning-indexer", "models": ["deepseek_v4_pro", "deepseek_v4_flash", "glm53", "glm53_flash"], "roles": ["index projection", "pool/compress", "score", "stable TopK", "Gather"], "formats": ["FP8/Q8 projection", "F32 parameters", "I32 index"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "AVAILABLE_UNBOUND", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R09", "region": "compression-cross-layer-index-state", "models": ["deepseek_v4_pro", "deepseek_v4_flash", "glm53", "glm53_flash"], "roles": ["compression", "CSA/HCA", "cross-invocation state", "ragged tail"], "formats": ["F32 state/index", "model projection format"], "route_status": {"cpu": "AVAILABLE_UNBOUND", "cuda": "AVAILABLE_UNBOUND", "apple": "AVAILABLE_UNBOUND", "vulkan": "AVAILABLE_UNBOUND"}},
+    {"id": "R10", "region": "moe-routing-dispatch-combine", "models": ["qwen38_24t", "kimi_k3", "deepseek_v4_pro", "deepseek_v4_flash", "glm53", "glm53_flash"], "roles": ["router score/bias", "stable TopK", "dispatch", "exclusive scan", "scatter", "combine", "shared expert"], "formats": ["F32/BF16 router", "I32 index"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R11", "region": "quantized-grouped-experts", "models": ["qwen38_24t", "kimi_k3", "deepseek_v4_pro", "deepseek_v4_flash", "glm53", "glm53_flash"], "roles": ["MUL_MAT_ID/grouped expert", "activation", "shared expert", "ordered combine"], "formats": ["IQ4_XS/Q4_K/Q5_K/Q6_K", "MXFP4", "official packed FP4/FP8"], "route_status": {"cpu": "AVAILABLE_UNBOUND", "cuda": "AVAILABLE_UNBOUND", "apple": "AVAILABLE_UNBOUND", "vulkan": "AVAILABLE_UNBOUND"}},
+    {"id": "R12", "region": "mhc-attnres", "models": ["kimi_k3", "deepseek_v4_pro", "deepseek_v4_flash", "glm53_flash"], "roles": ["small matrix", "Sinkhorn/normalization", "pre/post combine", "residual identity"], "formats": ["F32 base/scale/state", "BF16/Q8 projection"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "AVAILABLE_UNBOUND", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R13", "region": "mtp-nextn", "models": ["qwen35_2b", "qwen38_27b", "qwen38_24t", "deepseek_v4_pro", "deepseek_v4_flash", "glm53", "glm53_flash"], "roles": ["independent weights", "norm", "carry", "next-token side output"], "formats": ["profile-specific weights", "model activation/state"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}},
+    {"id": "R14", "region": "low-precision-codec-and-quant-matmul", "models": ["all quantized profiles"], "roles": ["codes/scales", "decode", "dynamic activation quant", "quantized MatMul"], "formats": ["GGUF K/IQ/Q8", "MXFP4", "official FP4/FP8/UE8M0"], "route_status": {"cpu": "AVAILABLE_UNBOUND", "cuda": "AVAILABLE_UNBOUND", "apple": "AVAILABLE_UNBOUND", "vulkan": "AVAILABLE_UNBOUND"}},
+    {"id": "R15", "region": "prepare-replay-resource-failure", "models": ["all"], "roles": ["cold match/bind", "packing/cache", "workspace", "native completion", "two submits", "failure does not publish"], "formats": ["all profile identities"], "route_status": {"cpu": "BOUND_UNPROVEN", "cuda": "BOUND_UNPROVEN", "apple": "BOUND_UNPROVEN", "vulkan": "BOUND_UNPROVEN"}}
+  ],
+  "provider_inventory": [
+    {"provider": "ggml CPU", "owner": "compute_provider_ggml", "current": "registered in CPU Direct and Graph; plain F32/F16/BF16/I32 only", "decision": "FIX", "target": "native GGUF storage catalog plus MUL_MAT/MUL_MAT_ID and mature model regions"},
+    {"provider": "oneDNN", "owner": "compute_provider_onednn + graph_provider_onednn", "current": "registered; qualified plain MatMul/norm/basic regions", "decision": "KEEP", "target": "plain/reorder/fused regions only; never claim GGUF format equivalence"},
+    {"provider": "ggml CUDA", "owner": "compute_provider_ggml_cuda + graph_provider_ggml_cuda", "current": "registered; plain tensor and selected attention paths", "decision": "FIX", "target": "native GGUF storage and grouped/model regions through the existing delegated runtime"},
+    {"provider": "cuBLASLt", "owner": "compute_provider_cublas", "current": "registered dense floating MatMul", "decision": "KEEP", "target": "plain projection and exact supported low-precision domains only"},
+    {"provider": "FlashInfer", "owner": "compute_provider_flashinfer", "current": "conditionally registered; qualified head-256 attention domain", "decision": "KEEP", "target": "Qwen attention where exact hardware/toolkit conditions match"},
+    {"provider": "SGLang + CCCL", "owner": "compute_provider_cuda", "current": "registered mature norm/indexing/collective fragments", "decision": "KEEP", "target": "exact supported fragments inside CUDA regions"},
+    {"provider": "Marlin", "owner": "compute_provider_marlin", "current": "registered exact signed symmetric group128 Q4 carrier; only tests/docs consume it", "decision": "REJECT_CANDIDATE", "target": "remove from default route and delete adapter unless D4 finds an independent real consumer"},
+    {"provider": "MLX", "owner": "compute_route_apple + graph_route_apple", "current": "broad typed/compiled Apple route; artificial affine-Q4 group64 only", "decision": "FIX", "target": "retain broad MLX regions and bind only exact native profile formats"},
+    {"provider": "ggml Metal", "owner": "compute_provider_ggml_metal", "current": "private dense F32/I32 recurrent NativeProgram used by Apple route", "decision": "FIX", "target": "general mature ggml Metal model/quant region without exposing a universal executor"},
+    {"provider": "ggml Vulkan", "owner": "compute_provider_ggml_vulkan", "current": "managed graph region with plain types and one MXFP4 carrier", "decision": "FIX", "target": "native GGUF K/IQ/Q8/MXFP4 storage and grouped/model regions"},
+    {"provider": "IREE Vulkan", "owner": "compute_provider_iree_vulkan", "current": "limited offline standard/FP8/scan region", "decision": "KEEP_CONDITIONAL", "target": "only exact device-qualified gaps after ggml Vulkan"}
+  ],
+  "finite_fix_set": [
+    {"id": "FIX-1", "work": "Define one versioned ggml-native storage catalog for Q3_K/Q4_K/Q5_K/Q6_K/Q8_0/IQ3/IQ4_XS/MXFP4 and checked TensorDesc construction; do not invent a HYLE codec."},
+    {"id": "FIX-2", "work": "Teach CPU, CUDA, Metal and Vulkan ggml bridges to import those native tensors and retain upstream MUL_MAT, MUL_MAT_ID and model-region fusion/resource ownership."},
+    {"id": "FIX-3", "work": "Bind the 15 real semantic regions to exact model/profile signatures and route conditions; use one bulk table per route and keep submit free of selection/timing."},
+    {"id": "FIX-4", "work": "Add reduced-capacity real-profile Direct/Graph consumers for official and primary GGUF profiles, including two submits, state/resource/completion and failure receipts."},
+    {"id": "FIX-5", "work": "Remove Marlin artificial-Q4 default wiring and any other adapter proven to have no target or independent consumer; preserve SIMD and route infrastructure."},
+    {"id": "FIX-6", "work": "Run source/static/shared delivery and one applicable P1 only after each route candidate is immutable; record exact residual UPSTREAM_MISSING/BACKEND_REJECTED gaps."}
+  ],
+  "counts": {
+    "models": 8,
+    "acceptance_profiles": 22,
+    "semantic_regions": 15,
+    "route_semantic_cells": 60,
+    "exact_real_profile_run_pass": 0,
+    "available_unbound_or_unreachable_format_route_cells": 10,
+    "legacy_route_cells": 256,
+    "legacy_validation_not_run": 134
+  }
+}

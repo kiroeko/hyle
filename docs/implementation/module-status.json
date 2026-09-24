@@ -396,9 +396,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-m3-provider-demand-reconciliation.md",
-      "summary": "M3 SCOPED：按真实模型算子/权重角色重建四路线 Provider 可达矩阵，再批量补接成熟能力并清理无需求或不可达接线；D1/D2 只审计。"
+      "summary": "M3 AUDITED：八个真实模型的 22 个 profile 已归并为 15 个语义 region；六项有限 FIX 固定为 ggml-native 批量接缝、真实 profile 路由/验收与无需求旧接线退场，自研算子继续冻结。"
     },
     {
       "module": "compute_backend_cpu",
