@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "candidate": "3798fd1129323c53c373dbdf7bd628b1a1f6365d",
+  "candidate_tree": "9a725ac7fa515bb43419366e88f229c645489f1f",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:official:official-bf16",
+    "route": "cpu",
+    "entry": "direct",
+    "regions": ["R01", "R02", "R03", "R04", "R05", "R13", "R14", "R15"],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.5-2B",
+    "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "shard": "model.safetensors-00001-of-00001.safetensors",
+    "expected_sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1",
+    "fixture_bytes": 117523552,
+    "fixture_tensors": 12,
+    "embedding_slice_sha256": "3924223432b46b6dd5463a5872d76ad674ba377bf76e27c1a56ce5625ee62945",
+    "direct_ffn_oracle_sha256": [
+      "840be4222754706a9d4533473e9eef7e5e4aabddc77b7f80e418a18064247ffe",
+      "9acb37e037087d9b924f40990b79d0bb39ede3f4f0a887777eedcf5ce4acc95a"
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "providers": [
+      "ggml CPU 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "oneDNN 3.13.2 primitives"
+    ],
+    "replay": "each prepared call submits twice with changed activation/token/state; routing stays cold-bound",
+    "oracles": "independent BF16 decoding, NumPy F32/BF16-boundary projection/FFN outputs, and C++ double attention/conv/recurrent calculations"
+  },
+  "regions": [
+    {"id": "R01", "test": "CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls", "result": "PASS"},
+    {"id": "R02", "test": "CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls", "result": "PASS"},
+    {"id": "R03", "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-r03/receipt.json", "result": "PASS"},
+    {"id": "R04", "test": "CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls", "result": "PASS"},
+    {"id": "R05", "test": "CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls", "result": "PASS"},
+    {"id": "R13", "test": "CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls", "result": "PASS"},
+    {"id": "R14", "test": "CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls", "result": "PASS"},
+    {"id": "R15", "test": "CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls", "result": "PASS"}
+  ],
+  "selected_validation": {
+    "selector": "READY: docs, closure, inputs tool, configure, compute_provider_ggml, compute_route_cpu, graph_route_cpu",
+    "compute_provider_ggml": "35/35 PASS",
+    "compute_route_cpu": "19/19 PASS",
+    "graph_route_cpu": "graph route plus cpu executor PASS",
+    "inputs_test": "13/13 PASS",
+    "module_closure": "PASS",
+    "docs": "PASS",
+    "diff_check": "PASS"
+  },
+  "delivery": {"status": "NOT_RUN", "reason": "D5-A5 runs once for the stable CPU route batch"},
+  "performance": {"tier": "NOT_RUN", "reason": "D5-A6 runs once after route correctness is stable"},
+  "machine": {
+    "system": "Windows 11",
+    "machine": "AMD64",
+    "processor_identifier": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel"
+  }
+}

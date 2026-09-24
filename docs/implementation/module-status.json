@@ -374,9 +374,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F5 AUDITED：官方 Qwen3.5 CPU Direct R02 证明独立 BF16 SwiGLU 仍落到冻结 native；固定 ggml CPU 已有成熟 SwiGLU，有限 FIX 只补 SiLU GatedActivation adapter 与 BF16 上游 Cast 接线。"
+      "summary": "M3-D5-F5 CANDIDATE 3798fd11：ggml CPU adapter 已用固定上游 SwiGLU 接管 F16/BF16/F32 packed/separate SiLU；Provider、CPU Direct/Graph owner suite 和官方 Qwen3.5 完整 CPU Direct/Graph 两格通过。",
+      "candidate": "3798fd1129323c53c373dbdf7bd628b1a1f6365d"
     },
     {
       "module": "graph_provider_onednn",

@@ -205,6 +205,11 @@ Direct 12/12、CPU Graph 34/34 与普通 cpu-executor 全部通过。未修改�
 热选择或性能竞速。若固定上游不能正确执行该精确域，则记录 `BACKEND_REJECTED`，不恢复 native 作为
 D5 成熟覆盖证据。
 
+**D5-F5 CANDIDATE（`3798fd11`）**：CPU adapter 已用固定 ggml 的 `ggml_swiglu`/
+`ggml_swiglu_split` 接管 F16/BF16/F32 的 packed/separate SiLU；BF16 只在同一上游图内 Cast 到 F32，
+再由既有输出边界转回。Provider 35/35、CPU Direct 19/19、CPU Graph 两个测试目标和 fixture 输入工具
+13/13 均通过；未修改公共 schema、上游源码、路由顺序或其它 activation。
+
 ### CPU Qwen3.5 official Graph 完整格
 
 不可变 candidate `f340b0d4` 已用本地 checkpoint 的 embedding slice、layer-0 norm/FFN/conv/GDN/out-proj、
@@ -212,6 +217,15 @@ layer-3 Q/K norm 与 MTP 权重，完成 R01-R05、R13-R15 的普通 CPU Graph �
 成熟 Provider identity、资源与失败检查；既有 R03 收据并入同一格。完整收据见
 [CPU Qwen3.5 official Graph](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-graph/README.md)。
 ledger 首次得到 1 个 `RUN_PASS`；CPU Direct、其它路线、三交付和 P1 仍未由该格代签。
+
+### CPU Qwen3.5 official Direct 完整格
+
+不可变 candidate `3798fd1129323c53c373dbdf7bd628b1a1f6365d` 复用同一 checkpoint fixture，
+通过普通 `compute::cpu` 上下文逐算子冷准备并执行 R01-R05、R13-R15。R02 保留真实 BF16 边界并由
+ggml SwiGLU 与 MatMul 承载；每个 prepared call 两次变化输入 replay，R01 另验证越界失败不发布，
+既有 R03 收据并入完整格。完整收据见
+[CPU Qwen3.5 official Direct](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-direct/README.md)。
+ledger 现有 2 个 `RUN_PASS`；其它路线、三交付和 P1 未由这两格代签。
 
 ## 验收合同
 
