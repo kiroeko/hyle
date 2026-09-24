@@ -1403,6 +1403,56 @@ TEST(GgmlCpuProvider, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
   }
 }
 
+template <class Value> void rope_type_boundary(RopeLayout layout) {
+  const auto data_desc = dense(half_test::data_type<Value>(), {1, 2, 1, 8});
+  const auto position_desc = dense(DataType::kInt32, {2});
+  const auto frequency_desc = dense(DataType::kFloat32, {2});
+  std::array<Value, 16> values{};
+  for (std::size_t i = 0; i < values.size(); ++i)
+    values[i] = half_test::encode<Value>(static_cast<double>(i + 1));
+  auto data = half_test::buffer<Value>(values);
+  auto positions =
+      half_test::buffer<std::int32_t>(std::array<std::int32_t, 2>{0, 2});
+  auto frequencies =
+      half_test::buffer<float>(std::array<float, 2>{0.5F, 0.25F});
+  auto output = output_buffer(data_desc);
+  const std::array inputs{
+      ConstTensorView::create(data_desc, data.view()).value(),
+      ConstTensorView::create(position_desc, positions.view()).value(),
+      ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  ASSERT_TRUE(execute(context,
+                      RoPE{.rotary_dimensions = 4,
+                           .sequence_axis = 1,
+                           .layout = layout},
+                      inputs,
+                      TensorView::create(data_desc, output.view()).value())
+                  .ok());
+  const auto actual = half_test::read<Value>(output);
+  std::array<double, 16> expected{};
+  for (std::size_t i = 0; i < expected.size(); ++i)
+    expected[i] = static_cast<double>(i + 1);
+  if (layout == RopeLayout::kInterleaved) {
+    expected[8] = 9.0 * std::cos(1.0) - 10.0 * std::sin(1.0);
+    expected[9] = 9.0 * std::sin(1.0) + 10.0 * std::cos(1.0);
+    expected[10] = 11.0 * std::cos(0.5) - 12.0 * std::sin(0.5);
+    expected[11] = 11.0 * std::sin(0.5) + 12.0 * std::cos(0.5);
+  } else {
+    expected[8] = 9.0 * std::cos(1.0) - 11.0 * std::sin(1.0);
+    expected[9] = 10.0 * std::cos(0.5) - 12.0 * std::sin(0.5);
+    expected[10] = 9.0 * std::sin(1.0) + 11.0 * std::cos(1.0);
+    expected[11] = 10.0 * std::sin(0.5) + 12.0 * std::cos(0.5);
+  }
+  ASSERT_EQ(actual.size(), expected.size());
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    half_test::expect_near(actual[i], expected[i]);
+}
+
+TEST(GgmlCpuProvider, Bfloat16AndFloatRopeMatchQualifiedUpstreamTypes) {
+  rope_type_boundary<hyle::simd::bfloat16_t>(RopeLayout::kInterleaved);
+  rope_type_boundary<float>(RopeLayout::kHalfSplit);
+}
+
 TEST(GgmlCpuProvider, NativeQ4KMatMulImportsGgufBytesAndReplays) {
   constexpr std::int64_t rows = 2;
   constexpr std::int64_t reduction = 256;

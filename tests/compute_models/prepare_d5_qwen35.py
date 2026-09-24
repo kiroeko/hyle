@@ -26,6 +26,8 @@ TENSORS = (
     "model.language_model.layers.3.self_attn.q_proj.weight",
     "mtp.fc.weight",
 )
+EMBEDDING = "model.language_model.embed_tokens.weight"
+EMBEDDING_ROWS = (0, 42, 151643, 151644, 151645, 248318, 248319)
 DTYPE_BYTES = {"BF16": 2, "F32": 4}
 
 
@@ -97,6 +99,28 @@ def extract(model_dir: Path, output: Path) -> dict:
                 "sha256": hashlib.sha256(payload).hexdigest(),
             })
 
+        embedding = header.get(EMBEDDING)
+        if not isinstance(embedding, dict) or embedding.get("dtype") != "BF16" or \
+                embedding.get("shape") != [248320, 2048]:
+            raise ValueError("Qwen embedding anchor changed")
+        embedding_begin, embedding_end = embedding["data_offsets"]
+        row_bytes = 2048 * DTYPE_BYTES["BF16"]
+        selected = bytearray()
+        source_ranges = []
+        for row in EMBEDDING_ROWS:
+            begin = embedding_begin + row * row_bytes
+            end = begin + row_bytes
+            if end > embedding_end:
+                raise ValueError("selected embedding row exceeds tensor")
+            stream.seek(payload_base + begin)
+            payload = stream.read(row_bytes)
+            if len(payload) != row_bytes:
+                raise ValueError("short embedding row read")
+            selected.extend(payload)
+            source_ranges.append([begin, end])
+        embedding_file = output / "embedding_rows_7x2048.bf16"
+        embedding_file.write_bytes(selected)
+
     try:
         import numpy as np
     except ImportError as error:
@@ -114,10 +138,38 @@ def extract(model_dir: Path, output: Path) -> dict:
     activation_bits = ((bits + rounding) >> 16).astype("<u2")
     activation = (activation_bits.astype(np.uint32) << 16).view(np.float32)
     expected_output = (weight @ activation).astype("<f4")
-    activation_file = output / "activation_1x2048.bf16"
-    expected_file = output / "expected_out_proj_1x2048.f32"
-    activation_bits.tofile(activation_file)
-    expected_output.tofile(expected_file)
+    projection_activation_file = output / "activation_1x2048.bf16"
+    projection_expected_file = output / "expected_out_proj_1x2048.f32"
+    activation_bits.tofile(projection_activation_file)
+    expected_output.tofile(projection_expected_file)
+
+    mtp_name = "mtp.fc.weight"
+    mtp_record = next(item for item in records if item["name"] == mtp_name)
+    if mtp_record["dtype"] != "BF16" or mtp_record["shape"] != [2048, 4096]:
+        raise ValueError("Qwen MTP projection anchor changed")
+    mtp_bits = np.fromfile(output / mtp_record["file"], dtype="<u2").reshape(2048, 4096)
+    mtp_weight = (mtp_bits.astype(np.uint32) << 16).view(np.float32)
+    mtp_oracles = []
+    for seed in (3, 11):
+        source = np.array(
+            [((index * 13 + seed * 7) % 127 - 63) / 512.0 for index in range(4096)],
+            dtype=np.float32)
+        bits = source.view(np.uint32)
+        rounding = ((bits >> 16) & 1) + np.uint32(0x7FFF)
+        activation_bits = ((bits + rounding) >> 16).astype("<u2")
+        activation = (activation_bits.astype(np.uint32) << 16).view(np.float32)
+        mtp_expected = (mtp_weight @ activation).astype("<f4")
+        activation_file = output / f"mtp_activation_seed{seed}_1x4096.bf16"
+        expected_file = output / f"mtp_expected_seed{seed}_1x2048.f32"
+        activation_bits.tofile(activation_file)
+        mtp_expected.tofile(expected_file)
+        mtp_oracles.append({
+            "seed": seed,
+            "activation": activation_file.name,
+            "activation_sha256": sha256(activation_file),
+            "expected": expected_file.name,
+            "expected_sha256": sha256(expected_file),
+        })
 
     receipt = {
         "schema_version": 1,
@@ -130,15 +182,27 @@ def extract(model_dir: Path, output: Path) -> dict:
         "source_full_hash_reused_from_verified_inventory": True,
         "payload_base": payload_base,
         "tensors": records,
+        "slices": [{
+            "name": EMBEDDING,
+            "dtype": "BF16",
+            "source_shape": [248320, 2048],
+            "selected_rows": list(EMBEDDING_ROWS),
+            "source_data_ranges": source_ranges,
+            "shape": [len(EMBEDDING_ROWS), 2048],
+            "bytes": len(selected),
+            "file": embedding_file.name,
+            "sha256": sha256(embedding_file),
+        }],
         "oracle": {
             "operation": "BF16 [1,2048] x transpose(BF16 [2048,2048])",
             "region": "R03",
-            "activation": activation_file.name,
-            "activation_sha256": sha256(activation_file),
-            "expected": expected_file.name,
-            "expected_sha256": sha256(expected_file),
+            "activation": projection_activation_file.name,
+            "activation_sha256": sha256(projection_activation_file),
+            "expected": projection_expected_file.name,
+            "expected_sha256": sha256(projection_expected_file),
             "accumulation": "NumPy float32 matrix-vector product after exact BF16 decode",
         },
+        "mtp_oracles": mtp_oracles,
     }
     receipt_path = output / "receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
@@ -156,7 +220,8 @@ def main() -> None:
     receipt = extract(args.model_dir.resolve(), args.output.resolve())
     print(json.dumps({"source_id": receipt["source_id"],
                       "tensors": len(receipt["tensors"]),
-                      "bytes": sum(item["bytes"] for item in receipt["tensors"]),
+                      "bytes": sum(item["bytes"] for item in receipt["tensors"]) +
+                               sum(item["bytes"] for item in receipt["slices"]),
                       "output": str(args.output.resolve())}))
 
 

@@ -562,6 +562,9 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       return {};
     (void)matmul;
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
+    auto *values = invocation.values[node.inputs[0]];
+    if (values->type == GGML_TYPE_BF16)
+      values = as_float(context, values);
     auto *positions = invocation.values[node.inputs[1]];
     auto *frequencies = invocation.values[node.inputs[2]];
     auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
@@ -572,9 +575,9 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                          ? GGML_ROPE_TYPE_NORMAL
                          : GGML_ROPE_TYPE_NEOX;
     result =
-        ggml_rope_ext(context, invocation.values[node.inputs[0]], positions,
-                      factors, static_cast<int>(rope->rotary_dimensions), mode,
-                      0, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
+        ggml_rope_ext(context, values, positions, factors,
+                      static_cast<int>(rope->rotary_dimensions), mode, 0,
+                      1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
   } else if (node.operation.get_if<Hadamard>()) {
     const auto &values = program.hadamards[node_index];
     if (values.empty())
@@ -1161,7 +1164,8 @@ bool supports(void *context, Operation operation,
     return inputs.size() == 3 && inputs[0].rank() == 4 &&
            rope->sequence_axis == 1 && inputs[0].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat16 ||
-            inputs[0].data_type() == DataType::kBFloat16) &&
+            inputs[0].data_type() == DataType::kBFloat16 ||
+            inputs[0].data_type() == DataType::kFloat32) &&
            inputs[1].rank() == 1 && inputs[1].is_dense() &&
            inputs[1].data_type() == DataType::kInt32 && inputs[2].rank() == 1 &&
            inputs[2].is_dense() && inputs[2].data_type() == DataType::kFloat32;

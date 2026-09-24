@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdlib>
 #include <cstddef>
 #include <cstdint>
@@ -20,11 +21,26 @@ inline constexpr std::int64_t kHidden = 2048;
 inline constexpr std::size_t kActivationBytes = kHidden * 2;
 inline constexpr std::size_t kWeightBytes = kHidden * kHidden * 2;
 inline constexpr std::size_t kExpectedBytes = kHidden * sizeof(float);
+inline constexpr std::int64_t kEmbeddingRows = 7;
+inline constexpr std::int64_t kMtpInput = 4096;
+inline constexpr std::array<std::int32_t, kEmbeddingRows> kEmbeddingRowIds{
+    0, 42, 151643, 151644, 151645, 248318, 248319};
 
 struct Projection final {
   std::vector<std::byte> activation;
   std::vector<std::byte> weight;
   std::vector<float> expected;
+};
+
+struct Embedding final {
+  std::vector<std::byte> rows;
+  std::vector<std::byte> scale;
+};
+
+struct MtpProjection final {
+  std::vector<std::byte> weight;
+  std::array<std::vector<std::byte>, 2> activations;
+  std::array<std::vector<float>, 2> expected;
 };
 
 inline std::optional<std::filesystem::path> root() {
@@ -76,9 +92,41 @@ inline Projection load_projection(const std::filesystem::path &directory) {
   return result;
 }
 
-inline c::WorkloadContext workload(c::WorkloadPhase phase) {
+inline Embedding load_embedding(const std::filesystem::path &directory) {
+  Embedding result;
+  result.rows = read_bytes(directory / "embedding_rows_7x2048.bf16",
+                           kEmbeddingRows * kHidden * 2);
+  result.scale = read_bytes(
+      directory / "tensors" /
+          "model_language_model_layers_0_input_layernorm_weight.bin",
+      kHidden * 2);
+  return result;
+}
+
+inline MtpProjection load_mtp(const std::filesystem::path &directory) {
+  MtpProjection result;
+  result.weight = read_bytes(directory / "tensors" / "mtp_fc_weight.bin",
+                             kHidden * kMtpInput * 2);
+  constexpr std::array seeds{3, 11};
+  for (std::size_t i = 0; i < seeds.size(); ++i) {
+    result.activations[i] = read_bytes(
+        directory / ("mtp_activation_seed" + std::to_string(seeds[i]) +
+                     "_1x4096.bf16"),
+        kMtpInput * 2);
+    const auto expected = read_bytes(
+        directory / ("mtp_expected_seed" + std::to_string(seeds[i]) +
+                     "_1x2048.f32"),
+        kExpectedBytes);
+    result.expected[i].resize(kHidden);
+    std::memcpy(result.expected[i].data(), expected.data(), expected.size());
+  }
+  return result;
+}
+
+inline c::WorkloadContext workload(c::WorkloadPhase phase,
+                                   std::uint64_t region = 3) {
   return {c::ModelArtifactProfile::create(workload_test::kModel).value(), phase,
-          {0x48594c454d4f444cULL, 3, 1}};
+          {0x48594c454d4f444cULL, region, 1}};
 }
 
 } // namespace d5_qwen35_fixture
