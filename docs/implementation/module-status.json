@@ -577,7 +577,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F6 AUDITED：官方 Qwen3.5 CUDA R02 证明独立 BF16 SwiGLU 仍落到冻结 hyle-cuda；固定 ggml CUDA 已有成熟 SwiGLU，有限 FIX 只补 SiLU GatedActivation adapter 与 BF16 上游 Cast 接线。"
+      "summary": "M3-D5-F6/F7 AUDITED：官方 Qwen3.5 CUDA 执行暴露 BF16 SwiGLU 未接线及 BF16 RoPE 资格过宽；有限 FIX 只用固定 ggml CUDA 的 SwiGLU 与 Cast/RoPE 图对齐成熟能力。"
     },
     {
       "module": "graph_provider_ggml_cuda",

@@ -250,6 +250,27 @@ ledger 现有 2 个 `RUN_PASS`；其它路线、三交付和 P1 未由这两格�
 fallback、热选择或性能竞速。若固定上游拒绝精确类型/形状，则记录 `BACKEND_REJECTED`，不恢复 native
 作为 D5 成熟覆盖证据。
 
+### D5-F7：Qwen3.5 CUDA BF16 RoPE 类型边界
+
+F6 接线后的完整 CUDA Direct 执行批次中，R02 FFN 已通过真实权重与独立 oracle；R04 的精确 BF16
+GQA 8/2×256 RoPE 则在普通入口 prepare 成功后，于 invocation 初始化/执行固定 ggml CUDA 的
+`rope.cu` 触发 `src0->type == F32 || F16` 断言。adapter 的资格函数接受 BF16，但 lowering 将 BF16
+原样交给只执行 F16/F32 的上游 CUDA RoPE；源码条件与真机失败一致。收据见
+[Qwen3.5 CUDA R04 RoPE admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-r04-cuda-rope-admission-audit/README.md)。
+
+`compute_provider_ggml_cuda` 已因 F6 处于 AUDITED；本次在任何 RoPE 产品修改前追加的有限 FIX 只有：
+
+1. adapter 的 RoPE 资格域与固定上游对齐为 F16/F32，并继续接纳官方 BF16；BF16 在同一 ggml CUDA
+   图内使用上游 `ggml_cast` 转成 F32，执行同一上游 RoPE，再由现有输出边界转回 BF16；
+2. Provider 回归覆盖 F16/BF16/F32、两种 RoPE layout、变化输入与不支持类型拒绝；完整 Qwen3.5
+   CUDA Direct/Graph 批次继续验证精确 8/2×256、两次 replay、成熟 Provider/workload identity 和独立
+   decode oracle；
+3. 验证集合保持 F6 的 `compute_provider_ggml_cuda`、`compute_route_cuda`、`graph_route_cuda`、selector
+   公共检查与 D5 路线三交付/P1，不另造仪器或测试矩阵。
+
+不修改公共 RoPE schema、ggml 源码、路由优先级或其它路线；不新增 HYLE 数学、kernel、fallback 或热
+选择。固定上游若拒绝 Cast 后的精确图，则记录 `BACKEND_REJECTED`，不绕回 native。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

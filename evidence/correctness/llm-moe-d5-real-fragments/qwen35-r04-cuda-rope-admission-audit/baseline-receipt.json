@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "baseline": "1c826fa7b",
+  "verdict": "UPSTREAM_TYPE_DOMAIN_MISMATCH",
+  "profile": "qwen35_2b:official:official-bf16",
+  "route": "cuda",
+  "entry": "direct",
+  "region": "R04",
+  "shape": {
+    "query_heads": 8,
+    "kv_heads": 2,
+    "head_depth": 256,
+    "activation": "BF16",
+    "layout": "half-split"
+  },
+  "observed": "prepare admitted BF16; fixed upstream CUDA RoPE asserted F16/F32",
+  "fixed_upstream": {
+    "name": "ggml",
+    "version": "0.24.0",
+    "revision": "456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "cuda_rope_native_types": ["F16", "F32"]
+  },
+  "machine": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "cuda_toolkit": "13.3.73"
+  },
+  "product_change_at_baseline": false
+}
