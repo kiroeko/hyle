@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "id": "llm-moe-d4-provider-first-retirement",
+  "baseline": "7d0ff127262c83ba0fdae98059baec6da9fae135",
+  "policy": {
+    "new_performance_runs": 0,
+    "algorithm_optimization_budget": 0,
+    "default_without_qualified_win": "mature_provider",
+    "simd_foundation": "KEEP_INFRA",
+    "exact_uncovered_semantics": "KEEP_RESIDUAL"
+  },
+  "qualified_win_domains": [],
+  "decisions": [
+    {
+      "id": "D4-01",
+      "route": "cuda",
+      "subject": "Marlin adapter, carrier, default binding and vendored subset",
+      "decision": "DELETE_FULL",
+      "mature_replacement": "ggml CUDA native GGUF K/IQ/Q8/MXFP4 MatMul and GroupedMatMul",
+      "reason": "The artificial signed-symmetric group128 Q4 carrier matches no target artifact and has no independent product consumer; all non-historical references are tests, a stale benchmark, build wiring and documentation.",
+      "product_actions": [
+        "delete src/compute_provider_marlin, include/hyle/compute/providers/marlin.h, tests/compute_provider_marlin and third_party/marlin",
+        "remove CUDA default binding and public QuantizedWeights alias",
+        "remove component/dependency-lock/validation-policy/package wiring",
+        "remove or migrate current tests, benchmark target and user documentation"
+      ]
+    },
+    {
+      "id": "D4-02",
+      "route": "cpu",
+      "subject": "native Scan and TopK domains",
+      "decision": "DELETE_DOMAIN",
+      "mature_replacement": "ggml CPU provider standard-index route using standard algorithms and ggml scalar conversion",
+      "reason": "The mature route accepts the same public Scan F32/I32 and stable TopK F32/F16/BF16/I32 domain, arbitrary selected axis/strides, checked I32 overflow and preserved value bits, and is already preferred at 200 over native 1000.",
+      "product_actions": [
+        "remove native Scan and TopK prepare/execute code and declarations",
+        "retain their API and route through ggml CPU standard-index"
+      ]
+    },
+    {
+      "id": "D4-03",
+      "route": "cpu",
+      "subject": "remaining compute_provider_native domains",
+      "decision": "KEEP_RESIDUAL",
+      "mature_replacement": "oneDNN and ggml CPU are already preferred where their exact contracts match",
+      "reason": "Fill, Select, GatedActivation and portions of dtype/layout/checked/alias domains have no complete mature substitute. Other native code is reachable only after preferred providers decline and therefore remains an exact semantic fallback, not a claimed winner.",
+      "product_actions": [
+        "do not add or optimize native math",
+        "retain provider at preference 1000 for only domains not accepted by preferred providers"
+      ]
+    },
+    {
+      "id": "D4-04",
+      "route": "cuda",
+      "subject": "HYLE native Scan, TopK and Gather implementations",
+      "decision": "DELETE_DOMAIN",
+      "mature_replacement": "pinned CUDA SDK CCCL provider",
+      "reason": "The CCCL provider already carries F32/I32 Scan with checked overflow, stable F32/F16/BF16/I32 TopK, and bit-preserving I32/I64 Gather with the same bounds, stride, alias and completion contracts, and is preferred at 100 over HYLE native 1000.",
+      "product_actions": [
+        "delete scan/topk/gather native provider and kernel files",
+        "remove native dispatcher and CMake references",
+        "retain CCCL provider and its original-program tests"
+      ]
+    },
+    {
+      "id": "D4-05",
+      "route": "cuda",
+      "subject": "remaining cuda_native provider domains",
+      "decision": "KEEP_RESIDUAL",
+      "mature_replacement": "ggml CUDA, cuBLASLt, FlashInfer, SGLang and CCCL are already preferred",
+      "reason": "Scatter and portions of Fill/Select/layout/checked semantics are not completely covered by the admitted mature providers. Tensor, norm, reduction, concat and gated code remains only as the lower-priority exact fallback outside mature domains.",
+      "product_actions": [
+        "do not add or optimize CUDA kernels",
+        "retain SGLang and CCCL as separately identified mature providers",
+        "retain only the residual HYLE provider sources after D4-04"
+      ]
+    },
+    {
+      "id": "D4-06",
+      "route": "apple",
+      "subject": "legacy indexing, reduction and custom ordered-scatter implementation",
+      "decision": "DELETE_FULL",
+      "mature_replacement": "current MLX lower_mature_indexing and lower_mature_reduction paths",
+      "reason": "apple_tensor routes Gather/Scatter/Scan/TopK and Reduce/Softmax through the later MLX implementations; the old lower_indexing/lower_reduction entry points have no caller and the custom Metal scatter is reachable only from that dead path.",
+      "product_actions": [
+        "delete apple_indexing.cc/.h, apple_reduction.cc/.h and apple_scatter.cc",
+        "remove the five sources from the Apple component"
+      ]
+    },
+    {
+      "id": "D4-07",
+      "route": "apple",
+      "subject": "current MLX and ggml Metal lowering",
+      "decision": "KEEP_INFRA",
+      "mature_replacement": "not applicable; these are the adopted mature implementations and lifecycle adapters",
+      "reason": "MLX/ggml own the arithmetic, compilation and device resources; HYLE code maps public semantics, checked failure and region lifetime without a duplicate kernel.",
+      "product_actions": [
+        "retain current mature lowering and resource/completion code"
+      ]
+    },
+    {
+      "id": "D4-08",
+      "route": "vulkan",
+      "subject": "HYLE preferred rank-2 F32 MatMul implementation and packing path",
+      "decision": "DELETE_DOMAIN",
+      "mature_replacement": "ggml Vulkan managed region",
+      "reason": "The route explicitly excludes plain rank-2 F32 MatMul from ggml so the older implementation wins. Existing qualified evidence is parity/inconclusive integration evidence and does not prove a HYLE algorithm advantage.",
+      "product_actions": [
+        "remove the F32 native route selectors, packing code and MatMul lowering",
+        "stop excluding plain rank-2 F32 MatMul from the ggml region",
+        "remove now-unused ggml shader-copy/matmul variants from HYLE shader generation"
+      ]
+    },
+    {
+      "id": "D4-09",
+      "route": "vulkan",
+      "subject": "specialized HYLE SwiGLU shader fallback",
+      "decision": "DELETE_DOMAIN",
+      "mature_replacement": "ggml Vulkan Unary/GLU managed region",
+      "reason": "The ordinary target domain is already lowered through the mature region before this branch, and no qualified evidence proves the extra HYLE shader wins.",
+      "product_actions": [
+        "delete shaders/swiglu.comp and its special lower_gate branch",
+        "leave unsupported exact shapes to the existing generic residual gate or a clear unsupported verdict"
+      ]
+    },
+    {
+      "id": "D4-10",
+      "route": "vulkan",
+      "subject": "generic tensor, checked I32 scan, ordered scatter and boundary adapters",
+      "decision": "KEEP_RESIDUAL",
+      "mature_replacement": "ggml Vulkan and IREE are already selected first in their exact admitted domains",
+      "reason": "Fill, Select, checked I32 overflow, scatter assignment/order and misaligned boundary materialization are not all supplied by a single mature program with HYLE public failure semantics.",
+      "product_actions": [
+        "retain only the exact residual shaders and adapters",
+        "do not claim them as performance winners or expand their domains"
+      ]
+    },
+    {
+      "id": "D4-11",
+      "route": "all",
+      "subject": "SIMD foundation, backend resources, completion and Graph planning",
+      "decision": "KEEP_INFRA",
+      "mature_replacement": "not applicable",
+      "reason": "These are reusable infrastructure or non-inference public capabilities, not operator-provider algorithms. The user explicitly excluded the SIMD foundation from retirement.",
+      "product_actions": [
+        "retain SIMD library and route-native device/resource/completion/planning facilities"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # M3-D4：Provider 优先的旧算子批量退场
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -74,3 +74,28 @@
 
 本轮 reopen trigger、owner、删除规则、审计全集、预算、验证和停止条件已冻结。下一步仅完成 O1-O6
 源码对账并生成机器可读退场 ledger；在 owner 进入 `AUDITED` 且有限删除集冻结前不修改产品代码。
+
+## AUDITED：有限退场集
+
+[机器可读退场 ledger](llm-moe-d4-retirement-ledger.json)已逐项绑定删除对象、成熟替代、保留原因和产品
+动作。审计没有找到任何可以跨域保留自实现的合格 `WIN`：CPU M32 证据支持 oneDNN；CUDA 证据只证明
+采用 SGLang 的组合路线非劣；Apple 比较的是同一 MLX 程序；Vulkan 比较只证明 ggml recipe 接入非劣且
+严格方向不确定。因而不追加测量，也不为旧实现寻找翻盘条件。
+
+有限产品改动固定为：
+
+1. 整包删除 Marlin adapter/carrier/vendor/default route/build/tests/current docs；历史 task/evidence 只保留为
+   历史事实，不再参与当前产品构建。
+2. 从 CPU native 删除 Scan/TopK 域，普通 CPU route 继续由 ggml standard-index 承载相同 public operation。
+3. 从 HYLE CUDA native provider 删除 Scan/TopK/Gather 域，普通 CUDA route 继续由已注册 CCCL provider
+   承载；SGLang/CCCL 原版程序和其生命周期 adapter 保留。
+4. 删除 Apple 无调用的旧 indexing/reduction/custom ordered-scatter 五个文件；当前 MLX mature lowering
+   保持唯一产品路径。
+5. 删除 Vulkan 自有 F32 MatMul 优先实现、packing 和专用 SwiGLU shader；plain F32 MatMul 与普通门控
+   进入 ggml managed region。通用 tensor shader、checked I32 scan、ordered scatter 和 boundary adapter
+   只按 ledger 的精确缺口保留。
+6. 同步收口 Direct/Graph roster、组件图、dependency lock、validation policy、安装导出、当前 tests/
+   benchmark 和用户文档。历史证据不回写，SIMD 基础库不动。
+
+表外不删除 CPU/CUDA/Vulkan fallback 域，不新增 kernel/provider/性能仪器。实现中若静态或 correctness
+证明成熟替代没有 ledger 所写合同，立即恢复该精确残余并记录限制，不扩大成逐算子研究。

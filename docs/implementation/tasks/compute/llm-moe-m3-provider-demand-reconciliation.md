@@ -124,7 +124,7 @@ DeepSeek V4 Pro preview 的 0813 GGUF sibling 只保留为格式证据，不计�
 | `FIX-2` | 四个 ggml Provider/route owner | CPU、CUDA、Metal、Vulkan 批量导入 native tensor，保留上游 `MUL_MAT`、`MUL_MAT_ID`、模型 region 与资源所有权 | 普通 Direct/Graph 能绑定；不按 kernel 建 vtable |
 | `FIX-3` | 四 route + Graph owner | 用一个表绑定 15 个 region 的 exact model/profile/port signature 与硬件/驱动/toolkit 条件 | prepare 固定，submit 不选路、不计时 |
 | `FIX-4` | 各路线 owner | 官方与 primary GGUF 的 reduced-capacity 真实片段、两次 submit、状态/资源/失败收据 | 不要求加载器或 27B/2.4T 整模常驻 |
-| `FIX-5` | `compute_provider_marlin`、`compute_route_cuda` 及实际发现的死接线 owner | 退场无目标、无独立 consumer、不可达或错误 fallback 的 adapter | 不删除 SIMD/路线设施/冻结自研数学 |
+| `FIX-5` | D4 十一个 route/provider owner | 按[批量 ledger](llm-moe-d4-retirement-ledger.json)整包或按域退场无目标、不可达、成熟实现已完整替代且无既有领先证据的旧实现 | 不删除 SIMD/路线设施/精确未覆盖残余，不新增或优化自研数学 |
 | `FIX-6` | 对应交付 owner | 稳定后一次 source/static/shared 与适用 P1；汇总精确残余 | 未运行不写 PASS；具名上游缺失另开最小缺口卡 |
 
 施工顺序固定为：公共 catalog → CPU/CUDA ggml → Apple Metal/MLX → Vulkan ggml/IREE → 旧接线退场 →

@@ -420,9 +420,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_sched",
@@ -431,15 +431,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_provider_cublas",
@@ -454,55 +454,51 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 SCOPED：按真实模型需求和成熟 Provider 完整语义覆盖，一次性审计并清退无需求、不可达或已被完整替代且无既有领先证据的旧实现；不新增/优化自研数学，SIMD 基础库保留。"
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
-      "candidate": "5a1b61fbfc7a3f131fa3c6e801fc6458ca507804",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-metal-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 5a1b61fb：十种 GGUF storage 的 ggml Metal Direct/Graph 接缝、两台 Mac 原生执行与三交付通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 2757ecc：十种 GGUF storage 的 ggml Vulkan Direct/Graph、GroupedMatMul、RTX 数值/资源/失败与三交付通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
-      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 2757ecc：十种 GGUF storage 的 ggml Vulkan Direct/Graph、GroupedMatMul、RTX 数值/资源/失败与三交付通过，等待 D5 真实 profile 片段验收。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
+      "summary": "M3-D4 AUDITED：退场 ledger 已冻结 Marlin、CPU native Scan/TopK、CUDA native Scan/TopK/Gather、Apple 五个死实现文件及 Vulkan F32 MatMul/SwiGLU 重复域；精确 Provider 缺口、SIMD 与路线基础设施保留，性能采样和算法优化预算为 0。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
