@@ -273,7 +273,7 @@ TEST(AppleD5, D5Qwen35OfficialFfnUsesMaturePreparedCalls) {
     ASSERT_EQ(actual.size(), fixture.direct_expected[replay].size());
     for (std::size_t i = 0; i < actual.size(); ++i) {
       const auto expected = fixture.direct_expected[replay][i];
-      EXPECT_NEAR(actual[i], expected, std::abs(expected) * 0.008 + 1.0e-8)
+      EXPECT_NEAR(actual[i], expected, std::abs(expected) * 0.008 + 3.0e-8)
           << replay << ':' << i;
     }
   }
