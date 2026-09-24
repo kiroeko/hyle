@@ -1,12 +1,13 @@
 # M3-D3：ggml native storage 与 CPU/CUDA 批量接缝
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
 - owners：`compute_provider_ggml`、`compute_provider_ggml_cuda`、
   `graph_provider_ggml_cuda`；公共格式描述由已处于 `AUDITED` 的 `compute_ops` 主卡持有。
 - baseline：`8bc31b76f`；Windows canonical 工作树干净。
+- candidate：`08b8e2f154477d2bde2d9f0539a804312658a265`。
 - reopen trigger：真实 Provider 矩阵证明固定 ggml 已含目标 GGUF K/IQ/Q8/MXFP4 程序，但 CPU/CUDA
   HYLE adapter 的 `representable()`/lowering 只接受 plain storage，普通 Direct/Graph 不可达。
 - consumer：普通 C++ consumer 从已加载的 GGUF tensor table 构造 checked `TensorDesc`，在 CPU 或
@@ -46,7 +47,7 @@
 
 ## 实现检查点
 
-有限 FIX 已按既定边界落地，候选尚未冻结：
+有限 FIX 已按既定边界落地并冻结到上述 candidate：
 
 - 公共描述器固定十种原生 block ABI，rank-2 权重的逻辑 `[K,N]` 映射为 ggml 连续 `[N,K]`，grouped
   权重保持 `[E,N,K]`；已知 ID 配错 block elements/bytes 会被拒绝。
@@ -77,5 +78,7 @@ consumer verdict。selector 未选择 P1：本批固定的是原生 storage 接�
 完整准备、上传、同步和融合成本仍由 D5 在不可变 profile candidate 上裁决，不能在此写成 PASS。
 
 维护检查 `check-module-closure.py --previous-ref f091b21d`、`check-docs.py` 与 `git diff --check` 均已
-通过。产品候选只差提交冻结；冻结前本卡和三个 Provider owner 保持 `AUDITED`，不提前写
-`CANDIDATE`/`CLOSED`。
+通过。统一 `loc-report.py` 对不可变 candidate 的显式 Compute+Graph 边界复算为 **60,718 行 / 252 个
+实现文件**，不含测试、vendor、docs、samples；这是全部存量，不是本批新增完成量。三个 Provider
+owner 进入 `CANDIDATE`，等待 D5 真实 profile 片段验收与主卡终审；这些未运行项不写成 PASS，当前
+也不提前 `CLOSED`。

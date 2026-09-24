@@ -374,9 +374,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 AUDITED：ggml/GGUF 十种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
+      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "graph_provider_onednn",
@@ -578,15 +579,17 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 AUDITED：ggml/GGUF 十种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
+      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 AUDITED：ggml/GGUF 十种真实量化 storage、CPU/CUDA native MatMul/GroupedMatMul 与 Direct/Graph 复用的五项有限 FIX 已固定。"
+      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。"
     },
     {
       "module": "compute_provider_flashinfer",
