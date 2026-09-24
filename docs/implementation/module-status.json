@@ -420,10 +420,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -432,17 +436,25 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_provider_cublas",
@@ -457,59 +469,91 @@
     },
     {
       "module": "compute_provider_marlin",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CANDIDATE 91c2fb4d：成熟 Provider 已替代的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已整批退场；四路线正确性、组件合同及 Compute/Graph 三交付通过，精确残余、SIMD 与路线基础设施保留。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed"
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",

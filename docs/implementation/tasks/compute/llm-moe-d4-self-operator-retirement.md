@@ -1,6 +1,6 @@
 # M3-D4：Provider 优先的旧算子批量退场
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -117,3 +117,13 @@ P0 确认 Provider 在准备期固定绑定且 submit 无搜索、计时或裁�
 各路线结果、三交付和统一 LOC。当前 Compute + Graph 为 57,658 实现行/228 文件，不含 tests、bench、
 docs、vendor 与生成目录。候选提交在全部 tracked 文件中净删除 11,232 行；其中 `include/hyle` 与 `src`
 删除 3,685 行、新增 129 行。下一步只进行状态终审，不追加构建或性能采样。
+
+## CLOSED
+
+终审接受候选 `91c2fb4df18f6937d64d195793a8c5b30b06a8ed`。ledger 的每项有限决策均已实施或以具名
+`KEEP_RESIDUAL/KEEP_INFRA` 原因保留；普通路线不再优先选择已被成熟 Provider 完整覆盖的 HYLE
+实现，SIMD 基础库保持独立能力。正确性、资源/完成语义、组件合同及 Compute/Graph 三交付全部满足
+本卡 stop 条件，P0 PASS，P1 按预声明归 D5 而未运行。
+
+D4 到此停止。真实模型画像的完整片段覆盖、端到端转换/同步成本和适用 P1 仍由 D5 首次裁决；该剩余
+工作不构成恢复本卡已删除自有算子的授权。
