@@ -91,6 +91,27 @@ block/group 与逐 tensor role 的混合格式。官方与 GGUF 是不同 profil
 [CUDA Qwen3.5 R03](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-r03/README.md)。
 两格仍是只覆盖 R03 的 partial receipt，不提前宣称完整 profile 或 P1。
 
+### D5-F2：Vulkan BF16 decode MatMul 边界修复
+
+同一真实 R03 片段在默认 Vulkan 路线暴露了不同的成熟 Provider 边界缺陷。固定 ggml
+`456172ec733a135778adcd32d00e576a58232e45-hyle` 的 Vulkan backend 会把 rank-2、1 行 BF16
+MatMul 送入 `mul_mat_vec`；该分支的公开选择条件允许 BF16 activation，但实际 pipeline 入口只接受
+F32、F16 或 Q8_1 activation，因而执行时触发 `b_type` 断言。现有 rank-3 小形状测试没有覆盖这个
+decode 分支。这是 HYLE 适配器对固定上游能力域限定不足，不是缺少新的 MatMul 实现。
+
+`compute_provider_ggml_vulkan` 从 D3 的 CANDIDATE 退回 AUDITED；固定 FIX 只有：
+
+1. 在现有 ggml Vulkan region 构图时，rank-2 BF16 MatMul 的 1–4 行 activation 先用上游 `ggml_cast`
+   扩为 F32，再交给同一个上游 BF16-weight/FP32-accumulation MatMul；权重、输出语义和 Provider 不变；
+2. Direct 与 Graph 用完整 Qwen3.5 `[2048,2048]` checkpoint 权重、精确 R03 workload、两次变化输入
+   验证普通入口；补 1–4 行资格回归以覆盖固定上游的整个 small-matvec 分支；
+3. 只运行 `compute_provider_ggml_vulkan`、`compute_route_vulkan`、`graph_route_vulkan` 及 selector
+   选中的公共检查；候选稳定后再签 Vulkan 三交付。
+
+不修改 ggml 源码，不新增 HYLE shader、MatMul、热选择或 fallback，也不改变 F16/F32、rank-3/batched、
+大于 4 行或量化 MatMul。若 F32 activation 边界仍被固定上游拒绝，则记录精确
+`BACKEND_REJECTED`，不在 D5 内扩张数学实现。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、

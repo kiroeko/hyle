@@ -557,10 +557,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 2757ecc：固定 ggml 456172ec 的十格式 MUL_MAT/MUL_MAT_ID 已从普通入口实机可达并通过三交付；无 HYLE codec 或 shader。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "M3-D5-F2 AUDITED：真实 Qwen3.5 R03 证明固定 ggml Vulkan 的 BF16 rank-2 small-matvec 会错误接纳后触发 b_type 断言；有限修复只在既有成熟 region 内将 1–4 行 BF16 activation 转为 F32。"
     },
     {
       "module": "compute_ggml_runtime",
