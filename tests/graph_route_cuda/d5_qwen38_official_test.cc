@@ -12,6 +12,8 @@
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/d5_qwen_vocabulary_fixture.h"
+#include "../compute_models/d5_qwen_vocabulary_graph_test.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
@@ -32,6 +34,7 @@ namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
 namespace qfull = d5_qwen38_24t_full_router;
 namespace qcase = d5_qwen38_profile_cases;
+namespace vocab = d5_qwen_vocabulary_fixture;
 using BF16 = hyle::simd::bfloat16_t;
 
 c::TensorDesc dense(c::DataType type,
@@ -1006,5 +1009,157 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     D5Official24T, CudaGraphQwen38Profiles,
     ::testing::Values(&qcase::kOfficial24T));
+
+class CudaGraphQwen38OfficialVocabulary
+    : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
+
+TEST_P(CudaGraphQwen38OfficialVocabulary,
+       D5WholeVocabularyHeadStreamsAllRows) {
+  const auto &shape = *GetParam();
+  const auto activation_desc = dense(c::DataType::kBFloat16, {1, shape.hidden});
+  const auto workload =
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 1);
+  auto context = g::cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice)
+                    .value();
+  const auto resource = memory.ref();
+  struct HeadGraph final {
+    g::CompiledGraph compiled;
+    g::ValueId activation;
+    g::ValueId weight;
+    g::ValueId logits;
+  };
+  const auto make_head = [&](std::int64_t rows) {
+    const auto stored = dense(c::DataType::kBFloat16, {rows, shape.hidden});
+    const auto weight_desc = stored.transposed().value();
+    auto builder = g::GraphBuilder::create().value();
+    const auto activation = builder.input(activation_desc).value();
+    const auto weight = builder.input(weight_desc).value();
+    const auto logits =
+        builder.add(c::Operation(c::MatMul{}), activation, weight).value();
+    EXPECT_TRUE(builder.publish(logits).ok());
+    auto logical = std::move(builder).finish().value();
+    auto compiled =
+        g::cuda::compile(logical, context, resource, {.workload = workload})
+            .value();
+    expect_mature(compiled);
+    EXPECT_EQ(compiled.executable.workload(), workload);
+    return HeadGraph{std::move(compiled), activation, weight, logits};
+  };
+  auto full = make_head(vocab::kShardRows);
+  auto tail = make_head(vocab::kVocabularyRows % vocab::kShardRows);
+
+  const auto max_weight = dense(c::DataType::kBFloat16,
+                                {vocab::kShardRows, shape.hidden});
+  const auto max_output =
+      dense(c::DataType::kBFloat16, {1, vocab::kShardRows});
+  auto weight_buffer = output_buffer(resource, max_weight);
+  auto logits_buffer = output_buffer(resource, max_output);
+  const std::array activations{vocab::activation(shape.hidden, 3),
+                               vocab::activation(shape.hidden, 17)};
+  auto activation_buffer = values_buffer<BF16>(resource, activations[0]);
+  auto full_invocation = full.compiled.executable.create_invocation().value();
+  auto tail_invocation = tail.compiled.executable.create_invocation().value();
+  const auto bind = [&](g::Invocation &invocation, const HeadGraph &graph,
+                        std::int64_t rows) {
+    const auto stored = dense(c::DataType::kBFloat16, {rows, shape.hidden});
+    const auto weight_desc = stored.transposed().value();
+    const auto output_desc = dense(c::DataType::kBFloat16, {1, rows});
+    const auto weight_view =
+        weight_buffer.view().subview(0, stored.required_bytes().value()).value();
+    const auto output_view =
+        logits_buffer.view().subview(0, output_desc.required_bytes().value())
+            .value();
+    EXPECT_TRUE(invocation
+                    .bind(graph.activation,
+                          c::ConstTensorView::create(activation_desc,
+                                                     activation_buffer.view())
+                              .value())
+                    .ok());
+    EXPECT_TRUE(invocation
+                    .bind(graph.weight,
+                          c::ConstTensorView::create(weight_desc, weight_view)
+                              .value())
+                    .ok());
+    EXPECT_TRUE(invocation
+                    .bind(graph.logits,
+                          c::TensorView::create(output_desc, output_view)
+                              .value())
+                    .ok());
+  };
+  bind(full_invocation, full, vocab::kShardRows);
+  bind(tail_invocation, tail, vocab::kVocabularyRows % vocab::kShardRows);
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(full_invocation.prepare_replay(queues).ok());
+  ASSERT_TRUE(tail_invocation.prepare_replay(queues).ok());
+
+  std::array<std::vector<BF16>, 2> logical_logits{
+      std::vector<BF16>(vocab::kVocabularyRows),
+      std::vector<BF16>(vocab::kVocabularyRows)};
+  std::int64_t visited = 0;
+  for (const auto shard : vocab::shards()) {
+    const auto weights = vocab::head_weight(shard, shape.hidden);
+    const auto weight_view = weight_buffer.view()
+                                 .subview(0, weights.size() * sizeof(BF16))
+                                 .value();
+    ASSERT_TRUE(weight_view.write(std::as_bytes(std::span(weights))).ok());
+    auto &invocation = shard.rows == vocab::kShardRows ? full_invocation
+                                                      : tail_invocation;
+    const auto output_bytes =
+        static_cast<std::size_t>(shard.rows) * sizeof(BF16);
+    const auto output_view = logits_buffer.view().subview(0, output_bytes).value();
+    for (std::size_t replay = 0; replay < activations.size(); ++replay) {
+      ASSERT_TRUE(activation_buffer.view()
+                      .write(std::as_bytes(std::span(activations[replay])))
+                      .ok());
+      auto done = invocation.submit(queue);
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      std::vector<BF16> actual(static_cast<std::size_t>(shard.rows));
+      ASSERT_TRUE(output_view.read(std::as_writable_bytes(std::span(actual))).ok());
+      std::ranges::copy(actual, logical_logits[replay].begin() + shard.first);
+    }
+    visited += shard.rows;
+  }
+  ASSERT_EQ(visited, vocab::kVocabularyRows);
+  for (std::size_t replay = 0; replay < activations.size(); ++replay)
+    for (const auto shard : vocab::shards()) {
+      const auto expected = vocab::expected_logits(activations[replay], shard);
+      const auto actual = std::span(logical_logits[replay])
+                              .subspan(shard.first, shard.rows);
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i) {
+        const auto reference = vocab::decode(expected[i]);
+        ASSERT_NEAR(vocab::decode(actual[i]), reference,
+                    std::abs(reference) * 0.012 + 2.0e-5)
+            << "global vocabulary row " << shard.first + i;
+      }
+    }
+}
+
+TEST_P(CudaGraphQwen38OfficialVocabulary,
+       D5WholeVocabularyGatherMapsGlobalRows) {
+  const auto &shape = *GetParam();
+  const auto workload =
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 1);
+  auto context = g::cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice)
+                    .value();
+  const auto resource = memory.ref();
+  d5_qwen_vocabulary_graph_test::check_gather(
+      context, resource, workload, shape.hidden,
+      [&](const g::Graph &logical, const c::WorkloadContext &identity) {
+        return g::cuda::compile(logical, context, resource,
+                                {.workload = identity})
+            .value();
+      },
+      [&](const g::CompiledGraph &compiled) { expect_mature(compiled); });
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official27BAnd24T, CudaGraphQwen38OfficialVocabulary,
+    ::testing::Values(&qcase::kOfficial27B, &qcase::kOfficial24T));
 
 } // namespace

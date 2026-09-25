@@ -15,6 +15,8 @@
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/d5_qwen_vocabulary_fixture.h"
+#include "../compute_models/d5_qwen_vocabulary_compute_test.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
@@ -34,6 +36,7 @@ namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
 namespace qfull = d5_qwen38_24t_full_router;
 namespace qcase = d5_qwen38_profile_cases;
+namespace vocab = d5_qwen_vocabulary_fixture;
 using BF16 = hyle::simd::bfloat16_t;
 
 c::TensorDesc dense(c::DataType type,
@@ -944,5 +947,114 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     D5Official24T, CudaQwen38Profiles,
     ::testing::Values(&qcase::kOfficial24T));
+
+class CudaQwen38OfficialVocabulary
+    : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
+
+TEST_P(CudaQwen38OfficialVocabulary, D5WholeVocabularyHeadStreamsAllRows) {
+  const auto &shape = *GetParam();
+  const auto activation_desc = dense(c::DataType::kBFloat16, {1, shape.hidden});
+  const auto workload =
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 1);
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto queue = context.create_queue().value();
+  const auto make_head = [&](std::int64_t rows) {
+    const auto stored = dense(c::DataType::kBFloat16, {rows, shape.hidden});
+    const auto weight_desc = stored.transposed().value();
+    const auto logits_desc = dense(c::DataType::kBFloat16, {1, rows});
+    const std::array inputs{activation_desc, weight_desc};
+    const std::array outputs{logits_desc};
+    return make_call(context, resource, c::Operation(c::MatMul{}), inputs,
+                     outputs, workload);
+  };
+  auto full = make_head(vocab::kShardRows);
+  auto tail = make_head(vocab::kVocabularyRows % vocab::kShardRows);
+  expect_mature(full, workload);
+  expect_mature(tail, workload);
+
+  const auto max_weight = dense(c::DataType::kBFloat16,
+                                {vocab::kShardRows, shape.hidden});
+  const auto max_output =
+      dense(c::DataType::kBFloat16, {1, vocab::kShardRows});
+  auto weight_buffer = output_buffer(resource, max_weight);
+  auto logits_buffer = output_buffer(resource, max_output);
+  const std::array activations{vocab::activation(shape.hidden, 3),
+                               vocab::activation(shape.hidden, 17)};
+  auto activation_buffer = values_buffer<BF16>(resource, activations[0]);
+  std::array<std::vector<BF16>, 2> logical_logits{
+      std::vector<BF16>(vocab::kVocabularyRows),
+      std::vector<BF16>(vocab::kVocabularyRows)};
+
+  std::int64_t visited = 0;
+  for (const auto shard : vocab::shards()) {
+    const auto stored = dense(c::DataType::kBFloat16,
+                              {shard.rows, shape.hidden});
+    const auto weight_desc = stored.transposed().value();
+    const auto output_desc = dense(c::DataType::kBFloat16, {1, shard.rows});
+    const auto weights = vocab::head_weight(shard, shape.hidden);
+    const auto weight_bytes = stored.required_bytes().value();
+    const auto output_bytes = output_desc.required_bytes().value();
+    const auto weight_view = weight_buffer.view().subview(0, weight_bytes).value();
+    const auto output_view = logits_buffer.view().subview(0, output_bytes).value();
+    ASSERT_TRUE(weight_view.write(std::as_bytes(std::span(weights))).ok());
+    const std::array inputs{
+        c::ConstTensorView::create(activation_desc, activation_buffer.view())
+            .value(),
+        c::ConstTensorView::create(weight_desc, weight_view).value()};
+    const std::array outputs{
+        c::TensorView::create(output_desc, output_view).value()};
+    auto &call = shard.rows == vocab::kShardRows ? full : tail;
+    for (std::size_t replay = 0; replay < activations.size(); ++replay) {
+      ASSERT_TRUE(activation_buffer.view()
+                      .write(std::as_bytes(std::span(activations[replay])))
+                      .ok());
+      run(call, queue, inputs, outputs);
+      std::vector<BF16> actual(static_cast<std::size_t>(shard.rows));
+      ASSERT_TRUE(output_view.read(std::as_writable_bytes(std::span(actual))).ok());
+      std::ranges::copy(actual, logical_logits[replay].begin() + shard.first);
+    }
+    visited += shard.rows;
+  }
+  ASSERT_EQ(visited, vocab::kVocabularyRows);
+  for (std::size_t replay = 0; replay < activations.size(); ++replay)
+    for (const auto shard : vocab::shards()) {
+      const auto expected = vocab::expected_logits(activations[replay], shard);
+      const auto actual = std::span(logical_logits[replay])
+                              .subspan(shard.first, shard.rows);
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i) {
+        const auto reference = vocab::decode(expected[i]);
+        ASSERT_NEAR(vocab::decode(actual[i]), reference,
+                    std::abs(reference) * 0.012 + 2.0e-5)
+            << "global vocabulary row " << shard.first + i;
+      }
+    }
+}
+
+TEST_P(CudaQwen38OfficialVocabulary, D5WholeVocabularyGatherMapsGlobalRows) {
+  const auto &shape = *GetParam();
+  const auto workload =
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 1);
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  d5_qwen_vocabulary_compute_test::check_gather(
+      context, memory.ref(), workload, shape.hidden,
+      [&](const c::PreparedOperation &prepared) {
+        const auto provider = prepared.provider().id;
+        EXPECT_TRUE(provider == c::ggml_cuda::kProviderId ||
+                    provider == c::cublas::kProviderId ||
+                    provider == c::cuda_native::kSglangProviderId ||
+                    provider == c::cuda_native::kCcclProviderId ||
+                    provider == c::flashinfer::kProviderId);
+      });
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official27BAnd24T, CudaQwen38OfficialVocabulary,
+    ::testing::Values(&qcase::kOfficial27B, &qcase::kOfficial24T));
 
 } // namespace

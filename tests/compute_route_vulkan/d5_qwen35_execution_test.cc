@@ -16,6 +16,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/d5_qwen_vocabulary_test.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "gate_norm_test_support.h"
 #include "hyle/compute/model_ops.h"
@@ -1413,5 +1414,77 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     D5Official24T, VulkanQwen38Profiles,
     ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
+
+class VulkanQwen38OfficialVocabulary
+    : public ::testing::TestWithParam<
+          const d5_qwen38_profile_cases::ProfileCase *> {};
+
+TEST_P(VulkanQwen38OfficialVocabulary,
+       D5WholeVocabularyHeadStreamsAllRows) {
+  namespace vocab = d5_qwen_vocabulary_fixture;
+  const auto &shape = *GetParam();
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, shape.hidden});
+  const auto workload =
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 1);
+  auto context = vulkan_test::context().value();
+  const auto prepare_head = [&](std::int64_t rows) {
+    const auto stored = dense(c::DataType::kBFloat16, {rows, shape.hidden});
+    return prepare(context, workload, c::Operation(c::MatMul{}),
+                   activation_desc, stored.transposed().value());
+  };
+  const auto upload_weight = [&](vocab::Shard shard,
+                                 std::span<const vocab::BF16> values) {
+    const auto stored =
+        dense(c::DataType::kBFloat16, {shard.rows, shape.hidden});
+    return upload(context, stored.transposed().value(), values);
+  };
+  const auto execute = [&](Call &call, std::span<const vocab::BF16> input,
+                           const v::Tensor &weight) {
+    const auto activation = upload(context, activation_desc, input);
+    const auto outputs = run(call, activation, weight);
+    EXPECT_EQ(outputs.size(), 1U);
+    return values(context, outputs.at(0));
+  };
+  d5_qwen_vocabulary_test::check_head(shape.hidden, prepare_head,
+                                       upload_weight, execute);
+}
+
+TEST_P(VulkanQwen38OfficialVocabulary,
+       D5WholeVocabularyGatherMapsGlobalRows) {
+  namespace vocab = d5_qwen_vocabulary_fixture;
+  const auto &shape = *GetParam();
+  const auto ids_desc = dense(c::DataType::kInt32, {1});
+  const auto workload =
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 1);
+  auto context = vulkan_test::context().value();
+  const auto prepare_gather = [&](std::int64_t rows) {
+    const auto table_desc =
+        dense(c::DataType::kBFloat16, {rows, shape.hidden});
+    return prepare(context, workload, c::Operation(c::Gather{}), table_desc,
+                   ids_desc);
+  };
+  const auto upload_table = [&](vocab::Shard shard,
+                                std::span<const vocab::BF16> values) {
+    const auto table_desc =
+        dense(c::DataType::kBFloat16, {shard.rows, shape.hidden});
+    return upload(context, table_desc, values);
+  };
+  const auto execute = [&](Call &call, std::int64_t local_id,
+                           const v::Tensor &table) {
+    const std::array index{static_cast<std::int32_t>(local_id)};
+    const auto ids = upload(context, ids_desc, std::span(index));
+    const auto outputs = run(call, table, ids);
+    EXPECT_EQ(outputs.size(), 1U);
+    return values(context, outputs.at(0));
+  };
+  d5_qwen_vocabulary_test::check_gather(shape.hidden, prepare_gather,
+                                         upload_table, execute);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official27BAnd24T, VulkanQwen38OfficialVocabulary,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kOfficial24T));
 
 } // namespace
