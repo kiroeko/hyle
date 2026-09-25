@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 #include "d5_qwen38_official_fixture.h"
@@ -42,6 +43,7 @@ inline constexpr std::int64_t kConvKernel = 4;
 inline constexpr std::int64_t kMtpInput = 2 * kHidden;
 inline constexpr std::int64_t kEmbeddingRows = 7;
 inline constexpr std::int64_t kActiveExperts = kTopK;
+inline constexpr int kExpertSeedStride = 7;
 // ggml's BF16 matrix traits may convert F32 dot-product inputs to BF16. Three
 // consecutive expert projections therefore use the same tolerance as the
 // existing exact-width BF16 FFN acceptance chain.
@@ -84,11 +86,14 @@ inline std::array<std::int32_t, kTopK> active_expert_ids() {
 
 inline std::vector<BF16> expert_weight(std::size_t outputs,
                                       std::size_t inputs, int seed) {
-  const auto one_expert = sparse_output_major_weight(outputs, inputs, seed);
-  std::vector<BF16> result(kActiveExperts * one_expert.size());
-  for (std::int64_t expert = 0; expert < kActiveExperts; ++expert)
+  const auto expert_size = outputs * inputs;
+  std::vector<BF16> result(kActiveExperts * expert_size);
+  for (std::int64_t expert = 0; expert < kActiveExperts; ++expert) {
+    const auto one_expert = sparse_output_major_weight(
+        outputs, inputs, seed + static_cast<int>(expert) * kExpertSeedStride);
     std::ranges::copy(one_expert,
-                      result.begin() + expert * one_expert.size());
+                      result.begin() + expert * expert_size);
+  }
   return result;
 }
 
@@ -107,27 +112,41 @@ inline std::vector<float> expert_input(int replay) {
 
 inline std::vector<float> project_slots(std::span<const float> input,
                                         std::size_t input_width,
-                                        std::size_t outputs, int seed) {
+                                        std::size_t outputs, int seed,
+                                        std::span<const std::int32_t> ids) {
   const auto slots = input.size() / input_width;
+  if (input.size() % input_width != 0 || ids.size() != slots)
+    throw std::invalid_argument("expert oracle slot shape mismatch");
   std::vector<float> result(slots * outputs);
-  for (std::size_t slot = 0; slot < slots; ++slot)
+  for (std::size_t slot = 0; slot < slots; ++slot) {
+    if (ids[slot] < 0 || ids[slot] >= kActiveExperts)
+      throw std::invalid_argument("expert oracle id outside resident bank");
+    const int expert_seed = seed + ids[slot] * kExpertSeedStride;
     for (std::size_t output = 0; output < outputs; ++output) {
       const auto value = input[slot * input_width +
-                               source_index(output, input_width, seed)] *
+                               source_index(output, input_width, expert_seed)] *
                          static_cast<float>(
-                             decode(coefficient(output, seed)));
+                             decode(coefficient(output, expert_seed)));
       result[slot * outputs + output] = value;
     }
+  }
   return result;
 }
 
 inline std::vector<float> expert_oracle(std::span<const float> input,
-                                        int seed) {
-  auto gate = project_slots(input, kHidden, kExpertHidden, seed);
-  const auto up = project_slots(input, kHidden, kExpertHidden, seed + 1);
+                                        int seed,
+                                        std::span<const std::int32_t> ids) {
+  auto gate = project_slots(input, kHidden, kExpertHidden, seed, ids);
+  const auto up = project_slots(input, kHidden, kExpertHidden, seed + 1, ids);
   for (std::size_t i = 0; i < gate.size(); ++i)
     gate[i] = gate[i] / (1.0F + std::exp(-gate[i])) * up[i];
-  return project_slots(gate, kExpertHidden, kHidden, seed + 2);
+  return project_slots(gate, kExpertHidden, kHidden, seed + 2, ids);
+}
+
+inline std::vector<float> expert_oracle(std::span<const float> input,
+                                        int seed) {
+  const auto ids = active_expert_ids();
+  return expert_oracle(input, seed, ids);
 }
 
 } // namespace d5_qwen38_24t_fixture
