@@ -710,6 +710,25 @@ gate 全部 PASS，127 个无关 gate 跳过或复用；完整 Direct owner 80.0
 ledger 现有 38 个 `RUN_PASS`、138 个 `VALIDATION_NOT_RUN`；剩余 Qwen3.8 GGUF Vulkan 两格以及
 D5-A5 三交付和 D5-A6 P1 尚未由本批代签。
 
+### Qwen3.8 primary GGUF Vulkan Direct/Graph 完整格
+
+不可变 tests-only candidate `af6a99c450996250a3f557f1eda832ca91c7ef41` 已在正式 Windows
+RTX 4070 的普通 Vulkan Direct/Graph 入口完成固定
+`qwen38_27b:primary_gguf:UD-Q4_K_M` profile 的 R01-R05、R13-R15。R01 保留 Q4_K
+embedding 的精确 5120 隐藏宽度；投影批次逐一运行 artifact 实际出现的 Q3_K、IQ3_S、IQ4_NL、
+IQ4_XS、Q4_K、Q5_K、Q6_K、Q8_0，并额外固定 MTP 的 Q6_K `10240 -> 5120` 权重。语义链
+保留 FFN=17408、GQA 24/4×256、partial interleaved RoPE 64、Gated DeltaNet K16/V48×128 及
+MTP 10240；每个 prepared artifact 以变化输入重放，越界 embedding 不发布结果。所有调用与 Graph
+report 只绑定固定 ggml Vulkan managed region 或限定 IREE Vulkan program，没有增加 HYLE 数学、
+fallback、热选择或产品实现。
+
+MSVC 19.50 Release/WERROR selector 的 docs、closure、configure、Vulkan Direct 与 Vulkan Graph 五个
+gate 全部 PASS，127 个无关 gate 跳过或复用；Vulkan SDK 1.4.357.0、NVIDIA driver 610.62，完整
+Direct owner 86.70 秒、Graph owner 70.37 秒。完整收据见
+[Qwen3.8 primary GGUF Vulkan complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-primary-gguf-complete/README.md)。
+ledger 现有 40 个 `RUN_PASS`、136 个 `VALIDATION_NOT_RUN`；Qwen3.8-27B primary GGUF 已完成四路线
+八格，D5-A5 三交付和 D5-A6 P1 仍由稳定路线批次统一执行。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
