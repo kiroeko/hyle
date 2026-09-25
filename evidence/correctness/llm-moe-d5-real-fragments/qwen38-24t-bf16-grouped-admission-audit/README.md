@@ -4,7 +4,8 @@
 
 `AUDITED_FIX_REQUIRED`。固定官方 profile 需要 BF16 dense expert weight + F32 activation/output and
 accumulation + I32 expert ids。成熟 ggml 四后端已有 `GGML_OP_MUL_MAT_ID` 的该域；HYLE 公共 schema
-以及 CPU、CUDA、Vulkan adapter 在进入 upstream 前把 weight 人为限制为 F32。
+以及 CPU、CUDA、Vulkan adapter 在进入 upstream 前把 weight 人为限制为 F32；Metal adapter 虽已
+lower 到同一 upstream op，但 native dtype 映射遗漏 BF16。
 
 ## Fixed consumer
 
@@ -27,8 +28,9 @@ accumulation + I32 expert ids。成熟 ggml 四后端已有 `GGML_OP_MUL_MAT_ID`
 - `src/compute_provider_ggml_vulkan/region.cc`
 
 All four adapters lower the accepted operation directly to `ggml_mul_mat_id`. CPU, CUDA and Vulkan duplicate the
-F32 dense-weight restriction; Metal already maps plain BF16 but is stopped by the shared public inference call.
-This is a schema/adapter capability gap, not missing grouped-matmul math.
+F32 dense-weight restriction. Metal is first stopped by shared public inference and, after that restriction is
+removed, also needs `DataType::kBFloat16 -> GGML_TYPE_BF16` in its native dtype map. This is a schema/adapter
+capability gap, not missing grouped-matmul math.
 
 ## Pinned upstream evidence
 

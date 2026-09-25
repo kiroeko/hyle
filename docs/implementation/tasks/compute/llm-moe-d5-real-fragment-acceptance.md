@@ -638,9 +638,9 @@ type trait 的 F32 dot 域，CUDA/Metal/Vulkan 的现有 backend admission/dispa
 1. 公共 `GroupedMatMul` dense schema 接纳 F32 或 plain BF16 weight；activation/output 保持 F32、ids
    保持 I32、accumulation 保持显式 F32，输出形状和现有 GGUF packed weight 的 F32 logical type 合同
    不变；
-2. CPU、CUDA、Vulkan 三个固定 ggml adapter 只放宽 plain dense BF16 weight 的相同域，继续直接
-   lower 到 `ggml_mul_mat_id`；Metal adapter 已能映射 BF16，只需随公共 schema 解锁；不接纳 BF16
-   activation/output，不增加转换、fallback、热选择或 HYLE 数学；
+2. 四个固定 ggml adapter 只放宽 plain dense BF16 weight 的相同域，继续直接 lower 到
+   `ggml_mul_mat_id`；CPU、CUDA、Vulkan 解除重复的 F32 admission，Metal 补齐其 native dtype 到
+   `GGML_TYPE_BF16` 的映射；不接纳 BF16 activation/output，不增加转换、fallback、热选择或 HYLE 数学；
 3. 四个 Provider 回归用 BF16 expert weight、F32 activation/output、I32 ids、变化输入 replay 和独立
    double oracle，保留既有 F32/量化 grouped expert 回归；
 4. Qwen3.8-2.4T 官方 Direct/Graph batch 保留 H=8192、expert intermediate=2048、512-way router 与
@@ -651,6 +651,18 @@ type trait 的 F32 dot 域，CUDA/Metal/Vulkan 的现有 backend admission/dispa
 
 不修改 ggml 源码、Provider 顺序、路由键、量化格式、资源模型或任何 HYLE kernel/shader。若某后端
 实际拒绝 BF16 `MUL_MAT_ID`，该路线记录精确 `BACKEND_REJECTED` 并停止，不以 F32 常驻复制伪造覆盖。
+
+**D5-F14 CANDIDATE（`d707af1e562e5fd4c183d187238a58bb8eab6641`）**：公共 schema 和四个
+固定 ggml adapter 已接纳 plain BF16 expert weight，并继续以 F32 activation/output/accumulation、
+I32 ids 直接执行上游 `ggml_mul_mat_id`。Windows CPU/CUDA/Vulkan 与正式 MacBook Air M4 的
+Provider、普通 Direct 和 Graph 定向用例均以变化输入通过；完整受影响套件分别通过 CPU 49/49、
+64/64，CUDA 48/48、65/65，Vulkan 162/162、73/73，Apple 78/78、51/51。Metal 验收首次发现其
+dtype 映射遗漏，最小补齐后实际编译运行 `kernel_mul_mv_id_bf16_f32_4`；没有转换、fallback、热选择
+或 HYLE 数学。完整 partial 收据见
+[Qwen3.8-2.4T BF16 grouped expert](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-bf16-grouped/README.md)。
+本收据只签 R11；公共 API selector 选择的 Windows Compute/Graph 源码、共享、静态及搬迁 CPU consumer
+均已通过。R01-R05、R10、R13-R15、D5-A5 各路线 profile 三交付与 P1 尚未完成，因此 ledger 仍为
+48 个 `RUN_PASS`、128 个 `VALIDATION_NOT_RUN`。
 
 ### Qwen3.8 Apple official Direct/Graph 完整格
 

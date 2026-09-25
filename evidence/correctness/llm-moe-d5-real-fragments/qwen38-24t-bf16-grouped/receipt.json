@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "candidate": "d707af1e562e5fd4c183d187238a58bb8eab6641",
+  "candidate_tree": "8720bcb031b19046e994d47f471e7c166db924da",
+  "verdict": "PARTIAL_RUN_PASS_R11_ONLY",
+  "scope": {
+    "profile": "qwen38_24t:official:official-bf16",
+    "region": "R11",
+    "routes": [
+      "cpu",
+      "cuda",
+      "apple",
+      "vulkan"
+    ],
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "not_claimed": [
+      "R01-R05, R10, or R13-R15",
+      "complete profile cells",
+      "route-level source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.8-2.4T-A95B",
+    "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+    "variant": "official-bf16",
+    "format_family": "safetensors",
+    "configuration_sha256": "4e3819548967e319ab435d044a3a331dbe3b078590ce822e9d74b79430533987",
+    "manifest_sha256": "e36c40d4e99b2714fff821218a0433bda2dec46afdb1ebee8ce96ced997928ee",
+    "official_header": "1609 BF16 tensors / 2446182725504 elements",
+    "fixture": "tests/compute_models/d5_qwen38_24t_fixture.h",
+    "payload": "deterministic exact-width BF16 sparse rows for ten active experts; no checkpoint bytes committed",
+    "oracle": "independent sparse projection and SiLU multiplication chain with explicit BF16 coefficient decode"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload": {
+      "region_namespace": "0x48594c454d4f444c",
+      "region_id": 11,
+      "version": 1
+    },
+    "shape_anchor": {
+      "hidden": 8192,
+      "experts": 512,
+      "active_experts": 10,
+      "top_k": 10,
+      "expert_intermediate": 2048,
+      "shared_expert_intermediate": 2048,
+      "first_two_weights": [
+        10,
+        2048,
+        8192
+      ],
+      "down_weight": [
+        10,
+        8192,
+        2048
+      ],
+      "activation": [
+        1,
+        10,
+        8192
+      ],
+      "expert_ids": [
+        1,
+        10
+      ]
+    },
+    "dtype": "plain BF16 expert weights, F32 activation/output/accumulation, I32 ids",
+    "provider": "ggml 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+    "provider_operation": "GGML_OP_MUL_MAT_ID",
+    "replay": "same prepared artifact, two submits with changed F32 activation; all ten distinct expert slots checked"
+  },
+  "runs": [
+    {
+      "route": "cpu",
+      "direct_test": "CpuQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "graph_test": "CpuGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "suite": {
+        "provider": "39/39 PASS",
+        "direct": "49/49 PASS",
+        "graph": "64/64 PASS"
+      }
+    },
+    {
+      "route": "cuda",
+      "direct_test": "CudaQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "graph_test": "CudaGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "suite": {
+        "provider": "27/27 PASS",
+        "direct": "48/48 PASS",
+        "graph": "65/65 PASS"
+      }
+    },
+    {
+      "route": "vulkan",
+      "direct_test": "VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "graph_test": "VulkanGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "suite": {
+        "provider": "21 applicable PASS / 1 optional validation-layer SKIP",
+        "direct": "162/162 PASS",
+        "graph": "73/73 PASS"
+      }
+    },
+    {
+      "route": "apple",
+      "direct_test": "AppleQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "graph_test": "AppleGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay",
+      "suite": {
+        "provider": "6/6 PASS",
+        "direct": "78/78 PASS",
+        "graph": "51/51 PASS"
+      },
+      "native_pipeline": "kernel_mul_mv_id_bf16_f32_4"
+    }
+  ],
+  "machines": {
+    "windows": {
+      "os": "Windows 11",
+      "gpu": "NVIDIA GeForce RTX 4070",
+      "gpu_memory_mib": 12282,
+      "driver": "610.62",
+      "cuda_toolkit": "13.3",
+      "vulkan_sdk": "1.4.357.0"
+    },
+    "apple": {
+      "profile": "M1-MAC formal",
+      "model": "MacBook Air Mac16,12",
+      "chip": "Apple M4",
+      "memory_gib": 16,
+      "os": "macOS 27.0 (26A428)",
+      "mlx": "0.32.2",
+      "ggml_metal": "0.24.0"
+    }
+  },
+  "maintenance": {
+    "selector_plan": "READY; 28 selected gates, 105 skipped/reused",
+    "inputs_test": "13/13 PASS",
+    "selected_delivery": {
+      "compute": "PASS; source, shared, static, relocated CPU consumer; Ninja/MSVC 19.50; oneDNN disabled because unchanged",
+      "graph": "PASS; source, shared, static, relocated CPU consumer; Ninja/MSVC 19.50; oneDNN disabled because unchanged",
+      "scope": "public API change-impact smoke only; not D5-A5 per-route profile delivery"
+    },
+    "module_closure": "PASS; 57 components, schema 4",
+    "docs": "PASS; 584 Markdown files, 2622 relative links",
+    "diff_check": "PASS"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "R11 is a correctness partial; D5 P1 runs once on the immutable complete route profile."
+  },
+  "ledger": {
+    "changed_cells": 0,
+    "run_pass": 48,
+    "validation_not_run": 128,
+    "reason": "R11 alone does not complete any profile/route Direct or Graph cell."
+  }
+}
