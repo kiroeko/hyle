@@ -469,6 +469,19 @@ closure、configure、Apple Direct 与 Apple Graph；127 个无关 gate 跳过�
 ledger 现有 14 个 `RUN_PASS`、162 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍随稳定
 Apple 路线批次执行，不由本 tests-only candidate 代签。
 
+**D5-F10 Vulkan complete（`e3b2a5fa`）**：Windows RTX 4070 上的普通 Vulkan Direct/Graph
+在既有 R01、R03/R14 收据上补齐相同 artifact 的 R02、R04、R05 与 R15。R02 运行完整
+`2048 -> 6144 -> 2048` F32 RMSNorm/SwiGLU 链，保留 Q4_K gate/up 与 Q6_K down；Graph 将完整
+逻辑链一次编译为一个成熟 managed region。R04/R05 以 exact primary-GGUF 身份复用已验的 BF16
+`8/2 x 256` GQA、K4 causal conv 与 `16 x 128` Gated DeltaNet 语义。Direct 的每项均固定到
+ggml Vulkan managed region 或限定 IREE dispatch；没有新增 HYLE shader、数学或 fallback。
+
+不可变 MSVC 19.50、Vulkan SDK 1.4.357.0、driver 610.62、Release/WERROR selector 通过 docs、
+closure、configure、Vulkan Direct 与 Vulkan Graph；127 个无关 gate 跳过或复用。完整收据见
+[Vulkan primary GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-complete/README.md)。
+ledger 现有 16 个 `RUN_PASS`、160 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍随稳定
+Vulkan 路线批次执行，不由本 tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
