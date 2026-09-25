@@ -821,12 +821,30 @@ report 与完整受影响 factor 验证。不修改其他 custom 准入或新增
 
 **F19 部分候选（`774c3a32d`）**：公共 BF16 `[T,K]` × 原生输出优先 BF16 `[E,K]`
 已接到四路线固定 ggml Provider 的 F32 score 边界。第 10/11 名近并列红灯先证明旧 BF16
-中间存储会改变入选专家；新路径的 CPU、CUDA、Apple、Vulkan Direct/Graph 定向结果均通过，
-MacBook Air 四个相关完整 suite 也通过。CPU Graph 的动态专家与加权合并仍为 partial，其他路线
+中间存储会改变入选专家；新路径的四路线 Direct/Graph 单算子定向结果通过，MacBook Air 四个
+相关完整 suite 也通过。Apple/Vulkan 的 Graph factor 辅助函数实际以 GraphBuilder 建单节点图并
+调用路线 Graph compile；尚未签多节点 R10 整链。CPU Graph 的动态专家与加权合并仍为 partial，
+其他路线
 尚未连接该完整链。Windows selector 的 27 个受影响 gate 尚未全部完成：修正 Vulkan SDK 后的
 全架构 ggml CUDA 构建已停止，具名中断 lease 阻止旧候选继续取得 selector verdict。
 [F32 score partial receipt](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-router-f32-score/README.md)
 记录实际测试和未签边界；三交付与 P1 不写 PASS，ledger 维持 48/176。
+
+### D5-F20：CUDA Graph workspace 别名根对齐
+
+**SCOPED（baseline `6f954ef5`，owner `graph`）**：本轮完整 Qwen3.8-2.4T
+BF16 MoE CUDA Graph 首次将 `Cast` 的内部 F32 输出经零偏移 `View` 交给固定 ggml CUDA region。
+Region 的冷期 `ResourceRequirement.minimum_alignment` 已声明 256 字节；Graph 的内部生命周期
+规划却只按 tensor 基本对齐和 64 字节默认值分配根，未把下游 port 要求传到别名根。
+MSVC Release/WERROR 编译通过，普通 Graph submit 的完成状态实际报
+`CUDA buffer offset does not satisfy the requested type alignment`，属于新的可复现重开事实。
+同批 CPU、Vulkan Graph 整链定向已通过；CUDA 失败不能记作模型 cell PASS。
+
+本缺陷只涉及 Graph 冷期的 workspace/alignment 规划，不修改 ggml CUDA 的既有
+256 字节合同、CUDA 算子、Provider 次序或公共路由。AUDITED 前核对具体失败值、
+端口 proposal 与别名偏移；有限 FIX 应使选中 Provider 的每个输入/输出最小对齐传到物理
+实例及零偏移别名根，对非零偏移不能满足的组合在准备期拒绝。验收只选受影响 Graph
+编译/执行、别名和四路线原有 owner 回归，候选稳定后按 selector 签署；不重跑无关 P1。
 
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
