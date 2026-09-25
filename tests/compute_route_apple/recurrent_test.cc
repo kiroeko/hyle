@@ -89,11 +89,16 @@ TEST(AppleRecurrent, OrdinaryPreparationInterleavedRequestsAndOldOutputOwner) {
   }
 }
 
-TEST(AppleRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+class AppleQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(AppleQwen38GdnProfiles,
+       D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   const auto inputs = qwen38_inputs(fixture);
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      c::WorkloadPhase::kDecode);
+      *GetParam(), c::WorkloadPhase::kDecode);
   auto context = a::Context::create();
   ASSERT_TRUE(context);
   auto program = context->prepare(c::GatedDeltaNet{}, inputs, workload);
@@ -111,6 +116,11 @@ TEST(AppleRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
     check(result->get()->arrays(), expected);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, AppleQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 TEST(AppleRecurrent, StridedMlxInputAndPreparationDiagnostics) {
   apple_test::Recurrent fixture(5, 2, 32);

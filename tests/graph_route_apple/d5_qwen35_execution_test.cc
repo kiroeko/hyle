@@ -219,24 +219,22 @@ void expect_qwen38_near(std::span<const double> actual,
         << i;
 }
 
-TEST(AppleGraphD5,
-     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+void run_quantized_embedding(
+    const c::ModelArtifactProfileDescription &profile, std::int64_t hidden,
+    std::int64_t rows, c::GgufQuantizedType type, std::uint64_t region,
+    int seed) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  constexpr auto hidden = d5_qwen35_fixture::kHidden;
-  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
   constexpr std::int64_t tokens = 2;
-  const auto stored = c::gguf_weight_description(
-      c::GgufQuantizedType::kQ6K, c::DataType::kFloat32, hidden, rows);
+  const auto stored =
+      c::gguf_weight_description(type, c::DataType::kFloat32, hidden, rows);
   ASSERT_TRUE(stored) << stored.error().message();
   const auto table_desc = stored->transposed().value();
   const auto ids_desc = dense(c::DataType::kInt32, {tokens});
-  const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x010f);
-  const auto physical = d5_gguf_test::values(rows, hidden, 41);
-  const auto packed =
-      d5_gguf_test::pack(c::GgufQuantizedType::kQ6K, physical, rows, hidden,
-                         table_desc.required_bytes().value());
+  const auto workload = d5_qwen35_fixture::workload(
+      profile, c::WorkloadPhase::kDecode, region);
+  const auto physical = d5_gguf_test::values(rows, hidden, seed);
+  const auto packed = d5_gguf_test::pack(
+      type, physical, rows, hidden, table_desc.required_bytes().value());
 
   auto builder = g::GraphBuilder::create().value();
   const auto table = builder.constant(table_desc).value();
@@ -278,7 +276,8 @@ TEST(AppleGraphD5,
 
   ASSERT_TRUE(retained.has_value());
   const auto before_failure = bits(*retained);
-  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const std::array<std::int32_t, tokens> invalid{
+      0, static_cast<std::int32_t>(rows)};
   const auto bad_ids = upload(context, ids_desc, std::span(invalid));
   const std::array bad_inputs{native(bad_ids)};
   ASSERT_TRUE(invocation.bind(bad_inputs).ok());
@@ -288,6 +287,23 @@ TEST(AppleGraphD5,
   ASSERT_FALSE(failure);
   EXPECT_TRUE(failure.error().IsOutOfRange());
   EXPECT_EQ(bits(*retained), before_failure);
+}
+
+TEST(AppleGraphD5,
+     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+  run_quantized_embedding(
+      d5_qwen35_fixture::kPrimaryGgufProfile, d5_qwen35_fixture::kHidden,
+      d5_qwen35_fixture::kEmbeddingRows, c::GgufQuantizedType::kQ6K, 0x010f,
+      41);
+}
+
+TEST(AppleGraphD5,
+     D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays) {
+  run_quantized_embedding(
+      d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+      d5_qwen38_official_fixture::kHidden,
+      d5_qwen38_official_fixture::kEmbeddingRows,
+      c::GgufQuantizedType::kQ4K, 0x010f, 19);
 }
 
 TEST(AppleGraphD5,
@@ -432,6 +448,12 @@ TEST(AppleGraphD5,
      D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
   run_quantized_projections(d5_qwen35_fixture::kPrimaryGgufProfile,
                             d5_gguf_test::kQwen35PrimaryProjectionCases);
+}
+
+TEST(AppleGraphD5,
+     D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+                            d5_gguf_test::kQwen38PrimaryProjectionCases);
 }
 
 TEST(AppleGraphD5,
@@ -1044,7 +1066,12 @@ TEST(AppleGraphD5, D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls) {
     }
   }
 }
-TEST(AppleGraphD5, D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays) {
+class AppleGraphQwen38Profiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(AppleGraphQwen38Profiles,
+       D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
   constexpr std::int64_t tokens = 2;
   constexpr int projection_seed = 31;
   const auto table_desc =
@@ -1058,7 +1085,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays) 
   const auto ids_desc = dense(c::DataType::kInt32, {tokens});
   const auto token_desc =
       dense(c::DataType::kBFloat16, {tokens, q::kHidden});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x01030e0f);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x01030e0f);
   auto context = a::Context::create().value();
   const auto table_values = q::values(q::kEmbeddingRows * q::kHidden, 5);
   const auto head_values =
@@ -1144,7 +1172,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays) 
   EXPECT_EQ(bits(*retained_embedding), before_failure);
 }
 
-TEST(AppleGraphD5, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
+TEST_P(AppleGraphQwen38Profiles,
+       D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) {
   constexpr int seed = 41;
   const auto activation_desc =
       dense(c::DataType::kBFloat16, {1, q::kHidden});
@@ -1159,7 +1188,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
           .value();
   const auto expanded_desc =
       dense(c::DataType::kBFloat16, {1, q::kFfnHidden});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0203);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0203);
   auto context = a::Context::create().value();
   const auto scale_values = q::scales(q::kHidden, 9);
   const auto scale = upload(context, scale_desc, std::span(scale_values));
@@ -1203,7 +1233,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
   }
 }
 
-TEST(AppleGraphD5, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
+TEST_P(AppleGraphQwen38Profiles,
+       D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto query_desc = dense(c::DataType::kBFloat16,
                                 {1, 1, q::kQueryHeads, q::kHeadDepth});
   const auto kv_desc = dense(c::DataType::kBFloat16,
@@ -1212,7 +1243,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
   const auto position_desc = dense(c::DataType::kInt32, {1});
   const auto frequency_desc =
       dense(c::DataType::kFloat32, {q::kRotaryDimensions / 2});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 4);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 4);
   auto context = a::Context::create().value();
   const auto query_scale_values = q::scales(q::kHeadDepth, 1);
   const auto key_scale_values = q::scales(q::kHeadDepth, 2);
@@ -1292,7 +1324,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
   }
 }
 
-TEST(AppleGraphD5, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
+TEST_P(AppleGraphQwen38Profiles,
+       D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays) {
   constexpr int weight_seed = 67;
   const auto half_desc = dense(c::DataType::kBFloat16, {1, q::kHidden});
   const auto joined_desc = dense(c::DataType::kBFloat16, {1, q::kMtpInput});
@@ -1301,7 +1334,8 @@ TEST(AppleGraphD5, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
           .transposed()
           .value();
   const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0d0e);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0d0e);
   auto context = a::Context::create().value();
   auto weight_values =
       q::sparse_output_major_weight(q::kHidden, q::kMtpInput, weight_seed);
@@ -1339,4 +1373,10 @@ TEST(AppleGraphD5, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
     expect_qwen38_near(values(converted[0]), normalized_expected);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, AppleGraphQwen38Profiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+
 } // namespace

@@ -135,7 +135,12 @@ TEST(AppleGraph, MatureLightningIndexerUsesOrdinaryGraphEntry) {
   }
 }
 
-TEST(AppleGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+class AppleGraphQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(AppleGraphQwen38GdnProfiles,
+       D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   auto context = a::Context::create();
   ASSERT_TRUE(context);
@@ -152,7 +157,7 @@ TEST(AppleGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
   auto graph = std::move(builder).finish().value();
   ga::CompileReport report;
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      c::WorkloadPhase::kDecode);
+      *GetParam(), c::WorkloadPhase::kDecode);
   auto program = ga::compile(*context, graph, {},
                              {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
@@ -172,6 +177,11 @@ TEST(AppleGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
     check_qwen38(result->get()->arrays(), expected);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, AppleGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 TEST(AppleGraph, OriginalRecurrentRegionsComposeWithMlxAndExplicitState) {
   apple_test::Recurrent fixture(5, 2, 32);
