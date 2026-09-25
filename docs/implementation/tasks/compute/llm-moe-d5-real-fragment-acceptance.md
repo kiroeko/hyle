@@ -758,6 +758,32 @@ Direct/Graph 均通过。详见 [R10 CPU Graph dispatch partial](../../../../evi
 `build_lora_mm` 的 ggml MatMul 产出 F32 logits，而现有公共 BF16 MatMul 合同先存 BF16 再 Cast F32；
 需先定界这个精度差异，不能以当前 synthetic logits 正确就称模型等价。ledger 仍为 48/176。
 
+### D5-F19：官方 BF16 router 的 F32 score 存储边界
+
+**AUDITED（baseline `f32c85ef3`，owners `compute_ops` 与四个固定 ggml Provider）**：
+固定 llama.cpp `4c9233c` 的 `build_moe_ffn` 通过 `build_lora_mm(gate_inp, cur)` 产生 router
+logits，所调用的 `ggml_mul_mat` 在固定 ggml 源码中明确创建 `GGML_TYPE_F32` 输出。现有 HYLE
+公共 `MatMul` 要求两输入同 dtype 且输出也同 dtype；四路线官方 BF16 consumer 因此先把 score 写入
+BF16，再 Cast F32。512 路 top-10 的第 10/11 名可因这一额外 BF16 舍入变成 tie，改变专家成员；
+目前的单对角 synthetic router 没有暴露这个风险。此为模型语义缺口，不以 P1 或性能猜测驱动 API。
+
+有限 FIX 固定如下：
+
+1. 在公共 model operation 中增加明确的 rank-2 `BF16 × BF16 -> F32` MatMul 语义，输入分别为
+   `[T,K]` 和 `[K,E]`，F32 输出 `[T,E]`，保持合法转置 stride，不改通用 `MatMul` 的同 dtype 合同，
+   不隐式转换已有图；
+2. CPU/CUDA/Metal/Vulkan 四个固定 ggml Provider 只在该精确域接纳并直译原版
+   `ggml_mul_mat` 的 F32 输出。现有 GGUF、oneDNN、MLX、cuBLAS 等 Provider 顺序及准入不变；
+   不增加 HYLE 数学、F32 常驻权重副本或额外设备往返；
+3. 先以第 10/11 名接近的 BF16 输入制造 BF16 中间存储会改变 top-10 的红灯测试，再对四路线
+   Direct/Graph 验证 F32 score、ID、归一化权重与动态 expert replay；失败时只记录精确 Provider
+   边界，不能用 host 排序或修改测试 oracle 代替；
+4. 运行 selector 选择的公共语义、Provider、Direct/Graph factor、三交付风险和公共检查；P0 审查
+   转换/同步/常驻资源，稳定不可变候选的适用 P1 留在对应路线 profile 验收，不在本精度 FIX 中
+   提前多次计时。
+
+本 FIX 不签共享 expert、完整 R05、其它模型/量化画像或完整 profile cell；ledger 保持 48/176。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

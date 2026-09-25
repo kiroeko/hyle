@@ -376,7 +376,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F18 AUDITED：R10 512-way router 定向测试发现 ggml CPU 适配器漏接成熟 F32 Softmax，普通路由选到冻结的 HYLE native；有限 FIX 仅接入固定 ggml 的 F32 dense rank-2、最后轴、无 mask、scale=1 Softmax。F14 grouped expert 候选仍有效。"
+      "summary": "M3-D5-F19 AUDITED：官方 BF16 router 的 ggml_mul_mat 原生 F32 score 与 HYLE 先存 BF16 再 Cast 的边界不等价；在固定 F18 Softmax 收据基础上，有限 FIX 只接入 rank-2 BF16×BF16→F32 的成熟 ggml CPU MatMul。"
     },
     {
       "module": "graph_provider_onednn",
@@ -393,7 +393,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile、Qwen3.8-27B 官方、primary GGUF 及 fidelity GGUF 的四路线 Direct/Graph 均已通过。ledger 当前 48/176 RUN_PASS，其余 128 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
+      "summary": "M3-D5-F19 AUDITED：固定 ggml 原生 BF16 router MatMul 保留 F32 score，公共 model operation 有限新增 rank-2 BF16×BF16→F32 语义；此前 48/176 RUN_PASS 保持，D5 其它画像继续按成熟 Provider 验收，自研数学冻结。"
     },
     {
       "module": "compute_backend_cpu",
@@ -541,7 +541,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F8 candidate 8af3a29d 保留为历史证据，有限 FIX 只接纳固定 ggml Vulkan 的 BF16 weight + F32 activation/output 域。"
+      "summary": "M3-D5-F19 AUDITED：保留 F14 BF16 grouped expert 候选，有限新增固定 ggml Vulkan 原生 rank-2 BF16×BF16→F32 router score 域，不增加转换或 HYLE 数学。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -558,7 +558,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F13 candidate 80bbbba0 保留为历史证据，有限 FIX 只接纳固定 ggml CUDA 的 BF16 weight + F32 activation/output 域。"
+      "summary": "M3-D5-F19 AUDITED：保留 F14 BF16 grouped expert 候选，有限新增固定 ggml CUDA 原生 rank-2 BF16×BF16→F32 router score 域，不增加转换或 HYLE 数学。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -582,7 +582,7 @@
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F8 candidate 94264ba2 保留为历史证据，有限 FIX 只接纳固定 ggml Metal 的 BF16 weight + F32 activation/output 域。"
+      "summary": "M3-D5-F19 AUDITED：保留 F14 BF16 grouped expert 候选，有限新增固定 ggml Metal 原生 rank-2 BF16×BF16→F32 router score 域，不增加转换或 HYLE 数学。"
     },
     {
       "module": "compute_provider_iree_vulkan",
