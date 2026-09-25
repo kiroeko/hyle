@@ -374,9 +374,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F12 AUDITED：Qwen3.8-27B 官方 24/4×256 GQA 暴露 ggml CPU SDPA 资格被旧 Qwen3.5 形状写死为 8/2，输出 gate 又遗漏固定上游已有 Sigmoid；有限 FIX 只恢复整数倍 GQA 接纳并映射 ggml_sigmoid，补 8/2、24/4、BF16 和特殊值回归。"
+      "summary": "M3-D5-F12 CPU CANDIDATE 667dda0d：固定 ggml CPU 已接纳 Qwen3.8-27B 官方 24/4×256 GQA 与上游 Sigmoid；官方 BF16 CPU Direct/Graph 两格、replay、失败、owner suites 和 WERROR selector 全部通过。",
+      "candidate": "667dda0d6a696eab0d3f243386a73f2f54cefe55"
     },
     {
       "module": "graph_provider_onednn",
@@ -393,7 +394,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：官方 Qwen3.5-2B BF16、primary GGUF 与 fidelity GGUF 均已在 CPU/CUDA/Apple/Vulkan Direct/Graph 的各 8 个完整格通过。ledger 当前 24/176 RUN_PASS，其余 152 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
+      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile 的四路线 Direct/Graph 24 格和 Qwen3.8-27B 官方 CPU Direct/Graph 两格已通过。ledger 当前 26/176 RUN_PASS，其余 150 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",

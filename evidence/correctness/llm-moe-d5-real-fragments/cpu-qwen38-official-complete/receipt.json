@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "candidate": "667dda0d6a696eab0d3f243386a73f2f54cefe55",
+  "candidate_tree": "fd80e5656789687b228fe8b15d643268f68578da",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:official:official-bf16",
+    "route": "cpu",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CUDA, Apple, or Vulkan complete cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "variant": "official-bf16",
+    "format_family": "safetensors",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "manifest_sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
+    "fixture": "tests/compute_models/d5_qwen38_official_fixture.h",
+    "payload": "deterministic nonzero BF16 data with one nonzero per full-shape output-major weight row; no checkpoint bytes committed",
+    "oracle": "independent double-precision RMSNorm, sparse projection, FFN, attention decode, output gate, MTP and BF16-boundary calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "dtypes": "BF16 weights/activations with F32 attention and recurrent accumulation",
+    "providers": [
+      "ggml CPU 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "oneDNN 3.13.2 primitives and graph regions"
+    ],
+    "provider_assertion": "every prepared call and compiled graph reports a fixed mature provider; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, gate, or state; routing remains cold-bound",
+    "failure": "an invalid embedding index fails without changing any previously published output buffer"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "CpuDefaultDirect.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "CpuDefaultDirect.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "CpuDefaultDirect.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "CpuDefaultGraph.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "CpuDefaultGraph.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "CpuDefaultGraph.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "CpuDefaultGraph.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Direct/Graph boundary projection"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "Direct/Graph exact-width FFN"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "Direct/Graph 5120x5120 projection"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "Direct/Graph partial RoPE, 24/4 GQA, Sigmoid output gate"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-grouped-head/receipt.json"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP concat and projection"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP normalization and F32 cast"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "Direct/Graph separate LM head and failure publication"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "441e6a01d2ff3341cbe13ae01126f0f73e536d1f",
+    "verdict": "PASS",
+    "selected": 7,
+    "skipped_or_reused": 126,
+    "werror": true,
+    "gates": {
+      "docs": "2c59f5d3996e793631d599414c97145862a1cf3ca23247f75833258a2e4f3d2f",
+      "closure": "4a4d5f19fe11613e110a14a9e08771d2371d750a692f9bbac6ce60316d18273d",
+      "model_inputs": "6a4cbcebadbc00a3ddfd0c8890b4fb8ccdd1f62db88d158a4df6540d6d757399",
+      "configure": "8d999d72a654d8d280b12d15e73683534df4bc8deb605ec39fdf2182e1b5cec2",
+      "compute_provider_ggml": "c1e6cbce7bb7ca5fd6ee42b6dae79154105539f90cdabc9d47e55d96119a1528",
+      "compute_route_cpu": "37d45afb0bce715dfed3868a02b8e1877e5366eee0250e277a0811aad0346a84",
+      "graph_route_cpu": "e3830582ea04e3eaaf813a10892bc34d6bf81be4205a6a7046c65e7751fd42f5"
+    },
+    "owner_suites": {
+      "compute_provider_ggml": "complete label PASS in 0.32 s",
+      "compute_route_cpu": "complete label PASS in 9.62 s",
+      "graph_route_cpu": "route and executor labels PASS in 10.01 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CPU route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57924,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-official-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "W1-WIN-RTX4070",
+    "system": "Windows 11",
+    "architecture": "AMD64",
+    "cpu": "13th Gen Intel Core i9-13900K",
+    "compiler": "MSVC 19.50.35728"
+  }
+}

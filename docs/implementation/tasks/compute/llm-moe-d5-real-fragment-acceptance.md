@@ -571,6 +571,16 @@ Qwen3.8-27B 官方 profile 的 R04 使用 BF16、24 query heads / 4 KV heads × 
 不修改公共 SDPA/Unary schema、ggml 源码、算法、路由顺序、native Provider 或任何 HYLE 数学/kernel；若固定
 ggml 实际执行 24/4 仍失败，则记录精确 `BACKEND_REJECTED`，不在 D5 实现替代 attention。
 
+不可变 candidate `667dda0d6a696eab0d3f243386a73f2f54cefe55` 已完成该有限 FIX。CPU Direct 与
+Graph 均在官方 H=5120、FFN=17408、GQA 24/4x256、partial interleaved RoPE 64、MTP 10240
+形状上通过 R01-R04、R13-R15，并合并既有 R05 K16/V48x128 收据；每个 artifact 使用变化输入
+replay，失败路径不发布结果，编译报告只含 ggml CPU/oneDNN 成熟 Provider。Release/WERROR selector
+的 docs、closure、模型输入工具、configure、ggml Provider、CPU Direct 与 CPU Graph 七个 gate
+全部 PASS，126 个无关 gate 跳过或复用；未启动 P1。完整收据见
+[Qwen3.8 official CPU complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-official-complete/README.md)。
+ledger 现有 26 个 `RUN_PASS`、150 个 `VALIDATION_NOT_RUN`；CUDA、Apple、Vulkan 六格以及 D5-A5
+三交付和 D5-A6 P1 尚未由本批代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
