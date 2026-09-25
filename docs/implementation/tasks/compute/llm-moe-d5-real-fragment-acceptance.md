@@ -803,6 +803,15 @@ Provider、Vulkan shader 或用户自定义 lowering。有限 FIX 只加入 `BFl
 Direct 实际执行的 schema；以普通 Graph 准备、两次近并列变化输入、F32 score、Provider region
 report 与完整受影响 factor 验证。不修改其他 custom 准入或新增后备执行器。
 
+**F19 部分候选（`774c3a32d`）**：公共 BF16 `[T,K]` × 原生输出优先 BF16 `[E,K]`
+已接到四路线固定 ggml Provider 的 F32 score 边界。第 10/11 名近并列红灯先证明旧 BF16
+中间存储会改变入选专家；新路径的 CPU、CUDA、Apple、Vulkan Direct/Graph 定向结果均通过，
+MacBook Air 四个相关完整 suite 也通过。CPU Graph 的动态专家与加权合并仍为 partial，其他路线
+尚未连接该完整链。Windows selector 的 27 个受影响 gate 尚未全部完成：修正 Vulkan SDK 后的
+全架构 ggml CUDA 构建已停止，具名中断 lease 阻止旧候选继续取得 selector verdict。
+[F32 score partial receipt](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-router-f32-score/README.md)
+记录实际测试和未签边界；三交付与 P1 不写 PASS，ledger 维持 48/176。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
