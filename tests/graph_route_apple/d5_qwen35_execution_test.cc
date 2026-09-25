@@ -1625,16 +1625,37 @@ TEST_P(AppleGraphQwenOfficialVocabulary,
         dense(c::DataType::kBFloat16, {shard.rows, shape.hidden});
     return upload(context, table_desc, values);
   };
+  std::optional<mx::array> retained;
   const auto execute = [&](Call &call, std::int64_t local_id,
                            const Tensor &table) {
     const std::array index{static_cast<std::int32_t>(local_id)};
     const auto ids = upload(context, ids_desc, std::span(index));
     const auto outputs = run(call, table, ids);
     EXPECT_EQ(outputs.size(), 1U);
+    retained = outputs.at(0);
     return values(outputs.at(0));
   };
+  const auto reject = [&](Call &call, std::int64_t local_id,
+                          const Tensor &table) {
+    ASSERT_TRUE(retained.has_value());
+    const auto before = bits(*retained);
+    const std::array index{static_cast<std::int32_t>(local_id)};
+    const auto ids = upload(context, ids_desc, std::span(index));
+    auto invocation = call.program.create_invocation().value();
+    const std::array inputs{native(table), native(ids)};
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto failed = invocation.submit();
+    if (failed) {
+      const auto result = failed->wait();
+      ASSERT_FALSE(result);
+      EXPECT_TRUE(result.error().IsOutOfRange());
+    } else {
+      EXPECT_TRUE(failed.error().IsOutOfRange());
+    }
+    EXPECT_EQ(bits(*retained), before);
+  };
   d5_qwen_vocabulary_test::check_gather(shape.hidden, prepare_gather,
-                                         upload_table, execute);
+                                         upload_table, execute, reject);
 }
 
 INSTANTIATE_TEST_SUITE_P(

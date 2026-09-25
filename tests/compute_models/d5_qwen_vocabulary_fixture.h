@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -49,9 +50,11 @@ inline std::vector<Shard> shards() {
   return result;
 }
 
-inline Shard shard_for(std::int64_t global_row) {
+inline std::optional<Shard> shard_for(std::int64_t global_row) {
+  if (global_row < 0 || global_row >= kVocabularyRows)
+    return std::nullopt;
   const auto first = (global_row / kShardRows) * kShardRows;
-  return {first, (std::min)(kShardRows, kVocabularyRows - first)};
+  return Shard{first, (std::min)(kShardRows, kVocabularyRows - first)};
 }
 
 inline BF16 encode(double value) { return half_test::encode<BF16>(value); }

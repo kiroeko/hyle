@@ -56,9 +56,9 @@ void check_head(std::int64_t hidden, Prepare prepare,
     }
 }
 
-template <class Prepare, class UploadTable, class Execute>
+template <class Prepare, class UploadTable, class Execute, class Reject>
 void check_gather(std::int64_t hidden, Prepare prepare,
-                  UploadTable upload_table, Execute execute) {
+                  UploadTable upload_table, Execute execute, Reject reject) {
   auto full = prepare(fixture::kShardRows);
   auto tail = prepare(fixture::kVocabularyRows % fixture::kShardRows);
   // Each program sees changed indices; the final three IDs exercise the
@@ -66,7 +66,9 @@ void check_gather(std::int64_t hidden, Prepare prepare,
   for (const auto global_id : fixture::kGatherIds) {
     ASSERT_GE(global_id, 0);
     ASSERT_LT(global_id, fixture::kVocabularyRows);
-    const auto shard = fixture::shard_for(global_id);
+    const auto located = fixture::shard_for(global_id);
+    ASSERT_TRUE(located);
+    const auto shard = *located;
     const auto table = fixture::head_weight(shard, hidden);
     auto native_table = upload_table(shard, table);
     auto &call = shard.rows == fixture::kShardRows ? full : tail;
@@ -77,8 +79,15 @@ void check_gather(std::int64_t hidden, Prepare prepare,
       ASSERT_NEAR(actual[column], fixture::decode(expected[column]), 1.0e-6)
           << "global row " << global_id << " column " << column;
   }
-  EXPECT_EQ(fixture::shard_for(fixture::kVocabularyRows - 1).first,
+  ASSERT_TRUE(fixture::shard_for(fixture::kVocabularyRows - 1));
+  EXPECT_EQ(fixture::shard_for(fixture::kVocabularyRows - 1)->first,
             fixture::kShardRows * 15);
+  EXPECT_FALSE(fixture::shard_for(-1));
+  EXPECT_FALSE(fixture::shard_for(fixture::kVocabularyRows));
+  const auto tail_shard = fixture::shard_for(fixture::kVocabularyRows - 1).value();
+  const auto table = fixture::head_weight(tail_shard, hidden);
+  auto native_table = upload_table(tail_shard, table);
+  reject(tail, tail_shard.rows, native_table);
 }
 
 } // namespace d5_qwen_vocabulary_test

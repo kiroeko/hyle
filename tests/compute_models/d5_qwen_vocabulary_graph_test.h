@@ -99,7 +99,9 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
   ASSERT_TRUE(tail_invocation.prepare_replay(queues).ok());
 
   for (const auto global_id : fixture::kGatherIds) {
-    const auto shard = fixture::shard_for(global_id);
+    const auto located = fixture::shard_for(global_id);
+    ASSERT_TRUE(located);
+    const auto shard = *located;
     const auto table = fixture::head_weight(shard, hidden);
     const auto table_view = table_buffer.view()
                                 .subview(0, std::as_bytes(std::span(table)).size())
@@ -122,6 +124,36 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
       ASSERT_EQ(actual[column].bits, expected[column].bits)
           << "global row " << global_id << " column " << column;
   }
+  EXPECT_FALSE(fixture::shard_for(-1));
+  EXPECT_FALSE(fixture::shard_for(fixture::kVocabularyRows));
+
+  // Keep the tail program and its table bound. The first global ID outside
+  // the vocabulary becomes local row tail.rows, which the checked Gather
+  // must reject without changing the previously published output buffer.
+  const auto tail_shard = fixture::shard_for(fixture::kVocabularyRows - 1).value();
+  const auto table = fixture::head_weight(tail_shard, hidden);
+  const auto table_view = table_buffer.view()
+                              .subview(0, std::as_bytes(std::span(table)).size())
+                              .value();
+  ASSERT_TRUE(table_view.write(std::as_bytes(std::span(table))).ok());
+  const std::array invalid{static_cast<std::int32_t>(tail_shard.rows)};
+  ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
+  const std::vector<fixture::BF16> sentinel(static_cast<std::size_t>(hidden),
+                                            fixture::encode(0.375));
+  ASSERT_TRUE(output_buffer.view()
+                  .write(std::as_bytes(std::span(sentinel)))
+                  .ok());
+  auto failure = tail_invocation.submit(queue);
+  if (failure)
+    EXPECT_TRUE(failure->wait().IsOutOfRange());
+  else
+    EXPECT_TRUE(failure.error().IsOutOfRange());
+  std::vector<fixture::BF16> retained(sentinel.size());
+  ASSERT_TRUE(output_buffer.view()
+                  .read(std::as_writable_bytes(std::span(retained)))
+                  .ok());
+  for (std::size_t column = 0; column < sentinel.size(); ++column)
+    EXPECT_EQ(retained[column].bits, sentinel[column].bits) << column;
 }
 
 } // namespace d5_qwen_vocabulary_graph_test

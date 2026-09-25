@@ -1477,16 +1477,36 @@ TEST_P(VulkanGraphQwenOfficialVocabulary,
         dense(c::DataType::kBFloat16, {shard.rows, shape.hidden});
     return upload(context, table_desc, values);
   };
+  v::Tensor retained;
   const auto execute = [&](Call &call, std::int64_t local_id,
                            const v::Tensor &table) {
     const std::array index{static_cast<std::int32_t>(local_id)};
     const auto ids = upload(context, ids_desc, std::span(index));
     const auto outputs = run(call, table, ids);
     EXPECT_EQ(outputs.size(), 1U);
+    retained = outputs.at(0);
     return values(context, outputs.at(0));
   };
+  const auto reject = [&](Call &call, std::int64_t local_id,
+                          const v::Tensor &table) {
+    const auto before = bits(context, retained);
+    const std::array index{static_cast<std::int32_t>(local_id)};
+    const auto ids = upload(context, ids_desc, std::span(index));
+    auto invocation = call.program.create_invocation().value();
+    const std::array inputs{table, ids};
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto failed = invocation.submit();
+    if (failed) {
+      const auto result = failed->wait();
+      ASSERT_FALSE(result);
+      EXPECT_TRUE(result.error().IsOutOfRange());
+    } else {
+      EXPECT_TRUE(failed.error().IsOutOfRange());
+    }
+    EXPECT_EQ(bits(context, retained), before);
+  };
   d5_qwen_vocabulary_test::check_gather(shape.hidden, prepare_gather,
-                                         upload_table, execute);
+                                         upload_table, execute, reject);
 }
 
 INSTANTIATE_TEST_SUITE_P(
