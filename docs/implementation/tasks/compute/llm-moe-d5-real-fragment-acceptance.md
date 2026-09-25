@@ -846,6 +846,17 @@ MSVC Release/WERROR 编译通过，普通 Graph submit 的完成状态实际报
 实例及零偏移别名根，对非零偏移不能满足的组合在准备期拒绝。验收只选受影响 Graph
 编译/执行、别名和四路线原有 owner 回归，候选稳定后按 selector 签署；不重跑无关 P1。
 
+**AUDITED（baseline `49c6c63b`）**：固定 ggml CUDA region 的
+`propose_resources` 对需要向量化的边界端口已提交 256 字节要求，Graph 的
+`discovery.requirements` 在冷期持有该值；`prepare_placed_steps_attempt` 建物理实例时没有保存
+这个要求，`plan_lifetimes` 建根请求时仅取 `max(64, TensorDesc.required_alignment())`。
+因此缺陷在 Graph 消费已声明的端口约束，不在 Provider 提案或设备枚举。有限 FIX 固定为：
+保存被选中 operation/region 的输入输出端口最小对齐；把零偏移 View/alias 的要求向根传播；
+工作区请求使用传播值，非零偏移冲突在准备期返回错误。只改 Graph 冷期规划，不增加
+新 Provider、数学、运行时搜索或公共治理逻辑。定向重放 CUDA 三组变化输入、近并列成员及
+shared/final oracle，随后运行 Graph CPU/CUDA/Vulkan 受影响 owner 和 Mac Apple 回归；
+完整 selector、三交付及适用 P1 仍在稳定批次签署。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

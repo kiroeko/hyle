@@ -282,9 +282,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F20 SCOPED：官方 BF16 MoE 完整 CUDA Graph 揭示共享 workspace 根未继承成熟 region 256 字节边界对齐要求；按精确缺陷重开。"
+      "summary": "D5-F20 AUDITED：官方 BF16 MoE 完整 CUDA Graph 揭示共享 workspace 根未继承成熟 region 256 字节边界对齐要求；有限 FIX 已锁定 Graph 冷期端口与别名对齐传播。"
     },
     {
       "module": "container_concurrent",
