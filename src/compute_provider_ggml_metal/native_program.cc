@@ -61,6 +61,8 @@ ggml_type native_type(DataType type) noexcept {
     return GGML_TYPE_F32;
   case DataType::kFloat16:
     return GGML_TYPE_F16;
+  case DataType::kBFloat16:
+    return GGML_TYPE_BF16;
   case DataType::kInt32:
     return GGML_TYPE_I32;
   default:
