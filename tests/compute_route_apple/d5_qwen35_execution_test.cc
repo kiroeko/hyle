@@ -58,6 +58,12 @@ mx::array upload(const a::Context &, const c::TensorDesc &description,
   const auto shape = native_shape(description, transposed);
   mx::array result = [&]() -> mx::array {
     switch (description.data_type()) {
+    case c::DataType::kFloat16: {
+      std::vector<std::uint16_t> data(bytes.size() / sizeof(std::uint16_t));
+      std::memcpy(data.data(), bytes.data(), bytes.size());
+      return mx::view(mx::array(data.data(), shape, mx::uint16), mx::float16,
+                      stream());
+    }
     case c::DataType::kBFloat16: {
       std::vector<std::uint16_t> data(bytes.size() / sizeof(std::uint16_t));
       std::memcpy(data.data(), bytes.data(), bytes.size());
@@ -224,12 +230,75 @@ TEST(AppleD5, D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
   EXPECT_EQ(bits(*retained), before_failure);
 }
 
-TEST(AppleD5,
-     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+TEST(AppleD5, D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays) {
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto table_desc = dense(c::DataType::kFloat16, {rows, hidden});
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const std::array specs{a::input_spec(table_desc).value(),
+                         a::input_spec(ids_desc).value()};
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x0108);
+  auto context = a::Context::create().value();
+  auto program =
+      context.prepare(c::Operation(c::Gather{}), specs, workload).value();
+  EXPECT_EQ(program.workload(), workload);
+
+  const auto source = d5_gguf_test::values(rows, hidden, 61);
+  std::vector<F16> table_values(source.size());
+  std::vector<float> decoded(source.size());
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    table_values[i] = half_test::encode<F16>(source[i]);
+    decoded[i] = static_cast<float>(half_test::decode(table_values[i]));
+  }
+  const auto table = upload(context, table_desc, std::span(table_values));
+  auto invocation = program.create_invocation().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  std::optional<mx::array> retained;
+  for (const auto &selection : selections) {
+    const auto ids = upload(context, ids_desc, std::span(selection));
+    const std::array inputs{table, ids};
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    ASSERT_EQ(result->get()->arrays().size(), 1U);
+    const auto &output = result->get()->arrays()[0];
+    const auto actual = values(output);
+    const auto expected =
+        d5_gguf_test::selected_rows(decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+    retained = output;
+  }
+
+  ASSERT_TRUE(retained.has_value());
+  const auto before_failure = bits(*retained);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const auto bad_ids = upload(context, ids_desc, std::span(invalid));
+  const std::array bad_inputs{table, bad_ids};
+  ASSERT_TRUE(invocation.bind(bad_inputs).ok());
+  auto failed = invocation.submit();
+  ASSERT_TRUE(failed) << failed.error().message();
+  auto failure = failed->wait();
+  ASSERT_FALSE(failure);
+  EXPECT_TRUE(failure.error().IsOutOfRange());
+  EXPECT_EQ(bits(*retained), before_failure);
+}
+
+template <std::size_t N>
+void run_quantized_projections(
+    const c::ModelArtifactProfileDescription &profile,
+    const std::array<d5_gguf_test::Qwen35Projection, N> &cases) {
   d5_gguf_test::QuantizerCleanup cleanup;
   auto context = a::Context::create().value();
 
-  for (const auto &test : d5_gguf_test::kQwen35PrimaryProjectionCases) {
+  for (const auto &test : cases) {
     SCOPED_TRACE(test.tensor);
     const auto input_desc = dense(c::DataType::kFloat32, {1, test.reduction});
     const auto weight_desc =
@@ -245,8 +314,8 @@ TEST(AppleD5,
     const std::array specs{a::input_spec(input_desc).value(),
                            a::input_spec(weight_desc).value()};
     const auto workload =
-        d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                    c::WorkloadPhase::kDecode, test.region);
+        d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode,
+                                    test.region);
     auto program =
         context.prepare(c::Operation(c::MatMul{}), specs, workload).value();
     EXPECT_EQ(program.workload(), workload);
@@ -278,24 +347,96 @@ TEST(AppleD5,
   }
 }
 
-TEST(AppleD5, D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay) {
+TEST(AppleD5,
+     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(d5_qwen35_fixture::kPrimaryGgufProfile,
+                            d5_gguf_test::kQwen35PrimaryProjectionCases);
+}
+
+TEST(AppleD5,
+     D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(
+      d5_qwen35_fixture::kFidelityGgufProfile,
+      d5_gguf_test::kQwen35FidelityQuantizedProjectionCases);
+}
+
+TEST(AppleD5, D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay) {
+  auto context = a::Context::create().value();
+  for (const auto &test : d5_gguf_test::kQwen35FidelityF16ProjectionCases) {
+    SCOPED_TRACE(test.tensor);
+    const auto input_desc = dense(c::DataType::kFloat16, {1, test.reduction});
+    const auto weight_desc =
+        dense(c::DataType::kFloat16, {test.columns, test.reduction})
+            .transposed()
+            .value();
+    const std::array specs{a::input_spec(input_desc).value(),
+                           a::input_spec(weight_desc).value()};
+    const auto workload =
+        d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                    c::WorkloadPhase::kDecode, test.region);
+    auto program =
+        context.prepare(c::Operation(c::MatMul{}), specs, workload).value();
+    EXPECT_EQ(program.workload(), workload);
+
+    const auto weight_source =
+        d5_gguf_test::values(test.columns, test.reduction, test.seed);
+    std::vector<F16> weight_values(weight_source.size());
+    std::vector<float> decoded_weights(weight_source.size());
+    for (std::size_t i = 0; i < weight_values.size(); ++i) {
+      weight_values[i] = half_test::encode<F16>(weight_source[i]);
+      decoded_weights[i] =
+          static_cast<float>(half_test::decode(weight_values[i]));
+    }
+    const auto weight = upload(context, weight_desc, std::span(weight_values));
+    auto activation_source =
+        d5_gguf_test::activation(test.reduction, test.seed);
+    auto invocation = program.create_invocation().value();
+    for (int replay = 0; replay < 2; ++replay) {
+      if (replay != 0)
+        for (auto &value : activation_source)
+          value = value * -0.75F + 0.001F;
+      std::vector<F16> activation_values(activation_source.size());
+      std::vector<float> decoded_activation(activation_source.size());
+      for (std::size_t i = 0; i < activation_values.size(); ++i) {
+        activation_values[i] = half_test::encode<F16>(activation_source[i]);
+        decoded_activation[i] =
+            static_cast<float>(half_test::decode(activation_values[i]));
+      }
+      const auto activation =
+          upload(context, input_desc, std::span(activation_values));
+      const std::array inputs{activation, weight};
+      ASSERT_TRUE(invocation.bind(inputs).ok());
+      auto result = invocation.submit().value().wait();
+      ASSERT_TRUE(result) << result.error().message();
+      ASSERT_EQ(result->get()->arrays().size(), 1U);
+      const auto expected_f32 = d5_gguf_test::matmul(
+          decoded_activation, decoded_weights, test.columns, test.reduction);
+      const std::vector<double> expected(expected_f32.begin(),
+                                         expected_f32.end());
+      expect(result->get()->arrays()[0], expected);
+    }
+  }
+}
+
+void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
+                         c::GgufQuantizedType gate_type,
+                         c::GgufQuantizedType down_type) {
   d5_gguf_test::QuantizerCleanup cleanup;
   constexpr std::int64_t hidden = d5_qwen35_fixture::kHidden;
   constexpr std::int64_t expanded = d5_qwen35_fixture::kFfnHidden;
   const auto activation_desc = dense(c::DataType::kFloat32, {1, hidden});
   const auto scale_desc = dense(c::DataType::kFloat32, {hidden});
   const auto gate_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
-                                 c::DataType::kFloat32, hidden, expanded)
+      c::gguf_weight_description(gate_type, c::DataType::kFloat32, hidden,
+                                 expanded)
           .value();
   const auto down_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ6K,
-                                 c::DataType::kFloat32, expanded, hidden)
+      c::gguf_weight_description(down_type, c::DataType::kFloat32, expanded,
+                                 hidden)
           .value();
   const auto expanded_desc = dense(c::DataType::kFloat32, {1, expanded});
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x020f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x020f);
   auto context = a::Context::create().value();
 
   const std::array norm_specs{a::input_spec(activation_desc).value(),
@@ -323,12 +464,12 @@ TEST(AppleD5, D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay) {
   for (const auto *call : {&normalize, &gate, &up, &gated, &down})
     EXPECT_EQ(call->program.workload(), workload);
 
-  const auto gate_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                  gate_weight_desc, 31);
-  const auto up_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                gate_weight_desc, 37);
-  const auto down_packed = packed(c::GgufQuantizedType::kQ6K, hidden, expanded,
-                                  down_weight_desc, 41);
+  const auto gate_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 31);
+  const auto up_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 37);
+  const auto down_packed =
+      packed(down_type, hidden, expanded, down_weight_desc, 41);
   const auto gate_weight = packed_array(gate_packed.bytes);
   const auto up_weight = packed_array(up_packed.bytes);
   const auto down_weight = packed_array(down_packed.bytes);
@@ -378,6 +519,17 @@ TEST(AppleD5, D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay) {
       EXPECT_NE(final_actual, previous_final);
     previous_final = final_actual;
   }
+}
+
+TEST(AppleD5, D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kPrimaryGgufProfile,
+                      c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K);
+}
+
+TEST(AppleD5, D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kFidelityGgufProfile,
+                      c::GgufQuantizedType::kQ8_0,
+                      c::GgufQuantizedType::kQ8_0);
 }
 
 TEST(AppleD5, D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls) {
@@ -540,6 +692,8 @@ TEST(AppleD5, D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls) {
   const std::array workloads{
       d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 4),
       d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x040f),
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
                                   c::WorkloadPhase::kDecode, 0x040f)};
   auto context = a::Context::create().value();
   const auto query_scale = upload(context, scale_desc, fixture.query);
@@ -641,6 +795,8 @@ TEST(AppleD5, D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls) {
   const std::array workloads{
       d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 5),
       d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x050f),
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
                                   c::WorkloadPhase::kDecode, 0x050f)};
   auto context = a::Context::create().value();
   const auto conv_weight =
