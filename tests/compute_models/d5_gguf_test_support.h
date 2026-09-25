@@ -116,6 +116,35 @@ inline constexpr std::array kQwen35PrimaryProjectionCases{
     Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0, 2048,
                      2048, 0x0503, 23}};
 
+// Exact Q8_0 representatives from the same fixed repository revision's
+// UD-Q8_K_XL artifact.  The artifact name is not treated as a global tensor
+// type: the F16 embedding and F16 projection roles are described separately
+// below.
+inline constexpr std::array kQwen35FidelityQuantizedProjectionCases{
+    Qwen35Projection{"blk.0.ffn_gate.weight", c::GgufQuantizedType::kQ8_0, 2048,
+                     6144, 0x0208, 29},
+    Qwen35Projection{"blk.0.ffn_down.weight", c::GgufQuantizedType::kQ8_0, 6144,
+                     2048, 0x0308, 31},
+    Qwen35Projection{"blk.3.attn_v.weight", c::GgufQuantizedType::kQ8_0, 2048,
+                     512, 0x0408, 37},
+    Qwen35Projection{"blk.3.attn_output.weight", c::GgufQuantizedType::kQ8_0,
+                     2048, 2048, 0x0e08, 41}};
+
+struct Qwen35DenseProjection final {
+  std::string_view tensor;
+  std::int64_t reduction;
+  std::int64_t columns;
+  std::uint64_t region;
+  int seed;
+};
+
+// UD-Q8_K_XL retains these representative projection roles as native F16.
+// Their exact names, shapes and formats come from the fixed GGUF header audit.
+inline constexpr std::array kQwen35FidelityF16ProjectionCases{
+    Qwen35DenseProjection{"blk.0.ssm_out.weight", 2048, 2048, 0x0508, 43},
+    Qwen35DenseProjection{"blk.3.attn_k.weight", 2048, 512, 0x0408, 47},
+    Qwen35DenseProjection{"blk.3.attn_q.weight", 2048, 4096, 0x0408, 53}};
+
 inline std::vector<float> activation(std::int64_t width, int seed) {
   std::vector<float> result(static_cast<std::size_t>(width));
   for (std::size_t i = 0; i < result.size(); ++i) {

@@ -74,29 +74,30 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
   }
 }
 
-TEST(CpuDefaultGraph,
-     D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay) {
+void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
+                         c::GgufQuantizedType gate_type,
+                         c::GgufQuantizedType down_type) {
   d5_gguf_test::QuantizerCleanup cleanup;
   constexpr std::int64_t hidden = d5_qwen35_fixture::kHidden;
   constexpr std::int64_t expanded = d5_qwen35_fixture::kFfnHidden;
   const auto activation_desc = dense(1, hidden);
   const auto scale_desc = vector(hidden);
   const auto gate_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
-                                 c::DataType::kFloat32, hidden, expanded)
+      c::gguf_weight_description(gate_type, c::DataType::kFloat32, hidden,
+                                 expanded)
           .value();
   const auto down_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ6K,
-                                 c::DataType::kFloat32, expanded, hidden)
+      c::gguf_weight_description(down_type, c::DataType::kFloat32, expanded,
+                                 hidden)
           .value();
   const auto expanded_desc = dense(1, expanded);
 
-  const auto gate_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                  gate_weight_desc, 31);
-  const auto up_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                gate_weight_desc, 37);
-  const auto down_packed = packed(c::GgufQuantizedType::kQ6K, hidden, expanded,
-                                  down_weight_desc, 41);
+  const auto gate_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 31);
+  const auto up_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 37);
+  const auto down_packed =
+      packed(down_type, hidden, expanded, down_weight_desc, 41);
   const auto scale_values = d5_qwen35_gguf_fragment::scale(hidden);
   auto activation_values = d5_gguf_test::activation(hidden, 43);
   auto activation_buffer = buffer<float>(activation_values);
@@ -150,8 +151,7 @@ TEST(CpuDefaultGraph,
                                                     down_weight_buffer.view())
                              .value()}};
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x020f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x020f);
   auto result = g::compile(logical, context,
                            {.constants = constants, .workload = workload});
   ASSERT_TRUE(result) << result.error().message();
@@ -257,7 +257,19 @@ TEST(CpuDefaultGraph,
 }
 
 TEST(CpuDefaultGraph,
-     D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay) {
+     D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kPrimaryGgufProfile,
+                      c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K);
+}
+
+TEST(CpuDefaultGraph,
+     D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kFidelityGgufProfile,
+                      c::GgufQuantizedType::kQ8_0, c::GgufQuantizedType::kQ8_0);
+}
+
+void run_qwen35_gguf_attention(
+    const c::ModelArtifactProfileDescription &profile) {
   constexpr std::int64_t query_heads = 8;
   constexpr std::int64_t kv_heads = 2;
   constexpr std::int64_t depth = 256;
@@ -339,8 +351,7 @@ TEST(CpuDefaultGraph,
                                         frequency_desc, frequency_buffer.view())
                                         .value()}};
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x040f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x040f);
   auto result = g::compile(logical, context,
                            {.constants = constants, .workload = workload});
   ASSERT_TRUE(result) << result.error().message();
@@ -437,7 +448,17 @@ TEST(CpuDefaultGraph,
   }
 }
 
-TEST(CpuDefaultGraph, D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay) {
+TEST(CpuDefaultGraph,
+     D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay) {
+  run_qwen35_gguf_attention(d5_qwen35_fixture::kPrimaryGgufProfile);
+}
+
+TEST(CpuDefaultGraph,
+     D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay) {
+  run_qwen35_gguf_attention(d5_qwen35_fixture::kFidelityGgufProfile);
+}
+
+void run_qwen35_gguf_gdn(const c::ModelArtifactProfileDescription &profile) {
   constexpr std::size_t heads = d5_qwen35_fixture::kGdnHeads;
   constexpr std::size_t depth = d5_qwen35_fixture::kGdnDepth;
   constexpr std::size_t channels = d5_qwen35_fixture::kConvChannels;
@@ -509,8 +530,7 @@ TEST(CpuDefaultGraph, D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay) {
           update_gate,
           c::ConstTensorView::create(gate_desc, beta_buffer.view()).value()}};
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x050f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x050f);
   auto result = g::compile(logical, context,
                            {.constants = constants, .workload = workload});
   ASSERT_TRUE(result) << result.error().message();
@@ -608,6 +628,14 @@ TEST(CpuDefaultGraph, D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay) {
       EXPECT_NE(actual_scores, previous_scores);
     previous_scores = actual_scores;
   }
+}
+
+TEST(CpuDefaultGraph, D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay) {
+  run_qwen35_gguf_gdn(d5_qwen35_fixture::kPrimaryGgufProfile);
+}
+
+TEST(CpuDefaultGraph, D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay) {
+  run_qwen35_gguf_gdn(d5_qwen35_fixture::kFidelityGgufProfile);
 }
 
 } // namespace

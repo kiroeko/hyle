@@ -24,6 +24,7 @@ namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 using BF16 = hyle::simd::bfloat16_t;
+using F16 = hyle::simd::float16_t;
 
 c::TensorDesc dense(c::DataType type,
                     std::initializer_list<std::int64_t> shape) {
@@ -164,6 +165,90 @@ TEST(CpuDefaultGraph,
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], expected[i], 1.0e-6F) << i;
+  }
+  EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
+
+  const auto before_failure = read_bytes(output_buffer_value);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
+  auto failed = invocation.submit(queue);
+  ASSERT_TRUE(failed) << failed.error().message();
+  EXPECT_FALSE(failed->wait().ok());
+  EXPECT_EQ(read_bytes(output_buffer_value), before_failure);
+}
+
+TEST(CpuDefaultGraph,
+     D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays) {
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto table_desc = dense(c::DataType::kFloat16, {rows, hidden});
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto output_desc = dense(c::DataType::kFloat16, {tokens, hidden});
+  const auto source = d5_gguf_test::values(rows, hidden, 61);
+  std::vector<F16> table_values(source.size());
+  std::vector<float> decoded(source.size());
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    table_values[i] = half_test::encode<F16>(source[i]);
+    decoded[i] = static_cast<float>(half_test::decode(table_values[i]));
+  }
+  auto table_buffer = half_test::buffer<F16>(table_values);
+  auto ids_buffer = output_buffer(ids_desc);
+  auto output_buffer_value = output_buffer(output_desc);
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto table = builder.constant(table_desc).value();
+  const auto ids = builder.input(ids_desc).value();
+  const auto embedded = builder.add(c::Gather{}, table, ids).value();
+  ASSERT_TRUE(builder.publish(embedded).ok());
+  auto logical = std::move(builder).finish().value();
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context =
+      g::cpu::create_context({.metadata_allocator = stats.get()}).value();
+  const std::array constants{g::ConstantBinding{
+      table,
+      c::ConstTensorView::create(table_desc, table_buffer.view()).value()}};
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x0108);
+  auto result = g::compile(logical, context,
+                           {.constants = constants, .workload = workload});
+  ASSERT_TRUE(result) << result.error().message();
+  auto compiled = std::move(*result);
+  EXPECT_EQ(compiled.executable.workload(), workload);
+  expect_mature(compiled);
+
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(
+      invocation
+          .bind(ids,
+                c::ConstTensorView::create(ids_desc, ids_buffer.view()).value())
+          .ok());
+  ASSERT_TRUE(invocation
+                  .bind(embedded, c::TensorView::create(
+                                      output_desc, output_buffer_value.view())
+                                      .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  const auto before = stats.snapshot();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  for (const auto &selection : selections) {
+    ASSERT_TRUE(
+        ids_buffer.view().write(std::as_bytes(std::span(selection))).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<F16>(output_buffer_value);
+    const auto expected =
+        d5_gguf_test::selected_rows(decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
   }
   EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
 

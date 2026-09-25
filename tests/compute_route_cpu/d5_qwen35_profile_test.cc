@@ -22,6 +22,7 @@
 namespace {
 namespace c = hyle::compute;
 using BF16 = hyle::simd::bfloat16_t;
+using F16 = hyle::simd::float16_t;
 
 c::TensorDesc dense(c::DataType type,
                     std::initializer_list<std::int64_t> shape) {
@@ -112,22 +113,22 @@ TEST(CpuDefaultDirect,
   const auto output_desc = dense(c::DataType::kFloat32, {tokens, hidden});
   const std::array input_descs{table_desc, ids_desc};
   const std::array output_descs{output_desc};
-  const auto workload = d5_qwen35_fixture::workload(
-      d5_qwen35_fixture::kPrimaryGgufProfile, c::WorkloadPhase::kDecode,
-      0x010f);
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x010f);
 
   auto context = c::cpu::create_context().value();
-  auto prepared = c::prepare(context, c::Operation(c::Gather{}), input_descs,
-                             output_descs, hyle::mem::system_resource(),
-                             workload);
+  auto prepared =
+      c::prepare(context, c::Operation(c::Gather{}), input_descs, output_descs,
+                 hyle::mem::system_resource(), workload);
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, c::ggml_cpu::kProviderId);
   EXPECT_EQ(prepared->workload(), workload);
 
   const auto physical = d5_gguf_test::values(rows, hidden, 17);
-  const auto packed = d5_gguf_test::pack(
-      c::GgufQuantizedType::kQ6K, physical, rows, hidden,
-      table_desc.required_bytes().value());
+  const auto packed =
+      d5_gguf_test::pack(c::GgufQuantizedType::kQ6K, physical, rows, hidden,
+                         table_desc.required_bytes().value());
   auto table_buffer = bytes_buffer(packed.bytes);
   auto ids_buffer = output_buffer(ids_desc);
   auto result_buffer = output_buffer(output_desc);
@@ -155,6 +156,71 @@ TEST(CpuDefaultDirect,
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], expected[i], 1.0e-6F) << i;
+  }
+
+  const auto before_failure = read_bytes(result_buffer);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
+  auto failed = invocation.submit(queue, inputs, outputs);
+  ASSERT_TRUE(failed) << failed.error().message();
+  EXPECT_FALSE(failed->wait().ok());
+  EXPECT_EQ(read_bytes(result_buffer), before_failure);
+}
+
+TEST(CpuDefaultDirect,
+     D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays) {
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto table_desc = dense(c::DataType::kFloat16, {rows, hidden});
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto output_desc = dense(c::DataType::kFloat16, {tokens, hidden});
+  const std::array input_descs{table_desc, ids_desc};
+  const std::array output_descs{output_desc};
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x0108);
+  auto context = c::cpu::create_context().value();
+  auto prepared =
+      c::prepare(context, c::Operation(c::Gather{}), input_descs, output_descs,
+                 hyle::mem::system_resource(), workload);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_TRUE(prepared->provider().id == c::ggml_cpu::kProviderId ||
+              prepared->provider().id == c::onednn::kProviderId)
+      << prepared->provider().name;
+  EXPECT_EQ(prepared->workload(), workload);
+
+  const auto source = d5_gguf_test::values(rows, hidden, 61);
+  std::vector<F16> table_values(source.size());
+  std::vector<float> decoded(source.size());
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    table_values[i] = half_test::encode<F16>(source[i]);
+    decoded[i] = static_cast<float>(half_test::decode(table_values[i]));
+  }
+  auto table_buffer = half_test::buffer<F16>(table_values);
+  auto ids_buffer = output_buffer(ids_desc);
+  auto result_buffer = output_buffer(output_desc);
+  const std::array inputs{
+      c::ConstTensorView::create(table_desc, table_buffer.view()).value(),
+      c::ConstTensorView::create(ids_desc, ids_buffer.view()).value()};
+  const std::array outputs{
+      c::TensorView::create(output_desc, result_buffer.view()).value()};
+  auto invocation = prepared->create_invocation().value();
+  auto queue = context.create_queue().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  for (const auto &selection : selections) {
+    ASSERT_TRUE(
+        ids_buffer.view().write(std::as_bytes(std::span(selection))).ok());
+    auto done = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<F16>(result_buffer);
+    const auto expected =
+        d5_gguf_test::selected_rows(decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
   }
 
   const auto before_failure = read_bytes(result_buffer);
