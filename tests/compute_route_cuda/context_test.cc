@@ -278,6 +278,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, CudaQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+
 TEST(CudaDefaultCompute, RejectsInvalidDeviceAndUnsupportedOperations) {
   EXPECT_FALSE(cuda::create_context({.device_ordinal = SIZE_MAX}).has_value());
   auto owner = cuda::create_context().value();

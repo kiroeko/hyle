@@ -276,6 +276,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, CudaGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+
 struct FfnGraph final {
   graph::Graph logical;
   graph::ValueId input, output;

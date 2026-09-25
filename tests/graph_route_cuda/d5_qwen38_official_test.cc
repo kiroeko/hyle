@@ -624,4 +624,8 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, CudaGraphQwen38Profiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+
 } // namespace
