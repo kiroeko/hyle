@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "candidate": "123c87c1082f99c03ceed4be954231e520f8357f",
+  "candidate_tree": "ee2ded650087144fbb7649901f9ca337f92f34d7",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
+    "route": "vulkan",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R14",
+      "R15"
+    ],
+    "excluded_regions": [
+      {
+        "region": "R13",
+        "reason": "the fixed GGUF artifact has no MTP/NextN tensors or sidecar"
+      }
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q8_K_XL",
+    "manifest_digest": "984823c386e1fd17a05b97d49a6416cd25940415d8f7f77182596533f3e5ab92",
+    "tensor_count": 320,
+    "logical_parameters": 1881825088,
+    "payload": "exact audited tensor names, roles, dimensions and formats with deterministic format-valid nonzero weights",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "mixed_weights": [
+      {
+        "role": "embedding",
+        "format": "F16",
+        "shape": [
+          2048,
+          248320
+        ]
+      },
+      {
+        "role": "FFN gate/up",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          6144
+        ]
+      },
+      {
+        "role": "FFN down",
+        "format": "Q8_0",
+        "shape": [
+          6144,
+          2048
+        ]
+      },
+      {
+        "role": "Gated DeltaNet output",
+        "format": "F16",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "attention K",
+        "format": "F16",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "attention Q",
+        "format": "F16",
+        "shape": [
+          2048,
+          4096
+        ]
+      },
+      {
+        "role": "attention V",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "attention output",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "convolution/state/norm",
+        "format": "F32"
+      }
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "providers": [
+      "ggml Vulkan 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "limited admitted IREE Vulkan dispatches"
+    ],
+    "routing": "ordinary Vulkan Direct prepare and Graph compile cold-bind only admitted ggml managed regions or limited IREE dispatches for every current fragment",
+    "replay": "each prepared chain or Graph program executes twice with changed activation, token or state; the Graph invocation is reused",
+    "runtime_pipelines": [
+      "ggml Vulkan F16 GET_ROWS",
+      "ggml Vulkan F16 dense MUL_MAT",
+      "ggml Vulkan Q8_0 MUL_MAT/MUL_MAT_VEC",
+      "admitted Vulkan attention, causal-convolution and Gated DeltaNet regions"
+    ],
+    "oracles": [
+      "independent Q8_0 packed-weight decode followed by F32 dot products",
+      "independent F16 encode/decode followed by F32 dot products",
+      "independent RMSNorm, half-split RoPE, causal-convolution and Gated DeltaNet calculations",
+      "BF16 activation/storage with F32 accumulation for the attention region",
+      "sequence-length-one 8-query-head/2-KV-head GQA mapping",
+      "checked embedding failure preserves the previously published output"
+    ],
+    "quantized_chain_gate": "per-stage RMSE <= 0.002 + 2% reference RMS and max error <= 0.02 + 2% max reference"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "tests": [
+        "VulkanManaged.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+        "VulkanGraphD5.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R02",
+      "tests": [
+        "VulkanManaged.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay",
+        "VulkanGraphD5.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R03",
+      "tests": [
+        "VulkanManaged.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "VulkanManaged.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+        "VulkanGraphD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "VulkanGraphD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R04",
+      "tests": [
+        "VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls",
+        "VulkanGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+      ],
+      "model_identity": "fidelity GGUF workload 0x040f",
+      "result": "PASS"
+    },
+    {
+      "id": "R05",
+      "tests": [
+        "VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls",
+        "VulkanGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls"
+      ],
+      "model_identity": "fidelity GGUF workload 0x050f",
+      "result": "PASS"
+    },
+    {
+      "id": "R14",
+      "tests": [
+        "VulkanManaged.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "VulkanManaged.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+        "VulkanGraphD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "VulkanGraphD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R15",
+      "tests": [
+        "VulkanManaged.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+        "VulkanManaged.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay",
+        "VulkanGraphD5.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays",
+        "VulkanGraphD5.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "7bda1b179025236546b44822f9e9be2a57e80b4a",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_route_vulkan",
+      "factor:graph_route_vulkan"
+    ],
+    "skipped_or_reused": 127,
+    "toolchain": "MSVC 19.50.35728; Vulkan SDK 1.4.357.0; NVIDIA driver 610.62",
+    "flags": "/DWIN32 /D_WINDOWS /GR /EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "W1-WIN, Windows 11, 13th Gen Intel Core i9-13900K, NVIDIA GeForce RTX 4070",
+    "compute_route_vulkan": "1/1 CTest executable PASS in 30.89 s; executable contains 142/142 passing tests",
+    "graph_route_vulkan": "1/1 CTest executable PASS in 15.48 s; executable contains 53/53 passing tests"
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable Vulkan route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs after the stable route correctness batch"
+  }
+}

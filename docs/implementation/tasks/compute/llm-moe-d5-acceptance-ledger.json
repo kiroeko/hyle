@@ -1936,18 +1936,76 @@
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:vulkan:graph",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:cpu:direct",
@@ -3396,9 +3454,9 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 22,
+    "RUN_PASS": 24,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 154
+    "VALIDATION_NOT_RUN": 152
   }
 }

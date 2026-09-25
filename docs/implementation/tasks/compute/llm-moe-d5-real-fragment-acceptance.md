@@ -534,6 +534,21 @@ gate 跳过或复用。完整收据见
 ledger 现有 22 个 `RUN_PASS`、154 个 `VALIDATION_NOT_RUN`。Vulkan 两格以及 D5-A5 三交付、
 D5-A6 P1 仍未由本 tests-only candidate 代签。
 
+**D5-F11 Vulkan complete（`123c87c1`）**：普通 Vulkan Direct/Graph 已完整运行同一固定
+`qwen35_2b:fidelity_gguf:UD-Q8_K_XL` profile。R01 的 F16 embedding、R02 的 Q8_0
+gate/up/down，以及 R03/R14 的 Q8_0 与 F16 投影均固定到成熟 ggml Vulkan region；R04/R05
+保留精确 `8/2 x 256` GQA、K4 causal conv 和 `16 x 128` Gated DeltaNet 语义，并只使用已准入的
+ggml 或有限 IREE Vulkan dispatch。每条 Direct/Graph 路径准备一次并以变化输入重放，匹配独立
+Q8_0、F16 或 fragment oracle；无效 embedding 索引失败不覆盖已发布结果。候选没有新增 HYLE
+数学、fallback、Provider 或热路径选路，R13 继续按固定 artifact 的已审计缺失排除。
+
+不可变 Windows RTX 4070、driver 610.62、MSVC 19.50、Vulkan SDK 1.4.357.0、Release/WERROR
+selector 通过 docs、closure、configure、Vulkan Direct 与 Vulkan Graph；完整 Direct 142/142、
+Graph 53/53，127 个无关 gate 跳过或复用。完整收据见
+[Vulkan fidelity GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/README.md)。
+ledger 现有 24 个 `RUN_PASS`、152 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍未由本
+tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
