@@ -722,6 +722,23 @@ Windows selector 选择 Vulkan 两个 factor；Apple 验证副本的 selector �
 R10 router/dispatch/combine 与 R05 完整模型投影/存储链未由这批片段覆盖，ledger 仍为 48/176；
 不代签 D5-A5 三交付或 D5-A6 P1。
 
+### D5-F18：Qwen3.8-2.4T R10 router 的成熟 Softmax 接入
+
+**AUDITED（baseline `dbf492934`，owner `compute_provider_ggml`）**：固定 llama.cpp
+`4c9233c` 的 `qwen35moe.cpp` 调用 `build_moe_ffn`，其实现对 512 个 router logits 先做
+Softmax，再稳定取 top-10、抽取选中权重并重新归一化；之后按选中专家执行乘法、加权合并，shared
+expert 另有 sigmoid gate。当前 HYLE ggml CPU Provider 已有这些基础图节点中的 MatMul、Cast、
+TopK、Reduce 与 Binary，但 F32 router Softmax 没有 admission/translation，普通 CPU 入口选到冻结的
+`hyle-native`。新增的真实 H=8192、E=512/top-10 Direct consumer 在成熟 Provider 断言处定向失败，
+其余数值断言通过；这不能作为 R10 PASS。
+
+有限 FIX 只在 `compute_provider_ggml` 接入固定 ggml 原版 `ggml_soft_max`：F32 plain/dense rank-2、
+最后轴、无 mask、scale=1、标准 Softmax、F32 accumulation；不扩宽其它 dtype/轴/mask，不改路由
+优先级、不加 HYLE 算法。用两次变化输入和稳定 tie 检查 512→10 的概率、ID 与归一化；随后接到
+已有 BF16 grouped expert 的真实 selected IDs 和权重，验证 Direct/Graph 与四路线。适用 selector
+factor、公共检查和 P0 成本结构先验收；本阶段不代签 D5-A5/P1，也不强迫插入上游 ggml MoE 路径没有的
+Scan/Scatter 节点。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

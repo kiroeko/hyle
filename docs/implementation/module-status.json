@@ -376,7 +376,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F12 candidate 667dda0d 保留为历史证据，有限 FIX 只接纳固定 ggml 的 BF16 weight + F32 activation/output 域。"
+      "summary": "M3-D5-F18 AUDITED：R10 512-way router 定向测试发现 ggml CPU 适配器漏接成熟 F32 Softmax，普通路由选到冻结的 HYLE native；有限 FIX 仅接入固定 ggml 的 F32 dense rank-2、最后轴、无 mask、scale=1 Softmax。F14 grouped expert 候选仍有效。"
     },
     {
       "module": "graph_provider_onednn",
