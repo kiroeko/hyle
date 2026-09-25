@@ -405,6 +405,15 @@ region 编译。Vulkan SDK 1.4.357.0、driver 610.62、MSVC 19.50、Release/WERR
 [Vulkan primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-projections/README.md)。
 本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
 
+**D5-F9 Apple partial（`ef9c0562`）**：同一组五个精确 tensor 已在正式 MacBook Air M4 的普通
+Apple Direct/Graph 上运行，固定 `ggml Metal` 并实际加载 Q4_K、Q5_K、Q6_K、IQ4_XS、Q8_0
+`mul_mv` pipeline；两次变化的 shared-buffer activation 匹配独立 packed-weight decode oracle。
+AppleClang 21、macOS SDK 27.0、Release/WERROR 的不可变 selector 通过 docs、closure、configure、
+Direct 与 Graph。首次完整 owner suite 使用了旧 R03 partial 夹具，4 个既有测试因缺文件拒绝；从 Windows
+canonical checkpoint 重建并同步当前 12 张量夹具后，Direct/Graph 均 2/2 PASS。收据见
+[Apple primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/README.md)。
+本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
