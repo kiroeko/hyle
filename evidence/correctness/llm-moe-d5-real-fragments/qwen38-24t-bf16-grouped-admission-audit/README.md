@@ -4,13 +4,15 @@
 
 `AUDITED_FIX_REQUIRED`。固定官方 profile 需要 BF16 dense expert weight + F32 activation/output and
 accumulation + I32 expert ids。成熟 ggml 四后端已有 `GGML_OP_MUL_MAT_ID` 的该域；HYLE 公共 schema
-和四个 adapter 在进入 upstream 前把 weight 人为限制为 F32。
+以及 CPU、CUDA、Vulkan adapter 在进入 upstream 前把 weight 人为限制为 F32。
 
 ## Fixed consumer
 
 - model: `Qwen/Qwen3.8-2.4T-A95B`
 - revision: `207bd685a7e3696cfaff12ded7c6a7ea0f88c996`
 - config SHA-256: `4e3819548967e319ab435d044a3a331dbe3b078590ce822e9d74b79430533987`
+- `model.safetensors.index.json` SHA-256:
+  `e36c40d4e99b2714fff821218a0433bda2dec46afdb1ebee8ce96ced997928ee`
 - official header: 1,609 BF16 tensors / 2,446,182,725,504 elements
 - shape: H=8192, 512 experts, top-10, routed/shared expert intermediate=2048
 - source: `docs/implementation/tasks/compute/llm-moe-model-weight-operator-audit.md`
@@ -24,8 +26,9 @@ accumulation + I32 expert ids。成熟 ggml 四后端已有 `GGML_OP_MUL_MAT_ID`
 - `src/compute_provider_ggml_metal/native_program.cc`
 - `src/compute_provider_ggml_vulkan/region.cc`
 
-All four adapters already lower the accepted operation directly to `ggml_mul_mat_id`; their dense admission
-duplicates the F32 weight restriction. This is an adapter capability gap, not missing grouped-matmul math.
+All four adapters lower the accepted operation directly to `ggml_mul_mat_id`. CPU, CUDA and Vulkan duplicate the
+F32 dense-weight restriction; Metal already maps plain BF16 but is stopped by the shared public inference call.
+This is a schema/adapter capability gap, not missing grouped-matmul math.
 
 ## Pinned upstream evidence
 
@@ -46,6 +49,7 @@ Pinned source: `ggml-456172ec733a-41b7e10fd424`.
 
 ## Frozen boundary
 
-The repair may admit dense BF16 expert weights while retaining F32 activation/output/accumulation and I32 ids.
-It may add provider and real-profile tests. It may not change upstream ggml, add conversions or fallback,
-broaden activation/output dtype, alter routing, or introduce HYLE math/kernel/shader code.
+The repair may admit **plain dense** BF16 expert weights while retaining F32 activation/output/accumulation and
+I32 ids. Existing GGUF packed weights keep their F32 logical type contract. It may add provider and real-profile
+tests. It may not change upstream ggml, add conversions or fallback, broaden activation/output dtype, alter
+routing, or introduce HYLE math/kernel/shader code.

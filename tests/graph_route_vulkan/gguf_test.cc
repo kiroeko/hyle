@@ -98,4 +98,59 @@ TEST(VulkanGraphGguf, PackedIq4XsGroupedExpertsUseCapturedMulMatId) {
                  grouped_matmul(values, packed.decoded, selected_values, n, k));
   }
 }
+
+TEST(VulkanGraphGguf,
+     DenseBfloatGroupedExpertsUseCapturedMulMatIdAndReplay) {
+  auto context = vulkan_test::context().value();
+  constexpr int experts = 3;
+  constexpr int n = 2;
+  constexpr int k = 32;
+  constexpr int tokens = 1;
+  constexpr int slots = 2;
+  const auto weight_desc = vulkan_tensor_test::dense(
+      c::DataType::kBFloat16, {experts, n, k});
+  const auto activation_desc = vulkan_tensor_test::dense(
+      c::DataType::kFloat32, {tokens, slots, k});
+  const auto ids_desc =
+      vulkan_tensor_test::dense(c::DataType::kInt32, {tokens, slots});
+  constexpr std::array<double, experts * n> row_values{1.0, 2.0, 3.0,
+                                                        4.0, -1.0, 0.5};
+  std::vector<double> weight_values(experts * n * k);
+  for (std::size_t row = 0; row < row_values.size(); ++row)
+    std::fill_n(weight_values.begin() + row * k, k, row_values[row]);
+  auto weight =
+      vulkan_tensor_test::make(context, weight_desc, weight_values);
+  auto builder = g::GraphBuilder::create().value();
+  const auto constant = builder.constant(weight_desc).value();
+  const auto activation = builder.input(activation_desc).value();
+  const auto ids = builder.input(ids_desc).value();
+  const std::array ports{constant, activation, ids};
+  const auto node =
+      builder.add_node(c::model_ops::grouped_matmul(), ports).value();
+  ASSERT_TRUE(builder.publish(builder.result(node).value()).ok());
+  auto graph = std::move(builder).finish().value();
+  gv::CompileReport report;
+  auto program =
+      gv::compile(context, graph, std::array{weight}, {.report = &report});
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(report.managed_region_count, 1U);
+  constexpr std::array<std::int32_t, tokens * slots> selected_values{0, 2};
+  auto selected =
+      context.upload(ids_desc, std::as_bytes(std::span(selected_values)))
+          .value();
+  auto invocation = program->create_invocation().value();
+  for (int replay = 1; replay <= 2; ++replay) {
+    const std::vector<double> activation_values(tokens * slots * k,
+                                                0.25 * replay);
+    auto samples =
+        vulkan_tensor_test::make(context, activation_desc, activation_values);
+    ASSERT_TRUE(invocation.bind(samples, selected).ok());
+    auto work = invocation.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const std::array expected{8.0 * replay, 16.0 * replay,
+                              -8.0 * replay, 4.0 * replay};
+    vulkan_tensor_test::expect(context, result->get()->tensors()[0], expected);
+  }
+}
 } // namespace

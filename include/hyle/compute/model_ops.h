@@ -67,8 +67,9 @@ inline Operation causal_conv1d() noexcept {
 // Expert-selecting matrix multiplication.  The expert id is chosen for every
 // token/slot pair while the public tensors keep their natural model layout:
 //   weights [E,N,K], activations [T,S,K], ids [T,S] -> [T,S,N].
-// The first admitted contract is dense F32; exact quantized storage mappings
-// are separate provider capabilities rather than implicit conversions here.
+// Plain dense expert weights may be F32 or BF16. Activations, accumulation and
+// output remain F32; exact quantized storage mappings are separate provider
+// capabilities rather than implicit conversions here.
 struct GroupedMatMul final {
   static constexpr OperationId operation_id{0x48594c454d4f444cULL,
                                              0x4d554c4944000002ULL};
@@ -88,11 +89,14 @@ struct GroupedMatMul final {
         !inputs[2].is_dense())
       return Status::InvalidArgument(
           "GroupedMatMul requires dense [E,N,K], [T,S,K], ids [T,S]");
-    if (inputs[0].data_type() != DataType::kFloat32 ||
+    if ((inputs[0].data_type() != DataType::kFloat32 &&
+         (inputs[0].data_type() != DataType::kBFloat16 ||
+          !inputs[0].is_plain())) ||
         inputs[1].data_type() != DataType::kFloat32 ||
         inputs[2].data_type() != DataType::kInt32)
       return Status::InvalidArgument(
-          "GroupedMatMul requires F32 weights/activations and I32 ids");
+          "GroupedMatMul requires F32 or plain BF16 weights, F32 activations "
+          "and I32 ids");
     const auto weights = inputs[0].dimensions();
     const auto activations = inputs[1].dimensions();
     const auto ids = inputs[2].dimensions();

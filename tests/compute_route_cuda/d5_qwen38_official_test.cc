@@ -10,10 +10,12 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/providers/cuda.h"
 #include "hyle/compute/providers/flashinfer.h"
@@ -26,6 +28,7 @@ namespace c = hyle::compute;
 namespace cuda = hyle::compute::cuda;
 namespace mem = hyle::mem;
 namespace q = d5_qwen38_official_fixture;
+namespace q24 = d5_qwen38_24t_fixture;
 using BF16 = hyle::simd::bfloat16_t;
 
 c::TensorDesc dense(c::DataType type,
@@ -388,6 +391,121 @@ TEST_P(CudaQwen38Profiles,
     const auto actual = half_test::read<BF16>(result_buffer);
     const auto expected = q::ffn(activation, scale_values, seed);
     expect_near(actual, expected, 0.025);
+  }
+}
+
+TEST(CudaQwen38_24T,
+     D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay) {
+  constexpr int seed = 71;
+  const auto weight_desc = dense(
+      c::DataType::kBFloat16,
+      {q24::kActiveExperts, q24::kExpertHidden, q24::kHidden});
+  const auto down_weight_desc = dense(
+      c::DataType::kBFloat16,
+      {q24::kActiveExperts, q24::kHidden, q24::kExpertHidden});
+  const auto activation_desc = dense(
+      c::DataType::kFloat32, {1, q24::kTopK, q24::kHidden});
+  const auto ids_desc =
+      dense(c::DataType::kInt32, {1, q24::kTopK});
+  const auto expanded_desc = dense(
+      c::DataType::kFloat32, {1, q24::kTopK, q24::kExpertHidden});
+  const auto output_desc = activation_desc;
+  const auto workload =
+      q24::workload(c::WorkloadPhase::kDecode, 0x0a0b);
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto queue = context.create_queue().value();
+  const std::array grouped_inputs{weight_desc, activation_desc, ids_desc};
+  const std::array expanded_output{expanded_desc};
+  auto gate = make_call(context, resource, c::model_ops::grouped_matmul(),
+                        grouped_inputs, expanded_output, workload);
+  auto up = make_call(context, resource, c::model_ops::grouped_matmul(),
+                      grouped_inputs, expanded_output, workload);
+  const std::array gated_inputs{expanded_desc, expanded_desc};
+  auto gated = make_call(
+      context, resource,
+      c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}),
+      gated_inputs, expanded_output, workload);
+  const std::array down_inputs{down_weight_desc, expanded_desc, ids_desc};
+  const std::array output{output_desc};
+  auto down = make_call(context, resource, c::model_ops::grouped_matmul(),
+                        down_inputs, output, workload);
+  EXPECT_EQ(gate.prepared.provider().id, c::ggml_cuda::kProviderId);
+  EXPECT_EQ(up.prepared.provider().id, c::ggml_cuda::kProviderId);
+  EXPECT_EQ(down.prepared.provider().id, c::ggml_cuda::kProviderId);
+  for (const auto *call : {&gate, &up, &gated, &down})
+    expect_mature(*call, workload);
+
+  auto gate_weight = q24::expert_weight(q24::kExpertHidden, q24::kHidden,
+                                        seed);
+  auto up_weight = q24::expert_weight(q24::kExpertHidden, q24::kHidden,
+                                      seed + 1);
+  auto down_weight = q24::expert_weight(q24::kHidden, q24::kExpertHidden,
+                                        seed + 2);
+  auto gate_weight_buffer = values_buffer<BF16>(resource, gate_weight);
+  gate_weight.clear();
+  gate_weight.shrink_to_fit();
+  auto up_weight_buffer = values_buffer<BF16>(resource, up_weight);
+  up_weight.clear();
+  up_weight.shrink_to_fit();
+  auto down_weight_buffer = values_buffer<BF16>(resource, down_weight);
+  down_weight.clear();
+  down_weight.shrink_to_fit();
+  const auto ids = q24::active_expert_ids();
+  auto ids_buffer = values_buffer<std::int32_t>(resource, ids);
+  auto activation_buffer = output_buffer(resource, activation_desc);
+  auto gate_buffer = output_buffer(resource, expanded_desc);
+  auto up_buffer = output_buffer(resource, expanded_desc);
+  auto gated_buffer = output_buffer(resource, expanded_desc);
+  auto result_buffer = output_buffer(resource, output_desc);
+
+  const auto id_view =
+      c::ConstTensorView::create(ids_desc, ids_buffer.view()).value();
+  const auto activation_view = c::ConstTensorView::create(
+                                   activation_desc, activation_buffer.view())
+                                   .value();
+  const std::array gate_views{
+      c::ConstTensorView::create(weight_desc, gate_weight_buffer.view()).value(),
+      activation_view, id_view};
+  const std::array up_views{
+      c::ConstTensorView::create(weight_desc, up_weight_buffer.view()).value(),
+      activation_view, id_view};
+  const std::array gate_output{
+      c::TensorView::create(expanded_desc, gate_buffer.view()).value()};
+  const std::array up_output{
+      c::TensorView::create(expanded_desc, up_buffer.view()).value()};
+  const std::array gated_views{
+      c::ConstTensorView::create(expanded_desc, gate_buffer.view()).value(),
+      c::ConstTensorView::create(expanded_desc, up_buffer.view()).value()};
+  const std::array gated_output{
+      c::TensorView::create(expanded_desc, gated_buffer.view()).value()};
+  const std::array down_views{
+      c::ConstTensorView::create(down_weight_desc, down_weight_buffer.view())
+          .value(),
+      c::ConstTensorView::create(expanded_desc, gated_buffer.view()).value(),
+      id_view};
+  const std::array result_output{
+      c::TensorView::create(output_desc, result_buffer.view()).value()};
+
+  for (int replay : {3, 17}) {
+    const auto input = q24::expert_input(replay);
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(input)))
+                    .ok());
+    run(gate, queue, gate_views, gate_output);
+    run(up, queue, up_views, up_output);
+    run(gated, queue, gated_views, gated_output);
+    run(down, queue, down_views, result_output);
+    const auto actual = half_test::read<float>(result_buffer);
+    const auto expected = q24::expert_oracle(input, seed);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i],
+                  std::abs(expected[i]) * q24::kExpertRelativeTolerance +
+                      q24::kExpertAbsoluteTolerance)
+          << i;
   }
 }
 

@@ -13,6 +13,7 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_route_vulkan/gate_norm_test_support.h"
 #include "hyle/compute/model_ops.h"
@@ -23,6 +24,7 @@ using namespace vulkan_gate_norm_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
 namespace q = d5_qwen38_official_fixture;
+namespace q24 = d5_qwen38_24t_fixture;
 
 std::vector<B16> decode_bfloat(std::span<const std::byte> bytes) {
   EXPECT_EQ(bytes.size() % sizeof(B16), 0U);
@@ -1100,6 +1102,73 @@ TEST_P(VulkanGraphQwen38Profiles,
     const auto output = run(down, product[0]);
     expect_qwen38_near(values(context, output[0]), q::ffn(input, scale_values, seed),
                        0.025);
+  }
+}
+
+TEST(VulkanGraphQwen38_24T,
+     D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay) {
+  constexpr int seed = 71;
+  const auto weight_desc = dense(
+      c::DataType::kBFloat16,
+      {q24::kActiveExperts, q24::kExpertHidden, q24::kHidden});
+  const auto down_weight_desc = dense(
+      c::DataType::kBFloat16,
+      {q24::kActiveExperts, q24::kHidden, q24::kExpertHidden});
+  const auto activation_desc = dense(
+      c::DataType::kFloat32, {1, q24::kTopK, q24::kHidden});
+  const auto ids_desc =
+      dense(c::DataType::kInt32, {1, q24::kTopK});
+  const auto expanded_desc = dense(
+      c::DataType::kFloat32, {1, q24::kTopK, q24::kExpertHidden});
+  const auto workload =
+      q24::workload(c::WorkloadPhase::kDecode, 0x0a0b);
+  auto context = vulkan_test::context().value();
+  auto gate_weight_values = q24::expert_weight(
+      q24::kExpertHidden, q24::kHidden, seed);
+  const auto gate_weight =
+      upload(context, weight_desc, std::span(gate_weight_values));
+  gate_weight_values.clear();
+  gate_weight_values.shrink_to_fit();
+  auto up_weight_values = q24::expert_weight(
+      q24::kExpertHidden, q24::kHidden, seed + 1);
+  const auto up_weight =
+      upload(context, weight_desc, std::span(up_weight_values));
+  up_weight_values.clear();
+  up_weight_values.shrink_to_fit();
+  auto down_weight_values = q24::expert_weight(
+      q24::kHidden, q24::kExpertHidden, seed + 2);
+  const auto down_weight =
+      upload(context, down_weight_desc, std::span(down_weight_values));
+  down_weight_values.clear();
+  down_weight_values.shrink_to_fit();
+  const auto ids_data = q24::active_expert_ids();
+  const auto ids = upload(context, ids_desc, std::span(ids_data));
+  auto gate = prepare(context, workload, c::model_ops::grouped_matmul(),
+                      gate_weight, activation_desc, ids_desc);
+  auto up = prepare(context, workload, c::model_ops::grouped_matmul(),
+                    up_weight, activation_desc, ids_desc);
+  auto gated = prepare(
+      context, workload,
+      c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}),
+      expanded_desc, expanded_desc);
+  auto down = prepare(context, workload, c::model_ops::grouped_matmul(),
+                      down_weight, expanded_desc, ids_desc);
+  for (int replay : {3, 17}) {
+    const auto input = q24::expert_input(replay);
+    const auto activation =
+        upload(context, activation_desc, std::span(input));
+    const auto gate_value = run(gate, activation, ids);
+    const auto up_value = run(up, activation, ids);
+    const auto product = run(gated, gate_value[0], up_value[0]);
+    const auto output = run(down, product[0], ids);
+    const auto actual = values(context, output[0]);
+    const auto expected = q24::expert_oracle(input, seed);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i],
+                  std::abs(expected[i]) * q24::kExpertRelativeTolerance +
+                      q24::kExpertAbsoluteTolerance)
+          << i;
   }
 }
 

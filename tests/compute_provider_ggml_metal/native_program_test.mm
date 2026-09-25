@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -29,6 +30,12 @@ struct Buffer final {
   Buffer &operator=(const Buffer &) = delete;
   ~Buffer() { [value release]; }
 };
+
+std::uint16_t bfloat16(float value) {
+  auto bits = std::bit_cast<std::uint32_t>(value);
+  bits += 0x7fffU + ((bits >> 16U) & 1U);
+  return static_cast<std::uint16_t>(bits >> 16U);
+}
 
 std::array<c::TensorDesc, 6> schema(int tokens, int heads, int depth) {
   auto tensor = [](std::array<std::int64_t, 4> shape) {
@@ -403,6 +410,72 @@ TEST(GgmlMetalProgram, PackedIq4XsGroupedExpertsUseNativeMulMatId) {
         }
     }
     ggml_quantize_free();
+    [device release];
+  }
+}
+
+TEST(GgmlMetalProgram, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
+  @autoreleasepool {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    ASSERT_NE(device, nil);
+    constexpr int experts = 3;
+    constexpr int n = 8;
+    constexpr int k = 64;
+    constexpr int tokens = 1;
+    constexpr int slots = 2;
+    const std::array descriptions{
+        c::TensorDesc::dense(c::DataType::kBFloat16,
+                             std::array<std::int64_t, 3>{experts, n, k})
+            .value(),
+        c::TensorDesc::dense(c::DataType::kFloat32,
+                             std::array<std::int64_t, 3>{tokens, slots, k})
+            .value(),
+        c::TensorDesc::dense(c::DataType::kInt32,
+                             std::array<std::int64_t, 2>{tokens, slots})
+            .value()};
+    auto program = metal::NativeProgram::create(c::model_ops::grouped_matmul(),
+                                                 descriptions);
+    ASSERT_TRUE(program) << program.error().message();
+
+    constexpr std::array<float, experts * n> row_values{
+        1.0F,  2.0F,  3.0F,  4.0F,  5.0F,  6.0F,  7.0F, 8.0F,
+        0.5F,  1.0F,  1.5F,  2.0F,  2.5F,  3.0F,  3.5F, 4.0F,
+        -1.0F, -2.0F, -3.0F, -4.0F, -5.0F, -6.0F, -7.0F, -8.0F};
+    std::vector<std::uint16_t> weights(experts * n * k);
+    for (std::size_t row = 0; row < row_values.size(); ++row)
+      std::fill_n(weights.begin() + row * k, k, bfloat16(row_values[row]));
+    std::vector<float> activations(tokens * slots * k, 0.25F);
+    constexpr std::array<std::int32_t, tokens * slots> ids{0, 2};
+    std::array<Buffer, 4> owners;
+    std::array<metal::BufferView, 4> ports;
+    const std::array bytes{weights.size() * sizeof(std::uint16_t),
+                           activations.size() * sizeof(float),
+                           ids.size() * sizeof(std::int32_t),
+                           (*program)->output_bytes()};
+    for (std::size_t i = 0; i < owners.size(); ++i) {
+      owners[i].value = [device newBufferWithLength:bytes[i]
+                                           options:MTLResourceStorageModeShared];
+      ASSERT_NE(owners[i].value, nil);
+      ports[i] = {(__bridge void *)owners[i].value, 0};
+    }
+    std::memcpy(owners[0].value.contents, weights.data(), bytes[0]);
+    std::memcpy(owners[2].value.contents, ids.data(), bytes[2]);
+    for (int replay = 1; replay <= 2; ++replay) {
+      std::fill(activations.begin(), activations.end(), 0.25F * replay);
+      std::memcpy(owners[1].value.contents, activations.data(), bytes[1]);
+      const auto status = (*program)->run(ports);
+      ASSERT_TRUE(status.ok()) << status.message();
+      const auto *actual = static_cast<const float *>(owners[3].value.contents);
+      for (int column = 0; column < n; ++column) {
+        EXPECT_NEAR(actual[column], row_values[column] * k * 0.25F * replay,
+                    1.0e-4F)
+            << column;
+        EXPECT_NEAR(actual[n + column], row_values[2 * n + column] * k *
+                                                0.25F * replay,
+                    1.0e-4F)
+            << column;
+      }
+    }
     [device release];
   }
 }

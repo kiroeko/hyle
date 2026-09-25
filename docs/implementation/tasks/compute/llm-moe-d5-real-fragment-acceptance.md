@@ -635,10 +635,12 @@ type trait 的 F32 dot 域，CUDA/Metal/Vulkan 的现有 backend admission/dispa
 `compute_provider_ggml_vulkan` 从各自 D5 candidate 精确退回本卡 AUDITED；`compute_ops` 已由 D5
 持有 AUDITED。有限 FIX 只有：
 
-1. 公共 `GroupedMatMul` dense schema 接纳 F32 或 BF16 weight；activation/output 保持 F32、ids 保持
-   I32、accumulation 保持显式 F32，输出形状和现有 GGUF packed weight 合同不变；
-2. 四个固定 ggml adapter 只放宽 dense BF16 weight 的相同域，继续直接 lower 到
-   `ggml_mul_mat_id`；不接纳 BF16 activation/output，不增加转换、fallback、热选择或 HYLE 数学；
+1. 公共 `GroupedMatMul` dense schema 接纳 F32 或 plain BF16 weight；activation/output 保持 F32、ids
+   保持 I32、accumulation 保持显式 F32，输出形状和现有 GGUF packed weight 的 F32 logical type 合同
+   不变；
+2. CPU、CUDA、Vulkan 三个固定 ggml adapter 只放宽 plain dense BF16 weight 的相同域，继续直接
+   lower 到 `ggml_mul_mat_id`；Metal adapter 已能映射 BF16，只需随公共 schema 解锁；不接纳 BF16
+   activation/output，不增加转换、fallback、热选择或 HYLE 数学；
 3. 四个 Provider 回归用 BF16 expert weight、F32 activation/output、I32 ids、变化输入 replay 和独立
    double oracle，保留既有 F32/量化 grouped expert 回归；
 4. Qwen3.8-2.4T 官方 Direct/Graph batch 保留 H=8192、expert intermediate=2048、512-way router 与

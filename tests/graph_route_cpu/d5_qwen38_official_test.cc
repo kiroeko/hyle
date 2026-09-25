@@ -7,8 +7,10 @@
 #include <span>
 #include <vector>
 
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
@@ -20,6 +22,7 @@ namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace q = d5_qwen38_official_fixture;
+namespace q24 = d5_qwen38_24t_fixture;
 using BF16 = hyle::simd::bfloat16_t;
 
 c::TensorDesc dense(c::DataType type,
@@ -328,6 +331,128 @@ TEST_P(CpuGraphQwen38Profiles, D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) 
     const auto actual = half_test::read<BF16>(output);
     const auto expected = q::ffn(input, scale_values, seed);
     expect_near(actual, expected, 0.025);
+  }
+}
+
+TEST(CpuGraphQwen38_24T,
+     D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay) {
+  constexpr int seed = 71;
+  const auto weight_desc = dense(
+      c::DataType::kBFloat16,
+      {q24::kActiveExperts, q24::kExpertHidden, q24::kHidden});
+  const auto down_weight_desc = dense(
+      c::DataType::kBFloat16,
+      {q24::kActiveExperts, q24::kHidden, q24::kExpertHidden});
+  const auto activation_desc = dense(
+      c::DataType::kFloat32, {1, q24::kTopK, q24::kHidden});
+  const auto ids_desc =
+      dense(c::DataType::kInt32, {1, q24::kTopK});
+  const auto output_desc = activation_desc;
+  auto gate_weight_values = q24::expert_weight(
+      q24::kExpertHidden, q24::kHidden, seed);
+  auto up_weight_values = q24::expert_weight(
+      q24::kExpertHidden, q24::kHidden, seed + 1);
+  auto down_weight_values = q24::expert_weight(
+      q24::kHidden, q24::kExpertHidden, seed + 2);
+  auto gate_weight_buffer = half_test::buffer<BF16>(gate_weight_values);
+  gate_weight_values.clear();
+  gate_weight_values.shrink_to_fit();
+  auto up_weight_buffer = half_test::buffer<BF16>(up_weight_values);
+  up_weight_values.clear();
+  up_weight_values.shrink_to_fit();
+  auto down_weight_buffer = half_test::buffer<BF16>(down_weight_values);
+  down_weight_values.clear();
+  down_weight_values.shrink_to_fit();
+  const auto ids_data = q24::active_expert_ids();
+  auto ids_buffer = half_test::buffer<std::int32_t>(ids_data);
+  auto activation_buffer = output_buffer(activation_desc);
+  auto result_buffer = output_buffer(output_desc);
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto gate_weight = builder.constant(weight_desc).value();
+  const auto up_weight = builder.constant(weight_desc).value();
+  const auto down_weight = builder.constant(down_weight_desc).value();
+  const auto activation = builder.input(activation_desc).value();
+  const auto ids = builder.input(ids_desc).value();
+  const std::array gate_ports{gate_weight, activation, ids};
+  const auto gate_node =
+      builder.add_node(c::model_ops::grouped_matmul(), gate_ports).value();
+  const auto gate = builder.result(gate_node).value();
+  const std::array up_ports{up_weight, activation, ids};
+  const auto up_node =
+      builder.add_node(c::model_ops::grouped_matmul(), up_ports).value();
+  const auto up = builder.result(up_node).value();
+  const auto gated =
+      builder
+          .add(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}, gate,
+               up)
+          .value();
+  const std::array down_ports{down_weight, gated, ids};
+  const auto down_node =
+      builder.add_node(c::model_ops::grouped_matmul(), down_ports).value();
+  const auto final = builder.result(down_node).value();
+  ASSERT_TRUE(builder.publish(final).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = g::cpu::create_context().value();
+  const std::array constants{
+      g::ConstantBinding{
+          gate_weight,
+          c::ConstTensorView::create(weight_desc, gate_weight_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          up_weight,
+          c::ConstTensorView::create(weight_desc, up_weight_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          down_weight,
+          c::ConstTensorView::create(down_weight_desc,
+                                     down_weight_buffer.view())
+              .value()}};
+  const auto workload =
+      q24::workload(c::WorkloadPhase::kDecode, 0x0a0b);
+  auto result = g::compile(logical, context,
+                           {.constants = constants, .workload = workload});
+  ASSERT_TRUE(result) << result.error().message();
+  auto compiled = std::move(*result);
+  EXPECT_EQ(compiled.executable.workload(), workload);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(activation,
+                        c::ConstTensorView::create(activation_desc,
+                                                   activation_buffer.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(ids, c::ConstTensorView::create(ids_desc,
+                                                       ids_buffer.view())
+                                 .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(final,
+                        c::TensorView::create(output_desc, result_buffer.view())
+                            .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (int replay : {3, 17}) {
+    const auto input = q24::expert_input(replay);
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(input)))
+                    .ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(result_buffer);
+    const auto expected = q24::expert_oracle(input, seed);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i],
+                  std::abs(expected[i]) * q24::kExpertRelativeTolerance +
+                      q24::kExpertAbsoluteTolerance)
+          << i;
   }
 }
 

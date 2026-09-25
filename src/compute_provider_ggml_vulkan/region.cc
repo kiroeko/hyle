@@ -339,14 +339,14 @@ bool region_supports(const Operation &operation,
              inputs[2].data_type() == DataType::kInt32 &&
              outputs[0].is_plain() && outputs[0].is_dense() &&
              outputs[0].data_type() == DataType::kFloat32;
-    return std::ranges::all_of(
-               inputs,
-               [](const auto &description) {
-                 return description.is_plain() && description.is_dense() &&
-                        (description.data_type() == DataType::kFloat32 ||
-                         description.data_type() == DataType::kInt32);
-               }) &&
-           outputs[0].is_plain() &&
+    return inputs[0].is_plain() && inputs[0].is_dense() &&
+           (inputs[0].data_type() == DataType::kFloat32 ||
+            inputs[0].data_type() == DataType::kBFloat16) &&
+           inputs[1].is_plain() && inputs[1].is_dense() &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[2].is_plain() && inputs[2].is_dense() &&
+           inputs[2].data_type() == DataType::kInt32 &&
+           outputs[0].is_plain() && outputs[0].is_dense() &&
            outputs[0].data_type() == DataType::kFloat32;
   }
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||

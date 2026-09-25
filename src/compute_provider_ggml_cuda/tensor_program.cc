@@ -299,7 +299,9 @@ bool tensor_operation_supports(Operation operation,
             (inputs[0].rank() == 3 && inputs[0].block_axis() == 2)) &&
            inputs[0].is_dense() && inputs[1].is_dense() &&
            inputs[2].is_dense() &&
-           inputs[0].data_type() == DataType::kFloat32 &&
+           (inputs[0].data_type() == DataType::kFloat32 ||
+            (inputs[0].is_plain() &&
+             inputs[0].data_type() == DataType::kBFloat16)) &&
            inputs[1].data_type() == DataType::kFloat32 &&
            inputs[2].data_type() == DataType::kInt32 &&
            outputs[0].data_type() == DataType::kFloat32;

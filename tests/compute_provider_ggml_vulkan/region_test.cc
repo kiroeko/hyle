@@ -15,6 +15,7 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -138,6 +139,33 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
   EXPECT_FALSE(region_supports(
       c::Operation(c::Gather{0, c::IndexBoundsPolicy::kUnchecked}),
       other_inputs, other_outputs));
+}
+
+TEST(GgmlVulkanRegion, DenseBfloatGroupedExpertsRequireF32Activations) {
+  const auto operation = c::model_ops::grouped_matmul();
+  const auto weights = c::TensorDesc::dense(
+                           c::DataType::kBFloat16,
+                           std::array<std::int64_t, 3>{3, 8, 64})
+                           .value();
+  const auto activations = c::TensorDesc::dense(
+                               c::DataType::kFloat32,
+                               std::array<std::int64_t, 3>{1, 2, 64})
+                               .value();
+  const auto ids = c::TensorDesc::dense(
+                       c::DataType::kInt32,
+                       std::array<std::int64_t, 2>{1, 2})
+                       .value();
+  const std::array inputs{weights, activations, ids};
+  const std::array outputs{
+      c::infer_single_output(operation, inputs).value()};
+  EXPECT_TRUE(region_supports(operation, inputs, outputs));
+
+  auto invalid_inputs = inputs;
+  invalid_inputs[1] = c::TensorDesc::dense(
+                          c::DataType::kBFloat16,
+                          std::array<std::int64_t, 3>{1, 2, 64})
+                          .value();
+  EXPECT_FALSE(region_supports(operation, invalid_inputs, outputs));
 }
 
 TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {

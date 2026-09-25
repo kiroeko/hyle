@@ -10,6 +10,7 @@
 
 #include "../../src/compute_ops/view_alias.h"
 #include "custom_operation_fixture.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/operation.h"
 
@@ -990,11 +991,32 @@ TEST(OperationModelOps, CausalConv1dKeepsNaturalSequenceLayout) {
 
 TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
   const auto f32 = DataType::kFloat32;
+  const auto bf16 = DataType::kBFloat16;
   const auto i32 = DataType::kInt32;
   const std::array grouped{tensor(f32, 3, 5, 7), tensor(f32, 11, 2, 7),
                            tensor(i32, 11, 2)};
   EXPECT_EQ(infer_one(model_ops::grouped_matmul(), grouped),
             tensor(f32, 11, 2, 5));
+  const std::array grouped_bf16{tensor(bf16, 3, 5, 7),
+                                tensor(f32, 11, 2, 7), tensor(i32, 11, 2)};
+  EXPECT_EQ(infer_one(model_ops::grouped_matmul(), grouped_bf16),
+            tensor(f32, 11, 2, 5));
+  auto invalid_grouped_type = grouped_bf16;
+  invalid_grouped_type[1] = tensor(bf16, 11, 2, 7);
+  EXPECT_FALSE(
+      infer_single_output(model_ops::grouped_matmul(), invalid_grouped_type));
+  invalid_grouped_type = grouped_bf16;
+  invalid_grouped_type[0] = tensor(DataType::kFloat16, 3, 5, 7);
+  EXPECT_FALSE(
+      infer_single_output(model_ops::grouped_matmul(), invalid_grouped_type));
+  invalid_grouped_type = grouped_bf16;
+  invalid_grouped_type[0] =
+      gguf_grouped_weight_description(GgufQuantizedType::kQ8_0, bf16, 3, 5,
+                                      32)
+          .value();
+  invalid_grouped_type[1] = tensor(f32, 11, 2, 32);
+  EXPECT_FALSE(
+      infer_single_output(model_ops::grouped_matmul(), invalid_grouped_type));
 
   const std::array combine{tensor(f32, 11, 24), tensor(f32, 3),
                            tensor(f32, 24)};

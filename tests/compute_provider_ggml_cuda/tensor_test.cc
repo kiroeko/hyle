@@ -744,6 +744,61 @@ TEST(GgmlCudaTensor, NativeQ8GroupedExpertsUseExactExpertIds) {
   EXPECT_NEAR(actual[3], 32.0F, 0.5F);
 }
 
+TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
+  using BF16 = hyle::simd::bfloat16_t;
+  constexpr std::int64_t experts = 3;
+  constexpr std::int64_t columns = 2;
+  constexpr std::int64_t reduction = 32;
+  const auto weights_desc =
+      dense(DataType::kBFloat16, {experts, columns, reduction});
+  const auto activations_desc = dense(DataType::kFloat32, {1, 2, reduction});
+  const auto ids_desc = dense(DataType::kInt32, {1, 2});
+  const std::array descriptions{weights_desc, activations_desc, ids_desc};
+  const auto output_desc =
+      infer_single_output(model_ops::grouped_matmul(), descriptions).value();
+  constexpr std::array<double, experts * columns> row_values{1.0, 2.0, 3.0,
+                                                              4.0, -1.0, 0.5};
+  std::vector<BF16> weights(experts * columns * reduction);
+  for (std::size_t row = 0; row < row_values.size(); ++row)
+    std::fill_n(weights.begin() + row * reduction, reduction,
+                half_test::encode<BF16>(row_values[row]));
+  std::vector<float> activations(2 * reduction, 0.25F);
+  constexpr std::array<std::int32_t, 2> ids{0, 2};
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto weights_buffer = upload<BF16>(memory.ref(), weights);
+  auto activation_buffer = upload<float>(memory.ref(), activations);
+  auto id_buffer = upload<std::int32_t>(memory.ref(), ids);
+  auto output = output_buffer(memory.ref(), output_desc);
+  const std::array inputs{
+      ConstTensorView::create(weights_desc, weights_buffer.view()).value(),
+      ConstTensorView::create(activations_desc, activation_buffer.view()).value(),
+      ConstTensorView::create(ids_desc, id_buffer.view()).value()};
+  auto output_view = TensorView::create(output_desc, output.view()).value();
+  auto prepared = prepare(ctx, model_ops::grouped_matmul(), inputs,
+                          std::span(&output_view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  for (int replay = 1; replay <= 2; ++replay) {
+    std::fill(activations.begin(), activations.end(), 0.25F * replay);
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(activations)))
+                    .ok());
+    auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
+    const std::array expected{8.0F * replay, 16.0F * replay,
+                              -8.0F * replay, 4.0F * replay};
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-5F) << i;
+  }
+}
+
 TEST(GgmlCudaTensor, MalformedNativeGgufFormatIsRejectedAtPrepare) {
   const auto format = StorageFormat::blocked(kGgufQ4K, 256, 143).value();
   constexpr std::array<std::int64_t, 2> shape{256, 2};
