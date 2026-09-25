@@ -749,6 +749,15 @@ region，故不能把该配置误记 PASS；它不是本次 Softmax 回归。完
 该 partial 没有把 top-10 ID/权重接到 grouped expert、shared gate 和最终 combine，也未裁决 BF16
 router MatMul 存储边界与固定 ggml 图的 F32 score 边界是否等价；不签 R10 或完整 profile cell。
 
+**D5-F18 后续局部收据（`34a13aab`、`0c97b284`）**：十个 resident expert 的测试权重已
+区分；CPU Graph 用同一 BF16 token 完成 512-way router、稳定 top-10、成熟 Gather 复制激活、动态
+ID 驱动 BF16 grouped expert、归一化权重乘法和十路合并。两次改变顺序的 replay 对照独立 oracle，
+Graph 定向 1/1、完整 factor 70/70。夹具变更在 CPU/Apple 完整 Direct/Graph 和 CUDA/Vulkan 定向
+Direct/Graph 均通过。详见 [R10 CPU Graph dispatch partial](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-r10-graph-dispatch-cpu/README.md)。
+这仍未接共享专家分支及最终相加，Direct 与其它三路线尚未接动态路由。固定 llama.cpp
+`build_lora_mm` 的 ggml MatMul 产出 F32 logits，而现有公共 BF16 MatMul 合同先存 BF16 再 Cast F32；
+需先定界这个精度差异，不能以当前 synthetic logits 正确就称模型等价。ledger 仍为 48/176。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
