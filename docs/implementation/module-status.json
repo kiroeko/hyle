@@ -394,7 +394,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile、Qwen3.8-27B 官方及 primary GGUF 的四路线 Direct/Graph 均已通过；Qwen3.8 fidelity GGUF CPU 两格新增通过。ledger 当前 42/176 RUN_PASS，其余 134 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
+      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile、Qwen3.8-27B 官方及 primary GGUF 的四路线 Direct/Graph 均已通过；Qwen3.8 fidelity GGUF CPU/CUDA 四格通过。ledger 当前 44/176 RUN_PASS，其余 132 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",

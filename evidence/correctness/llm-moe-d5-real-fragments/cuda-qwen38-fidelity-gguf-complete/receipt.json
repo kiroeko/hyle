@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "candidate": "e1ecacc3bd7c27c461b8cc46665180aeeacfd584",
+  "candidate_tree": "7fa04391d39e0dd2049fc004183726b835c2da16",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
+    "route": "cuda",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CPU, Apple, or Vulkan cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "model_repository": "Qwen/Qwen3.8-27B",
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "artifact_repository": "unsloth/Qwen3.8-27B-GGUF",
+    "artifact_revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "variant": "UD-Q8_K_XL",
+    "format_family": "gguf",
+    "tensor_count": 866,
+    "logical_parameters": 27320697856,
+    "header_manifest_sha256": "c447a6903da1d21afa4fd0fbcfe9e1e160d4324620bf2bea58fa5d56f05f829c",
+    "audit": "docs/implementation/tasks/compute/llm-moe-model-weight-operator-audit.md",
+    "fixture": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+    "payload": "deterministic nonzero format-valid Q8_0 blocks at exact model reduction/output widths; no checkpoint bytes are committed",
+    "oracle": "stored blocks are decoded independently of route execution, then compared with host row-selection or float matmul; semantic fragments use separate host calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "storage": {
+      "embedding": "token_embd.weight Q8_0 [5120,248320]",
+      "dense_ffn": "Q8_0 gate/up/down projections",
+      "full_attention": "BF16 Q/K/V, Q8_0 output projection",
+      "gated_delta_net": "Q8_0 fused QKV, alpha and output projections; F32 convolution/state",
+      "lm_head": "BF16",
+      "mtp": "BF16 blk.64.nextn.eh_proj.weight [10240,5120]",
+      "norm_state_conv": "F32"
+    },
+    "providers": [
+      "ggml CUDA 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "cuBLASLt plus fixed CUDA-native SGLang/CCCL and FlashInfer providers"
+    ],
+    "provider_assertion": "every prepared call and compiled graph reports a fixed mature provider; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, gate, or state; routing remains cold-bound and fixed ggml CUDA may create graph metadata only on the first submit",
+    "failure": "an invalid embedding index fails without changing the previously published output"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "CudaDefaultCompute.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay",
+        "D5FidelityGguf/CudaQwen38Profiles.*",
+        "D5FidelityGguf/CudaQwen38GdnProfiles.*"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "CudaDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "CudaDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay",
+        "D5FidelityGguf/CudaGraphQwen38Profiles.*",
+        "D5FidelityGguf/CudaGraphQwen38GdnProfiles.*"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Q8_0 embedding at exact hidden width plus checked failure and replay"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "exact-width FFN semantics and Q8_0 FFN projection storage"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "exact projection widths across Q8_0 stored roles"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "partial RoPE, 24/4 GQA, output gate, BF16 Q/K/V and Q8_0 output roles"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "tests": "K16/V48 grouped-head Gated DeltaNet, F32 state and Q8_0 projection roles"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "MTP concat semantics and BF16 10240-to-5120 artifact role"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "normalization, cast and mixed-format projection boundaries"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "separate BF16 LM-head semantics and checked publication failure"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "39012a2691b5f55d52c903e829492304a870a51b",
+    "verdict": "PASS",
+    "selected": 5,
+    "skipped_or_reused": 127,
+    "werror": true,
+    "toolchain": "MSVC 19.50.35728; CUDA Toolkit 13.3.73; CUDAARCHS=89-real",
+    "machine": "Windows 11; Intel Core i9-13900K; NVIDIA GeForce RTX 4070 SM89",
+    "gates": {
+      "docs": "26ea99b59b979c28242a0a71907f56e41812ba2da57321e395db3e96463e9e62",
+      "closure": "775e6cad18744bb2a90474153d43af5d344b96960d6107270913576432464917",
+      "configure": "5fd855094462b00f565cdf00d4df9a343b8ec8f95037dfa77ed26338a71163c7",
+      "compute_route_cuda": "61a2682094ca50b4f23666ec461684b26b25dc7582d6efc68a4ae982c4449853",
+      "graph_route_cuda": "9888483c8c99c95f5df7aa011f3df4ec91346ac5f1abbdd7298fff01060696fa"
+    },
+    "owner_suites": {
+      "compute_route_cuda": "1/1 CTest executable PASS in 66.53 s",
+      "graph_route_cuda": "1/1 CTest executable PASS in 68.66 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CPU route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-fidelity-gguf-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "W1-WIN-RTX4070",
+    "system": "Windows 11",
+    "architecture": "AMD64",
+    "cpu": "13th Gen Intel Core i9-13900K",
+    "compiler": "MSVC 19.50.35728"
+  }
+}
