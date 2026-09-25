@@ -441,6 +441,20 @@ applicability correction 约束。不可变 MSVC 19.50 Release/WERROR selector �
 ledger 现有 10 个 `RUN_PASS`、166 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍随稳定 CPU
 路线批次执行，不由本 tests-only candidate 代签。
 
+**D5-F10 CUDA complete（`ae2b789b`）**：普通 CUDA Direct/Graph 在既有 R01、R03/R14 收据上
+补齐相同 artifact 的 R02、R04、R05 与 R15。R02 保留 Q4_K gate/up 和 Q6_K down；R04 按真实
+模型合同使用 BF16 activation/storage、F32 accumulation，而不是无适用成熟 attention Provider 的
+F32-only 测试形状；R05 覆盖 K4 causal conv 和 `16 x 128` Gated DeltaNet 状态更新。所有准备调用与
+Graph step 均固定到 ggml CUDA、cuBLAS、SGLang/CCCL native 或 FlashInfer 成熟路径，没有新增 HYLE
+数学或 fallback。固定 ggml CUDA 允许在首次 submit 建立 CUDA Graph metadata，第二次变化输入重放不再
+发生 metadata allocation/reallocation。
+
+不可变 Windows RTX 4070/SM89 candidate 以 `CUDAARCHS=89-real` 通过 MSVC 19.50 Release/WERROR
+selector 的 docs、closure、configure、CUDA Direct 与 CUDA Graph；127 个无关 gate 跳过或复用。
+完整收据见 [CUDA primary GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-complete/README.md)。
+ledger 现有 12 个 `RUN_PASS`、164 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍随稳定
+CUDA 路线批次执行，不由本 tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
