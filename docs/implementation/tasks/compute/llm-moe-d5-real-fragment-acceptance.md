@@ -52,6 +52,15 @@ Vulkan 的普通 Direct/Graph 入口接通；F19 的四路线 F32 score 定向�
 若某路线真实缺少固定上游能力，记录精确拒绝并停止该路线，不用 HYLE 自研数学补洞。之后的
 Kimi、DeepSeek、GLM 和量化格式按同样有限批次推进，不逐算子重建。
 
+**下一接线批次：共用 GGUF 词表 carrier。** 将 Qwen3.5-2B、Qwen3.8-27B、
+Qwen3.8-2.4T 的六个精确 GGUF profile 合为一个 R01 批次。共享参数化测试表记录 embedding 与
+output head 各自的真实存储格式、tied/untied 角色、H=2048/5120/8192 和 V=248,320；
+四路线 Direct/Graph 共用分片遍历、独立解码 oracle、全局边界检查，再由路线适配器提供原生
+准备、上传和提交。先写完六个 profile 的接线，不按 profile 或单个 Gather/MatMul 反复运行完整
+owner suite、selector、三交付或 P1。批内只做编译/极小定向烟测以发现错误接缝；候选稳定后
+一次选择并运行适用验证。单个通过的检查点不改变 176 格 ledger 状态。若真实上游拒绝某格式，
+记录 profile、权重角色、路线、原生错误及资源成本，再定界该格，不以另一格式代签。
+
 **当前 BF16 full MoE 批次结果（部分收据）**：四路线各自的完整 Graph owner 与 Direct owner
 suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 final add 的三次变化输入
 重放及独立 oracle。Graph 的 CUDA 256-byte workspace 对齐缺陷已按 D5-F20 修复；Apple Direct
