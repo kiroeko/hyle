@@ -77,6 +77,9 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 候选，低并行构建一次，串行运行选中的 correctness/交付门；适用 P1 仍只在稳定候选上执行。
 若批内发现精确语义或 Provider 阻塞，先按 owner 协议定向处理；未运行门保持待验。
 跨多个模型格共用的 Provider/route 产物和测试夹具应在同一批复用，避免重复配置同一依赖。
+模型 profile 尚未接齐时，其内部 region 子链只运行必要的定向接缝检查；partial receipt 不触发
+一棵新的全路线 selector 构建树。待该 profile 或明确独立路线能力可签验收格时，再冻结候选
+集中运行所选门；若人为中断构建，未完成门保留未运行，不能把已编译对象算成 PASS。
 
 大批成熟 Provider 接线可用 [`provider-batch.py`](../../../scripts/provider-batch.py) 与 versioned
 manifest 固定 B2--B6 的 Provider feature 超集、路线、系统、三交付 profile、factor、test label、

@@ -35,7 +35,8 @@ the corrected test reads the raw integer bits and then passed.
 
 The Windows change-impact plan from `6f954ef5` selected Graph,
 ggml-CUDA/oneDNN Graph providers, and CPU/CUDA/Vulkan Graph route factors;
-the full selector has **not** run on this candidate. Apple was checked in a
+the full selector has **not completed** on this partial-profile candidate.
+Apple was checked in a
 disposable Mac verification checkout fetched from the Windows-pushed commit.
 No source/static/shared delivery or P1 is signed here. The later
 [Direct full-chain receipt](../qwen38-24t-full-router-direct/README.md)

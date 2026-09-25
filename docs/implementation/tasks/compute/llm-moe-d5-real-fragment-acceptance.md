@@ -43,13 +43,14 @@ Provider，批量写完该组四路线 Direct/Graph 的必要接线、夹具和 
 一次选择受影响门并复用同一构建树。前一批完整证据可按精确身份复用。API/算法稳定后才做路线
 三交付和适用 P1；未运行格及门始终保留 `VALIDATION_NOT_RUN`，不能用编译目标或单片段代签。
 
-当前有限批次是 Qwen3.8-2.4T 官方 BF16 的 512-way/top-10 路由、动态 grouped expert、
-独立 sigmoid shared expert 与最终相加，在 CPU、CUDA、Apple、Vulkan 的普通 Direct/Graph 入口
-接通。F19 已有四路线 F32 score 的定向结果，但不能替代整条 R10/R11 链。批内不反复启动
-全量 selector；接线完成后一次验证四路线的变化输入重放、近并列成员、独立数值 oracle、成熟
-Provider report、资源/完成/失败和交付。若某路线真实缺少固定上游能力，记录精确拒绝并停止该
-路线，不用 HYLE 自研数学补洞。之后的 Kimi、DeepSeek、GLM 和量化格式按同样有限批次推进，
-不逐算子重建。
+当前 profile 批次是 Qwen3.8-2.4T 官方 BF16。其 R10/R11 接线子组覆盖 512-way/top-10
+路由、动态 grouped expert、独立 sigmoid shared expert 与最终相加，在 CPU、CUDA、Apple、
+Vulkan 的普通 Direct/Graph 入口接通；F19 的四路线 F32 score 定向结果不能替代整条链。
+该子组的定向测试与完整 owner suite 是 partial receipt，不能触发 profile 级全量 selector、
+三交付或 P1。继续批量接通同一 profile 的 R01-R05/R13-R15 后冻结候选，集中验证四路线的
+变化输入重放、近并列成员、独立数值 oracle、成熟 Provider report、资源/完成/失败和交付。
+若某路线真实缺少固定上游能力，记录精确拒绝并停止该路线，不用 HYLE 自研数学补洞。之后的
+Kimi、DeepSeek、GLM 和量化格式按同样有限批次推进，不逐算子重建。
 
 **当前 BF16 full MoE 批次结果（部分收据）**：四路线各自的完整 Graph owner 与 Direct owner
 suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 final add 的三次变化输入
@@ -59,6 +60,10 @@ suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 fi
 与 [Direct 收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-direct/README.md)。
 这只证明 R10/R11 的完整链，不能代签官方 BF16 整个 profile 的其它 region、三交付或 P1；ledger
 仍为 48/176 `RUN_PASS`。其余模型继续按有限批次接线，到批末再选受影响门。
+不可变 `c2c1f7e8d` 的提前 selector 尝试选中 13 门；docs、closure、共享模型输入工具与
+W1-WIN/MSVC 配置已运行通过。它在 CPU factor 首次编译共用 ggml CUDA 对象时人为停止，
+余下 factor 未获 selector verdict；这次试运行不改变上述 partial receipt 或 ledger，
+完整 selector 留到官方 BF16 profile 接线稳定后的批末执行。
 
 ## 批量验收形状
 
