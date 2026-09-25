@@ -70,6 +70,14 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 
 ## Provider 批次编排层
 
+成熟算子/region 的普通迭代按[Compute 批次合同](../../architecture/compute-design.md#61-算子接入按有限批次接线和验证)
+执行：先在当前 owner 卡列出该批所有模型权重角色、路线、Provider 接缝、Direct/Graph 入口、
+有限 FIX 和适用门，再集中接线。批内可以用 `plan` 看影响面及做不构建的文档/静态检查；
+**不把每个 op 当成一个需立刻完整 `run` 的候选**。批末产品/API 和消费者稳定后提交一个不可变
+候选，低并行构建一次，串行运行选中的 correctness/交付门；适用 P1 仍只在稳定候选上执行。
+若批内发现精确语义或 Provider 阻塞，先按 owner 协议定向处理；未运行门保持待验。
+跨多个模型格共用的 Provider/route 产物和测试夹具应在同一批复用，避免重复配置同一依赖。
+
 大批成熟 Provider 接线可用 [`provider-batch.py`](../../../scripts/provider-batch.py) 与 versioned
 manifest 固定 B2--B6 的 Provider feature 超集、路线、系统、三交付 profile、factor、test label、
 适用性和 residual。这个批次层只减少重复配置和状态抄写，不是第二套验证事实：

@@ -35,6 +35,22 @@
   profile/route/entry cell 全部获得 `RUN_PASS`、`BACKEND_REJECTED` 或 `UPSTREAM_MISSING`；未运行数为
   0。若精确缺口需要新数学或 Provider，记录最小后续卡并停止，不在 D5 扩张。
 
+## 接线优先的批次执行规则
+
+依照[Compute 算子批次合同](../../../architecture/compute-design.md#61-算子接入按有限批次接线和验证)，
+D5 不再以单个 op/片段作为构建和完整验证的单位。先按下表固定模型/权重角色及已接入的成熟
+Provider，批量写完该组四路线 Direct/Graph 的必要接线、夹具和 oracle；批末冻结不可变候选，
+一次选择受影响门并复用同一构建树。前一批完整证据可按精确身份复用。API/算法稳定后才做路线
+三交付和适用 P1；未运行格及门始终保留 `VALIDATION_NOT_RUN`，不能用编译目标或单片段代签。
+
+当前有限批次是 Qwen3.8-2.4T 官方 BF16 的 512-way/top-10 路由、动态 grouped expert、
+独立 sigmoid shared expert 与最终相加，在 CPU、CUDA、Apple、Vulkan 的普通 Direct/Graph 入口
+接通。F19 已有四路线 F32 score 的定向结果，但不能替代整条 R10/R11 链。批内不反复启动
+全量 selector；接线完成后一次验证四路线的变化输入重放、近并列成员、独立数值 oracle、成熟
+Provider report、资源/完成/失败和交付。若某路线真实缺少固定上游能力，记录精确拒绝并停止该
+路线，不用 HYLE 自研数学补洞。之后的 Kimi、DeepSeek、GLM 和量化格式按同样有限批次推进，
+不逐算子重建。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
