@@ -1098,7 +1098,7 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
     ASSERT_FALSE(result);
     EXPECT_TRUE(result.error().IsUnimplemented());
   }
-  auto softmax = prepare(context, Softmax{}, description);
+  auto softmax = prepare(context, Softmax{.axis = 0}, description);
   ASSERT_FALSE(softmax);
   EXPECT_TRUE(softmax.error().IsUnimplemented());
   for (auto threads : {0U, std::numeric_limits<std::uint32_t>::max()}) {
@@ -1120,6 +1120,43 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
     EXPECT_TRUE(denied.error().IsResourceExhausted());
   }
   EXPECT_TRUE(stats.balanced());
+}
+
+TEST(GgmlCpuProvider, D5RouterSoftmaxUsesMatureRowsAndKeepsNarrowDomain) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto description = dense(DataType::kFloat32, {2, 512});
+  std::vector<float> scores(2 * 512);
+  for (std::size_t expert = 0; expert < 10; ++expert) {
+    scores[expert] = 1.0F + static_cast<float>(expert) / 8.0F;
+    scores[512 + expert] = 1.0F + static_cast<float>(9 - expert) / 8.0F;
+  }
+  auto input = half_test::buffer<float>(scores);
+  auto result = output_buffer(description);
+  const std::array inputs{
+      ConstTensorView::create(description, input.view()).value()};
+  auto status = execute(context, Softmax{}, inputs,
+                        TensorView::create(description, result.view()).value());
+  ASSERT_TRUE(status.ok()) << status.message();
+  const auto actual = half_test::read<float>(result);
+  for (std::size_t row = 0; row < 2; ++row) {
+    double denominator = 0;
+    for (std::size_t expert = 0; expert < 512; ++expert)
+      denominator += std::exp(scores[row * 512 + expert]);
+    for (std::size_t expert = 0; expert < 512; ++expert)
+      EXPECT_NEAR(actual[row * 512 + expert],
+                  std::exp(scores[row * 512 + expert]) / denominator,
+                  2.0e-7);
+  }
+  for (const auto operation : {Softmax{.axis = 0},
+                               Softmax{.scale = 0.5F}}) {
+    auto rejected = prepare(context, operation, description);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+  }
+  auto rejected_half =
+      prepare(context, Softmax{}, dense(DataType::kFloat16, {2, 512}));
+  ASSERT_FALSE(rejected_half);
+  EXPECT_TRUE(rejected_half.error().IsUnimplemented());
 }
 
 TEST(GgmlCpuProvider, InvocationAllocationFailureRollsBackAndCanRecover) {

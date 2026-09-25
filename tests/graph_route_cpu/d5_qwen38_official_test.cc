@@ -459,6 +459,116 @@ TEST(CpuGraphQwen38_24T,
   }
 }
 
+TEST(CpuGraphQwen38_24T,
+     D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10) {
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden})
+          .transposed()
+          .value();
+  const auto selected_desc =
+      dense(c::DataType::kFloat32, {1, q24::kTopK});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, q24::kTopK});
+  std::vector<BF16> router_weight(q24::kExperts * q24::kHidden);
+  for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
+    router_weight[expert * q24::kHidden + expert] = q::encode(1.0);
+  auto weight_buffer = half_test::buffer<BF16>(router_weight);
+  auto activation_buffer = output_buffer(activation_desc);
+  auto ids_buffer = output_buffer(ids_desc);
+  auto normalized_buffer = output_buffer(selected_desc);
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto activation = builder.input(activation_desc).value();
+  const auto weight = builder.constant(weight_desc).value();
+  const auto router = builder.add(c::MatMul{}, activation, weight).value();
+  const auto fp32 =
+      builder.add(c::Cast{c::DataType::kFloat32}, router).value();
+  const auto probabilities = builder.add(c::Softmax{}, fp32).value();
+  const std::array topk_inputs{probabilities};
+  const auto topk =
+      builder.add_node(c::Operation(c::TopK{.count = q24::kTopK}),
+                       topk_inputs)
+          .value();
+  const auto selected = builder.result(topk, 0).value();
+  const auto ids = builder.result(topk, 1).value();
+  const auto sum =
+      builder
+          .add(c::Reduce{.kind = c::ReductionKind::kSum,
+                         .axes = c::Axes::from(std::array<std::int32_t, 1>{-1})
+                                     .value(),
+                         .keep_dimensions = true,
+                         .accumulation_type = c::DataType::kFloat32},
+               selected)
+          .value();
+  const auto normalized =
+      builder.add(c::Binary{c::BinaryKind::kDivide}, selected, sum).value();
+  ASSERT_TRUE(builder.publish(ids).ok());
+  ASSERT_TRUE(builder.publish(normalized).ok());
+  auto logical = std::move(builder).finish().value();
+
+  auto context = g::cpu::create_context().value();
+  const std::array constants{g::ConstantBinding{
+      weight, c::ConstTensorView::create(weight_desc, weight_buffer.view())
+                  .value()}};
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a10);
+  auto compiled_result = g::compile(
+      logical, context, {.constants = constants, .workload = workload});
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(activation,
+                        c::ConstTensorView::create(activation_desc,
+                                                   activation_buffer.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(ids,
+                        c::TensorView::create(ids_desc, ids_buffer.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(normalized,
+                        c::TensorView::create(selected_desc,
+                                              normalized_buffer.view())
+                            .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (int replay = 0; replay < 3; ++replay) {
+    std::vector<BF16> input(q24::kHidden);
+    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert) {
+      const double logit = replay == 0 ? 1.0 + expert / 8.0
+                           : replay == 1 ? 1.0 + (q24::kTopK - 1 - expert) / 8.0
+                                         : 2.0;
+      input[expert] = q::encode(logit);
+    }
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(input)))
+                    .ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual_ids = half_test::read<std::int32_t>(ids_buffer);
+    const auto weights = half_test::read<float>(normalized_buffer);
+    double selected_sum = 0;
+    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
+      selected_sum += std::exp(q::decode(input[expert]));
+    for (std::int64_t slot = 0; slot < q24::kTopK; ++slot) {
+      const auto expected_id = replay == 0 ? q24::kTopK - 1 - slot
+                               : replay == 1 ? slot : slot;
+      EXPECT_EQ(actual_ids[slot], expected_id);
+      EXPECT_NEAR(weights[slot],
+                  std::exp(q::decode(input[expected_id])) / selected_sum,
+                  2.0e-6);
+    }
+  }
+}
+
 TEST_P(CpuGraphQwen38Profiles, D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto &shape = *GetParam();
   const auto query_desc = dense(c::DataType::kBFloat16,

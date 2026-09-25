@@ -472,6 +472,125 @@ TEST(CpuQwen38_24T,
   }
 }
 
+TEST(CpuQwen38_24T,
+     D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10) {
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden})
+          .transposed()
+          .value();
+  const auto logits_bf16_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kExperts});
+  const auto logits_desc =
+      dense(c::DataType::kFloat32, {1, q24::kExperts});
+  const auto selected_desc =
+      dense(c::DataType::kFloat32, {1, q24::kTopK});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, q24::kTopK});
+  const auto sum_desc = dense(c::DataType::kFloat32, {1, 1});
+  const auto workload =
+      q24::workload(c::WorkloadPhase::kDecode, 0x0a10);
+  auto context = c::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  auto router = make_call(
+      context, c::Operation(c::MatMul{}),
+      std::array{activation_desc, weight_desc},
+      std::array{logits_bf16_desc}, workload);
+  auto cast = make_call(
+      context, c::Operation(c::Cast{c::DataType::kFloat32}),
+      std::array{logits_bf16_desc}, std::array{logits_desc}, workload);
+  auto softmax = make_call(context, c::Operation(c::Softmax{}),
+                           std::array{logits_desc}, std::array{logits_desc},
+                           workload);
+  auto topk = make_call(
+      context, c::Operation(c::TopK{.count = q24::kTopK}),
+      std::array{logits_desc}, std::array{selected_desc, ids_desc}, workload);
+  auto sum = make_call(
+      context,
+      c::Operation(c::Reduce{
+          .kind = c::ReductionKind::kSum,
+          .axes = c::Axes::from(std::array<std::int32_t, 1>{-1}).value(),
+          .keep_dimensions = true,
+          .accumulation_type = c::DataType::kFloat32}),
+      std::array{selected_desc}, std::array{sum_desc}, workload);
+  auto normalize = make_call(
+      context, c::Operation(c::Binary{c::BinaryKind::kDivide}),
+      std::array{selected_desc, sum_desc}, std::array{selected_desc}, workload);
+  for (const auto *call : {&router, &cast, &softmax, &topk, &sum,
+                           &normalize})
+    expect_mature(*call, workload);
+
+  std::vector<BF16> router_weight(q24::kExperts * q24::kHidden);
+  for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
+    router_weight[expert * q24::kHidden + expert] = q::encode(1.0);
+  auto weight_buffer = half_test::buffer<BF16>(router_weight);
+  auto activation_buffer = output_buffer(activation_desc);
+  auto logits_bf16_buffer = output_buffer(logits_bf16_desc);
+  auto logits_buffer = output_buffer(logits_desc);
+  auto probability_buffer = output_buffer(logits_desc);
+  auto selected_buffer = output_buffer(selected_desc);
+  auto ids_buffer = output_buffer(ids_desc);
+  auto sum_buffer = output_buffer(sum_desc);
+  auto normalized_buffer = output_buffer(selected_desc);
+  const auto view = [](const c::TensorDesc &description,
+                       hyle::mem::Buffer &buffer) {
+    return c::ConstTensorView::create(description, buffer.view()).value();
+  };
+  const auto output = [](const c::TensorDesc &description,
+                         hyle::mem::Buffer &buffer) {
+    return c::TensorView::create(description, buffer.view()).value();
+  };
+  const std::array router_inputs{view(activation_desc, activation_buffer),
+                                 view(weight_desc, weight_buffer)};
+  const std::array router_output{output(logits_bf16_desc,
+                                        logits_bf16_buffer)};
+  const std::array cast_inputs{view(logits_bf16_desc, logits_bf16_buffer)};
+  const std::array cast_output{output(logits_desc, logits_buffer)};
+  const std::array softmax_inputs{view(logits_desc, logits_buffer)};
+  const std::array softmax_output{output(logits_desc, probability_buffer)};
+  const std::array topk_inputs{view(logits_desc, probability_buffer)};
+  const std::array topk_outputs{output(selected_desc, selected_buffer),
+                                 output(ids_desc, ids_buffer)};
+  const std::array sum_inputs{view(selected_desc, selected_buffer)};
+  const std::array sum_output{output(sum_desc, sum_buffer)};
+  const std::array normalize_inputs{view(selected_desc, selected_buffer),
+                                     view(sum_desc, sum_buffer)};
+  const std::array normalize_output{output(selected_desc, normalized_buffer)};
+
+  for (int replay = 0; replay < 3; ++replay) {
+    std::vector<BF16> activation(q24::kHidden);
+    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert) {
+      const double logit = replay == 0 ? 1.0 + expert / 8.0
+                           : replay == 1 ? 1.0 + (q24::kTopK - 1 - expert) / 8.0
+                                         : 2.0;
+      activation[expert] = q::encode(logit);
+    }
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(activation)))
+                    .ok());
+    run(router, queue, router_inputs, router_output);
+    run(cast, queue, cast_inputs, cast_output);
+    run(softmax, queue, softmax_inputs, softmax_output);
+    run(topk, queue, topk_inputs, topk_outputs);
+    run(sum, queue, sum_inputs, sum_output);
+    run(normalize, queue, normalize_inputs, normalize_output);
+
+    const auto ids = half_test::read<std::int32_t>(ids_buffer);
+    const auto weights = half_test::read<float>(normalized_buffer);
+    double selected_sum = 0;
+    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
+      selected_sum += std::exp(q::decode(activation[expert]));
+    for (std::int64_t slot = 0; slot < q24::kTopK; ++slot) {
+      const auto expected_id = replay == 0 ? q24::kTopK - 1 - slot
+                               : replay == 1 ? slot : slot;
+      EXPECT_EQ(ids[slot], expected_id);
+      EXPECT_NEAR(weights[slot],
+                  std::exp(q::decode(activation[expected_id])) / selected_sum,
+                  2.0e-6);
+    }
+  }
+}
+
 TEST_P(CpuQwen38Profiles,
      D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto &shape = *GetParam();

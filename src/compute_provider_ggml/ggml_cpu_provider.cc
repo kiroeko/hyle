@@ -467,6 +467,8 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       result = ggml_mul(context, result, fp(1));
     if (node.inputs.size() > 2)
       result = ggml_add(context, result, fp(2));
+  } else if (node.operation.get_if<Softmax>()) {
+    result = ggml_soft_max(context, fp(0));
   } else if (const auto *reduce = node.operation.get_if<Reduce>()) {
     const auto &source = recipe.values[node.inputs[0]];
     if (elements(source) == 0) {
@@ -1146,6 +1148,14 @@ bool supports(void *context, Operation operation,
     return rms->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())
     return norm->accumulation_type == DataType::kFloat32;
+  if (const auto *softmax = operation.get_if<Softmax>())
+    return inputs.size() == 1 && inputs[0].rank() == 2 &&
+           inputs[0].is_plain() && inputs[0].is_dense() &&
+           inputs[0].data_type() == DataType::kFloat32 &&
+           output == inputs[0] && softmax->axis == -1 &&
+           softmax->scale == 1.0F && softmax->kind == SoftmaxKind::kSoftmax &&
+           softmax->mask == MaskKind::kNone &&
+           softmax->accumulation_type == DataType::kFloat32;
   if (const auto *reduce = operation.get_if<Reduce>())
     return (reduce->kind == ReductionKind::kSum ||
             reduce->kind == ReductionKind::kMean) &&
@@ -1239,7 +1249,8 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<Unary>() || operation.get_if<Binary>() ||
          operation.get_if<GatedActivation>() ||
          operation.get_if<RmsNorm>() || operation.get_if<LayerNorm>() ||
-         operation.get_if<Reduce>() || operation.get_if<Concat>() ||
+         operation.get_if<Softmax>() || operation.get_if<Reduce>() ||
+         operation.get_if<Concat>() ||
          operation.get_if<Scatter>() || operation.get_if<MatMul>() ||
          operation.get_if<RoPE>() || operation.get_if<Hadamard>() ||
          operation.get_if<ScaledDotProductAttention>() ||
