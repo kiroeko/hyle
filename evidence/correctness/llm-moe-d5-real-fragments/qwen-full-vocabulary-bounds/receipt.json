@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "candidate": "d2250624a825013322d52ace58a2ee6470708c18",
+  "candidate_tree": "0eb05e4a5458d89241b4c497d8047af679e52629",
+  "verdict": "PARTIAL_BF16_FULL_VOCABULARY_BOUNDS_ONLY",
+  "profiles": [
+    "qwen35_2b:official:official-bf16",
+    "qwen38_27b:official:official-bf16",
+    "qwen38_24t:official:official-bf16"
+  ],
+  "logical_vocabulary_rows": 248320,
+  "tail_shard_rows": 2560,
+  "invalid_global_ids_rejected": [-1, 248320],
+  "invalid_local_index_checked": 2560,
+  "targeted_tests": {
+    "cpu_direct": "3/3 PASS",
+    "cpu_graph": "3/3 PASS",
+    "cuda_direct": "3/3 PASS",
+    "cuda_graph": "3/3 PASS",
+    "apple_direct": "3/3 PASS",
+    "apple_graph": "3/3 PASS",
+    "vulkan_direct": "3/3 PASS",
+    "vulkan_graph": "3/3 PASS"
+  },
+  "selector": "PLAN_ONLY: Vulkan factors selected; other affected routes tested explicitly; no full selector verdict",
+  "not_claimed": [
+    "quantized artifact vocabulary formats",
+    "complete profile cells",
+    "whole-profile owner suites",
+    "external source/static/shared delivery",
+    "applicable P1",
+    "full-model inference"
+  ],
+  "ledger": {"changed_cells": 0, "run_pass": 0, "validation_not_run": 176},
+  "compute_graph_implementation_lines_excluding_tests": 58043
+}

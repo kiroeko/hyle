@@ -104,6 +104,15 @@ Gather 已验证跨片和尾片的具名全局索引。32 个定向用例全部�
 profile 接线稳定后的统一批末执行。全局越界和真实量化格式仍需同批补足，
 ledger 保持 0/176 `RUN_PASS`。
 
+**R01 BF16 全局越界批内检查点（`d2250624`）**：上述 2B、27B、2.4T
+官方 profile 的词表消费者在四路线 Direct/Graph 共 24 个定向用例上拒绝
+`-1` 和 `248,320` 全局索引；绕过消费者检查提交尾片本地索引 `2560`
+时，成熟 Provider 的 checked Gather 返回越界，失败不取代已发布结果。
+见[共用越界部分收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-full-vocabulary-bounds/README.md)。
+BF16 词表边界的该项缺口已有运行证据；其它量化权重格式、完整 profile
+组合、全量 selector、三交付与适用 P1 仍待稳定批末验收，ledger 保持
+0/176 `RUN_PASS`。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
