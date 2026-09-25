@@ -156,7 +156,8 @@ Call prepare(const a::Context &context, const c::WorkloadContext &workload,
 
 std::vector<mx::array> run(Call &call, std::span<const mx::array> inputs) {
   auto invocation = call.program.create_invocation().value();
-  EXPECT_TRUE(invocation.bind(inputs).ok());
+  const auto bound = invocation.bind(inputs);
+  EXPECT_TRUE(bound.ok()) << bound.message();
   auto work = invocation.submit();
   EXPECT_TRUE(work) << work.error().message();
   if (!work)
@@ -1305,14 +1306,15 @@ TEST(AppleQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
                std::span(expected.activation));
     std::size_t call_index = 0;
     for (const auto &step : direct.nodes) {
+      SCOPED_TRACE(c::operation_name(step.operation.kind()));
       if (step.operation.kind() == c::OperationKind::kView) {
         ASSERT_EQ(step.inputs.size(), 1U);
         ASSERT_EQ(step.outputs.size(), 1U);
         ASSERT_EQ(step.operation.get_if<c::View>()->kind(),
                   c::ViewKind::kReshape);
-        tensors[step.outputs[0].ordinal()] = mx::reshape(
+        tensors[step.outputs[0].ordinal()] = ready(mx::reshape(
             *tensors[step.inputs[0].ordinal()],
-            native_shape(direct.description(step.outputs[0]), false), stream());
+            native_shape(direct.description(step.outputs[0]), false), stream()));
         continue;
       }
       std::vector<mx::array> inputs;
