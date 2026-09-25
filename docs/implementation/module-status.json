@@ -394,7 +394,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：官方 Qwen3.5-2B BF16 已在 CPU/CUDA/Apple/Vulkan Direct/Graph 的 8 个完整格通过真实权重、replay、失败与 owner 回归；其余 168 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
+      "summary": "M3-D5 AUDITED：官方 Qwen3.5-2B BF16 已在 CPU/CUDA/Apple/Vulkan Direct/Graph 的 8 个完整格通过；Qwen3.5 primary GGUF 又完成 CPU Direct/Graph 2 格的全部适用 region。ledger 当前 10/176 RUN_PASS，其余 166 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",

@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "candidate": "b2e6a27fb59cc867f74f32da1138c78743a373c0",
+  "candidate_tree": "96c539a59260aee8ac57bab2f27b49e3d0ece96e",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "route": "cpu",
+    "entries": ["direct", "graph"],
+    "regions": ["R01", "R02", "R03", "R04", "R05", "R14", "R15"],
+    "excluded_regions": [
+      {
+        "region": "R13",
+        "reason": "the fixed GGUF artifact has no MTP/NextN tensors or sidecar"
+      }
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "payload": "exact audited tensor names, roles, dimensions and formats with deterministic format-valid nonzero packed weights",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "mixed_weights": [
+      {"role": "FFN gate/up", "format": "Q4_K", "shape": [2048, 6144]},
+      {"role": "FFN down", "format": "Q6_K", "shape": [6144, 2048]},
+      {"role": "attention K", "format": "Q5_K", "shape": [2048, 512]},
+      {"role": "Gated DeltaNet output", "format": "Q8_0", "shape": [2048, 2048]},
+      {"role": "later FFN gate", "format": "IQ4_XS", "shape": [2048, 6144]}
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "providers": [
+      "ggml CPU 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "oneDNN 3.13.2 primitives/regions"
+    ],
+    "routing": "ordinary CPU Direct prepare and Graph compile cold-bind only mature providers for every current fragment",
+    "replay": "each prepared chain or Graph program submits twice with changed activation/state; R02 records zero metadata allocation or reallocation after preparation",
+    "oracles": [
+      "independent GGUF packed-weight decode followed by F32 dot products",
+      "independent F32 RMSNorm, half-split RoPE, causal-convolution and Gated DeltaNet calculations",
+      "sequence-length-one 8-query-head/2-KV-head GQA mapping",
+      "checked embedding failure preserves the previously published output and a fresh invocation recovers"
+    ],
+    "quantized_chain_gate": "per-stage RMSE <= 0.002 + 2% reference RMS and max error <= 0.02 + 2% max reference; this accounts for native activation re-quantization while the oracle keeps activations F32"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-r01/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R02",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay",
+        "CpuDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R03",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R04",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls",
+        "CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay"
+      ],
+      "projection_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R05",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls",
+        "CpuDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay"
+      ],
+      "projection_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R14",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R15",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay",
+        "CpuDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay"
+      ],
+      "failure_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-r01/receipt.json",
+      "result": "PASS"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "923cbd4665221fb63966cfe97f2ab00197e7dbd5",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "tool:tests/compute_models/inputs_test.py",
+      "configure",
+      "factor:compute_route_cpu",
+      "factor:graph_route_cpu"
+    ],
+    "skipped_or_reused": 127,
+    "compute_route_cpu": "1/1 CTest executable PASS in 5.90 s",
+    "graph_route_cpu": "2/2 CTest executables PASS in 6.37 s",
+    "toolchain": "MSVC 19.50.35728",
+    "flags": "/DWIN32 /D_WINDOWS /GR /EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K"
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CPU route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs after the stable route correctness batch"
+  }
+}

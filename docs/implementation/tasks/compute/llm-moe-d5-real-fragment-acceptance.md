@@ -423,6 +423,24 @@ canonical checkpoint 重建并同步当前 12 张量夹具后，Direct/Graph 均
 [Apple primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/README.md)。
 本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
 
+### D5-F10：Qwen3.5 primary GGUF 完整路线格
+
+**D5-F10 CPU complete（`b2e6a27f`）**：在既有 R01、R03/R14 精确收据上，普通 CPU
+Direct/Graph 已补齐该 artifact 的全部剩余适用 region。R02 运行完整
+`2048 -> 6144 -> 2048` RMSNorm/SwiGLU FFN，gate/up 保留原生 Q4_K、down 保留原生 Q6_K；
+R04 运行 F32 norm、half-split RoPE 和精确 `8 query heads / 2 KV heads x 256` GQA 语义；R05
+运行 K4 causal conv 与 `16 x 128` Gated DeltaNet 状态更新。每条链以两个变化 activation/state
+重放，逐中间结果匹配独立 oracle；R02 Direct/Graph 在准备完成后的重放区间均为零 metadata
+allocation/reallocation。所有调用和 Graph compile report 只固定到 ggml CPU 或 oneDNN，没有新增
+HYLE 数学或 fallback。
+
+固定 GGUF artifact 不含 R13；这不是跳过适用能力，具体 header/repository 证据仍由 D5-F9 的 artifact
+applicability correction 约束。不可变 MSVC 19.50 Release/WERROR selector 通过 docs、closure、fixture
+工具、configure、CPU Direct 与 CPU Graph，127 个无关 gate 跳过或复用；P1 未启动。完整收据见
+[CPU primary GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-complete/README.md)。
+ledger 现有 10 个 `RUN_PASS`、166 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍随稳定 CPU
+路线批次执行，不由本 tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
