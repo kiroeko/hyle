@@ -13,6 +13,7 @@
 #include "../compute/workload_fixture.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 
 #include "hyle/compute/cpu.h"
@@ -496,10 +497,12 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
 
 class CpuQwen38GdnProfiles
     : public ::testing::TestWithParam<
-          const ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(CpuQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
-  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const auto &profile_case = *GetParam();
+  const d5_qwen38_gdn_fixture::Fixture fixture(
+      0, profile_case.gdn_key_heads, profile_case.gdn_value_heads);
   std::vector<hyle::mem::Buffer> input_storage;
   std::vector<ConstTensorView> inputs;
   input_storage.reserve(fixture.inputs.size());
@@ -528,7 +531,8 @@ TEST_P(CpuQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
       TensorView::create(fixture.outputs[0], output_storage[0].view()).value(),
       TensorView::create(fixture.outputs[1], output_storage[1].view()).value()};
   const auto workload =
-      d5_qwen38_gdn_fixture::workload(*GetParam(), WorkloadPhase::kDecode);
+      d5_qwen38_gdn_fixture::workload(*profile_case.profile,
+                                     WorkloadPhase::kDecode);
   auto context = create_context().value();
   auto prepared = prepare(context, Operation(GatedDeltaNet{}), inputs, outputs,
                           hyle::mem::system_resource(), workload);
@@ -560,12 +564,16 @@ TEST_P(CpuQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, CpuQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, CpuQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, CpuQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 #endif
 #endif
 

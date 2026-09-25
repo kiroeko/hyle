@@ -119,17 +119,24 @@ inline std::vector<double> rms_norm(std::span<const BF16> input,
 }
 
 inline std::vector<double> ffn(std::span<const BF16> activation,
-                               std::span<const BF16> scale, int seed) {
+                               std::span<const BF16> scale, int seed,
+                               std::size_t hidden,
+                               std::size_t ffn_hidden) {
   const auto normalized = rms_norm(activation, scale);
   const auto normalized_bf16 = as_bf16(normalized);
-  const auto gate = sparse_projection(normalized_bf16, kFfnHidden, seed);
-  const auto up = sparse_projection(normalized_bf16, kFfnHidden, seed + 1);
-  std::vector<BF16> gated(kFfnHidden);
+  const auto gate = sparse_projection(normalized_bf16, ffn_hidden, seed);
+  const auto up = sparse_projection(normalized_bf16, ffn_hidden, seed + 1);
+  std::vector<BF16> gated(ffn_hidden);
   for (std::size_t i = 0; i < gated.size(); ++i) {
     const auto silu = gate[i] / (1.0 + std::exp(-gate[i]));
     gated[i] = encode(silu * up[i]);
   }
-  return sparse_projection(gated, kHidden, seed + 2);
+  return sparse_projection(gated, hidden, seed + 2);
+}
+
+inline std::vector<double> ffn(std::span<const BF16> activation,
+                               std::span<const BF16> scale, int seed) {
+  return ffn(activation, scale, seed, kHidden, kFfnHidden);
 }
 
 inline std::vector<double> dense_head(std::span<const BF16> input,

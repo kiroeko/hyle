@@ -84,18 +84,22 @@ inline c::WorkloadContext workload(c::WorkloadPhase phase) {
 }
 
 struct Fixture final {
+  std::int64_t key_heads;
+  std::int64_t value_heads;
   std::array<c::TensorDesc, 6> inputs;
   std::array<c::TensorDesc, 2> outputs;
   std::array<std::vector<float>, 6> data;
 
-  explicit Fixture(int seed = 0) {
+  explicit Fixture(int seed = 0, std::int64_t key_heads = kKeyHeads,
+                   std::int64_t value_heads = kValueHeads)
+      : key_heads(key_heads), value_heads(value_heads) {
     inputs = {
-        dense({kBatches, kTokens, kKeyHeads, kDepth}),
-        dense({kBatches, kTokens, kKeyHeads, kDepth}),
-        dense({kBatches, kTokens, kValueHeads, kDepth}),
-        dense({kBatches, kTokens, kValueHeads, 1}),
-        dense({kBatches, kTokens, kValueHeads, 1}),
-        dense({kBatches, kValueHeads, kDepth, kDepth}),
+        dense({kBatches, kTokens, key_heads, kDepth}),
+        dense({kBatches, kTokens, key_heads, kDepth}),
+        dense({kBatches, kTokens, value_heads, kDepth}),
+        dense({kBatches, kTokens, value_heads, 1}),
+        dense({kBatches, kTokens, value_heads, 1}),
+        dense({kBatches, value_heads, kDepth, kDepth}),
     };
     outputs = {inputs[2], inputs[5]};
     for (std::size_t port = 0; port < data.size(); ++port) {
@@ -117,9 +121,9 @@ struct Fixture final {
         std::vector<double>(data[2].size()),
         std::vector<double>(data[5].begin(), data[5].end())};
     auto &state = result[1];
-    for (std::int64_t value_head = 0; value_head < kValueHeads;
+    for (std::int64_t value_head = 0; value_head < value_heads;
          ++value_head) {
-      const auto key_head = value_head % kKeyHeads;
+      const auto key_head = value_head % key_heads;
       const auto qk = static_cast<std::size_t>(key_head * kDepth);
       const auto value = static_cast<std::size_t>(value_head * kDepth);
       const auto matrix =
