@@ -671,6 +671,24 @@ Release/WERROR selector 的 docs、closure、模型输入工具、configure、CP
 ledger 现有 34 个 `RUN_PASS`、142 个 `VALIDATION_NOT_RUN`；其余六条 Qwen3.8 GGUF 路线格以及
 D5-A5 三交付和 D5-A6 P1 尚未由本批代签。
 
+### Qwen3.8 primary GGUF CUDA Direct/Graph 完整格
+
+不可变 tests-only candidate `02b58c8df5b3e281df8d6aea967c47d4eeea08c0` 已在普通 CUDA Direct/Graph 入口完成固定
+`qwen38_27b:primary_gguf:UD-Q4_K_M` profile 的 R01-R05、R13-R15。R01 保留 Q4_K
+embedding 的精确 5120 隐藏宽度；投影批次逐一运行 artifact 实际出现的 Q3_K、IQ3_S、IQ4_NL、
+IQ4_XS、Q4_K、Q5_K、Q6_K、Q8_0，并额外固定 MTP 的 Q6_K `10240 -> 5120` 权重。语义链
+保留 FFN=17408、GQA 24/4×256、partial interleaved RoPE 64、Gated DeltaNet K16/V48×128 及
+MTP 10240；每个 prepared artifact 以变化输入重放，越界 embedding 不发布结果。所有调用与 Graph
+report 只绑定固定 ggml CUDA、cuBLASLt、SGLang/CCCL 或 FlashInfer，没有增加 HYLE 数学、fallback、
+热选择或产品实现。
+
+MSVC 19.50 Release/WERROR selector 的 docs、closure、configure、CUDA Direct 与 CUDA Graph 五个 gate
+全部 PASS，127 个无关 gate 跳过或复用；CUDA Toolkit 13.3.73、`CUDAARCHS=89-real`，完整 Direct
+owner 63.09 秒、Graph owner 64.50 秒。完整收据见
+[Qwen3.8 primary GGUF CUDA complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-primary-gguf-complete/README.md)。ledger 现有
+36 个 `RUN_PASS`、140 个 `VALIDATION_NOT_RUN`；其余四条 Qwen3.8 GGUF Apple/Vulkan 路线格以及
+D5-A5 三交付和 D5-A6 P1 尚未由本批代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
