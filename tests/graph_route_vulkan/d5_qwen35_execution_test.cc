@@ -185,11 +185,71 @@ TEST(VulkanGraphD5,
 }
 
 TEST(VulkanGraphD5,
-     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+     D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays) {
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto table_desc = dense(c::DataType::kFloat16, {rows, hidden});
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x0108);
+  const auto source = d5_gguf_test::values(rows, hidden, 61);
+  std::vector<F16> table_values(source.size());
+  std::vector<float> decoded(source.size());
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    table_values[i] = half_test::encode<F16>(source[i]);
+    decoded[i] = static_cast<float>(half_test::decode(table_values[i]));
+  }
+  auto context = vulkan_test::context().value();
+  const auto table = upload(context, table_desc, std::span(table_values));
+  auto call =
+      prepare(context, workload, c::Operation(c::Gather{}), table, ids_desc);
+  auto invocation = call.program.create_invocation().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  v::Tensor retained;
+  for (std::size_t replay = 0; replay < selections.size(); ++replay) {
+    const auto &selection = selections[replay];
+    const auto ids = upload(context, ids_desc, std::span(selection));
+    ASSERT_TRUE(invocation.bind(ids).ok());
+    auto result = invocation.submit().value().wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto output = result->get()->tensors()[0];
+    const auto actual = values(context, output);
+    const auto expected =
+        d5_gguf_test::selected_rows(decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+    if (replay + 1 == selections.size())
+      retained = output;
+  }
+
+  const auto before = bytes(context, retained);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const auto bad = upload(context, ids_desc, std::span(invalid));
+  auto failed_invocation = call.program.create_invocation().value();
+  ASSERT_TRUE(failed_invocation.bind(bad).ok());
+  auto submitted = failed_invocation.submit();
+  if (submitted) {
+    auto failure = submitted->wait();
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().IsOutOfRange());
+  } else {
+    EXPECT_TRUE(submitted.error().IsOutOfRange());
+  }
+  EXPECT_EQ(bytes(context, retained), before);
+}
+
+template <std::size_t N>
+void run_quantized_projections(
+    const c::ModelArtifactProfileDescription &profile,
+    const std::array<d5_gguf_test::Qwen35Projection, N> &cases) {
   d5_gguf_test::QuantizerCleanup cleanup;
   auto context = vulkan_test::context().value();
 
-  for (const auto &test : d5_gguf_test::kQwen35PrimaryProjectionCases) {
+  for (const auto &test : cases) {
     SCOPED_TRACE(test.tensor);
     const auto input_desc = dense(c::DataType::kFloat32, {1, test.reduction});
     const auto weight_desc =
@@ -202,9 +262,8 @@ TEST(VulkanGraphD5,
         d5_gguf_test::pack(test.type, physical, test.columns, test.reduction,
                            weight_desc.required_bytes().value());
     const auto weight = upload(context, weight_desc, packed.bytes);
-    const auto workload =
-        d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                    c::WorkloadPhase::kDecode, test.region);
+    const auto workload = d5_qwen35_fixture::workload(
+        profile, c::WorkloadPhase::kDecode, test.region);
     auto call = prepare(context, workload, c::Operation(c::MatMul{}),
                         input_desc, weight);
 
@@ -234,26 +293,93 @@ TEST(VulkanGraphD5,
 }
 
 TEST(VulkanGraphD5,
-     D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay) {
+     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(d5_qwen35_fixture::kPrimaryGgufProfile,
+                            d5_gguf_test::kQwen35PrimaryProjectionCases);
+}
+
+TEST(VulkanGraphD5,
+     D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(
+      d5_qwen35_fixture::kFidelityGgufProfile,
+      d5_gguf_test::kQwen35FidelityQuantizedProjectionCases);
+}
+
+TEST(VulkanGraphD5,
+     D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay) {
+  auto context = vulkan_test::context().value();
+  for (const auto &test : d5_gguf_test::kQwen35FidelityF16ProjectionCases) {
+    SCOPED_TRACE(test.tensor);
+    const auto input_desc = dense(c::DataType::kFloat16, {1, test.reduction});
+    const auto weight_desc =
+        dense(c::DataType::kFloat16, {test.columns, test.reduction})
+            .transposed()
+            .value();
+    const auto workload =
+        d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                    c::WorkloadPhase::kDecode, test.region);
+    const auto weight_source =
+        d5_gguf_test::values(test.columns, test.reduction, test.seed);
+    std::vector<F16> weight_values(weight_source.size());
+    std::vector<float> decoded_weights(weight_source.size());
+    for (std::size_t i = 0; i < weight_values.size(); ++i) {
+      weight_values[i] = half_test::encode<F16>(weight_source[i]);
+      decoded_weights[i] =
+          static_cast<float>(half_test::decode(weight_values[i]));
+    }
+    const auto weight = upload(context, weight_desc, std::span(weight_values));
+    auto call = prepare(context, workload, c::Operation(c::MatMul{}),
+                        input_desc, weight);
+    auto invocation = call.program.create_invocation().value();
+    auto activation_source =
+        d5_gguf_test::activation(test.reduction, test.seed);
+    for (int replay = 0; replay < 2; ++replay) {
+      if (replay != 0)
+        for (auto &value : activation_source)
+          value = value * -0.75F + 0.001F;
+      std::vector<F16> activation_values(activation_source.size());
+      std::vector<float> decoded_activation(activation_source.size());
+      for (std::size_t i = 0; i < activation_values.size(); ++i) {
+        activation_values[i] = half_test::encode<F16>(activation_source[i]);
+        decoded_activation[i] =
+            static_cast<float>(half_test::decode(activation_values[i]));
+      }
+      const auto activation =
+          upload(context, input_desc, std::span(activation_values));
+      ASSERT_TRUE(invocation.bind(activation).ok());
+      auto result = invocation.submit().value().wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto expected_f32 = d5_gguf_test::matmul(
+          decoded_activation, decoded_weights, test.columns, test.reduction);
+      const std::vector<double> expected(expected_f32.begin(),
+                                         expected_f32.end());
+      expect(context, result->get()->tensors()[0], expected);
+    }
+  }
+}
+
+void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
+                         c::GgufQuantizedType gate_type,
+                         c::GgufQuantizedType down_type) {
   d5_gguf_test::QuantizerCleanup cleanup;
   constexpr std::int64_t hidden = d5_qwen35_fixture::kHidden;
   constexpr std::int64_t expanded = d5_qwen35_fixture::kFfnHidden;
   const auto activation_desc = dense(c::DataType::kFloat32, {1, hidden});
   const auto scale_desc = dense(c::DataType::kFloat32, {hidden});
   const auto gate_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
-                                 c::DataType::kFloat32, hidden, expanded)
+      c::gguf_weight_description(gate_type, c::DataType::kFloat32, hidden,
+                                 expanded)
           .value();
   const auto down_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ6K,
-                                 c::DataType::kFloat32, expanded, hidden)
+      c::gguf_weight_description(down_type, c::DataType::kFloat32, expanded,
+                                 hidden)
           .value();
-  const auto gate_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                  gate_weight_desc, 31);
-  const auto up_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                gate_weight_desc, 37);
-  const auto down_packed = packed(c::GgufQuantizedType::kQ6K, hidden, expanded,
-                                  down_weight_desc, 41);
+  const auto gate_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 31);
+  const auto up_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 37);
+  const auto down_packed =
+      packed(down_type, hidden, expanded, down_weight_desc, 41);
   const auto scale_values = d5_qwen35_gguf_fragment::scale(hidden);
   auto activation_values = d5_gguf_test::activation(hidden, 43);
   auto context = vulkan_test::context().value();
@@ -283,9 +409,8 @@ TEST(VulkanGraphD5,
     ASSERT_TRUE(builder.publish(value).ok());
   auto graph = std::move(builder).finish().value();
   const std::array constants{scale, gate_weight, up_weight, down_weight};
-  const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x020f);
+  const auto workload = d5_qwen35_fixture::workload(
+      profile, c::WorkloadPhase::kDecode, 0x020f);
   gv::CompileReport report;
   auto compiled = gv::compile(context, graph, constants,
                               {.report = &report, .workload = workload});
@@ -339,6 +464,19 @@ TEST(VulkanGraphD5,
       EXPECT_NE(final_actual, previous_final);
     previous_final = final_actual;
   }
+}
+
+TEST(VulkanGraphD5,
+     D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kPrimaryGgufProfile,
+                      c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K);
+}
+
+TEST(VulkanGraphD5,
+     D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kFidelityGgufProfile,
+                      c::GgufQuantizedType::kQ8_0,
+                      c::GgufQuantizedType::kQ8_0);
 }
 
 TEST(VulkanGraphD5,
@@ -501,6 +639,8 @@ TEST(VulkanGraphD5, D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls) {
   const std::array workloads{
       d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 4),
       d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x040f),
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
                                   c::WorkloadPhase::kDecode, 0x040f)};
   auto context = vulkan_test::context().value();
   const auto query_scale = upload(context, scale_desc, fixture.query);
@@ -600,6 +740,8 @@ TEST(VulkanGraphD5, D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls) {
   const std::array workloads{
       d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 5),
       d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x050f),
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
                                   c::WorkloadPhase::kDecode, 0x050f)};
   auto context = vulkan_test::context().value();
   const auto conv_weight =
