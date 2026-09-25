@@ -482,6 +482,26 @@ closure、configure、Vulkan Direct 与 Vulkan Graph；127 个无关 gate 跳过
 ledger 现有 16 个 `RUN_PASS`、160 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍随稳定
 Vulkan 路线批次执行，不由本 tests-only candidate 代签。
 
+### D5-F11：Qwen3.5 fidelity GGUF 完整路线格
+
+**D5-F11 CPU complete（`74101b6e`）**：普通 CPU Direct/Graph 已完整运行固定
+`qwen35_2b:fidelity_gguf:UD-Q8_K_XL` profile 的全部适用 region。测试没有从 artifact 名称推断全局
+Q8：R01 使用真实 F16 embedding；R02 使用 Q8_0 gate/up/down；R03/R14 分别运行 Q8_0 FFN/V/O
+投影和 F16 GDN-output/K/Q 投影；R04/R05 保留真实 `8/2 x 256` GQA、K4 causal conv 与
+`16 x 128` Gated DeltaNet 语义，state/conv/norm 为 F32。每个 prepared chain 或 Graph program
+以变化输入重放，匹配独立 Q8_0 packed-weight、F16 dense 或 F32 fragment oracle；无效 embedding
+索引失败不覆盖已发布结果。所有调用与 Graph compile report 只固定到 ggml CPU 或 oneDNN，没有新增
+HYLE 数学、fallback 或热路径选路。固定 320-tensor artifact 不含 MTP/NextN，因此 R13 仍按已审计
+applicability 证据排除。
+
+不可变 MSVC 19.50 Release/WERROR selector 通过 docs、closure、模型输入工具、configure、CPU Direct
+与 CPU Graph；Direct 可执行文件 30/30、Graph route 可执行文件 45/45。首次 selector 进程缺少
+Visual Studio `rc`/`mt` 环境而在 compiler configure 停止；同一 candidate 加载 `VsDevCmd` 后通过，
+期间没有源码变化。完整收据见
+[CPU fidelity GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-fidelity-gguf-complete/README.md)。
+ledger 现有 18 个 `RUN_PASS`、158 个 `VALIDATION_NOT_RUN`。CUDA、Apple、Vulkan 六格以及 D5-A5
+三交付、D5-A6 P1 仍未由本 tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
