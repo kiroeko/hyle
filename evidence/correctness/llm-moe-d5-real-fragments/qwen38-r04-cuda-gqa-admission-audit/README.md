@@ -21,6 +21,11 @@ The same executable already accepts the Qwen3.5 8/2x256 form. This is a cold
 prepare rejection, before execution or timing; no performance result is
 involved.
 
+After admitting 24/4 to the existing ggml CUDA path, the exact fragment also
+showed that its output-gate Sigmoid selected the frozen `hyle-cuda` provider.
+The mature-provider assertion rejected that fallback before it could count as
+coverage.
+
 ## Source boundary
 
 `src/compute_provider_ggml_cuda/ggml_cuda_provider.cc` already lowers BF16
@@ -33,11 +38,18 @@ FlashInfer has a separately qualified native 8/2x256 SM89 kernel and its
 shape contract remains unchanged. Qwen3.8 24/4x256 is assigned to the existing
 ggml CUDA graph path.
 
+`src/compute_provider_ggml_cuda/tensor_program.cc` already owns the mature
+ggml CUDA unary program and upstream exposes `ggml_sigmoid`; its admission and
+lowering switches simply omit Sigmoid. The CPU adapter uses this same fixed
+upstream operation for the same model fragment.
+
 ## Finite correction
 
 The only product correction is to replace the ggml CUDA 8/2 head constants
 with positive integer-ratio GQA validation while preserving all existing
 dtype, layout, mask, accumulation, depth, K/V equality, output and overflow
 checks. Regression covers both 8/2 and 24/4, followed by the exact Qwen3.8
-Direct/Graph consumer. No public API, provider order, upstream source, HYLE
-kernel or alternative attention implementation is authorized.
+Direct/Graph consumer. The same correction admits only public Sigmoid and maps
+it to `ggml_sigmoid`, without opening any other unary. No public API, provider
+order, upstream source, HYLE kernel or alternative attention implementation is
+authorized.
