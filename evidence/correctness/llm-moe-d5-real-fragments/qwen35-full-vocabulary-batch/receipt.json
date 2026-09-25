@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "candidate": "ae54c66cead8a9385267b4fb88f5e199bf599be1",
+  "candidate_tree": "18cc68f09a7130fbc5bc69fb543af2dc39029a68",
+  "verdict": "PARTIAL_R01_QWEN35_BF16_HEAD_AND_GATHER_ONLY",
+  "profile": "qwen35_2b:official:official-bf16",
+  "source_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "hidden": 2048,
+  "vocabulary_rows": 248320,
+  "shard_rows": 16384,
+  "targeted_new_tests": {
+    "cpu_direct": "2/2 PASS",
+    "cpu_graph": "2/2 PASS",
+    "cuda_direct": "2/2 PASS",
+    "cuda_graph": "2/2 PASS",
+    "apple_direct": "2/2 PASS",
+    "apple_graph": "2/2 PASS",
+    "vulkan_direct": "2/2 PASS",
+    "vulkan_graph": "2/2 PASS"
+  },
+  "payload": "synthetic sparse nonzero BF16 row in full-width dense weights, not checkpoint bytes",
+  "owner_suites": "NOT_RUN_FOR_THIS_CANDIDATE",
+  "selector": "NOT_RUN_FOR_THIS_CANDIDATE",
+  "external_cpp_delivery": "NOT_RUN_FOR_THIS_CANDIDATE",
+  "p1": "NOT_RUN_FOR_THIS_CANDIDATE",
+  "not_claimed": [
+    "global out-of-range Gather rejection",
+    "quantized artifact vocabulary formats",
+    "complete profile cells",
+    "full-model inference"
+  ],
+  "ledger": {"changed_cells": 0, "run_pass": 0, "validation_not_run": 176},
+  "compute_graph_implementation_lines_excluding_tests": 58043
+}

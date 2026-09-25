@@ -96,6 +96,14 @@ Gather 已验证跨片和尾片的具名全局索引。32 个定向用例全部�
 量化画像的精确权重格式未在这份 BF16 收据内运行，完整 selector、三交付与适用 P1
 也未签署。完整 profile 接线稳定后再集中验证，ledger 保持 0/176 `RUN_PASS`。
 
+**R01 Qwen3.5-2B 共用词表批内扩展（`ae54c66c`）**：同一分片与 oracle
+消费者已复用于本地官方 BF16 profile 的 H=2048、V=248,320；四路线 Direct/Graph
+各自的输出头与全局 Gather 共 16 个定向用例通过，使用既有隔离构建树增量编译。
+见[2B 词表部分收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-full-vocabulary-batch/README.md)。
+本次没有再启动完整 owner suite、全路线 selector、三交付或 P1；这些门仍在
+profile 接线稳定后的统一批末执行。全局越界和真实量化格式仍需同批补足，
+ledger 保持 0/176 `RUN_PASS`。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
