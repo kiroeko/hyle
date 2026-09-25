@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "candidate": "66f4d80fb8b65410ee6ec06a70f2f65e6f5d95ce",
+  "candidate_tree": "c0e6cf68754c45108453215f083ee15fe030e50e",
+  "verdict": "PARTIAL_RUN_PASS_CPU_ROUTER_ONLY",
+  "profile": "qwen38_24t:official:official-bf16",
+  "route": "cpu",
+  "entries": ["direct", "graph"],
+  "provider_change": "ggml CPU F32 plain dense rank-2 final-axis unmasked unit-scale Softmax only",
+  "source_model": "llama.cpp 4c9233c034fc450dcf34c7c0988aebe6da5cdf1a, src/models/qwen35moe.cpp and src/llama-graph.cpp",
+  "tests": {
+    "targeted_direct": "1/1 PASS, two changed inputs and one tie case",
+    "targeted_graph": "1/1 PASS, two changed inputs and one tie case",
+    "onednn_on_provider_complete": "40/40 PASS, no skips",
+    "onednn_on_direct_complete": "55/55 PASS, no skips",
+    "onednn_on_graph_complete": "70/70 PASS, no skips",
+    "onednn_off_provider_complete": "40/40 PASS",
+    "onednn_off_direct_complete": "52/52 PASS",
+    "onednn_off_graph_complete": "64/65 FAIL: existing Qwen3.5 test requires oneDNN region",
+    "module_closure": "PASS, 57 components, schema 4",
+    "docs": "PASS, 587 Markdown files, 2627 relative links",
+    "diff_check": "PASS"
+  },
+  "selector": "READY: docs, closure, configure, compute_provider_ggml, compute_route_cpu, graph_route_cpu; 126 skipped/reused",
+  "not_claimed": [
+    "R10 expert dispatch and weighted combine",
+    "shared expert sigmoid gate and final residual",
+    "BF16 router output versus pinned ggml F32 score boundary equivalence",
+    "complete profile cells",
+    "D5-A5 route-level profile delivery",
+    "D5-A6 P1",
+    "full-model inference"
+  ],
+  "ledger": {
+    "changed_cells": 0,
+    "run_pass": 48,
+    "validation_not_run": 128
+  },
+  "compute_graph_implementation_lines_excluding_tests": 57949
+}

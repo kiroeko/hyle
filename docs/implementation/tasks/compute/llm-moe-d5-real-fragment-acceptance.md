@@ -739,6 +739,16 @@ TopK、Reduce 与 Binary，但 F32 router Softmax 没有 admission/translation�
 factor、公共检查和 P0 成本结构先验收；本阶段不代签 D5-A5/P1，也不强迫插入上游 ggml MoE 路径没有的
 Scan/Scatter 节点。
 
+**CANDIDATE（`66f4d80fb`，R10 router partial）**：固定 ggml CPU `ggml_soft_max` 已按有限 FIX
+接入；H=8192 BF16 router projection 产生 512 个 score，经显式 F32 Cast、Softmax、稳定 TopK、
+Reduce/Divide 形成 10 个 ID 和重新归一化的权重。普通 CPU Direct 与 Graph 用两次变化输入和一次
+并列 tie 各通过 1/1。`oneDNN=ON` 的正式受影响完整套件为 Provider 40/40、Direct 55/55、
+Graph 70/70。`oneDNN=OFF` 的 Graph 全套 64/65，失败的旧 Qwen3.5 用例明确断言必须出现 oneDNN
+region，故不能把该配置误记 PASS；它不是本次 Softmax 回归。完整局部证据见
+[R10 CPU router](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-r10-router-cpu/README.md)。
+该 partial 没有把 top-10 ID/权重接到 grouped expert、shared gate 和最终 combine，也未裁决 BF16
+router MatMul 存储边界与固定 ggml 图的 F32 score 边界是否等价；不签 R10 或完整 profile cell。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
