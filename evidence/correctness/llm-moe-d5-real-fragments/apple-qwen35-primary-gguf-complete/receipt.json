@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "candidate": "690d5f2c26e717f237455669a6b08085b8cdbf90",
+  "candidate_tree": "a0d64307f9a46b6d54dfd86055176cf5966f6d0d",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "route": "apple",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R14",
+      "R15"
+    ],
+    "excluded_regions": [
+      {
+        "region": "R13",
+        "reason": "the fixed GGUF artifact has no MTP/NextN tensors or sidecar"
+      }
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q4_K_XL",
+    "fixture_source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "payload": "exact audited tensor names, roles, dimensions and formats with deterministic format-valid nonzero packed weights",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "mixed_weights": [
+      {
+        "role": "FFN gate/up",
+        "format": "Q4_K",
+        "shape": [
+          2048,
+          6144
+        ]
+      },
+      {
+        "role": "FFN down",
+        "format": "Q6_K",
+        "shape": [
+          6144,
+          2048
+        ]
+      },
+      {
+        "role": "attention K",
+        "format": "Q5_K",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "Gated DeltaNet output",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "later FFN gate",
+        "format": "IQ4_XS",
+        "shape": [
+          2048,
+          6144
+        ]
+      }
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "providers": [
+      "MLX 0.32.2 native Metal regions",
+      "ggml Metal 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle"
+    ],
+    "routing": "ordinary Apple Direct prepare and Graph compile cold-bind only admitted mature providers for every current fragment",
+    "replay": "each prepared chain or Graph program executes twice with changed activation or state; the Graph invocation is reused",
+    "runtime_pipelines": [
+      "kernel_get_rows_q6_K",
+      "kernel_mul_mv_q4_K_f32",
+      "kernel_mul_mv_q5_K_f32",
+      "kernel_mul_mv_q6_K_f32",
+      "kernel_mul_mv_iq4_xs_f32",
+      "kernel_mul_mv_q8_0_f32",
+      "kernel_gated_delta_net_f32_4"
+    ],
+    "oracles": [
+      "independent GGUF packed-weight decode followed by F32 dot products",
+      "independent RMSNorm, half-split RoPE, causal-convolution and Gated DeltaNet calculations",
+      "BF16 activation/storage with F32 accumulation for the attention region",
+      "sequence-length-one 8-query-head/2-KV-head GQA mapping",
+      "checked embedding failure preserves the previously published output"
+    ],
+    "quantized_chain_gate": "per-stage RMSE <= 0.002 + 2% reference RMS and max error <= 0.02 + 2% max reference"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-r01/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R02",
+      "tests": [
+        "AppleD5.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay",
+        "AppleGraphD5.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R03",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R04",
+      "tests": [
+        "AppleD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls",
+        "AppleGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+      ],
+      "model_identity": "primary GGUF workload 0x040f",
+      "projection_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R05",
+      "tests": [
+        "AppleD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls",
+        "AppleGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls"
+      ],
+      "model_identity": "primary GGUF workload 0x050f",
+      "projection_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R14",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-projections/receipt.json",
+      "result": "PASS"
+    },
+    {
+      "id": "R15",
+      "tests": [
+        "AppleD5.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay",
+        "AppleGraphD5.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay"
+      ],
+      "failure_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-r01/receipt.json",
+      "result": "PASS"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "480199e48f3aa4f1abaaa435e7ef8a6535c6f108",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_route_apple",
+      "factor:graph_route_apple"
+    ],
+    "skipped_or_reused": 127,
+    "compute_route_apple": "1/1 CTest executable PASS in 71.05 s",
+    "graph_route_apple": "1/1 CTest executable PASS in 10.65 s",
+    "toolchain": "AppleClang 21.0.0; libc++; macOS SDK 27.0; Metal 17F109 command-line tools shim",
+    "flags": "Release -O3 -DNDEBUG; WERROR",
+    "machine": "M1-MAC, MacBook Air Mac16,12, Apple M4, 16 GB, macOS 27.0 build 26A428"
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable Apple route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs after the stable route correctness batch"
+  }
+}
