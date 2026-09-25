@@ -383,8 +383,7 @@ TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {
       ConstTensorView::create(description, source.view()).value();
   for (auto kind :
        {UnaryKind::kAbs, UnaryKind::kNeg, UnaryKind::kExp, UnaryKind::kLog,
-        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh,
-        UnaryKind::kSigmoid}) {
+        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh}) {
     auto status =
         execute(context, Unary{kind}, std::span(&input, 1),
                 TensorView::create(description, output.view()).value());
@@ -414,9 +413,6 @@ TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {
       case UnaryKind::kTanh:
         expected = std::tanh(values[i]);
         break;
-      case UnaryKind::kSigmoid:
-        expected = 1.0 / (1.0 + std::exp(-values[i]));
-        break;
       default:
         FAIL();
       }
@@ -444,30 +440,6 @@ TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {
   };
   check.template operator()<hyle::simd::float16_t>();
   check.template operator()<hyle::simd::bfloat16_t>();
-}
-
-TEST(GgmlCpuProvider, MatureSigmoidPreservesBfloatBoundary) {
-  using BF16 = hyle::simd::bfloat16_t;
-  const std::array source_values{-8.0, -1.0, 0.0, 1.0, 8.0};
-  std::array<BF16, source_values.size()> encoded{};
-  for (std::size_t i = 0; i < encoded.size(); ++i)
-    encoded[i] = half_test::encode<BF16>(source_values[i]);
-  const auto description = dense(DataType::kBFloat16, {encoded.size()});
-  auto source = half_test::buffer<BF16>(encoded);
-  auto output = output_buffer(description);
-  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  const auto input =
-      ConstTensorView::create(description, source.view()).value();
-  auto status = execute(context, Unary{UnaryKind::kSigmoid},
-                        std::span(&input, 1),
-                        TensorView::create(description, output.view()).value());
-  ASSERT_TRUE(status.ok()) << status.message();
-  const auto actual = half_test::read<BF16>(output);
-  for (std::size_t i = 0; i < actual.size(); ++i) {
-    const auto input_value = half_test::decode(encoded[i]);
-    const auto expected = 1.0 / (1.0 + std::exp(-input_value));
-    half_test::expect_near(actual[i], expected);
-  }
 }
 
 TEST(GgmlCpuProvider, DenseRankSixBroadcastStridedCopyConcatAndGather) {
@@ -1092,8 +1064,8 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   const auto description = dense(DataType::kFloat32, {2, 7});
   for (auto kind :
-       {UnaryKind::kRelu, UnaryKind::kSilu, UnaryKind::kGelu,
-        UnaryKind::kGeluTanh, UnaryKind::kSoftplus}) {
+       {UnaryKind::kRelu, UnaryKind::kSigmoid, UnaryKind::kSilu,
+        UnaryKind::kGelu, UnaryKind::kGeluTanh, UnaryKind::kSoftplus}) {
     auto result = prepare(context, Unary{kind}, description);
     ASSERT_FALSE(result);
     EXPECT_TRUE(result.error().IsUnimplemented());
@@ -1924,25 +1896,20 @@ TEST(GgmlCpuProvider, HalfMatMulCoversDecodeTailAndRankFourBroadcast) {
     half_test::expect_near(value, 3);
 }
 
-template <class T>
-void mature_attention_gqa_decode(std::int64_t query_heads,
-                                 std::int64_t kv_heads) {
+TEST(GgmlCpuProvider, MatureAttentionHandlesHead256GqaDecode) {
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  const auto query_desc =
-      dense(half_test::data_type<T>(), {1, 1, query_heads, 256});
-  const auto kv_desc = dense(half_test::data_type<T>(), {1, 1, kv_heads, 256});
-  std::vector<T> query(query_desc.element_count().value(),
-                       half_test::encode<T>(0.03125));
-  std::vector<T> key(kv_desc.element_count().value(),
-                     half_test::encode<T>(0.0625));
-  std::vector<T> value(kv_desc.element_count().value());
-  for (std::size_t head = 0; head < static_cast<std::size_t>(kv_heads); ++head)
+  const auto query_desc = dense(DataType::kFloat32, {1, 1, 8, 256});
+  const auto kv_desc = dense(DataType::kFloat32, {1, 1, 2, 256});
+  std::vector<float> query(query_desc.element_count().value(), 0.03125F);
+  std::vector<float> key(kv_desc.element_count().value(), 0.0625F);
+  std::vector<float> value(kv_desc.element_count().value());
+  for (std::size_t head = 0; head < 2; ++head)
     for (std::size_t depth = 0; depth < 256; ++depth)
       value[head * 256 + depth] =
-          half_test::encode<T>(static_cast<double>(head * 1000 + depth) / 256.0);
-  auto q = half_test::buffer<T>(query);
-  auto k = half_test::buffer<T>(key);
-  auto v = half_test::buffer<T>(value);
+          static_cast<float>(head * 1000 + depth) / 256.0F;
+  auto q = half_test::buffer<float>(query);
+  auto k = half_test::buffer<float>(key);
+  auto v = half_test::buffer<float>(value);
   auto output = output_buffer(query_desc);
   const std::array inputs{ConstTensorView::create(query_desc, q.view()).value(),
                           ConstTensorView::create(kv_desc, k.view()).value(),
@@ -1955,22 +1922,12 @@ void mature_attention_gqa_decode(std::int64_t query_heads,
   ASSERT_TRUE(execute(context, attention, inputs,
                       TensorView::create(query_desc, output.view()).value())
                   .ok());
-  const auto actual = half_test::read<T>(output);
-  const auto heads_per_group = query_heads / kv_heads;
-  for (std::size_t head = 0; head < static_cast<std::size_t>(query_heads);
-       ++head)
+  const auto actual = half_test::read<float>(output);
+  for (std::size_t head = 0; head < 8; ++head)
     for (std::size_t depth = 0; depth < 256; ++depth)
-      half_test::expect_near(
-          actual[head * 256 + depth],
-          half_test::decode(value[(head / heads_per_group) * 256 + depth]));
-}
-
-TEST(GgmlCpuProvider, MatureAttentionHandlesQwen35Head256GqaDecode) {
-  mature_attention_gqa_decode<float>(8, 2);
-}
-
-TEST(GgmlCpuProvider, MatureAttentionHandlesQwen38Head256GqaDecode) {
-  mature_attention_gqa_decode<hyle::simd::bfloat16_t>(24, 4);
+      EXPECT_NEAR(actual[head * 256 + depth], value[(head / 4) * 256 + depth],
+                  1.0e-5F)
+          << head << ':' << depth;
 }
 
 template <class T> void causal_gqa_prefill() {

@@ -549,28 +549,6 @@ Graph 53/53，127 个无关 gate 跳过或复用。完整收据见
 ledger 现有 24 个 `RUN_PASS`、152 个 `VALIDATION_NOT_RUN`。D5-A5 三交付和 D5-A6 P1 仍未由本
 tests-only candidate 代签。
 
-### D5-F12：Qwen3.8 CPU GQA 资格域修复
-
-Qwen3.8-27B 官方 profile 的 R04 使用 BF16、24 query heads / 4 KV heads × 256 和 F32 累加。
-普通 CPU Direct 在 RMSNorm/RoPE 准备成功后拒绝 SDPA；同一 executable 的 Qwen3.5 8/2×256 GQA
-通过。源码定位到 `compute_provider_ggml` 的 SDPA 资格函数把成熟路径写死为 `Q=8、KV=2、D=256`，
-而紧邻的固定 ggml lowering 已使用 `ggml_mul_mat` 的 head-batch 广播，没有 8/2 专用算法。失败和源码
-边界见 [Qwen3.8 R04 admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-r04-cpu-gqa-admission-audit/README.md)。
-
-因此 `compute_provider_ggml` 从 D5 candidate 精确退回本卡 AUDITED。有限 FIX 只有：
-
-1. 在既有 dense BF16/F16/F32、causal、无显式 mask、F32 accumulation 域内，将 SDPA 资格从固定
-   8/2 改为正 head 数、`Q_heads % KV_heads == 0`、Q/K/V depth 相同、K/V 形状相同和既有输出形状；
-2. 把 Qwen3.8 `attn_output_gate=true` 所需的公共 Sigmoid 只映射到固定 ggml 已有的
-   `ggml_sigmoid`；保留 F32 内部执行和既有输出转换，验证 BF16、有限尾部、±∞ 与 NaN，不开放其它 unary；
-3. Provider 回归同时保留 8/2×256 并新增 24/4×256，两者继续 lower 到同一固定 ggml program；
-4. Qwen3.8 官方 CPU Direct/Graph 使用 exact profile、真实内宽、两次变化输入和独立 oracle 完成
-   R01-R05、R13-R15；既有 R05 K16/V48×128 收据并入完整格；
-5. 只运行 `compute_provider_ggml`、`compute_route_cpu`、`graph_route_cpu` 与 selector 选择的公共检查。
-
-不修改公共 SDPA/Unary schema、ggml 源码、算法、路由顺序、native Provider 或任何 HYLE 数学/kernel；若固定
-ggml 实际执行 24/4 仍失败，则记录精确 `BACKEND_REJECTED`，不在 D5 实现替代 attention。
-
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

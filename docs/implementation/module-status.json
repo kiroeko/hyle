@@ -374,9 +374,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F12 AUDITED：Qwen3.8-27B 官方 24/4×256 GQA 暴露 ggml CPU SDPA 资格被旧 Qwen3.5 形状写死为 8/2，输出 gate 又遗漏固定上游已有 Sigmoid；有限 FIX 只恢复整数倍 GQA 接纳并映射 ggml_sigmoid，补 8/2、24/4、BF16 和特殊值回归。"
+      "summary": "M3-D5-F8 CPU CANDIDATE 42f0320f：固定 ggml GET_ROWS 已接管 Q4_K/Q6_K/Q8_0 checked embedding；Qwen3.5 primary GGUF R01 的 CPU Direct/Graph、replay、失败、owner suite 与 WERROR selector 通过，等待其它路线和完整画像。",
+      "candidate": "42f0320f64d88b7e0e9b78daa17f8790a88f53cc"
     },
     {
       "module": "graph_provider_onednn",
