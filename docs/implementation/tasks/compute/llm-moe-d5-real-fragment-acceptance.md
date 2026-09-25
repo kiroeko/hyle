@@ -675,6 +675,23 @@ Windows CPU Direct 全套 54/54、Graph 全套 69/69，无跳过；证据见
 R10 路由/派发/合并和 R05 的完整模型投影/存储边界仍待验；本 partial 不改变 ledger 48/176，
 不代签各路线三交付或 P1。
 
+### D5-F16：Windows CUDA 运行库版本使 CCCL Provider 不可达
+
+**SCOPED（baseline `0d25f9938`）**：在官方 Qwen3.8-2.4T CUDA 批次中，R01 的 BF16 Gather
+准备失败；相同的 Qwen3.8-27B 既有 R01 用例在当前机器也重现。源码定位到
+`compute_provider_cuda/collectives_provider.cc` 的 CCCL 资格规则：SM 8.9、编译 Toolkit 13030、
+`CCCL-300304` 都匹配，但运行库要求精确 13030。当前 `v13.3` SDK 的 `CUDART_VERSION=13030`、
+`CUB_VERSION=300304`，其 Windows 运行库和驱动经 API 均报告 13040；因此 CCCL 的 Gather、TopK、
+Scan 在匹配阶段整体不可达，最后的 CUDA tensor Provider 只返回“未实现该算子族”。
+[NVIDIA CUDA Runtime 文档](https://docs.nvidia.com/cuda/cuda-runtime-api/cuda_runtime_api/group__CUDART____VERSION.html)
+明确说明 CUDA 13 起 Windows 使用随显示驱动提供的运行库，其版本可能与编译 Toolkit 不同；
+[CUDA 兼容性说明](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html)
+允许 CUDA 13.x 内的兼容组合，但具体 Provider 能力仍须本机验证。
+
+本次只重开 `compute_provider_cuda` 的 CCCL 环境资格；不修改 TopK/Gather/Scan 数学、CCCL 调用、
+其它 CUDA Provider 或优先级。D4 CLOSED 的算子清退结论仍有效。先完成 AUDITED 有限 FIX 定界，
+再改产品代码；现有 CUDA 测试候选的 R01 失败保持原样作为触发证据。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
