@@ -729,6 +729,27 @@ Direct owner 86.70 秒、Graph owner 70.37 秒。完整收据见
 ledger 现有 40 个 `RUN_PASS`、136 个 `VALIDATION_NOT_RUN`；Qwen3.8-27B primary GGUF 已完成四路线
 八格，D5-A5 三交付和 D5-A6 P1 仍由稳定路线批次统一执行。
 
+### Qwen3.8 fidelity GGUF CPU Direct/Graph 完整格
+
+不可变 tests-only candidate `5bbecf49865ffbe638d9639ac0fb051ece539e8c` 已通过普通 CPU
+Direct/Graph 入口完成固定 `qwen38_27b:fidelity_gguf:UD-Q8_K_XL` profile 的
+R01-R05、R13-R15。固定 header 为 1 shard、866 tensors、27,320,697,856 logical parameters；
+embedding、dense FFN、GDN projection 与 attention output 为 Q8_0，full-attention Q/K/V、LM head
+与 MTP projection 为 BF16，norm、conv 与 recurrent state 为 F32。测试没有从制品档位推断全局 dtype。
+
+R01 运行精确 5120 宽 Q8_0 embedding；投影批次覆盖 FFN up/down、融合 GDN QKV、attention output、
+SSM alpha/output 的真实 Q8_0 角色和宽度；语义链保持 FFN=17408、GQA 24/4×256、partial
+interleaved RoPE 64、Gated DeltaNet K16/V48×128 与 MTP 10240。每个 prepared artifact 使用变化输入
+重放，越界 embedding 不发布结果；所有 Direct/Graph report 只接受固定 ggml CPU 或 oneDNN 成熟实现，
+没有新增 HYLE 数学、fallback、热选择或产品代码。
+
+MSVC 19.50 Release/WERROR selector 的 docs、closure、模型输入工具、configure、CPU Direct 与 CPU
+Graph 六个 gate 全部 PASS，127 个无关 gate 跳过或复用；完整 Direct owner 66.90 秒，Graph 与 executor
+67.12 秒。完整收据见
+[Qwen3.8 fidelity GGUF CPU complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-fidelity-gguf-complete/README.md)。
+ledger 现有 42 个 `RUN_PASS`、134 个 `VALIDATION_NOT_RUN`；其余 CUDA、Apple、Vulkan 六格以及
+D5-A5 三交付和 D5-A6 P1 仍待对应路线批次完成。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

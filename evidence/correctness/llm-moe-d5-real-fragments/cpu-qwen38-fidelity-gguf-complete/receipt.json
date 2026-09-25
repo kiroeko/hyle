@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "candidate": "5bbecf49865ffbe638d9639ac0fb051ece539e8c",
+  "candidate_tree": "769a9a1632e0d093e91223294d282d647b83d2d2",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
+    "route": "cpu",
+    "entries": ["direct", "graph"],
+    "regions": ["R01", "R02", "R03", "R04", "R05", "R13", "R14", "R15"],
+    "not_claimed": [
+      "CUDA, Apple, or Vulkan cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "model_repository": "Qwen/Qwen3.8-27B",
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "artifact_repository": "unsloth/Qwen3.8-27B-GGUF",
+    "artifact_revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "variant": "UD-Q8_K_XL",
+    "format_family": "gguf",
+    "tensor_count": 866,
+    "logical_parameters": 27320697856,
+    "header_manifest_sha256": "c447a6903da1d21afa4fd0fbcfe9e1e160d4324620bf2bea58fa5d56f05f829c",
+    "audit": "docs/implementation/tasks/compute/llm-moe-model-weight-operator-audit.md",
+    "fixture": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+    "payload": "deterministic nonzero format-valid Q8_0 blocks at exact model reduction/output widths; no checkpoint bytes are committed",
+    "oracle": "stored blocks are decoded independently of route execution, then compared with host row-selection or float matmul; semantic fragments use separate host calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "storage": {
+      "embedding": "token_embd.weight Q8_0 [5120,248320]",
+      "dense_ffn": "Q8_0 gate/up/down projections",
+      "full_attention": "BF16 Q/K/V, Q8_0 output projection",
+      "gated_delta_net": "Q8_0 fused QKV, alpha and output projections; F32 convolution/state",
+      "lm_head": "BF16",
+      "mtp": "BF16 blk.64.nextn.eh_proj.weight [10240,5120]",
+      "norm_state_conv": "F32"
+    },
+    "providers": [
+      "ggml CPU 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "oneDNN 3.13.2 primitives and graph regions"
+    ],
+    "provider_assertion": "every prepared call and compiled graph reports a fixed mature provider; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, gate, or state; routing remains cold-bound",
+    "failure": "an invalid embedding index fails without changing the previously published output"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "CpuDefaultDirect.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay",
+        "D5FidelityGguf/CpuQwen38Profiles.*",
+        "D5FidelityGguf/CpuQwen38GdnProfiles.*"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "CpuDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "CpuDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay",
+        "D5FidelityGguf/CpuGraphQwen38Profiles.*",
+        "D5FidelityGguf/CpuGraphQwen38GdnProfiles.*"
+      ]
+    }
+  ],
+  "regions": [
+    {"id": "R01", "result": "PASS", "tests": "Q8_0 embedding at exact hidden width plus checked failure and replay"},
+    {"id": "R02", "result": "PASS", "tests": "exact-width FFN semantics and Q8_0 FFN projection storage"},
+    {"id": "R03", "result": "PASS", "tests": "exact projection widths across Q8_0 stored roles"},
+    {"id": "R04", "result": "PASS", "tests": "partial RoPE, 24/4 GQA, output gate, BF16 Q/K/V and Q8_0 output roles"},
+    {"id": "R05", "result": "PASS", "tests": "K16/V48 grouped-head Gated DeltaNet, F32 state and Q8_0 projection roles"},
+    {"id": "R13", "result": "PASS", "tests": "MTP concat semantics and BF16 10240-to-5120 artifact role"},
+    {"id": "R14", "result": "PASS", "tests": "normalization, cast and mixed-format projection boundaries"},
+    {"id": "R15", "result": "PASS", "tests": "separate BF16 LM-head semantics and checked publication failure"}
+  ],
+  "selected_validation": {
+    "baseline": "1b4322a66591f7f80a344d8ee88d5b65a72bea4e",
+    "verdict": "PASS",
+    "selected": 6,
+    "skipped_or_reused": 127,
+    "werror": true,
+    "gates": {
+      "docs": "d0d35aebf0f6782ebcba520a2e403a1e8c3ba230ccf568d2ae93740805fb9637",
+      "closure": "d1ca3e400644466be4eef1b616322ac3a10e8cea716a6106114de409923e6e49",
+      "model_inputs": "5046be33c97852fb1a6d4ec3a0fde1c1e55ee6f4a51a867acead3b1172b9562c",
+      "configure": "d9a73405d807610846f0d38fc2759ff03bac70389305778eb69aae3fd5cb9371",
+      "compute_route_cpu": "ed7feb7907d64520a150519c6be660a4332fc6cabe8201f24526164961072a50",
+      "graph_route_cpu": "033aee92b9034f2f46062029ed479ebfc9a8aa505ef8a35400b452b0701cd6e0"
+    },
+    "owner_suites": {
+      "compute_route_cpu": "1/1 CTest executable PASS in 66.90 s",
+      "graph_route_cpu": "2/2 CTest executables PASS in 67.12 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CPU route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-fidelity-gguf-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "W1-WIN-RTX4070",
+    "system": "Windows 11",
+    "architecture": "AMD64",
+    "cpu": "13th Gen Intel Core i9-13900K",
+    "compiler": "MSVC 19.50.35728"
+  }
+}
