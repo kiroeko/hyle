@@ -27,6 +27,7 @@ namespace c = hyle::compute;
 namespace cuda = hyle::compute::cuda;
 namespace mem = hyle::mem;
 using BF16 = hyle::simd::bfloat16_t;
+using F16 = hyle::simd::float16_t;
 
 c::TensorDesc dense(c::DataType type,
                     std::initializer_list<std::int64_t> shape) {
@@ -184,7 +185,74 @@ TEST(CudaDefaultCompute,
 }
 
 TEST(CudaDefaultCompute,
-     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+     D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays) {
+  constexpr auto hidden = d5_qwen35_fixture::kHidden;
+  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
+  constexpr std::int64_t tokens = 2;
+  const auto table_desc = dense(c::DataType::kFloat16, {rows, hidden});
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto output_desc = dense(c::DataType::kFloat16, {tokens, hidden});
+  const std::array input_descs{table_desc, ids_desc};
+  const std::array output_descs{output_desc};
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x0108);
+
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto call = make_call(context, resource, c::Operation(c::Gather{}),
+                        input_descs, output_descs, workload);
+  EXPECT_EQ(call.prepared.provider().id, c::cuda_native::kCcclProviderId);
+  EXPECT_EQ(call.prepared.workload(), workload);
+
+  const auto source = d5_gguf_test::values(rows, hidden, 61);
+  std::vector<F16> table_values(source.size());
+  std::vector<float> decoded(source.size());
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    table_values[i] = half_test::encode<F16>(source[i]);
+    decoded[i] = static_cast<float>(half_test::decode(table_values[i]));
+  }
+  auto table_buffer = values_buffer<F16>(resource, table_values);
+  auto ids_buffer = output_buffer(resource, ids_desc);
+  auto result_buffer = output_buffer(resource, output_desc);
+  const std::array inputs{
+      c::ConstTensorView::create(table_desc, table_buffer.view()).value(),
+      c::ConstTensorView::create(ids_desc, ids_buffer.view()).value()};
+  const std::array outputs{
+      c::TensorView::create(output_desc, result_buffer.view()).value()};
+  auto &invocation = call.invocation;
+  auto queue = context.create_queue().value();
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 5}}, {{6, 2}}}};
+  for (const auto &selection : selections) {
+    ASSERT_TRUE(
+        ids_buffer.view().write(std::as_bytes(std::span(selection))).ok());
+    auto done = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<F16>(result_buffer);
+    const auto expected =
+        d5_gguf_test::selected_rows(decoded, hidden, selection);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      half_test::expect_near(actual[i], expected[i]);
+  }
+
+  const auto before_failure = read_bytes(result_buffer);
+  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
+  auto failed = invocation.submit(queue, inputs, outputs);
+  ASSERT_TRUE(failed) << failed.error().message();
+  EXPECT_FALSE(failed->wait().ok());
+  EXPECT_EQ(read_bytes(result_buffer), before_failure);
+}
+
+template <std::size_t N>
+void run_quantized_projections(
+    const c::ModelArtifactProfileDescription &profile,
+    const std::array<d5_gguf_test::Qwen35Projection, N> &cases) {
   d5_gguf_test::QuantizerCleanup cleanup;
   auto context = cuda::create_context().value();
   auto memory =
@@ -192,7 +260,7 @@ TEST(CudaDefaultCompute,
   const auto resource = memory.ref();
   auto queue = context.create_queue().value();
 
-  for (const auto &test : d5_gguf_test::kQwen35PrimaryProjectionCases) {
+  for (const auto &test : cases) {
     SCOPED_TRACE(test.tensor);
     const auto input_desc = dense(c::DataType::kFloat32, {1, test.reduction});
     const auto weight_desc =
@@ -203,8 +271,7 @@ TEST(CudaDefaultCompute,
     const std::array input_descs{input_desc, weight_desc};
     const std::array output_descs{output_desc};
     const auto workload = d5_qwen35_fixture::workload(
-        d5_qwen35_fixture::kPrimaryGgufProfile,
-        c::WorkloadPhase::kDecode, test.region);
+        profile, c::WorkloadPhase::kDecode, test.region);
     auto call = make_call(context, resource, c::Operation(c::MatMul{}),
                           input_descs, output_descs, workload);
     EXPECT_EQ(call.prepared.provider().id, c::ggml_cuda::kProviderId);
@@ -212,8 +279,8 @@ TEST(CudaDefaultCompute,
 
     const auto physical =
         d5_gguf_test::values(test.columns, test.reduction, test.seed);
-    const auto packed = d5_gguf_test::pack(
-        test.type, physical, test.columns, test.reduction,
+    const auto packed =
+        d5_gguf_test::pack(test.type, physical, test.columns, test.reduction,
         weight_desc.required_bytes().value());
     auto activation_values =
         d5_gguf_test::activation(test.reduction, test.seed);
@@ -221,7 +288,8 @@ TEST(CudaDefaultCompute,
     auto weight_buffer = bytes_buffer(resource, packed.bytes);
     auto result_buffer = output_buffer(resource, output_desc);
     const std::array inputs{
-        c::ConstTensorView::create(input_desc, activation_buffer.view()).value(),
+        c::ConstTensorView::create(input_desc, activation_buffer.view())
+            .value(),
         c::ConstTensorView::create(weight_desc, weight_buffer.view()).value()};
     const std::array outputs{
         c::TensorView::create(output_desc, result_buffer.view()).value()};
@@ -236,10 +304,97 @@ TEST(CudaDefaultCompute,
       }
       run(call, queue, inputs, outputs);
       const auto actual = half_test::read<float>(result_buffer);
-      const auto expected =
-          d5_gguf_test::matmul(activation_values, packed.decoded, test.columns,
-                               test.reduction);
+      const auto expected = d5_gguf_test::matmul(
+          activation_values, packed.decoded, test.columns, test.reduction);
       d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+    }
+  }
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(d5_qwen35_fixture::kPrimaryGgufProfile,
+                            d5_gguf_test::kQwen35PrimaryProjectionCases);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay) {
+  run_quantized_projections(
+      d5_qwen35_fixture::kFidelityGgufProfile,
+      d5_gguf_test::kQwen35FidelityQuantizedProjectionCases);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay) {
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto queue = context.create_queue().value();
+
+  for (const auto &test : d5_gguf_test::kQwen35FidelityF16ProjectionCases) {
+    SCOPED_TRACE(test.tensor);
+    const auto input_desc = dense(c::DataType::kFloat16, {1, test.reduction});
+    const auto stored_weight_desc =
+        dense(c::DataType::kFloat16, {test.columns, test.reduction});
+    const auto weight_desc = stored_weight_desc.transposed().value();
+    const auto output_desc = dense(c::DataType::kFloat16, {1, test.columns});
+    const std::array input_descs{input_desc, weight_desc};
+    const std::array output_descs{output_desc};
+    const auto workload =
+        d5_qwen35_fixture::workload(d5_qwen35_fixture::kFidelityGgufProfile,
+                                    c::WorkloadPhase::kDecode, test.region);
+    auto call = make_call(context, resource, c::Operation(c::MatMul{}),
+                          input_descs, output_descs, workload);
+    expect_mature(call, workload);
+
+    const auto weight_source =
+        d5_gguf_test::values(test.columns, test.reduction, test.seed);
+    std::vector<F16> weight_values(weight_source.size());
+    std::vector<float> decoded_weights(weight_source.size());
+    for (std::size_t i = 0; i < weight_values.size(); ++i) {
+      weight_values[i] = half_test::encode<F16>(weight_source[i]);
+      decoded_weights[i] =
+          static_cast<float>(half_test::decode(weight_values[i]));
+    }
+    auto activation_source =
+        d5_gguf_test::activation(test.reduction, test.seed);
+    std::vector<F16> activation_values(activation_source.size());
+    std::vector<float> decoded_activation(activation_source.size());
+    const auto encode_activation = [&] {
+      for (std::size_t i = 0; i < activation_values.size(); ++i) {
+        activation_values[i] = half_test::encode<F16>(activation_source[i]);
+        decoded_activation[i] =
+            static_cast<float>(half_test::decode(activation_values[i]));
+      }
+    };
+    encode_activation();
+    auto activation_buffer = values_buffer<F16>(resource, activation_values);
+    auto weight_buffer = values_buffer<F16>(resource, weight_values);
+    auto result_buffer = output_buffer(resource, output_desc);
+    const std::array inputs{
+        c::ConstTensorView::create(input_desc, activation_buffer.view())
+            .value(),
+        c::ConstTensorView::create(weight_desc, weight_buffer.view()).value()};
+    const std::array outputs{
+        c::TensorView::create(output_desc, result_buffer.view()).value()};
+
+    for (int replay = 0; replay < 2; ++replay) {
+      if (replay != 0) {
+        for (auto &value : activation_source)
+          value = value * -0.75F + 0.001F;
+        encode_activation();
+        ASSERT_TRUE(activation_buffer.view()
+                        .write(std::as_bytes(std::span(activation_values)))
+                        .ok());
+      }
+      run(call, queue, inputs, outputs);
+      const auto actual = half_test::read<F16>(result_buffer);
+      const auto expected = d5_gguf_test::matmul(
+          decoded_activation, decoded_weights, test.columns, test.reduction);
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        half_test::expect_near(actual[i], expected[i]);
     }
   }
 }

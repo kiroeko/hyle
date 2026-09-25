@@ -140,25 +140,25 @@ d5_gguf_test::Packed packed(c::GgufQuantizedType type, std::int64_t columns,
                             description.required_bytes().value());
 }
 
-TEST(CudaDefaultCompute,
-     D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay) {
+void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
+                         c::GgufQuantizedType gate_type,
+                         c::GgufQuantizedType down_type) {
   d5_gguf_test::QuantizerCleanup cleanup;
   constexpr std::int64_t hidden = d5_qwen35_fixture::kHidden;
   constexpr std::int64_t expanded = d5_qwen35_fixture::kFfnHidden;
   const auto activation_desc = dense(1, hidden);
   const auto scale_desc = vector(hidden);
   const auto gate_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
-                                 c::DataType::kFloat32, hidden, expanded)
+      c::gguf_weight_description(gate_type, c::DataType::kFloat32, hidden,
+                                 expanded)
           .value();
   const auto down_weight_desc =
-      c::gguf_weight_description(c::GgufQuantizedType::kQ6K,
-                                 c::DataType::kFloat32, expanded, hidden)
+      c::gguf_weight_description(down_type, c::DataType::kFloat32, expanded,
+                                 hidden)
           .value();
   const auto expanded_desc = dense(1, expanded);
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x020f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x020f);
 
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
@@ -195,12 +195,12 @@ TEST(CudaDefaultCompute,
   for (const auto *call : {&norm, &gate, &up, &gated, &down})
     EXPECT_EQ(call->prepared.workload(), workload);
 
-  const auto gate_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                  gate_weight_desc, 31);
-  const auto up_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
-                                gate_weight_desc, 37);
-  const auto down_packed = packed(c::GgufQuantizedType::kQ6K, hidden, expanded,
-                                  down_weight_desc, 41);
+  const auto gate_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 31);
+  const auto up_packed =
+      packed(gate_type, expanded, hidden, gate_weight_desc, 37);
+  const auto down_packed =
+      packed(down_type, hidden, expanded, down_weight_desc, 41);
   const auto scale_values = d5_qwen35_gguf_fragment::scale(hidden);
   auto activation_values = d5_gguf_test::activation(hidden, 43);
 
@@ -310,7 +310,19 @@ TEST(CudaDefaultCompute,
 }
 
 TEST(CudaDefaultCompute,
-     D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls) {
+     D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kPrimaryGgufProfile,
+                      c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay) {
+  run_qwen35_gguf_ffn(d5_qwen35_fixture::kFidelityGgufProfile,
+                      c::GgufQuantizedType::kQ8_0, c::GgufQuantizedType::kQ8_0);
+}
+
+void run_qwen35_gguf_attention(
+    const c::ModelArtifactProfileDescription &profile) {
   constexpr std::int64_t query_heads = 8;
   constexpr std::int64_t kv_heads = 2;
   constexpr std::int64_t depth = 256;
@@ -323,8 +335,7 @@ TEST(CudaDefaultCompute,
           .value();
   const auto frequency_desc = vector(depth / 2);
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x040f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x040f);
   auto context = cuda::create_context().value();
   auto memory =
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
@@ -491,7 +502,17 @@ TEST(CudaDefaultCompute,
   }
 }
 
-TEST(CudaDefaultCompute, D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls) {
+TEST(CudaDefaultCompute,
+     D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls) {
+  run_qwen35_gguf_attention(d5_qwen35_fixture::kPrimaryGgufProfile);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35FidelityGgufAttentionSemanticsUseMaturePreparedCalls) {
+  run_qwen35_gguf_attention(d5_qwen35_fixture::kFidelityGgufProfile);
+}
+
+void run_qwen35_gguf_gdn(const c::ModelArtifactProfileDescription &profile) {
   constexpr std::size_t heads = d5_qwen35_fixture::kGdnHeads;
   constexpr std::size_t depth = d5_qwen35_fixture::kGdnDepth;
   constexpr std::size_t channels = d5_qwen35_fixture::kConvChannels;
@@ -509,8 +530,7 @@ TEST(CudaDefaultCompute, D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls) {
                                   static_cast<std::int64_t>(depth),
                                   static_cast<std::int64_t>(depth)});
   const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x050f);
+      d5_qwen35_fixture::workload(profile, c::WorkloadPhase::kDecode, 0x050f);
   auto context = cuda::create_context().value();
   auto memory =
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
@@ -619,6 +639,14 @@ TEST(CudaDefaultCompute, D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls) {
       EXPECT_NE(actual_scores, previous_scores);
     previous_scores = actual_scores;
   }
+}
+
+TEST(CudaDefaultCompute, D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls) {
+  run_qwen35_gguf_gdn(d5_qwen35_fixture::kPrimaryGgufProfile);
+}
+
+TEST(CudaDefaultCompute, D5Qwen35FidelityGgufGdnStateUsesMaturePreparedCalls) {
+  run_qwen35_gguf_gdn(d5_qwen35_fixture::kFidelityGgufProfile);
 }
 
 } // namespace
