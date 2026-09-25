@@ -122,6 +122,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, AppleQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+
 TEST(AppleRecurrent, StridedMlxInputAndPreparationDiagnostics) {
   apple_test::Recurrent fixture(5, 2, 32);
   std::vector<float> transposed(fixture.data[0].size());
