@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "candidate": "051b3e061627661ac020e7a6217154677e69ddae",
+  "candidate_tree": "d6b0a1c5bf1bf66a7ccac012dc5718f9c176ac5a",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
+    "route": "cpu",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CUDA, Apple, or Vulkan cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "model_repository": "Qwen/Qwen3.8-27B",
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "artifact_repository": "unsloth/Qwen3.8-27B-GGUF",
+    "artifact_revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "variant": "UD-Q4_K_M",
+    "format_family": "gguf",
+    "tensor_count": 866,
+    "logical_parameters": 27320697856,
+    "header_manifest_sha256": "380ddd71a9afe228097df16cfbbc8fd33f2707fe562ea9f695f25eb40b01e774",
+    "audit": "docs/implementation/tasks/compute/llm-moe-model-weight-operator-audit.md",
+    "fixture": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+    "payload": "deterministic nonzero format-valid GGUF blocks at exact model reduction/output widths; token rows are bounded and no checkpoint bytes are committed",
+    "oracle": "stored blocks are decoded independently of route execution, then compared with host row-selection or float matmul; semantic fragments use separate host calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "storage": {
+      "embedding": "token_embd.weight Q4_K [5120,248320], exercised with bounded rows and exact width",
+      "projection_types": [
+        "Q3_K",
+        "IQ3_S",
+        "IQ4_NL",
+        "IQ4_XS",
+        "Q4_K",
+        "Q5_K",
+        "Q6_K",
+        "Q8_0"
+      ],
+      "mtp": "blk.64.nextn.eh_proj.weight Q6_K [10240,5120]"
+    },
+    "providers": [
+      "ggml CPU 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "oneDNN 3.13.2 primitives and graph regions"
+    ],
+    "provider_assertion": "every prepared call and compiled graph reports a fixed mature provider; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, gate, or state; routing remains cold-bound",
+    "failure": "an invalid embedding index fails without changing the previously published output"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "CpuDefaultDirect.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "CpuDefaultDirect.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay",
+        "D5OfficialAndPrimaryGguf/CpuQwen38Profiles.*/1",
+        "D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles.*/1"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "CpuDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "CpuDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay",
+        "D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.*/1",
+        "D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles.*/1"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Q4_K embedding at exact hidden width plus boundary semantics"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "exact-width FFN semantics plus mixed GGUF FFN storage"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "exact projection widths across stored subtypes"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "partial RoPE, 24/4 GQA, output gate, and quantized attention projections"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "tests": "K16/V48 grouped-head Gated DeltaNet and recurrent projection storage"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "MTP concat semantics and exact Q6_K 10240-to-5120 projection"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "normalization, cast, and projection boundaries"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "separate LM-head semantics and failure publication; Q6_K storage subtype is exercised natively"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "53fada0987b16f5df5da98a622069b3b6fe4b074",
+    "verdict": "PASS",
+    "selected": 6,
+    "skipped_or_reused": 127,
+    "werror": true,
+    "gates": {
+      "docs": "36174f9a0b901d4d8d258d30f9a9bf5fae063262669883d8bfa3dea399aa3878",
+      "closure": "68a78d7f82054474379e614af9667e1f3c61e6d6e4007d2a7f631f74bd233a1c",
+      "model_inputs": "dcb321e6cb3780b00703f01aadfcb95b7c7ec9e920c95bb46f389c2ad30a0cab",
+      "configure": "50c6f4de91863fc4e61af90f423eda04e7f47c4bad1c50bdb0afc69b5fef632b",
+      "compute_route_cpu": "74f6c7d6207a1acd0471f4b50772a948ad48922b5bc9373e7a350ee5ce37ff17",
+      "graph_route_cpu": "eae4cb6ccfa445a92a2b1af65ffc09bf531d0e4aa28bfb54529e3fbc0f2bc88e"
+    },
+    "owner_suites": {
+      "compute_route_cpu": "complete label PASS in 63.21 s",
+      "graph_route_cpu": "route and executor labels PASS in 63.67 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CPU route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-primary-gguf-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "W1-WIN-RTX4070",
+    "system": "Windows 11",
+    "architecture": "AMD64",
+    "cpu": "13th Gen Intel Core i9-13900K",
+    "compiler": "MSVC 19.50.35728"
+  }
+}
