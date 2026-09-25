@@ -702,6 +702,13 @@ Scan 在匹配阶段整体不可达，最后的 CUDA tensor Provider 只返回�
 3. 只运行 selector 指向的 Provider/Direct/Graph factor、输入工具与公共检查；本规则没有更改数学或
    公开 API，本 partial 不启动 D5-A5/A6。若 13.4 库实际执行不合格，则撤销扩域并记录精确拒绝。
 
+**CANDIDATE（`05b374e61`）**：有限 FIX 已实现，RTX 4070 / SM 8.9 上 Toolkit 13.3 编译产物
+与驱动提供的 13.4 runtime 组合实际运行通过。CCCL owner 定向 10/10、全套 42/42；CUDA Direct
+全套 53/53、Graph 全套 70/70，均无跳过。Qwen3.8-2.4T 官方 BF16 的 Direct/Graph 各 5/5
+片段通过；既有 27B Gather 也恢复。证据见
+[Qwen3.8-2.4T CUDA batch](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-bf16-cuda-batch/README.md)。
+这仍是局部片段证据：R10 与 R05 完整链、各路线 profile 交付和 P1 未签，ledger 维持 48/176。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

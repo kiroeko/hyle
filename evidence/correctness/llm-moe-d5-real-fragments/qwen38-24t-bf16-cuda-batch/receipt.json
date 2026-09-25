@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "candidate": "05b374e616ff9d9a8e64359d9a869a8fb7f69bf5",
+  "candidate_tree": "ecf57a1f5a3f132562596c93d1d7a8d332cbff50",
+  "verdict": "PARTIAL_RUN_PASS_CUDA_FRAGMENTS_ONLY",
+  "profile": "qwen38_24t:official:official-bf16",
+  "source_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+  "route": "cuda",
+  "entries": ["direct", "graph"],
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "compiled_toolkit_version": 13030,
+    "runtime_version": 13040,
+    "driver_api_version": 13040,
+    "cub_version": 300304,
+    "compiler": "MSVC 19.50 with /WX"
+  },
+  "change": "CCCL runtime qualification exact 13030 to inclusive range 13030..13040; other predicates unchanged",
+  "tests": {
+    "cccl_targeted": "10/10 PASS",
+    "cccl_owner_complete": "42/42 PASS, no skips",
+    "cuda_direct_complete": "53/53 PASS, no skips; official 2.4T subset 5/5",
+    "cuda_graph_complete": "70/70 PASS, no skips; official 2.4T subset 5/5",
+    "module_closure": "PASS",
+    "docs": "PASS",
+    "diff_check": "PASS"
+  },
+  "fragment_shapes": {
+    "hidden": 8192,
+    "shared_expert_intermediate": 2048,
+    "query_heads": 64,
+    "kv_heads": 4,
+    "head_depth": 256,
+    "gdn_key_heads": 16,
+    "gdn_value_heads": 128,
+    "gdn_head_depth": 128,
+    "mtp_input": 16384,
+    "token_capacity": 2
+  },
+  "not_claimed": [
+    "R10 router/dispatch/combine",
+    "complete R05 model projection/storage chain",
+    "complete profile cells",
+    "D5-A5 route-level profile delivery",
+    "D5-A6 P1",
+    "full-model inference"
+  ],
+  "ledger": {
+    "changed_cells": 0,
+    "run_pass": 48,
+    "validation_not_run": 128
+  },
+  "compute_graph_implementation_lines_excluding_tests": 57938
+}
