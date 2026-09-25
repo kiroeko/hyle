@@ -54,6 +54,24 @@ inline constexpr c::ModelArtifactProfileDescription kPrimaryGgufProfile{
         "380ddd71a9afe228097df16cfbbc8fd33f2707fe562ea9f695f25eb40b01e774",
     .format_family = "gguf"};
 
+// Fixed one-shard high-fidelity deployment artifact. The manifest digest is
+// SHA-256 over the pinned repository/revision/variant, logical counts and all
+// 866 retained tensor name/shape/type rows in canonical JSON form.
+inline constexpr c::ModelArtifactProfileDescription kFidelityGgufProfile{
+    .model_publisher = "Qwen",
+    .model_repository = "Qwen/Qwen3.8-27B",
+    .model_family = "qwen3.8",
+    .model_name = "Qwen3.8-27B",
+    .model_revision = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    .configuration_digest =
+        "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    .artifact_repository = "unsloth/Qwen3.8-27B-GGUF",
+    .artifact_revision = "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    .variant = "UD-Q8_K_XL",
+    .manifest_digest =
+        "c447a6903da1d21afa4fd0fbcfe9e1e160d4324620bf2bea58fa5d56f05f829c",
+    .format_family = "gguf"};
+
 inline c::WorkloadContext
 workload(const c::ModelArtifactProfileDescription &profile,
          c::WorkloadPhase phase) {

@@ -185,6 +185,15 @@ TEST(CpuDefaultDirect,
 }
 
 TEST(CpuDefaultDirect,
+     D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays) {
+  run_quantized_embedding(
+      d5_qwen38_gdn_fixture::kFidelityGgufProfile,
+      d5_qwen38_official_fixture::kHidden,
+      d5_qwen38_official_fixture::kEmbeddingRows,
+      c::GgufQuantizedType::kQ8_0, 0x0108, 23);
+}
+
+TEST(CpuDefaultDirect,
      D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays) {
   constexpr auto hidden = d5_qwen35_fixture::kHidden;
   constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;

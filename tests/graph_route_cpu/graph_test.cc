@@ -392,6 +392,10 @@ INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, CpuGraphQwen38GdnProfiles,
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, CpuGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
 #endif
 
 #if defined(HYLE_GRAPH_ONEDNN) || defined(HYLE_COMPUTE_GGML_CPU)

@@ -129,6 +129,13 @@ TEST(CpuDefaultGraph,
 }
 
 TEST(CpuDefaultGraph,
+     D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay) {
+  run_quantized_projections(
+      d5_qwen38_gdn_fixture::kFidelityGgufProfile,
+      d5_gguf_test::kQwen38FidelityQuantizedProjectionCases);
+}
+
+TEST(CpuDefaultGraph,
      D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay) {
   run_quantized_projections(
       d5_qwen35_fixture::kFidelityGgufProfile,

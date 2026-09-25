@@ -562,6 +562,10 @@ INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, CpuQwen38GdnProfiles,
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, CpuQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
 #endif
 #endif
 

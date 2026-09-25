@@ -140,6 +140,23 @@ inline constexpr std::array kQwen38PrimaryProjectionCases{
     Qwen35Projection{"blk.0.ssm_alpha.weight", c::GgufQuantizedType::kQ8_0,
                      5120, 48, 0x0503, 97}};
 
+// Exact Q8_0 projection roles from the same fixed repository revision's
+// Qwen3.8-27B UD-Q8_K_XL artifact. Full-attention Q/K/V, the LM head and MTP
+// projection remain BF16 and are exercised by the profile semantic chains.
+inline constexpr std::array kQwen38FidelityQuantizedProjectionCases{
+    Qwen35Projection{"blk.0.ffn_up.weight", c::GgufQuantizedType::kQ8_0, 5120,
+                     17408, 0x0208, 101},
+    Qwen35Projection{"blk.0.ffn_down.weight", c::GgufQuantizedType::kQ8_0,
+                     17408, 5120, 0x0308, 103},
+    Qwen35Projection{"blk.0.attn_qkv.weight", c::GgufQuantizedType::kQ8_0,
+                     5120, 10240, 0x0408, 107},
+    Qwen35Projection{"blk.3.attn_output.weight", c::GgufQuantizedType::kQ8_0,
+                     6144, 5120, 0x0408, 109},
+    Qwen35Projection{"blk.0.ssm_alpha.weight", c::GgufQuantizedType::kQ8_0,
+                     5120, 48, 0x0508, 113},
+    Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0,
+                     6144, 5120, 0x0508, 127}};
+
 // Exact Q8_0 representatives from the same fixed repository revision's
 // UD-Q8_K_XL artifact.  The artifact name is not treated as a global tensor
 // type: the F16 embedding and F16 projection roles are described separately
