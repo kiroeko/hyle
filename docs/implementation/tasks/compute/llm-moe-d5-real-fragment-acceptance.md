@@ -664,6 +664,17 @@ dtype 映射遗漏，最小补齐后实际编译运行 `kernel_mul_mv_id_bf16_f3
 均已通过。R01-R05、R10、R13-R15、D5-A5 各路线 profile 三交付与 P1 尚未完成，因此 ledger 仍为
 48 个 `RUN_PASS`、128 个 `VALIDATION_NOT_RUN`。
 
+### D5-F15：Qwen3.8-2.4T 官方 BF16 CPU 片段批量验收
+
+tests-only candidate `041d9e63a` 把已验 Qwen3.8 CPU Direct/Graph 参数化 consumer 复用到官方
+2.4T 的 H=8192、shared expert N=2048、GQA 64/4×256、GDN K16/V128×128 和 MTP 16384 输入。
+普通入口分别运行 embedding/投影/head、shared FFN、RoPE/GQA/output gate、MTP 和 GDN 状态更新，
+两次变化输入复用准备/编译结果并对照独立 oracle。现有 R11 BF16 grouped expert 收据继续独立有效。
+Windows CPU Direct 全套 54/54、Graph 全套 69/69，无跳过；证据见
+[Qwen3.8-2.4T CPU batch](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-bf16-cpu-batch/README.md)。
+R10 路由/派发/合并和 R05 的完整模型投影/存储边界仍待验；本 partial 不改变 ledger 48/176，
+不代签各路线三交付或 P1。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

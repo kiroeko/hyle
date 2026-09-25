@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "candidate": "041d9e63a",
+  "candidate_tree": "535d0864e5f67caefe4cbe0fbd164db1f4228a68",
+  "verdict": "PARTIAL_RUN_PASS_CPU_FRAGMENTS_ONLY",
+  "profile": "qwen38_24t:official:official-bf16",
+  "source_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+  "route": "cpu",
+  "entries": ["direct", "graph"],
+  "fragment_shapes": {
+    "hidden": 8192,
+    "shared_expert_intermediate": 2048,
+    "query_heads": 64,
+    "kv_heads": 4,
+    "head_depth": 256,
+    "gdn_key_heads": 16,
+    "gdn_value_heads": 128,
+    "gdn_head_depth": 128,
+    "mtp_input": 16384,
+    "token_capacity": 2,
+    "selected_embedding_rows": 7
+  },
+  "tests": {
+    "direct": "D5Official24T/CpuQwen38Profiles.* 4/4 and D5Official24T/CpuQwen38GdnProfiles.* 1/1; complete factor 54/54 PASS",
+    "graph": "D5Official24T/CpuGraphQwen38Profiles.* 4/4 and D5Official24T/CpuGraphQwen38GdnProfiles.* 1/1; complete factor 69/69 PASS",
+    "inputs_tool": "13/13 PASS",
+    "module_closure": "PASS; 57 components, schema 4",
+    "docs": "PASS; 585 Markdown files, 2624 relative links",
+    "diff_check": "PASS"
+  },
+  "provider_boundary": "ordinary profile-bound paths assert each prepared step is ggml CPU or oneDNN; R05 GatedDeltaNet is asserted as ggml CPU",
+  "replay": "two changing inputs per prepared/compiled fragment; R05 state output compared to an independent oracle",
+  "not_claimed": [
+    "R10 router/dispatch/combine",
+    "complete R05 model projection/storage chain",
+    "complete profile cells",
+    "D5-A5 route-level profile delivery",
+    "D5-A6 P1",
+    "full-model inference"
+  ],
+  "ledger": {
+    "changed_cells": 0,
+    "run_pass": 48,
+    "validation_not_run": 128
+  },
+  "compute_graph_implementation_lines_excluding_tests": 57938
+}
