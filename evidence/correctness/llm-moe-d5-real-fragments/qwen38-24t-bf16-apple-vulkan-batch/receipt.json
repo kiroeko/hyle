@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "candidate": "10c878305d939f98ef8d81a8e5d6cf4eda779c2c",
+  "candidate_tree": "3668e88fa0b0a050e90d5293fe552d029883062e",
+  "verdict": "PARTIAL_RUN_PASS_APPLE_VULKAN_FRAGMENTS_ONLY",
+  "profile": "qwen38_24t:official:official-bf16",
+  "source_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+  "fragment_shapes": {
+    "hidden": 8192,
+    "shared_expert_intermediate": 2048,
+    "query_heads": 64,
+    "kv_heads": 4,
+    "head_depth": 256,
+    "gdn_key_heads": 16,
+    "gdn_value_heads": 128,
+    "gdn_head_depth": 128,
+    "mtp_input": 16384
+  },
+  "tests": {
+    "vulkan_direct": "5/5 new profile subset; complete factor 167/167 PASS, no skips",
+    "vulkan_graph": "5/5 new profile subset; complete factor 78/78 PASS, no skips",
+    "apple_direct": "5/5 new profile subset; complete factor 83/83 PASS, no skips",
+    "apple_graph": "5/5 new profile subset; complete factor 56/56 PASS, no skips",
+    "module_closure": "PASS, 57 components, schema 4",
+    "docs": "PASS, 586 Markdown files, 2625 relative links",
+    "diff_check": "PASS"
+  },
+  "selector": {
+    "windows": "READY: docs, closure, configure, compute_route_vulkan, graph_route_vulkan; 127 skipped/reused",
+    "macbook_air": "READY: docs, closure, configure, compute_route_apple, compute_route_vulkan, graph_route_apple, graph_route_vulkan; 125 skipped/reused",
+    "platform_execution": "Vulkan factors on Windows RTX 4070; Apple factors on MacBook Air M4"
+  },
+  "replay": "four profile fragments use changing inputs; GDN repeats a bound input and checks its independent state oracle",
+  "not_claimed": [
+    "R10 router/dispatch/combine",
+    "complete R05 model projection/storage chain and changing-input state replay",
+    "complete profile cells",
+    "D5-A5 route-level profile delivery",
+    "D5-A6 P1",
+    "full-model inference"
+  ],
+  "ledger": {
+    "changed_cells": 0,
+    "run_pass": 48,
+    "validation_not_run": 128
+  },
+  "compute_graph_implementation_lines_excluding_tests": 57938
+}

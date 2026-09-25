@@ -709,6 +709,19 @@ Scan 在匹配阶段整体不可达，最后的 CUDA tensor Provider 只返回�
 [Qwen3.8-2.4T CUDA batch](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-bf16-cuda-batch/README.md)。
 这仍是局部片段证据：R10 与 R05 完整链、各路线 profile 交付和 P1 未签，ledger 维持 48/176。
 
+### D5-F17：Qwen3.8-2.4T 官方 BF16 Apple/Vulkan 形状复用
+
+tests-only candidate `10c878305` 将既有 Qwen3.8 Apple/Vulkan Direct/Graph profile consumer
+参数化，加入官方 2.4T 的 H=8192、shared expert N=2048、GQA 64/4×256、MTP 16384 和
+GDN K16/V128×128；仍复用同一普通入口、成熟 Provider 与独立 oracle。各路线此前的 R11 grouped
+expert 收据独立有效。Vulkan RTX 4070 的新形状 Direct/Graph 各 5/5，完整 factor 167/167、
+78/78；MacBook Air M4 的新形状 Direct/Graph 各 5/5，完整 factor 83/83、56/56，均无跳过。
+Windows selector 选择 Vulkan 两个 factor；Apple 验证副本的 selector 选择 Apple 和 Vulkan factor，
+由两台适用平台分别执行。证据见
+[Qwen3.8-2.4T Apple/Vulkan batch](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-bf16-apple-vulkan-batch/README.md)。
+R10 router/dispatch/combine 与 R05 完整模型投影/存储链未由这批片段覆盖，ledger 仍为 48/176；
+不代签 D5-A5 三交付或 D5-A6 P1。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
