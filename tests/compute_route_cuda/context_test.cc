@@ -1,6 +1,7 @@
 #include "../compute/workload_fixture.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "ffn_support.h"
 #include "hyle/compute/providers/flashinfer.h"
@@ -205,10 +206,12 @@ TEST(CudaDefaultCompute, D5RealQwenProjectionUsesExactProfileAndReplays) {
 
 class CudaQwen38GdnProfiles
     : public ::testing::TestWithParam<
-          const compute::ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(CudaQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
-  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const auto &profile_case = *GetParam();
+  const d5_qwen38_gdn_fixture::Fixture fixture(
+      0, profile_case.gdn_key_heads, profile_case.gdn_value_heads);
   auto owner = cuda::create_context().value();
   auto memory =
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
@@ -243,7 +246,7 @@ TEST_P(CudaQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
       compute::TensorView::create(fixture.outputs[1], output_storage[1].view())
           .value()};
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      *GetParam(), compute::WorkloadPhase::kDecode);
+      *profile_case.profile, compute::WorkloadPhase::kDecode);
   auto prepared = compute::prepare(owner,
                                    compute::Operation(compute::GatedDeltaNet{}),
                                    inputs, outputs, resource, workload);
@@ -275,12 +278,16 @@ TEST_P(CudaQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, CudaQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, CudaQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, CudaQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
 TEST(CudaDefaultCompute, RejectsInvalidDeviceAndUnsupportedOperations) {
   EXPECT_FALSE(cuda::create_context({.device_ordinal = SIZE_MAX}).has_value());

@@ -29,7 +29,7 @@ struct Invocation final {
 inline constexpr std::array kQualificationPredicates{
     RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
     RouteFactPredicate::number(route_fact::kArchitectureMinor, 9),
-    RouteFactPredicate::number(route_fact::kRuntimeVersion, 13030),
+    RouteFactPredicate::range(route_fact::kRuntimeVersion, 13030, 13040),
     RouteFactPredicate::number(route_fact::kToolkitVersion, 13030)};
 
 ProviderRuntimeProperties

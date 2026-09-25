@@ -3,6 +3,7 @@
 #include "../compute/workload_fixture.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_route_cuda/ffn_support.h"
 #include "hyle/compute/providers/ggml_cuda.h"
@@ -193,10 +194,12 @@ TEST(CudaDefaultGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
 
 class CudaGraphQwen38GdnProfiles
     : public ::testing::TestWithParam<
-          const compute::ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(CudaGraphQwen38GdnProfiles, GroupedHeadUsesOrdinaryGraphAndReplays) {
-  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const auto &profile_case = *GetParam();
+  const d5_qwen38_gdn_fixture::Fixture fixture(
+      0, profile_case.gdn_key_heads, profile_case.gdn_value_heads);
   auto builder = graph::GraphBuilder::create().value();
   std::array<graph::ValueId, 6> inputs;
   for (std::size_t port = 0; port < inputs.size(); ++port)
@@ -215,7 +218,7 @@ TEST_P(CudaGraphQwen38GdnProfiles, GroupedHeadUsesOrdinaryGraphAndReplays) {
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   const auto resource = memory.ref();
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      *GetParam(), compute::WorkloadPhase::kDecode);
+      *profile_case.profile, compute::WorkloadPhase::kDecode);
   auto compiled = graph::cuda::compile(logical, owner, resource,
                                        {.workload = workload});
   ASSERT_TRUE(compiled) << compiled.error().message();
@@ -273,12 +276,16 @@ TEST_P(CudaGraphQwen38GdnProfiles, GroupedHeadUsesOrdinaryGraphAndReplays) {
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, CudaGraphQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, CudaGraphQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, CudaGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
 struct FfnGraph final {
   graph::Graph logical;

@@ -9,6 +9,7 @@
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
@@ -27,6 +28,7 @@ namespace g = hyle::graph;
 namespace mem = hyle::mem;
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
+namespace qcase = d5_qwen38_profile_cases;
 using BF16 = hyle::simd::bfloat16_t;
 
 c::TensorDesc dense(c::DataType type,
@@ -85,31 +87,31 @@ void expect_near(std::span<const BF16> actual,
 }
 
 class CudaGraphQwen38Profiles
-    : public ::testing::TestWithParam<
-          const c::ModelArtifactProfileDescription *> {};
+    : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
 
 TEST_P(CudaGraphQwen38Profiles,
        D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
+  const auto &shape = *GetParam();
   constexpr std::int64_t tokens = 2;
   constexpr int projection_seed = 31;
   const auto table_desc =
-      dense(c::DataType::kBFloat16, {q::kEmbeddingRows, q::kHidden});
+      dense(c::DataType::kBFloat16, {q::kEmbeddingRows, shape.hidden});
   const auto head_desc = table_desc.transposed().value();
   const auto stored_projection_desc =
-      dense(c::DataType::kBFloat16, {q::kHidden, q::kHidden});
+      dense(c::DataType::kBFloat16, {shape.hidden, shape.hidden});
   const auto projection_desc = stored_projection_desc.transposed().value();
-  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {shape.hidden});
   const auto ids_desc = dense(c::DataType::kInt32, {tokens});
   const auto token_desc =
-      dense(c::DataType::kBFloat16, {tokens, q::kHidden});
+      dense(c::DataType::kBFloat16, {tokens, shape.hidden});
   const auto logits_desc =
       dense(c::DataType::kBFloat16, {tokens, q::kEmbeddingRows});
 
-  auto table_values = q::values(q::kEmbeddingRows * q::kHidden, 5);
-  auto head_values = q::values(q::kEmbeddingRows * q::kHidden, 7, 96.0);
-  auto scale_values = q::scales(q::kHidden, 3);
+  auto table_values = q::values(q::kEmbeddingRows * shape.hidden, 5);
+  auto head_values = q::values(q::kEmbeddingRows * shape.hidden, 7, 96.0);
+  auto scale_values = q::scales(shape.hidden, 3);
   auto projection_values = q::sparse_output_major_weight(
-      q::kHidden, q::kHidden, projection_seed);
+      shape.hidden, shape.hidden, projection_seed);
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   auto context =
@@ -161,7 +163,7 @@ TEST_P(CudaGraphQwen38Profiles,
           scale,
           c::ConstTensorView::create(scale_desc, scale_buffer.view()).value()}};
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x01030e0f);
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x01030e0f);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -214,23 +216,23 @@ TEST_P(CudaGraphQwen38Profiles,
     for (std::size_t token = 0; token < tokens; ++token) {
       const auto row_index = static_cast<std::size_t>(selected[token]);
       const auto row = std::span<const BF16>(table_values)
-                           .subspan(row_index * q::kHidden, q::kHidden);
+                           .subspan(row_index * shape.hidden, shape.hidden);
       const auto expected_normalized =
           q::rms_norm(row, scale_values, 1.0e-6);
-      std::vector<BF16> residual_values(q::kHidden);
-      std::vector<double> residual_expected(q::kHidden);
+      std::vector<BF16> residual_values(shape.hidden);
+      std::vector<double> residual_expected(shape.hidden);
       for (std::size_t i = 0; i < residual_values.size(); ++i) {
         residual_values[i] =
             q::encode(q::decode(row[i]) + expected_normalized[i]);
         residual_expected[i] = q::decode(residual_values[i]);
       }
-      expect_near(std::span(actual_residual).subspan(token * q::kHidden,
-                                                     q::kHidden),
+      expect_near(std::span(actual_residual).subspan(token * shape.hidden,
+                                                     shape.hidden),
                   residual_expected);
       const auto expected_projected = q::sparse_projection(
-          residual_values, q::kHidden, projection_seed);
+          residual_values, shape.hidden, projection_seed);
       expect_near(std::span(actual_projected)
-                      .subspan(token * q::kHidden, q::kHidden),
+                      .subspan(token * shape.hidden, shape.hidden),
                   expected_projected);
       const auto projected_bf16 = q::as_bf16(expected_projected);
       const auto expected_logits =
@@ -263,24 +265,25 @@ TEST_P(CudaGraphQwen38Profiles,
 
 TEST_P(CudaGraphQwen38Profiles,
        D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) {
+  const auto &shape = *GetParam();
   constexpr int seed = 41;
   const auto activation_desc =
-      dense(c::DataType::kBFloat16, {1, q::kHidden});
-  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+      dense(c::DataType::kBFloat16, {1, shape.hidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {shape.hidden});
   const auto stored_gate_desc =
-      dense(c::DataType::kBFloat16, {q::kFfnHidden, q::kHidden});
+      dense(c::DataType::kBFloat16, {shape.ffn_hidden, shape.hidden});
   const auto gate_desc = stored_gate_desc.transposed().value();
   const auto stored_down_desc =
-      dense(c::DataType::kBFloat16, {q::kHidden, q::kFfnHidden});
+      dense(c::DataType::kBFloat16, {shape.hidden, shape.ffn_hidden});
   const auto down_desc = stored_down_desc.transposed().value();
 
-  auto scale_values = q::scales(q::kHidden, 9);
+  auto scale_values = q::scales(shape.hidden, 9);
   auto gate_values =
-      q::sparse_output_major_weight(q::kFfnHidden, q::kHidden, seed);
+      q::sparse_output_major_weight(shape.ffn_hidden, shape.hidden, seed);
   auto up_values =
-      q::sparse_output_major_weight(q::kFfnHidden, q::kHidden, seed + 1);
+      q::sparse_output_major_weight(shape.ffn_hidden, shape.hidden, seed + 1);
   auto down_values =
-      q::sparse_output_major_weight(q::kHidden, q::kFfnHidden, seed + 2);
+      q::sparse_output_major_weight(shape.hidden, shape.ffn_hidden, seed + 2);
   auto context = g::cuda::create_context().value();
   auto memory =
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
@@ -329,7 +332,7 @@ TEST_P(CudaGraphQwen38Profiles,
           down_weight,
           c::ConstTensorView::create(down_desc, down_buffer.view()).value()}};
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0203);
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x0203);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -352,7 +355,7 @@ TEST_P(CudaGraphQwen38Profiles,
   auto queue = context.create_queue().value();
   ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
   for (int replay_seed : {3, 17}) {
-    const auto input = q::values(q::kHidden, replay_seed);
+    const auto input = q::values(shape.hidden, replay_seed);
     ASSERT_TRUE(activation_buffer.view()
                     .write(std::as_bytes(std::span(input)))
                     .ok());
@@ -360,7 +363,7 @@ TEST_P(CudaGraphQwen38Profiles,
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
     const auto actual = half_test::read<BF16>(output);
-    const auto expected = q::ffn(input, scale_values, seed);
+    const auto expected = q::ffn(input, scale_values, seed, shape.hidden, shape.ffn_hidden);
     expect_near(actual, expected, 0.025);
   }
 }
@@ -493,10 +496,11 @@ TEST(CudaGraphQwen38_24T,
 
 TEST_P(CudaGraphQwen38Profiles,
        D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
+  const auto &shape = *GetParam();
   const auto query_desc = dense(c::DataType::kBFloat16,
-                                {1, 1, q::kQueryHeads, q::kHeadDepth});
+                                {1, 1, shape.query_heads, q::kHeadDepth});
   const auto kv_desc = dense(c::DataType::kBFloat16,
-                             {1, 1, q::kKvHeads, q::kHeadDepth});
+                             {1, 1, shape.kv_heads, q::kHeadDepth});
   const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHeadDepth});
   const auto position_desc = dense(c::DataType::kInt32, {1});
   const auto frequency_desc =
@@ -572,7 +576,7 @@ TEST_P(CudaGraphQwen38Profiles,
                                                     frequency_buffer.view())
                              .value()}};
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 4);
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 4);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -621,8 +625,8 @@ TEST_P(CudaGraphQwen38Profiles,
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
     const auto actual = half_test::read<BF16>(result_buffer);
-    for (std::size_t head = 0; head < q::kQueryHeads; ++head) {
-      const auto value_head = head / (q::kQueryHeads / q::kKvHeads);
+    for (std::size_t head = 0; head < static_cast<std::size_t>(shape.query_heads); ++head) {
+      const auto value_head = head / (shape.query_heads / shape.kv_heads);
       for (std::size_t column = 0; column < q::kHeadDepth; ++column) {
         const auto index = head * q::kHeadDepth + column;
         const auto sigmoid_value = q::decode(q::encode(
@@ -640,17 +644,18 @@ TEST_P(CudaGraphQwen38Profiles,
 
 TEST_P(CudaGraphQwen38Profiles,
        D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays) {
+  const auto &shape = *GetParam();
   constexpr int weight_seed = 67;
-  const auto half_desc = dense(c::DataType::kBFloat16, {1, q::kHidden});
-  const auto joined_desc = dense(c::DataType::kBFloat16, {1, q::kMtpInput});
+  const auto half_desc = dense(c::DataType::kBFloat16, {1, shape.hidden});
+  const auto joined_desc = dense(c::DataType::kBFloat16, {1, (2 * shape.hidden)});
   const auto stored_weight_desc =
-      dense(c::DataType::kBFloat16, {q::kHidden, q::kMtpInput});
+      dense(c::DataType::kBFloat16, {shape.hidden, (2 * shape.hidden)});
   const auto weight_desc = stored_weight_desc.transposed().value();
-  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
-  const auto output_f32_desc = dense(c::DataType::kFloat32, {1, q::kHidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {shape.hidden});
+  const auto output_f32_desc = dense(c::DataType::kFloat32, {1, shape.hidden});
   auto weight_values =
-      q::sparse_output_major_weight(q::kHidden, q::kMtpInput, weight_seed);
-  auto scale_values = q::scales(q::kHidden, 11);
+      q::sparse_output_major_weight(shape.hidden, (2 * shape.hidden), weight_seed);
+  auto scale_values = q::scales(shape.hidden, 11);
   auto context = g::cuda::create_context().value();
   auto memory =
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
@@ -688,7 +693,7 @@ TEST_P(CudaGraphQwen38Profiles,
           scale,
           c::ConstTensorView::create(scale_desc, scale_buffer.view()).value()}};
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0d0e);
+      q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x0d0e);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -722,12 +727,12 @@ TEST_P(CudaGraphQwen38Profiles,
   auto queue = context.create_queue().value();
   ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
   for (int seed : {5, 19}) {
-    const auto input = q::values(q::kMtpInput, seed);
+    const auto input = q::values((2 * shape.hidden), seed);
     ASSERT_TRUE(first_buffer.view()
-                    .write(std::as_bytes(std::span(input).first(q::kHidden)))
+                    .write(std::as_bytes(std::span(input).first(shape.hidden)))
                     .ok());
     ASSERT_TRUE(second_buffer.view()
-                    .write(std::as_bytes(std::span(input).last(q::kHidden)))
+                    .write(std::as_bytes(std::span(input).last(shape.hidden)))
                     .ok());
     auto done = invocation.submit(queue);
     ASSERT_TRUE(done) << done.error().message();
@@ -735,7 +740,7 @@ TEST_P(CudaGraphQwen38Profiles,
     const auto actual_projected = half_test::read<BF16>(projected_buffer);
     const auto actual_converted = half_test::read<float>(converted_buffer);
     const auto expected_projected =
-        q::sparse_projection(input, q::kHidden, weight_seed);
+        q::sparse_projection(input, shape.hidden, weight_seed);
     expect_near(actual_projected, expected_projected);
     const auto projected_bf16 = q::as_bf16(expected_projected);
     const auto expected_normalized =
@@ -750,11 +755,14 @@ TEST_P(CudaGraphQwen38Profiles,
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, CudaGraphQwen38Profiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&qcase::kOfficial27B, &qcase::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, CudaGraphQwen38Profiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&qcase::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, CudaGraphQwen38Profiles,
+    ::testing::Values(&qcase::kOfficial24T));
 
 } // namespace
