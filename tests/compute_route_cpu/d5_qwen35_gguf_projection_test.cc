@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -163,6 +164,12 @@ TEST(CpuDefaultDirect,
                 prepared->provider().id == c::onednn::kProviderId)
         << prepared->provider().name;
     EXPECT_EQ(prepared->workload(), workload);
+#if defined(__aarch64__) || defined(_M_ARM64)
+    const bool native_half_accumulation =
+        prepared->provider().id == c::ggml_cpu::kProviderId;
+#else
+    const bool native_half_accumulation = false;
+#endif
 
     const auto weight_source =
         d5_gguf_test::values(test.columns, test.reduction, test.seed);
@@ -212,8 +219,28 @@ TEST(CpuDefaultDirect,
       const auto expected = d5_gguf_test::matmul(
           decoded_activation, decoded_weights, test.columns, test.reduction);
       ASSERT_EQ(actual.size(), expected.size());
-      for (std::size_t i = 0; i < actual.size(); ++i)
-        half_test::expect_near(actual[i], expected[i]);
+      if (native_half_accumulation) {
+        // ggml's ARM NEON path accumulates these dot products in FP16. A
+        // per-element relative check against FP32 accumulation misclassifies
+        // cancellation near zero; bound both absolute and aggregate error.
+        double squared_error = 0.0;
+        double squared_reference = 0.0;
+        double max_error = 0.0;
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          const double rounded = half_test::decode(
+              half_test::encode<F16>(expected[i]));
+          const double error = half_test::decode(actual[i]) - rounded;
+          squared_error += error * error;
+          squared_reference += rounded * rounded;
+          max_error = std::max(max_error, std::abs(error));
+        }
+        EXPECT_LE(max_error, 2.5e-3);
+        ASSERT_GT(squared_reference, 0.0);
+        EXPECT_LE(std::sqrt(squared_error / squared_reference), 1.0e-3);
+      } else {
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          half_test::expect_near(actual[i], expected[i]);
+      }
     }
   }
 }

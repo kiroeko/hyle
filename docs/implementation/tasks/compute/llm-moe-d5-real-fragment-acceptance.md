@@ -42,6 +42,12 @@ D5 不再以单个 op/片段作为构建和完整验证的单位。先按下表�
 Provider，批量写完该组四路线 Direct/Graph 的必要接线、夹具和 oracle；批末冻结不可变候选，
 一次选择受影响门并复用同一构建树。前一批完整证据可按精确身份复用。API/算法稳定后才做路线
 三交付和适用 P1；未运行格及门始终保留 `VALIDATION_NOT_RUN`，不能用编译目标或单片段代签。
+后续接线优先扩充共享 profile/权重角色参数表与四路线已有入口，跨模型复用相同 Provider carrier；
+不得为了每个新算子或画像复制一套 adapter、测试目标、完整 selector 和收据。批内只在共享接缝
+改变或出现具体失败时做静态/最小定向检查，完成本组所有已审定接线或精确拒绝后才冻结候选，
+串行运行适用 owner/consumer、三交付和性能门。同一候选上的合格收据按身份复用；部分片段
+即使通过，整格仍维持 `VALIDATION_NOT_RUN`，直到其全部 region 与该格正确性门实际完成；
+三交付和 P1 另按 D5-A5/A6 裁决。
 
 当前 profile 批次是 Qwen3.8-2.4T 官方 BF16。其 R10/R11 接线子组覆盖 512-way/top-10
 路由、动态 grouped expert、独立 sigmoid shared expert 与最终相加，在 CPU、CUDA、Apple、
