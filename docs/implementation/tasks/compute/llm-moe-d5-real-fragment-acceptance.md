@@ -857,6 +857,13 @@ MSVC Release/WERROR 编译通过，普通 Graph submit 的完成状态实际报
 shared/final oracle，随后运行 Graph CPU/CUDA/Vulkan 受影响 owner 和 Mac Apple 回归；
 完整 selector、三交付及适用 P1 仍在稳定批次签署。
 
+**Graph 批次部分收据（candidate `825c41f8d`）**：CPU、CUDA、Vulkan 与
+MacBook Air Apple 的完整多节点 R10/R11 Graph 均以三组变化输入通过独立 ID、routed、
+shared、combine 和 final oracle；四路线完整 Graph owner suite 及适用 Graph 核心回归通过。
+Graph 对齐 FIX 已在 CUDA 真实执行中验证。详见
+[完整 MoE Graph 批次](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-graph/README.md)。
+这是 Graph 子批结果，Direct 整链、完整 selector、三交付和 P1 尚未签署；ledger 保持 48/176。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
