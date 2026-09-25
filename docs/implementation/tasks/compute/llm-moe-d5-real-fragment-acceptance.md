@@ -692,6 +692,16 @@ Scan 在匹配阶段整体不可达，最后的 CUDA tensor Provider 只返回�
 其它 CUDA Provider 或优先级。D4 CLOSED 的算子清退结论仍有效。先完成 AUDITED 有限 FIX 定界，
 再改产品代码；现有 CUDA 测试候选的 R01 失败保持原样作为触发证据。
 
+**AUDITED 有限 FIX**：
+
+1. 仅将 CCCL 的 `kRuntimeVersion` 从精确 13030 改为闭区间 13030..13040；SM 8.9、编译 Toolkit
+   13030、`CCCL-300304` 仍精确匹配。该区间只覆盖已验旧机运行库和本次实际 13.4 运行库；不宽放
+   CUDA 14、其它架构/Toolkits 或其它 Provider。
+2. 在 RTX 4070 当前 13040 环境重新运行 CCCL Gather/TopK/Scan owner suite 与 Qwen3.8 27B/2.4T
+   普通 CUDA Direct/Graph；对 2.4T 保留 H=8192、K16/V128、top-10、两次变化输入和独立 oracle。
+3. 只运行 selector 指向的 Provider/Direct/Graph factor、输入工具与公共检查；本规则没有更改数学或
+   公开 API，本 partial 不启动 D5-A5/A6。若 13.4 库实际执行不合格，则撤销扩域并记录精确拒绝。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

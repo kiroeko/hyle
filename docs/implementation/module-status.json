@@ -479,9 +479,9 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F16 SCOPED：Windows CUDA 13.3 build 加载 13.4 driver-packaged runtime，既有 CCCL 精确 13030 规则拒绝 Gather/TopK/Scan；只重定界 CCCL 环境资格，D4 CLOSED 证据仍有效。"
+      "summary": "M3-D5-F16 AUDITED：Windows CUDA 13.3 build 加载 13.4 driver-packaged runtime，CCCL 精确 13030 规则拒绝 Gather/TopK/Scan；有限 FIX 只允许 13030..13040 runtime，保留 SM89、Toolkit 13030、CCCL-300304 精确资格。"
     },
     {
       "module": "compute_route_cuda",
