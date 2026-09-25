@@ -416,6 +416,9 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     case UnaryKind::kTanh:
       result = ggml_tanh(context, a);
       break;
+    case UnaryKind::kSigmoid:
+      result = ggml_sigmoid(context, a);
+      break;
     default:
       break; // Stable tails and non-finite domains need another mature carrier.
     }
@@ -1126,6 +1129,7 @@ bool supports(void *context, Operation operation,
     case UnaryKind::kSqrt:
     case UnaryKind::kRsqrt:
     case UnaryKind::kTanh:
+    case UnaryKind::kSigmoid:
       return true;
     default:
       return false;
@@ -1222,8 +1226,8 @@ bool supports(void *context, Operation operation,
         return false;
     const auto q = inputs[0].dimensions();
     const auto k = inputs[1].dimensions();
-    return q[0] > 0 && q[1] > 0 && k[1] >= q[1] && q[2] == 8 && k[2] == 2 &&
-           q[3] == 256 && k[3] == 256 && q[0] == k[0] &&
+    return q[0] > 0 && q[1] > 0 && k[1] >= q[1] && q[2] > 0 && k[2] > 0 &&
+           q[2] % k[2] == 0 && q[3] > 0 && q[3] == k[3] && q[0] == k[0] &&
            inputs[1] == inputs[2] && output == inputs[0];
   }
   return false;
