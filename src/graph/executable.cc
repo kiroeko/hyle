@@ -3442,6 +3442,7 @@ Status prepare_placed_steps_attempt(
     if (!plan.instance_descriptions.try_push_back(plan.descriptions[value]) ||
         !plan.instance_values.try_push_back(value) ||
         !plan.instance_storage.try_push_back(storage) ||
+        !plan.instance_alignments.try_push_back(1) ||
         !plan.instance_roles.try_push_back(roles) ||
         !plan.workspace_requests.try_push_back(kNone) ||
         !plan.value_materialized.try_push_back(0) ||
@@ -3715,6 +3716,9 @@ Status prepare_placed_steps_attempt(
                                               selected_inputs[index]);
         if (!instance)
           return std::move(instance).error();
+        plan.instance_alignments[*instance] =
+            (std::max)(plan.instance_alignments[*instance],
+                       input_requirements[index].minimum_alignment);
         if (!physical_inputs.try_push_back(*instance))
           return plan_allocation_failure();
       }
@@ -3741,6 +3745,9 @@ Status prepare_placed_steps_attempt(
         auto instance = add_instance(value, storage, roles);
         if (!instance)
           return std::move(instance).error();
+        plan.instance_alignments[*instance] =
+            (std::max)(plan.instance_alignments[*instance],
+                       output_requirements[index].minimum_alignment);
         producer_instances[value] = *instance;
         producer_storage[value] = storage;
         if ((roles & detail::kExternalOutput) != 0)
@@ -3788,6 +3795,15 @@ Status prepare_placed_steps_attempt(
     publish_operation_placement(node_index, *placement);
     preparation_prefix[node_index] = discovery.physical.prefix();
     const std::uint32_t workspace_storage = node_workspace_storage[node_index];
+    std::span<const compute::ResourceRequirement> port_requirements;
+    if (!placement->route->metadata_view) {
+      port_requirements =
+          std::span<const compute::ResourceRequirement>(
+              discovery.operations.requirements)
+              .subspan(placement->route->requirements_begin,
+                       static_cast<std::size_t>(node.input_count) +
+                           node.output_count);
+    }
     physical_inputs.clear();
     if (!physical_inputs.try_reserve(node.input_count))
       return plan_allocation_failure();
@@ -3801,6 +3817,10 @@ Status prepare_placed_steps_attempt(
       auto instance = ensure_local_instance(value, input_storage);
       if (!instance)
         return std::move(instance).error();
+      if (!port_requirements.empty())
+        plan.instance_alignments[*instance] =
+            (std::max)(plan.instance_alignments[*instance],
+                       port_requirements[input_index].minimum_alignment);
       if (!physical_inputs.try_push_back(*instance))
         return plan_allocation_failure();
     }
@@ -3829,6 +3849,11 @@ Status prepare_placed_steps_attempt(
       auto instance = add_instance(value, output_storage, roles);
       if (!instance)
         return std::move(instance).error();
+      if (!port_requirements.empty())
+        plan.instance_alignments[*instance] =
+            (std::max)(plan.instance_alignments[*instance],
+                       port_requirements[node.input_count + output_index]
+                           .minimum_alignment);
       producer_instances[value] = *instance;
       if ((roles & detail::kExternalOutput) != 0)
         plan.external_instances[value] = *instance;
@@ -5214,6 +5239,21 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     }
   }
 
+  // The selected provider's port requirement applies to the physical bytes,
+  // including when a metadata View exposes those bytes under another shape.
+  // Walk aliases backwards so a root inherits every downstream requirement.
+  for (std::size_t ordinal = plan.instance_values.size(); ordinal-- > 0;) {
+    const auto source = plan.alias_sources[ordinal];
+    if (source == detail::kNoInPlaceSource)
+      continue;
+    const auto alignment = plan.instance_alignments[ordinal];
+    if (plan.alias_offsets[ordinal] % alignment != 0)
+      return Status::InvalidArgument(
+          "graph alias offset cannot satisfy provider port alignment");
+    plan.instance_alignments[source] =
+        (std::max)(plan.instance_alignments[source], alignment);
+  }
+
   for (std::size_t ordinal = 0; ordinal < plan.instance_values.size();
        ++ordinal) {
     if (plan.value_materialized[ordinal] == 0 ||
@@ -5262,9 +5302,11 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
             // non-zero slice offset would reject otherwise valid aliases.
             .alignment = domain_alias ? 1
                          : alias_request == mem::kNoLifetimeAlias
-                             ? (std::max)(std::size_t{64},
-                                          description.required_alignment())
-                             : description.required_alignment(),
+                             ? (std::max)({std::size_t{64},
+                                           description.required_alignment(),
+                                           plan.instance_alignments[ordinal]})
+                             : (std::max)(description.required_alignment(),
+                                          plan.instance_alignments[ordinal]),
             .begin = begin,
             .end = end,
             .alias_of = alias_request,

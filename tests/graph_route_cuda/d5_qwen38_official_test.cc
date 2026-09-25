@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -8,6 +9,7 @@
 #include <vector>
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
@@ -28,6 +30,7 @@ namespace g = hyle::graph;
 namespace mem = hyle::mem;
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
+namespace qfull = d5_qwen38_24t_full_router;
 namespace qcase = d5_qwen38_profile_cases;
 using BF16 = hyle::simd::bfloat16_t;
 
@@ -66,6 +69,10 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
     const auto report = compiled.report.step(step).value();
     const auto provider = report.provider.id;
     const auto node = compiled.report.node(report.node_begin).value();
+    if (node.kind == c::OperationKind::kView) {
+      EXPECT_TRUE(report.provider.name.empty());
+      continue;
+    }
     EXPECT_TRUE(provider == c::ggml_cuda::kProviderId ||
                 provider == c::cublas::kProviderId ||
                 provider == c::cuda_native::kSglangProviderId ||
@@ -209,7 +216,8 @@ TEST_P(CudaGraphQwen38Profiles,
         ids_buffer.view().write(std::as_bytes(std::span(selected))).ok());
     auto done = invocation.submit(queue);
     ASSERT_TRUE(done) << done.error().message();
-    ASSERT_TRUE(done->wait().ok());
+    const auto status = done->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
     const auto actual_residual = half_test::read<BF16>(residual_buffer);
     const auto actual_projected = half_test::read<BF16>(projected_buffer);
     const auto actual_logits = half_test::read<BF16>(logits_buffer);
@@ -559,6 +567,113 @@ TEST(CudaGraphQwen38_24T,
     ASSERT_EQ(actual.size(), q24::kExperts);
     EXPECT_NEAR(actual[9], 1.0, 1.0e-6);
     EXPECT_NEAR(actual[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
+TEST(CudaGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
+  auto full = qfull::make_graph();
+  auto weights = qfull::make_weights();
+  auto context = g::cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto constants = std::array{
+      values_buffer<BF16>(resource, weights.router),
+      values_buffer<std::int32_t>(resource, weights.replication),
+      values_buffer<BF16>(resource, weights.routed_gate),
+      values_buffer<BF16>(resource, weights.routed_up),
+      values_buffer<BF16>(resource, weights.routed_down),
+      values_buffer<BF16>(resource, weights.shared_gate),
+      values_buffer<BF16>(resource, weights.shared_up),
+      values_buffer<BF16>(resource, weights.shared_down),
+      values_buffer<BF16>(resource, weights.shared_gate_input),
+      values_buffer<std::int32_t>(resource, weights.shared_ids)};
+  weights = {};
+  const std::array bindings{
+      g::ConstantBinding{full.constants[0],
+                         c::ConstTensorView::create(full.constant_descs[0],
+                                                    constants[0].view()).value()},
+      g::ConstantBinding{full.constants[1],
+                         c::ConstTensorView::create(full.constant_descs[1],
+                                                    constants[1].view()).value()},
+      g::ConstantBinding{full.constants[2],
+                         c::ConstTensorView::create(full.constant_descs[2],
+                                                    constants[2].view()).value()},
+      g::ConstantBinding{full.constants[3],
+                         c::ConstTensorView::create(full.constant_descs[3],
+                                                    constants[3].view()).value()},
+      g::ConstantBinding{full.constants[4],
+                         c::ConstTensorView::create(full.constant_descs[4],
+                                                    constants[4].view()).value()},
+      g::ConstantBinding{full.constants[5],
+                         c::ConstTensorView::create(full.constant_descs[5],
+                                                    constants[5].view()).value()},
+      g::ConstantBinding{full.constants[6],
+                         c::ConstTensorView::create(full.constant_descs[6],
+                                                    constants[6].view()).value()},
+      g::ConstantBinding{full.constants[7],
+                         c::ConstTensorView::create(full.constant_descs[7],
+                                                    constants[7].view()).value()},
+      g::ConstantBinding{full.constants[8],
+                         c::ConstTensorView::create(full.constant_descs[8],
+                                                    constants[8].view()).value()},
+      g::ConstantBinding{full.constants[9],
+                         c::ConstTensorView::create(full.constant_descs[9],
+                                                    constants[9].view()).value()}};
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  auto compiled_result = g::cuda::compile(
+      full.graph, context, resource,
+      {.constants = bindings, .workload = workload});
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  auto activation_buffer = output_buffer(resource, full.activation_desc);
+  auto outputs = std::array{
+      output_buffer(resource, full.output_descs[0]),
+      output_buffer(resource, full.output_descs[1]),
+      output_buffer(resource, full.output_descs[2]),
+      output_buffer(resource, full.output_descs[3]),
+      output_buffer(resource, full.output_descs[4])};
+  ASSERT_TRUE(invocation
+                  .bind(full.activation,
+                        c::ConstTensorView::create(full.activation_desc,
+                                                   activation_buffer.view())
+                            .value())
+                  .ok());
+  for (std::size_t i = 0; i < outputs.size(); ++i)
+    ASSERT_TRUE(invocation
+                    .bind(full.outputs[i],
+                          c::TensorView::create(full.output_descs[i],
+                                                outputs[i].view())
+                              .value())
+                    .ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
+  for (const int replay : {3, 17, 29}) {
+    const auto expected = qfull::expected(replay);
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(expected.activation)))
+                    .ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    const auto status = done->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto ids = half_test::read<std::int32_t>(outputs[0]);
+    ASSERT_TRUE(std::ranges::equal(ids, expected.ids));
+    for (std::size_t output = 1; output < outputs.size(); ++output) {
+      const auto actual = half_test::read<float>(outputs[output]);
+      const auto &oracle = output == 1 ? expected.routed
+                           : output == 2 ? expected.combined
+                           : output == 3 ? expected.shared
+                                         : expected.full;
+      ASSERT_EQ(actual.size(), oracle.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], oracle[i],
+                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
+                        q24::kExpertAbsoluteTolerance)
+            << "output=" << output << " element=" << i;
+    }
   }
 }
 

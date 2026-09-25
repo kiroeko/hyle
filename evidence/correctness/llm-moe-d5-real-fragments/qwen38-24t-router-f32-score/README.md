@@ -10,7 +10,7 @@ pipeline widens only the small BF16 activation on device before the multiply.
 
 The prior BF16-score path failed the new CPU near-tie test: experts 9 and 10
 became equal after BF16 storage and the tenth selected ID changed. The new F32
-path passed the same 512-way, top-10, four-replay Direct and Graph tests, with
+path passed the same 512-way, top-10, four-replay CPU Direct and Graph tests, with
 different inputs and an independently calculated membership and normalized
 weight oracle. CPU Graph's separate grouped-expert test also connects changing
 router IDs to ten distinct resident experts and a weighted combine. This is a
@@ -18,14 +18,16 @@ partial R10 result; the shared expert branch is not connected there.
 
 Targeted Windows Release/WERROR results on RTX 4070:
 
-| Route | Provider, Direct, Graph |
+| Route | Actual entry exercised |
 | --- | --- |
 | CPU | `compute_ops` 1/1, ggml CPU 1/1, Direct 1/1, Graph 2/2 |
 | CUDA | ggml CUDA 1/1, Direct 1/1, Graph 1/1 |
-| Vulkan | ggml Vulkan 1/1, Direct 1/1, Graph 1/1 |
+| Vulkan | ggml Vulkan 1/1, Direct 1/1, single-node Graph 1/1 |
 
-On the formal MacBook Air M4, the ggml Metal provider, Apple Direct, and Apple
-Graph targeted cases each passed 1/1. The relevant complete Apple CTest suites
+On the formal MacBook Air M4, the ggml Metal provider, Apple Direct, and
+single-node Apple Graph targeted cases each passed 1/1. The Graph-factor
+`prepare` helper builds a Graph and calls `ga::compile`; the corresponding
+Vulkan helper calls `gv::compile`. The relevant complete Apple CTest suites
 `compute_ops`, `compute_provider_ggml_metal`, `compute_route_apple`, and
 `graph_route_apple` passed 4/4, serially, in 73.65 seconds. The Direct and
 Graph tests executed the upstream `kernel_mul_mv_bf16_bf16_4` path; the
@@ -41,7 +43,10 @@ The interrupted selector lease prevents a verdict for that candidate. The
 complete Windows selector and delivery result is therefore pending, and this
 receipt does not mark those gates PASS.
 
-This change does not sign a full Qwen3.8-2.4T profile cell. The CPU shared
-expert and final addition, the other routes' dynamic dispatch/combine, complete
+This change does not sign a full Qwen3.8-2.4T profile cell. Apple and Vulkan
+Graph compile the router as a single-node graph; they do not yet compile the
+full multi-node router, dispatch, shared-expert and combine chain. The CPU
+shared expert and final addition,
+the other routes' dynamic dispatch/combine, complete
 R05, relocated three-delivery consumers, and applicable P1 remain to be done.
 The D5 ledger remains 48/176 `RUN_PASS`.

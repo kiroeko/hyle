@@ -43,6 +43,10 @@ inline constexpr std::int64_t kConvKernel = 4;
 inline constexpr std::int64_t kMtpInput = 2 * kHidden;
 inline constexpr std::int64_t kEmbeddingRows = 7;
 inline constexpr std::int64_t kActiveExperts = kTopK;
+// The integrated router also keeps the near-tie eleventh expert resident, so
+// either side of the top-10 boundary can be dispatched without swapping a
+// prepared weight bank between replays.
+inline constexpr std::int64_t kRouterResidentExperts = kTopK + 1;
 inline constexpr int kExpertSeedStride = 7;
 // ggml's BF16 matrix traits may convert F32 dot-product inputs to BF16. Three
 // consecutive expert projections therefore use the same tolerance as the
@@ -85,10 +89,12 @@ inline std::array<std::int32_t, kTopK> active_expert_ids() {
 }
 
 inline std::vector<BF16> expert_weight(std::size_t outputs,
-                                      std::size_t inputs, int seed) {
+                                      std::size_t inputs, int seed,
+                                      std::int64_t resident_experts =
+                                          kActiveExperts) {
   const auto expert_size = outputs * inputs;
-  std::vector<BF16> result(kActiveExperts * expert_size);
-  for (std::int64_t expert = 0; expert < kActiveExperts; ++expert) {
+  std::vector<BF16> result(resident_experts * expert_size);
+  for (std::int64_t expert = 0; expert < resident_experts; ++expert) {
     const auto one_expert = sparse_output_major_weight(
         outputs, inputs, seed + static_cast<int>(expert) * kExpertSeedStride);
     std::ranges::copy(one_expert,
@@ -113,13 +119,15 @@ inline std::vector<float> expert_input(int replay) {
 inline std::vector<float> project_slots(std::span<const float> input,
                                         std::size_t input_width,
                                         std::size_t outputs, int seed,
-                                        std::span<const std::int32_t> ids) {
+                                        std::span<const std::int32_t> ids,
+                                        std::int64_t resident_experts =
+                                            kActiveExperts) {
   const auto slots = input.size() / input_width;
   if (input.size() % input_width != 0 || ids.size() != slots)
     throw std::invalid_argument("expert oracle slot shape mismatch");
   std::vector<float> result(slots * outputs);
   for (std::size_t slot = 0; slot < slots; ++slot) {
-    if (ids[slot] < 0 || ids[slot] >= kActiveExperts)
+    if (ids[slot] < 0 || ids[slot] >= resident_experts)
       throw std::invalid_argument("expert oracle id outside resident bank");
     const int expert_seed = seed + ids[slot] * kExpertSeedStride;
     for (std::size_t output = 0; output < outputs; ++output) {
@@ -135,12 +143,17 @@ inline std::vector<float> project_slots(std::span<const float> input,
 
 inline std::vector<float> expert_oracle(std::span<const float> input,
                                         int seed,
-                                        std::span<const std::int32_t> ids) {
-  auto gate = project_slots(input, kHidden, kExpertHidden, seed, ids);
-  const auto up = project_slots(input, kHidden, kExpertHidden, seed + 1, ids);
+                                        std::span<const std::int32_t> ids,
+                                        std::int64_t resident_experts =
+                                            kActiveExperts) {
+  auto gate = project_slots(input, kHidden, kExpertHidden, seed, ids,
+                            resident_experts);
+  const auto up = project_slots(input, kHidden, kExpertHidden, seed + 1, ids,
+                                resident_experts);
   for (std::size_t i = 0; i < gate.size(); ++i)
     gate[i] = gate[i] / (1.0F + std::exp(-gate[i])) * up[i];
-  return project_slots(gate, kExpertHidden, kHidden, seed + 2, ids);
+  return project_slots(gate, kExpertHidden, kHidden, seed + 2, ids,
+                       resident_experts);
 }
 
 inline std::vector<float> expert_oracle(std::span<const float> input,

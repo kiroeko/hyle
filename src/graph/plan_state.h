@@ -662,6 +662,7 @@ struct PlanState final : util::RefCounted<PlanState> {
         constant_bindings(allocator_value), effect_bindings(allocator_value),
         descriptions(allocator_value), instance_descriptions(allocator_value),
         instance_values(allocator_value), instance_storage(allocator_value),
+        instance_alignments(allocator_value),
         instance_roles(allocator_value), external_instances(allocator_value),
         external_storage(allocator_value), node_inputs(allocator_value),
         node_outputs(allocator_value), step_nodes(allocator_value),
@@ -752,6 +753,8 @@ struct PlanState final : util::RefCounted<PlanState> {
   TensorDescriptions instance_descriptions;
   ValueOrdinals instance_values;
   ValueOrdinals instance_storage;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef>
+      instance_alignments;
   BindingRoles instance_roles;
   ValueOrdinals external_instances;
   ValueOrdinals external_storage;

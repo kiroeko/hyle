@@ -343,12 +343,13 @@ TEST_P(CpuGraphQwen38Profiles, D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) 
 TEST(CpuGraphQwen38_24T,
      D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay) {
   constexpr int seed = 71;
+  constexpr int shared_seed = 113;
   const auto weight_desc = dense(
       c::DataType::kBFloat16,
-      {q24::kActiveExperts, q24::kExpertHidden, q24::kHidden});
+      {q24::kRouterResidentExperts, q24::kExpertHidden, q24::kHidden});
   const auto down_weight_desc = dense(
       c::DataType::kBFloat16,
-      {q24::kActiveExperts, q24::kHidden, q24::kExpertHidden});
+      {q24::kRouterResidentExperts, q24::kHidden, q24::kExpertHidden});
   const auto activation_desc = dense(
       c::DataType::kFloat32, {1, q24::kTopK, q24::kHidden});
   const auto router_activation_desc =
@@ -361,19 +362,33 @@ TEST(CpuGraphQwen38_24T,
   const auto output_desc = activation_desc;
   const auto combined_desc =
       dense(c::DataType::kFloat32, {1, 1, q24::kHidden});
+  const auto shared_weight_desc = dense(
+      c::DataType::kBFloat16,
+      {1, q24::kSharedExpertHidden, q24::kHidden});
+  const auto shared_down_weight_desc = dense(
+      c::DataType::kBFloat16,
+      {1, q24::kHidden, q24::kSharedExpertHidden});
+  const auto shared_gate_input_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto shared_ids_desc = dense(c::DataType::kInt32, {1, 1});
   std::vector<BF16> router_weight_values(q24::kExperts * q24::kHidden);
   for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
     router_weight_values[expert * q24::kHidden + expert] = q::encode(1.0);
+  router_weight_values[q24::kTopK * q24::kHidden + 20] = q::encode(1.0);
+  router_weight_values[q24::kTopK * q24::kHidden + 21] = q::encode(1.0);
   auto router_weight_buffer = half_test::buffer<BF16>(router_weight_values);
   std::array<std::int32_t, q24::kTopK> replication_indices_values{};
   auto replication_indices_buffer =
       half_test::buffer<std::int32_t>(replication_indices_values);
   auto gate_weight_values = q24::expert_weight(
-      q24::kExpertHidden, q24::kHidden, seed);
+      q24::kExpertHidden, q24::kHidden, seed,
+      q24::kRouterResidentExperts);
   auto up_weight_values = q24::expert_weight(
-      q24::kExpertHidden, q24::kHidden, seed + 1);
+      q24::kExpertHidden, q24::kHidden, seed + 1,
+      q24::kRouterResidentExperts);
   auto down_weight_values = q24::expert_weight(
-      q24::kHidden, q24::kExpertHidden, seed + 2);
+      q24::kHidden, q24::kExpertHidden, seed + 2,
+      q24::kRouterResidentExperts);
   auto gate_weight_buffer = half_test::buffer<BF16>(gate_weight_values);
   gate_weight_values.clear();
   gate_weight_values.shrink_to_fit();
@@ -383,10 +398,34 @@ TEST(CpuGraphQwen38_24T,
   auto down_weight_buffer = half_test::buffer<BF16>(down_weight_values);
   down_weight_values.clear();
   down_weight_values.shrink_to_fit();
+  auto shared_gate_values = q24::sparse_output_major_weight(
+      q24::kSharedExpertHidden, q24::kHidden, shared_seed);
+  auto shared_up_values = q24::sparse_output_major_weight(
+      q24::kSharedExpertHidden, q24::kHidden, shared_seed + 1);
+  auto shared_down_values = q24::sparse_output_major_weight(
+      q24::kHidden, q24::kSharedExpertHidden, shared_seed + 2);
+  auto shared_gate_input_values =
+      q24::sparse_output_major_weight(1, q24::kHidden, shared_seed + 3);
+  const std::array<std::int32_t, 1> shared_ids_values{0};
+  auto shared_gate_buffer = half_test::buffer<BF16>(shared_gate_values);
+  shared_gate_values.clear();
+  shared_gate_values.shrink_to_fit();
+  auto shared_up_buffer = half_test::buffer<BF16>(shared_up_values);
+  shared_up_values.clear();
+  shared_up_values.shrink_to_fit();
+  auto shared_down_buffer = half_test::buffer<BF16>(shared_down_values);
+  shared_down_values.clear();
+  shared_down_values.shrink_to_fit();
+  auto shared_gate_input_buffer =
+      half_test::buffer<BF16>(shared_gate_input_values);
+  auto shared_ids_buffer =
+      half_test::buffer<std::int32_t>(shared_ids_values);
   auto ids_buffer = output_buffer(ids_desc);
   auto router_activation_buffer = output_buffer(router_activation_desc);
   auto result_buffer = output_buffer(output_desc);
   auto combined_buffer = output_buffer(combined_desc);
+  auto shared_result_buffer = output_buffer(combined_desc);
+  auto full_result_buffer = output_buffer(combined_desc);
 
   auto builder = g::GraphBuilder::create().value();
   const auto router_weight = builder.constant(router_weight_desc).value();
@@ -395,12 +434,28 @@ TEST(CpuGraphQwen38_24T,
   const auto gate_weight = builder.constant(weight_desc).value();
   const auto up_weight = builder.constant(weight_desc).value();
   const auto down_weight = builder.constant(down_weight_desc).value();
+  const auto shared_gate_weight = builder.constant(shared_weight_desc).value();
+  const auto shared_up_weight = builder.constant(shared_weight_desc).value();
+  const auto shared_down_weight =
+      builder.constant(shared_down_weight_desc).value();
+  const auto shared_gate_input_weight =
+      builder.constant(shared_gate_input_desc).value();
+  const auto shared_ids = builder.constant(shared_ids_desc).value();
   const auto router_activation = builder.input(router_activation_desc).value();
   const std::array router_ports{router_activation, router_weight};
   const auto router_node =
       builder.add_node(c::model_ops::bfloat_linear_f32(), router_ports).value();
   const auto token_fp32 =
       builder.add(c::Cast{c::DataType::kFloat32}, router_activation).value();
+  const auto shared_activation =
+      builder
+          .add(c::View::reshape(
+                   c::TensorShape::create(std::array<std::int64_t, 3>{
+                                              1, 1, q24::kHidden})
+                       .value())
+                   .value(),
+               token_fp32)
+          .value();
   const auto replicated =
       builder.add(c::Gather{}, token_fp32, replication_indices).value();
   const auto activation =
@@ -471,9 +526,66 @@ TEST(CpuGraphQwen38_24T,
                          .accumulation_type = c::DataType::kFloat32},
                weighted)
           .value();
+  const std::array shared_gate_ports{shared_gate_weight, shared_activation,
+                                     shared_ids};
+  const auto shared_gate =
+      builder.result(builder.add_node(c::model_ops::grouped_matmul(),
+                                      shared_gate_ports)
+                         .value())
+          .value();
+  const std::array shared_up_ports{shared_up_weight, shared_activation,
+                                   shared_ids};
+  const auto shared_up =
+      builder.result(builder.add_node(c::model_ops::grouped_matmul(),
+                                      shared_up_ports)
+                         .value())
+          .value();
+  const auto shared_gated =
+      builder
+          .add(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate},
+               shared_gate, shared_up)
+          .value();
+  const std::array shared_down_ports{shared_down_weight, shared_gated,
+                                     shared_ids};
+  const auto shared_down =
+      builder.result(builder.add_node(c::model_ops::grouped_matmul(),
+                                      shared_down_ports)
+                         .value())
+          .value();
+  const std::array shared_gate_input_ports{router_activation,
+                                           shared_gate_input_weight};
+  const auto shared_gate_score =
+      builder.result(builder.add_node(c::model_ops::bfloat_linear_f32(),
+                                      shared_gate_input_ports)
+                         .value())
+          .value();
+  const auto shared_gate_probability =
+      builder
+          .add(c::Unary{c::UnaryKind::kSigmoid}, shared_gate_score)
+          .value();
+  const auto shared_gate_broadcast =
+      builder
+          .add(c::View::reshape(
+                   c::TensorShape::create(std::array<std::int64_t, 3>{1, 1,
+                                                                      1})
+                       .value())
+                   .value(),
+               shared_gate_probability)
+          .value();
+  const auto shared_result =
+      builder
+          .add(c::Binary{c::BinaryKind::kMultiply}, shared_down,
+               shared_gate_broadcast)
+          .value();
+  const auto full_result =
+      builder
+          .add(c::Binary{c::BinaryKind::kAdd}, combined, shared_result)
+          .value();
   ASSERT_TRUE(builder.publish(ids).ok());
   ASSERT_TRUE(builder.publish(final).ok());
   ASSERT_TRUE(builder.publish(combined).ok());
+  ASSERT_TRUE(builder.publish(shared_result).ok());
+  ASSERT_TRUE(builder.publish(full_result).ok());
   auto logical = std::move(builder).finish().value();
   auto context = g::cpu::create_context().value();
   const std::array constants{
@@ -499,6 +611,30 @@ TEST(CpuGraphQwen38_24T,
           down_weight,
           c::ConstTensorView::create(down_weight_desc,
                                      down_weight_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          shared_gate_weight,
+          c::ConstTensorView::create(shared_weight_desc,
+                                     shared_gate_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          shared_up_weight,
+          c::ConstTensorView::create(shared_weight_desc,
+                                     shared_up_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          shared_down_weight,
+          c::ConstTensorView::create(shared_down_weight_desc,
+                                     shared_down_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          shared_gate_input_weight,
+          c::ConstTensorView::create(shared_gate_input_desc,
+                                     shared_gate_input_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          shared_ids,
+          c::ConstTensorView::create(shared_ids_desc, shared_ids_buffer.view())
               .value()}};
   const auto workload =
       q24::workload(c::WorkloadPhase::kDecode, 0x0a0b);
@@ -532,25 +668,54 @@ TEST(CpuGraphQwen38_24T,
                                               combined_buffer.view())
                             .value())
                   .ok());
+  ASSERT_TRUE(invocation
+                  .bind(shared_result,
+                        c::TensorView::create(combined_desc,
+                                              shared_result_buffer.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(full_result,
+                        c::TensorView::create(combined_desc,
+                                              full_result_buffer.view())
+                            .value())
+                  .ok());
   auto queue = context.create_queue().value();
   const std::array queues{
       g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
-  for (int replay : {3, 17}) {
+  for (int replay : {3, 17, 29}) {
     const auto token_values = q24::expert_input(replay);
     std::vector<BF16> router_input(q24::kHidden);
     for (std::int64_t column = 0; column < q24::kHidden; ++column)
       router_input[column] = q::encode(token_values[column]);
     std::array<std::int32_t, q24::kTopK> expected_ids{};
-    double selected_total = 0;
     for (std::int64_t expert = 0; expert < q24::kTopK; ++expert) {
       const double logit = replay == 3 ? 1.0 + expert / 8.0
-                                       : 1.0 + (q24::kTopK - 1 - expert) / 8.0;
+                           : replay == 17
+                               ? 1.0 + (q24::kTopK - 1 - expert) / 8.0
+                           : expert == q24::kTopK - 1
+                               ? 1.0
+                               : 2.0 + expert / 8.0;
       router_input[expert] = q::encode(logit);
-      selected_total += std::exp(q::decode(router_input[expert]));
       expected_ids[expert] = static_cast<std::int32_t>(
-          replay == 3 ? q24::kTopK - 1 - expert : expert);
+          replay == 3 ? q24::kTopK - 1 - expert
+          : replay == 17 ? expert
+          : expert == q24::kTopK - 1 ? q24::kTopK
+                                      : q24::kTopK - 2 - expert);
     }
+    if (replay == 29) {
+      router_input[20] = q::encode(1.0);
+      router_input[21] = q::encode(0.001953125);
+    }
+    const auto score = [&](std::int32_t expert) {
+      return expert == q24::kTopK
+                 ? q::decode(router_input[20]) + q::decode(router_input[21])
+                 : q::decode(router_input[expert]);
+    };
+    double selected_total = 0;
+    for (const auto id : expected_ids)
+      selected_total += std::exp(score(id));
     ASSERT_TRUE(router_activation_buffer.view()
                     .write(std::as_bytes(std::span(router_input)))
                     .ok());
@@ -565,26 +730,59 @@ TEST(CpuGraphQwen38_24T,
     const auto actual_ids = half_test::read<std::int32_t>(ids_buffer);
     EXPECT_TRUE(std::ranges::equal(actual_ids, expected_ids));
     const auto actual = half_test::read<float>(result_buffer);
-    const auto expected = q24::expert_oracle(input, seed, expected_ids);
+    const auto expected = q24::expert_oracle(
+        input, seed, expected_ids, q24::kRouterResidentExperts);
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], expected[i],
                   std::abs(expected[i]) * q24::kExpertRelativeTolerance +
                       q24::kExpertAbsoluteTolerance)
           << i;
+    const auto shared_input =
+        std::span<const float>(input.data(), q24::kHidden);
+    auto expected_shared_gate = q24::project_slots(
+        shared_input, q24::kHidden, q24::kSharedExpertHidden, shared_seed,
+        shared_ids_values);
+    const auto expected_shared_up = q24::project_slots(
+        shared_input, q24::kHidden, q24::kSharedExpertHidden, shared_seed + 1,
+        shared_ids_values);
+    for (std::size_t i = 0; i < expected_shared_gate.size(); ++i)
+      expected_shared_gate[i] =
+          expected_shared_gate[i] /
+          (1.0F + std::exp(-expected_shared_gate[i])) * expected_shared_up[i];
+    const auto shared_gate_logit = q24::project_slots(
+        shared_input, q24::kHidden, 1, shared_seed + 3, shared_ids_values);
+    const double shared_probability =
+        1.0 / (1.0 + std::exp(-shared_gate_logit[0]));
+    const auto expected_shared = q24::project_slots(
+        expected_shared_gate, q24::kSharedExpertHidden, q24::kHidden,
+        shared_seed + 2, shared_ids_values);
     const auto actual_combined = half_test::read<float>(combined_buffer);
+    const auto actual_shared = half_test::read<float>(shared_result_buffer);
+    const auto actual_full = half_test::read<float>(full_result_buffer);
     ASSERT_EQ(actual_combined.size(), q24::kHidden);
+    ASSERT_EQ(actual_shared.size(), q24::kHidden);
+    ASSERT_EQ(actual_full.size(), q24::kHidden);
     for (std::int64_t column = 0; column < q24::kHidden; ++column) {
       double expected_combined = 0;
       for (std::int64_t slot = 0; slot < q24::kTopK; ++slot) {
         const auto id = expected_ids[slot];
-        const double weight = std::exp(q::decode(router_input[id])) /
-                              selected_total;
+        const double weight = std::exp(score(id)) / selected_total;
         expected_combined +=
             weight * expected[slot * q24::kHidden + column];
       }
       EXPECT_NEAR(actual_combined[column], expected_combined,
                   std::abs(expected_combined) *
+                          q24::kExpertRelativeTolerance +
+                      q24::kExpertAbsoluteTolerance)
+          << column;
+      const double shared_value = expected_shared[column] * shared_probability;
+      EXPECT_NEAR(actual_shared[column], shared_value,
+                  std::abs(shared_value) * q24::kExpertRelativeTolerance +
+                      q24::kExpertAbsoluteTolerance)
+          << column;
+      EXPECT_NEAR(actual_full[column], expected_combined + shared_value,
+                  (std::abs(expected_combined) + std::abs(shared_value)) *
                           q24::kExpertRelativeTolerance +
                       q24::kExpertAbsoluteTolerance)
           << column;

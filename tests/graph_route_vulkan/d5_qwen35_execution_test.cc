@@ -16,6 +16,7 @@
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_route_vulkan/gate_norm_test_support.h"
@@ -28,6 +29,7 @@ namespace g = hyle::graph;
 namespace gv = g::vulkan;
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
+namespace qfull = d5_qwen38_24t_full_router;
 
 std::vector<B16> decode_bfloat(std::span<const std::byte> bytes) {
   EXPECT_EQ(bytes.size() % sizeof(B16), 0U);
@@ -1206,6 +1208,62 @@ TEST(VulkanGraphQwen38_24T,
     ASSERT_EQ(scores.size(), q24::kExperts);
     EXPECT_NEAR(scores[9], 1.0, 1.0e-6);
     EXPECT_NEAR(scores[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
+TEST(VulkanGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
+  auto full = qfull::make_graph();
+  auto weights = qfull::make_weights();
+  auto context = vulkan_test::context().value();
+  const std::array constants{
+      upload(context, full.constant_descs[0], std::span(weights.router)),
+      upload(context, full.constant_descs[1], std::span(weights.replication)),
+      upload(context, full.constant_descs[2], std::span(weights.routed_gate)),
+      upload(context, full.constant_descs[3], std::span(weights.routed_up)),
+      upload(context, full.constant_descs[4], std::span(weights.routed_down)),
+      upload(context, full.constant_descs[5], std::span(weights.shared_gate)),
+      upload(context, full.constant_descs[6], std::span(weights.shared_up)),
+      upload(context, full.constant_descs[7], std::span(weights.shared_down)),
+      upload(context, full.constant_descs[8], std::span(weights.shared_gate_input)),
+      upload(context, full.constant_descs[9], std::span(weights.shared_ids))};
+  weights = {};
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  gv::CompileReport report;
+  auto compiled = gv::compile(context, full.graph, constants,
+                              {.report = &report, .workload = workload});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_GT(report.managed_region_count, 0U);
+  EXPECT_EQ(compiled->workload(), workload);
+  auto invocation = compiled->create_invocation().value();
+  for (const int replay : {3, 17, 29}) {
+    const auto expected = qfull::expected(replay);
+    const auto activation =
+        upload(context, full.activation_desc, std::span(expected.activation));
+    const std::array inputs{activation};
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto outputs = result->get()->tensors();
+    ASSERT_EQ(outputs.size(), full.outputs.size());
+    const auto ids = bits(context, outputs[0]);
+    ASSERT_EQ(ids.size(), expected.ids.size());
+    for (std::size_t i = 0; i < ids.size(); ++i)
+      EXPECT_EQ(ids[i], expected.ids[i]) << "slot=" << i;
+    for (std::size_t output = 1; output < outputs.size(); ++output) {
+      const auto actual = values(context, outputs[output]);
+      const auto &oracle = output == 1 ? expected.routed
+                           : output == 2 ? expected.combined
+                           : output == 3 ? expected.shared
+                                         : expected.full;
+      ASSERT_EQ(actual.size(), oracle.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], oracle[i],
+                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
+                        q24::kExpertAbsoluteTolerance)
+            << "output=" << output << " element=" << i;
+    }
   }
 }
 
