@@ -1247,10 +1247,10 @@ INSTANTIATE_TEST_SUITE_P(
     D5Official24T, CpuGraphQwen38Profiles,
     ::testing::Values(&qcase::kOfficial24T));
 
-class CpuGraphQwen38OfficialVocabulary
-    : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
+class CpuGraphQwenOfficialVocabulary
+    : public ::testing::TestWithParam<const vocab::ProfileCase *> {};
 
-TEST_P(CpuGraphQwen38OfficialVocabulary,
+TEST_P(CpuGraphQwenOfficialVocabulary,
        D5WholeVocabularyHeadStreamsAllRows) {
   const auto &shape = *GetParam();
   const auto activation_desc = dense(c::DataType::kBFloat16, {1, shape.hidden});
@@ -1371,7 +1371,7 @@ TEST_P(CpuGraphQwen38OfficialVocabulary,
     }
 }
 
-TEST_P(CpuGraphQwen38OfficialVocabulary,
+TEST_P(CpuGraphQwenOfficialVocabulary,
        D5WholeVocabularyGatherMapsGlobalRows) {
   const auto &shape = *GetParam();
   const auto workload =
@@ -1386,7 +1386,8 @@ TEST_P(CpuGraphQwen38OfficialVocabulary,
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    D5Official27BAnd24T, CpuGraphQwen38OfficialVocabulary,
-    ::testing::Values(&qcase::kOfficial27B, &qcase::kOfficial24T));
+    D5Official2B27BAnd24T, CpuGraphQwenOfficialVocabulary,
+    ::testing::Values(&vocab::kOfficial2B, &vocab::kOfficial27B,
+                      &vocab::kOfficial24T));
 
 } // namespace

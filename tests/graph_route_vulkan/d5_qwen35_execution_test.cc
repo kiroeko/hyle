@@ -1422,11 +1422,11 @@ INSTANTIATE_TEST_SUITE_P(
     D5Official24T, VulkanGraphQwen38Profiles,
     ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
-class VulkanGraphQwen38OfficialVocabulary
+class VulkanGraphQwenOfficialVocabulary
     : public ::testing::TestWithParam<
-          const d5_qwen38_profile_cases::ProfileCase *> {};
+          const d5_qwen_vocabulary_fixture::ProfileCase *> {};
 
-TEST_P(VulkanGraphQwen38OfficialVocabulary,
+TEST_P(VulkanGraphQwenOfficialVocabulary,
        D5WholeVocabularyHeadStreamsAllRows) {
   namespace vocab = d5_qwen_vocabulary_fixture;
   const auto &shape = *GetParam();
@@ -1457,7 +1457,7 @@ TEST_P(VulkanGraphQwen38OfficialVocabulary,
                                        upload_weight, execute);
 }
 
-TEST_P(VulkanGraphQwen38OfficialVocabulary,
+TEST_P(VulkanGraphQwenOfficialVocabulary,
        D5WholeVocabularyGatherMapsGlobalRows) {
   namespace vocab = d5_qwen_vocabulary_fixture;
   const auto &shape = *GetParam();
@@ -1490,8 +1490,9 @@ TEST_P(VulkanGraphQwen38OfficialVocabulary,
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    D5Official27BAnd24T, VulkanGraphQwen38OfficialVocabulary,
-    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
-                      &d5_qwen38_profile_cases::kOfficial24T));
+    D5Official2B27BAnd24T, VulkanGraphQwenOfficialVocabulary,
+    ::testing::Values(&d5_qwen_vocabulary_fixture::kOfficial2B,
+                      &d5_qwen_vocabulary_fixture::kOfficial27B,
+                      &d5_qwen_vocabulary_fixture::kOfficial24T));
 
 } // namespace

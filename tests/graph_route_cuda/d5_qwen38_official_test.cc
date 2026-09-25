@@ -1010,10 +1010,10 @@ INSTANTIATE_TEST_SUITE_P(
     D5Official24T, CudaGraphQwen38Profiles,
     ::testing::Values(&qcase::kOfficial24T));
 
-class CudaGraphQwen38OfficialVocabulary
-    : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
+class CudaGraphQwenOfficialVocabulary
+    : public ::testing::TestWithParam<const vocab::ProfileCase *> {};
 
-TEST_P(CudaGraphQwen38OfficialVocabulary,
+TEST_P(CudaGraphQwenOfficialVocabulary,
        D5WholeVocabularyHeadStreamsAllRows) {
   const auto &shape = *GetParam();
   const auto activation_desc = dense(c::DataType::kBFloat16, {1, shape.hidden});
@@ -1139,7 +1139,7 @@ TEST_P(CudaGraphQwen38OfficialVocabulary,
     }
 }
 
-TEST_P(CudaGraphQwen38OfficialVocabulary,
+TEST_P(CudaGraphQwenOfficialVocabulary,
        D5WholeVocabularyGatherMapsGlobalRows) {
   const auto &shape = *GetParam();
   const auto workload =
@@ -1159,7 +1159,8 @@ TEST_P(CudaGraphQwen38OfficialVocabulary,
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    D5Official27BAnd24T, CudaGraphQwen38OfficialVocabulary,
-    ::testing::Values(&qcase::kOfficial27B, &qcase::kOfficial24T));
+    D5Official2B27BAnd24T, CudaGraphQwenOfficialVocabulary,
+    ::testing::Values(&vocab::kOfficial2B, &vocab::kOfficial27B,
+                      &vocab::kOfficial24T));
 
 } // namespace

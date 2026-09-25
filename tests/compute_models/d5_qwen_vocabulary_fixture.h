@@ -7,11 +7,26 @@
 #include <span>
 #include <vector>
 
+#include "../compute/workload_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
+#include "d5_qwen38_profile_cases.h"
 
 namespace d5_qwen_vocabulary_fixture {
 
 using BF16 = hyle::simd::bfloat16_t;
+
+struct ProfileCase final {
+  const hyle::compute::ModelArtifactProfileDescription *profile;
+  std::int64_t hidden;
+};
+
+inline constexpr ProfileCase kOfficial2B{&workload_test::kModel, 2048};
+inline constexpr ProfileCase kOfficial27B{
+    d5_qwen38_profile_cases::kOfficial27B.profile,
+    d5_qwen38_profile_cases::kOfficial27B.hidden};
+inline constexpr ProfileCase kOfficial24T{
+    d5_qwen38_profile_cases::kOfficial24T.profile,
+    d5_qwen38_profile_cases::kOfficial24T.hidden};
 
 // All Qwen3.5-2B and Qwen3.8 target profiles have this logical vocabulary.
 // A shard limits resident weight storage; every row must still be executed.
