@@ -205,6 +205,11 @@ void run_quantized_embedding(
       type, physical, rows, hidden, table_desc.required_bytes().value());
   const auto table = packed_array(packed.bytes);
   auto invocation = program.create_invocation().value();
+  // ggml Metal's Q4_K get_rows path evaluates the high-nibble scale division
+  // in half precision before publishing F32. The independent oracle decodes
+  // the same packed bytes in F32, so bound that one provider conversion step.
+  const auto tolerance =
+      type == c::GgufQuantizedType::kQ4K ? 5.0e-4 : 1.0e-6;
   constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
       {{{0, 5}}, {{6, 2}}}};
   std::optional<mx::array> retained;
@@ -223,7 +228,7 @@ void run_quantized_embedding(
         d5_gguf_test::selected_rows(packed.decoded, hidden, selection);
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
-      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+      EXPECT_NEAR(actual[i], expected[i], tolerance) << i;
     retained = output;
   }
 
