@@ -39,7 +39,7 @@
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
 |---|---:|---|---|
-| Qwen3.5-2B | 3 | H=2048、FFN=6144、GQA 8/2×256、GDN 16×128、conv K4 | R01-R05、R13-R15 |
+| Qwen3.5-2B | 3 | H=2048、FFN=6144、GQA 8/2×256、GDN 16×128、conv K4 | official：R01-R05、R13-R15；两份 GGUF：R01-R05、R14-R15 |
 | Qwen3.8-27B | 3 | H=5120、FFN=17408、GQA 24/4×256、GDN K16/V48×128 | R01-R05、R13-R15 |
 | Qwen3.8-2.4T | 3 | H=8192、E=512/top10、expert N=2048、GQA 64/4×256 | R01-R05、R10-R11、R13-R15 |
 | Kimi K3 | 3 | H=7168、E=896/top16、expert N=3584、attention 96×128 | R01-R03、R06-R07、R10-R12、R14-R15 |
@@ -387,7 +387,7 @@ IQ4_XS `[2048,6144]` 和 `blk.0.ssm_out.weight` Q8_0 `[2048,2048]`。两条入�
 成熟 region。不可变 MSVC 19.50/WERROR selector 的 docs、closure、fixture 工具、Direct 与 Graph
 全部 PASS，未暴露产品缺陷，也没有新增 HYLE 数学。收据见
 [CPU primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-projections/README.md)。
-本 partial 只签 R03/R14；R02、R04、R05、R13、R15 和完整 cell 仍未代签，ledger 总计数不变。
+本 partial 只签 R03/R14；R02、R04、R05、R15 和完整 cell 仍未代签，ledger 总计数不变。
 
 **D5-F9 CUDA partial（`9dc37c98`）**：同一参数化 consumer 已在 RTX 4070/SM89 的普通 CUDA
 Direct/Graph 上运行全部五个精确 tensor，均冷绑定固定 `ggml-cuda`；设备 activation 变化两次，结果匹配
@@ -396,6 +396,15 @@ Release/WERROR 的不可变 selector 通过单架构 configure、Direct 与 Grap
 没有新增 CUDA kernel 或 fallback。收据见
 [CUDA primary GGUF projections](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-projections/README.md)。
 本 partial 同样只签 R03/R14，完整 cell 和 ledger 总计数不变。
+
+#### D5-F9 artifact region applicability correction
+
+固定 revision `f6d5376` 的 Qwen3.5 `UD-Q4_K_XL` 与 `UD-Q8_K_XL` 均各有 320 个 tensor；
+完整 header 名单的 MTP/NextN 匹配数都是 0，两个名单完全相同，且仓库树中没有 MTP sidecar。
+因此模型家族的官方 BF16 checkpoint 继续要求 R13，但这两个 GGUF artifact 不要求 R13。当前 ledger
+已按具体 artifact identity 删除这两份 profile 的 R13；不能凭官方 checkpoint 的能力为 GGUF 虚造权重，
+也不能用官方 R13 收据代签 GGUF。审计收据见
+[Qwen3.5 GGUF region applicability](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen35-gguf-region-applicability-audit/README.md)。
 
 **D5-F9 Vulkan partial（`e31a6e7d`）**：同一组五个精确 tensor 已在 RTX 4070 的普通 Vulkan
 Direct/Graph 上运行，均冷绑定固定 `ggml-vulkan`；两次变化的 device activation 匹配独立

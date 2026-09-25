@@ -25,8 +25,8 @@
     {
       "model": "qwen35_2b",
       "official": {"repository": "Qwen/Qwen3.5-2B", "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc", "variant": "official-bf16", "formats": ["BF16", "F32 recurrent"]},
-      "primary_gguf": {"repository": "unsloth/Qwen3.5-2B-GGUF", "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae", "variant": "UD-Q4_K_XL", "formats": ["Q4_K", "Q5_K", "Q6_K", "Q8_0", "IQ4_XS", "F16", "F32"]},
-      "fidelity_gguf": {"repository": "unsloth/Qwen3.5-2B-GGUF", "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae", "variant": "UD-Q8_K_XL", "formats": ["Q8_0", "F16", "F32"]}
+      "primary_gguf": {"repository": "unsloth/Qwen3.5-2B-GGUF", "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae", "variant": "UD-Q4_K_XL", "formats": ["Q4_K", "Q5_K", "Q6_K", "Q8_0", "IQ4_XS", "F16", "F32"], "excluded_regions": ["R13"]},
+      "fidelity_gguf": {"repository": "unsloth/Qwen3.5-2B-GGUF", "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae", "variant": "UD-Q8_K_XL", "formats": ["Q8_0", "F16", "F32"], "excluded_regions": ["R13"]}
     },
     {
       "model": "qwen38_27b",

@@ -70,7 +70,7 @@
 
 | 模型 | 固定 GGUF profile 与来源 | header 观察 | 2026-09-24 社区信号 |
 |---|---|---|---|
-| Qwen3.5-2B | [`UD-Q4_K_XL` @ `f6d5376`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/blob/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-UD-Q4_K_XL.gguf) | 1 shard，320 tensors，1,881,825,088 logical parameters；语言模型 GGUF，不含官方 checkpoint 的完整视觉 tensor 集 | repo 319,752 downloads/month、157 likes |
+| Qwen3.5-2B | [`UD-Q4_K_XL` @ `f6d5376`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/blob/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-UD-Q4_K_XL.gguf) | 1 shard，320 tensors，1,881,825,088 logical parameters；语言模型 GGUF，不含官方 checkpoint 的视觉或 MTP tensor，固定 revision 也没有 MTP sidecar | repo 319,752 downloads/month、157 likes |
 | Qwen3.8-27B | [`UD-Q4_K_M` @ `4ca7207`](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf) | 1 shard，866 tensors，27,320,697,856 logical parameters | repo 7,134,167 downloads/month、4,563 likes |
 | Qwen3.8-2.4T-A95B | [`UD-IQ4_XS` @ `567d3e6`](https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/tree/567d3e6ac26c5474b18311e619c04350fb9a5556/UD-IQ4_XS) | 29 shards，1,702 tensors，2,446,182,725,504 logical parameters | repo 11,107 downloads/month、117 likes；同 repo 还发布 BF16/Q8 与 1--3-bit 档 |
 | Kimi K3 | [`UD-Q4_K_XL` @ `a083636`](https://huggingface.co/unsloth/Kimi-K3-GGUF/tree/a0836360ce58dfec088d966a97f2ddc8a606279b/UD-Q4_K_XL) | 32 shards，2,573 tensors，2,779,483,135,584 logical parameters | repo 457,281 downloads/month、386 likes |
@@ -87,7 +87,7 @@ tensor 保留为 F16/BF16，并继续保留 Kimi/DeepSeek 的 MXFP4 expert；Qwe
 
 | 模型 | 固定高保真 profile 与来源 | header 观察 | 主要按角色格式 |
 |---|---|---|---|
-| Qwen3.5-2B | [`UD-Q8_K_XL` @ `f6d5376`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/blob/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-UD-Q8_K_XL.gguf) | 1 shard，320 tensors，1,881,825,088 logical parameters | embedding F16；attention/FFN 按角色混合 F16/Q8_0；GDN projection F16，state/conv/norm F32 |
+| Qwen3.5-2B | [`UD-Q8_K_XL` @ `f6d5376`](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/blob/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-UD-Q8_K_XL.gguf) | 1 shard，320 tensors，1,881,825,088 logical parameters；与 Q4 画像具有同一组 tensor 名，不含 MTP | embedding F16；attention/FFN 按角色混合 F16/Q8_0；GDN projection F16，state/conv/norm F32 |
 | Qwen3.8-27B | [`UD-Q8_K_XL` @ `4ca7207`](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q8_K_XL.gguf) | 1 shard，866 tensors，27,320,697,856 logical parameters | embedding/FFN/GDN 主要 Q8_0；部分 attention、LM head、MTP 保留 BF16；state/conv/norm F32 |
 | Qwen3.8-2.4T-A95B | [`Q8_0` @ `567d3e6`](https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/tree/567d3e6ac26c5474b18311e619c04350fb9a5556/Q8_0) | 56 shards，1,702 tensors，2,446,182,725,504 logical parameters | projection、routed/shared expert、embedding/output 为 Q8_0；router、norm、GDN state/conv 为 F32 |
 | Kimi K3 | [`UD-Q8_K_XL` @ `a083636`](https://huggingface.co/unsloth/Kimi-K3-GGUF/tree/a0836360ce58dfec088d966a97f2ddc8a606279b/UD-Q8_K_XL) | 34 shards，2,573 tensors，2,779,483,135,584 logical parameters | routed expert 仍为 MXFP4；其它大矩阵保留 BF16；KDA state/conv、router、norm 为 F32 |

@@ -55,6 +55,7 @@ def main() -> None:
             assert item[field] == expected[field]
         assert item["regions"]
         assert set(item["regions"]) <= REGIONS
+        assert not (set(item["regions"]) & set(expected.get("excluded_regions", [])))
         assert item["shape_anchor"]
         assert all(isinstance(value, int) and value > 0
                    for value in item["shape_anchor"].values())

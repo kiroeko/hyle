@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "kind": "artifact_region_applicability_audit",
+  "observed_on": "2026-09-25",
+  "repository": "unsloth/Qwen3.5-2B-GGUF",
+  "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+  "profiles": [
+    {
+      "variant": "UD-Q4_K_XL",
+      "file": "Qwen3.5-2B-UD-Q4_K_XL.gguf",
+      "tensor_count": 320,
+      "logical_parameters": 1881825088,
+      "sorted_tensor_name_sha256": "c0b3b739e8a6adcb551cd76a7d0c6758cbc8cd99a217c2bc7fa8adfe8da5c786",
+      "mtp_or_nextn_tensor_matches": 0
+    },
+    {
+      "variant": "UD-Q8_K_XL",
+      "file": "Qwen3.5-2B-UD-Q8_K_XL.gguf",
+      "tensor_count": 320,
+      "logical_parameters": 1881825088,
+      "sorted_tensor_name_sha256": "c0b3b739e8a6adcb551cd76a7d0c6758cbc8cd99a217c2bc7fa8adfe8da5c786",
+      "mtp_or_nextn_tensor_matches": 0
+    }
+  ],
+  "repository_mtp_sidecar_matches": 0,
+  "decision": {
+    "excluded_region": "R13",
+    "scope": [
+      "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+      "qwen35_2b:fidelity_gguf:UD-Q8_K_XL"
+    ],
+    "official_profile_unchanged": true,
+    "execution_verdict": "NOT_RUN"
+  }
+}
