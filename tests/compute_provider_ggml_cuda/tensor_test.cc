@@ -483,7 +483,7 @@ TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
   auto ctx = context();
   const auto description = dense(DataType::kFloat32, {2, 31});
   for (const auto kind :
-       {UnaryKind::kSilu, UnaryKind::kSigmoid, UnaryKind::kSoftplus})
+       {UnaryKind::kSilu, UnaryKind::kSoftplus})
     EXPECT_FALSE(prepare(ctx, Unary{kind}, description));
   const auto odd = TensorDesc::strided_bytes(DataType::kFloat32,
                                              std::array<std::int64_t, 1>{7},

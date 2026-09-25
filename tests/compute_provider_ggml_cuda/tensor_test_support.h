@@ -311,7 +311,8 @@ inline void unary_and_cast(Context &context) {
       ConstTensorView::create(description, source.view()).value();
   for (auto kind :
        {UnaryKind::kAbs, UnaryKind::kNeg, UnaryKind::kExp, UnaryKind::kLog,
-        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh}) {
+        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh,
+        UnaryKind::kSigmoid}) {
     auto status =
         execute(context, Unary{kind}, std::span(&input, 1),
                 TensorView::create(description, output.view()).value());
@@ -340,6 +341,9 @@ inline void unary_and_cast(Context &context) {
         break;
       case UnaryKind::kTanh:
         expected = std::tanh(values[i]);
+        break;
+      case UnaryKind::kSigmoid:
+        expected = 1.0 / (1.0 + std::exp(-values[i]));
         break;
       default:
         FAIL();

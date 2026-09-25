@@ -623,9 +623,10 @@ bool supports(void *value, Operation operation,
         return false;
     const auto q = inputs[0].dimensions();
     const auto k = inputs[1].dimensions();
-    if (q[0] <= 0 || q[0] > 65535 || q[1] <= 0 || k[1] < q[1] || q[2] != 8 ||
-        k[2] != 2 || q[3] != 256 || k[3] != 256 || q[0] != k[0] ||
-        inputs[1] != inputs[2] || outputs[0] != inputs[0])
+    if (q[0] <= 0 || q[0] > 65535 || q[1] <= 0 || k[1] < q[1] ||
+        q[2] <= 0 || k[2] <= 0 || q[2] % k[2] != 0 || q[3] <= 0 ||
+        q[3] != k[3] || q[0] != k[0] || inputs[1] != inputs[2] ||
+        outputs[0] != inputs[0])
       return false;
     // Bound native indexing and the BF16 score/mask allocation before any
     // upstream API asserts or buffer-size arithmetic can be reached.

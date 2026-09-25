@@ -106,4 +106,44 @@ TEST(GgmlCudaAttention, Bfloat16ValuesOutsideFloat16RangeRemainFinite) {
   exercise_attention<__nv_bfloat16>(compute::DataType::kBFloat16, 1, 513, 0.01,
                                     0.0625F, true);
 }
+
+TEST(GgmlCudaAttention, Qwen38GroupedQueryHeadRatioRuns) {
+  auto context = compute::Context::create(cuda::device(0).value(),
+                                          compute::ggml_cuda::provider())
+                     .value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  Tensor query(compute::DataType::kBFloat16, {1, 1, 24, 256}, memory.ref());
+  Tensor key(compute::DataType::kBFloat16, {1, 1, 4, 256}, memory.ref());
+  Tensor value(compute::DataType::kBFloat16, {1, 1, 4, 256}, memory.ref());
+  Tensor output(compute::DataType::kBFloat16, {1, 1, 24, 256}, memory.ref());
+  (void)payload<__nv_bfloat16>(query, 3);
+  (void)payload<__nv_bfloat16>(key, 7);
+  const auto values = payload<__nv_bfloat16>(value, 11);
+  const std::array inputs{query.view.as_const(), key.view.as_const(),
+                          value.view.as_const()};
+  const std::array outputs{output.view};
+  auto prepared = compute::prepare(
+      context,
+      compute::Operation(compute::ScaledDotProductAttention{.scale = 0.0625F,
+                                                            .causal = true}),
+      inputs, outputs, memory.ref());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, compute::ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation();
+  ASSERT_TRUE(invocation) << invocation.error().message();
+  auto queue = context.create_queue().value();
+  auto done = invocation->submit(queue, inputs, outputs);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::vector<__nv_bfloat16> actual(24 * 256);
+  ASSERT_TRUE(output.storage.view()
+                  .read(std::as_writable_bytes(std::span(actual)))
+                  .ok());
+  for (std::size_t head = 0; head < 24; ++head)
+    for (std::size_t depth = 0; depth < 256; ++depth)
+      EXPECT_NEAR(decode(actual[head * 256 + depth]),
+                  decode(values[(head / 6) * 256 + depth]), 0.01)
+          << "head=" << head << " depth=" << depth;
+}
 } // namespace

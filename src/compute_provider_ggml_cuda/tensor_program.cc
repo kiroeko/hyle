@@ -355,6 +355,7 @@ bool tensor_operation_supports(Operation operation,
     case UnaryKind::kSqrt:
     case UnaryKind::kRsqrt:
     case UnaryKind::kTanh:
+    case UnaryKind::kSigmoid:
       return true;
     default:
       return false;
@@ -506,6 +507,9 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     }
     case UnaryKind::kTanh:
       result = ggml_tanh(context, a);
+      break;
+    case UnaryKind::kSigmoid:
+      result = ggml_sigmoid(context, a);
       break;
     default:
       break; // Stable tails and non-finite domains need another mature carrier.
