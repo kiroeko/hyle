@@ -4,8 +4,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -44,6 +46,18 @@ struct Weights final {
   std::vector<BF16> shared_gate_input;
   std::array<std::int32_t, 1> shared_ids{0};
 };
+
+inline std::array<std::span<const std::byte>, 10>
+constant_bytes(const Weights &weights) {
+  const auto bytes = [](auto &&values) {
+    return std::as_bytes(std::span(values));
+  };
+  return {bytes(weights.router), bytes(weights.replication),
+          bytes(weights.routed_gate), bytes(weights.routed_up),
+          bytes(weights.routed_down), bytes(weights.shared_gate),
+          bytes(weights.shared_up), bytes(weights.shared_down),
+          bytes(weights.shared_gate_input), bytes(weights.shared_ids)};
+}
 
 inline Weights make_weights() {
   Weights weights;
@@ -371,6 +385,192 @@ inline GraphCase make_graph() {
       throw std::runtime_error("full router output publication failed");
   return {std::move(builder).finish().value(), activation_desc,
           constant_descs, output_descs, activation, constants, outputs};
+}
+
+// The Direct recipe uses Compute-only values and output inference. It does not
+// create or link a Graph, preserving the independent Direct delivery seam.
+enum class ValueKind : std::uint8_t { kInput, kConstant, kNodeOutput };
+
+struct ValueId final {
+  std::uint32_t index = 0;
+  ValueKind type = ValueKind::kInput;
+  std::uint32_t ordinal() const noexcept { return index; }
+  ValueKind kind() const noexcept { return type; }
+};
+
+struct DirectNode final {
+  c::Operation operation;
+  std::vector<ValueId> inputs;
+  std::vector<ValueId> outputs;
+};
+
+struct DirectPorts final {
+  c::TensorDesc activation_desc;
+  ValueId activation;
+  std::array<ValueId, 10> constants;
+  std::array<ValueId, 5> outputs;
+};
+
+struct DirectCase final {
+  DirectPorts full;
+  std::vector<c::TensorDesc> descriptions;
+  std::vector<DirectNode> nodes;
+
+  const c::TensorDesc &description(ValueId value) const {
+    return descriptions[value.ordinal()];
+  }
+};
+
+inline DirectCase make_direct_case() {
+  DirectCase result{};
+  const auto add_value = [&](c::TensorDesc description, ValueKind kind) {
+    const auto index = static_cast<std::uint32_t>(result.descriptions.size());
+    result.descriptions.push_back(std::move(description));
+    return ValueId{index, kind};
+  };
+  const auto append = [&](c::Operation operation,
+                          std::initializer_list<ValueId> inputs,
+                          std::size_t output_count = 1) {
+    std::vector<c::TensorDesc> input_descs, output_descs(output_count);
+    for (const auto input : inputs)
+      input_descs.push_back(result.description(input));
+    const auto status =
+        c::infer_output_descriptions(operation, input_descs, output_descs);
+    if (!status.ok())
+      throw std::runtime_error(std::string(status.message()));
+    DirectNode step{operation, inputs, {}};
+    for (auto &description : output_descs)
+      step.outputs.push_back(
+          add_value(std::move(description), ValueKind::kNodeOutput));
+    auto outputs = step.outputs;
+    result.nodes.push_back(std::move(step));
+    return outputs;
+  };
+  const auto one = [&](c::Operation operation,
+                       std::initializer_list<ValueId> inputs) {
+    return append(operation, inputs)[0];
+  };
+
+  result.full.activation_desc = dense(
+      c::DataType::kBFloat16, std::array<std::int64_t, 2>{1, q::kHidden});
+  result.full.activation =
+      add_value(result.full.activation_desc, ValueKind::kInput);
+  const std::array constant_descs{
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 2>{q::kExperts, q::kHidden}),
+      dense(c::DataType::kInt32,
+            std::array<std::int64_t, 1>{q::kTopK}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 3>{q::kRouterResidentExperts,
+                                        q::kExpertHidden, q::kHidden}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 3>{q::kRouterResidentExperts,
+                                        q::kExpertHidden, q::kHidden}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 3>{q::kRouterResidentExperts,
+                                        q::kHidden, q::kExpertHidden}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 3>{1, q::kSharedExpertHidden, q::kHidden}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 3>{1, q::kSharedExpertHidden, q::kHidden}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 3>{1, q::kHidden, q::kSharedExpertHidden}),
+      dense(c::DataType::kBFloat16,
+            std::array<std::int64_t, 2>{1, q::kHidden}),
+      dense(c::DataType::kInt32, std::array<std::int64_t, 2>{1, 1})};
+  for (std::size_t index = 0; index < constant_descs.size(); ++index)
+    result.full.constants[index] =
+        add_value(constant_descs[index], ValueKind::kConstant);
+  const auto &k = result.full.constants;
+  const auto activation = result.full.activation;
+
+  const auto score = one(c::model_ops::bfloat_linear_f32(), {activation, k[0]});
+  const auto probability = one(c::Operation(c::Softmax{}), {score});
+  const auto topk =
+      append(c::Operation(c::TopK{.count = q::kTopK}), {probability}, 2);
+  const auto selected = topk[0], ids = topk[1];
+  const auto selected_sum =
+      one(c::Operation(c::Reduce{
+              .kind = c::ReductionKind::kSum,
+              .axes = c::Axes::from(std::array<std::int32_t, 1>{-1}).value(),
+              .keep_dimensions = true,
+              .accumulation_type = c::DataType::kFloat32}),
+          {selected});
+  const auto normalized = one(c::Operation(c::Binary{c::BinaryKind::kDivide}),
+                              {selected, selected_sum});
+  const auto token_f32 =
+      one(c::Operation(c::Cast{c::DataType::kFloat32}), {activation});
+  const auto replicated = one(c::Operation(c::Gather{}), {token_f32, k[1]});
+  const auto routed_activation =
+      one(c::Operation(c::View::reshape(
+                           c::TensorShape::create(
+                               std::array<std::int64_t, 3>{1, q::kTopK,
+                                                            q::kHidden})
+                               .value())
+                           .value()),
+          {replicated});
+  const auto routed_gate =
+      one(c::model_ops::grouped_matmul(), {k[2], routed_activation, ids});
+  const auto routed_up =
+      one(c::model_ops::grouped_matmul(), {k[3], routed_activation, ids});
+  const auto routed_gated =
+      one(c::Operation(c::GatedActivation{
+              .inputs = c::GatedInputKind::kSeparate}),
+          {routed_gate, routed_up});
+  const auto routed =
+      one(c::model_ops::grouped_matmul(), {k[4], routed_gated, ids});
+  const auto selected_weights =
+      one(c::Operation(c::View::reshape(
+                           c::TensorShape::create(
+                               std::array<std::int64_t, 3>{1, q::kTopK, 1})
+                               .value())
+                           .value()),
+          {normalized});
+  const auto weighted = one(
+      c::Operation(c::Binary{c::BinaryKind::kMultiply}),
+      {routed, selected_weights});
+  const auto combined =
+      one(c::Operation(c::Reduce{
+              .kind = c::ReductionKind::kSum,
+              .axes = c::Axes::from(std::array<std::int32_t, 1>{1}).value(),
+              .keep_dimensions = true,
+              .accumulation_type = c::DataType::kFloat32}),
+          {weighted});
+  const auto shared_activation =
+      one(c::Operation(c::View::reshape(
+                           c::TensorShape::create(
+                               std::array<std::int64_t, 3>{1, 1, q::kHidden})
+                               .value())
+                           .value()),
+          {token_f32});
+  const auto shared_gate =
+      one(c::model_ops::grouped_matmul(), {k[5], shared_activation, k[9]});
+  const auto shared_up =
+      one(c::model_ops::grouped_matmul(), {k[6], shared_activation, k[9]});
+  const auto shared_gated =
+      one(c::Operation(c::GatedActivation{
+              .inputs = c::GatedInputKind::kSeparate}),
+          {shared_gate, shared_up});
+  const auto shared_down =
+      one(c::model_ops::grouped_matmul(), {k[7], shared_gated, k[9]});
+  const auto shared_score =
+      one(c::model_ops::bfloat_linear_f32(), {activation, k[8]});
+  const auto shared_probability =
+      one(c::Operation(c::Unary{c::UnaryKind::kSigmoid}), {shared_score});
+  const auto shared_broadcast =
+      one(c::Operation(c::View::reshape(
+                           c::TensorShape::create(
+                               std::array<std::int64_t, 3>{1, 1, 1})
+                               .value())
+                           .value()),
+          {shared_probability});
+  const auto shared = one(
+      c::Operation(c::Binary{c::BinaryKind::kMultiply}),
+      {shared_down, shared_broadcast});
+  const auto full = one(c::Operation(c::Binary{c::BinaryKind::kAdd}),
+                        {combined, shared});
+  result.full.outputs = {ids, routed, combined, shared, full};
+  return result;
 }
 
 } // namespace d5_qwen38_24t_full_router

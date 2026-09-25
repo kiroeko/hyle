@@ -18,6 +18,7 @@
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "hyle/compute/apple.h"
@@ -30,6 +31,7 @@ namespace a = c::apple;
 namespace mx = mlx::core;
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
+namespace qfull = d5_qwen38_24t_full_router;
 
 c::TensorDesc dense(c::DataType type,
                     std::initializer_list<std::int64_t> shape) {
@@ -1266,6 +1268,80 @@ TEST(AppleQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
     ASSERT_EQ(scores.size(), q24::kExperts);
     EXPECT_NEAR(scores[9], 1.0, 1.0e-6);
     EXPECT_NEAR(scores[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
+TEST(AppleQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
+  auto direct = qfull::make_direct_case();
+  auto weights = qfull::make_weights();
+  auto context = a::Context::create().value();
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  std::vector<std::optional<mx::array>> tensors(direct.descriptions.size());
+  const auto bytes = qfull::constant_bytes(weights);
+  for (std::size_t index = 0; index < direct.full.constants.size(); ++index) {
+    const auto id = direct.full.constants[index];
+    tensors[id.ordinal()] = upload(context, direct.description(id), bytes[index]);
+  }
+  weights = {};
+
+  std::vector<Call> calls;
+  calls.reserve(direct.nodes.size());
+  for (const auto &step : direct.nodes) {
+    if (step.operation.kind() == c::OperationKind::kView)
+      continue;
+    std::vector<mx::array> inputs;
+    for (const auto id : step.inputs)
+      inputs.push_back(id.kind() == qfull::ValueKind::kConstant
+                           ? *tensors[id.ordinal()]
+                           : example(context, direct.description(id)));
+    calls.push_back(prepare(context, workload, step.operation,
+                            std::span<const mx::array>(inputs)));
+  }
+
+  for (const int replay : {3, 17, 29}) {
+    const auto expected = qfull::expected(replay);
+    tensors[direct.full.activation.ordinal()] =
+        upload(context, direct.full.activation_desc,
+               std::span(expected.activation));
+    std::size_t call_index = 0;
+    for (const auto &step : direct.nodes) {
+      if (step.operation.kind() == c::OperationKind::kView) {
+        ASSERT_EQ(step.inputs.size(), 1U);
+        ASSERT_EQ(step.outputs.size(), 1U);
+        ASSERT_EQ(step.operation.get_if<c::View>()->kind(),
+                  c::ViewKind::kReshape);
+        tensors[step.outputs[0].ordinal()] = mx::reshape(
+            *tensors[step.inputs[0].ordinal()],
+            native_shape(direct.description(step.outputs[0]), false), stream());
+        continue;
+      }
+      std::vector<mx::array> inputs;
+      for (const auto id : step.inputs)
+        inputs.push_back(*tensors[id.ordinal()]);
+      const auto outputs =
+          run(calls[call_index++], std::span<const mx::array>(inputs));
+      ASSERT_EQ(outputs.size(), step.outputs.size());
+      for (std::size_t index = 0; index < outputs.size(); ++index)
+        tensors[step.outputs[index].ordinal()] = outputs[index];
+    }
+    const auto ids = values(*tensors[direct.full.outputs[0].ordinal()]);
+    ASSERT_EQ(ids.size(), expected.ids.size());
+    for (std::size_t i = 0; i < ids.size(); ++i)
+      EXPECT_EQ(ids[i], expected.ids[i]) << "slot=" << i;
+    for (std::size_t output = 1; output < direct.full.outputs.size(); ++output) {
+      const auto actual =
+          values(*tensors[direct.full.outputs[output].ordinal()]);
+      const auto &oracle = output == 1 ? expected.routed
+                           : output == 2 ? expected.combined
+                           : output == 3 ? expected.shared
+                                         : expected.full;
+      ASSERT_EQ(actual.size(), oracle.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], oracle[i],
+                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
+                        q24::kExpertAbsoluteTolerance)
+            << "output=" << output << " element=" << i;
+    }
   }
 }
 

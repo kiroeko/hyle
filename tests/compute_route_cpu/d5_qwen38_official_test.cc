@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -11,6 +12,7 @@
 #include <vector>
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
@@ -25,6 +27,7 @@ namespace {
 namespace c = hyle::compute;
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
+namespace qfull = d5_qwen38_24t_full_router;
 namespace qcase = d5_qwen38_profile_cases;
 using BF16 = hyle::simd::bfloat16_t;
 
@@ -605,8 +608,98 @@ TEST(CpuQwen38_24T,
   }
 }
 
+TEST(CpuQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
+  auto direct = qfull::make_direct_case();
+  auto weights = qfull::make_weights();
+  auto context = c::cpu::create_context().value();
+  auto queue = context.create_queue().value();
+  const auto resource = hyle::mem::system_resource();
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  std::vector<hyle::mem::Buffer> buffers(direct.descriptions.size());
+  std::vector<hyle::mem::BufferView> views(direct.descriptions.size());
+  const auto allocate = [&](qfull::ValueId id) {
+    const auto &description = direct.description(id);
+    buffers[id.ordinal()] =
+        hyle::mem::Buffer::create(resource,
+                                  description.required_bytes().value(), 64)
+            .value();
+    views[id.ordinal()] = buffers[id.ordinal()].view();
+  };
+  allocate(direct.full.activation);
+  const auto constant_bytes = qfull::constant_bytes(weights);
+  for (std::size_t index = 0; index < direct.full.constants.size(); ++index) {
+    const auto id = direct.full.constants[index];
+    allocate(id);
+    ASSERT_TRUE(views[id.ordinal()].write(constant_bytes[index]).ok());
+  }
+  weights = {};
+
+  std::vector<DirectCall> calls;
+  calls.reserve(direct.nodes.size());
+  for (const auto &step : direct.nodes) {
+    if (step.operation.kind() == c::OperationKind::kView) {
+      ASSERT_EQ(step.inputs.size(), 1U);
+      ASSERT_EQ(step.outputs.size(), 1U);
+      ASSERT_EQ(step.operation.get_if<c::View>()->kind(),
+                c::ViewKind::kReshape);
+      views[step.outputs[0].ordinal()] = views[step.inputs[0].ordinal()];
+      continue;
+    }
+    std::vector<c::TensorDesc> inputs, outputs;
+    for (const auto id : step.inputs)
+      inputs.push_back(direct.description(id));
+    for (const auto id : step.outputs) {
+      outputs.push_back(direct.description(id));
+      allocate(id);
+    }
+    calls.push_back(make_call(context, step.operation, inputs, outputs,
+                              workload));
+    expect_mature(calls.back(), workload);
+  }
+
+  for (const int replay : {3, 17, 29}) {
+    const auto expected = qfull::expected(replay);
+    ASSERT_TRUE(views[direct.full.activation.ordinal()]
+                    .write(std::as_bytes(std::span(expected.activation)))
+                    .ok());
+    std::size_t call_index = 0;
+    for (const auto &step : direct.nodes) {
+      if (step.operation.kind() == c::OperationKind::kView)
+        continue;
+      std::vector<c::ConstTensorView> inputs;
+      std::vector<c::TensorView> outputs;
+      for (const auto id : step.inputs)
+        inputs.push_back(c::ConstTensorView::create(
+                             direct.description(id), views[id.ordinal()])
+                             .value());
+      for (const auto id : step.outputs)
+        outputs.push_back(c::TensorView::create(
+                              direct.description(id), views[id.ordinal()])
+                              .value());
+      run(calls[call_index++], queue, inputs, outputs);
+    }
+    const auto ids = half_test::read<std::int32_t>(
+        buffers[direct.full.outputs[0].ordinal()]);
+    ASSERT_TRUE(std::ranges::equal(ids, expected.ids));
+    for (std::size_t output = 1; output < direct.full.outputs.size(); ++output) {
+      const auto actual = half_test::read<float>(
+          buffers[direct.full.outputs[output].ordinal()]);
+      const auto &oracle = output == 1 ? expected.routed
+                           : output == 2 ? expected.combined
+                           : output == 3 ? expected.shared
+                                         : expected.full;
+      ASSERT_EQ(actual.size(), oracle.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], oracle[i],
+                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
+                        q24::kExpertAbsoluteTolerance)
+            << "output=" << output << " element=" << i;
+    }
+  }
+}
+
 TEST_P(CpuQwen38Profiles,
-     D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
+       D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto &shape = *GetParam();
   const auto query_desc = dense(c::DataType::kBFloat16,
                                 {1, 1, shape.query_heads, q::kHeadDepth});
