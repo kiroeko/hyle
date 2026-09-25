@@ -581,6 +581,31 @@ replay，失败路径不发布结果，编译报告只含 ggml CPU/oneDNN 成熟
 ledger 现有 26 个 `RUN_PASS`、150 个 `VALIDATION_NOT_RUN`；CUDA、Apple、Vulkan 六格以及 D5-A5
 三交付和 D5-A6 P1 尚未由本批代签。
 
+### D5-F13：Qwen3.8 CUDA GQA 资格域修复
+
+Qwen3.8-27B 官方 profile 的 R04 使用 BF16、24 query heads / 4 KV heads × 256 和 F32 累加。
+普通 CUDA Direct 的 RMSNorm、partial interleaved RoPE 和输出 Sigmoid 均可准备，但 SDPA 在准备期被
+默认路线拒绝；同一 executable 的 Qwen3.5 8/2×256 GQA 已通过。源码定位到 `compute_provider_ggml_cuda`
+的 SDPA 资格函数把 query/KV head 数写死为 8/2，紧邻的成熟 lowering 已使用固定 ggml CUDA
+`ggml_mul_mat` head-batch 广播，没有 8/2 专用算法。失败和源码边界见
+[Qwen3.8 CUDA R04 admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-r04-cuda-gqa-admission-audit/README.md)。
+
+因此 `compute_provider_ggml_cuda` 从 D5 candidate 精确退回本卡 AUDITED。有限 FIX 只有：
+
+1. 在既有 dense BF16/F16、causal、无显式 mask、F32 accumulation、SM89 资格域内，将 ggml CUDA
+   SDPA admission 从固定 8/2 改为正 head 数、`Q_heads % KV_heads == 0`、Q/K/V depth 相同、K/V
+   形状相同和既有输出形状；
+2. 保持 FlashInfer 的 8/2×256 已资格化原生 kernel 域不变；24/4 由固定 ggml CUDA 成熟图接管，
+   不新增 HYLE kernel、fallback、热路径搜索或路由顺序；
+3. Provider 回归保留 8/2×256 并新增 24/4×256，两者必须准备到成熟 Provider；Qwen3.8 CUDA
+   Direct/Graph 使用 exact profile、两次变化输入、独立 oracle 和稳定 replay 完成 R01-R04、R13-R15；
+4. CUDA 首次 submit 允许固定上游建立一次 graph metadata，资源稳定性从第一轮 warm replay 到第二轮
+   replay 比较；只运行 `compute_provider_ggml_cuda`、`compute_route_cuda`、`graph_provider_ggml_cuda`、
+   `graph_route_cuda` 与 selector 选择的公共检查。
+
+不修改公共 SDPA schema、ggml 源码、算法、FlashInfer kernel 或任何 HYLE 数学；若固定 ggml CUDA
+实际执行 24/4 仍失败，则记录精确 `BACKEND_REJECTED`，不在 D5 实现替代 attention。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

@@ -563,10 +563,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 CUDA CANDIDATE 889bb81a：固定 ggml GET_ROWS 已接管 Q4_K/Q6_K/Q8_0 checked embedding；Qwen3.5 primary GGUF R01 的 CUDA Direct/Graph、replay、失败、owner suite 与 WERROR selector 通过，等待其余路线和完整验收。",
-      "candidate": "889bb81a26b08c962af7e5adde0076f202c6b38e"
+      "summary": "M3-D5-F13 AUDITED：Qwen3.8-27B 官方 24/4×256 BF16 GQA 暴露 ggml CUDA SDPA 资格被旧 Qwen3.5 形状写死为 8/2；有限 FIX 只把既有成熟 ggml CUDA GQA lowering 的 admission 泛化到正整数倍 head ratio，并保留 FlashInfer 已资格化域。"
     },
     {
       "module": "graph_provider_ggml_cuda",
