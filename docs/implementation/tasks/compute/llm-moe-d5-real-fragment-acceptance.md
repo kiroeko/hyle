@@ -689,6 +689,27 @@ owner 63.09 秒、Graph owner 64.50 秒。完整收据见
 36 个 `RUN_PASS`、140 个 `VALIDATION_NOT_RUN`；其余四条 Qwen3.8 GGUF Apple/Vulkan 路线格以及
 D5-A5 三交付和 D5-A6 P1 尚未由本批代签。
 
+### Qwen3.8 primary GGUF Apple Direct/Graph 完整格
+
+不可变 tests-only candidate `dfa1423767d375154aa75cc717d327d7073d331b` 已在正式 MacBook Air M4
+的普通 Apple Direct/Graph 入口完成固定 `qwen38_27b:primary_gguf:UD-Q4_K_M` profile 的
+R01-R05、R13-R15。R01 保留 Q4_K embedding 的精确 5120 隐藏宽度；投影批次逐一运行 artifact
+实际出现的 Q3_K、IQ3_S、IQ4_NL、IQ4_XS、Q4_K、Q5_K、Q6_K、Q8_0，并额外固定 MTP 的
+Q6_K `10240 -> 5120` 权重。语义链保留 FFN=17408、GQA 24/4×256、partial interleaved RoPE 64、
+Gated DeltaNet K16/V48×128 及 MTP 10240；每个 prepared artifact 以变化输入重放，越界 embedding
+不发布结果。量化调用固定绑定 ggml Metal，其余语义片段固定绑定 MLX Metal；没有增加 HYLE 数学、
+fallback、热选择或产品实现。
+
+Q4_K `get_rows` 的独立 F32 oracle 首轮暴露了成熟 Provider 的数值边界。源码确认 ggml Metal
+`dequantize_q4_K` 在高半字节分支以 half 精度执行 `xb->d / 16.h` 后发布 F32；实测最大绝对差
+`4.506111145019531e-4`。仅该转换按 `5e-4` 验收，其它 embedding 格式仍保持 `1e-6`。
+AppleClang 21 Release/WERROR selector 的 docs、closure、configure、Apple Direct 与 Apple Graph 五个
+gate 全部 PASS，127 个无关 gate 跳过或复用；完整 Direct owner 80.02 秒、Graph owner 40.11 秒。
+完整收据见
+[Qwen3.8 primary GGUF Apple complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/README.md)。
+ledger 现有 38 个 `RUN_PASS`、138 个 `VALIDATION_NOT_RUN`；剩余 Qwen3.8 GGUF Vulkan 两格以及
+D5-A5 三交付和 D5-A6 P1 尚未由本批代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

@@ -2588,18 +2588,84 @@
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:apple:graph",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:vulkan:direct",
@@ -3850,9 +3916,9 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 36,
+    "RUN_PASS": 38,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 140
+    "VALIDATION_NOT_RUN": 138
   }
 }

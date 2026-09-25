@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "candidate": "dfa1423767d375154aa75cc717d327d7073d331b",
+  "candidate_tree": "7658fec56c5ded73b99c17734f94de9b9cc228cd",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
+    "route": "apple",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CPU, CUDA, or Vulkan cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "model_repository": "Qwen/Qwen3.8-27B",
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "artifact_repository": "unsloth/Qwen3.8-27B-GGUF",
+    "artifact_revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "variant": "UD-Q4_K_M",
+    "format_family": "gguf",
+    "tensor_count": 866,
+    "logical_parameters": 27320697856,
+    "header_manifest_sha256": "380ddd71a9afe228097df16cfbbc8fd33f2707fe562ea9f695f25eb40b01e774",
+    "audit": "docs/implementation/tasks/compute/llm-moe-model-weight-operator-audit.md",
+    "fixture": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+    "payload": "deterministic nonzero format-valid GGUF blocks at exact model reduction/output widths; token rows are bounded and no checkpoint bytes are committed",
+    "oracle": "stored blocks are decoded independently of route execution, then compared with host row-selection or float matmul; semantic fragments use separate host calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "storage": {
+      "embedding": "token_embd.weight Q4_K [5120,248320], exercised with bounded rows and exact width",
+      "projection_types": [
+        "Q3_K",
+        "IQ3_S",
+        "IQ4_NL",
+        "IQ4_XS",
+        "Q4_K",
+        "Q5_K",
+        "Q6_K",
+        "Q8_0"
+      ],
+      "mtp": "blk.64.nextn.eh_proj.weight Q6_K [10240,5120]"
+    },
+    "providers": [
+      "MLX 0.32.2 Metal native programs",
+      "ggml Metal 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle"
+    ],
+    "provider_assertion": "quantized Direct calls and Graph compile reports bind fixed ggml Metal; the remaining semantic fragments use ordinary fixed MLX Metal programs; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, gate, or state while routing remains cold-bound",
+    "failure": "an invalid embedding index fails without changing the previously published output",
+    "numerics": {
+      "scope": "Q4_K get_rows only",
+      "oracle": "independent CPU F32 decode of the identical packed blocks",
+      "provider_behavior": "ggml Metal dequantize_q4_K evaluates the high-nibble xb->d / 16.h scale step in half precision before publishing F32",
+      "observed_max_absolute_error": 0.0004506111145019531,
+      "acceptance_absolute_error": 0.0005,
+      "other_embedding_formats_absolute_error": 1e-06
+    }
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "AppleD5.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "AppleD5.D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+        "D5OfficialAndPrimaryGguf/AppleQwen38Profiles.*/1",
+        "D5OfficialAndPrimaryGguf/AppleQwen38GdnProfiles.*/1"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "AppleGraphD5.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+        "AppleGraphD5.D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+        "D5OfficialAndPrimaryGguf/AppleGraphQwen38Profiles.*/1",
+        "D5OfficialAndPrimaryGguf/AppleGraphQwen38GdnProfiles.*/1"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Q4_K embedding at exact hidden width plus boundary semantics"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "exact-width FFN semantics plus mixed GGUF FFN storage"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "exact projection widths across stored subtypes"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "partial RoPE, 24/4 GQA, output gate, and quantized attention projections"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "tests": "K16/V48 grouped-head Gated DeltaNet and recurrent projection storage"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "MTP concat semantics and exact Q6_K 10240-to-5120 projection"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "normalization, cast, and projection boundaries"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "separate LM-head semantics and failure publication; Q6_K storage subtype is exercised natively"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "fe31cbec3713f7697efdf48a6b502adec84abc6c",
+    "verdict": "PASS",
+    "selected": 5,
+    "skipped_or_reused": 127,
+    "werror": true,
+    "toolchain": "AppleClang 21.0.0.21000334; libc++; macOS SDK 27.0",
+    "machine": "MacBook Air Mac16,12; Apple M4; macOS 27.0",
+    "gates": {
+      "docs": "056ba79c0b5281398fe867bc822bd791aca49410af6af6f478637a1b55d09495",
+      "closure": "745dc6f64bb6861991ada0f04ba2d02115f598c6fc1ad8e7556c6940c371fa22",
+      "configure": "426ea8f26a8fb23a8e3041c4bef047f2107131fccad2ff3f36247a18d5176023",
+      "compute_route_apple": "e135d4afd2175a505c4dba16e1b8db04767fb5d9f6dcd506f2b1ddba901f7662",
+      "graph_route_apple": "5028fb3a249c3847a30a107f588d5fa1049dd4d78c4df40d1f6d7e3f523417fe"
+    },
+    "owner_suites": {
+      "compute_route_apple": "complete label PASS in 80.02 s",
+      "graph_route_apple": "complete label PASS in 40.11 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable Apple route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "M1-MAC",
+    "system": "macOS 27.0 (Darwin 27.0.0)",
+    "model": "MacBook Air Mac16,12",
+    "chip": "Apple M4",
+    "memory": "16 GB",
+    "compiler": "AppleClang 21.0.0.21000334",
+    "mlx": "0.32.2",
+    "ggml": "0.24.0 / 456172ec733a135778adcd32d00e576a58232e45-hyle"
+  }
+}
