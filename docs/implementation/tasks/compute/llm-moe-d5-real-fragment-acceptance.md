@@ -502,6 +502,22 @@ Visual Studio `rc`/`mt` 环境而在 compiler configure 停止；同一 candidat
 ledger 现有 18 个 `RUN_PASS`、158 个 `VALIDATION_NOT_RUN`。CUDA、Apple、Vulkan 六格以及 D5-A5
 三交付、D5-A6 P1 仍未由本 tests-only candidate 代签。
 
+**D5-F11 CUDA complete（`d407d9cc`）**：普通 CUDA Direct/Graph 已完整运行同一固定
+`qwen35_2b:fidelity_gguf:UD-Q8_K_XL` profile。R01 的 F16 embedding 冷绑定原始 CCCL checked
+Gather，并按其合同持有 workspace；R02 保留 Q8_0 gate/up/down；R03/R14 分别运行 Q8_0 与 F16
+投影；R04/R05 保留精确 `8/2 x 256` GQA、K4 causal conv 和 `16 x 128` Gated DeltaNet 语义。
+每条 Direct/Graph 路径准备一次并以变化输入重放，匹配独立 Q8_0、F16 或 fragment oracle；无效
+embedding 索引失败不覆盖已发布结果。所有调用和 Graph report 只固定到 ggml CUDA、cuBLAS、
+SGLang/CCCL native 或 FlashInfer，没有新增 HYLE 数学、fallback 或热路径选路。R13 继续按固定
+artifact 的已审计缺失排除。
+
+不可变 RTX 4070/SM89、MSVC 19.50、CUDA 13.3、Release/WERROR selector 通过 docs、closure、
+configure、CUDA Direct 与 CUDA Graph；完整 Direct 29/29、Graph 46/46，127 个无关 gate 跳过或
+复用。完整收据见
+[CUDA fidelity GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-fidelity-gguf-complete/README.md)。
+ledger 现有 20 个 `RUN_PASS`、156 个 `VALIDATION_NOT_RUN`。Apple、Vulkan 四格以及 D5-A5 三交付、
+D5-A6 P1 仍未由本 tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

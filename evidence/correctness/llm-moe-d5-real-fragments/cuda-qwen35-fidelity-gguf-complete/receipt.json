@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "candidate": "d407d9cc7c3f01cffab5b02e1c613c60bc220b0e",
+  "candidate_tree": "6b6747dae436aa04cd1b4d6399e7bb2cba866284",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
+    "route": "cuda",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R14",
+      "R15"
+    ],
+    "excluded_regions": [
+      {
+        "region": "R13",
+        "reason": "the fixed GGUF artifact has no MTP/NextN tensors or sidecar"
+      }
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q8_K_XL",
+    "manifest_digest": "984823c386e1fd17a05b97d49a6416cd25940415d8f7f77182596533f3e5ab92",
+    "tensor_count": 320,
+    "logical_parameters": 1881825088,
+    "payload": "exact audited tensor names, roles, dimensions and formats with deterministic format-valid nonzero weights",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "mixed_weights": [
+      {
+        "role": "embedding",
+        "format": "F16",
+        "shape": [
+          2048,
+          248320
+        ]
+      },
+      {
+        "role": "FFN gate/up",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          6144
+        ]
+      },
+      {
+        "role": "FFN down",
+        "format": "Q8_0",
+        "shape": [
+          6144,
+          2048
+        ]
+      },
+      {
+        "role": "Gated DeltaNet output",
+        "format": "F16",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "attention K",
+        "format": "F16",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "attention Q",
+        "format": "F16",
+        "shape": [
+          2048,
+          4096
+        ]
+      },
+      {
+        "role": "attention V",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "attention output",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "convolution/state/norm",
+        "format": "F32"
+      }
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "providers": [
+      "ggml CUDA 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "cuBLAS / CUDA native SGLang and CCCL / FlashInfer registered mature paths"
+    ],
+    "routing": "ordinary CUDA Direct prepare and Graph compile cold-bind only mature providers for every current fragment; F16 embedding selects original CCCL Gather and its declared workspace",
+    "replay": "each prepared chain or Graph program submits twice with changed activation, token or state; Graph replay preparation owns planned workspace and stable metadata, while fixed ggml CUDA may construct its capture cache on first submit",
+    "oracles": [
+      "independent Q8_0 packed-weight decode followed by F32 dot products",
+      "independent F16 encode/decode followed by F32 dot products",
+      "independent RMSNorm, half-split RoPE, causal-convolution and Gated DeltaNet calculations",
+      "BF16 activation/storage with F32 accumulation for the attention region",
+      "sequence-length-one 8-query-head/2-KV-head GQA mapping",
+      "checked CCCL embedding failure preserves the previously published output"
+    ],
+    "quantized_chain_gate": "per-stage RMSE <= 0.002 + 2% reference RMS and max error <= 0.02 + 2% max reference"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R02",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R03",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "CudaDefaultCompute.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R04",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufAttentionSemanticsUseMaturePreparedCalls",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R05",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufGdnStateUsesMaturePreparedCalls",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R14",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "CudaDefaultCompute.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R15",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+        "CudaDefaultCompute.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays",
+        "CudaDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "a29ff641ecaebec823612eede59b478c9d4a80cf",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_route_cuda",
+      "factor:graph_route_cuda"
+    ],
+    "skipped_or_reused": 127,
+    "compute_route_cuda": "1/1 CTest executable PASS in 16.10 s; executable contains 29/29 passing tests",
+    "graph_route_cuda": "1/1 CTest executable PASS in 18.13 s; executable contains 46/46 passing tests",
+    "toolchain": "MSVC 19.50.35728; CUDA Toolkit 13.3.73",
+    "flags": "/DWIN32 /D_WINDOWS /GR /EHsc; Release /O2 /Ob2 /DNDEBUG; WERROR; CUDAARCHS=89-real",
+    "machine": "Windows 11, 13th Gen Intel Core i9-13900K, NVIDIA GeForce RTX 4070 SM89"
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CUDA route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs after the stable route correctness batch"
+  }
+}
