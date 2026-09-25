@@ -11,6 +11,7 @@
 
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
@@ -114,23 +115,22 @@ void run(DirectCall &call, c::Queue &queue,
   ASSERT_TRUE(completion->wait().ok());
 }
 
-TEST(CudaDefaultCompute,
-     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+void run_quantized_embedding(
+    const c::ModelArtifactProfileDescription &profile, std::int64_t hidden,
+    std::int64_t rows, c::GgufQuantizedType type, std::uint64_t region,
+    int seed) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  constexpr auto hidden = d5_qwen35_fixture::kHidden;
-  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
   constexpr std::int64_t tokens = 2;
-  const auto stored = c::gguf_weight_description(
-      c::GgufQuantizedType::kQ6K, c::DataType::kFloat32, hidden, rows);
+  const auto stored =
+      c::gguf_weight_description(type, c::DataType::kFloat32, hidden, rows);
   ASSERT_TRUE(stored) << stored.error().message();
   const auto table_desc = stored->transposed().value();
   const auto ids_desc = dense(c::DataType::kInt32, {tokens});
   const auto output_desc = dense(c::DataType::kFloat32, {tokens, hidden});
   const std::array input_descs{table_desc, ids_desc};
   const std::array output_descs{output_desc};
-  const auto workload =
-      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
-                                  c::WorkloadPhase::kDecode, 0x010f);
+  const auto workload = d5_qwen35_fixture::workload(
+      profile, c::WorkloadPhase::kDecode, region);
 
   auto context = cuda::create_context().value();
   auto memory =
@@ -142,10 +142,9 @@ TEST(CudaDefaultCompute,
   EXPECT_EQ(prepared->provider().id, c::ggml_cuda::kProviderId);
   EXPECT_EQ(prepared->workload(), workload);
 
-  const auto physical = d5_gguf_test::values(rows, hidden, 17);
-  const auto packed =
-      d5_gguf_test::pack(c::GgufQuantizedType::kQ6K, physical, rows, hidden,
-                         table_desc.required_bytes().value());
+  const auto physical = d5_gguf_test::values(rows, hidden, seed);
+  const auto packed = d5_gguf_test::pack(
+      type, physical, rows, hidden, table_desc.required_bytes().value());
   auto table_buffer = bytes_buffer(resource, packed.bytes);
   auto ids_buffer = output_buffer(resource, ids_desc);
   auto result_buffer = output_buffer(resource, output_desc);
@@ -176,12 +175,30 @@ TEST(CudaDefaultCompute,
   }
 
   const auto before_failure = read_bytes(result_buffer);
-  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const std::array<std::int32_t, tokens> invalid{
+      0, static_cast<std::int32_t>(rows)};
   ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
   auto failed = invocation.submit(queue, inputs, outputs);
   ASSERT_TRUE(failed) << failed.error().message();
   EXPECT_FALSE(failed->wait().ok());
   EXPECT_EQ(read_bytes(result_buffer), before_failure);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+  run_quantized_embedding(
+      d5_qwen35_fixture::kPrimaryGgufProfile, d5_qwen35_fixture::kHidden,
+      d5_qwen35_fixture::kEmbeddingRows, c::GgufQuantizedType::kQ6K, 0x010f,
+      17);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays) {
+  run_quantized_embedding(
+      d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+      d5_qwen38_official_fixture::kHidden,
+      d5_qwen38_official_fixture::kEmbeddingRows,
+      c::GgufQuantizedType::kQ4K, 0x010f, 19);
 }
 
 TEST(CudaDefaultCompute,
@@ -315,6 +332,12 @@ TEST(CudaDefaultCompute,
      D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
   run_quantized_projections(d5_qwen35_fixture::kPrimaryGgufProfile,
                             d5_gguf_test::kQwen35PrimaryProjectionCases);
+}
+
+TEST(CudaDefaultCompute,
+     D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay) {
+  run_quantized_projections(d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+                            d5_gguf_test::kQwen38PrimaryProjectionCases);
 }
 
 TEST(CudaDefaultCompute,

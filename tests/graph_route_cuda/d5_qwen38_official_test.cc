@@ -81,8 +81,12 @@ void expect_near(std::span<const BF16> actual,
         << i;
 }
 
-TEST(CudaDefaultGraph,
-     D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays) {
+class CudaGraphQwen38Profiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(CudaGraphQwen38Profiles,
+       D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
   constexpr std::int64_t tokens = 2;
   constexpr int projection_seed = 31;
   const auto table_desc =
@@ -153,7 +157,8 @@ TEST(CudaDefaultGraph,
       g::ConstantBinding{
           scale,
           c::ConstTensorView::create(scale_desc, scale_buffer.view()).value()}};
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x01030e0f);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x01030e0f);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -253,7 +258,8 @@ TEST(CudaDefaultGraph,
   EXPECT_EQ(read_bytes(logits_buffer), last_logits);
 }
 
-TEST(CudaDefaultGraph, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
+TEST_P(CudaGraphQwen38Profiles,
+       D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) {
   constexpr int seed = 41;
   const auto activation_desc =
       dense(c::DataType::kBFloat16, {1, q::kHidden});
@@ -319,7 +325,8 @@ TEST(CudaDefaultGraph, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
       g::ConstantBinding{
           down_weight,
           c::ConstTensorView::create(down_desc, down_buffer.view()).value()}};
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0203);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0203);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -355,7 +362,8 @@ TEST(CudaDefaultGraph, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
   }
 }
 
-TEST(CudaDefaultGraph, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
+TEST_P(CudaGraphQwen38Profiles,
+       D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto query_desc = dense(c::DataType::kBFloat16,
                                 {1, 1, q::kQueryHeads, q::kHeadDepth});
   const auto kv_desc = dense(c::DataType::kBFloat16,
@@ -434,7 +442,8 @@ TEST(CudaDefaultGraph, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
                          c::ConstTensorView::create(frequency_desc,
                                                     frequency_buffer.view())
                              .value()}};
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 4);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 4);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -500,7 +509,8 @@ TEST(CudaDefaultGraph, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
   }
 }
 
-TEST(CudaDefaultGraph, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
+TEST_P(CudaGraphQwen38Profiles,
+       D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays) {
   constexpr int weight_seed = 67;
   const auto half_desc = dense(c::DataType::kBFloat16, {1, q::kHidden});
   const auto joined_desc = dense(c::DataType::kBFloat16, {1, q::kMtpInput});
@@ -548,7 +558,8 @@ TEST(CudaDefaultGraph, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
       g::ConstantBinding{
           scale,
           c::ConstTensorView::create(scale_desc, scale_buffer.view()).value()}};
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0d0e);
+  const auto workload =
+      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0d0e);
   auto result = g::cuda::compile(
       logical, context, resource,
       {.constants = constants, .workload = workload});
@@ -607,5 +618,10 @@ TEST(CudaDefaultGraph, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
           << i;
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, CudaGraphQwen38Profiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 } // namespace

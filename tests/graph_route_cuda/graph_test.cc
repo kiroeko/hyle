@@ -191,7 +191,11 @@ TEST(CudaDefaultGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
   }
 }
 
-TEST(CudaDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+class CudaGraphQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const compute::ModelArtifactProfileDescription *> {};
+
+TEST_P(CudaGraphQwen38GdnProfiles, GroupedHeadUsesOrdinaryGraphAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   auto builder = graph::GraphBuilder::create().value();
   std::array<graph::ValueId, 6> inputs;
@@ -211,7 +215,7 @@ TEST(CudaDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
       cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
   const auto resource = memory.ref();
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      compute::WorkloadPhase::kDecode);
+      *GetParam(), compute::WorkloadPhase::kDecode);
   auto compiled = graph::cuda::compile(logical, owner, resource,
                                        {.workload = workload});
   ASSERT_TRUE(compiled) << compiled.error().message();
@@ -266,6 +270,11 @@ TEST(CudaDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
     }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, CudaGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 struct FfnGraph final {
   graph::Graph logical;

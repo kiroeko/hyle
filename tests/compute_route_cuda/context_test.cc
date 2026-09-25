@@ -203,7 +203,11 @@ TEST(CudaDefaultCompute, D5RealQwenProjectionUsesExactProfileAndReplays) {
   }
 }
 
-TEST(CudaDefaultCompute, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+class CudaQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const compute::ModelArtifactProfileDescription *> {};
+
+TEST_P(CudaQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   auto owner = cuda::create_context().value();
   auto memory =
@@ -239,7 +243,7 @@ TEST(CudaDefaultCompute, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
       compute::TensorView::create(fixture.outputs[1], output_storage[1].view())
           .value()};
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      compute::WorkloadPhase::kDecode);
+      *GetParam(), compute::WorkloadPhase::kDecode);
   auto prepared = compute::prepare(owner,
                                    compute::Operation(compute::GatedDeltaNet{}),
                                    inputs, outputs, resource, workload);
@@ -268,6 +272,11 @@ TEST(CudaDefaultCompute, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
     }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, CudaQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 TEST(CudaDefaultCompute, RejectsInvalidDeviceAndUnsupportedOperations) {
   EXPECT_FALSE(cuda::create_context({.device_ordinal = SIZE_MAX}).has_value());
