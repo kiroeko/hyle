@@ -54,6 +54,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, VulkanQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+
 TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
                                   64 * 1024 * 1024);

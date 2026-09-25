@@ -213,6 +213,15 @@ TEST(VulkanGraphD5,
 }
 
 TEST(VulkanGraphD5,
+     D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays) {
+  run_quantized_embedding(
+      d5_qwen38_gdn_fixture::kFidelityGgufProfile,
+      d5_qwen38_official_fixture::kHidden,
+      d5_qwen38_official_fixture::kEmbeddingRows,
+      c::GgufQuantizedType::kQ8_0, 0x0108, 23);
+}
+
+TEST(VulkanGraphD5,
      D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays) {
   constexpr auto hidden = d5_qwen35_fixture::kHidden;
   constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
@@ -330,6 +339,13 @@ TEST(VulkanGraphD5,
      D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
   run_quantized_projections(d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
                             d5_gguf_test::kQwen38PrimaryProjectionCases);
+}
+
+TEST(VulkanGraphD5,
+     D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay) {
+  run_quantized_projections(
+      d5_qwen38_gdn_fixture::kFidelityGgufProfile,
+      d5_gguf_test::kQwen38FidelityQuantizedProjectionCases);
 }
 
 TEST(VulkanGraphD5,
@@ -1232,5 +1248,9 @@ INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, VulkanGraphQwen38Profiles,
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, VulkanGraphQwen38Profiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
 
 } // namespace

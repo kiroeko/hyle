@@ -62,6 +62,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
                       &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
+INSTANTIATE_TEST_SUITE_P(
+    D5FidelityGguf, VulkanGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+
 TEST(VulkanGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
   auto context = vulkan_test::context().value();
   for (const auto &test : model_fragment_test::cases()) {
