@@ -289,6 +289,46 @@ struct LightningIndexer final {
 inline Operation grouped_matmul() noexcept {
   return Operation::custom(GroupedMatMul{});
 }
+// Model linear projection: activations [T,K], stored output-major weights
+// [E,K] -> F32 scores [T,E]. The ordinary MatMul contract retains its
+// same-dtype output; this operation binds a mature native BF16 product.
+struct BFloatLinearF32 final {
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4d41544d554c4633ULL};
+  static constexpr std::string_view operation_name = "bfloat-linear-f32";
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{2, 2}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32,
+            true};
+  }
+
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 2 || outputs.size() != 1 || inputs[0].rank() != 2 ||
+        inputs[1].rank() != 2 || !inputs[0].is_plain() ||
+        !inputs[1].is_plain() || !inputs[0].is_dense() ||
+        !inputs[1].is_dense() ||
+        inputs[0].data_type() != DataType::kBFloat16 ||
+        inputs[1].data_type() != DataType::kBFloat16)
+      return Status::InvalidArgument(
+          "BFloatLinearF32 requires plain dense BF16 [T,K] and [E,K]");
+    const auto lhs = inputs[0].dimensions();
+    const auto rhs = inputs[1].dimensions();
+    if (lhs[0] <= 0 || lhs[1] <= 0 || rhs[0] <= 0 || rhs[1] != lhs[1])
+      return Status::InvalidArgument("BFloatLinearF32 dimensions do not match");
+    const std::array shape{lhs[0], rhs[0]};
+    auto result = TensorDesc::dense(DataType::kFloat32, shape);
+    if (!result)
+      return std::move(result).error();
+    outputs[0] = *result;
+    return Status::Ok();
+  }
+};
+
+inline Operation bfloat_linear_f32() noexcept {
+  return Operation::custom(BFloatLinearF32{});
+}
 inline Operation hyper_connection_combine(float epsilon = 1.0e-6F,
                                            std::int32_t iterations = 20) noexcept {
   return Operation::custom(HyperConnectionCombine{epsilon, iterations});

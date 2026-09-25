@@ -989,6 +989,26 @@ TEST(OperationModelOps, CausalConv1dKeepsNaturalSequenceLayout) {
   EXPECT_FALSE(infer_single_output(operation, invalid));
 }
 
+TEST(OperationModelOps, BFloatLinearF32KeepsNativeScorePrecision) {
+  const auto bf16 = DataType::kBFloat16;
+  const auto f32 = DataType::kFloat32;
+  const auto stored_weight = tensor(bf16, 512, 8192);
+  const std::array inputs{tensor(bf16, 1, 8192), stored_weight};
+  const auto operation = model_ops::bfloat_linear_f32();
+  EXPECT_EQ(operation_name(operation), "bfloat-linear-f32");
+  EXPECT_EQ(infer_one(operation, inputs), tensor(f32, 1, 512));
+
+  auto invalid = inputs;
+  invalid[0] = tensor(f32, 1, 8192);
+  EXPECT_FALSE(infer_single_output(operation, invalid));
+  invalid = inputs;
+  invalid[1] = stored_weight.transposed().value();
+  EXPECT_FALSE(infer_single_output(operation, invalid));
+  invalid = inputs;
+  invalid[1] = tensor(bf16, 512, 8191);
+  EXPECT_FALSE(infer_single_output(operation, invalid));
+}
+
 TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
   const auto f32 = DataType::kFloat32;
   const auto bf16 = DataType::kBFloat16;

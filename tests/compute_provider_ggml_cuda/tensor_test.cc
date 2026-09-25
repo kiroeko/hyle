@@ -799,6 +799,43 @@ TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   }
 }
 
+TEST(GgmlCudaTensor, BfloatRouterMatMulRetainsNativeF32Score) {
+  using BF16 = hyle::simd::bfloat16_t;
+  const auto activation_desc = dense(DataType::kBFloat16, {1, 2});
+  const auto weight_desc = dense(DataType::kBFloat16, {2, 2});
+  const std::array descriptions{activation_desc, weight_desc};
+  const auto output_desc =
+      infer_single_output(model_ops::bfloat_linear_f32(), descriptions).value();
+  const std::array activations{half_test::encode<BF16>(1.0),
+                               half_test::encode<BF16>(0.001953125)};
+  const std::array weights{
+      half_test::encode<BF16>(1.0), half_test::encode<BF16>(1.0),
+      half_test::encode<BF16>(1.0), half_test::encode<BF16>(0.0)};
+  auto ctx = context();
+  auto memory =
+      cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto activation_buffer = upload<BF16>(memory.ref(), activations);
+  auto weight_buffer = upload<BF16>(memory.ref(), weights);
+  auto output = output_buffer(memory.ref(), output_desc);
+  const std::array inputs{
+      ConstTensorView::create(activation_desc, activation_buffer.view()).value(),
+      ConstTensorView::create(weight_desc, weight_buffer.view()).value()};
+  auto output_view = TensorView::create(output_desc, output.view()).value();
+  auto prepared = prepare(ctx, model_ops::bfloat_linear_f32(), inputs,
+                          std::span(&output_view, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto invocation = prepared->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  const auto actual = half_test::read<float>(output);
+  ASSERT_EQ(actual.size(), 2U);
+  EXPECT_NEAR(actual[0], 1.001953125F, 1.0e-6F);
+  EXPECT_NEAR(actual[1], 1.0F, 1.0e-6F);
+}
+
 TEST(GgmlCudaTensor, MalformedNativeGgufFormatIsRejectedAtPrepare) {
   const auto format = StorageFormat::blocked(kGgufQ4K, 256, 143).value();
   constexpr std::array<std::int64_t, 2> shape{256, 2};

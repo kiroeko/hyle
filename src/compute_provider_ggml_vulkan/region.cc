@@ -349,6 +349,9 @@ bool region_supports(const Operation &operation,
            outputs[0].is_plain() && outputs[0].is_dense() &&
            outputs[0].data_type() == DataType::kFloat32;
   }
+  if (operation.custom_as<model_ops::BFloatLinearF32>())
+    return inputs.size() == 2 && outputs.size() == 1 &&
+           outputs[0].data_type() == DataType::kFloat32;
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -720,7 +723,8 @@ Result<Region> Region::create(NativeDevice device,
       } else if (node.operation.custom_as<model_ops::LightningIndexer>()) {
         output = ggml_lightning_indexer(context, arguments[0], arguments[1],
                                         arguments[2], arguments[3]);
-      } else if (node.operation.get_if<MatMul>()) {
+      } else if (node.operation.get_if<MatMul>() ||
+                 node.operation.custom_as<model_ops::BFloatLinearF32>()) {
         // The fixed upstream Vulkan small-matvec selector admits a BF16
         // activation for one to four rank-2 rows, but its selected pipeline
         // accepts only F32/F16/Q8_1 on that port. Keep the BF16 weight and
@@ -737,7 +741,7 @@ Result<Region> Region::create(NativeDevice device,
         auto *right = arguments[1];
         const bool quantized =
             quantized_weight_domain(recipe.values[node.inputs[1]]);
-        if (!quantized) {
+        if (node.operation.get_if<MatMul>() && !quantized) {
           right = ggml_transpose(context, right);
           if (!ggml_is_contiguous(right))
             right = ggml_cont(context, right);

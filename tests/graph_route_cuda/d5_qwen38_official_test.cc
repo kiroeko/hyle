@@ -494,6 +494,74 @@ TEST(CudaGraphQwen38_24T,
   }
 }
 
+TEST(CudaGraphQwen38_24T,
+     D5OfficialBfloatRouterPreservesF32NearTieScores) {
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden});
+  const auto output_desc =
+      dense(c::DataType::kFloat32, {1, q24::kExperts});
+  std::vector<BF16> weights(q24::kExperts * q24::kHidden);
+  weights[9 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 21] = q::encode(1.0);
+  auto context = g::cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto weight_buffer = values_buffer<BF16>(resource, weights);
+  auto activation_buffer = output_buffer(resource, activation_desc);
+  auto result_buffer = output_buffer(resource, output_desc);
+  auto builder = g::GraphBuilder::create().value();
+  const auto activation = builder.input(activation_desc).value();
+  const auto weight = builder.constant(weight_desc).value();
+  const std::array ports{activation, weight};
+  const auto node =
+      builder.add_node(c::model_ops::bfloat_linear_f32(), ports).value();
+  const auto scores = builder.result(node).value();
+  ASSERT_TRUE(builder.publish(scores).ok());
+  auto logical = std::move(builder).finish().value();
+  const std::array constants{g::ConstantBinding{
+      weight, c::ConstTensorView::create(weight_desc, weight_buffer.view())
+                  .value()}};
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a10);
+  auto result = g::cuda::compile(
+      logical, context, resource,
+      {.constants = constants, .workload = workload});
+  ASSERT_TRUE(result) << result.error().message();
+  auto compiled = std::move(*result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(activation,
+                        c::ConstTensorView::create(activation_desc,
+                                                   activation_buffer.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(scores, c::TensorView::create(output_desc,
+                                                      result_buffer.view())
+                                    .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
+  for (const double fraction : {0.001953125, 0.0029296875}) {
+    std::vector<BF16> input(q24::kHidden);
+    input[20] = q::encode(1.0);
+    input[21] = q::encode(fraction);
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(input))).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(result_buffer);
+    ASSERT_EQ(actual.size(), q24::kExperts);
+    EXPECT_NEAR(actual[9], 1.0, 1.0e-6);
+    EXPECT_NEAR(actual[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
 TEST_P(CudaGraphQwen38Profiles,
        D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto &shape = *GetParam();

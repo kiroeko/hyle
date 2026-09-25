@@ -145,6 +145,7 @@ bool mature_model_operation(Operation operation) noexcept {
   return operation.get_if<MatMul>() || operation.get_if<Gather>() ||
          operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
+         operation.custom_as<model_ops::BFloatLinearF32>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
          operation.custom_as<model_ops::HyperConnectionPre>() ||
          operation.custom_as<model_ops::HyperConnectionPost>() ||
@@ -284,7 +285,8 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
     }
     auto &t = state->tensors;
     ggml_tensor *result = nullptr;
-    if (operation.get_if<MatMul>()) {
+    if (operation.get_if<MatMul>() ||
+        operation.custom_as<model_ops::BFloatLinearF32>()) {
       result = ggml_mul_mat(state->arena.get(), t[1], t[0]);
       if (result != nullptr && !ggml_prec_set_acc(result, GGML_PREC_F32))
         return std::unexpected(Status::Unimplemented(

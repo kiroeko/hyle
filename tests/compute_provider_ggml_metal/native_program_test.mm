@@ -480,6 +480,46 @@ TEST(GgmlMetalProgram, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   }
 }
 
+TEST(GgmlMetalProgram, BfloatRouterLinearRetainsNativeF32Score) {
+  @autoreleasepool {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+    ASSERT_NE(device, nil);
+    const std::array descriptions{
+        c::TensorDesc::dense(c::DataType::kBFloat16,
+                             std::array<std::int64_t, 2>{1, 2})
+            .value(),
+        c::TensorDesc::dense(c::DataType::kBFloat16,
+                             std::array<std::int64_t, 2>{2, 2})
+            .value()};
+    auto program = metal::NativeProgram::create(
+        c::model_ops::bfloat_linear_f32(), descriptions);
+    ASSERT_TRUE(program) << program.error().message();
+    const std::array<std::uint16_t, 2> activation{
+        bfloat16(1.0F), bfloat16(0.001953125F)};
+    const std::array<std::uint16_t, 4> weights{
+        bfloat16(1.0F), bfloat16(1.0F),
+        bfloat16(1.0F), bfloat16(0.0F)};
+    std::array<Buffer, 3> owners;
+    std::array<metal::BufferView, 3> ports;
+    const std::array bytes{sizeof(activation), sizeof(weights),
+                           (*program)->output_bytes()};
+    for (std::size_t i = 0; i < owners.size(); ++i) {
+      owners[i].value = [device newBufferWithLength:bytes[i]
+                                           options:MTLResourceStorageModeShared];
+      ASSERT_NE(owners[i].value, nil);
+      ports[i] = {(__bridge void *)owners[i].value, 0};
+    }
+    std::memcpy(owners[0].value.contents, activation.data(), bytes[0]);
+    std::memcpy(owners[1].value.contents, weights.data(), bytes[1]);
+    const auto status = (*program)->run(ports);
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto *scores = static_cast<const float *>(owners[2].value.contents);
+    EXPECT_NEAR(scores[0], 1.001953125F, 1.0e-6F);
+    EXPECT_NEAR(scores[1], 1.0F, 1.0e-6F);
+    [device release];
+  }
+}
+
 TEST(GgmlMetalProgram, DeclinesUnqualifiedShapesAndMetadataOomIsRecoverable) {
   auto inputs = schema(1, 2, 96);
   EXPECT_TRUE(metal::NativeProgram::validate(inputs).IsUnimplemented());

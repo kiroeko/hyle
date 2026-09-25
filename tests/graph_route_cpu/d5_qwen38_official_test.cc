@@ -354,9 +354,7 @@ TEST(CpuGraphQwen38_24T,
   const auto router_activation_desc =
       dense(c::DataType::kBFloat16, {1, q24::kHidden});
   const auto router_weight_desc =
-      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden})
-          .transposed()
-          .value();
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden});
   const auto replication_indices_desc =
       dense(c::DataType::kInt32, {q24::kTopK});
   const auto ids_desc = dense(c::DataType::kInt32, {1, q24::kTopK});
@@ -398,8 +396,9 @@ TEST(CpuGraphQwen38_24T,
   const auto up_weight = builder.constant(weight_desc).value();
   const auto down_weight = builder.constant(down_weight_desc).value();
   const auto router_activation = builder.input(router_activation_desc).value();
-  const auto router =
-      builder.add(c::MatMul{}, router_activation, router_weight).value();
+  const std::array router_ports{router_activation, router_weight};
+  const auto router_node =
+      builder.add_node(c::model_ops::bfloat_linear_f32(), router_ports).value();
   const auto token_fp32 =
       builder.add(c::Cast{c::DataType::kFloat32}, router_activation).value();
   const auto replicated =
@@ -413,8 +412,7 @@ TEST(CpuGraphQwen38_24T,
                    .value(),
                replicated)
           .value();
-  const auto fp32 =
-      builder.add(c::Cast{c::DataType::kFloat32}, router).value();
+  const auto fp32 = builder.result(router_node).value();
   const auto probabilities = builder.add(c::Softmax{}, fp32).value();
   const std::array topk_inputs{probabilities};
   const auto topk =
@@ -599,15 +597,15 @@ TEST(CpuGraphQwen38_24T,
   const auto activation_desc =
       dense(c::DataType::kBFloat16, {1, q24::kHidden});
   const auto weight_desc =
-      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden})
-          .transposed()
-          .value();
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden});
   const auto selected_desc =
       dense(c::DataType::kFloat32, {1, q24::kTopK});
   const auto ids_desc = dense(c::DataType::kInt32, {1, q24::kTopK});
   std::vector<BF16> router_weight(q24::kExperts * q24::kHidden);
   for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
     router_weight[expert * q24::kHidden + expert] = q::encode(1.0);
+  router_weight[q24::kTopK * q24::kHidden + 20] = q::encode(1.0);
+  router_weight[q24::kTopK * q24::kHidden + 21] = q::encode(1.0);
   auto weight_buffer = half_test::buffer<BF16>(router_weight);
   auto activation_buffer = output_buffer(activation_desc);
   auto ids_buffer = output_buffer(ids_desc);
@@ -616,9 +614,10 @@ TEST(CpuGraphQwen38_24T,
   auto builder = g::GraphBuilder::create().value();
   const auto activation = builder.input(activation_desc).value();
   const auto weight = builder.constant(weight_desc).value();
-  const auto router = builder.add(c::MatMul{}, activation, weight).value();
-  const auto fp32 =
-      builder.add(c::Cast{c::DataType::kFloat32}, router).value();
+  const std::array router_ports{activation, weight};
+  const auto router_node =
+      builder.add_node(c::model_ops::bfloat_linear_f32(), router_ports).value();
+  const auto fp32 = builder.result(router_node).value();
   const auto probabilities = builder.add(c::Softmax{}, fp32).value();
   const std::array topk_inputs{probabilities};
   const auto topk =
@@ -674,13 +673,23 @@ TEST(CpuGraphQwen38_24T,
   const std::array queues{
       g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
-  for (int replay = 0; replay < 3; ++replay) {
+  for (int replay = 0; replay < 4; ++replay) {
     std::vector<BF16> input(q24::kHidden);
-    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert) {
-      const double logit = replay == 0 ? 1.0 + expert / 8.0
-                           : replay == 1 ? 1.0 + (q24::kTopK - 1 - expert) / 8.0
-                                         : 2.0;
-      input[expert] = q::encode(logit);
+    if (replay == 3) {
+      for (std::int64_t expert = 0; expert < q24::kTopK - 1;
+           ++expert)
+        input[expert] = q::encode(2.0 + expert / 8.0);
+      input[q24::kTopK - 1] = q::encode(1.0);
+      input[20] = q::encode(1.0);
+      input[21] = q::encode(0.001953125);
+    } else {
+      for (std::int64_t expert = 0; expert < q24::kTopK; ++expert) {
+        const double logit =
+            replay == 0 ? 1.0 + expert / 8.0
+            : replay == 1 ? 1.0 + (q24::kTopK - 1 - expert) / 8.0
+                          : 2.0;
+        input[expert] = q::encode(logit);
+      }
     }
     ASSERT_TRUE(activation_buffer.view()
                     .write(std::as_bytes(std::span(input)))
@@ -690,15 +699,29 @@ TEST(CpuGraphQwen38_24T,
     ASSERT_TRUE(done->wait().ok());
     const auto actual_ids = half_test::read<std::int32_t>(ids_buffer);
     const auto weights = half_test::read<float>(normalized_buffer);
+    const auto expected_score = [&](std::int64_t expert) {
+      return expert == q24::kTopK
+                 ? q::decode(input[20]) + q::decode(input[21])
+                 : q::decode(input[expert]);
+    };
     double selected_sum = 0;
-    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
-      selected_sum += std::exp(q::decode(input[expert]));
     for (std::int64_t slot = 0; slot < q24::kTopK; ++slot) {
-      const auto expected_id = replay == 0 ? q24::kTopK - 1 - slot
-                               : replay == 1 ? slot : slot;
+      const auto expected_id =
+          replay == 0 ? q24::kTopK - 1 - slot
+          : replay == 3 ? (slot == q24::kTopK - 1 ? q24::kTopK
+                                                    : q24::kTopK - 2 - slot)
+                        : slot;
+      selected_sum += std::exp(expected_score(expected_id));
+    }
+    for (std::int64_t slot = 0; slot < q24::kTopK; ++slot) {
+      const auto expected_id =
+          replay == 0 ? q24::kTopK - 1 - slot
+          : replay == 3 ? (slot == q24::kTopK - 1 ? q24::kTopK
+                                                    : q24::kTopK - 2 - slot)
+                        : slot;
       EXPECT_EQ(actual_ids[slot], expected_id);
       EXPECT_NEAR(weights[slot],
-                  std::exp(q::decode(input[expected_id])) / selected_sum,
+                  std::exp(expected_score(expected_id)) / selected_sum,
                   2.0e-6);
     }
   }

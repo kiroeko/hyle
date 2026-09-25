@@ -305,6 +305,9 @@ bool tensor_operation_supports(Operation operation,
            inputs[1].data_type() == DataType::kFloat32 &&
            inputs[2].data_type() == DataType::kInt32 &&
            outputs[0].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::BFloatLinearF32>())
+    return outputs.size() == 1 && inputs.size() == 2 &&
+           output.data_type() == DataType::kFloat32;
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -635,11 +638,13 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     result = ggml_lightning_indexer(
         context, values[node.inputs[0]], values[node.inputs[1]],
         values[node.inputs[2]], values[node.inputs[3]]);
-  } else if (node.operation.get_if<MatMul>()) {
+  } else if (node.operation.get_if<MatMul>() ||
+             node.operation.custom_as<model_ops::BFloatLinearF32>()) {
     auto *left = native_shape(context, values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
     auto *right = values[node.inputs[1]];
-    if (!native_quantized(recipe.values[node.inputs[1]])) {
+    if (node.operation.get_if<MatMul>() &&
+        !native_quantized(recipe.values[node.inputs[1]])) {
       right = ggml_transpose(context, right);
       if (!ggml_is_contiguous(right))
         right = ggml_cont(context, right);

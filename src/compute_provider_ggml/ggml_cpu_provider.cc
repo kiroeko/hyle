@@ -570,14 +570,15 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                     invocation.values[node.inputs[1]],
                                     invocation.values[node.inputs[2]],
                                     invocation.values[node.inputs[3]]);
-  } else if (const auto *matmul = node.operation.get_if<MatMul>()) {
+  } else if (const auto *matmul = node.operation.get_if<MatMul>();
+             matmul || node.operation.custom_as<model_ops::BFloatLinearF32>()) {
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
     // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
     // shared RHS across the corresponding activation batches.
     auto *left = native_shape(context, invocation.values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
     auto *right = invocation.values[node.inputs[1]];
-    if (!native_quantized(recipe.values[node.inputs[1]])) {
+    if (matmul && !native_quantized(recipe.values[node.inputs[1]])) {
       right = ggml_transpose(context, right);
       if (!ggml_is_contiguous(right))
         right = ggml_cont(context, right);
@@ -1076,6 +1077,9 @@ bool supports(void *context, Operation operation,
            inputs[2].data_type() == DataType::kInt32 &&
            outputs[0].data_type() == DataType::kFloat32;
   }
+  if (operation.custom_as<model_ops::BFloatLinearF32>())
+    return outputs.size() == 1 && inputs.size() == 2 &&
+           output.data_type() == DataType::kFloat32;
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -1257,6 +1261,7 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
+         operation.custom_as<model_ops::BFloatLinearF32>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionCombine>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionPre>().has_value() ||
          operation.custom_as<model_ops::HyperConnectionPost>().has_value() ||

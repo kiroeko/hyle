@@ -168,6 +168,28 @@ TEST(GgmlVulkanRegion, DenseBfloatGroupedExpertsRequireF32Activations) {
   EXPECT_FALSE(region_supports(operation, invalid_inputs, outputs));
 }
 
+TEST(GgmlVulkanRegion, BfloatRouterMatMulRetainsF32OutputDomain) {
+  const auto operation = c::model_ops::bfloat_linear_f32();
+  const auto activation =
+      c::TensorDesc::dense(c::DataType::kBFloat16,
+                           std::array<std::int64_t, 2>{1, 8192})
+          .value();
+  const auto stored =
+      c::TensorDesc::dense(c::DataType::kBFloat16,
+                           std::array<std::int64_t, 2>{512, 8192})
+          .value();
+  const std::array inputs{activation, stored};
+  const std::array outputs{
+      c::infer_single_output(operation, inputs).value()};
+  EXPECT_TRUE(region_supports(operation, inputs, outputs));
+  auto invalid_outputs = outputs;
+  invalid_outputs[0] =
+      c::TensorDesc::dense(c::DataType::kBFloat16,
+                           std::array<std::int64_t, 2>{1, 512})
+          .value();
+  EXPECT_FALSE(region_supports(operation, inputs, invalid_outputs));
+}
+
 TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
 #if defined(_WIN32)
   SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |

@@ -512,6 +512,52 @@ TEST(CudaQwen38_24T,
   }
 }
 
+TEST(CudaQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden});
+  const auto output_desc =
+      dense(c::DataType::kFloat32, {1, q24::kExperts});
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a10);
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  const std::array inputs_desc{activation_desc, weight_desc};
+  const std::array outputs_desc{output_desc};
+  auto call = make_call(context, resource,
+                        c::model_ops::bfloat_linear_f32(), inputs_desc,
+                        outputs_desc, workload);
+  EXPECT_EQ(call.prepared.provider().id, c::ggml_cuda::kProviderId);
+  std::vector<BF16> weights(q24::kExperts * q24::kHidden);
+  weights[9 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 21] = q::encode(1.0);
+  auto weight_buffer = values_buffer<BF16>(resource, weights);
+  auto activation_buffer = output_buffer(resource, activation_desc);
+  auto output = output_buffer(resource, output_desc);
+  const std::array inputs{
+      c::ConstTensorView::create(activation_desc,
+                                 activation_buffer.view()).value(),
+      c::ConstTensorView::create(weight_desc, weight_buffer.view()).value()};
+  const std::array outputs{
+      c::TensorView::create(output_desc, output.view()).value()};
+  auto queue = context.create_queue().value();
+  for (const double fraction : {0.001953125, 0.0029296875}) {
+    std::vector<BF16> activation(q24::kHidden);
+    activation[20] = q::encode(1.0);
+    activation[21] = q::encode(fraction);
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(activation))).ok());
+    run(call, queue, inputs, outputs);
+    const auto scores = half_test::read<float>(output);
+    ASSERT_EQ(scores.size(), q24::kExperts);
+    EXPECT_NEAR(scores[9], 1.0, 1.0e-6);
+    EXPECT_NEAR(scores[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
 TEST_P(CudaQwen38Profiles,
        D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto &shape = *GetParam();

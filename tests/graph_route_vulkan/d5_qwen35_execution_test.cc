@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <cstring>
 #include <span>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -71,9 +73,11 @@ Call prepare(const v::Context &context, const c::WorkloadContext &workload,
     EXPECT_TRUE(builder.publish(builder.result(node, output).value()).ok());
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
-  auto program = gv::compile(context, graph, constants,
-                             {.report = &report, .workload = workload})
-                     .value();
+  auto compiled = gv::compile(context, graph, constants,
+                              {.report = &report, .workload = workload});
+  if (!compiled)
+    throw std::runtime_error(std::string(compiled.error().message()));
+  auto program = std::move(*compiled);
   EXPECT_GT(report.managed_region_count, 0U);
   EXPECT_EQ(program.workload(), workload);
   return {std::move(program)};
@@ -1172,6 +1176,36 @@ TEST(VulkanGraphQwen38_24T,
                   std::abs(expected[i]) * q24::kExpertRelativeTolerance +
                       q24::kExpertAbsoluteTolerance)
           << i;
+  }
+}
+
+TEST(VulkanGraphQwen38_24T,
+     D5OfficialBfloatRouterPreservesF32NearTieScores) {
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden});
+  std::vector<B16> weights(q24::kExperts * q24::kHidden);
+  weights[9 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 21] = q::encode(1.0);
+  auto context = vulkan_test::context().value();
+  const auto weight = upload(context, weight_desc, std::span(weights));
+  auto call = prepare(context,
+                      q24::workload(c::WorkloadPhase::kDecode, 0x0a10),
+                      c::model_ops::bfloat_linear_f32(), activation_desc,
+                      weight);
+  for (const double fraction : {0.001953125, 0.0029296875}) {
+    std::vector<B16> input(q24::kHidden);
+    input[20] = q::encode(1.0);
+    input[21] = q::encode(fraction);
+    const auto activation = upload(context, activation_desc, std::span(input));
+    const auto output = run(call, activation);
+    ASSERT_EQ(output.size(), 1U);
+    const auto scores = values(context, output[0]);
+    ASSERT_EQ(scores.size(), q24::kExperts);
+    EXPECT_NEAR(scores[9], 1.0, 1.0e-6);
+    EXPECT_NEAR(scores[10], 1.0 + fraction, 1.0e-6);
   }
 }
 

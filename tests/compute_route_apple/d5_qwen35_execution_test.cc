@@ -1240,6 +1240,35 @@ TEST(AppleQwen38_24T,
   }
 }
 
+TEST(AppleQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden});
+  std::vector<B16> weights(q24::kExperts * q24::kHidden);
+  weights[9 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 20] = q::encode(1.0);
+  weights[10 * q24::kHidden + 21] = q::encode(1.0);
+  auto context = a::Context::create().value();
+  const auto weight = upload(context, weight_desc, std::span(weights));
+  auto call = prepare(context,
+                      q24::workload(c::WorkloadPhase::kDecode, 0x0a10),
+                      c::model_ops::bfloat_linear_f32(), activation_desc,
+                      weight_desc);
+  for (const double fraction : {0.001953125, 0.0029296875}) {
+    std::vector<B16> input(q24::kHidden);
+    input[20] = q::encode(1.0);
+    input[21] = q::encode(fraction);
+    const auto activation = upload(context, activation_desc, std::span(input));
+    const auto output = run(call, activation, weight);
+    ASSERT_EQ(output.size(), 1U);
+    const auto scores = values(output[0]);
+    ASSERT_EQ(scores.size(), q24::kExperts);
+    EXPECT_NEAR(scores[9], 1.0, 1.0e-6);
+    EXPECT_NEAR(scores[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
 TEST_P(AppleQwen38Profiles,
        D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto query_desc = dense(c::DataType::kBFloat16,
