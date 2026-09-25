@@ -61,6 +61,14 @@ owner suite、selector、三交付或 P1。批内只做编译/极小定向烟测
 一次选择并运行适用验证。单个通过的检查点不改变 176 格 ledger 状态。若真实上游拒绝某格式，
 记录 profile、权重角色、路线、原生错误及资源成本，再定界该格，不以另一格式代签。
 
+**共用 GGUF 词表 carrier 批次结果（`76ebc05d5`）**：六个精确画像的 R01
+embedding/head 已在 CPU、CUDA、Apple、Vulkan 各自 Direct/Graph 普通入口通过
+96/96 个定向用例。真实逻辑宽度、逐角色格式、全部 logits、跨片索引和越界失败
+已检查；夹具权重内容为按真实 GGUF 格式生成的合成分片，不声称下载了巨型权重。
+这是[一份批次收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-gguf-vocabulary-carrier/README.md)，
+不触发每个算子/profile 的全量 selector、三交付或 P1；其它 region 未组合验收，
+ledger 维持 0/176 `RUN_PASS`。
+
 **当前 BF16 full MoE 批次结果（部分收据）**：四路线各自的完整 Graph owner 与 Direct owner
 suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 final add 的三次变化输入
 重放及独立 oracle。Graph 的 CUDA 256-byte workspace 对齐缺陷已按 D5-F20 修复；Apple Direct
