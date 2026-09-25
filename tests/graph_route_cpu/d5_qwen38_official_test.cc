@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -51,6 +52,8 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
     const auto report = compiled.report.step(step).value();
     const auto provider = report.provider.id;
     const auto node = compiled.report.node(report.node_begin).value();
+    if (node.kind == c::OperationKind::kView && report.provider.name.empty())
+      continue;
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
                 provider == g::onednn::kProviderId)
@@ -348,9 +351,25 @@ TEST(CpuGraphQwen38_24T,
       {q24::kActiveExperts, q24::kHidden, q24::kExpertHidden});
   const auto activation_desc = dense(
       c::DataType::kFloat32, {1, q24::kTopK, q24::kHidden});
-  const auto ids_desc =
-      dense(c::DataType::kInt32, {1, q24::kTopK});
+  const auto router_activation_desc =
+      dense(c::DataType::kBFloat16, {1, q24::kHidden});
+  const auto router_weight_desc =
+      dense(c::DataType::kBFloat16, {q24::kExperts, q24::kHidden})
+          .transposed()
+          .value();
+  const auto replication_indices_desc =
+      dense(c::DataType::kInt32, {q24::kTopK});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, q24::kTopK});
   const auto output_desc = activation_desc;
+  const auto combined_desc =
+      dense(c::DataType::kFloat32, {1, 1, q24::kHidden});
+  std::vector<BF16> router_weight_values(q24::kExperts * q24::kHidden);
+  for (std::int64_t expert = 0; expert < q24::kTopK; ++expert)
+    router_weight_values[expert * q24::kHidden + expert] = q::encode(1.0);
+  auto router_weight_buffer = half_test::buffer<BF16>(router_weight_values);
+  std::array<std::int32_t, q24::kTopK> replication_indices_values{};
+  auto replication_indices_buffer =
+      half_test::buffer<std::int32_t>(replication_indices_values);
   auto gate_weight_values = q24::expert_weight(
       q24::kExpertHidden, q24::kHidden, seed);
   auto up_weight_values = q24::expert_weight(
@@ -366,17 +385,56 @@ TEST(CpuGraphQwen38_24T,
   auto down_weight_buffer = half_test::buffer<BF16>(down_weight_values);
   down_weight_values.clear();
   down_weight_values.shrink_to_fit();
-  const auto ids_data = q24::active_expert_ids();
-  auto ids_buffer = half_test::buffer<std::int32_t>(ids_data);
-  auto activation_buffer = output_buffer(activation_desc);
+  auto ids_buffer = output_buffer(ids_desc);
+  auto router_activation_buffer = output_buffer(router_activation_desc);
   auto result_buffer = output_buffer(output_desc);
+  auto combined_buffer = output_buffer(combined_desc);
 
   auto builder = g::GraphBuilder::create().value();
+  const auto router_weight = builder.constant(router_weight_desc).value();
+  const auto replication_indices =
+      builder.constant(replication_indices_desc).value();
   const auto gate_weight = builder.constant(weight_desc).value();
   const auto up_weight = builder.constant(weight_desc).value();
   const auto down_weight = builder.constant(down_weight_desc).value();
-  const auto activation = builder.input(activation_desc).value();
-  const auto ids = builder.input(ids_desc).value();
+  const auto router_activation = builder.input(router_activation_desc).value();
+  const auto router =
+      builder.add(c::MatMul{}, router_activation, router_weight).value();
+  const auto token_fp32 =
+      builder.add(c::Cast{c::DataType::kFloat32}, router_activation).value();
+  const auto replicated =
+      builder.add(c::Gather{}, token_fp32, replication_indices).value();
+  const auto activation =
+      builder
+          .add(c::View::reshape(
+                   c::TensorShape::create(std::array<std::int64_t, 3>{
+                                              1, q24::kTopK, q24::kHidden})
+                       .value())
+                   .value(),
+               replicated)
+          .value();
+  const auto fp32 =
+      builder.add(c::Cast{c::DataType::kFloat32}, router).value();
+  const auto probabilities = builder.add(c::Softmax{}, fp32).value();
+  const std::array topk_inputs{probabilities};
+  const auto topk =
+      builder.add_node(c::Operation(c::TopK{.count = q24::kTopK}),
+                       topk_inputs)
+          .value();
+  const auto selected = builder.result(topk, 0).value();
+  const auto ids = builder.result(topk, 1).value();
+  const auto selected_sum =
+      builder
+          .add(c::Reduce{.kind = c::ReductionKind::kSum,
+                         .axes = c::Axes::from(std::array<std::int32_t, 1>{-1})
+                                     .value(),
+                         .keep_dimensions = true,
+                         .accumulation_type = c::DataType::kFloat32},
+               selected)
+          .value();
+  const auto normalized =
+      builder.add(c::Binary{c::BinaryKind::kDivide}, selected, selected_sum)
+          .value();
   const std::array gate_ports{gate_weight, activation, ids};
   const auto gate_node =
       builder.add_node(c::model_ops::grouped_matmul(), gate_ports).value();
@@ -394,10 +452,43 @@ TEST(CpuGraphQwen38_24T,
   const auto down_node =
       builder.add_node(c::model_ops::grouped_matmul(), down_ports).value();
   const auto final = builder.result(down_node).value();
+  const auto slot_weights =
+      builder
+          .add(c::View::reshape(
+                   c::TensorShape::create(std::array<std::int64_t, 3>{
+                                              1, q24::kTopK, 1})
+                       .value())
+                   .value(),
+               normalized)
+          .value();
+  const auto weighted =
+      builder.add(c::Binary{c::BinaryKind::kMultiply}, final, slot_weights)
+          .value();
+  const auto combined =
+      builder
+          .add(c::Reduce{.kind = c::ReductionKind::kSum,
+                         .axes = c::Axes::from(std::array<std::int32_t, 1>{1})
+                                     .value(),
+                         .keep_dimensions = true,
+                         .accumulation_type = c::DataType::kFloat32},
+               weighted)
+          .value();
+  ASSERT_TRUE(builder.publish(ids).ok());
   ASSERT_TRUE(builder.publish(final).ok());
+  ASSERT_TRUE(builder.publish(combined).ok());
   auto logical = std::move(builder).finish().value();
   auto context = g::cpu::create_context().value();
   const std::array constants{
+      g::ConstantBinding{
+          router_weight,
+          c::ConstTensorView::create(router_weight_desc,
+                                     router_weight_buffer.view())
+              .value()},
+      g::ConstantBinding{
+          replication_indices,
+          c::ConstTensorView::create(replication_indices_desc,
+                                     replication_indices_buffer.view())
+              .value()},
       g::ConstantBinding{
           gate_weight,
           c::ConstTensorView::create(weight_desc, gate_weight_buffer.view())
@@ -421,14 +512,15 @@ TEST(CpuGraphQwen38_24T,
   expect_mature(compiled);
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation
-                  .bind(activation,
-                        c::ConstTensorView::create(activation_desc,
-                                                   activation_buffer.view())
+                  .bind(router_activation,
+                        c::ConstTensorView::create(
+                            router_activation_desc,
+                            router_activation_buffer.view())
                             .value())
                   .ok());
   ASSERT_TRUE(invocation
-                  .bind(ids, c::ConstTensorView::create(ids_desc,
-                                                       ids_buffer.view())
+                  .bind(ids, c::TensorView::create(ids_desc,
+                                                  ids_buffer.view())
                                  .value())
                   .ok());
   ASSERT_TRUE(invocation
@@ -436,26 +528,69 @@ TEST(CpuGraphQwen38_24T,
                         c::TensorView::create(output_desc, result_buffer.view())
                             .value())
                   .ok());
+  ASSERT_TRUE(invocation
+                  .bind(combined,
+                        c::TensorView::create(combined_desc,
+                                              combined_buffer.view())
+                            .value())
+                  .ok());
   auto queue = context.create_queue().value();
   const std::array queues{
       g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   for (int replay : {3, 17}) {
-    const auto input = q24::expert_input(replay);
-    ASSERT_TRUE(activation_buffer.view()
-                    .write(std::as_bytes(std::span(input)))
+    const auto token_values = q24::expert_input(replay);
+    std::vector<BF16> router_input(q24::kHidden);
+    for (std::int64_t column = 0; column < q24::kHidden; ++column)
+      router_input[column] = q::encode(token_values[column]);
+    std::array<std::int32_t, q24::kTopK> expected_ids{};
+    double selected_total = 0;
+    for (std::int64_t expert = 0; expert < q24::kTopK; ++expert) {
+      const double logit = replay == 3 ? 1.0 + expert / 8.0
+                                       : 1.0 + (q24::kTopK - 1 - expert) / 8.0;
+      router_input[expert] = q::encode(logit);
+      selected_total += std::exp(q::decode(router_input[expert]));
+      expected_ids[expert] = static_cast<std::int32_t>(
+          replay == 3 ? q24::kTopK - 1 - expert : expert);
+    }
+    ASSERT_TRUE(router_activation_buffer.view()
+                    .write(std::as_bytes(std::span(router_input)))
                     .ok());
+    std::vector<float> input(q24::kTopK * q24::kHidden);
+    for (std::int64_t slot = 0; slot < q24::kTopK; ++slot)
+      for (std::int64_t column = 0; column < q24::kHidden; ++column)
+        input[slot * q24::kHidden + column] =
+            static_cast<float>(q::decode(router_input[column]));
     auto done = invocation.submit(queue);
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
+    const auto actual_ids = half_test::read<std::int32_t>(ids_buffer);
+    EXPECT_TRUE(std::ranges::equal(actual_ids, expected_ids));
     const auto actual = half_test::read<float>(result_buffer);
-    const auto expected = q24::expert_oracle(input, seed);
+    const auto expected = q24::expert_oracle(input, seed, expected_ids);
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_NEAR(actual[i], expected[i],
                   std::abs(expected[i]) * q24::kExpertRelativeTolerance +
                       q24::kExpertAbsoluteTolerance)
           << i;
+    const auto actual_combined = half_test::read<float>(combined_buffer);
+    ASSERT_EQ(actual_combined.size(), q24::kHidden);
+    for (std::int64_t column = 0; column < q24::kHidden; ++column) {
+      double expected_combined = 0;
+      for (std::int64_t slot = 0; slot < q24::kTopK; ++slot) {
+        const auto id = expected_ids[slot];
+        const double weight = std::exp(q::decode(router_input[id])) /
+                              selected_total;
+        expected_combined +=
+            weight * expected[slot * q24::kHidden + column];
+      }
+      EXPECT_NEAR(actual_combined[column], expected_combined,
+                  std::abs(expected_combined) *
+                          q24::kExpertRelativeTolerance +
+                      q24::kExpertAbsoluteTolerance)
+          << column;
+    }
   }
 }
 
