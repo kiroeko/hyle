@@ -621,6 +621,35 @@ CUDA Graph Route 七个 gate 全部 PASS，125 个无关 gate 跳过或复用；
 ledger 现有 28 个 `RUN_PASS`、148 个 `VALIDATION_NOT_RUN`；Apple、Vulkan 四格以及 D5-A5 三交付和
 D5-A6 P1 尚未由本批代签。
 
+### D5-F14：Qwen3.8-2.4T 官方 BF16 grouped expert 准入
+
+固定 `Qwen/Qwen3.8-2.4T-A95B@207bd685` 官方 profile 的 1,609 个 tensor 全部为 BF16；
+92 层主干中的 routed expert 按层堆叠，配置为 H=8192、512 experts、top-10、expert/shared
+intermediate=2048。现有公共 `GroupedMatMul` 却把 dense expert weight 写死为 F32，四个固定 ggml
+adapter 也重复这一限制，因此 R11 在进入成熟 Provider 前即被拒绝。固定 ggml `ggml_mul_mat_id`
+本身创建 F32 输出，upstream backend test 明确登记 BF16 weight + F32 activation，CPU 使用 BF16
+type trait 的 F32 dot 域，CUDA/Metal/Vulkan 的现有 backend admission/dispatch 均包含 BF16 weight。
+完整源码边界见 [D5-F14 admission audit](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-bf16-grouped-admission-audit/README.md)。
+
+因此 `compute_provider_ggml`、`compute_provider_ggml_cuda`、`compute_provider_ggml_metal` 与
+`compute_provider_ggml_vulkan` 从各自 D5 candidate 精确退回本卡 AUDITED；`compute_ops` 已由 D5
+持有 AUDITED。有限 FIX 只有：
+
+1. 公共 `GroupedMatMul` dense schema 接纳 F32 或 BF16 weight；activation/output 保持 F32、ids 保持
+   I32、accumulation 保持显式 F32，输出形状和现有 GGUF packed weight 合同不变；
+2. 四个固定 ggml adapter 只放宽 dense BF16 weight 的相同域，继续直接 lower 到
+   `ggml_mul_mat_id`；不接纳 BF16 activation/output，不增加转换、fallback、热选择或 HYLE 数学；
+3. 四个 Provider 回归用 BF16 expert weight、F32 activation/output、I32 ids、变化输入 replay 和独立
+   double oracle，保留既有 F32/量化 grouped expert 回归；
+4. Qwen3.8-2.4T 官方 Direct/Graph batch 保留 H=8192、expert intermediate=2048、512-way router 与
+   top-10 语义；允许按 D5 容量合同只实例化被选 active expert 子集，但不得缩小内宽、dtype、state
+   或语义端口；
+5. 只运行 `compute_ops`、四个 ggml Provider owner suite、对应 Direct/Graph route factor 与 selector
+   选择的公共检查；API/算法和路线批次稳定后才进入 D5-A5/A6，不在本修复中提前启动 P1。
+
+不修改 ggml 源码、Provider 顺序、路由键、量化格式、资源模型或任何 HYLE kernel/shader。若某后端
+实际拒绝 BF16 `MUL_MAT_ID`，该路线记录精确 `BACKEND_REJECTED` 并停止，不以 F32 常驻复制伪造覆盖。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

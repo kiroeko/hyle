@@ -374,10 +374,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F12 CPU CANDIDATE 667dda0d：固定 ggml CPU 已接纳 Qwen3.8-27B 官方 24/4×256 GQA 与上游 Sigmoid；官方 BF16 CPU Direct/Graph 两格、replay、失败、owner suites 和 WERROR selector 全部通过。",
-      "candidate": "667dda0d6a696eab0d3f243386a73f2f54cefe55"
+      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F12 candidate 667dda0d 保留为历史证据，有限 FIX 只接纳固定 ggml 的 BF16 weight + F32 activation/output 域。"
     },
     {
       "module": "graph_provider_onednn",
@@ -545,10 +544,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 Vulkan CANDIDATE 8af3a29d：固定 ggml Vulkan GET_ROWS 已接纳 exact Q4_K/Q6_K/Q8_0 internal embedding region；Qwen3.5 primary GGUF R01 的 Direct/Graph replay、checked 失败/恢复与 WERROR selector 通过，等待其余 region 和完整验收。",
-      "candidate": "8af3a29da32243748fdd0bfab407097b3fcb8059"
+      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F8 candidate 8af3a29d 保留为历史证据，有限 FIX 只接纳固定 ggml Vulkan 的 BF16 weight + F32 activation/output 域。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -563,10 +561,9 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F13 CUDA CANDIDATE 80bbbba0：固定 ggml CUDA 已接管正整数倍 GQA 和公共 Sigmoid；Qwen3.8-27B 官方 24/4×256 BF16 Direct/Graph 两格、稳定 replay、失败发布、完整 owner suite 与 WERROR selector 通过。",
-      "candidate": "80bbbba06288709ff85c27cc1e4ab1bec8343e84"
+      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F13 candidate 80bbbba0 保留为历史证据，有限 FIX 只接纳固定 ggml CUDA 的 BF16 weight + F32 activation/output 域。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -588,10 +585,9 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 Apple CANDIDATE 94264ba2：固定 ggml Metal GET_ROWS 已接管 Q4_K/Q6_K/Q8_0 checked embedding；Qwen3.5 primary GGUF R01 的 Direct/Graph、replay、失败、owner suite 与 WERROR selector 通过。",
-      "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3"
+      "summary": "M3-D5-F14 AUDITED：Qwen3.8-2.4T 官方 BF16 grouped expert 暴露 HYLE F32-only admission 缺口；既有 F8 candidate 94264ba2 保留为历史证据，有限 FIX 只接纳固定 ggml Metal 的 BF16 weight + F32 activation/output 域。"
     },
     {
       "module": "compute_provider_iree_vulkan",
