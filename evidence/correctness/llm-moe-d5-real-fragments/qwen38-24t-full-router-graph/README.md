@@ -37,8 +37,10 @@ The Windows change-impact plan from `6f954ef5` selected Graph,
 ggml-CUDA/oneDNN Graph providers, and CPU/CUDA/Vulkan Graph route factors;
 the full selector has **not** run on this candidate. Apple was checked in a
 disposable Mac verification checkout fetched from the Windows-pushed commit.
-No source/static/shared delivery or P1 is signed here. Direct full-chain
-assembly remains pending; this receipt does not change any D5 model cell from
-`VALIDATION_NOT_RUN`. The unified Compute + Graph implementation count at this
+No source/static/shared delivery or P1 is signed here. The later
+[Direct full-chain receipt](../qwen38-24t-full-router-direct/README.md)
+completed the same MoE chain through all four ordinary Direct routes; neither
+partial receipt changes any D5 model cell from `VALIDATION_NOT_RUN`. The
+unified Compute + Graph implementation count at this
 candidate is **58,043 lines / 228 files**, excluding tests, with the LOC
 self-check passing.

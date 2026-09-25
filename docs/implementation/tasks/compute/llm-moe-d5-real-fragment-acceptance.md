@@ -51,6 +51,15 @@ Provider report、资源/完成/失败和交付。若某路线真实缺少固定
 路线，不用 HYLE 自研数学补洞。之后的 Kimi、DeepSeek、GLM 和量化格式按同样有限批次推进，
 不逐算子重建。
 
+**当前 BF16 full MoE 批次结果（部分收据）**：四路线各自的完整 Graph owner 与 Direct owner
+suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 final add 的三次变化输入
+重放及独立 oracle。Graph 的 CUDA 256-byte workspace 对齐缺陷已按 D5-F20 修复；Apple Direct
+消费者的惰性 MLX reshape 必须在下一次 bind 前求值。见
+[Graph 收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-graph/README.md)
+与 [Direct 收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-direct/README.md)。
+这只证明 R10/R11 的完整链，不能代签官方 BF16 整个 profile 的其它 region、三交付或 P1；ledger
+仍为 48/176 `RUN_PASS`。其余模型继续按有限批次接线，到批末再选受影响门。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
