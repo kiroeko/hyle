@@ -394,7 +394,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile 的四路线 Direct/Graph 24 格和 Qwen3.8-27B 官方 CPU Direct/Graph 两格已通过。ledger 当前 26/176 RUN_PASS，其余 150 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
+      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile 的四路线 Direct/Graph 24 格和 Qwen3.8-27B 官方 CPU/CUDA Direct/Graph 四格已通过。ledger 当前 28/176 RUN_PASS，其余 148 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",
@@ -563,9 +563,10 @@
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F13 AUDITED：Qwen3.8-27B 官方 24/4×256 BF16 GQA 暴露 ggml CUDA SDPA 资格被旧 Qwen3.5 形状写死为 8/2，输出门 Sigmoid 又遗漏固定上游已有实现；有限 FIX 只泛化成熟 GQA admission 并映射 ggml_sigmoid，保留 FlashInfer 已资格化域。"
+      "summary": "M3-D5-F13 CUDA CANDIDATE 80bbbba0：固定 ggml CUDA 已接管正整数倍 GQA 和公共 Sigmoid；Qwen3.8-27B 官方 24/4×256 BF16 Direct/Graph 两格、稳定 replay、失败发布、完整 owner suite 与 WERROR selector 通过。",
+      "candidate": "80bbbba06288709ff85c27cc1e4ab1bec8343e84"
     },
     {
       "module": "graph_provider_ggml_cuda",

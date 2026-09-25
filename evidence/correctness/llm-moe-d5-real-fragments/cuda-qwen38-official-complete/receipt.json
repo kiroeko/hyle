@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "candidate": "80bbbba06288709ff85c27cc1e4ab1bec8343e84",
+  "candidate_tree": "25ca12ae5825915f8a39a4ab4b51f339b4520839",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:official:official-bf16",
+    "route": "cuda",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CPU, Apple, or Vulkan complete cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "variant": "official-bf16",
+    "format_family": "safetensors",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "manifest_sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
+    "fixture": "tests/compute_models/d5_qwen38_official_fixture.h",
+    "payload": "deterministic nonzero BF16 data with one nonzero per full-shape output-major weight row; no checkpoint bytes committed",
+    "oracle": "independent double-precision RMSNorm, sparse projection, FFN, attention decode, output gate, MTP and BF16-boundary calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "dtypes": "BF16 weights/activations with F32 attention and recurrent accumulation",
+    "providers": [
+      "ggml CUDA 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "cuBLASLt from CUDA Toolkit 13.3.73",
+      "qualified SGLang, CCCL and FlashInfer CUDA adapters"
+    ],
+    "provider_assertion": "every prepared call and compiled graph reports a fixed mature provider; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token or gate; routing remains cold-bound and allocations are stable after the first CUDA warm replay",
+    "failure": "an invalid embedding index fails without changing any previously published output buffer"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "CudaDefaultCompute.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "CudaDefaultCompute.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "CudaDefaultCompute.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "CudaDefaultCompute.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "CudaDefaultGraph.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "CudaDefaultGraph.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "CudaDefaultGraph.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "CudaDefaultGraph.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Direct/Graph boundary projection"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "Direct/Graph exact-width FFN"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "Direct/Graph 5120x5120 projection"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "Direct/Graph partial RoPE, 24/4 GQA, Sigmoid output gate"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-grouped-head/receipt.json"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP concat and projection"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP normalization and F32 cast"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "Direct/Graph separate LM head and failure publication"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "d9275005f15041721959f591aa5e8cef9ecde38a",
+    "verdict": "PASS",
+    "selected": 7,
+    "skipped_or_reused": 125,
+    "werror": true,
+    "cuda_architectures": "89-real",
+    "gates": {
+      "docs": "2d87ad6f88ceff1c3e84cb5fc1dfea716c81b80d0915b3c7a12fcc7049323572",
+      "closure": "7d5a3a5a5b3d264add30a4821439ea9c4b5f6d7cfc8004c7492c7dcb7e3241af",
+      "configure": "b0a6d550bee2523b19296949faaff0ba749653e31901eb4bf72c1dda7ee15d86",
+      "compute_provider_ggml_cuda": "024272d9d7e718fcbed5e7b8ab325b1f1c8f902c52c959227056310ce374ae57",
+      "compute_route_cuda": "eb258b115ea58028a1f8bb9e1425b933c829918093455b08ce6e08409c44f5f5",
+      "graph_provider_ggml_cuda": "9b0b63f19ce26abd963acceeb9543550ced2052d5d3236d404c0032ff8c43a8c",
+      "graph_route_cuda": "836b0880eaddc2889e33da4840913ea8e829150daa7087333429905d047ad1ee"
+    },
+    "owner_suites": {
+      "compute_provider_ggml_cuda": "complete label PASS in 1.39 s",
+      "compute_route_cuda": "complete label PASS in 15.58 s",
+      "graph_provider_ggml_cuda": "complete label PASS in 0.33 s",
+      "graph_route_cuda": "complete label PASS in 17.73 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable CUDA route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-official-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "W1-WIN-RTX4070",
+    "system": "Windows 11",
+    "architecture": "AMD64",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "driver": "610.62",
+    "cuda": "13.3.73",
+    "compiler": "MSVC 19.50.35728"
+  }
+}

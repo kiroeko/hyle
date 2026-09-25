@@ -610,6 +610,17 @@ tensor program 已承载同组 unary，且上游已有 `ggml_sigmoid`，只是 a
 不修改公共 SDPA/Unary schema、ggml 源码、算法、FlashInfer kernel 或任何 HYLE 数学；若固定 ggml CUDA
 实际执行 24/4 仍失败，则记录精确 `BACKEND_REJECTED`，不在 D5 实现替代 attention。
 
+**D5-F13 CUDA CANDIDATE（`80bbbba06`）**：固定 ggml CUDA adapter 已把既有 attention program
+的资格域从固定 8/2 放宽到正整数倍 GQA，并把公共 Sigmoid 映射到上游 `ggml_sigmoid`；FlashInfer
+仍只接管其已资格化的 8/2×256 域。Qwen3.8-27B 官方 H=5120、FFN=17408、GQA 24/4×256、partial
+interleaved RoPE 64、MTP 10240 在普通 CUDA Direct/Graph 均以变化输入通过，首次 submit 后 replay
+资源稳定，invalid Gather 不发布结果；既有 R05 K16/V48×128 收据并入完整格。Release/WERROR
+selector 的 docs、closure、configure、ggml CUDA Provider、CUDA Direct、ggml CUDA Graph Provider 与
+CUDA Graph Route 七个 gate 全部 PASS，125 个无关 gate 跳过或复用；未启动 P1。完整收据见
+[Qwen3.8 official CUDA complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-official-complete/README.md)。
+ledger 现有 28 个 `RUN_PASS`、148 个 `VALIDATION_NOT_RUN`；Apple、Vulkan 四格以及 D5-A5 三交付和
+D5-A6 P1 尚未由本批代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，
