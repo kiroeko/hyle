@@ -13,6 +13,7 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
+#include "../compute_models/d5_qwen_gguf_vocabulary_vulkan_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
@@ -1507,5 +1508,46 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen_vocabulary_fixture::kOfficial2B,
                       &d5_qwen_vocabulary_fixture::kOfficial27B,
                       &d5_qwen_vocabulary_fixture::kOfficial24T));
+
+class VulkanQwenGgufVocabulary
+    : public ::testing::TestWithParam<
+          const d5_qwen_gguf_vocabulary_cases::Case *> {};
+
+TEST_P(VulkanQwenGgufVocabulary, HeadRunsEntireLogicalVocabulary) {
+  namespace gguf = d5_qwen_gguf_vocabulary_vulkan_test;
+  auto context = vulkan_test::context().value();
+  const auto prepare_native = [&](const c::WorkloadContext &workload,
+                                  c::Operation operation,
+                                  const c::TensorDesc &left,
+                                  const c::TensorDesc &right) {
+    return prepare(context, workload, std::move(operation), left, right);
+  };
+  gguf::check_head(context, *GetParam(), prepare_native,
+                   [](Call &call, const v::Tensor &left,
+                      const v::Tensor &right) { return run(call, left, right); });
+}
+
+TEST_P(VulkanQwenGgufVocabulary, GatherMapsGlobalRowsAndRejectsOutOfBounds) {
+  namespace gguf = d5_qwen_gguf_vocabulary_vulkan_test;
+  auto context = vulkan_test::context().value();
+  const auto prepare_native = [&](const c::WorkloadContext &workload,
+                                  c::Operation operation,
+                                  const c::TensorDesc &left,
+                                  const c::TensorDesc &right) {
+    return prepare(context, workload, std::move(operation), left, right);
+  };
+  gguf::check_gather(context, *GetParam(), prepare_native,
+                     [](Call &call, const v::Tensor &left,
+                        const v::Tensor &right) { return run(call, left, right); });
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    D5ExactQwenGguf, VulkanQwenGgufVocabulary,
+    ::testing::Values(&d5_qwen_gguf_vocabulary_cases::kCases[0],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[1],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[2],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[3],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[4],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[5]));
 
 } // namespace

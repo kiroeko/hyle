@@ -78,7 +78,9 @@ void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
 
 template <class Prepare, class Upload, class Execute, class Reject>
 void check_gather(const cases::Case &profile, Prepare prepare, Upload upload,
-                  Execute execute, Reject reject) {
+                  Execute execute, Reject reject,
+                  float absolute_tolerance = 1.0e-6F,
+                  float relative_tolerance = 0.0F) {
   fixture::SparseRows rows(profile.embedding, profile.hidden);
   auto full = prepare(vocab::kShardRows);
   auto tail = prepare(vocab::kVocabularyRows % vocab::kShardRows);
@@ -92,7 +94,9 @@ void check_gather(const cases::Case &profile, Prepare prepare, Upload upload,
     const auto expected = rows.row(global_id);
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t column = 0; column < actual.size(); ++column)
-      ASSERT_NEAR(actual[column], expected[column], 1.0e-6F)
+      ASSERT_NEAR(actual[column], expected[column],
+                  absolute_tolerance +
+                      relative_tolerance * std::abs(expected[column]))
           << profile.name << " global row " << global_id
           << " column " << column;
   }

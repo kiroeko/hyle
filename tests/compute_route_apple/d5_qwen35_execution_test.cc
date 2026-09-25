@@ -17,6 +17,7 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
+#include "../compute_models/d5_qwen_gguf_vocabulary_apple_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
@@ -1595,5 +1596,64 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&d5_qwen_vocabulary_fixture::kOfficial2B,
                       &d5_qwen_vocabulary_fixture::kOfficial27B,
                       &d5_qwen_vocabulary_fixture::kOfficial24T));
+
+class AppleQwenGgufVocabulary
+    : public ::testing::TestWithParam<
+          const d5_qwen_gguf_vocabulary_cases::Case *> {};
+
+TEST_P(AppleQwenGgufVocabulary, HeadRunsEntireLogicalVocabulary) {
+  namespace gguf = d5_qwen_gguf_vocabulary_apple_test;
+  auto context = a::Context::create().value();
+  const auto prepare_native = [&](const c::WorkloadContext &workload,
+                                  c::Operation operation,
+                                  const c::TensorDesc &left,
+                                  const c::TensorDesc &right) {
+    const std::array specs{a::input_spec(left).value(),
+                           a::input_spec(right).value()};
+    return Call{context.prepare(operation, specs, workload).value()};
+  };
+  const auto upload_dense = [&](const c::TensorDesc &description,
+                                std::span<const std::byte> bytes) {
+    return upload(context, description, bytes);
+  };
+  gguf::check_head(*GetParam(), prepare_native, upload_dense,
+                   [](std::span<const std::byte> bytes) {
+                     return packed_array(bytes);
+                   },
+                   [](Call &call, const mx::array &left,
+                      const mx::array &right) { return run(call, left, right); });
+}
+
+TEST_P(AppleQwenGgufVocabulary, GatherMapsGlobalRowsAndRejectsOutOfBounds) {
+  namespace gguf = d5_qwen_gguf_vocabulary_apple_test;
+  auto context = a::Context::create().value();
+  const auto prepare_native = [&](const c::WorkloadContext &workload,
+                                  c::Operation operation,
+                                  const c::TensorDesc &left,
+                                  const c::TensorDesc &right) {
+    const std::array specs{a::input_spec(left).value(),
+                           a::input_spec(right).value()};
+    return Call{context.prepare(operation, specs, workload).value()};
+  };
+  const auto upload_dense = [&](const c::TensorDesc &description,
+                                std::span<const std::byte> bytes) {
+    return upload(context, description, bytes);
+  };
+  gguf::check_gather(*GetParam(), prepare_native, upload_dense,
+                     [](std::span<const std::byte> bytes) {
+                       return packed_array(bytes);
+                     },
+                     [](Call &call, const mx::array &left,
+                        const mx::array &right) { return run(call, left, right); });
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    D5ExactQwenGguf, AppleQwenGgufVocabulary,
+    ::testing::Values(&d5_qwen_gguf_vocabulary_cases::kCases[0],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[1],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[2],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[3],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[4],
+                      &d5_qwen_gguf_vocabulary_cases::kCases[5]));
 
 } // namespace
