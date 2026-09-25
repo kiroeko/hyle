@@ -518,6 +518,22 @@ configure、CUDA Direct 与 CUDA Graph；完整 Direct 29/29、Graph 46/46，127
 ledger 现有 20 个 `RUN_PASS`、156 个 `VALIDATION_NOT_RUN`。Apple、Vulkan 四格以及 D5-A5 三交付、
 D5-A6 P1 仍未由本 tests-only candidate 代签。
 
+**D5-F11 Apple complete（`65bdb5f5`）**：普通 Apple Direct/Graph 已完整运行同一固定
+`qwen35_2b:fidelity_gguf:UD-Q8_K_XL` profile。R01 的 F16 embedding 由 MLX Metal 执行；
+R02 的 Q8_0 gate/up/down 以及 R03/R14 的 Q8_0 投影由原始 ggml Metal 执行，F16 投影由
+MLX Metal 执行；R04/R05 保留精确 `8/2 x 256` GQA、K4 causal conv 和 `16 x 128`
+Gated DeltaNet 语义。每条 Direct/Graph 路径准备一次并以变化输入重放，匹配独立 Q8_0、F16 或
+fragment oracle；无效 embedding 索引失败不覆盖已发布结果。所有调用和 Graph report 只固定到
+MLX 或 ggml Metal，没有新增 HYLE 数学、fallback 或热路径选路。R13 继续按固定 artifact 的已审计
+缺失排除。
+
+不可变 MacBook Air M4、AppleClang 21、macOS SDK 27.0、Release/WERROR selector 通过 docs、
+closure、configure、Apple Direct 与 Apple Graph；完整 Direct 59/59、Graph 32/32，127 个无关
+gate 跳过或复用。完整收据见
+[Apple fidelity GGUF complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-fidelity-gguf-complete/README.md)。
+ledger 现有 22 个 `RUN_PASS`、154 个 `VALIDATION_NOT_RUN`。Vulkan 两格以及 D5-A5 三交付、
+D5-A6 P1 仍未由本 tests-only candidate 代签。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

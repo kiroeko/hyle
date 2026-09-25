@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "candidate": "65bdb5f57701767bbcf4115c97900b49cfcfadec",
+  "candidate_tree": "3d34e1d8b6ff481780522eed79f4bffafdb73259",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
+    "route": "apple",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R14",
+      "R15"
+    ],
+    "excluded_regions": [
+      {
+        "region": "R13",
+        "reason": "the fixed GGUF artifact has no MTP/NextN tensors or sidecar"
+      }
+    ],
+    "not_claimed": [
+      "other routes",
+      "source/static/shared delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "artifact": {
+    "model_repository": "Qwen/Qwen3.5-2B",
+    "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+    "artifact_repository": "unsloth/Qwen3.5-2B-GGUF",
+    "artifact_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+    "variant": "UD-Q8_K_XL",
+    "manifest_digest": "984823c386e1fd17a05b97d49a6416cd25940415d8f7f77182596533f3e5ab92",
+    "tensor_count": 320,
+    "logical_parameters": 1881825088,
+    "payload": "exact audited tensor names, roles, dimensions and formats with deterministic format-valid nonzero weights",
+    "shape_anchor": {
+      "hidden": 2048,
+      "ffn": 6144,
+      "query_heads": 8,
+      "kv_heads": 2,
+      "head_dim": 256,
+      "gdn_heads": 16,
+      "gdn_head_dim": 128,
+      "conv_kernel": 4
+    },
+    "mixed_weights": [
+      {
+        "role": "embedding",
+        "format": "F16",
+        "shape": [
+          2048,
+          248320
+        ]
+      },
+      {
+        "role": "FFN gate/up",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          6144
+        ]
+      },
+      {
+        "role": "FFN down",
+        "format": "Q8_0",
+        "shape": [
+          6144,
+          2048
+        ]
+      },
+      {
+        "role": "Gated DeltaNet output",
+        "format": "F16",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "attention K",
+        "format": "F16",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "attention Q",
+        "format": "F16",
+        "shape": [
+          2048,
+          4096
+        ]
+      },
+      {
+        "role": "attention V",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          512
+        ]
+      },
+      {
+        "role": "attention output",
+        "format": "Q8_0",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "role": "convolution/state/norm",
+        "format": "F32"
+      }
+    ]
+  },
+  "consumer": {
+    "phase": "decode",
+    "providers": [
+      "MLX 0.32.2 native Metal regions",
+      "ggml Metal 0.24.0 at 456172ec733a135778adcd32d00e576a58232e45-hyle"
+    ],
+    "routing": "ordinary Apple Direct prepare and Graph compile cold-bind only admitted mature providers for every current fragment",
+    "replay": "each prepared chain or Graph program executes twice with changed activation, token or state; the Graph invocation is reused",
+    "runtime_pipelines": [
+      "MLX F16 gather",
+      "MLX F16 matmul",
+      "kernel_mul_mv_q8_0_f32",
+      "kernel_gated_delta_net_f32_4"
+    ],
+    "oracles": [
+      "independent Q8_0 packed-weight decode followed by F32 dot products",
+      "independent F16 encode/decode followed by F32 dot products",
+      "independent RMSNorm, half-split RoPE, causal-convolution and Gated DeltaNet calculations",
+      "BF16 activation/storage with F32 accumulation for the attention region",
+      "sequence-length-one 8-query-head/2-KV-head GQA mapping",
+      "checked embedding failure preserves the previously published output"
+    ],
+    "quantized_chain_gate": "per-stage RMSE <= 0.002 + 2% reference RMS and max error <= 0.02 + 2% max reference"
+  },
+  "regions": [
+    {
+      "id": "R01",
+      "tests": [
+        "AppleD5.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+        "AppleGraphD5.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R02",
+      "tests": [
+        "AppleD5.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay",
+        "AppleGraphD5.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R03",
+      "tests": [
+        "AppleD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "AppleD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+        "AppleGraphD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "AppleGraphD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R04",
+      "tests": [
+        "AppleD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls",
+        "AppleGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+      ],
+      "model_identity": "fidelity GGUF workload 0x040f",
+      "result": "PASS"
+    },
+    {
+      "id": "R05",
+      "tests": [
+        "AppleD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls",
+        "AppleGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls"
+      ],
+      "model_identity": "fidelity GGUF workload 0x050f",
+      "result": "PASS"
+    },
+    {
+      "id": "R14",
+      "tests": [
+        "AppleD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "AppleD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+        "AppleGraphD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+        "AppleGraphD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay"
+      ],
+      "result": "PASS"
+    },
+    {
+      "id": "R15",
+      "tests": [
+        "AppleD5.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+        "AppleD5.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay",
+        "AppleGraphD5.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays",
+        "AppleGraphD5.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay"
+      ],
+      "result": "PASS"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "68831532b3c698523d4333cd19ca73893b2196a8",
+    "verdict": "PASS",
+    "selected": [
+      "docs",
+      "closure",
+      "configure",
+      "factor:compute_route_apple",
+      "factor:graph_route_apple"
+    ],
+    "skipped_or_reused": 127,
+    "compute_route_apple": "1/1 CTest executable PASS in 52.35 s; executable contains 59/59 passing tests",
+    "graph_route_apple": "1/1 CTest executable PASS in 12.47 s; executable contains 32/32 passing tests",
+    "toolchain": "AppleClang 21.0.0; libc++; macOS SDK 27.0; Metal 17F109 command-line tools shim",
+    "flags": "Release -O3 -DNDEBUG; WERROR",
+    "machine": "M1-MAC, MacBook Air Mac16,12, Apple M4, 16 GB, macOS 27.0 build 26A428"
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable Apple route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs after the stable route correctness batch"
+  }
+}
