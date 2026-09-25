@@ -58,8 +58,8 @@ suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 fi
 消费者的惰性 MLX reshape 必须在下一次 bind 前求值。见
 [Graph 收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-graph/README.md)
 与 [Direct 收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-direct/README.md)。
-这只证明 R10/R11 的完整链，不能代签官方 BF16 整个 profile 的其它 region、三交付或 P1；ledger
-仍为 48/176 `RUN_PASS`。其余模型继续按有限批次接线，到批末再选受影响门。
+这只证明 R10/R11 的完整链，不能代签官方 BF16 整个 profile 的其它 region、三交付或 P1；
+R01 资格纠正后 ledger 为 0/176 `RUN_PASS`。其余模型继续按有限批次接线，到批末再选受影响门。
 不可变 `c2c1f7e8d` 的提前 selector 尝试选中 13 门；docs、closure、共享模型输入工具与
 W1-WIN/MSVC 配置已运行通过。它在 CPU factor 首次编译共用 ggml CUDA 对象时人为停止，
 余下 factor 未获 selector verdict；这次试运行不改变上述 partial receipt 或 ledger，
@@ -69,9 +69,9 @@ W1-WIN/MSVC 配置已运行通过。它在 CPU factor 首次编译共用 ggml CU
 `(2×16+128)×128=20,480` 通道、K4 causal Conv1d 已通过四路线 Direct/Graph
 八条普通入口的两次变化输入和独立 oracle；见
 [定向收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-causal-conv/README.md)。
-这不触发逐算子的完整 selector/三交付/P1。R01 现有七行词表测试不能签官方
-248,320 行词表；批内应接通真实宽度的 embedding/head 边界后再冻结完整 profile
-候选。2.4T 官方八格继续保持 `VALIDATION_NOT_RUN`，不把定向测试记作全格通过。
+这不触发逐算子的完整 selector/三交付/P1。此前 R01 的七行词表测试不能签官方
+248,320 行词表；后续共用 BF16 词表批内检查点已接通真实宽度的 embedding/head
+边界，见下文。2.4T 官方八格继续保持 `VALIDATION_NOT_RUN`，不把定向测试记作全格通过。
 
 **R01 资格纠正（`ae15979a8` 后审计）**：此前 Qwen3.5-2B 与 Qwen3.8-27B
 六个 profile 的 48 个已签格，均将真实 248,320 行词表缩成七行完成 Gather/输出头；
@@ -85,6 +85,16 @@ R01 的 248,320 行允许按硬件资源无损分片执行：每片保留该 pro
 权重格式与原始行号，全部分片的 logits 必须按全局行序拼成完整词表并检查；Gather 必须验证
 跨片全局索引和越界失败。分片程序可复用，但不得只抽样几行或把分片宽度当作模型词表宽度。
 这属于图/消费者的资源规划，不新增 HYLE 数学或让 Provider 热路径重新选择。
+
+**R01 共用 BF16 词表批内检查点（`c4e2b0d0`）**：Qwen3.8-27B 与 2.4T
+官方 profile 的 248,320 行输出头在四路线 Direct/Graph 上无损分片运行，保留各自
+5120/8192 hidden 与 BF16 类型；两次变化输入的全部 logits 按全局行序核对独立 oracle。
+Gather 已验证跨片和尾片的具名全局索引。32 个定向用例全部通过，八个 owner suite
+均无失败；六个依赖本地 Qwen3.5 夹具的用例在每个 suite 中 SKIP。详见
+[共用词表部分收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-full-vocabulary-batch/README.md)。
+这仍不是 R01 或完整 profile 的验收：本批尚未新增 248,320 全局越界拒绝用例，
+量化画像的精确权重格式未在这份 BF16 收据内运行，完整 selector、三交付与适用 P1
+也未签署。完整 profile 接线稳定后再集中验证，ledger 保持 0/176 `RUN_PASS`。
 
 ## 批量验收形状
 

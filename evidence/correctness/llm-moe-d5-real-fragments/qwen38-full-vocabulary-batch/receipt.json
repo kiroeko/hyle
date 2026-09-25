@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "candidate": "c4e2b0d0f661dd2d0181af68c3d8d30a1ab477fa",
+  "candidate_tree": "339ea2b6b506e826be52715f381fa5406c2441ed",
+  "verdict": "PARTIAL_R01_BF16_HEAD_AND_GATHER_ONLY",
+  "profiles": [
+    {
+      "id": "qwen38_27b:official:official-bf16",
+      "source_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "hidden": 5120
+    },
+    {
+      "id": "qwen38_24t:official:official-bf16",
+      "source_revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+      "hidden": 8192
+    }
+  ],
+  "vocabulary_rows": 248320,
+  "shard_rows": 16384,
+  "head": "all 248320 logits checked for each of two changed BF16 activations",
+  "gather_global_ids": [0, 16385, 131071, 248317, 248318, 248319],
+  "payload": "synthetic sparse nonzero BF16 row in full-width dense weights, not checkpoint bytes",
+  "targeted_new_tests": {
+    "cpu_direct": "4/4 PASS",
+    "cpu_graph": "4/4 PASS",
+    "cuda_direct": "4/4 PASS",
+    "cuda_graph": "4/4 PASS",
+    "apple_direct": "4/4 PASS",
+    "apple_graph": "4/4 PASS",
+    "vulkan_direct": "4/4 PASS",
+    "vulkan_graph": "4/4 PASS"
+  },
+  "complete_owner_suites": {
+    "cpu_direct": {"pass": 52, "skip": 6, "fail": 0},
+    "cpu_graph": {"pass": 64, "skip": 6, "fail": 0},
+    "cuda_direct": {"pass": 54, "skip": 6, "fail": 0},
+    "cuda_graph": {"pass": 71, "skip": 6, "fail": 0},
+    "apple_direct": {"pass": 84, "skip": 6, "fail": 0},
+    "apple_graph": {"pass": 57, "skip": 6, "fail": 0},
+    "vulkan_direct": {"pass": 168, "skip": 6, "fail": 0},
+    "vulkan_graph": {"pass": 79, "skip": 6, "fail": 0}
+  },
+  "skipped_reason": "HYLE_D5_QWEN35_FIXTURE was not set; skips are unrelated Qwen3.5 cases",
+  "selector": "INCOMPLETE: common checks and configure passed, first CPU factor was interrupted during fresh all-route dependency build; no complete verdict",
+  "not_claimed": [
+    "full R01 global out-of-range Gather failure",
+    "quantized artifact vocabulary formats",
+    "complete profile cells",
+    "source/static/shared external delivery",
+    "applicable P1",
+    "full-model inference"
+  ],
+  "ledger": {"changed_cells": 0, "run_pass": 0, "validation_not_run": 176},
+  "compute_graph_implementation_lines_excluding_tests": 58043
+}
