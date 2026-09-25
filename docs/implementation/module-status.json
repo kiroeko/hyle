@@ -394,7 +394,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile 的四路线 Direct/Graph 24 格和 Qwen3.8-27B 官方 CPU/CUDA Direct/Graph 四格已通过。ledger 当前 28/176 RUN_PASS，其余 148 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
+      "summary": "M3-D5 AUDITED：三个 Qwen3.5-2B profile 的四路线 Direct/Graph 24 格和 Qwen3.8-27B 官方 CPU/CUDA/Apple Direct/Graph 六格已通过。ledger 当前 30/176 RUN_PASS，其余 146 格继续按固定成熟 Provider 批量验收，自研数学保持冻结。"
     },
     {
       "module": "compute_backend_cpu",

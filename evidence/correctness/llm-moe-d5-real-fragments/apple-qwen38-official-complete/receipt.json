@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "candidate": "6086dd721af664a1d759bb4eea3dfd645e02c99f",
+  "candidate_tree": "f17756921f3478fd913cf2b623f4bcf0a6e0fa17",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:official:official-bf16",
+    "route": "apple",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CPU, CUDA, or Vulkan complete cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "variant": "official-bf16",
+    "format_family": "safetensors",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "manifest_sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
+    "fixture": "tests/compute_models/d5_qwen38_official_fixture.h",
+    "payload": "deterministic nonzero BF16 data with one nonzero per full-shape output-major weight row; no checkpoint bytes committed",
+    "oracle": "independent double-precision RMSNorm, sparse projection, FFN, attention decode, output gate, MTP and BF16-boundary calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "dtypes": "BF16 weights/activations with F32 attention and recurrent accumulation",
+    "providers": [
+      "MLX 0.32.2 Metal native programs",
+      "ggml Metal 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle for the admitted R05 region"
+    ],
+    "provider_assertion": "Direct uses the ordinary Apple Context prepare path; Graph compile reports the exact node kind and a nonempty fixed mature implementation policy; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, or gate data while the route stays cold-bound",
+    "failure": "an invalid embedding index fails without changing the previously published output"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "AppleD5.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "AppleD5.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "AppleD5.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "AppleD5.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "AppleGraphD5.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "AppleGraphD5.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "AppleGraphD5.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "AppleGraphD5.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Direct/Graph checked embedding and boundary projection"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "Direct/Graph exact-width FFN"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "Direct/Graph 5120x5120 projection"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "Direct/Graph partial RoPE, 24/4 GQA, Sigmoid output gate"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-grouped-head/receipt.json"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP concat and projection"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP normalization and F32 cast"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "Direct/Graph separate LM head and failure publication"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "2d21fbf9caa286981a7fbc9dddd481731fbe8397",
+    "verdict": "PASS",
+    "selected": 5,
+    "skipped_or_reused": 127,
+    "werror": true,
+    "gates": {
+      "docs": "530a338a850106947f55c4de5f2886fab0774e98e56a04b2b601e861ecb7b048",
+      "closure": "dc7c5d6709c26975270d59546a3d00cb53a8c8039b0ee477589ed3442fb02db7",
+      "configure": "0edf935fc8248fb49abd16a600bf36e660f6227416cd3c5f287e3345bef5b5c9",
+      "compute_route_apple": "f460caaaf8997590617b6b473023edb22e3c49055069e2710ecc7571306d16b9",
+      "graph_route_apple": "740b6c81cb031964e5eee2726853cb3a29ac4bb202dca5744c8a6fa89a1f8d86"
+    },
+    "owner_suites": {
+      "compute_route_apple": "complete factor PASS in 54.37 s",
+      "graph_route_apple": "complete factor PASS in 13.05 s"
+    }
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable Apple route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-official-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "M1-MAC",
+    "system": "macOS 27.0 (26A428)",
+    "model": "MacBook Air Mac16,12",
+    "chip": "Apple M4",
+    "memory": "16 GB",
+    "compiler": "AppleClang 21.0.0.21000334",
+    "mlx": "0.32.2",
+    "ggml": "0.24.0 / 456172ec733a135778adcd32d00e576a58232e45-hyle"
+  }
+}
