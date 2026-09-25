@@ -75,6 +75,62 @@ void expect_near(std::span<const BF16> actual,
 class CpuGraphQwen38Profiles
     : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
 
+TEST(CpuGraphQwen38_24T, D5ExactWidthCausalConvGraphReplay) {
+  const d5_qwen38_gdn_fixture::ConvFixture fixture(
+      q24::kGdnKeyHeads, q24::kGdnValueHeads);
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 5);
+  auto builder = g::GraphBuilder::create().value();
+  const auto samples_id = builder.input(fixture.samples_desc).value();
+  const auto weights_id = builder.input(fixture.weights_desc).value();
+  const auto output_id =
+      builder.add(c::model_ops::causal_conv1d(), samples_id, weights_id)
+          .value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = g::cpu::create_context().value();
+  auto compiled = g::compile(logical, context, {.workload = workload}).value();
+  expect_mature(compiled);
+  EXPECT_EQ(compiled.executable.workload(), workload);
+  auto samples = output_buffer(fixture.samples_desc);
+  auto weights = half_test::buffer<float>(fixture.weights);
+  auto output = output_buffer(fixture.output_desc);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(samples_id,
+                        c::ConstTensorView::create(fixture.samples_desc,
+                                                   samples.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(weights_id,
+                        c::ConstTensorView::create(fixture.weights_desc,
+                                                   weights.view())
+                            .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(output_id,
+                        c::TensorView::create(fixture.output_desc,
+                                              output.view())
+                            .value())
+                  .ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (const int seed : {3, 17}) {
+    const auto input = fixture.samples(seed);
+    ASSERT_TRUE(samples.view().write(std::as_bytes(std::span(input))).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = half_test::read<float>(output);
+    const auto expected = fixture.oracle(input);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+  }
+}
+
 TEST_P(CpuGraphQwen38Profiles,
      D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
   const auto &shape = *GetParam();

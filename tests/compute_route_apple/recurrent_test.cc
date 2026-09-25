@@ -7,6 +7,7 @@
 
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../model_fragment_test_support.h"
@@ -131,6 +132,47 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     D5Official24T, AppleQwen38GdnProfiles,
     ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
+
+TEST(AppleQwen38_24T, D5ExactWidthCausalConvDirectReplay) {
+  const d5_qwen38_gdn_fixture::ConvFixture fixture(
+      d5_qwen38_24t_fixture::kGdnKeyHeads,
+      d5_qwen38_24t_fixture::kGdnValueHeads);
+  const auto workload = d5_qwen38_24t_fixture::workload(
+      c::WorkloadPhase::kDecode, 5);
+  auto context = a::Context::create().value();
+  const mx::array weights(fixture.weights.data(),
+                          {static_cast<int>(fixture.channels),
+                           static_cast<int>(d5_qwen38_gdn_fixture::kConvKernel)});
+  const auto initial = fixture.samples(3);
+  const std::array arguments{
+      mx::array(initial.data(),
+                {1, static_cast<int>(d5_qwen38_gdn_fixture::kConvKernel),
+                 static_cast<int>(fixture.channels)}),
+      weights};
+  auto program = context.prepare(c::model_ops::causal_conv1d(), arguments,
+                                 workload).value();
+  EXPECT_EQ(program.workload(), workload);
+  auto invocation = program.create_invocation().value();
+  for (const int seed : {3, 17}) {
+    const auto input = fixture.samples(seed);
+    const std::array resident{
+        mx::array(input.data(),
+                  {1, static_cast<int>(d5_qwen38_gdn_fixture::kConvKernel),
+                   static_cast<int>(fixture.channels)}),
+        weights};
+    ASSERT_TRUE(invocation.bind(resident).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto arrays = result->get()->arrays();
+    ASSERT_EQ(arrays.size(), 1U);
+    const auto expected = fixture.oracle(input);
+    ASSERT_EQ(arrays[0].size(), expected.size());
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      EXPECT_NEAR(arrays[0].data<float>()[i], expected[i], 1.0e-6) << i;
+  }
+}
 
 TEST(AppleRecurrent, StridedMlxInputAndPreparationDiagnostics) {
   apple_test::Recurrent fixture(5, 2, 32);

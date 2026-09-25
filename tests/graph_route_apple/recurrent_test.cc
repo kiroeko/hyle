@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "../compute_route_apple/recurrent_fixture.h"
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../model_fragment_test_support.h"
@@ -192,6 +193,52 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     D5Official24T, AppleGraphQwen38GdnProfiles,
     ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
+
+TEST(AppleGraphQwen38_24T, D5ExactWidthCausalConvGraphReplay) {
+  const d5_qwen38_gdn_fixture::ConvFixture fixture(
+      d5_qwen38_24t_fixture::kGdnKeyHeads,
+      d5_qwen38_24t_fixture::kGdnValueHeads);
+  const auto workload = d5_qwen38_24t_fixture::workload(
+      c::WorkloadPhase::kDecode, 5);
+  auto builder = g::GraphBuilder::create().value();
+  const auto samples_id = builder.input(fixture.samples_desc).value();
+  const auto weights_id = builder.input(fixture.weights_desc).value();
+  const auto output_id =
+      builder.add(c::model_ops::causal_conv1d(), samples_id, weights_id)
+          .value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = a::Context::create().value();
+  ga::CompileReport report;
+  auto program = ga::compile(context, logical, {},
+                             {.report = &report, .workload = workload})
+                     .value();
+  EXPECT_EQ(program.workload(), workload);
+  EXPECT_NE(report.implementation_policy.find("MLX"), std::string::npos);
+  const mx::array weights(fixture.weights.data(),
+                          {static_cast<int>(fixture.channels),
+                           static_cast<int>(d5_qwen38_gdn_fixture::kConvKernel)});
+  auto invocation = program.create_invocation().value();
+  for (const int seed : {3, 17}) {
+    const auto input = fixture.samples(seed);
+    const std::array resident{
+        mx::array(input.data(),
+                  {1, static_cast<int>(d5_qwen38_gdn_fixture::kConvKernel),
+                   static_cast<int>(fixture.channels)}),
+        weights};
+    ASSERT_TRUE(invocation.bind(resident).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto arrays = result->get()->arrays();
+    ASSERT_EQ(arrays.size(), 1U);
+    const auto expected = fixture.oracle(input);
+    ASSERT_EQ(arrays[0].size(), expected.size());
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      EXPECT_NEAR(arrays[0].data<float>()[i], expected[i], 1.0e-6) << i;
+  }
+}
 
 TEST(AppleGraph, OriginalRecurrentRegionsComposeWithMlxAndExplicitState) {
   apple_test::Recurrent fixture(5, 2, 32);

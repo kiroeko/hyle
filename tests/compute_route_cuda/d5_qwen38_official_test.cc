@@ -127,6 +127,40 @@ void expect_near(std::span<const BF16> actual,
 class CudaQwen38Profiles
     : public ::testing::TestWithParam<const qcase::ProfileCase *> {};
 
+TEST(CudaQwen38_24T, D5ExactWidthCausalConvDirectReplay) {
+  const d5_qwen38_gdn_fixture::ConvFixture fixture(
+      q24::kGdnKeyHeads, q24::kGdnValueHeads);
+  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 5);
+  auto context = cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice)
+                    .value();
+  const auto resource = memory.ref();
+  auto queue = context.create_queue().value();
+  const std::array inputs{fixture.samples_desc, fixture.weights_desc};
+  const std::array outputs{fixture.output_desc};
+  auto call = make_call(context, resource, c::model_ops::causal_conv1d(),
+                        inputs, outputs, workload);
+  expect_mature(call, workload);
+  auto samples = output_buffer(resource, fixture.samples_desc);
+  auto weights = values_buffer<float>(resource, fixture.weights);
+  auto result = output_buffer(resource, fixture.output_desc);
+  const std::array input_views{
+      c::ConstTensorView::create(fixture.samples_desc, samples.view()).value(),
+      c::ConstTensorView::create(fixture.weights_desc, weights.view()).value()};
+  const std::array output_views{
+      c::TensorView::create(fixture.output_desc, result.view()).value()};
+  for (const int seed : {3, 17}) {
+    const auto input = fixture.samples(seed);
+    ASSERT_TRUE(samples.view().write(std::as_bytes(std::span(input))).ok());
+    run(call, queue, input_views, output_views);
+    const auto actual = half_test::read<float>(result);
+    const auto expected = fixture.oracle(input);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+  }
+}
+
 TEST_P(CudaQwen38Profiles,
        D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
   const auto &shape = *GetParam();

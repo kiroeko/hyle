@@ -3,6 +3,7 @@
 #include "vulkan_program_internal.h"
 
 #include "../model_fragment_test_support.h"
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../sparse_fragment_test_support.h"
@@ -63,6 +64,42 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     D5Official24T, VulkanQwen38GdnProfiles,
     ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
+
+TEST(VulkanQwen38_24T, D5ExactWidthCausalConvDirectReplay) {
+  const d5_qwen38_gdn_fixture::ConvFixture fixture(
+      d5_qwen38_24t_fixture::kGdnKeyHeads,
+      d5_qwen38_24t_fixture::kGdnValueHeads);
+  const auto workload = d5_qwen38_24t_fixture::workload(
+      c::WorkloadPhase::kDecode, 5);
+  auto context = vulkan_test::context().value();
+  const std::array arguments{v::Argument(fixture.samples_desc),
+                             v::Argument(fixture.weights_desc)};
+  auto program = v::prepare(context, c::model_ops::causal_conv1d(), arguments,
+                            workload).value();
+  EXPECT_EQ(program.workload(), workload);
+  const auto weights =
+      vulkan_test::upload(context, fixture.weights_desc, fixture.weights)
+          .value();
+  auto invocation = program.create_invocation().value();
+  for (const int seed : {3, 17}) {
+    const auto input = fixture.samples(seed);
+    const std::array resident{
+        vulkan_test::upload(context, fixture.samples_desc, input).value(),
+        weights};
+    ASSERT_TRUE(invocation.bind(resident).ok());
+    auto work = invocation.submit();
+    ASSERT_TRUE(work) << work.error().message();
+    auto result = work->wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto outputs = result->get()->tensors();
+    ASSERT_EQ(outputs.size(), 1U);
+    const auto actual = vulkan_test::read(context, outputs[0]).value();
+    const auto expected = fixture.oracle(input);
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_NEAR(actual[i], expected[i], 1.0e-6) << i;
+  }
+}
 
 TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),

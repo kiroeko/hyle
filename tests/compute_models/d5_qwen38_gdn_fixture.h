@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
+#include <span>
 #include <vector>
 
 #include "hyle/compute/tensor_desc.h"
@@ -17,6 +19,59 @@ inline constexpr std::int64_t kTokens = 1;
 inline constexpr std::int64_t kKeyHeads = 16;
 inline constexpr std::int64_t kValueHeads = 48;
 inline constexpr std::int64_t kDepth = 128;
+inline constexpr std::int64_t kConvKernel = 4;
+
+// Qwen's causal convolution consumes the concatenated K, K and V projection
+// channels. Keep its full model width while reducing only the token window.
+struct ConvFixture final {
+  std::int64_t channels;
+  c::TensorDesc samples_desc;
+  c::TensorDesc weights_desc;
+  c::TensorDesc output_desc;
+  std::vector<float> weights;
+
+  ConvFixture(std::int64_t key_heads, std::int64_t value_heads)
+      : channels((2 * key_heads + value_heads) * kDepth),
+        samples_desc(dense({1, kConvKernel, channels})),
+        weights_desc(dense({channels, kConvKernel})),
+        output_desc(dense({1, 1, channels})),
+        weights(static_cast<std::size_t>(channels * kConvKernel)) {
+    for (std::size_t channel = 0; channel < static_cast<std::size_t>(channels);
+         ++channel)
+      for (std::size_t tap = 0; tap < kConvKernel; ++tap)
+        weights[channel * kConvKernel + tap] =
+            static_cast<float>(static_cast<int>((channel * 7 + tap * 13) % 17) -
+                               8) /
+            128.0F;
+  }
+
+  std::vector<float> samples(int seed) const {
+    std::vector<float> result(
+        static_cast<std::size_t>(kConvKernel * channels));
+    for (std::size_t i = 0; i < result.size(); ++i)
+      result[i] =
+          static_cast<float>(static_cast<int>((i * 11 + seed * 19) % 31) - 15) /
+          128.0F;
+    return result;
+  }
+
+  std::vector<double> oracle(std::span<const float> samples) const {
+    std::vector<double> result(static_cast<std::size_t>(channels));
+    for (std::size_t channel = 0; channel < result.size(); ++channel)
+      for (std::size_t tap = 0; tap < kConvKernel; ++tap)
+        result[channel] +=
+            static_cast<double>(samples[tap * result.size() + channel]) *
+            weights[channel * kConvKernel + tap];
+    return result;
+  }
+
+private:
+  static c::TensorDesc dense(std::initializer_list<std::int64_t> shape) {
+    return c::TensorDesc::dense(c::DataType::kFloat32,
+                                {shape.begin(), shape.size()})
+        .value();
+  }
+};
 
 // Fixed official artifact identity. The manifest digest is the SHA-256 of
 // model.safetensors.index.json at the pinned revision.
