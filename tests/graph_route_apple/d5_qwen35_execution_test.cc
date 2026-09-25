@@ -350,7 +350,6 @@ TEST(AppleGraphD5,
       c::gguf_weight_description(c::GgufQuantizedType::kQ6K,
                                  c::DataType::kFloat32, expanded, hidden)
           .value();
-  const auto expanded_desc = dense(c::DataType::kFloat32, {1, expanded});
   const auto gate_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
                                   gate_weight_desc, 31);
   const auto up_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
