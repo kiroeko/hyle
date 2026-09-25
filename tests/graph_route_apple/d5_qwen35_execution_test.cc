@@ -16,6 +16,7 @@
 
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_route_apple/tensor_test_support.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
@@ -92,9 +93,25 @@ Tensor upload(const a::Context &, const c::TensorDesc &description,
 mx::array packed_array(std::span<const std::byte> bytes) {
   std::vector<std::uint8_t> storage(bytes.size());
   std::memcpy(storage.data(), bytes.data(), bytes.size());
-  return ready(mx::array(storage.data(),
-                         mx::Shape{static_cast<int>(storage.size())},
-                         mx::uint8));
+  return ready(mx::array(
+      storage.data(), mx::Shape{static_cast<int>(storage.size())}, mx::uint8));
+}
+
+d5_gguf_test::Packed packed(c::GgufQuantizedType type, std::int64_t columns,
+                            std::int64_t reduction,
+                            const c::TensorDesc &description, int seed) {
+  const auto source = d5_gguf_test::values(columns, reduction, seed);
+  return d5_gguf_test::pack(type, source, columns, reduction,
+                            description.required_bytes().value());
+}
+
+std::vector<float> float_values(const mx::array &array) {
+  const auto source = values(array);
+  std::vector<float> result(source.size());
+  std::ranges::transform(source, result.begin(), [](double value) {
+    return static_cast<float>(value);
+  });
+  return result;
 }
 
 template <class T, std::size_t Extent>
@@ -212,12 +229,10 @@ TEST(AppleGraphD5,
   const std::array constants{packed_array(packed.bytes)};
   auto context = a::Context::create().value();
   ga::CompileReport report;
-  auto program =
-      ga::compile(context, graph, constants,
-                  {.report = &report, .workload = workload});
+  auto program = ga::compile(context, graph, constants,
+                             {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
-  EXPECT_NE(report.implementation_policy.find("ggml Metal"),
-            std::string::npos);
+  EXPECT_NE(report.implementation_policy.find("ggml Metal"), std::string::npos);
   EXPECT_EQ(program->workload(), workload);
 
   auto invocation = program->create_invocation().value();
@@ -271,9 +286,9 @@ TEST(AppleGraphD5,
             .value();
     const auto physical =
         d5_gguf_test::values(test.columns, test.reduction, test.seed);
-    const auto packed = d5_gguf_test::pack(
-        test.type, physical, test.columns, test.reduction,
-        weight_desc.required_bytes().value());
+    const auto packed =
+        d5_gguf_test::pack(test.type, physical, test.columns, test.reduction,
+                           weight_desc.required_bytes().value());
 
     auto builder = g::GraphBuilder::create().value();
     const auto activation = builder.input(input_desc).value();
@@ -282,9 +297,9 @@ TEST(AppleGraphD5,
     ASSERT_TRUE(builder.publish(product).ok());
     auto graph = std::move(builder).finish().value();
     const std::array constants{packed_array(packed.bytes)};
-    const auto workload = d5_qwen35_fixture::workload(
-        d5_qwen35_fixture::kPrimaryGgufProfile,
-        c::WorkloadPhase::kDecode, test.region);
+    const auto workload =
+        d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                    c::WorkloadPhase::kDecode, test.region);
     ga::CompileReport report;
     auto program = ga::compile(context, graph, constants,
                                {.report = &report, .workload = workload});
@@ -313,11 +328,119 @@ TEST(AppleGraphD5,
       std::ranges::transform(actual, actual_f32.begin(), [](double value) {
         return static_cast<float>(value);
       });
-      const auto expected =
-          d5_gguf_test::matmul(activation_values, packed.decoded, test.columns,
-                               test.reduction);
+      const auto expected = d5_gguf_test::matmul(
+          activation_values, packed.decoded, test.columns, test.reduction);
       d5_gguf_test::expect_quantized_matmul_close(actual_f32, expected);
     }
+  }
+}
+
+TEST(AppleGraphD5,
+     D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr std::int64_t hidden = d5_qwen35_fixture::kHidden;
+  constexpr std::int64_t expanded = d5_qwen35_fixture::kFfnHidden;
+  const auto activation_desc = dense(c::DataType::kFloat32, {1, hidden});
+  const auto scale_desc = dense(c::DataType::kFloat32, {hidden});
+  const auto gate_weight_desc =
+      c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
+                                 c::DataType::kFloat32, hidden, expanded)
+          .value();
+  const auto down_weight_desc =
+      c::gguf_weight_description(c::GgufQuantizedType::kQ6K,
+                                 c::DataType::kFloat32, expanded, hidden)
+          .value();
+  const auto expanded_desc = dense(c::DataType::kFloat32, {1, expanded});
+  const auto gate_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
+                                  gate_weight_desc, 31);
+  const auto up_packed = packed(c::GgufQuantizedType::kQ4K, expanded, hidden,
+                                gate_weight_desc, 37);
+  const auto down_packed = packed(c::GgufQuantizedType::kQ6K, hidden, expanded,
+                                  down_weight_desc, 41);
+  const auto scale_values = d5_qwen35_gguf_fragment::scale(hidden);
+  auto activation_values = d5_gguf_test::activation(hidden, 43);
+  auto context = a::Context::create().value();
+  const auto scale = upload(context, scale_desc, std::span(scale_values));
+  const auto gate_weight = packed_array(gate_packed.bytes);
+  const auto up_weight = packed_array(up_packed.bytes);
+  const auto down_weight = packed_array(down_packed.bytes);
+
+  auto builder = g::GraphBuilder::create().value();
+  const auto activation = builder.input(activation_desc).value();
+  const auto scale_id = builder.constant(scale_desc).value();
+  const auto gate_weight_id = builder.constant(gate_weight_desc).value();
+  const auto up_weight_id = builder.constant(gate_weight_desc).value();
+  const auto down_weight_id = builder.constant(down_weight_desc).value();
+  const auto normalized =
+      builder.add(c::RmsNorm{}, activation, scale_id).value();
+  const auto gate =
+      builder.add(c::MatMul{}, normalized, gate_weight_id).value();
+  const auto up = builder.add(c::MatMul{}, normalized, up_weight_id).value();
+  const auto gated =
+      builder
+          .add(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}, gate,
+               up)
+          .value();
+  const auto final = builder.add(c::MatMul{}, gated, down_weight_id).value();
+  for (const auto value : {normalized, gate, up, gated, final})
+    ASSERT_TRUE(builder.publish(value).ok());
+  auto graph = std::move(builder).finish().value();
+  const std::array constants{native(scale), gate_weight, up_weight,
+                             down_weight};
+  const auto workload =
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x020f);
+  ga::CompileReport report;
+  auto compiled = ga::compile(context, graph, constants,
+                              {.report = &report, .workload = workload});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_TRUE(report.status.ok());
+  EXPECT_NE(report.implementation_policy.find("ggml Metal"), std::string::npos);
+  EXPECT_EQ(compiled->workload(), workload);
+  auto invocation = compiled->create_invocation().value();
+  std::vector<float> previous_final;
+  for (int replay = 0; replay < 2; ++replay) {
+    if (replay != 0)
+      for (auto &value : activation_values)
+        value = value * -0.625F + 0.00075F;
+    const auto input =
+        upload(context, activation_desc, std::span(activation_values));
+    const std::array inputs{native(input)};
+    ASSERT_TRUE(invocation.bind(inputs).ok());
+    auto result = invocation.submit().value().wait();
+    ASSERT_TRUE(result) << result.error().message();
+    ASSERT_EQ(result->get()->arrays().size(), 5U);
+    const auto &outputs = result->get()->arrays();
+    const auto normalized_actual = float_values(outputs[0]);
+    const auto normalized_expected =
+        d5_qwen35_gguf_fragment::rms_norm(activation_values, scale_values);
+    d5_qwen35_gguf_fragment::expect_close(
+        normalized_actual, normalized_expected, 3.0e-5F, 2.0e-5F);
+
+    const auto gate_actual = float_values(outputs[1]);
+    const auto up_actual = float_values(outputs[2]);
+    const auto gate_expected = d5_gguf_test::matmul(
+        normalized_actual, gate_packed.decoded, expanded, hidden);
+    const auto up_expected = d5_gguf_test::matmul(
+        normalized_actual, up_packed.decoded, expanded, hidden);
+    d5_gguf_test::expect_quantized_chain_matmul_close(gate_actual,
+                                                      gate_expected);
+    d5_gguf_test::expect_quantized_chain_matmul_close(up_actual, up_expected);
+
+    const auto gated_actual = float_values(outputs[3]);
+    const auto gated_expected =
+        d5_qwen35_gguf_fragment::silu_gate(gate_actual, up_actual);
+    d5_qwen35_gguf_fragment::expect_close(gated_actual, gated_expected, 2.0e-5F,
+                                          2.0e-5F);
+
+    const auto final_actual = float_values(outputs[4]);
+    const auto final_expected = d5_gguf_test::matmul(
+        gated_actual, down_packed.decoded, hidden, expanded);
+    d5_gguf_test::expect_quantized_chain_matmul_close(final_actual,
+                                                      final_expected);
+    if (!previous_final.empty())
+      EXPECT_NE(final_actual, previous_final);
+    previous_final = final_actual;
   }
 }
 
@@ -385,8 +508,7 @@ TEST(AppleGraphD5,
         const auto normalized_value =
             rounded(value * inverse * half_test::decode(scale_values[column]),
                     mx::bfloat16);
-        expected_row[column] =
-            rounded(value + normalized_value, mx::bfloat16);
+        expected_row[column] = rounded(value + normalized_value, mx::bfloat16);
         EXPECT_EQ(actual_residual[token * hidden + column],
                   expected_row[column]);
       }
@@ -480,8 +602,10 @@ TEST(AppleGraphD5, D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls) {
   const auto scale_desc = dense(c::DataType::kBFloat16, {depth});
   const auto position_desc = dense(c::DataType::kInt32, {1});
   const auto frequency_desc = dense(c::DataType::kFloat32, {depth / 2});
-  const auto workload =
-      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 4);
+  const std::array workloads{
+      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 4),
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x040f)};
   auto context = a::Context::create().value();
   const auto query_scale = upload(context, scale_desc, fixture.query);
   const auto key_scale = upload(context, scale_desc, fixture.key);
@@ -492,52 +616,56 @@ TEST(AppleGraphD5, D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls) {
   const auto position = upload(context, position_desc, std::span(positions));
   const auto frequency =
       upload(context, frequency_desc, std::span<const float>(frequencies));
-  auto query_norm = prepare(context, workload, c::Operation(c::RmsNorm{}),
-                            query_desc, query_scale);
-  auto key_norm = prepare(context, workload, c::Operation(c::RmsNorm{}),
-                          kv_desc, key_scale);
-  const c::RoPE rope{.rotary_dimensions = depth,
-                     .sequence_axis = 1,
-                     .layout = c::RopeLayout::kHalfSplit};
-  auto query_rope = prepare(context, workload, c::Operation(rope), query_desc,
+  for (const auto &workload : workloads) {
+    auto query_norm = prepare(context, workload, c::Operation(c::RmsNorm{}),
+                              query_desc, query_scale);
+    auto key_norm = prepare(context, workload, c::Operation(c::RmsNorm{}),
+                            kv_desc, key_scale);
+    const c::RoPE rope{.rotary_dimensions = depth,
+                       .sequence_axis = 1,
+                       .layout = c::RopeLayout::kHalfSplit};
+    auto query_rope = prepare(context, workload, c::Operation(rope), query_desc,
+                              position, frequency);
+    auto key_rope = prepare(context, workload, c::Operation(rope), kv_desc,
                             position, frequency);
-  auto key_rope = prepare(context, workload, c::Operation(rope), kv_desc,
-                          position, frequency);
-  auto attention =
-      prepare(context, workload,
-              c::Operation(c::ScaledDotProductAttention{
-                  .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
-                  .scale = 0.0625F,
-                  .causal = true,
-                  .accumulation_type = c::DataType::kFloat32}),
-              query_desc, kv_desc, kv_desc);
-  std::vector<B16> queries(query_desc.element_count().value());
-  std::vector<B16> keys(kv_desc.element_count().value());
-  std::vector<B16> value_data(kv_desc.element_count().value());
-  for (int seed : {1, 7}) {
-    for (std::size_t i = 0; i < queries.size(); ++i)
-      queries[i] = half_test::encode<B16>(
-          static_cast<double>(static_cast<int>((i + seed) % 31) - 15) / 64);
-    for (std::size_t i = 0; i < keys.size(); ++i) {
-      keys[i] = half_test::encode<B16>(
-          static_cast<double>(static_cast<int>((i + seed) % 29) - 14) / 64);
-      value_data[i] = half_test::encode<B16>(
-          static_cast<double>(seed * 100 + static_cast<int>(i)) / 256);
+    auto attention =
+        prepare(context, workload,
+                c::Operation(c::ScaledDotProductAttention{
+                    .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+                    .scale = 0.0625F,
+                    .causal = true,
+                    .accumulation_type = c::DataType::kFloat32}),
+                query_desc, kv_desc, kv_desc);
+    std::vector<B16> queries(query_desc.element_count().value());
+    std::vector<B16> keys(kv_desc.element_count().value());
+    std::vector<B16> value_data(kv_desc.element_count().value());
+    for (int seed : {1, 7}) {
+      for (std::size_t i = 0; i < queries.size(); ++i)
+        queries[i] = half_test::encode<B16>(
+            static_cast<double>(static_cast<int>((i + seed) % 31) - 15) / 64);
+      for (std::size_t i = 0; i < keys.size(); ++i) {
+        keys[i] = half_test::encode<B16>(
+            static_cast<double>(static_cast<int>((i + seed) % 29) - 14) / 64);
+        value_data[i] = half_test::encode<B16>(
+            static_cast<double>(seed * 100 + static_cast<int>(i)) / 256);
+      }
+      const auto query = upload(context, query_desc, std::span(queries));
+      const auto key = upload(context, kv_desc, std::span(keys));
+      const auto value = upload(context, kv_desc, std::span(value_data));
+      const auto normalized_query = run(query_norm, query);
+      const auto normalized_key = run(key_norm, key);
+      const auto rotated_query = run(query_rope, normalized_query[0]);
+      const auto rotated_key = run(key_rope, normalized_key[0]);
+      const auto output =
+          run(attention, rotated_query[0], rotated_key[0], value);
+      const auto actual = bits(output[0]);
+      for (std::size_t head = 0; head < query_heads; ++head)
+        for (std::size_t column = 0; column < depth; ++column)
+          EXPECT_EQ(
+              actual[head * depth + column],
+              value_data[(head / (query_heads / kv_heads)) * depth + column]
+                  .bits);
     }
-    const auto query = upload(context, query_desc, std::span(queries));
-    const auto key = upload(context, kv_desc, std::span(keys));
-    const auto value = upload(context, kv_desc, std::span(value_data));
-    const auto normalized_query = run(query_norm, query);
-    const auto normalized_key = run(key_norm, key);
-    const auto rotated_query = run(query_rope, normalized_query[0]);
-    const auto rotated_key = run(key_rope, normalized_key[0]);
-    const auto output = run(attention, rotated_query[0], rotated_key[0], value);
-    const auto actual = bits(output[0]);
-    for (std::size_t head = 0; head < query_heads; ++head)
-      for (std::size_t column = 0; column < depth; ++column)
-        EXPECT_EQ(actual[head * depth + column],
-                  value_data[(head / (query_heads / kv_heads)) * depth + column]
-                      .bits);
   }
 }
 
@@ -573,91 +701,96 @@ TEST(AppleGraphD5, D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls) {
         -std::exp(static_cast<double>(fixture.log_decay[head])) * softplus);
     beta[head] = static_cast<float>(1.0 / (1.0 + std::exp(-bias)));
   }
-  const auto workload =
-      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 5);
+  const std::array workloads{
+      d5_qwen35_fixture::workload(c::WorkloadPhase::kDecode, 5),
+      d5_qwen35_fixture::workload(d5_qwen35_fixture::kPrimaryGgufProfile,
+                                  c::WorkloadPhase::kDecode, 0x050f)};
   auto context = a::Context::create().value();
   const auto conv_weight =
       upload(context, conv_weight_desc, std::span(conv_weights));
   const auto decay = upload(context, gate_desc, std::span(log_decay));
   const auto update = upload(context, gate_desc, std::span(beta));
-  auto convolution = prepare(context, workload, c::model_ops::causal_conv1d(),
-                             conv_samples_desc, conv_weight);
-  auto gdn = prepare(context, workload, c::Operation(c::GatedDeltaNet{}),
-                     qkv_desc, qkv_desc, qkv_desc, decay, update, state_desc);
-  for (int seed : {2, 9}) {
-    std::vector<float> conv_samples(conv_samples_desc.element_count().value());
-    std::array<std::vector<float>, 3> qkv_values;
-    for (auto &port : qkv_values)
-      port.resize(qkv_desc.element_count().value());
-    std::vector<float> state_values(state_desc.element_count().value());
-    for (std::size_t i = 0; i < conv_samples.size(); ++i)
-      conv_samples[i] =
-          static_cast<float>(static_cast<int>((i * 17 + seed * 5) % 61) - 30) /
-          128.0F;
-    for (std::size_t port = 0; port < qkv_values.size(); ++port)
-      for (std::size_t i = 0; i < qkv_values[port].size(); ++i)
-        qkv_values[port][i] =
-            static_cast<float>(
-                std::sin(static_cast<double>(i + port * 37 + seed) * 0.017)) *
-            0.025F;
-    for (std::size_t i = 0; i < state_values.size(); ++i)
-      state_values[i] = static_cast<float>(std::sin(
-                            static_cast<double>(i + seed * 19) * 0.009)) *
-                        0.0005F;
-    const auto samples =
-        upload(context, conv_samples_desc, std::span(conv_samples));
-    std::array qkv{
-        upload(context, qkv_desc, std::span(qkv_values[0])),
-        upload(context, qkv_desc, std::span(qkv_values[1])),
-        upload(context, qkv_desc, std::span(qkv_values[2])),
-    };
-    const auto state = upload(context, state_desc, std::span(state_values));
-    const auto conv_output = run(convolution, samples);
-    const auto gdn_output = run(gdn, qkv[0], qkv[1], qkv[2], state);
-    ASSERT_EQ(gdn_output.size(), 2U);
-    const auto actual_conv = values(conv_output[0]);
-    const auto actual_scores = values(gdn_output[0]);
-    const auto actual_state = values(gdn_output[1]);
-    for (std::size_t channel = 0; channel < channels; ++channel) {
-      double expected = 0;
-      for (std::size_t tap = 0; tap < kernel; ++tap)
-        expected += conv_samples[tap * channels + channel] *
-                    conv_weights[channel * kernel + tap];
-      EXPECT_NEAR(actual_conv[channel], expected,
-                  std::abs(expected) * 2.0e-5 + 1.0e-6)
-          << channel;
-    }
-    std::vector<double> expected_state(state_values.begin(),
-                                       state_values.end());
-    std::vector<double> expected_scores(actual_scores.size());
-    for (std::size_t head = 0; head < heads; ++head) {
-      const auto vector = head * depth;
-      const auto matrix = head * depth * depth;
-      const auto retain = std::exp(static_cast<double>(log_decay[head]));
-      for (std::size_t column = 0; column < depth; ++column) {
-        const auto row = matrix + column * depth;
-        double projected = 0;
-        for (std::size_t key_column = 0; key_column < depth; ++key_column) {
-          expected_state[row + key_column] *= retain;
-          projected += expected_state[row + key_column] *
-                       qkv_values[1][vector + key_column];
-        }
-        const auto delta = static_cast<double>(beta[head]) *
-                           (qkv_values[2][vector + column] - projected);
-        double score = 0;
-        for (std::size_t key_column = 0; key_column < depth; ++key_column) {
-          expected_state[row + key_column] +=
-              delta * qkv_values[1][vector + key_column];
-          score += expected_state[row + key_column] *
-                   qkv_values[0][vector + key_column];
-        }
-        expected_scores[vector + column] = score / std::sqrt(double(depth));
+  for (const auto &workload : workloads) {
+    auto convolution = prepare(context, workload, c::model_ops::causal_conv1d(),
+                               conv_samples_desc, conv_weight);
+    auto gdn = prepare(context, workload, c::Operation(c::GatedDeltaNet{}),
+                       qkv_desc, qkv_desc, qkv_desc, decay, update, state_desc);
+    for (int seed : {2, 9}) {
+      std::vector<float> conv_samples(
+          conv_samples_desc.element_count().value());
+      std::array<std::vector<float>, 3> qkv_values;
+      for (auto &port : qkv_values)
+        port.resize(qkv_desc.element_count().value());
+      std::vector<float> state_values(state_desc.element_count().value());
+      for (std::size_t i = 0; i < conv_samples.size(); ++i)
+        conv_samples[i] = static_cast<float>(
+                              static_cast<int>((i * 17 + seed * 5) % 61) - 30) /
+                          128.0F;
+      for (std::size_t port = 0; port < qkv_values.size(); ++port)
+        for (std::size_t i = 0; i < qkv_values[port].size(); ++i)
+          qkv_values[port][i] =
+              static_cast<float>(
+                  std::sin(static_cast<double>(i + port * 37 + seed) * 0.017)) *
+              0.025F;
+      for (std::size_t i = 0; i < state_values.size(); ++i)
+        state_values[i] = static_cast<float>(std::sin(
+                              static_cast<double>(i + seed * 19) * 0.009)) *
+                          0.0005F;
+      const auto samples =
+          upload(context, conv_samples_desc, std::span(conv_samples));
+      std::array qkv{
+          upload(context, qkv_desc, std::span(qkv_values[0])),
+          upload(context, qkv_desc, std::span(qkv_values[1])),
+          upload(context, qkv_desc, std::span(qkv_values[2])),
+      };
+      const auto state = upload(context, state_desc, std::span(state_values));
+      const auto conv_output = run(convolution, samples);
+      const auto gdn_output = run(gdn, qkv[0], qkv[1], qkv[2], state);
+      ASSERT_EQ(gdn_output.size(), 2U);
+      const auto actual_conv = values(conv_output[0]);
+      const auto actual_scores = values(gdn_output[0]);
+      const auto actual_state = values(gdn_output[1]);
+      for (std::size_t channel = 0; channel < channels; ++channel) {
+        double expected = 0;
+        for (std::size_t tap = 0; tap < kernel; ++tap)
+          expected += conv_samples[tap * channels + channel] *
+                      conv_weights[channel * kernel + tap];
+        EXPECT_NEAR(actual_conv[channel], expected,
+                    std::abs(expected) * 2.0e-5 + 1.0e-6)
+            << channel;
       }
+      std::vector<double> expected_state(state_values.begin(),
+                                         state_values.end());
+      std::vector<double> expected_scores(actual_scores.size());
+      for (std::size_t head = 0; head < heads; ++head) {
+        const auto vector = head * depth;
+        const auto matrix = head * depth * depth;
+        const auto retain = std::exp(static_cast<double>(log_decay[head]));
+        for (std::size_t column = 0; column < depth; ++column) {
+          const auto row = matrix + column * depth;
+          double projected = 0;
+          for (std::size_t key_column = 0; key_column < depth; ++key_column) {
+            expected_state[row + key_column] *= retain;
+            projected += expected_state[row + key_column] *
+                         qkv_values[1][vector + key_column];
+          }
+          const auto delta = static_cast<double>(beta[head]) *
+                             (qkv_values[2][vector + column] - projected);
+          double score = 0;
+          for (std::size_t key_column = 0; key_column < depth; ++key_column) {
+            expected_state[row + key_column] +=
+                delta * qkv_values[1][vector + key_column];
+            score += expected_state[row + key_column] *
+                     qkv_values[0][vector + key_column];
+          }
+          expected_scores[vector + column] = score / std::sqrt(double(depth));
+        }
+      }
+      for (std::size_t i = 0; i < actual_scores.size(); ++i)
+        EXPECT_NEAR(actual_scores[i], expected_scores[i], 4.0e-6) << i;
+      for (std::size_t i = 0; i < actual_state.size(); ++i)
+        EXPECT_NEAR(actual_state[i], expected_state[i], 4.0e-6) << i;
     }
-    for (std::size_t i = 0; i < actual_scores.size(); ++i)
-      EXPECT_NEAR(actual_scores[i], expected_scores[i], 4.0e-6) << i;
-    for (std::size_t i = 0; i < actual_state.size(); ++i)
-      EXPECT_NEAR(actual_state[i], expected_state[i], 4.0e-6) << i;
   }
 }
 
