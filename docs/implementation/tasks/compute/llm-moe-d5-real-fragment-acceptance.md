@@ -769,12 +769,13 @@ BF16，再 Cast F32。512 路 top-10 的第 10/11 名可因这一额外 BF16 舍
 
 有限 FIX 固定如下：
 
-1. 在公共 model operation 中增加明确的 rank-2 `BF16 × BF16 -> F32` MatMul 语义，输入分别为
-   `[T,K]` 和 `[K,E]`，F32 输出 `[T,E]`，保持合法转置 stride，不改通用 `MatMul` 的同 dtype 合同，
-   不隐式转换已有图；
+1. 在公共 model operation 中增加明确的 rank-2 `BF16 Linear -> F32` 语义，输入分别为
+   activation `[T,K]` 和模型原始输出优先存储的 weight `[E,K]`，F32 输出 `[T,E]`；不改通用
+   `MatMul` 的同 dtype 合同，不隐式转换已有图；
 2. CPU/CUDA/Metal/Vulkan 四个固定 ggml Provider 只在该精确域接纳并直译原版
-   `ggml_mul_mat` 的 F32 输出。现有 GGUF、oneDNN、MLX、cuBLAS 等 Provider 顺序及准入不变；
-   不增加 HYLE 数学、F32 常驻权重副本或额外设备往返；
+   `ggml_mul_mat` 的 F32 输出。Vulkan 的一行 BF16 小 matvec 复用已审定的上游管线限制处理：
+   只将该激活在设备图内提升 F32，权重仍 BF16；验收含此必要成本。现有 GGUF、oneDNN、MLX、
+   cuBLAS 等 Provider 顺序及准入不变；不增加 HYLE 数学、F32 常驻权重副本或设备往返；
 3. 先以第 10/11 名接近的 BF16 输入制造 BF16 中间存储会改变 top-10 的红灯测试，再对四路线
    Direct/Graph 验证 F32 score、ID、归一化权重与动态 expert replay；失败时只记录精确 Provider
    边界，不能用 host 排序或修改测试 oracle 代替；
@@ -783,6 +784,18 @@ BF16，再 Cast F32。512 路 top-10 的第 10/11 名可因这一额外 BF16 舍
    提前多次计时。
 
 本 FIX 不签共享 expert、完整 R05、其它模型/量化画像或完整 profile cell；ledger 保持 48/176。
+
+**路线接缝重定界（baseline `f595c7f51`）**：`BFloatLinearF32` 的固定 ggml Vulkan
+Direct 定向实际执行已通过，但 Graph 编译返回 `Vulkan custom schema needs a cold native
+lowering`，在到达同一 Provider 前被成熟 custom 白名单拒绝。Apple 的 Direct 与 Graph 路线同样
+以固定 `fixed_ggml_model_operation` 列表划分 ggml region。新模型 consumer 是 F19 原生 F32
+router；这构成 `graph_route_vulkan` 的新事实 reopen trigger（当前 SCOPED），并要求
+`compute_route_apple`、`graph_route_apple` 从既有 D5 候选重定界为 AUDITED。既有 D4 删除裁决
+和 F8 候选保留为历史证据。Apple 两 owner 的有限 FIX 仅是各自在冷期的
+`fixed_ggml_model_operation` 分类加入此 custom schema，交由已审定 ggml Metal Provider 执行；
+Direct/Graph 各以近并列 F32 score 和变化输入验证。
+本轮只接通该 operation 至已 AUDITED 的固定 ggml Provider，不改变 Graph 调度、MLX region、
+CUDA 路由、资源/完成语义、旧 GGUF 路由或自研数学。
 
 ### Qwen3.8 Apple official Direct/Graph 完整格
 

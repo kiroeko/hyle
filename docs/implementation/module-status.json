@@ -507,17 +507,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 Apple CANDIDATE 94264ba2：普通 Direct 已将 Q4_K/Q6_K/Q8_0 checked embedding 交给固定 ggml Metal；Qwen3.5 primary GGUF R01、replay、失败与 WERROR selector 通过，等待其余 region 和完整验收。",
-      "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3"
+      "summary": "M3-D5-F19 AUDITED：新 BF16→F32 router model operation 只加入 Apple Direct 固定 ggml 分类，原生 Metal Provider 按精确域执行；F8 embedding 候选保留为历史证据。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F8 Apple CANDIDATE 94264ba2：Graph 已将量化 embedding constant 切入固定 ggml Metal region；Qwen3.5 primary GGUF R01、replay、失败与 WERROR selector 通过，等待其余 region 和完整验收。",
-      "candidate": "94264ba2822a7bbcf8abc3b86db7f5f52181bfb3"
+      "summary": "M3-D5-F19 AUDITED：新 BF16→F32 router model operation 只加入 Apple Graph 固定 ggml region 分类，沿用既有 F8 Graph 候选证据。"
     },
     {
       "module": "compute_route_vulkan",
@@ -528,14 +526,9 @@
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "M3-D5-F19 SCOPED：成熟 ggml Vulkan Direct 已执行 BF16→F32 router，但 Graph custom 分类在 Provider 前拒绝；只重开这一新模型入口接缝，D4 自研算子删除裁决仍有效。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
