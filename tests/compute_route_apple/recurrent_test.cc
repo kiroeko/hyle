@@ -8,6 +8,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/quota_allocator.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 
@@ -91,14 +92,15 @@ TEST(AppleRecurrent, OrdinaryPreparationInterleavedRequestsAndOldOutputOwner) {
 
 class AppleQwen38GdnProfiles
     : public ::testing::TestWithParam<
-          const c::ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(AppleQwen38GdnProfiles,
        D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
-  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const d5_qwen38_gdn_fixture::Fixture fixture(
+      0, GetParam()->gdn_key_heads, GetParam()->gdn_value_heads);
   const auto inputs = qwen38_inputs(fixture);
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      *GetParam(), c::WorkloadPhase::kDecode);
+      *GetParam()->profile, c::WorkloadPhase::kDecode);
   auto context = a::Context::create();
   ASSERT_TRUE(context);
   auto program = context->prepare(c::GatedDeltaNet{}, inputs, workload);
@@ -119,12 +121,16 @@ TEST_P(AppleQwen38GdnProfiles,
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, AppleQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, AppleQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, AppleQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
 TEST(AppleRecurrent, StridedMlxInputAndPreparationDiagnostics) {
   apple_test::Recurrent fixture(5, 2, 32);

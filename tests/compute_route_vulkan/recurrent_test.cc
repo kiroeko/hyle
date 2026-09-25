@@ -4,6 +4,7 @@
 
 #include "../model_fragment_test_support.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../sparse_fragment_test_support.h"
 
 #include "hyle/compute/model_ops.h"
@@ -13,18 +14,19 @@ using namespace vulkan_recurrent_test;
 
 class VulkanQwen38GdnProfiles
     : public ::testing::TestWithParam<
-          const c::ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(VulkanQwen38GdnProfiles,
        D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
-  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const d5_qwen38_gdn_fixture::Fixture fixture(
+      0, GetParam()->gdn_key_heads, GetParam()->gdn_value_heads);
   auto context = vulkan_test::context().value();
   std::vector<v::Argument> arguments;
   arguments.reserve(fixture.inputs.size());
   for (const auto &description : fixture.inputs)
     arguments.emplace_back(description);
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      *GetParam(), c::WorkloadPhase::kDecode);
+      *GetParam()->profile, c::WorkloadPhase::kDecode);
   auto program = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
                             arguments, workload);
   ASSERT_TRUE(program) << program.error().message();
@@ -51,12 +53,16 @@ TEST_P(VulkanQwen38GdnProfiles,
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, VulkanQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, VulkanQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, VulkanQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
 TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),

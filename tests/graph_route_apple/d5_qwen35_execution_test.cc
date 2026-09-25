@@ -18,6 +18,7 @@
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_route_apple/tensor_test_support.h"
 #include "hyle/compute/model_ops.h"
@@ -1091,32 +1092,32 @@ TEST(AppleGraphD5, D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls) {
 }
 class AppleGraphQwen38Profiles
     : public ::testing::TestWithParam<
-          const c::ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(AppleGraphQwen38Profiles,
        D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
   constexpr std::int64_t tokens = 2;
   constexpr int projection_seed = 31;
   const auto table_desc =
-      dense(c::DataType::kBFloat16, {q::kEmbeddingRows, q::kHidden});
+      dense(c::DataType::kBFloat16, {q::kEmbeddingRows, GetParam()->hidden});
   const auto head_desc = table_desc.transposed().value();
   const auto projection_desc =
-      dense(c::DataType::kBFloat16, {q::kHidden, q::kHidden})
+      dense(c::DataType::kBFloat16, {GetParam()->hidden, GetParam()->hidden})
           .transposed()
           .value();
-  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {GetParam()->hidden});
   const auto ids_desc = dense(c::DataType::kInt32, {tokens});
   const auto token_desc =
-      dense(c::DataType::kBFloat16, {tokens, q::kHidden});
+      dense(c::DataType::kBFloat16, {tokens, GetParam()->hidden});
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x01030e0f);
+      q::workload(*GetParam()->profile, c::WorkloadPhase::kDecode, 0x01030e0f);
   auto context = a::Context::create().value();
-  const auto table_values = q::values(q::kEmbeddingRows * q::kHidden, 5);
+  const auto table_values = q::values(q::kEmbeddingRows * GetParam()->hidden, 5);
   const auto head_values =
-      q::values(q::kEmbeddingRows * q::kHidden, 7, 96.0);
-  const auto scale_values = q::scales(q::kHidden, 3);
+      q::values(q::kEmbeddingRows * GetParam()->hidden, 7, 96.0);
+  const auto scale_values = q::scales(GetParam()->hidden, 3);
   auto projection_values = q::sparse_output_major_weight(
-      q::kHidden, q::kHidden, projection_seed);
+      GetParam()->hidden, GetParam()->hidden, projection_seed);
   const auto table = upload(context, table_desc, std::span(table_values));
   const auto head = upload(context, head_desc, std::span(head_values));
   const auto scale = upload(context, scale_desc, std::span(scale_values));
@@ -1153,24 +1154,24 @@ TEST_P(AppleGraphQwen38Profiles,
     for (std::size_t token = 0; token < tokens; ++token) {
       const auto row_index = static_cast<std::size_t>(selected[token]);
       const auto row = std::span<const B16>(table_values)
-                           .subspan(row_index * q::kHidden, q::kHidden);
+                           .subspan(row_index * GetParam()->hidden, GetParam()->hidden);
       const auto normalized_expected =
           q::rms_norm(row, scale_values, 1.0e-6);
-      std::vector<B16> residual_values(q::kHidden);
-      std::vector<double> residual_expected(q::kHidden);
+      std::vector<B16> residual_values(GetParam()->hidden);
+      std::vector<double> residual_expected(GetParam()->hidden);
       for (std::size_t i = 0; i < residual_values.size(); ++i) {
         residual_values[i] =
             q::encode(q::decode(row[i]) + normalized_expected[i]);
         residual_expected[i] = q::decode(residual_values[i]);
       }
       expect_qwen38_near(
-          std::span(actual_residual).subspan(token * q::kHidden, q::kHidden),
+          std::span(actual_residual).subspan(token * GetParam()->hidden, GetParam()->hidden),
           residual_expected);
       const auto projected_expected = q::sparse_projection(
-          residual_values, q::kHidden, projection_seed);
+          residual_values, GetParam()->hidden, projection_seed);
       expect_qwen38_near(
           std::span(actual_projected)
-              .subspan(token * q::kHidden, q::kHidden),
+              .subspan(token * GetParam()->hidden, GetParam()->hidden),
           projected_expected);
       const auto logits_expected = q::dense_head(
           q::as_bf16(projected_expected), head_values, q::kEmbeddingRows);
@@ -1199,35 +1200,35 @@ TEST_P(AppleGraphQwen38Profiles,
        D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) {
   constexpr int seed = 41;
   const auto activation_desc =
-      dense(c::DataType::kBFloat16, {1, q::kHidden});
-  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+      dense(c::DataType::kBFloat16, {1, GetParam()->hidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {GetParam()->hidden});
   const auto gate_desc =
-      dense(c::DataType::kBFloat16, {q::kFfnHidden, q::kHidden})
+      dense(c::DataType::kBFloat16, {GetParam()->ffn_hidden, GetParam()->hidden})
           .transposed()
           .value();
   const auto down_desc =
-      dense(c::DataType::kBFloat16, {q::kHidden, q::kFfnHidden})
+      dense(c::DataType::kBFloat16, {GetParam()->hidden, GetParam()->ffn_hidden})
           .transposed()
           .value();
   const auto expanded_desc =
-      dense(c::DataType::kBFloat16, {1, q::kFfnHidden});
+      dense(c::DataType::kBFloat16, {1, GetParam()->ffn_hidden});
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0203);
+      q::workload(*GetParam()->profile, c::WorkloadPhase::kDecode, 0x0203);
   auto context = a::Context::create().value();
-  const auto scale_values = q::scales(q::kHidden, 9);
+  const auto scale_values = q::scales(GetParam()->hidden, 9);
   const auto scale = upload(context, scale_desc, std::span(scale_values));
   auto gate_values =
-      q::sparse_output_major_weight(q::kFfnHidden, q::kHidden, seed);
+      q::sparse_output_major_weight(GetParam()->ffn_hidden, GetParam()->hidden, seed);
   const auto gate_weight = upload(context, gate_desc, std::span(gate_values));
   gate_values.clear();
   gate_values.shrink_to_fit();
   auto up_values =
-      q::sparse_output_major_weight(q::kFfnHidden, q::kHidden, seed + 1);
+      q::sparse_output_major_weight(GetParam()->ffn_hidden, GetParam()->hidden, seed + 1);
   const auto up_weight = upload(context, gate_desc, std::span(up_values));
   up_values.clear();
   up_values.shrink_to_fit();
   auto down_values =
-      q::sparse_output_major_weight(q::kHidden, q::kFfnHidden, seed + 2);
+      q::sparse_output_major_weight(GetParam()->hidden, GetParam()->ffn_hidden, seed + 2);
   const auto down_weight = upload(context, down_desc, std::span(down_values));
   down_values.clear();
   down_values.shrink_to_fit();
@@ -1244,14 +1245,16 @@ TEST_P(AppleGraphQwen38Profiles,
   auto down = prepare(context, workload, c::Operation(c::MatMul{}),
                       expanded_desc, down_weight);
   for (int replay_seed : {3, 17}) {
-    const auto input = q::values(q::kHidden, replay_seed);
+    const auto input = q::values(GetParam()->hidden, replay_seed);
     const auto activation = upload(context, activation_desc, std::span(input));
     const auto normalized = run(normalize, activation);
     const auto gate_value = run(gate, normalized[0]);
     const auto up_value = run(up, normalized[0]);
     const auto product = run(gated, gate_value[0], up_value[0]);
     const auto output = run(down, product[0]);
-    expect_qwen38_near(values(output[0]), q::ffn(input, scale_values, seed),
+    expect_qwen38_near(values(output[0]), q::ffn(input, scale_values, seed,
+                                                    GetParam()->hidden,
+                                                    GetParam()->ffn_hidden),
                        0.025);
   }
 }
@@ -1325,15 +1328,15 @@ TEST(AppleGraphQwen38_24T,
 TEST_P(AppleGraphQwen38Profiles,
        D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto query_desc = dense(c::DataType::kBFloat16,
-                                {1, 1, q::kQueryHeads, q::kHeadDepth});
+                                {1, 1, GetParam()->query_heads, q::kHeadDepth});
   const auto kv_desc = dense(c::DataType::kBFloat16,
-                             {1, 1, q::kKvHeads, q::kHeadDepth});
+                             {1, 1, GetParam()->kv_heads, q::kHeadDepth});
   const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHeadDepth});
   const auto position_desc = dense(c::DataType::kInt32, {1});
   const auto frequency_desc =
       dense(c::DataType::kFloat32, {q::kRotaryDimensions / 2});
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 4);
+      q::workload(*GetParam()->profile, c::WorkloadPhase::kDecode, 4);
   auto context = a::Context::create().value();
   const auto query_scale_values = q::scales(q::kHeadDepth, 1);
   const auto key_scale_values = q::scales(q::kHeadDepth, 2);
@@ -1396,8 +1399,8 @@ TEST_P(AppleGraphQwen38Profiles,
     const auto gate_value = run(sigmoid, gate);
     const auto output = run(multiply, attended[0], gate_value[0]);
     const auto actual = values(output[0]);
-    for (std::size_t head = 0; head < q::kQueryHeads; ++head) {
-      const auto value_head = head / (q::kQueryHeads / q::kKvHeads);
+    for (std::size_t head = 0; head < static_cast<std::size_t>(GetParam()->query_heads); ++head) {
+      const auto value_head = head / (GetParam()->query_heads / GetParam()->kv_heads);
       for (std::size_t column = 0; column < q::kHeadDepth; ++column) {
         const auto index = head * q::kHeadDepth + column;
         const auto gate_expected = q::decode(q::encode(
@@ -1416,22 +1419,22 @@ TEST_P(AppleGraphQwen38Profiles,
 TEST_P(AppleGraphQwen38Profiles,
        D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays) {
   constexpr int weight_seed = 67;
-  const auto half_desc = dense(c::DataType::kBFloat16, {1, q::kHidden});
-  const auto joined_desc = dense(c::DataType::kBFloat16, {1, q::kMtpInput});
+  const auto half_desc = dense(c::DataType::kBFloat16, {1, GetParam()->hidden});
+  const auto joined_desc = dense(c::DataType::kBFloat16, {1, (2 * GetParam()->hidden)});
   const auto weight_desc =
-      dense(c::DataType::kBFloat16, {q::kHidden, q::kMtpInput})
+      dense(c::DataType::kBFloat16, {GetParam()->hidden, (2 * GetParam()->hidden)})
           .transposed()
           .value();
-  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {GetParam()->hidden});
   const auto workload =
-      q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0d0e);
+      q::workload(*GetParam()->profile, c::WorkloadPhase::kDecode, 0x0d0e);
   auto context = a::Context::create().value();
   auto weight_values =
-      q::sparse_output_major_weight(q::kHidden, q::kMtpInput, weight_seed);
+      q::sparse_output_major_weight(GetParam()->hidden, (2 * GetParam()->hidden), weight_seed);
   const auto weight = upload(context, weight_desc, std::span(weight_values));
   weight_values.clear();
   weight_values.shrink_to_fit();
-  const auto scale_values = q::scales(q::kHidden, 11);
+  const auto scale_values = q::scales(GetParam()->hidden, 11);
   const auto scale = upload(context, scale_desc, std::span(scale_values));
   auto concat = prepare(context, workload,
                         c::Operation(c::Concat{.axis = 1}), half_desc,
@@ -1443,19 +1446,19 @@ TEST_P(AppleGraphQwen38Profiles,
   auto cast = prepare(context, workload,
                       c::Operation(c::Cast{c::DataType::kFloat32}), half_desc);
   for (int seed : {5, 19}) {
-    const auto input = q::values(q::kMtpInput, seed);
+    const auto input = q::values((2 * GetParam()->hidden), seed);
     const auto first = upload(
         context, half_desc,
-        std::span<const B16>(input).first(static_cast<std::size_t>(q::kHidden)));
+        std::span<const B16>(input).first(static_cast<std::size_t>(GetParam()->hidden)));
     const auto second = upload(
         context, half_desc,
-        std::span<const B16>(input).last(static_cast<std::size_t>(q::kHidden)));
+        std::span<const B16>(input).last(static_cast<std::size_t>(GetParam()->hidden)));
     const auto joined = run(concat, first, second);
     const auto projected = run(projection, joined[0]);
     const auto normalized = run(normalize, projected[0]);
     const auto converted = run(cast, normalized[0]);
     const auto projected_expected =
-        q::sparse_projection(input, q::kHidden, weight_seed);
+        q::sparse_projection(input, GetParam()->hidden, weight_seed);
     expect_qwen38_near(values(projected[0]), projected_expected);
     const auto normalized_expected =
         q::rms_norm(q::as_bf16(projected_expected), scale_values);
@@ -1465,11 +1468,15 @@ TEST_P(AppleGraphQwen38Profiles,
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, AppleGraphQwen38Profiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, AppleGraphQwen38Profiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, AppleGraphQwen38Profiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
 } // namespace

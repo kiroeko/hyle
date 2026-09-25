@@ -1,5 +1,6 @@
 #include "hyle/graph/vulkan.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_route_vulkan/recurrent_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
@@ -11,11 +12,12 @@ namespace gv = g::vulkan;
 
 class VulkanGraphQwen38GdnProfiles
     : public ::testing::TestWithParam<
-          const c::ModelArtifactProfileDescription *> {};
+          const d5_qwen38_profile_cases::ProfileCase *> {};
 
 TEST_P(VulkanGraphQwen38GdnProfiles,
        D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
-  const d5_qwen38_gdn_fixture::Fixture fixture;
+  const d5_qwen38_gdn_fixture::Fixture fixture(
+      0, GetParam()->gdn_key_heads, GetParam()->gdn_value_heads);
   auto context = vulkan_test::context().value();
   auto builder = g::GraphBuilder::create().value();
   std::array<g::ValueId, 6> inputs;
@@ -30,7 +32,7 @@ TEST_P(VulkanGraphQwen38GdnProfiles,
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      *GetParam(), c::WorkloadPhase::kDecode);
+      *GetParam()->profile, c::WorkloadPhase::kDecode);
   auto program = gv::compile(context, graph, {},
                              {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
@@ -59,12 +61,16 @@ TEST_P(VulkanGraphQwen38GdnProfiles,
 
 INSTANTIATE_TEST_SUITE_P(
     D5OfficialAndPrimaryGguf, VulkanGraphQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
-                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial27B,
+                      &d5_qwen38_profile_cases::kPrimaryGguf27B));
 
 INSTANTIATE_TEST_SUITE_P(
     D5FidelityGguf, VulkanGraphQwen38GdnProfiles,
-    ::testing::Values(&d5_qwen38_gdn_fixture::kFidelityGgufProfile));
+    ::testing::Values(&d5_qwen38_profile_cases::kFidelityGguf27B));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5Official24T, VulkanGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_profile_cases::kOfficial24T));
 
 TEST(VulkanGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
   auto context = vulkan_test::context().value();
