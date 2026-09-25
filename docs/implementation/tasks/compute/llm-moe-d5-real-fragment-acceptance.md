@@ -65,6 +65,14 @@ W1-WIN/MSVC 配置已运行通过。它在 CPU factor 首次编译共用 ggml CU
 余下 factor 未获 selector verdict；这次试运行不改变上述 partial receipt 或 ledger，
 完整 selector 留到官方 BF16 profile 接线稳定后的批末执行。
 
+**R05 causal conv 批内检查点（`55ff8c517`）**：官方 2.4T 的
+`(2×16+128)×128=20,480` 通道、K4 causal Conv1d 已通过四路线 Direct/Graph
+八条普通入口的两次变化输入和独立 oracle；见
+[定向收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-causal-conv/README.md)。
+这不触发逐算子的完整 selector/三交付/P1。R01 现有七行词表测试不能签官方
+248,320 行词表；批内应接通真实宽度的 embedding/head 边界后再冻结完整 profile
+候选。2.4T 官方八格继续保持 `VALIDATION_NOT_RUN`，不把定向测试记作全格通过。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
