@@ -636,6 +636,23 @@ PASS，127 个无关 gate 跳过；完整 Direct factor 54.37 秒、Graph factor
 ledger 现有 30 个 `RUN_PASS`、146 个 `VALIDATION_NOT_RUN`；Vulkan 两格以及 D5-A5 三交付和 D5-A6
 P1 尚未由本批代签。
 
+### Qwen3.8 Vulkan official Direct/Graph 完整格
+
+不可变 tests-only candidate `5fc3c2f418795e6cd89b86e3f546d5775b96758a` 在 Windows RTX 4070
+上以普通 Vulkan prepare/bind/submit 和 Graph build/compile/bind/submit 覆盖官方 H=5120、
+FFN=17408、GQA 24/4×256、partial interleaved RoPE 64 与 MTP 10240。每个 prepared artifact
+使用变化输入重放，invalid Gather 不改写已发布结果；既有完整 ggml Vulkan R05 K16/V48×128 收据
+并入两格。现有固定 ggml Vulkan managed region 与限定 IREE dispatch 直接接受这些形状，没有修改
+产品实现、Provider 顺序、公共 schema 或新增 HYLE 数学。
+
+Release/WERROR selector 的 docs、closure、configure、Vulkan Direct 和 Vulkan Graph 五个 gate 全部
+PASS，127 个无关 gate 跳过；完整 Direct factor 31.98 秒、Graph factor 16.73 秒。首两次 configure
+分别因未绑定 Vulkan SDK，以及 CMD 提前展开 PATH 后丢失 Windows SDK `rc/mt` 而在产品编译前停止；
+最终收据显式绑定 Vulkan SDK 1.4.357.0、`rc`、`mt` 与 `glslc`。完整收据见
+[Qwen3.8 official Vulkan complete](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-official-complete/README.md)。
+ledger 现有 32 个 `RUN_PASS`、144 个 `VALIDATION_NOT_RUN`；D5-A5 三交付和 D5-A6 P1 仍由稳定路线
+批次统一执行。
+
 ### CUDA Qwen3.5 official Direct/Graph 完整格
 
 不可变 candidate `9917438bb44ebc29f647f2b0ce2919a73342fa3e` 复用同一真实 checkpoint fixture，

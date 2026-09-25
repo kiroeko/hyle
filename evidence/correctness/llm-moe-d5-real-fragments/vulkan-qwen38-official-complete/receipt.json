@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "candidate": "5fc3c2f418795e6cd89b86e3f546d5775b96758a",
+  "candidate_tree": "34932d9c489269193579aaede09aae03b99463fa",
+  "verdict": "RUN_PASS",
+  "scope": {
+    "profile": "qwen38_27b:official:official-bf16",
+    "route": "vulkan",
+    "entries": [
+      "direct",
+      "graph"
+    ],
+    "regions": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "not_claimed": [
+      "CPU, CUDA, or Apple complete cells",
+      "source/static/shared external delivery",
+      "P1",
+      "full model inference"
+    ]
+  },
+  "source": {
+    "repository": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "variant": "official-bf16",
+    "format_family": "safetensors",
+    "configuration_sha256": "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    "manifest_sha256": "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
+    "fixture": "tests/compute_models/d5_qwen38_official_fixture.h",
+    "payload": "deterministic nonzero BF16 data with one nonzero per full-shape output-major weight row; no checkpoint bytes committed",
+    "oracle": "independent double-precision RMSNorm, sparse projection, FFN, attention decode, output gate, MTP and BF16-boundary calculations"
+  },
+  "consumer": {
+    "phase": "decode",
+    "workload_namespace": "0x48594c454d4f444c",
+    "shape_anchor": {
+      "hidden": 5120,
+      "ffn": 17408,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "head_dim": 256,
+      "rotary_dimensions": 64,
+      "gdn_key_heads": 16,
+      "gdn_value_heads": 48,
+      "gdn_head_dim": 128,
+      "mtp_input": 10240
+    },
+    "dtypes": "BF16 weights/activations with F32 attention and recurrent accumulation",
+    "providers": [
+      "ggml Vulkan 0.24.0 @ 456172ec733a135778adcd32d00e576a58232e45-hyle",
+      "limited admitted IREE Vulkan dispatches"
+    ],
+    "provider_assertion": "every Direct preparation contains a fixed mature managed region or admitted IREE dispatch, and every compiled one-node Graph reports a mature managed region; no HYLE-owned math is accepted",
+    "replay": "each prepared artifact submits twice with changed activation, token, or gate data while the route stays cold-bound",
+    "failure": "an invalid embedding index fails without changing the previously published output"
+  },
+  "cells": [
+    {
+      "entry": "direct",
+      "result": "PASS",
+      "tests": [
+        "VulkanManaged.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "VulkanManaged.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "VulkanManaged.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "VulkanManaged.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    },
+    {
+      "entry": "graph",
+      "result": "PASS",
+      "tests": [
+        "VulkanGraphD5.D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays",
+        "VulkanGraphD5.D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays",
+        "VulkanGraphD5.D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay",
+        "VulkanGraphD5.D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays"
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "R01",
+      "result": "PASS",
+      "tests": "Direct/Graph checked embedding and boundary projection"
+    },
+    {
+      "id": "R02",
+      "result": "PASS",
+      "tests": "Direct/Graph exact-width FFN"
+    },
+    {
+      "id": "R03",
+      "result": "PASS",
+      "tests": "Direct/Graph 5120x5120 projection"
+    },
+    {
+      "id": "R04",
+      "result": "PASS",
+      "tests": "Direct/Graph partial RoPE, 24/4 GQA, Sigmoid output gate"
+    },
+    {
+      "id": "R05",
+      "result": "PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen38-r05-grouped-head/receipt.json"
+    },
+    {
+      "id": "R13",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP concat and projection"
+    },
+    {
+      "id": "R14",
+      "result": "PASS",
+      "tests": "Direct/Graph MTP normalization and F32 cast"
+    },
+    {
+      "id": "R15",
+      "result": "PASS",
+      "tests": "Direct/Graph separate LM head and failure publication"
+    }
+  ],
+  "selected_validation": {
+    "baseline": "782ddb03e072f9a379c08aed0b3d37830e4adf10",
+    "verdict": "PASS",
+    "selected": 5,
+    "skipped_or_reused": 127,
+    "werror": true,
+    "gates": {
+      "docs": "bfe4b204276940c9caf56646c569528b9358940f38d7886ae4ce2e9a53b04902",
+      "closure": "fd9acded9767eeacde093a9a8a433ebbe6e1393a8ea4e2b890c8fef6054660ff",
+      "configure": "d89ac7ff58e196ec4cbac29e02eeefe2cea8e395ca6ae4973dba7b19f515855a",
+      "compute_route_vulkan": "f0c5b8c6628546a9e4a81853673e1b7e1ab4970b2447b7ae595d33579894c759",
+      "graph_route_vulkan": "029beb2b055c7bed30485516082660ca80843b8a2aacc3e6565beb8728e30146"
+    },
+    "owner_suites": {
+      "compute_route_vulkan": "complete factor PASS in 31.98 s",
+      "graph_route_vulkan": "complete factor PASS in 16.73 s"
+    },
+    "environment_correction": "two pre-product configure attempts were rejected for an unbound Vulkan SDK and then a CMD-expanded PATH that dropped rc/mt; the signed run explicitly bound Vulkan SDK, rc, mt and glslc before configuration"
+  },
+  "delivery": {
+    "status": "NOT_RUN",
+    "reason": "D5-A5 runs once for the stable Vulkan route batch"
+  },
+  "performance": {
+    "tier": "NOT_RUN",
+    "reason": "D5-A6 runs once after the route batch is stable"
+  },
+  "implementation_loc": {
+    "code": 57929,
+    "files": 228,
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-official-complete/compute-graph-loc.json"
+  },
+  "machine": {
+    "profile": "W1-WIN-RTX4070",
+    "system": "Windows 11",
+    "architecture": "AMD64",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "driver": "610.62",
+    "vulkan_sdk": "1.4.357.0",
+    "compiler": "MSVC 19.50.35728"
+  }
+}
