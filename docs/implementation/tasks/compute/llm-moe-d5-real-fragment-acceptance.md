@@ -797,6 +797,12 @@ Direct/Graph 各以近并列 F32 score 和变化输入验证。
 本轮只接通该 operation 至已 AUDITED 的固定 ggml Provider，不改变 Graph 调度、MLX region、
 CUDA 路由、资源/完成语义、旧 GGUF 路由或自研数学。
 
+**Vulkan Graph AUDITED（baseline `a6c79badb`）**：失败点精确在
+`graph_route_vulkan/vulkan_lowering.cc` 的 `mature_custom` 分类，不在固定 ggml Vulkan
+Provider、Vulkan shader 或用户自定义 lowering。有限 FIX 只加入 `BFloatLinearF32` 这一已由
+Direct 实际执行的 schema；以普通 Graph 准备、两次近并列变化输入、F32 score、Provider region
+report 与完整受影响 factor 验证。不修改其他 custom 准入或新增后备执行器。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

@@ -526,9 +526,9 @@
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 SCOPED：成熟 ggml Vulkan Direct 已执行 BF16→F32 router，但 Graph custom 分类在 Provider 前拒绝；只重开这一新模型入口接缝，D4 自研算子删除裁决仍有效。"
+      "summary": "M3-D5-F19 AUDITED：成熟 ggml Vulkan Direct 已执行 BF16→F32 router；Graph 在 Provider 前的 mature_custom 分类只需加入这一 schema，按近并列 F32 score 与完整 factor 验证。D4 删除裁决仍有效。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
