@@ -13,6 +13,7 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
+#include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_route_vulkan/gate_norm_test_support.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/vulkan.h"
@@ -21,6 +22,7 @@ namespace {
 using namespace vulkan_gate_norm_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
+namespace q = d5_qwen38_official_fixture;
 
 std::vector<B16> decode_bfloat(std::span<const std::byte> bytes) {
   EXPECT_EQ(bytes.size() % sizeof(B16), 0U);
@@ -120,6 +122,16 @@ std::vector<float> float_values(const v::Context &context,
     return static_cast<float>(value);
   });
   return result;
+}
+
+void expect_qwen38_near(std::span<const double> actual,
+                        std::span<const double> expected,
+                        double relative = 0.012) {
+  ASSERT_EQ(actual.size(), expected.size());
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    EXPECT_NEAR(actual[i], expected[i],
+                std::abs(expected[i]) * relative + 2.0e-5)
+        << i;
 }
 
 TEST(VulkanGraphD5,
@@ -888,4 +900,298 @@ TEST(VulkanGraphD5, D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls) {
     }
   }
 }
+TEST(VulkanGraphD5, D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays) {
+  constexpr std::int64_t tokens = 2;
+  constexpr int projection_seed = 31;
+  const auto table_desc =
+      dense(c::DataType::kBFloat16, {q::kEmbeddingRows, q::kHidden});
+  const auto head_desc = table_desc.transposed().value();
+  const auto projection_desc =
+      dense(c::DataType::kBFloat16, {q::kHidden, q::kHidden})
+          .transposed()
+          .value();
+  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+  const auto ids_desc = dense(c::DataType::kInt32, {tokens});
+  const auto token_desc =
+      dense(c::DataType::kBFloat16, {tokens, q::kHidden});
+  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x01030e0f);
+  auto context = vulkan_test::context().value();
+  const auto table_values = q::values(q::kEmbeddingRows * q::kHidden, 5);
+  const auto head_values =
+      q::values(q::kEmbeddingRows * q::kHidden, 7, 96.0);
+  const auto scale_values = q::scales(q::kHidden, 3);
+  auto projection_values = q::sparse_output_major_weight(
+      q::kHidden, q::kHidden, projection_seed);
+  const auto table = upload(context, table_desc, std::span(table_values));
+  const auto head = upload(context, head_desc, std::span(head_values));
+  const auto scale = upload(context, scale_desc, std::span(scale_values));
+  const auto projection_weight =
+      upload(context, projection_desc, std::span(projection_values));
+  projection_values.clear();
+  projection_values.shrink_to_fit();
+  auto gather =
+      prepare(context, workload, c::Operation(c::Gather{}), table, ids_desc);
+  auto normalize =
+      prepare(context, workload, c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}),
+              token_desc, scale);
+  auto residual =
+      prepare(context, workload, c::Operation(c::Binary{c::BinaryKind::kAdd}),
+              token_desc, token_desc);
+  auto projection = prepare(context, workload, c::Operation(c::MatMul{}),
+                            token_desc, projection_weight);
+  auto lm_head = prepare(context, workload, c::Operation(c::MatMul{}),
+                         token_desc, head);
+
+  constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
+      {{{0, 4}}, {{6, 2}}}};
+  v::Tensor retained_embedding;
+  for (const auto &selected : selections) {
+    const auto ids = upload(context, ids_desc, std::span(selected));
+    const auto embedded = run(gather, ids);
+    const auto normalized = run(normalize, embedded[0]);
+    const auto combined = run(residual, embedded[0], normalized[0]);
+    const auto projected = run(projection, combined[0]);
+    const auto logits = run(lm_head, projected[0]);
+    const auto actual_residual = values(context, combined[0]);
+    const auto actual_projected = values(context, projected[0]);
+    const auto actual_logits = values(context, logits[0]);
+    for (std::size_t token = 0; token < tokens; ++token) {
+      const auto row_index = static_cast<std::size_t>(selected[token]);
+      const auto row = std::span<const B16>(table_values)
+                           .subspan(row_index * q::kHidden, q::kHidden);
+      const auto normalized_expected =
+          q::rms_norm(row, scale_values, 1.0e-6);
+      std::vector<B16> residual_values(q::kHidden);
+      std::vector<double> residual_expected(q::kHidden);
+      for (std::size_t i = 0; i < residual_values.size(); ++i) {
+        residual_values[i] =
+            q::encode(q::decode(row[i]) + normalized_expected[i]);
+        residual_expected[i] = q::decode(residual_values[i]);
+      }
+      expect_qwen38_near(
+          std::span(actual_residual).subspan(token * q::kHidden, q::kHidden),
+          residual_expected);
+      const auto projected_expected = q::sparse_projection(
+          residual_values, q::kHidden, projection_seed);
+      expect_qwen38_near(
+          std::span(actual_projected)
+              .subspan(token * q::kHidden, q::kHidden),
+          projected_expected);
+      const auto logits_expected = q::dense_head(
+          q::as_bf16(projected_expected), head_values, q::kEmbeddingRows);
+      expect_qwen38_near(
+          std::span(actual_logits)
+              .subspan(token * q::kEmbeddingRows, q::kEmbeddingRows),
+          logits_expected, 0.016);
+    }
+    retained_embedding = embedded[0];
+  }
+
+  const auto before_failure = bytes(context, retained_embedding);
+  const std::array<std::int32_t, tokens> invalid{0, q::kEmbeddingRows};
+  const auto bad_ids = upload(context, ids_desc, std::span(invalid));
+  auto failed_invocation = gather.program.create_invocation().value();
+  ASSERT_TRUE(failed_invocation.bind(bad_ids).ok());
+  auto failed = failed_invocation.submit();
+  ASSERT_TRUE(failed) << failed.error().message();
+  EXPECT_FALSE(failed->wait().has_value());
+  EXPECT_EQ(bytes(context, retained_embedding), before_failure);
+}
+
+TEST(VulkanGraphD5, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
+  constexpr int seed = 41;
+  const auto activation_desc =
+      dense(c::DataType::kBFloat16, {1, q::kHidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+  const auto gate_desc =
+      dense(c::DataType::kBFloat16, {q::kFfnHidden, q::kHidden})
+          .transposed()
+          .value();
+  const auto down_desc =
+      dense(c::DataType::kBFloat16, {q::kHidden, q::kFfnHidden})
+          .transposed()
+          .value();
+  const auto expanded_desc =
+      dense(c::DataType::kBFloat16, {1, q::kFfnHidden});
+  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0203);
+  auto context = vulkan_test::context().value();
+  const auto scale_values = q::scales(q::kHidden, 9);
+  const auto scale = upload(context, scale_desc, std::span(scale_values));
+  auto gate_values =
+      q::sparse_output_major_weight(q::kFfnHidden, q::kHidden, seed);
+  const auto gate_weight = upload(context, gate_desc, std::span(gate_values));
+  gate_values.clear();
+  gate_values.shrink_to_fit();
+  auto up_values =
+      q::sparse_output_major_weight(q::kFfnHidden, q::kHidden, seed + 1);
+  const auto up_weight = upload(context, gate_desc, std::span(up_values));
+  up_values.clear();
+  up_values.shrink_to_fit();
+  auto down_values =
+      q::sparse_output_major_weight(q::kHidden, q::kFfnHidden, seed + 2);
+  const auto down_weight = upload(context, down_desc, std::span(down_values));
+  down_values.clear();
+  down_values.shrink_to_fit();
+  auto normalize = prepare(context, workload, c::Operation(c::RmsNorm{}),
+                           activation_desc, scale);
+  auto gate = prepare(context, workload, c::Operation(c::MatMul{}),
+                      activation_desc, gate_weight);
+  auto up = prepare(context, workload, c::Operation(c::MatMul{}),
+                    activation_desc, up_weight);
+  auto gated = prepare(
+      context, workload,
+      c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}),
+      expanded_desc, expanded_desc);
+  auto down = prepare(context, workload, c::Operation(c::MatMul{}),
+                      expanded_desc, down_weight);
+  for (int replay_seed : {3, 17}) {
+    const auto input = q::values(q::kHidden, replay_seed);
+    const auto activation = upload(context, activation_desc, std::span(input));
+    const auto normalized = run(normalize, activation);
+    const auto gate_value = run(gate, normalized[0]);
+    const auto up_value = run(up, normalized[0]);
+    const auto product = run(gated, gate_value[0], up_value[0]);
+    const auto output = run(down, product[0]);
+    expect_qwen38_near(values(context, output[0]), q::ffn(input, scale_values, seed),
+                       0.025);
+  }
+}
+
+TEST(VulkanGraphD5, D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
+  const auto query_desc = dense(c::DataType::kBFloat16,
+                                {1, 1, q::kQueryHeads, q::kHeadDepth});
+  const auto kv_desc = dense(c::DataType::kBFloat16,
+                             {1, 1, q::kKvHeads, q::kHeadDepth});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHeadDepth});
+  const auto position_desc = dense(c::DataType::kInt32, {1});
+  const auto frequency_desc =
+      dense(c::DataType::kFloat32, {q::kRotaryDimensions / 2});
+  const auto workload = q::workload(c::WorkloadPhase::kDecode, 4);
+  auto context = vulkan_test::context().value();
+  const auto query_scale_values = q::scales(q::kHeadDepth, 1);
+  const auto key_scale_values = q::scales(q::kHeadDepth, 2);
+  const auto query_scale =
+      upload(context, scale_desc, std::span(query_scale_values));
+  const auto key_scale =
+      upload(context, scale_desc, std::span(key_scale_values));
+  const std::array<std::int32_t, 1> positions{11};
+  std::vector<float> frequencies(q::kRotaryDimensions / 2);
+  for (std::size_t i = 0; i < frequencies.size(); ++i)
+    frequencies[i] = 1.0F / static_cast<float>(i + 1);
+  const auto position = upload(context, position_desc, std::span(positions));
+  const auto frequency =
+      upload(context, frequency_desc, std::span(frequencies));
+  auto query_norm = prepare(context, workload, c::Operation(c::RmsNorm{}),
+                            query_desc, query_scale);
+  auto key_norm = prepare(context, workload, c::Operation(c::RmsNorm{}),
+                          kv_desc, key_scale);
+  const c::RoPE rope{.rotary_dimensions = q::kRotaryDimensions,
+                     .sequence_axis = 1,
+                     .layout = c::RopeLayout::kInterleaved};
+  auto query_rope = prepare(context, workload, c::Operation(rope), query_desc,
+                            position, frequency);
+  auto key_rope = prepare(context, workload, c::Operation(rope), kv_desc,
+                          position, frequency);
+  auto attention = prepare(
+      context, workload,
+      c::Operation(c::ScaledDotProductAttention{
+          .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+          .scale = 0.0625F,
+          .causal = true,
+          .accumulation_type = c::DataType::kFloat32}),
+      query_desc, kv_desc, kv_desc);
+  auto sigmoid = prepare(context, workload,
+                         c::Operation(c::Unary{c::UnaryKind::kSigmoid}),
+                         query_desc);
+  auto multiply =
+      prepare(context, workload,
+              c::Operation(c::Binary{c::BinaryKind::kMultiply}), query_desc,
+              query_desc);
+  for (int seed : {2, 13}) {
+    const auto queries = q::values(*query_desc.element_count(), seed);
+    const auto keys = q::values(*kv_desc.element_count(), seed + 1);
+    const auto value_data =
+        q::values(*kv_desc.element_count(), seed + 2, 128.0);
+    const auto gate_data =
+        q::values(*query_desc.element_count(), seed + 3, 32.0);
+    const auto query = upload(context, query_desc, std::span(queries));
+    const auto key = upload(context, kv_desc, std::span(keys));
+    const auto value = upload(context, kv_desc, std::span(value_data));
+    const auto gate = upload(context, query_desc, std::span(gate_data));
+    const auto normalized_query = run(query_norm, query);
+    const auto normalized_key = run(key_norm, key);
+    const auto rotated_query =
+        run(query_rope, normalized_query[0]);
+    const auto rotated_key =
+        run(key_rope, normalized_key[0]);
+    const auto attended =
+        run(attention, rotated_query[0], rotated_key[0], value);
+    const auto gate_value = run(sigmoid, gate);
+    const auto output = run(multiply, attended[0], gate_value[0]);
+    const auto actual = values(context, output[0]);
+    for (std::size_t head = 0; head < q::kQueryHeads; ++head) {
+      const auto value_head = head / (q::kQueryHeads / q::kKvHeads);
+      for (std::size_t column = 0; column < q::kHeadDepth; ++column) {
+        const auto index = head * q::kHeadDepth + column;
+        const auto gate_expected = q::decode(q::encode(
+            1.0 / (1.0 + std::exp(-q::decode(gate_data[index])))));
+        const auto expected = q::decode(q::encode(
+            q::decode(value_data[value_head * q::kHeadDepth + column]) *
+            gate_expected));
+        EXPECT_NEAR(actual[index], expected,
+                    std::abs(expected) * 0.012 + 2.0e-5)
+            << index;
+      }
+    }
+  }
+}
+
+TEST(VulkanGraphD5, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
+  constexpr int weight_seed = 67;
+  const auto half_desc = dense(c::DataType::kBFloat16, {1, q::kHidden});
+  const auto joined_desc = dense(c::DataType::kBFloat16, {1, q::kMtpInput});
+  const auto weight_desc =
+      dense(c::DataType::kBFloat16, {q::kHidden, q::kMtpInput})
+          .transposed()
+          .value();
+  const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
+  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0d0e);
+  auto context = vulkan_test::context().value();
+  auto weight_values =
+      q::sparse_output_major_weight(q::kHidden, q::kMtpInput, weight_seed);
+  const auto weight = upload(context, weight_desc, std::span(weight_values));
+  weight_values.clear();
+  weight_values.shrink_to_fit();
+  const auto scale_values = q::scales(q::kHidden, 11);
+  const auto scale = upload(context, scale_desc, std::span(scale_values));
+  auto concat = prepare(context, workload,
+                        c::Operation(c::Concat{.axis = 1}), half_desc,
+                        half_desc);
+  auto projection = prepare(context, workload, c::Operation(c::MatMul{}),
+                            joined_desc, weight);
+  auto normalize = prepare(context, workload, c::Operation(c::RmsNorm{}),
+                           half_desc, scale);
+  auto cast = prepare(context, workload,
+                      c::Operation(c::Cast{c::DataType::kFloat32}), half_desc);
+  for (int seed : {5, 19}) {
+    const auto input = q::values(q::kMtpInput, seed);
+    const auto first = upload(
+        context, half_desc,
+        std::span<const B16>(input).first(static_cast<std::size_t>(q::kHidden)));
+    const auto second = upload(
+        context, half_desc,
+        std::span<const B16>(input).last(static_cast<std::size_t>(q::kHidden)));
+    const auto joined = run(concat, first, second);
+    const auto projected = run(projection, joined[0]);
+    const auto normalized = run(normalize, projected[0]);
+    const auto converted = run(cast, normalized[0]);
+    const auto projected_expected =
+        q::sparse_projection(input, q::kHidden, weight_seed);
+    expect_qwen38_near(values(context, projected[0]), projected_expected);
+    const auto normalized_expected =
+        q::rms_norm(q::as_bf16(projected_expected), scale_values);
+    expect_qwen38_near(values(context, converted[0]), normalized_expected);
+  }
+}
+
 } // namespace
