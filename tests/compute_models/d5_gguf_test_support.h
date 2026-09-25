@@ -87,8 +87,7 @@ inline std::vector<float> selected_rows(std::span<const float> rows,
   std::vector<float> result(static_cast<std::size_t>(width) * ids.size());
   for (std::size_t i = 0; i < ids.size(); ++i)
     std::copy_n(rows.begin() + static_cast<std::ptrdiff_t>(ids[i] * width),
-                width,
-                result.begin() + static_cast<std::ptrdiff_t>(i * width));
+                width, result.begin() + static_cast<std::ptrdiff_t>(i * width));
   return result;
 }
 
@@ -106,16 +105,16 @@ struct Qwen35Projection final {
 // reduced, while every model reduction/output width and native storage format
 // remains unchanged.
 inline constexpr std::array kQwen35PrimaryProjectionCases{
-    Qwen35Projection{"blk.0.ffn_gate.weight", c::GgufQuantizedType::kQ4K,
-                     2048, 6144, 0x0203, 11},
-    Qwen35Projection{"blk.0.ffn_down.weight", c::GgufQuantizedType::kQ6K,
-                     6144, 2048, 0x0303, 13},
-    Qwen35Projection{"blk.3.attn_k.weight", c::GgufQuantizedType::kQ5K,
-                     2048, 512, 0x0403, 17},
+    Qwen35Projection{"blk.0.ffn_gate.weight", c::GgufQuantizedType::kQ4K, 2048,
+                     6144, 0x0203, 11},
+    Qwen35Projection{"blk.0.ffn_down.weight", c::GgufQuantizedType::kQ6K, 6144,
+                     2048, 0x0303, 13},
+    Qwen35Projection{"blk.3.attn_k.weight", c::GgufQuantizedType::kQ5K, 2048,
+                     512, 0x0403, 17},
     Qwen35Projection{"blk.8.ffn_gate.weight", c::GgufQuantizedType::kIq4Xs,
                      2048, 6144, 0x0803, 19},
-    Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0,
-                     2048, 2048, 0x0503, 23}};
+    Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0, 2048,
+                     2048, 0x0503, 23}};
 
 inline std::vector<float> activation(std::int64_t width, int seed) {
   std::vector<float> result(static_cast<std::size_t>(width));
@@ -129,8 +128,7 @@ inline std::vector<float> activation(std::int64_t width, int seed) {
 
 inline std::vector<float> matmul(std::span<const float> input,
                                  std::span<const float> decoded_weights,
-                                 std::int64_t columns,
-                                 std::int64_t reduction) {
+                                 std::int64_t columns, std::int64_t reduction) {
   std::vector<float> result(static_cast<std::size_t>(columns));
   for (std::int64_t column = 0; column < columns; ++column) {
     double sum = 0.0;
@@ -161,6 +159,36 @@ inline void expect_quantized_matmul_close(std::span<const float> actual,
   // separately from the already-applied weight quantization loss.
   EXPECT_LE(max_error, 8.0e-3F);
   EXPECT_LE(rmse, 2.0e-3);
+}
+
+inline void
+expect_quantized_chain_matmul_close(std::span<const float> actual,
+                                    std::span<const float> expected) {
+  ASSERT_EQ(actual.size(), expected.size());
+  double squared_error = 0.0;
+  double squared_reference = 0.0;
+  float max_error = 0.0F;
+  float max_reference = 0.0F;
+  for (std::size_t index = 0; index < actual.size(); ++index) {
+    const auto error = std::abs(actual[index] - expected[index]);
+    max_error = std::max(max_error, error);
+    max_reference = std::max(max_reference, std::abs(expected[index]));
+    squared_error += static_cast<double>(error) * error;
+    squared_reference += static_cast<double>(expected[index]) * expected[index];
+  }
+  const auto rmse =
+      std::sqrt(squared_error / static_cast<double>(actual.size()));
+  const auto reference_rms =
+      std::sqrt(squared_reference / static_cast<double>(actual.size()));
+  // A complete GGUF FFN quantizes the normalized activation and then the
+  // post-gate activation for their respective native dot-product types. The
+  // decoded-weight oracle deliberately keeps those activations in F32. Judge
+  // that declared extra quantization as a scale-relative error while retaining
+  // an absolute floor for values near zero.
+  EXPECT_LE(rmse, 2.0e-3 + 2.0e-2 * reference_rms)
+      << "reference_rms=" << reference_rms;
+  EXPECT_LE(max_error, 2.0e-2F + 2.0e-2F * max_reference)
+      << "max_reference=" << max_reference;
 }
 
 struct QuantizerCleanup final {
