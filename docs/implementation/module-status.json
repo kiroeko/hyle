@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：固定 ggml 原生 BF16 router MatMul 保留 F32 score，公共 model operation 有限新增 rank-2 BF16×BF16→F32 语义；此前 48/176 RUN_PASS 保持，D5 其它画像继续按成熟 Provider 验收，自研数学冻结。"
+      "summary": "M3-D5 AUDITED：成熟 Provider 的 BF16 router F32 score 已接线；R01 七行词表不满足真实 248320 行验收，旧 48 格退回 partial，当前完整格 0/176。按 profile 批量接线并延后整批验证，自研数学冻结。"
     },
     {
       "module": "compute_backend_cpu",

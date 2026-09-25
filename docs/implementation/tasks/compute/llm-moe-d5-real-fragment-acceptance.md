@@ -73,6 +73,14 @@ W1-WIN/MSVC 配置已运行通过。它在 CPU factor 首次编译共用 ggml CU
 248,320 行词表；批内应接通真实宽度的 embedding/head 边界后再冻结完整 profile
 候选。2.4T 官方八格继续保持 `VALIDATION_NOT_RUN`，不把定向测试记作全格通过。
 
+**R01 资格纠正（`ae15979a8` 后审计）**：此前 Qwen3.5-2B 与 Qwen3.8-27B
+六个 profile 的 48 个已签格，均将真实 248,320 行词表缩成七行完成 Gather/输出头；
+这不符合本卡仅缩小 batch、token、活跃 expert 和上下文容量的规则。
+旧收据保留为 R01 的有限接线证据，其它已运行 region 以 partial receipt 保留；
+[`ledger`](llm-moe-d5-acceptance-ledger.json) 将 48 格退回 `VALIDATION_NOT_RUN`，
+当前完整格为 0/176。先按共用真实词表宽度批量接通四路线 Direct/Graph，批末再
+统一运行完整 profile gate；历史收据中的 48/176 是纠正前的快照，不再代表当前验收。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |

@@ -28,6 +28,8 @@ This is a focused R05 connection check, not an entire profile acceptance.
 The complete owner selector, external source/static/shared consumers and P1
 were not run for this candidate. The existing R01 boundary test also uses a
 seven-row vocabulary table and output head; it does not prove the official
-248,320-row vocabulary width. The D5 ledger remains unchanged at 48/176
-`RUN_PASS` cells, with all eight Qwen3.8-2.4T official cells still
-`VALIDATION_NOT_RUN`.
+248,320-row vocabulary width. At the time of this candidate the D5 ledger
+had 48/176 `RUN_PASS` cells. A subsequent R01 qualification audit found
+that all 48 used a seven-row vocabulary instead of the official 248,320 rows.
+The current ledger therefore has 0/176 complete cells; all eight Qwen3.8-2.4T
+official cells were already `VALIDATION_NOT_RUN` and stay so.
