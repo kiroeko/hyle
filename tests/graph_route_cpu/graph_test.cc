@@ -311,7 +311,11 @@ TEST(CpuDefaultGraph, D5RealQwenProjectionUsesExactProfileAndReplays) {
   }
 }
 
-TEST(CpuDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+class CpuGraphQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const compute::ModelArtifactProfileDescription *> {};
+
+TEST_P(CpuGraphQwen38GdnProfiles, GroupedHeadUsesOrdinaryGraphAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   auto builder = graph::GraphBuilder::create().value();
   std::array<graph::ValueId, 6> inputs;
@@ -327,7 +331,7 @@ TEST(CpuDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
   auto logical = std::move(builder).finish().value();
   auto context = graph::cpu::create_context().value();
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      compute::WorkloadPhase::kDecode);
+      *GetParam(), compute::WorkloadPhase::kDecode);
   auto compiled = graph::compile(logical, context, {.workload = workload});
   ASSERT_TRUE(compiled) << compiled.error().message();
   EXPECT_EQ(compiled->executable.workload(), workload);
@@ -383,6 +387,11 @@ TEST(CpuDefaultGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
     }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, CpuGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 #endif
 
 #if defined(HYLE_GRAPH_ONEDNN) || defined(HYLE_COMPUTE_GGML_CPU)

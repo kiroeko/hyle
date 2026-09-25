@@ -95,8 +95,12 @@ void expect_near(std::span<const BF16> actual,
         << i;
 }
 
-TEST(CpuDefaultDirect,
-     D5Qwen38OfficialBoundaryProjectionUsesExactHiddenAndReplays) {
+class CpuQwen38Profiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(CpuQwen38Profiles,
+     D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays) {
   constexpr std::int64_t tokens = 2;
   constexpr int projection_seed = 31;
   const auto table_desc =
@@ -111,7 +115,7 @@ TEST(CpuDefaultDirect,
       dense(c::DataType::kBFloat16, {tokens, q::kHidden});
   const auto logits_desc =
       dense(c::DataType::kBFloat16, {tokens, q::kEmbeddingRows});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x01030e0f);
+  const auto workload = q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x01030e0f);
 
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
@@ -244,7 +248,7 @@ TEST(CpuDefaultDirect,
   EXPECT_EQ(read_bytes(logits_buffer), last_logits);
 }
 
-TEST(CpuDefaultDirect, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
+TEST_P(CpuQwen38Profiles, D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) {
   constexpr int seed = 41;
   const auto activation_desc =
       dense(c::DataType::kBFloat16, {1, q::kHidden});
@@ -257,7 +261,7 @@ TEST(CpuDefaultDirect, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
   const auto down_desc = stored_down_desc.transposed().value();
   const auto expanded_desc =
       dense(c::DataType::kBFloat16, {1, q::kFfnHidden});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0203);
+  const auto workload = q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0203);
   auto context = c::cpu::create_context().value();
   auto queue = context.create_queue().value();
   const std::array norm_inputs{activation_desc, scale_desc};
@@ -350,8 +354,8 @@ TEST(CpuDefaultDirect, D5Qwen38OfficialFfnUsesExactInnerWidthAndReplays) {
   }
 }
 
-TEST(CpuDefaultDirect,
-     D5Qwen38OfficialPartialRopeGqaAndOutputGateReplay) {
+TEST_P(CpuQwen38Profiles,
+     D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay) {
   const auto query_desc = dense(c::DataType::kBFloat16,
                                 {1, 1, q::kQueryHeads, q::kHeadDepth});
   const auto kv_desc = dense(c::DataType::kBFloat16,
@@ -360,7 +364,7 @@ TEST(CpuDefaultDirect,
   const auto position_desc = dense(c::DataType::kInt32, {1});
   const auto frequency_desc =
       dense(c::DataType::kFloat32, {q::kRotaryDimensions / 2});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 4);
+  const auto workload = q::workload(*GetParam(), c::WorkloadPhase::kDecode, 4);
   auto context = c::cpu::create_context().value();
   auto queue = context.create_queue().value();
   const std::array query_norm_inputs{query_desc, scale_desc};
@@ -496,7 +500,7 @@ TEST(CpuDefaultDirect,
   }
 }
 
-TEST(CpuDefaultDirect, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
+TEST_P(CpuQwen38Profiles, D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays) {
   constexpr int weight_seed = 67;
   const auto half_desc = dense(c::DataType::kBFloat16, {1, q::kHidden});
   const auto joined_desc = dense(c::DataType::kBFloat16, {1, q::kMtpInput});
@@ -505,7 +509,7 @@ TEST(CpuDefaultDirect, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
   const auto weight_desc = stored_weight_desc.transposed().value();
   const auto scale_desc = dense(c::DataType::kBFloat16, {q::kHidden});
   const auto output_f32_desc = dense(c::DataType::kFloat32, {1, q::kHidden});
-  const auto workload = q::workload(c::WorkloadPhase::kDecode, 0x0d0e);
+  const auto workload = q::workload(*GetParam(), c::WorkloadPhase::kDecode, 0x0d0e);
   auto context = c::cpu::create_context().value();
   auto queue = context.create_queue().value();
   const std::array concat_inputs{half_desc, half_desc};
@@ -584,5 +588,10 @@ TEST(CpuDefaultDirect, D5Qwen38OfficialMtpUsesExactConcatWidthAndReplays) {
           << i;
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, CpuQwen38Profiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 } // namespace

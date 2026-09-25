@@ -494,7 +494,11 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
   }
 }
 
-TEST(CpuDefaultContext, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+class CpuQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const ModelArtifactProfileDescription *> {};
+
+TEST_P(CpuQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   std::vector<hyle::mem::Buffer> input_storage;
   std::vector<ConstTensorView> inputs;
@@ -524,7 +528,7 @@ TEST(CpuDefaultContext, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
       TensorView::create(fixture.outputs[0], output_storage[0].view()).value(),
       TensorView::create(fixture.outputs[1], output_storage[1].view()).value()};
   const auto workload =
-      d5_qwen38_gdn_fixture::workload(WorkloadPhase::kDecode);
+      d5_qwen38_gdn_fixture::workload(*GetParam(), WorkloadPhase::kDecode);
   auto context = create_context().value();
   auto prepared = prepare(context, Operation(GatedDeltaNet{}), inputs, outputs,
                           hyle::mem::system_resource(), workload);
@@ -553,6 +557,11 @@ TEST(CpuDefaultContext, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
     }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, CpuQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 #endif
 #endif
 

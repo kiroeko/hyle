@@ -35,9 +35,34 @@ inline constexpr c::ModelArtifactProfileDescription kOfficialProfile{
         "77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df",
     .format_family = "safetensors"};
 
-inline c::WorkloadContext workload(c::WorkloadPhase phase) {
-  return {c::ModelArtifactProfile::create(kOfficialProfile).value(), phase,
+// Fixed one-shard deployment artifact. The manifest digest is a stable hash
+// of the pinned GGUF header identity plus all 866 tensor name/shape/type rows
+// retained by the model-weight audit; it does not claim to be the 16 GiB file
+// object's content hash.
+inline constexpr c::ModelArtifactProfileDescription kPrimaryGgufProfile{
+    .model_publisher = "Qwen",
+    .model_repository = "Qwen/Qwen3.8-27B",
+    .model_family = "qwen3.8",
+    .model_name = "Qwen3.8-27B",
+    .model_revision = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    .configuration_digest =
+        "191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab",
+    .artifact_repository = "unsloth/Qwen3.8-27B-GGUF",
+    .artifact_revision = "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    .variant = "UD-Q4_K_M",
+    .manifest_digest =
+        "380ddd71a9afe228097df16cfbbc8fd33f2707fe562ea9f695f25eb40b01e774",
+    .format_family = "gguf"};
+
+inline c::WorkloadContext
+workload(const c::ModelArtifactProfileDescription &profile,
+         c::WorkloadPhase phase) {
+  return {c::ModelArtifactProfile::create(profile).value(), phase,
           {0x48594c454d4f444cULL, 5, 1}};
+}
+
+inline c::WorkloadContext workload(c::WorkloadPhase phase) {
+  return workload(kOfficialProfile, phase);
 }
 
 struct Fixture final {

@@ -12,6 +12,7 @@
 
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cpu.h"
@@ -90,22 +91,21 @@ std::vector<float> transpose_bf16_weight(std::vector<std::byte> &storage,
   return result;
 }
 
-TEST(CpuDefaultGraph,
-     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+void run_quantized_embedding(
+    const c::ModelArtifactProfileDescription &profile, std::int64_t hidden,
+    std::int64_t rows, c::GgufQuantizedType type, std::uint64_t region,
+    int seed) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  constexpr auto hidden = d5_qwen35_fixture::kHidden;
-  constexpr auto rows = d5_qwen35_fixture::kEmbeddingRows;
   constexpr std::int64_t tokens = 2;
-  const auto stored = c::gguf_weight_description(
-      c::GgufQuantizedType::kQ6K, c::DataType::kFloat32, hidden, rows);
+  const auto stored =
+      c::gguf_weight_description(type, c::DataType::kFloat32, hidden, rows);
   ASSERT_TRUE(stored) << stored.error().message();
   const auto table_desc = stored->transposed().value();
   const auto ids_desc = dense(c::DataType::kInt32, {tokens});
   const auto output_desc = dense(c::DataType::kFloat32, {tokens, hidden});
-  const auto physical = d5_gguf_test::values(rows, hidden, 17);
+  const auto physical = d5_gguf_test::values(rows, hidden, seed);
   const auto packed = d5_gguf_test::pack(
-      c::GgufQuantizedType::kQ6K, physical, rows, hidden,
-      table_desc.required_bytes().value());
+      type, physical, rows, hidden, table_desc.required_bytes().value());
   auto table_buffer = bytes_buffer(packed.bytes);
   auto ids_buffer = output_buffer(ids_desc);
   auto output_buffer_value = output_buffer(output_desc);
@@ -124,8 +124,7 @@ TEST(CpuDefaultGraph,
       table,
       c::ConstTensorView::create(table_desc, table_buffer.view()).value()}};
   const auto workload = d5_qwen35_fixture::workload(
-      d5_qwen35_fixture::kPrimaryGgufProfile, c::WorkloadPhase::kDecode,
-      0x010f);
+      profile, c::WorkloadPhase::kDecode, region);
   auto result = g::compile(logical, context,
                            {.constants = constants, .workload = workload});
   ASSERT_TRUE(result) << result.error().message();
@@ -169,12 +168,30 @@ TEST(CpuDefaultGraph,
   EXPECT_EQ(stats.snapshot().total_allocs, before.total_allocs);
 
   const auto before_failure = read_bytes(output_buffer_value);
-  constexpr std::array<std::int32_t, tokens> invalid{0, rows};
+  const std::array<std::int32_t, tokens> invalid{
+      0, static_cast<std::int32_t>(rows)};
   ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(invalid))).ok());
   auto failed = invocation.submit(queue);
   ASSERT_TRUE(failed) << failed.error().message();
   EXPECT_FALSE(failed->wait().ok());
   EXPECT_EQ(read_bytes(output_buffer_value), before_failure);
+}
+
+TEST(CpuDefaultGraph,
+     D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays) {
+  run_quantized_embedding(
+      d5_qwen35_fixture::kPrimaryGgufProfile, d5_qwen35_fixture::kHidden,
+      d5_qwen35_fixture::kEmbeddingRows, c::GgufQuantizedType::kQ6K, 0x010f,
+      17);
+}
+
+TEST(CpuDefaultGraph,
+     D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays) {
+  run_quantized_embedding(
+      d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+      d5_qwen38_official_fixture::kHidden,
+      d5_qwen38_official_fixture::kEmbeddingRows,
+      c::GgufQuantizedType::kQ4K, 0x010f, 19);
 }
 
 TEST(CpuDefaultGraph,

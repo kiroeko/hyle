@@ -116,6 +116,30 @@ inline constexpr std::array kQwen35PrimaryProjectionCases{
     Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0, 2048,
                      2048, 0x0503, 23}};
 
+// One exact representative for every quantized storage subtype present in
+// unsloth/Qwen3.8-27B-GGUF@4ca7207 UD-Q4_K_M. Token/expert capacity may be
+// reduced elsewhere, but these projection reduction/output widths and tensor
+// roles are copied from the retained 866-row GGUF header audit.
+inline constexpr std::array kQwen38PrimaryProjectionCases{
+    Qwen35Projection{"blk.0.ffn_up.weight", c::GgufQuantizedType::kQ3K, 5120,
+                     17408, 0x0203, 61},
+    Qwen35Projection{"blk.11.ffn_gate.weight", c::GgufQuantizedType::kIq3S,
+                     5120, 17408, 0x0203, 67},
+    Qwen35Projection{"blk.21.attn_qkv.weight", c::GgufQuantizedType::kIq4Nl,
+                     5120, 10240, 0x0403, 71},
+    Qwen35Projection{"blk.0.ffn_down.weight", c::GgufQuantizedType::kIq4Xs,
+                     17408, 5120, 0x0303, 73},
+    Qwen35Projection{"blk.1.attn_qkv.weight", c::GgufQuantizedType::kQ4K, 5120,
+                     10240, 0x0403, 79},
+    Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ5K, 6144,
+                     5120, 0x0503, 83},
+    Qwen35Projection{"blk.3.attn_output.weight", c::GgufQuantizedType::kQ6K,
+                     6144, 5120, 0x0403, 89},
+    Qwen35Projection{"blk.64.nextn.eh_proj.weight",
+                     c::GgufQuantizedType::kQ6K, 10240, 5120, 0x0d03, 93},
+    Qwen35Projection{"blk.0.ssm_alpha.weight", c::GgufQuantizedType::kQ8_0,
+                     5120, 48, 0x0503, 97}};
+
 // Exact Q8_0 representatives from the same fixed repository revision's
 // UD-Q8_K_XL artifact.  The artifact name is not treated as a global tensor
 // type: the F16 embedding and F16 projection roles are described separately

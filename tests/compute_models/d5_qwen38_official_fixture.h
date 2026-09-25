@@ -22,13 +22,19 @@ inline constexpr std::int64_t kKvHeads = 4;
 inline constexpr std::int64_t kHeadDepth = 256;
 inline constexpr std::int64_t kRotaryDimensions = 64;
 
-inline c::WorkloadContext workload(c::WorkloadPhase phase,
-                                   std::uint64_t region) {
+inline c::WorkloadContext
+workload(const c::ModelArtifactProfileDescription &profile,
+         c::WorkloadPhase phase, std::uint64_t region) {
   return {c::ModelArtifactProfile::create(
-              d5_qwen38_gdn_fixture::kOfficialProfile)
+              profile)
               .value(),
           phase,
           {0x48594c454d4f444cULL, region, 1}};
+}
+
+inline c::WorkloadContext workload(c::WorkloadPhase phase,
+                                   std::uint64_t region) {
+  return workload(d5_qwen38_gdn_fixture::kOfficialProfile, phase, region);
 }
 
 inline BF16 encode(double value) { return half_test::encode<BF16>(value); }

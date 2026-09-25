@@ -7,6 +7,7 @@
 
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
@@ -119,6 +120,12 @@ TEST(CpuDefaultGraph,
      D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay) {
   run_quantized_projections(d5_qwen35_fixture::kPrimaryGgufProfile,
                             d5_gguf_test::kQwen35PrimaryProjectionCases);
+}
+
+TEST(CpuDefaultGraph,
+     D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay) {
+  run_quantized_projections(d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+                            d5_gguf_test::kQwen38PrimaryProjectionCases);
 }
 
 TEST(CpuDefaultGraph,
