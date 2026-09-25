@@ -9,7 +9,12 @@ using namespace vulkan_recurrent_test;
 namespace g = hyle::graph;
 namespace gv = g::vulkan;
 
-TEST(VulkanGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
+class VulkanGraphQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(VulkanGraphQwen38GdnProfiles,
+       D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   auto context = vulkan_test::context().value();
   auto builder = g::GraphBuilder::create().value();
@@ -25,7 +30,7 @@ TEST(VulkanGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
   auto graph = std::move(builder).finish().value();
   gv::CompileReport report;
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      c::WorkloadPhase::kDecode);
+      *GetParam(), c::WorkloadPhase::kDecode);
   auto program = gv::compile(context, graph, {},
                              {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
@@ -51,6 +56,11 @@ TEST(VulkanGraph, D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays) {
       expect(context, values[port], expected[port]);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, VulkanGraphQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 TEST(VulkanGraph, MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry) {
   auto context = vulkan_test::context().value();

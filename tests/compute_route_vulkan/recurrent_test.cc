@@ -11,7 +11,12 @@
 namespace {
 using namespace vulkan_recurrent_test;
 
-TEST(VulkanRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
+class VulkanQwen38GdnProfiles
+    : public ::testing::TestWithParam<
+          const c::ModelArtifactProfileDescription *> {};
+
+TEST_P(VulkanQwen38GdnProfiles,
+       D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
   auto context = vulkan_test::context().value();
   std::vector<v::Argument> arguments;
@@ -19,7 +24,7 @@ TEST(VulkanRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
   for (const auto &description : fixture.inputs)
     arguments.emplace_back(description);
   const auto workload = d5_qwen38_gdn_fixture::workload(
-      c::WorkloadPhase::kDecode);
+      *GetParam(), c::WorkloadPhase::kDecode);
   auto program = v::prepare(context, c::Operation(c::GatedDeltaNet{}),
                             arguments, workload);
   ASSERT_TRUE(program) << program.error().message();
@@ -43,6 +48,11 @@ TEST(VulkanRecurrent, D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays) {
       expect(context, outputs[port], expected[port]);
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    D5OfficialAndPrimaryGguf, VulkanQwen38GdnProfiles,
+    ::testing::Values(&d5_qwen38_gdn_fixture::kOfficialProfile,
+                      &d5_qwen38_gdn_fixture::kPrimaryGgufProfile));
 
 TEST(VulkanRecurrent, OriginalDirectStateAndIndependentRetainedOutputs) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
