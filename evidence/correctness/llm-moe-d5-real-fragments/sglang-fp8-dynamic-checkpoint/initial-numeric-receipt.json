@@ -1,0 +1,45 @@
+{
+  "candidate": "deac9fd01348fca47998ce8cb581b6b6fb1847fa",
+  "route": "cuda",
+  "factors": [
+    "compute_ops",
+    "compute_provider_cuda",
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f38-native-entry\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 14.91
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_ops|compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f38-native-entry\\cuda\\tests.xml"
+      ],
+      "returncode": 8,
+      "seconds": 3.03
+    }
+  ],
+  "test_filter": "ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn"
+}

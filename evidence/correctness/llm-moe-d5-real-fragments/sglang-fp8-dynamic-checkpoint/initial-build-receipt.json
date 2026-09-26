@@ -1,0 +1,23 @@
+{
+  "candidate": "b4e96c8f09b006e10a2ebab6552d7fbd280019f1",
+  "route": "cuda",
+  "factors": [
+    "compute_ops",
+    "compute_provider_cuda",
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f38-native-entry\\cuda\\build.cmd"
+      ],
+      "returncode": 2,
+      "seconds": 4.67
+    }
+  ],
+  "test_filter": "ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn"
+}

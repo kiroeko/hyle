@@ -48,3 +48,17 @@ GEMM独立double block求和转F32，F32输出绝对2e-6+相对2e-6；BF16输出
 允许原累加误差最多1个BF16 ULP，并单独保留量化codes精确门。NaN/Inf不是本模型finite域资格。
 九个实际投影签名，M1/M3，各两个输入；量化边界另用group的零值/floor与BF16相邻scale阈值。
 本卡不增加完整画像格；所有适用未运行项保持未验。
+
+## 2026-09-27 检查点与一次有限接缝纠正
+
+`deac9fd0` 的动态投影216次普通 Direct/Graph 执行、语义及资源测试通过；完整 GLM 共享FFN
+未通过严格门，见[保留的失败与原因](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-checkpoint/README.md)。
+实际 gate/up 与激活均精确一致。SM89 Triton 原版量化存在 F32→F16截断→FP8 的中间舍入，
+另有归一化临界值差异；最后GEMM按实际codes独立检查通过。已有整链门通过不覆盖严格编码失败。
+
+不更改现有门或输入。允许本卡已预留的一次具名接缝纠正：核验同 pin 原版
+`python/sglang/kernels/aot/csrc/gemm/per_token_group_quant_8bit.cu` 的
+`per_token_group_quant_8bit_kernel` 普通scale分支。该候选直接使用CUDA FP8类型转换，支持
+runtime eps；保持原算法和host的groups-per-block规则，复用已有GEMM及workspace生命周期。
+先用保留反例与原边界集核验，通过才接入；候选仍未运行，不预写PASS。
+若仍不满足严格门，停止该纠正，记录具体边界再裁决；不得继续换姿势试验或新增自研数学。

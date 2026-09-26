@@ -1,0 +1,384 @@
+[
+  {
+    "m": 1,
+    "replay": 0,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 127,
+        "max_absolute_error": 1.52587890625e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 1.1126200405442432e-07,
+    "codes_divide_mismatch": 14,
+    "codes_reciprocal_mismatch": 14,
+    "codes_half_rtz_mismatch": 1,
+    "down_from_actual_codes_max_bf16_ulps": 1,
+    "examples": [
+      {
+        "row": 0,
+        "col": 325,
+        "value": 9.424984455108643e-07,
+        "scale": 8.7738037109375e-05,
+        "normalized": 0.0107421875,
+        "half_rtz": 0.0107421875,
+        "expected_code": 6,
+        "actual_code": 5
+      },
+      {
+        "row": 0,
+        "col": 1438,
+        "value": 7.063150405883789e-06,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.033233173191547394,
+        "half_rtz": 0.033203125,
+        "expected_code": 17,
+        "actual_code": 16
+      },
+      {
+        "row": 0,
+        "col": 1439,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1442,
+        "value": 7.063150405883789e-06,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.033233173191547394,
+        "half_rtz": 0.033203125,
+        "expected_code": 17,
+        "actual_code": 16
+      },
+      {
+        "row": 0,
+        "col": 1443,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1527,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1530,
+        "value": 7.063150405883789e-06,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.033233173191547394,
+        "half_rtz": 0.033203125,
+        "expected_code": 17,
+        "actual_code": 16
+      },
+      {
+        "row": 0,
+        "col": 1531,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1830,
+        "value": 7.748603820800781e-06,
+        "scale": 6.839207344455644e-05,
+        "normalized": 0.11329681426286697,
+        "half_rtz": 0.11328125,
+        "expected_code": 31,
+        "actual_code": 30
+      },
+      {
+        "row": 0,
+        "col": 1831,
+        "value": 3.0994415283203125e-05,
+        "scale": 6.839207344455644e-05,
+        "normalized": 0.4531872570514679,
+        "half_rtz": 0.453125,
+        "expected_code": 47,
+        "actual_code": 46
+      }
+    ]
+  },
+  {
+    "m": 1,
+    "replay": 1,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 28,
+        "max_absolute_error": 3.0517578125e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 1.0512945181062605e-07,
+    "codes_divide_mismatch": 2,
+    "codes_reciprocal_mismatch": 0,
+    "codes_half_rtz_mismatch": 0,
+    "down_from_actual_codes_max_bf16_ulps": 1,
+    "examples": [
+      {
+        "row": 0,
+        "col": 1814,
+        "value": 1.5869736671447754e-06,
+        "scale": 0.0002321515785297379,
+        "normalized": 0.0068359375,
+        "half_rtz": 0.006832122802734375,
+        "expected_code": 4,
+        "actual_code": 3
+      },
+      {
+        "row": 0,
+        "col": 1818,
+        "value": 1.5869736671447754e-06,
+        "scale": 0.0002321515785297379,
+        "normalized": 0.0068359375,
+        "half_rtz": 0.006832122802734375,
+        "expected_code": 4,
+        "actual_code": 3
+      }
+    ]
+  },
+  {
+    "m": 3,
+    "replay": 0,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 252,
+        "max_absolute_error": 3.0517578125e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 1.1126200405442432e-07,
+    "codes_divide_mismatch": 29,
+    "codes_reciprocal_mismatch": 22,
+    "codes_half_rtz_mismatch": 1,
+    "down_from_actual_codes_max_bf16_ulps": 1,
+    "examples": [
+      {
+        "row": 0,
+        "col": 325,
+        "value": 9.424984455108643e-07,
+        "scale": 8.7738037109375e-05,
+        "normalized": 0.0107421875,
+        "half_rtz": 0.0107421875,
+        "expected_code": 6,
+        "actual_code": 5
+      },
+      {
+        "row": 0,
+        "col": 1438,
+        "value": 7.063150405883789e-06,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.033233173191547394,
+        "half_rtz": 0.033203125,
+        "expected_code": 17,
+        "actual_code": 16
+      },
+      {
+        "row": 0,
+        "col": 1439,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1442,
+        "value": 7.063150405883789e-06,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.033233173191547394,
+        "half_rtz": 0.033203125,
+        "expected_code": 17,
+        "actual_code": 16
+      },
+      {
+        "row": 0,
+        "col": 1443,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1527,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1530,
+        "value": 7.063150405883789e-06,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.033233173191547394,
+        "half_rtz": 0.033203125,
+        "expected_code": 17,
+        "actual_code": 16
+      },
+      {
+        "row": 0,
+        "col": 1531,
+        "value": 2.8252601623535156e-05,
+        "scale": 0.00021253313752822578,
+        "normalized": 0.13293269276618958,
+        "half_rtz": 0.1328125,
+        "expected_code": 33,
+        "actual_code": 32
+      },
+      {
+        "row": 0,
+        "col": 1830,
+        "value": 7.748603820800781e-06,
+        "scale": 6.839207344455644e-05,
+        "normalized": 0.11329681426286697,
+        "half_rtz": 0.11328125,
+        "expected_code": 31,
+        "actual_code": 30
+      },
+      {
+        "row": 0,
+        "col": 1831,
+        "value": 3.0994415283203125e-05,
+        "scale": 6.839207344455644e-05,
+        "normalized": 0.4531872570514679,
+        "half_rtz": 0.453125,
+        "expected_code": 47,
+        "actual_code": 46
+      }
+    ]
+  },
+  {
+    "m": 3,
+    "replay": 1,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 80,
+        "max_absolute_error": 6.103515625e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 1.1080034312271891e-07,
+    "codes_divide_mismatch": 5,
+    "codes_reciprocal_mismatch": 3,
+    "codes_half_rtz_mismatch": 2,
+    "down_from_actual_codes_max_bf16_ulps": 1,
+    "examples": [
+      {
+        "row": 0,
+        "col": 1814,
+        "value": 1.5869736671447754e-06,
+        "scale": 0.0002321515785297379,
+        "normalized": 0.0068359375,
+        "half_rtz": 0.006832122802734375,
+        "expected_code": 4,
+        "actual_code": 3
+      },
+      {
+        "row": 0,
+        "col": 1818,
+        "value": 1.5869736671447754e-06,
+        "scale": 0.0002321515785297379,
+        "normalized": 0.0068359375,
+        "half_rtz": 0.006832122802734375,
+        "expected_code": 4,
+        "actual_code": 3
+      },
+      {
+        "row": 1,
+        "col": 1618,
+        "value": 5.774199962615967e-07,
+        "scale": 8.446829451713711e-05,
+        "normalized": 0.0068359375,
+        "half_rtz": 0.0068359375,
+        "expected_code": 4,
+        "actual_code": 3
+      },
+      {
+        "row": 1,
+        "col": 1622,
+        "value": 5.774199962615967e-07,
+        "scale": 8.446829451713711e-05,
+        "normalized": 0.0068359375,
+        "half_rtz": 0.0068359375,
+        "expected_code": 4,
+        "actual_code": 3
+      },
+      {
+        "row": 2,
+        "col": 2019,
+        "value": 2.193450927734375e-05,
+        "scale": 5.613054599962197e-05,
+        "normalized": 0.39077669382095337,
+        "half_rtz": 0.390625,
+        "expected_code": 45,
+        "actual_code": 44
+      }
+    ]
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "candidate": "deac9fd01348fca47998ce8cb581b6b6fb1847fa",
+  "scope": "Partial dynamic FP8 correctness and preserved strict-quantization failure; not complete model qualification",
+  "files": {
+    "compilation.json": "68ab5ec998e7252f41f70f31bf17f4ce4b8892d1ec3a7247a89caf5c76ce9266",
+    "diagnose.py": "8fe9a704a9801e9f8127d310ce58191fe36899027369f902dc2cc65445bc6c52",
+    "ffn-1-0-0.bin": "04f823c22e472dc1da88e2c5e6205457804907b2c220f79148a2c1ccd9e49c3d",
+    "ffn-1-0-1.bin": "5b4787cb64cff989fc260b6dae1dd4347e2189938574039396e35983c13d3fd4",
+    "ffn-1-0-2.bin": "055311deb0317cbee0511d51c28b67501006547987418599df047ed2270dd536",
+    "ffn-1-1-0.bin": "a383aa2c7e9106de401a042385700bf24c28833fab3e01938b08692f012eefff",
+    "ffn-1-1-1.bin": "e8ef9e22472b75cf2e32f0845cad51b14403500d8d5bb2c909a09c8978161721",
+    "ffn-1-1-2.bin": "e7be8dba627462fc1a6e1aacb7a6a3770318c7db41ec6a94bea5a2684991b80e",
+    "ffn-3-0-0.bin": "ad479f7afcab6f416ce3239eede08738e2f854fc8c0e941e9c0d79eeaef7d806",
+    "ffn-3-0-1.bin": "ee07237851e41405038a1a5e31935d43971c857c8342f344158a361d78d39951",
+    "ffn-3-0-2.bin": "8ef9d98a1727949cf8f59aef3815754e702e8c453617d87d7e538338531c787f",
+    "ffn-3-1-0.bin": "3681cce217757ecf94708d6c7e460341400f0739d8e22670b0690ae736548702",
+    "ffn-3-1-1.bin": "b84b0beb34b402c46cab85af44d85acc208604054c6427e876fa68525f8b3a55",
+    "ffn-3-1-2.bin": "5de2d3f75ac49c10f149f79781e1fe5f2cfc0ff63661ea8c1afcbbc0820f53b7",
+    "ffn-diagnosis.json": "b3eb1189f8fc3a27e286be59fe18bbd67cba310c868089e0b23cebddebe8211b",
+    "initial-build-failure.log.gz": "0c9d0dd3a20977ec65996f5eb0530ed64b9152132de353528e65ab6318553054",
+    "initial-build-receipt.json": "ef31b9d6eda1053f278744113a07394406337e38580a6dd8469d7f4cee2d75bd",
+    "initial-numeric-native-tests.log.gz": "9d65573f069cdf60968182a461272798e62421e8f4d2a4acccdcdc4167f6a661",
+    "initial-numeric-receipt.json": "e3f01ba2b506ee2602099c9fd9b73814123957bee0ff0d380ed47079bf7504c3",
+    "initial-numeric-tests.log.gz": "41b44680b5cb62e6b48a717c34668efeec8c48d22054ba16b44d139664e097ea",
+    "native-receipt.json": "9419c3393ca076ee179bc93a4c786baf99d6a3766cfdd12c55f33b917814fda9",
+    "quantize_bf16.ptx": "98e858a8fb1d56ab0f3f6bdc7b797c26aa9e445a47b6017573aa07c736b9668f",
+    "README.md": "a4168b7ffda9716007e95d5ad6170cc5f6edbb197ba91fac42c351d6c0c07458",
+    "source.json": "98f588d40dee6a8b122ae9ffe52c002bf48b2fbfe00088936d348cc47f0d82fe",
+    "trace-build-failure.log.gz": "f7e3ec25a1265276f7bc2656cac4f7788810f5655bd109e50f89acdcc9ca9665",
+    "trace-build-receipt.json": "e66454cc45881e58a7b9156c04dac195810be4f535592cd8b982ff81623730e6",
+    "validation-plan.json": "b920da86afed02d12b887947ea146dd7cb3e14fc51437051679d81bb0ba34759"
+  }
+}
