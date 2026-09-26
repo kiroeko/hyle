@@ -310,6 +310,11 @@ plain I32输入/输出，保留原尺寸、字节、rank、axis和推导结果�
 I32，也不增加 kernel。验收为 provider 原生大整数/-1逐位重放、无效域拒绝、原 Concat回归及本批
 CUDA Direct/Graph 的全部 pool/tail。Vulkan 同批失败先定位到测试读回把 I32当F32，只修 consumer。
 
+F31 冷初始化进一步确认：实际构建的 `source-977e0a6dff4b1d66` 接纳原版 I32 CONCAT/CPY，
+但明确拒绝 I32 DUP。原 lowering 在首段额外建立 DUP，使扩准入后 invocation 仍被拒绝；这不是
+Concat数学缺失。有限 FIX 同时将 I32 首段复制改接原版 `ggml_cpy`，保持整数类型与逐位复制，
+包括单输入 Concat；浮点原路径不变。不改 runtime pin、上游 kernel 或一般 Copy准入。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
