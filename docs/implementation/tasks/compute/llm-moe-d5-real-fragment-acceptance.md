@@ -980,15 +980,16 @@ block、top-10 与全局 ID 到本地槽的保序映射；不承诺整份 2.4T �
 
 **AUDITED，有限 FIX**：固定 ggml CPU/CUDA/Metal/Vulkan 均有原生量化格式映射和
 `ggml_mul_mat_id` 构图；Vulkan 已有 canonical grouped GGUF 权重域，Metal 已允许
-rank-3 block-axis-2 权重；CPU/CUDA 分支虽枚举了 quantized grouped，却仍要求 plain
-F32/BF16。按同一份固定 header 反证，不改变 operation ID、F32 activation/output、I32
+rank-3 block-axis-2 权重；CPU/CUDA 的 logical F32 分支也已允许非 plain 权重，
+并限制为 rank-3、block-axis-2。因此当前唯一已证实的拒绝点是公共 schema。
+按同一份固定 header 反证，不改变 operation ID、F32 activation/output、I32
 ID、资源/完成/失败语义。仅允许：
 
 1. `compute_ops` 对权重 port 接纳由 `gguf_grouped_weight_description` 构造的 canonical
    GGUF `[E,N,K]`、logical F32；拒绝非 canonical stride/block、其它 port 的 packed
    storage 与不完整 K block。plain F32/BF16 合同保留。
-2. CPU/CUDA 两个 ggml adapter 放通上述精确域；Metal/Vulkan 只在真实片段揭示具体
-   准入或资源缺陷时修其现有 adapter。四路线都使用各自 ggml 原生 program，不建 HYLE
+2. 四个现有 ggml adapter 先保持原样；只在真实片段揭示具体准入或资源缺陷时按
+   所属路线定向修复。四路线都使用各自 ggml 原生 program，不建 HYLE
    grouped kernel 或共享万能执行器。
 3. 以 `UD-IQ4_XS` 的 IQ4_XS/Q5_K/Q6_K 和 `Q8_0` 的 Q8_0 角色先做同批
    storage/MatMul 入口测试，再用常驻 11 个 expert、512-way/top-10 的量化 routed

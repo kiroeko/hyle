@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/operation.h"
 
 namespace hyle::compute::model_ops {
@@ -68,8 +69,8 @@ inline Operation causal_conv1d() noexcept {
 // token/slot pair while the public tensors keep their natural model layout:
 //   weights [E,N,K], activations [T,S,K], ids [T,S] -> [T,S,N].
 // Plain dense expert weights may be F32 or BF16. Activations, accumulation and
-// output remain F32; exact quantized storage mappings are separate provider
-// capabilities rather than implicit conversions here.
+// output remain F32. Packed GGUF weights retain their exact native K blocks;
+// individual providers still qualify the device and format during prepare.
 struct GroupedMatMul final {
   static constexpr OperationId operation_id{0x48594c454d4f444cULL,
                                              0x4d554c4944000002ULL};
@@ -89,15 +90,27 @@ struct GroupedMatMul final {
         !inputs[2].is_dense())
       return Status::InvalidArgument(
           "GroupedMatMul requires dense [E,N,K], [T,S,K], ids [T,S]");
-    if ((inputs[0].data_type() != DataType::kFloat32 &&
-         (inputs[0].data_type() != DataType::kBFloat16 ||
-          !inputs[0].is_plain())) ||
+    const auto weights = inputs[0].dimensions();
+    bool grouped_gguf = false;
+    if (inputs[0].data_type() == DataType::kFloat32 &&
+        !inputs[0].is_plain()) {
+      const auto type = gguf_quantized_type(inputs[0].storage_format());
+      if (type) {
+        const auto canonical = gguf_grouped_weight_description(
+            *type, DataType::kFloat32, weights[0], weights[1], weights[2]);
+        grouped_gguf = canonical && *canonical == inputs[0];
+      }
+    }
+    if ((!(inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[0].is_plain()) &&
+         !(inputs[0].data_type() == DataType::kBFloat16 &&
+           inputs[0].is_plain()) &&
+         !grouped_gguf) ||
         inputs[1].data_type() != DataType::kFloat32 ||
         inputs[2].data_type() != DataType::kInt32)
       return Status::InvalidArgument(
-          "GroupedMatMul requires F32 or plain BF16 weights, F32 activations "
-          "and I32 ids");
-    const auto weights = inputs[0].dimensions();
+          "GroupedMatMul requires plain F32/BF16 or canonical GGUF F32 "
+          "weights, F32 activations and I32 ids");
     const auto activations = inputs[1].dimensions();
     const auto ids = inputs[2].dimensions();
     if (weights[0] <= 0 || weights[1] <= 0 || weights[2] <= 0 ||

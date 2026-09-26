@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：Qwen3.8-2.4T IQ4_XS/Q8_0 grouped expert 的 GGUF blocked 权重被公共语义及 CPU ggml adapter 拒绝；有限 FIX 只准入 canonical grouped GGUF 权重与原生 ggml_mul_mat_id，完整片段仍待验。"
+      "summary": "M3-D5-F21 AUDITED：Qwen3.8-2.4T IQ4_XS/Q8_0 grouped expert 的 GGUF blocked 权重被公共语义拒绝；CPU ggml 已有对应原生条件，有限 FIX 只改公共 canonical 准入并验证真实链。"
     },
     {
       "module": "graph_provider_onednn",
@@ -546,7 +546,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；CUDA ggml 已有量化映射和 mul_mat_id，有限 FIX 为 canonical grouped GGUF 权重准入与 2.4T IQ4_XS/Q8_0 完整片段验证。"
+      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；CUDA ggml 已有量化映射及 mul_mat_id 的 F32 logical packed 准入，待公共 schema 修复后复核 2.4T IQ4_XS/Q8_0 真实片段。"
     },
     {
       "module": "graph_provider_ggml_cuda",

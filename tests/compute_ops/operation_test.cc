@@ -1061,6 +1061,35 @@ TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
       infer_single_output(model_ops::hyper_connection_post(), invalid_post));
 }
 
+TEST(OperationModelOps, GroupedExpertAcceptsOnlyCanonicalGgufWeightPort) {
+  const auto f32 = DataType::kFloat32;
+  const auto i32 = DataType::kInt32;
+  const auto activation = tensor(f32, 1, 10, 8192);
+  const auto ids = tensor(i32, 1, 10);
+  for (const auto type : {GgufQuantizedType::kIq4Xs,
+                          GgufQuantizedType::kQ8_0}) {
+    const auto weight =
+        gguf_grouped_weight_description(type, f32, 11, 2048, 8192).value();
+    const std::array inputs{weight, activation, ids};
+    EXPECT_EQ(infer_one(model_ops::grouped_matmul(), inputs),
+              tensor(f32, 1, 10, 2048));
+
+    auto invalid = inputs;
+    invalid[0] = gguf_grouped_weight_description(
+                     type, DataType::kBFloat16, 11, 2048, 8192)
+                     .value();
+    EXPECT_FALSE(infer_single_output(model_ops::grouped_matmul(), invalid));
+    invalid = inputs;
+    invalid[1] = tensor(DataType::kBFloat16, 1, 10, 8192);
+    EXPECT_FALSE(infer_single_output(model_ops::grouped_matmul(), invalid));
+    invalid = inputs;
+    invalid[2] = tensor(i32, 1, 9);
+    EXPECT_FALSE(infer_single_output(model_ops::grouped_matmul(), invalid));
+  }
+  EXPECT_FALSE(gguf_grouped_weight_description(
+      GgufQuantizedType::kIq4Xs, f32, 11, 2048, 8191));
+}
+
 TEST(OperationModelOps, LightningIndexerKeepsSparseModelLayout) {
   const auto f32 = DataType::kFloat32;
   const auto f16 = DataType::kFloat16;
