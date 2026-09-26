@@ -69,7 +69,7 @@
 |---|---|---|---|
 | MG1 | compute_ops | 添加一个 Custom Operation schema；八个 F32 输入 Q/K/V、raw a、raw b、negative_a、dt_bias、state；两个输出 attended/state | 复用既有 GDN shape inference；scalar gate、plain dense、参数 `[1,1,H,1]`；拒绝不匹配 shape/type/arity |
 | MG2 | 四个 ggml Provider | 原版 Add/Softplus/Mul/Sigmoid 连接原版 GDN，复用现有输出拆分和执行资源 | 不改 Unary 准入、不补数学、不公开 g/beta；按各路线原生容量与失败规则准备 |
-| MG3 | Apple Direct/Graph、Vulkan Graph | 已有原生分类增加此 schema；Vulkan 仅为此成熟 schema 允许两个 custom outputs | 未知 custom、多输出或错误 alias 仍拒绝；不重构公共路由 |
+| MG3 | Apple Direct/Graph、Vulkan Direct/Graph | 已有原生分类增加此 schema；Vulkan 仅为此成熟 schema 允许八输入和两个 custom outputs | 未知 custom、多输出或错误 alias 仍拒绝；不重构公共路由 |
 | MG4 | ggml Metal | 八输入加一个 packed output 的私有端口容量；四个 gate 中间 tensor 的原生冷期分配/完整释放 | 不在 submit 分配 workspace；backend 销毁前释放；沿用 checked completion |
 | MG5 | 测试消费者 | 共享 R05 recipe 改用完整 region；批量扩展 Qwen 九画像并检查实际状态反馈 | 四路线 Direct/Graph、变化输入、原独立 oracle、资源和普通 Unary 拒绝；其它片段按身份复用 |
 

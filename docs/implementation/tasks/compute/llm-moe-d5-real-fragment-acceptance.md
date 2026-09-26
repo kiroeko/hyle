@@ -10,10 +10,14 @@ R05 使用主机预计算 gate/decay，48 个整格退回未完整资格；非 R
 当前 ledger 为 **0/176 RUN_PASS、176/176 VALIDATION_NOT_RUN**。下文48格数字保留为历史快照，
 不能继续用作当前完整覆盖。既有 Provider/Graph owner 的有限 FIX 不随此待决项自动扩张。
 
-**D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Graph
+**D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22
 验证事实和 D5 三交付/P1 待办保留。
+
+接线源码审计补充：`compute_route_vulkan` 的 `region_operation()` 使用六输入栈数组，无法将
+合法八输入完整 recurrent schema 送达 Provider。该 owner 已为 F22 处于 AUDITED；本次仅将容量
+扩为八，并仅对具名 `RecurrentGatedDeltaNet` 放行超过六输入的请求，其他准入域不变。
 
 ## Closure card
 

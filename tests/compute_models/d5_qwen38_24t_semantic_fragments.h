@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
+#include <cstring>
+#include <optional>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -42,6 +45,7 @@ struct Fragment final {
   std::vector<std::vector<std::byte>> constant_bytes;
   std::vector<recipe::DirectNode> nodes;
   std::vector<Replay> replays;
+  std::optional<std::pair<std::size_t, std::size_t>> state_ports{};
 
   const c::TensorDesc &description(ValueId id) const {
     return descriptions[id.ordinal()];
@@ -90,6 +94,25 @@ template <class T> std::vector<std::byte> bytes(std::span<const T> values) {
 template <class T> std::vector<std::byte> bytes(const std::vector<T> &values) {
   return bytes<T>(std::span<const T>(values));
 }
+// Feed each route's actual previous state back into the next invocation.
+// The oracle advances independently; replacing actual state with its answer
+// would hide accumulated error in a recurrent consumer.
+struct StateFeedback final {
+  const Fragment &fragment;
+  std::vector<std::byte> state{};
+
+  std::span<const std::byte> input(const Replay &replay, std::size_t port) const {
+    if (fragment.state_ports && port == fragment.state_ports->first &&
+        !state.empty())
+      return state;
+    return replay.inputs[port];
+  }
+  void observe(std::size_t port, std::span<const float> actual) {
+    if (fragment.state_ports && port == fragment.state_ports->second)
+      state = bytes(actual);
+  }
+};
+
 inline c::TensorDesc dense(std::initializer_list<std::int64_t> shape,
                            c::DataType type = c::DataType::kFloat32) {
   return c::TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
@@ -412,17 +435,32 @@ inline Fragment attention(const c::ModelArtifactProfileDescription *profile) {
   return f;
 }
 
-inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
+inline Fragment gdn(const c::ModelArtifactProfileDescription *profile,
+                     int steps = 2) {
   namespace gd = d5_qwen38_gdn_fixture;
-  const bool official = profile == &q::kOfficialProfile;
+  const bool official = profile->variant == "official-bf16";
+  const bool local_official = profile == &workload_test::kModel;
   Fragment f{
       .profile = profile, .region = 0x050523, .absolute_tolerance = 2.0e-6F};
   constexpr std::int64_t keys = q::kGdnKeyHeads;
-  constexpr std::int64_t heads = q::kGdnValueHeads;
+  const std::int64_t heads =
+      profile->model_repository == "Qwen/Qwen3.5-2B" ? 16 :
+      profile->model_repository == "Qwen/Qwen3.8-27B" ? 48 : 128;
   constexpr std::int64_t depth = q::kGdnHeadDepth;
   constexpr std::int64_t key_width = keys * depth;
-  constexpr std::int64_t channels = (2 * keys + heads) * depth;
+  const std::int64_t channels = (2 * keys + heads) * depth;
   gd::ConvFixture conv(keys, heads);
+  std::optional<d5_qwen35_fixture::Recurrent> local;
+  const auto bf16 = [](const std::vector<std::byte> &data, std::size_t i) {
+    std::uint16_t bits;
+    std::memcpy(&bits, data.data() + 2 * i, sizeof(bits));
+    return std::bit_cast<float>(std::uint32_t{bits} << 16);
+  };
+  if (local_official) {
+    local = d5_qwen35_fixture::load_recurrent(d5_qwen35_fixture::root().value());
+    for (std::size_t i = 0; i < conv.weights.size(); ++i)
+      conv.weights[i] = bf16(local->convolution_weight, i);
+  }
   auto samples = f.input(conv.samples_desc);
   auto weight = f.constant(conv.weights_desc, bytes(conv.weights));
   auto convolution = f.one(c::model_ops::causal_conv1d(), {samples, weight});
@@ -456,8 +494,8 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
       reshape(take(2 * key_width, heads * depth), {1, 1, heads, depth});
   // Official V heads are grouped by K head; the pinned GGUF converter has
   // already reordered V, conv, gates and output weights into cyclic order.
-  // Expand only the official Q/K boundary. GGUF keeps the native 16/128
-  // grouped-head program without a head-replication gather.
+  // Expand only the official Q/K boundary. GGUF keeps the native grouped
+  // program without a head-replication gather.
   std::vector<float> l2_scale(depth, 1.0F / std::sqrt(float(depth)));
   auto l2 = f.constant(dense({depth}), bytes(l2_scale));
   const c::Operation normalize(c::RmsNorm{.epsilon = 1.0e-6F / float(depth)});
@@ -483,9 +521,9 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   auto z = f.input(dense({1, 1, heads, depth}));
   std::vector<float> alog(heads), negative_a(heads), dt(heads);
   for (std::int64_t h = 0; h < heads; ++h) {
-    alog[h] = -1.0F - float(h % 7) / 32.0F;
+    alog[h] = local ? local->log_decay[h] : -1.0F - float(h % 7) / 32.0F;
     negative_a[h] = -std::exp(alog[h]);
-    dt[h] = float(h % 9 - 4) / 64.0F;
+    dt[h] = local ? bf16(local->time_bias, h) : float(h % 9 - 4) / 64.0F;
   }
   // Runtime F32 ports are the declared recurrent domain. Official small
   // constants originate as BF16 and are exactly representable here; GGUF
@@ -496,22 +534,19 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
     alpha = f.one(c::Operation(c::Unary{c::UnaryKind::kExp}), {alpha});
     alpha = f.one(c::Operation(c::Unary{c::UnaryKind::kNeg}), {alpha});
   }
-  auto gate =
-      f.one(c::Operation(c::Binary{c::BinaryKind::kAdd}), {raw_a, bias});
-  gate = f.one(c::Operation(c::Unary{c::UnaryKind::kSoftplus}), {gate});
-  gate =
-      f.one(c::Operation(c::Binary{c::BinaryKind::kMultiply}), {gate, alpha});
-  auto beta = f.one(c::Operation(c::Unary{c::UnaryKind::kSigmoid}), {raw_b});
-  auto recurrent = f.append(c::Operation(c::GatedDeltaNet{}),
-                            {query, key, value, gate, beta, initial_state}, 2);
+  auto recurrent = f.append(c::model_ops::recurrent_gated_delta_net(),
+                            {query, key, value, raw_a, raw_b, alpha, bias,
+                             initial_state}, 2);
   auto norm_values = oracle::scale(depth);
   auto norm = f.constant(dense({depth}), bytes(norm_values));
   auto normalized =
       f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {recurrent[0], norm});
   auto result = f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}), {z, normalized});
-  f.outputs = {convolution, gate, beta, recurrent[0], recurrent[1], result};
+  f.outputs = {convolution, recurrent[0], recurrent[1], result};
+  f.state_ports = {{3, 2}};
   std::vector<float> state;
-  for (int seed : {3, 17}) {
+  for (int iteration = 0; iteration < steps; ++iteration) {
+    const int seed = 3 + 14 * iteration;
     gd::Fixture reference(seed, native_key_heads, heads);
     if (!state.empty())
       reference.data[5] = state;
@@ -561,11 +596,7 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
     for (std::size_t i = 0; i < gated.size(); ++i)
       gated[i] *= static_cast<float>(double(z_values[i]) /
                                      (1.0 + std::exp(-double(z_values[i]))));
-    expected.outputs = {std::move(conv_values),
-                        reference.data[3],
-                        reference.data[4],
-                        std::move(core),
-                        state,
+    expected.outputs = {std::move(conv_values), std::move(core), state,
                         std::move(gated)};
     f.replays.push_back(std::move(expected));
   }
@@ -589,6 +620,16 @@ inline void expect_output(const Fragment &fragment,
     oracle::expect_close(actual, expected, fragment.absolute_tolerance,
                          4.0e-5F);
 }
+inline constexpr std::array kRecurrentProfiles{
+    &workload_test::kModel,
+    &d5_qwen35_fixture::kPrimaryGgufProfile,
+    &d5_qwen35_fixture::kFidelityGgufProfile,
+    &d5_qwen38_gdn_fixture::kOfficialProfile,
+    &d5_qwen38_gdn_fixture::kPrimaryGgufProfile,
+    &d5_qwen38_gdn_fixture::kFidelityGgufProfile,
+    &q::kOfficialProfile,
+    &d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+    &d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile};
 inline constexpr std::array kProfiles{
     &d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
     &d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile};

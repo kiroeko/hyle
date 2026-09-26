@@ -64,6 +64,57 @@ inline Operation causal_conv1d() noexcept {
   return Operation::custom(CausalConv1d{});
 }
 
+// Single-token Qwen recurrent region. Q/K are already normalized and use
+// GatedDeltaNet's head mapping. Inputs are Q, K, V, raw a, raw b, negative
+// decay coefficient, dt bias, state; outputs are attended values and state.
+// The provider owns softplus(a + dt) * negative_a and sigmoid(b) internally.
+// Their numerical qualification belongs to the complete recurrent region,
+// independently of the generic Unary softplus contract.
+struct RecurrentGatedDeltaNet final {
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x47444e4741540007ULL};
+  static constexpr std::string_view operation_name = "recurrent-gated-delta-net";
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{8, 8}, 2, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32,
+            true};
+  }
+
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 8 || outputs.size() != 2)
+      return Status::InvalidArgument(
+          "RecurrentGatedDeltaNet requires eight inputs and two outputs");
+    for (const auto &input : inputs)
+      if (input.rank() != 4 || !input.is_plain() || !input.is_dense() ||
+          input.data_type() != DataType::kFloat32)
+        return Status::InvalidArgument(
+            "RecurrentGatedDeltaNet requires plain dense rank-four F32 inputs");
+    const auto q = inputs[0].dimensions();
+    const auto v = inputs[2].dimensions();
+    if (q[0] != 1 || q[1] != 1 || q[3] != 128 ||
+        (v[2] != 16 && v[2] != 48 && v[2] != 128) ||
+        (q[2] != 16 && q[2] != v[2]))
+      return Status::InvalidArgument(
+          "RecurrentGatedDeltaNet requires B1/T1/D128, V16/48/128 and K16 or equal heads");
+    for (std::size_t i = 3; i != 7; ++i) {
+      const auto gate = inputs[i].dimensions();
+      if (gate[0] != 1 || gate[1] != 1 || gate[2] != v[2] || gate[3] != 1)
+        return Status::InvalidArgument(
+            "RecurrentGatedDeltaNet gates and parameters require [1,1,H,1]");
+    }
+    const std::array recurrent{inputs[0], inputs[1], inputs[2], inputs[3],
+                               inputs[4], inputs[7]};
+    return compute::infer_output_descriptions(Operation(GatedDeltaNet{}),
+                                               recurrent, outputs);
+  }
+};
+
+inline Operation recurrent_gated_delta_net() noexcept {
+  return Operation::custom(RecurrentGatedDeltaNet{});
+}
+
 // Expert-selecting matrix multiplication.  The expert id is chosen for every
 // token/slot pair while the public tensors keep their natural model layout:
 //   weights [E,N,K], activations [T,S,K], ids [T,S] -> [T,S,N].

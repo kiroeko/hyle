@@ -785,17 +785,30 @@ void run_q24_semantic_fragment(
             .ok());
   auto queue = context.create_queue().value();
   ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
+  sem::StateFeedback feedback{fixture};
   for (const auto &expected : fixture.replays) {
     for (std::size_t i = 0; i < inputs.size(); ++i)
-      ASSERT_TRUE(inputs[i].view().write(expected.inputs[i]).ok());
+      ASSERT_TRUE(inputs[i].view().write(feedback.input(expected, i)).ok());
     auto done = invocation.submit(queue);
     ASSERT_TRUE(done) << done.error().message();
     const auto status = done->wait();
     ASSERT_TRUE(status.ok()) << status.message();
     for (std::size_t output = 0; output < outputs.size(); ++output) {
       const auto actual = half_test::read<float>(outputs[output]);
+      feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output]);
     }
+  }
+}
+
+TEST(CudaGraphQwenRecurrent, D5NineProfilesUseCompleteGateAndActualStateFeedback) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  if (!d5_qwen35_fixture::root())
+    GTEST_SKIP() << "HYLE_D5_QWEN35_FIXTURE is required for actual 2B parameters";
+  for (auto profile : sem::kRecurrentProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(sem::gdn(profile, 8));
   }
 }
 

@@ -144,6 +144,7 @@ ggml_tensor *native_tensor(ggml_context *context,
 bool mature_model_operation(Operation operation) noexcept {
   return operation.get_if<MatMul>() || operation.get_if<Gather>() ||
          operation.get_if<GatedDeltaNet>() ||
+         operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::BFloatLinearF32>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
@@ -157,12 +158,13 @@ struct NativeProgram::State {
   ggml_runtime::MetadataArena arena;
   ggml_backend_t backend = nullptr;
   ggml_cgraph *graph = nullptr;
-  std::array<ggml_tensor *, 7> tensors{};
-  std::array<BufferOwner, 7> buffers;
-  std::array<void *, 7> native_buffers{};
-  std::array<std::size_t, 7> bytes{};
-  std::array<std::size_t, 7> alignments{};
-  std::array<bool, 7> packed{};
+  std::array<ggml_tensor *, 9> tensors{};
+  std::array<BufferOwner, 9> buffers;
+  std::array<BufferOwner, 4> gate_buffers;
+  std::array<void *, 9> native_buffers{};
+  std::array<std::size_t, 9> bytes{};
+  std::array<std::size_t, 9> alignments{};
+  std::array<bool, 9> packed{};
   std::vector<TensorDesc> outputs;
   std::vector<std::size_t> output_offsets;
   std::size_t port_count = 0;
@@ -179,6 +181,8 @@ struct NativeProgram::State {
       // Imported buffers are released while the original device owner exists.
       for (auto &buffer : buffers)
         ggml_backend_buffer_free(std::exchange(buffer.value, nullptr));
+      for (auto &buffer : gate_buffers)
+        ggml_backend_buffer_free(std::exchange(buffer.value, nullptr));
       ggml_backend_free(backend);
     }
   }
@@ -190,7 +194,7 @@ NativeProgram::~NativeProgram() = default;
 
 Status NativeProgram::validate(Operation operation,
                                std::span<const TensorDesc> inputs) noexcept {
-  if (!mature_model_operation(operation) || inputs.size() + 1 > 7)
+  if (!mature_model_operation(operation) || inputs.size() + 1 > 9)
     return Status::Unimplemented("ggml Metal model operation is not admitted");
   const auto output_count = operation_traits(operation).outputs;
   if (output_count > 2)
@@ -199,7 +203,8 @@ Status NativeProgram::validate(Operation operation,
   std::array<TensorDesc, 2> output_storage;
   const auto outputs = std::span(output_storage).first(output_count);
   HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, outputs));
-  if (operation.get_if<GatedDeltaNet>()) {
+  if (operation.get_if<GatedDeltaNet>() ||
+      operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
     const auto q = inputs[0].dimensions();
     const auto v = inputs[2].dimensions();
     if (v[2] % q[2] != 0 || q[3] != v[3] ||
@@ -268,8 +273,11 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
   HYLE_RETURN_IF_ERROR(validate(operation, inputs));
   try {
     auto state = std::make_unique<State>();
-    HYLE_ASSIGN_OR_RETURN(state->arena,
-                          ggml_runtime::MetadataArena::for_graph(12, 32, allocator));
+    const bool recurrent =
+        operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
+    HYLE_ASSIGN_OR_RETURN(
+        state->arena,
+        ggml_runtime::MetadataArena::for_graph(recurrent ? 20 : 12, 32, allocator));
     state->backend = ggml_backend_metal_init();
     if (state->backend == nullptr)
       return std::unexpected(Status::Unavailable("ggml Metal backend unavailable"));
@@ -296,9 +304,39 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       state->checked_index_port = 1;
       state->checked_index_count = inputs[1].element_count().value();
       state->checked_index_extent = inputs[0].dimensions()[0];
-    } else if (operation.get_if<GatedDeltaNet>()) {
-      result = ggml_gated_delta_net(state->arena.get(), t[0], t[1], t[2],
-                                    t[3], t[4], t[5], 1);
+    } else if (operation.get_if<GatedDeltaNet>() || recurrent) {
+      auto *context = state->arena.get();
+      auto *gate = t[3];
+      auto *beta = t[4];
+      auto *initial = t[5];
+      if (recurrent) {
+        auto *shifted = ggml_add(context, gate, t[6]);
+        auto *softplus = ggml_softplus(context, shifted);
+        gate = ggml_mul(context, softplus, t[5]);
+        beta = ggml_sigmoid(context, beta);
+        initial = t[7];
+        const std::array intermediates{shifted, softplus, gate, beta};
+        const auto type = ggml_backend_get_default_buffer_type(state->backend);
+        for (std::size_t i = 0; i < intermediates.size(); ++i) {
+          auto *tensor = intermediates[i];
+          if (!ggml_backend_supports_op(state->backend, tensor))
+            return std::unexpected(Status::Unimplemented(
+                "ggml Metal recurrent gate capability unavailable"));
+          auto &buffer = state->gate_buffers[i].value;
+          buffer = ggml_backend_alloc_buffer(
+              state->backend, ggml_backend_buft_get_alloc_size(type, tensor));
+          if (buffer == nullptr)
+            return std::unexpected(Status::ResourceExhausted(
+                "ggml Metal recurrent gate workspace allocation failed"));
+          if (ggml_backend_tensor_alloc(buffer, tensor,
+                                         ggml_backend_buffer_get_base(buffer)) !=
+              GGML_STATUS_SUCCESS)
+            return std::unexpected(Status::ResourceExhausted(
+                "ggml Metal recurrent gate tensor allocation failed"));
+        }
+      }
+      result = ggml_gated_delta_net(context, t[0], t[1], t[2], gate, beta,
+                                    initial, 1);
     } else if (operation.custom_as<model_ops::GroupedMatMul>()) {
       result = ggml_mul_mat_id(state->arena.get(), t[0], t[1], t[2]);
       state->checked_index_port = 2;
@@ -339,7 +377,7 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       return std::unexpected(Status::Unimplemented("ggml Metal model capability unavailable"));
     // Original specialization/cache, cold and shape-only; no user data or
     // mutable state is executed to manufacture a prepared replay claim.
-    if (operation.get_if<GatedDeltaNet>() &&
+    if ((operation.get_if<GatedDeltaNet>() || recurrent) &&
         !ggml_hyle_metal_prepare_gdn(state->backend, result))
       return std::unexpected(Status::Unavailable("ggml Metal recurrent pipeline preparation failed"));
     state->graph = ggml_new_graph_custom(state->arena.get(), 32, false);
@@ -377,7 +415,7 @@ Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
   if (ports.size() != s.port_count)
     return Status::InvalidArgument("ggml Metal model buffer count mismatch");
   try {
-    std::array<BufferOwner, 7> replacements;
+    std::array<BufferOwner, 9> replacements;
     for (std::size_t i = 0; i < ports.size(); ++i) {
       if (ports[i].metal_buffer == nullptr ||
           (s.packed[i] ? ports[i].offset != 0

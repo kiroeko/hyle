@@ -651,12 +651,23 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         return {};
       result = ggml_permute(context, result, 0, 2, 1, 3);
     }
-  } else if (node.operation.get_if<GatedDeltaNet>()) {
+  } else if (node.operation.get_if<GatedDeltaNet>() ||
+             node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
+    const auto input = [&](std::size_t port) {
+      return invocation.values[node.inputs[port]];
+    };
+    auto *gate = input(3);
+    auto *beta = input(4);
+    auto *initial = input(5);
+    if (node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
+      gate = ggml_mul(context,
+                      ggml_softplus(context, ggml_add(context, gate, input(6))),
+                      input(5));
+      beta = ggml_sigmoid(context, beta);
+      initial = input(7);
+    }
     auto *packed = ggml_gated_delta_net(
-        context, invocation.values[node.inputs[0]],
-        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
-        invocation.values[node.inputs[3]], invocation.values[node.inputs[4]],
-        invocation.values[node.inputs[5]], 1);
+        context, input(0), input(1), input(2), gate, beta, initial, 1);
     const auto score_count =
         static_cast<std::int64_t>(elements(recipe.values[node.outputs[0]]));
     const auto state_count =
@@ -1101,8 +1112,10 @@ bool supports(void *context, Operation operation,
            inputs[2].data_type() == DataType::kFloat32 &&
            inputs[3].data_type() == DataType::kFloat16 &&
            outputs[0].data_type() == DataType::kFloat32;
-  if (operation.get_if<GatedDeltaNet>()) {
-    if (outputs.size() != 2 || inputs.size() != 6 ||
+  const bool recurrent =
+      operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
+  if (operation.get_if<GatedDeltaNet>() || recurrent) {
+    if (outputs.size() != 2 || inputs.size() != (recurrent ? 8U : 6U) ||
         !std::ranges::all_of(inputs, [](const auto &description) {
           return description.is_dense() &&
                  description.data_type() == DataType::kFloat32;
@@ -1263,6 +1276,7 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<RoPE>() || operation.get_if<Hadamard>() ||
          operation.get_if<ScaledDotProductAttention>() ||
          operation.get_if<GatedDeltaNet>() ||
+         operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
          operation.custom_as<model_ops::BFloatLinearF32>().has_value() ||

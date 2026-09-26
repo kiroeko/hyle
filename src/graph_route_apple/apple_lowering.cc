@@ -38,6 +38,7 @@ struct Plan {
 
 bool fixed_ggml_model_operation(const compute::Operation &operation) noexcept {
   return operation.get_if<compute::GatedDeltaNet>() ||
+         operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||
          operation.custom_as<compute::model_ops::GroupedMatMul>() ||
          operation.custom_as<compute::model_ops::BFloatLinearF32>() ||
          operation.custom_as<

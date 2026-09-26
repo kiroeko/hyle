@@ -1290,6 +1290,7 @@ void run_q24_semantic_fragment(
                             std::span<const v::Argument>(arguments)));
   }
 
+  sem::StateFeedback feedback{fixture};
   for (const auto &expected : fixture.replays) {
     // The previous outputs have been checked; release their leases before
     // replay.
@@ -1299,7 +1300,7 @@ void run_q24_semantic_fragment(
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
       auto id = fixture.inputs[i];
       tensors[id.ordinal()] = upload(context, fixture.description(id),
-                                     std::span(expected.inputs[i]));
+                                     feedback.input(expected, i));
     }
     std::size_t call_index = 0;
     for (const auto &step : fixture.nodes) {
@@ -1326,11 +1327,23 @@ void run_q24_semantic_fragment(
       const auto actual =
           float_values(context, tensors[fixture.outputs[output].ordinal()]);
       SCOPED_TRACE(output);
+      feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output],
                          expected.native_outputs.empty()
                              ? std::span<const float>{}
                              : expected.native_outputs[output]);
     }
+  }
+}
+
+TEST(VulkanQwenRecurrent, D5NineProfilesUseCompleteGateAndActualStateFeedback) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  if (!d5_qwen35_fixture::root())
+    GTEST_SKIP() << "HYLE_D5_QWEN35_FIXTURE is required for actual 2B parameters";
+  for (auto profile : sem::kRecurrentProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(sem::gdn(profile, 8));
   }
 }
 

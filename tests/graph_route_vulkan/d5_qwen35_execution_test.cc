@@ -1306,11 +1306,12 @@ void run_q24_semantic_fragment(
   EXPECT_GT(report.managed_region_count, 0U);
   EXPECT_EQ(compiled->workload(), workload);
   auto invocation = compiled->create_invocation().value();
+  sem::StateFeedback feedback{fixture};
   for (const auto &expected : fixture.replays) {
     std::vector<v::Tensor> inputs;
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
       inputs.push_back(upload(context, fixture.description(fixture.inputs[i]),
-                              std::span(expected.inputs[i])));
+                              feedback.input(expected, i)));
     ASSERT_TRUE(invocation.bind(inputs).ok());
     auto work = invocation.submit();
     ASSERT_TRUE(work) << work.error().message();
@@ -1321,11 +1322,23 @@ void run_q24_semantic_fragment(
     for (std::size_t output = 0; output < outputs.size(); ++output) {
       const auto actual = float_values(context, outputs[output]);
       SCOPED_TRACE(output);
+      feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output],
                          expected.native_outputs.empty()
                              ? std::span<const float>{}
                              : expected.native_outputs[output]);
     }
+  }
+}
+
+TEST(VulkanGraphQwenRecurrent, D5NineProfilesUseCompleteGateAndActualStateFeedback) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  if (!d5_qwen35_fixture::root())
+    GTEST_SKIP() << "HYLE_D5_QWEN35_FIXTURE is required for actual 2B parameters";
+  for (auto profile : sem::kRecurrentProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(sem::gdn(profile, 8));
   }
 }
 

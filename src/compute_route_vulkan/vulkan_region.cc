@@ -100,9 +100,11 @@ bool transposed_dense_matrix(const TensorDesc &description) noexcept {
 }
 bool region_operation(const ProgramState &program, const PlanStep &step,
                       bool promote_bfloat) noexcept {
-  if (step.custom || step.inputs.size() > 6 || step.outputs.size() > 2)
+  const auto max_inputs =
+      step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ? 8U : 6U;
+  if (step.custom || step.inputs.size() > max_inputs || step.outputs.size() > 2)
     return false;
-  std::array<TensorDesc, 6> inputs;
+  std::array<TensorDesc, 8> inputs;
   std::size_t input_count = 0;
   for (const auto input : step.inputs) {
     const auto &description = program.values[input].description;

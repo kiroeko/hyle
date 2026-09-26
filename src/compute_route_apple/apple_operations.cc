@@ -81,6 +81,7 @@ Result<TensorDesc> float_description(const mx::array &input) noexcept {
 
 bool fixed_ggml_model_operation(const Operation &operation) noexcept {
   return operation.get_if<GatedDeltaNet>() ||
+         operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::BFloatLinearF32>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||

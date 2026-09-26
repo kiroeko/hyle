@@ -119,12 +119,14 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       if (!needed)
         continue;
       if ((operation.kind() == compute::OperationKind::kCustom &&
-           output_count != 1) ||
+           output_count != 1 &&
+           !(output_count == 2 &&
+             operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>())) ||
           (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
            operation.kind() != compute::OperationKind::kView))
         return std::unexpected(
             Status::Unimplemented("Vulkan Graph requires supported alias "
-                                  "semantics and single-output custom nodes"));
+                                  "semantics and qualified custom outputs"));
       cv::detail::PlanStep step;
       step.operation = operation;
       for (std::size_t port = 0; port < output_count; ++port) {
@@ -145,6 +147,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
         continue;
       const bool mature_custom =
           node->operation.custom_as<compute::model_ops::CausalConv1d>() ||
+          node->operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||
           node->operation.custom_as<compute::model_ops::GroupedMatMul>() ||
           node->operation.custom_as<compute::model_ops::BFloatLinearF32>() ||
           node->operation

@@ -331,8 +331,10 @@ bool tensor_operation_supports(Operation operation,
                                  return description.is_dense();
                                }) &&
            outputs[0].data_type() == DataType::kFloat32;
-  if (operation.get_if<GatedDeltaNet>()) {
-    if (outputs.size() != 2 || inputs.size() != 6 ||
+  const bool recurrent =
+      operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
+  if (operation.get_if<GatedDeltaNet>() || recurrent) {
+    if (outputs.size() != 2 || inputs.size() != (recurrent ? 8U : 6U) ||
         !std::ranges::all_of(inputs, [](const auto &description) {
           return description.is_dense() &&
                  description.data_type() == DataType::kFloat32;
@@ -679,11 +681,23 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
-  } else if (node.operation.get_if<GatedDeltaNet>()) {
+  } else if (node.operation.get_if<GatedDeltaNet>() ||
+             node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
+    const auto input = [&](std::size_t port) {
+      return values[node.inputs[port]];
+    };
+    auto *gate = input(3);
+    auto *beta = input(4);
+    auto *initial = input(5);
+    if (node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
+      gate = ggml_mul(context,
+                      ggml_softplus(context, ggml_add(context, gate, input(6))),
+                      input(5));
+      beta = ggml_sigmoid(context, beta);
+      initial = input(7);
+    }
     auto *packed = ggml_gated_delta_net(
-        context, values[node.inputs[0]], values[node.inputs[1]],
-        values[node.inputs[2]], values[node.inputs[3]], values[node.inputs[4]],
-        values[node.inputs[5]], 1);
+        context, input(0), input(1), input(2), gate, beta, initial, 1);
     const auto score_count = static_cast<std::int64_t>(
         *recipe.values[node.outputs[0]].element_count());
     const auto state_count = static_cast<std::int64_t>(

@@ -989,6 +989,70 @@ TEST(OperationModelOps, CausalConv1dKeepsNaturalSequenceLayout) {
   EXPECT_FALSE(infer_single_output(operation, invalid));
 }
 
+TEST(OperationModelOps, RecurrentRegionKeepsQualifiedShapeAndPrivateGates) {
+  const auto operation = model_ops::recurrent_gated_delta_net();
+  EXPECT_EQ(operation_name(operation), "recurrent-gated-delta-net");
+  EXPECT_EQ(operation_traits(operation).outputs, 2);
+  EXPECT_EQ(operation_traits(operation).alias, AliasPolicy::kNone);
+  const auto f32 = DataType::kFloat32;
+  for (const auto heads : {16, 48, 128}) {
+    for (const auto keys : {16, heads}) {
+      const auto gate = tensor(f32, 1, 1, heads, 1);
+      const std::array inputs{
+          tensor(f32, 1, 1, keys, 128), tensor(f32, 1, 1, keys, 128),
+          tensor(f32, 1, 1, heads, 128), gate, gate, gate, gate,
+          tensor(f32, 1, heads, 128, 128)};
+      std::array<TensorDesc, 2> outputs;
+      ASSERT_TRUE(infer_output_descriptions(operation, inputs, outputs).ok());
+      EXPECT_EQ(outputs[0], inputs[2]);
+      EXPECT_EQ(outputs[1], inputs[7]);
+      EXPECT_FALSE(infer_single_output(operation, inputs));
+    }
+  }
+}
+
+TEST(OperationModelOps, RecurrentRegionRejectsUnqualifiedPortsAtomically) {
+  const auto operation = model_ops::recurrent_gated_delta_net();
+  const auto f32 = DataType::kFloat32;
+  const auto gate = tensor(f32, 1, 1, 48, 1);
+  const std::array valid{
+      tensor(f32, 1, 1, 16, 128), tensor(f32, 1, 1, 16, 128),
+      tensor(f32, 1, 1, 48, 128), gate, gate, gate, gate,
+      tensor(f32, 1, 48, 128, 128)};
+  const auto sentinel = tensor(f32, 7);
+  const auto reject = [&](std::span<const TensorDesc> inputs) {
+    std::array outputs{sentinel, sentinel};
+    EXPECT_TRUE(infer_output_descriptions(operation, inputs, outputs)
+                    .IsInvalidArgument());
+    EXPECT_EQ(outputs[0], sentinel);
+    EXPECT_EQ(outputs[1], sentinel);
+  };
+  for (std::size_t port = 0; port < valid.size(); ++port) {
+    auto inputs = valid;
+    inputs[port] = TensorDesc::dense(DataType::kBFloat16,
+                                      valid[port].dimensions()).value();
+    reject(inputs);
+    for (std::size_t axis = 0; axis < 4; ++axis) {
+      std::array<std::int64_t, 4> shape;
+      std::ranges::copy(valid[port].dimensions(), shape.begin());
+      ++shape[axis];
+      inputs[port] = TensorDesc::dense(f32, shape).value();
+      reject(inputs);
+    }
+  }
+  auto inputs = valid;
+  inputs[3] = tensor(f32, 1, 1, 48, 128); // No per-channel gate domain.
+  reject(inputs);
+  inputs = valid;
+  inputs[5] = tensor(f32, 48); // Explicit rank-four coefficient contract.
+  reject(inputs);
+  reject(std::span(valid).first(7));
+  std::array outputs{sentinel};
+  EXPECT_TRUE(infer_output_descriptions(operation, valid, outputs)
+                  .IsInvalidArgument());
+  EXPECT_EQ(outputs[0], sentinel);
+}
+
 TEST(OperationModelOps, BFloatLinearF32KeepsNativeScorePrecision) {
   const auto bf16 = DataType::kBFloat16;
   const auto f32 = DataType::kFloat32;

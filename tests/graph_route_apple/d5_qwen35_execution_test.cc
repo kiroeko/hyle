@@ -1457,11 +1457,12 @@ void run_q24_semantic_fragment(
               std::string::npos);
   EXPECT_EQ(compiled->workload(), workload);
   auto invocation = compiled->create_invocation().value();
+  sem::StateFeedback feedback{fixture};
   for (const auto &expected : fixture.replays) {
     std::vector<mx::array> inputs;
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
       inputs.push_back(upload(context, fixture.description(fixture.inputs[i]),
-                              std::span(expected.inputs[i]))
+                              feedback.input(expected, i))
                            .native);
     ASSERT_TRUE(invocation.bind(inputs).ok());
     auto work = invocation.submit();
@@ -1472,8 +1473,20 @@ void run_q24_semantic_fragment(
     ASSERT_EQ(outputs.size(), full.outputs.size());
     for (std::size_t output = 0; output < outputs.size(); ++output) {
       const auto actual = float_values(outputs[output]);
+      feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output]);
     }
+  }
+}
+
+TEST(AppleGraphQwenRecurrent, D5NineProfilesUseCompleteGateAndActualStateFeedback) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  if (!d5_qwen35_fixture::root())
+    GTEST_SKIP() << "HYLE_D5_QWEN35_FIXTURE is required for actual 2B parameters";
+  for (auto profile : sem::kRecurrentProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(sem::gdn(profile, 8));
   }
 }
 

@@ -443,8 +443,13 @@ bool region_supports(const Operation &operation,
            query[3] == key[3] && inputs[1] == inputs[2] &&
            outputs[0] == inputs[0];
   }
-  if (operation.get_if<GatedDeltaNet>()) {
-    if (inputs.size() != 6 || outputs.size() != 2 ||
+  const bool recurrent =
+      operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
+  if (operation.get_if<GatedDeltaNet>() || recurrent) {
+    std::array<TensorDesc, 2> inferred;
+    if (inputs.size() != (recurrent ? 8U : 6U) || outputs.size() != 2 ||
+        !infer_output_descriptions(operation, inputs, inferred).ok() ||
+        !std::ranges::equal(inferred, outputs) ||
         !std::ranges::all_of(inputs, [](const auto &input) {
           return input.rank() == 4 && input.data_type() == DataType::kFloat32;
         }))
@@ -611,7 +616,8 @@ Result<Region> Region::create(NativeDevice device,
     // Other operations need at most three (Rsqrt: Fill, Sqrt, Div).
     auto capacity = recipe.inputs.size() + 16;
     for (const auto &node : recipe.nodes) {
-      capacity += node.operation.get_if<Scan>()            ? 16
+      capacity += node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ? 9
+                  : node.operation.get_if<Scan>()            ? 16
                   : node.operation.get_if<Reduce>()        ? 12
                   : node.operation.get_if<Scatter>()       ? 10
                   : node.operation.get_if<TopK>()          ? 10
@@ -804,12 +810,22 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
-      } else if (node.operation.get_if<GatedDeltaNet>()) {
+      } else if (node.operation.get_if<GatedDeltaNet>() ||
+                 node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
         auto *value = arguments[2];
+        auto *gate = arguments[3];
+        auto *beta = arguments[4];
         auto *initial = arguments[5];
-        auto *fused =
-            ggml_gated_delta_net(context, left, arguments[1], value,
-                                 arguments[3], arguments[4], initial, 1);
+        if (node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
+          gate = ggml_mul(context,
+                          ggml_softplus(context,
+                                        ggml_add(context, gate, arguments[6])),
+                          arguments[5]);
+          beta = ggml_sigmoid(context, beta);
+          initial = arguments[7];
+        }
+        auto *fused = ggml_gated_delta_net(
+            context, left, arguments[1], value, gate, beta, initial, 1);
         // Upstream owns the fused recurrence and concatenates scores/state.
         // Published ports have independent storage; initial state stays
         // read-only.
