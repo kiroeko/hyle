@@ -511,7 +511,9 @@ TEST(GgmlCudaTensor, IntegerConcatPreservesIndexBitsAcrossReplays) {
   auto program = prepare(ctx, Operation(Concat{.axis = 1}), inputs, std::span(&view, 1));
   ASSERT_TRUE(program) << program.error().message();
   EXPECT_EQ(program->provider().id, ggml_cuda::kProviderId);
-  auto invocation = program->create_invocation().value();
+  auto created = program->create_invocation();
+  ASSERT_TRUE(created) << created.error().message();
+  auto invocation = std::move(*created);
   auto queue = ctx.create_queue().value();
   for (int replay = 0; replay < 2; ++replay) {
     ASSERT_TRUE(aa.view().write(std::as_bytes(std::span(a))).ok());

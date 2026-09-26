@@ -617,8 +617,13 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
         continue;
       auto *part = ggml_reshape_3d(context, input(i), inner,
                                    description.dimensions()[selected], outer);
-      result = result ? ggml_concat(context, result, part, 1)
-                      : ggml_dup(context, part);
+      // This runtime admits I32 CPY/CONCAT but explicitly declines I32 DUP.
+      // Keep indices as integers, including a one-input Concat's owned copy.
+      if (!result && part->type == GGML_TYPE_I32)
+        result = ggml_cpy(context, part, ggml_dup_tensor(context, part));
+      else
+        result = result ? ggml_concat(context, result, part, 1)
+                        : ggml_dup(context, part);
     }
   } else if (node.operation.get_if<Gather>()) {
     result =
