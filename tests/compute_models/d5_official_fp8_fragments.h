@@ -86,6 +86,9 @@ inline sem::Fragment projection(const Case &shape, std::int64_t m) {
     }
   auto weight = f.constant(desc[1], std::move(w));
   f.outputs = {f.one(c::Operation(c::MatMul{}), {input, weight})};
+  // Two sparse terms with these dyadic codes/scales have an exact F32 sum.
+  // The general semantic-fragment absolute tolerance would mask small outputs.
+  f.exact_outputs = {0};
   for (int replay = 0; replay < 2; ++replay) {
     std::vector<std::byte> a(desc[0].required_bytes().value());
     std::vector<float> expected(m * shape.n);
