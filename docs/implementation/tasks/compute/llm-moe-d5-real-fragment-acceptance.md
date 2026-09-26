@@ -88,6 +88,16 @@ D5-A6 P1 尚未执行。Mac 额外 CPU Graph 检查的 ARM FP16 oracle 与把 BF
 画像转为 F32 后要求 oneDNN 融合的测试形状仍失败，不能写作 Mac 全套 selector PASS；
 它不代替本卡的 Windows CPU 产品机 verdict，后续须单独修正与复核。
 
+**当前混合权重 MoE 批次（`ea5cb859` → `ceef59d8` → `2e3d4c8d`）**：Qwen3.8-2.4T
+官方及两个 GGUF 画像共用完整 R10/R11 recipe；四路线八入口的六个真实投影角色、原生量化
+grouped、官方整链和量化整链共 32/32 项通过。CPU 唯一产品修改是既有 ggml F32 native-layout
+MatMul 的准入条件；公共 schema 的误判已纠正并撤销新增实现，GPU 无产品修改。完整 CPU
+owner 的唯一旧路由断言已迁移并定向复测，其余用例通过；不改写初跑失败记录。见
+[合并收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-mixed-moe-batch/README.md)。
+当前实现为 58,047 行 / 228 文件。接下来继续整批接通两个 GGUF 画像其它角色/region 的真实
+dtype、量化 grouped 错误 ID 和完整资源负例门，批末再做完整 selector、三交付和 P1；本部分
+收据不改变 48/176 ledger，不重复构建已通过的单个算子。
+
 **当前 BF16 full MoE 批次结果（部分收据）**：四路线各自的完整 Graph owner 与 Direct owner
 suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 final add 的三次变化输入
 重放及独立 oracle。Graph 的 CUDA 256-byte workspace 对齐缺陷已按 D5-F20 修复；Apple Direct

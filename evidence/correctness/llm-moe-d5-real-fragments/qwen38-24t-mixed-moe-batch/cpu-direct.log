@@ -1,0 +1,53 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5GgufGroupedExpert*:*D5FullRouter*:*D5GgufFullRouter*:*D5Qwen38_24TGgufMoeWeightRoles*
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuDefaultDirect
+[ RUN      ] CpuDefaultDirect.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] CpuDefaultDirect.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (5075 ms)
+[----------] 1 test from CpuDefaultDirect (5075 ms total)
+
+[----------] 3 tests from CpuQwen38_24T
+[ RUN      ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (3024 ms)
+[ RUN      ] CpuQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay
+[       OK ] CpuQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay (1865 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(88): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+matmul: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(790): UD-IQ4_XS
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(88): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+matmul: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(790): UD-IQ4_XS
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(88): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+matmul: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(790): Q8_0
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(88): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+matmul: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(790): Q8_0
+
+[  FAILED  ] CpuQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9814 ms)
+[----------] 3 tests from CpuQwen38_24T (14704 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 2 test suites ran. (19779 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CpuQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+
+ 1 FAILED TEST

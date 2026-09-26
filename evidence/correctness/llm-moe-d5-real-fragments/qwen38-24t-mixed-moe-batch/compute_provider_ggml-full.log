@@ -1,0 +1,91 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 41 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 41 tests from GgmlCpuProvider
+[ RUN      ] GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes
+[       OK ] GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes (2 ms)
+[ RUN      ] GgmlCpuProvider.MatureSwiGluCoversStorageTypesAndInputLayouts
+[       OK ] GgmlCpuProvider.MatureSwiGluCoversStorageTypesAndInputLayouts (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout
+[       OK ] GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently
+[       OK ] GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently (0 ms)
+[ RUN      ] GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet
+[       OK ] GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet (14 ms)
+[ RUN      ] GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry
+[       OK ] GgmlCpuProvider.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureLightningIndexerUsesOrdinaryEntryAndReplays
+[       OK ] GgmlCpuProvider.MatureLightningIndexerUsesOrdinaryEntryAndReplays (0 ms)
+[ RUN      ] GgmlCpuProvider.AdmittedUnarySpecialValuesAndHalfCastRounding
+[       OK ] GgmlCpuProvider.AdmittedUnarySpecialValuesAndHalfCastRounding (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureSigmoidPreservesBfloatBoundary
+[       OK ] GgmlCpuProvider.MatureSigmoidPreservesBfloatBoundary (0 ms)
+[ RUN      ] GgmlCpuProvider.DenseRankSixBroadcastStridedCopyConcatAndGather
+[       OK ] GgmlCpuProvider.DenseRankSixBroadcastStridedCopyConcatAndGather (0 ms)
+[ RUN      ] GgmlCpuProvider.GatherAxesPreserveTypesAndValidateCurrentStridedIndices
+[       OK ] GgmlCpuProvider.GatherAxesPreserveTypesAndValidateCurrentStridedIndices (1 ms)
+[ RUN      ] GgmlCpuProvider.GatherEmptyIndicesNeedNoPayload
+[       OK ] GgmlCpuProvider.GatherEmptyIndicesNeedNoPayload (0 ms)
+[ RUN      ] GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices
+[       OK ] GgmlCpuProvider.ScatterAddUsesMatureDuplicateReductionAndChecksIndices (0 ms)
+[ RUN      ] GgmlCpuProvider.ScatterAddWithEmptyIndicesCopiesTheBase
+[       OK ] GgmlCpuProvider.ScatterAddWithEmptyIndicesCopiesTheBase (0 ms)
+[ RUN      ] GgmlCpuProvider.ColumnBroadcastKeepsOperandOrder
+[       OK ] GgmlCpuProvider.ColumnBroadcastKeepsOperandOrder (0 ms)
+[ RUN      ] GgmlCpuProvider.GeneralBroadcastPreservesHeadBatchAndOperandAxes
+[       OK ] GgmlCpuProvider.GeneralBroadcastPreservesHeadBatchAndOperandAxes (3 ms)
+[ RUN      ] GgmlCpuProvider.SelectedReductionsCoverAllRankSixAxisSets
+[       OK ] GgmlCpuProvider.SelectedReductionsCoverAllRankSixAxisSets (15 ms)
+[ RUN      ] GgmlCpuProvider.EmptyReductionsPublishIdentitiesAndScalarValues
+[       OK ] GgmlCpuProvider.EmptyReductionsPublishIdentitiesAndScalarValues (0 ms)
+[ RUN      ] GgmlCpuProvider.PersistentIndependentSlotsHonorExecutorAndClose
+[       OK ] GgmlCpuProvider.PersistentIndependentSlotsHonorExecutorAndClose (0 ms)
+[ RUN      ] GgmlCpuProvider.DeclinesUnqualifiedDomainsAndInvalidThreadBudget
+[       OK ] GgmlCpuProvider.DeclinesUnqualifiedDomainsAndInvalidThreadBudget (0 ms)
+[ RUN      ] GgmlCpuProvider.D5RouterSoftmaxUsesMatureRowsAndKeepsNarrowDomain
+[       OK ] GgmlCpuProvider.D5RouterSoftmaxUsesMatureRowsAndKeepsNarrowDomain (0 ms)
+[ RUN      ] GgmlCpuProvider.InvocationAllocationFailureRollsBackAndCanRecover
+[       OK ] GgmlCpuProvider.InvocationAllocationFailureRollsBackAndCanRecover (0 ms)
+[ RUN      ] GgmlCpuProvider.StandardScanHandlesAxisStridesAndCheckedOverflow
+[       OK ] GgmlCpuProvider.StandardScanHandlesAxisStridesAndCheckedOverflow (0 ms)
+[ RUN      ] GgmlCpuProvider.StandardSelectionPreservesStableOrderAndStorageBits
+[       OK ] GgmlCpuProvider.StandardSelectionPreservesStableOrderAndStorageBits (0 ms)
+[ RUN      ] GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota
+[       OK ] GgmlCpuProvider.StandardScanReplaysWithoutAllocationsAndHonorsQuota (0 ms)
+[ RUN      ] GgmlCpuProvider.StandardSelectionKeepsAdjacentLargeIntegersDistinct
+[       OK ] GgmlCpuProvider.StandardSelectionKeepsAdjacentLargeIntegersDistinct (0 ms)
+[ RUN      ] GgmlCpuProvider.EmptyScanHasNoNativeEpisodeOrPayloadAccess
+[       OK ] GgmlCpuProvider.EmptyScanHasNoNativeEpisodeOrPayloadAccess (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureLinearRopeAndHadamardUseOrdinaryEntry
+[       OK ] GgmlCpuProvider.MatureLinearRopeAndHadamardUseOrdinaryEntry (0 ms)
+[ RUN      ] GgmlCpuProvider.Bfloat16AndFloatRopeMatchQualifiedUpstreamTypes
+[       OK ] GgmlCpuProvider.Bfloat16AndFloatRopeMatchQualifiedUpstreamTypes (0 ms)
+[ RUN      ] GgmlCpuProvider.NativeQ4KMatMulImportsGgufBytesAndReplays
+[       OK ] GgmlCpuProvider.NativeQ4KMatMulImportsGgufBytesAndReplays (0 ms)
+[ RUN      ] GgmlCpuProvider.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds
+[       OK ] GgmlCpuProvider.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds (0 ms)
+[ RUN      ] GgmlCpuProvider.RepresentativeNativeGgufFormatsExecuteWithoutRepacking
+[       OK ] GgmlCpuProvider.RepresentativeNativeGgufFormatsExecuteWithoutRepacking (0 ms)
+[ RUN      ] GgmlCpuProvider.NativeQ8GroupedExpertsUseExactExpertIds
+[       OK ] GgmlCpuProvider.NativeQ8GroupedExpertsUseExactExpertIds (0 ms)
+[ RUN      ] GgmlCpuProvider.BfloatRouterMatMulRetainsNativeF32Score
+[       OK ] GgmlCpuProvider.BfloatRouterMatMulRetainsNativeF32Score (0 ms)
+[ RUN      ] GgmlCpuProvider.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+[       OK ] GgmlCpuProvider.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (0 ms)
+[ RUN      ] GgmlCpuProvider.MalformedNativeGgufFormatIsRejectedAtPrepare
+[       OK ] GgmlCpuProvider.MalformedNativeGgufFormatIsRejectedAtPrepare (0 ms)
+[ RUN      ] GgmlCpuProvider.BatchedMatMulBroadcastsNativeTransposedWeightsWithoutCopy
+[       OK ] GgmlCpuProvider.BatchedMatMulBroadcastsNativeTransposedWeightsWithoutCopy (0 ms)
+[ RUN      ] GgmlCpuProvider.HalfMatMulCoversDecodeTailAndRankFourBroadcast
+[       OK ] GgmlCpuProvider.HalfMatMulCoversDecodeTailAndRankFourBroadcast (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureAttentionHandlesQwen35Head256GqaDecode
+[       OK ] GgmlCpuProvider.MatureAttentionHandlesQwen35Head256GqaDecode (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureAttentionHandlesQwen38Head256GqaDecode
+[       OK ] GgmlCpuProvider.MatureAttentionHandlesQwen38Head256GqaDecode (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill
+[       OK ] GgmlCpuProvider.MatureAttentionAppliesCausalMaskForHalfPrefill (1 ms)
+[----------] 41 tests from GgmlCpuProvider (41 ms total)
+
+[----------] Global test environment tear-down
+[==========] 41 tests from 1 test suite ran. (41 ms total)
+[  PASSED  ] 41 tests.

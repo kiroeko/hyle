@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：复核纠正公共 schema 已支持 F32 blocked grouped 权重；CPU ggml 现有原生路径按 Qwen3.8-2.4T IQ4_XS/Q8_0 真实形状批量验收，不新增数学。"
+      "summary": "M3-D5-F21 AUDITED：原 schema 已支持 grouped GGUF；实际 F32 router 准入缺口已用既有 ggml MatMul 修复。CPU 混合 MoE 与相关 owner 检查通过，旧路由断言迁移复测通过；无新增数学。"
     },
     {
       "module": "graph_provider_onednn",
@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：六个 Qwen 画像已重新签署 48/176 格；复核确认公共 schema 已支持量化 grouped，撤销误判所增实现；继续四路线原生 ggml_mul_mat_id 真实形状批量验收，自研数学冻结。"
+      "summary": "M3-D5-F21 AUDITED：48/176 完整格；2.4T 混合权重 MoE 的四路线八入口 32/32 批次检查通过，完整其它角色、负例、三交付和 P1 仍待批末验收；公共 schema 误判已纠正。"
     },
     {
       "module": "compute_backend_cpu",
@@ -529,7 +529,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；固定 Vulkan ggml 已有 canonical grouped GGUF 域，按 2.4T IQ4_XS/Q8_0 完整片段复核，缺陷才定向修改。"
+      "summary": "M3-D5-F21 AUDITED：2.4T IQ4_XS/Q8_0 grouped、混合权重完整 MoE 和变化输入/ID 在 Vulkan Direct/Graph 本批各 4/4 通过，无新增产品修改；完整画像与交付/P1 仍待批末。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -546,7 +546,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；CUDA ggml 已有量化映射及 mul_mat_id 的 F32 logical packed 准入，公共 schema 也已支持，继续批量复核 2.4T IQ4_XS/Q8_0 真实片段。"
+      "summary": "M3-D5-F21 AUDITED：2.4T IQ4_XS/Q8_0 grouped、混合权重完整 MoE 和变化输入/ID 在 CUDA Direct/Graph 本批各 4/4 通过，无新增产品修改；完整画像与交付/P1 仍待批末。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -570,7 +570,7 @@
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；Metal ggml 已有量化 grouped 权重域，按 2.4T IQ4_XS/Q8_0 完整片段复核，缺陷才定向修改。"
+      "summary": "M3-D5-F21 AUDITED：2.4T IQ4_XS/Q8_0 grouped、混合权重完整 MoE 和变化输入/ID 在 Apple Direct/Graph 本批各 4/4 通过，无新增产品修改；完整画像与交付/P1 仍待批末。"
     },
     {
       "module": "compute_provider_iree_vulkan",

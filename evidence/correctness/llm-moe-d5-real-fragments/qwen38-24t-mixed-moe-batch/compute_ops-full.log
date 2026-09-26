@@ -1,0 +1,168 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 51 tests from 20 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from OperationViewAlias
+[ RUN      ] OperationViewAlias.CheckedSliceOffsetsMatchAddressingAndEmptyRules
+[       OK ] OperationViewAlias.CheckedSliceOffsetsMatchAddressingAndEmptyRules (0 ms)
+[ RUN      ] OperationViewAlias.RejectsUnrepresentableOffsetsAndInconsistentSpans
+[       OK ] OperationViewAlias.RejectsUnrepresentableOffsetsAndInconsistentSpans (0 ms)
+[----------] 2 tests from OperationViewAlias (0 ms total)
+
+[----------] 1 test from OperationCatalog
+[ RUN      ] OperationCatalog.HasTwentyTwoTypedBuiltinFamiliesAndInvalidDefault
+[       OK ] OperationCatalog.HasTwentyTwoTypedBuiltinFamiliesAndInvalidDefault (0 ms)
+[----------] 1 test from OperationCatalog (0 ms total)
+
+[----------] 1 test from OperationScan
+[ RUN      ] OperationScan.ChecksAxisAndInputDomainWithoutPayload
+[       OK ] OperationScan.ChecksAxisAndInputDomainWithoutPayload (0 ms)
+[----------] 1 test from OperationScan (0 ms total)
+
+[----------] 1 test from OperationViews
+[ RUN      ] OperationViews.InferReshapeSlicePermutationAndBroadcastWithoutKernel
+[       OK ] OperationViews.InferReshapeSlicePermutationAndBroadcastWithoutKernel (0 ms)
+[----------] 1 test from OperationViews (0 ms total)
+
+[----------] 1 test from OperationMaterialization
+[ RUN      ] OperationMaterialization.CoversCopyFillAndCastContracts
+[       OK ] OperationMaterialization.CoversCopyFillAndCastContracts (0 ms)
+[----------] 1 test from OperationMaterialization (0 ms total)
+
+[----------] 3 tests from OperationElementwise
+[ RUN      ] OperationElementwise.AppliesBroadcastAndSelectTypeRules
+[       OK ] OperationElementwise.AppliesBroadcastAndSelectTypeRules (0 ms)
+[ RUN      ] OperationElementwise.SelectIncludesConditionInBroadcastShape
+[       OK ] OperationElementwise.SelectIncludesConditionInBroadcastShape (0 ms)
+[ RUN      ] OperationElementwise.SoftplusPreservesFloatingDomainAndRejectsInteger
+[       OK ] OperationElementwise.SoftplusPreservesFloatingDomainAndRejectsInteger (0 ms)
+[----------] 3 tests from OperationElementwise (0 ms total)
+
+[----------] 2 tests from OperationReductionAndNorm
+[ RUN      ] OperationReductionAndNorm.PreserveExplicitAxesAndParameterShapes
+[       OK ] OperationReductionAndNorm.PreserveExplicitAxesAndParameterShapes (0 ms)
+[ RUN      ] OperationReductionAndNorm.HalfInputPreservesFloat32LearnedParameters
+[       OK ] OperationReductionAndNorm.HalfInputPreservesFloat32LearnedParameters (0 ms)
+[----------] 2 tests from OperationReductionAndNorm (0 ms total)
+
+[----------] 4 tests from OperationQuantizedMatMul
+[ RUN      ] OperationQuantizedMatMul.InfersSignedAndAffineGroupedLinearProjections
+[       OK ] OperationQuantizedMatMul.InfersSignedAndAffineGroupedLinearProjections (0 ms)
+[ RUN      ] OperationQuantizedMatMul.RejectsIncompleteAndContradictoryContracts
+[       OK ] OperationQuantizedMatMul.RejectsIncompleteAndContradictoryContracts (0 ms)
+[ RUN      ] OperationQuantizedMatMul.PreservesEmptyOutputsAndChecksOutputOverflow
+[       OK ] OperationQuantizedMatMul.PreservesEmptyOutputsAndChecksOutputOverflow (0 ms)
+[ RUN      ] OperationQuantizedMatMul.CarriesTheWholeDescriptorAcrossSharedLibrary
+[       OK ] OperationQuantizedMatMul.CarriesTheWholeDescriptorAcrossSharedLibrary (0 ms)
+[----------] 4 tests from OperationQuantizedMatMul (0 ms total)
+
+[----------] 1 test from OperationHadamard
+[ RUN      ] OperationHadamard.PreservesShapeAndRequiresPowerOfTwoFinalDimension
+[       OK ] OperationHadamard.PreservesShapeAndRequiresPowerOfTwoFinalDimension (0 ms)
+[----------] 1 test from OperationHadamard (0 ms total)
+
+[----------] 1 test from OperationMatMul
+[ RUN      ] OperationMatMul.BroadcastsBatchDimensionsWithoutLayoutFlags
+[       OK ] OperationMatMul.BroadcastsBatchDimensionsWithoutLayoutFlags (0 ms)
+[----------] 1 test from OperationMatMul (0 ms total)
+
+[----------] 1 test from OperationGatedActivation
+[ RUN      ] OperationGatedActivation.SupportsPackedAndSeparateConsumerShapes
+[       OK ] OperationGatedActivation.SupportsPackedAndSeparateConsumerShapes (0 ms)
+[----------] 1 test from OperationGatedActivation (0 ms total)
+
+[----------] 2 tests from OperationIndexing
+[ RUN      ] OperationIndexing.ScatterAssignmentAndAdditionHaveDistinctPrecision
+[       OK ] OperationIndexing.ScatterAssignmentAndAdditionHaveDistinctPrecision (0 ms)
+[ RUN      ] OperationIndexing.CoversGatherScatterAndVariadicConcat
+[       OK ] OperationIndexing.CoversGatherScatterAndVariadicConcat (0 ms)
+[----------] 2 tests from OperationIndexing (0 ms total)
+
+[----------] 2 tests from OperationTransformer
+[ RUN      ] OperationTransformer.CoversRoPESoftmaxTopKAndAttentionShapes
+[       OK ] OperationTransformer.CoversRoPESoftmaxTopKAndAttentionShapes (0 ms)
+[ RUN      ] OperationTransformer.GroupedAttentionPreservesQueryHeadsAndMaskDomain
+[       OK ] OperationTransformer.GroupedAttentionPreservesQueryHeadsAndMaskDomain (0 ms)
+[----------] 2 tests from OperationTransformer (0 ms total)
+
+[----------] 2 tests from OperationCustom
+[ RUN      ] OperationCustom.UsesInlineTypedDescriptorWithoutGlobalRegistry
+[       OK ] OperationCustom.UsesInlineTypedDescriptorWithoutGlobalRegistry (0 ms)
+[ RUN      ] OperationCustom.DecodesSchemaIdentityAcrossSharedFactorBoundary
+[       OK ] OperationCustom.DecodesSchemaIdentityAcrossSharedFactorBoundary (0 ms)
+[----------] 2 tests from OperationCustom (0 ms total)
+
+[----------] 7 tests from OperationResources
+[ RUN      ] OperationResources.ReturnsOwnedAccessValuesFromCopiedInlineDescriptor
+[       OK ] OperationResources.ReturnsOwnedAccessValuesFromCopiedInlineDescriptor (0 ms)
+[ RUN      ] OperationResources.ValidatesFullFiniteArityAndRejectsIndexBeforeCallback
+[       OK ] OperationResources.ValidatesFullFiniteArityAndRejectsIndexBeforeCallback (0 ms)
+[ RUN      ] OperationResources.RejectsInvalidEffectAndCountBeforeInference
+[       OK ] OperationResources.RejectsInvalidEffectAndCountBeforeInference (0 ms)
+[ RUN      ] OperationResources.RejectsMissingOrPotentiallyThrowingAccessCallback
+[       OK ] OperationResources.RejectsMissingOrPotentiallyThrowingAccessCallback (0 ms)
+[ RUN      ] OperationResources.RejectsMalformedAccessAtAnyPort
+[       OK ] OperationResources.RejectsMalformedAccessAtAnyPort (0 ms)
+[ RUN      ] OperationResources.PureAndUnknownEffectsDoNotRequireResourceCallbacks
+[       OK ] OperationResources.PureAndUnknownEffectsDoNotRequireResourceCallbacks (0 ms)
+[ RUN      ] OperationResources.UsesProducerAccessCallbackAcrossSharedFactorBoundary
+[       OK ] OperationResources.UsesProducerAccessCallbackAcrossSharedFactorBoundary (0 ms)
+[----------] 7 tests from OperationResources (0 ms total)
+
+[----------] 2 tests from OperationGatedDeltaNet
+[ RUN      ] OperationGatedDeltaNet.PreservesExplicitStateAndGroupedHeadContract
+[       OK ] OperationGatedDeltaNet.PreservesExplicitStateAndGroupedHeadContract (0 ms)
+[ RUN      ] OperationGatedDeltaNet.RejectsWrongGatesStateTypesAndArityAtomically
+[       OK ] OperationGatedDeltaNet.RejectsWrongGatesStateTypesAndArityAtomically (0 ms)
+[----------] 2 tests from OperationGatedDeltaNet (0 ms total)
+
+[----------] 5 tests from OperationModelOps
+[ RUN      ] OperationModelOps.CausalConv1dKeepsNaturalSequenceLayout
+[       OK ] OperationModelOps.CausalConv1dKeepsNaturalSequenceLayout (0 ms)
+[ RUN      ] OperationModelOps.BFloatLinearF32KeepsNativeScorePrecision
+[       OK ] OperationModelOps.BFloatLinearF32KeepsNativeScorePrecision (0 ms)
+[ RUN      ] OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts
+[       OK ] OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts (0 ms)
+[ RUN      ] OperationModelOps.GroupedExpertAcceptsNativeGgufWeights
+[       OK ] OperationModelOps.GroupedExpertAcceptsNativeGgufWeights (0 ms)
+[ RUN      ] OperationModelOps.LightningIndexerKeepsSparseModelLayout
+[       OK ] OperationModelOps.LightningIndexerKeepsSparseModelLayout (0 ms)
+[----------] 5 tests from OperationModelOps (0 ms total)
+
+[----------] 2 tests from OperationValidation
+[ RUN      ] OperationValidation.RequiresExactInputAndOutputSpans
+[       OK ] OperationValidation.RequiresExactInputAndOutputSpans (0 ms)
+[ RUN      ] OperationValidation.RejectsUnknownTypedModesBeforeShapeInference
+[       OK ] OperationValidation.RejectsUnknownTypedModesBeforeShapeInference (0 ms)
+[----------] 2 tests from OperationValidation (0 ms total)
+
+[----------] 6 tests from ComputeOpsTensorDesc
+[ RUN      ] ComputeOpsTensorDesc.CoversEveryPublicScalarWidth
+[       OK ] ComputeOpsTensorDesc.CoversEveryPublicScalarWidth (0 ms)
+[ RUN      ] ComputeOpsTensorDesc.OwnsPortableShapeAndStrideFactsWithoutStorage
+[       OK ] ComputeOpsTensorDesc.OwnsPortableShapeAndStrideFactsWithoutStorage (0 ms)
+[ RUN      ] ComputeOpsTensorDesc.KeepsBlockedEncodingSeparateFromLogicalType
+[       OK ] ComputeOpsTensorDesc.KeepsBlockedEncodingSeparateFromLogicalType (0 ms)
+[ RUN      ] ComputeOpsTensorDesc.RejectsSchemasThatCannotBeRepresented
+[       OK ] ComputeOpsTensorDesc.RejectsSchemasThatCannotBeRepresented (0 ms)
+[ RUN      ] ComputeOpsTensorDesc.ZeroExtentMakesElementCountZeroBeforeMultiplication
+[       OK ] ComputeOpsTensorDesc.ZeroExtentMakesElementCountZeroBeforeMultiplication (0 ms)
+[ RUN      ] ComputeOpsTensorDesc.TransposeSwapsOnlyMatrixAxesForBatchedLayouts
+[       OK ] ComputeOpsTensorDesc.TransposeSwapsOnlyMatrixAxesForBatchedLayouts (0 ms)
+[----------] 6 tests from ComputeOpsTensorDesc (0 ms total)
+
+[----------] 5 tests from ComputeOpsLowPrecision
+[ RUN      ] ComputeOpsLowPrecision.Float8PhysicalSizesAndLogicalOrientation
+[       OK ] ComputeOpsLowPrecision.Float8PhysicalSizesAndLogicalOrientation (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.Mxfp4BlockAxisFollowsLogicalK
+[       OK ] ComputeOpsLowPrecision.Mxfp4BlockAxisFollowsLogicalK (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.GgufCatalogPreservesExactNativeBlocks
+[       OK ] ComputeOpsLowPrecision.GgufCatalogPreservesExactNativeBlocks (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.GgufGroupedWeightsKeepExpertRowAndKOrder
+[       OK ] ComputeOpsLowPrecision.GgufGroupedWeightsKeepExpertRowAndKOrder (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.RejectsIncompleteBlocksAndOverflow
+[       OK ] ComputeOpsLowPrecision.RejectsIncompleteBlocksAndOverflow (0 ms)
+[----------] 5 tests from ComputeOpsLowPrecision (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 51 tests from 20 test suites ran. (0 ms total)
+[  PASSED  ] 51 tests.

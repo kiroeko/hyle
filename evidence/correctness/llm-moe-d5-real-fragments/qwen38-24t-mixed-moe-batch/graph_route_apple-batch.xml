@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="4" failures="0" disabled="0" errors="0" time="8.282" timestamp="2026-09-26T10:07:47.099" name="AllTests">
+  <testsuite name="AppleGraphQwen38_24T" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="5.944" timestamp="2026-09-26T10:07:47.099">
+    <testcase name="D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds" file="/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc" line="1278" status="run" result="completed" time="1.477" timestamp="2026-09-26T10:07:47.099" classname="AppleGraphQwen38_24T" />
+    <testcase name="D5FullRouterSharedExpertAndNearTieReplay" file="/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc" line="1456" status="run" result="completed" time="0.554" timestamp="2026-09-26T10:07:48.576" classname="AppleGraphQwen38_24T" />
+    <testcase name="D5GgufFullRouterSharedExpertAndNearTieReplay" file="/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc" line="1460" status="run" result="completed" time="3.913" timestamp="2026-09-26T10:07:49.130" classname="AppleGraphQwen38_24T" />
+  </testsuite>
+  <testsuite name="AppleGraphD5" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="2.337" timestamp="2026-09-26T10:07:53.043">
+    <testcase name="D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions" file="/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc" line="490" status="run" result="completed" time="2.337" timestamp="2026-09-26T10:07:53.043" classname="AppleGraphD5" />
+  </testsuite>
+</testsuites>

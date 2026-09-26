@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="51" failures="0" disabled="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350" name="AllTests">
+  <testsuite name="OperationViewAlias" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="CheckedSliceOffsetsMatchAddressingAndEmptyRules" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="46" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationViewAlias" />
+    <testcase name="RejectsUnrepresentableOffsetsAndInconsistentSpans" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="72" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationViewAlias" />
+  </testsuite>
+  <testsuite name="OperationCatalog" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="HasTwentyTwoTypedBuiltinFamiliesAndInvalidDefault" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="88" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationCatalog" />
+  </testsuite>
+  <testsuite name="OperationScan" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="ChecksAxisAndInputDomainWithoutPayload" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="133" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationScan" />
+  </testsuite>
+  <testsuite name="OperationViews" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="InferReshapeSlicePermutationAndBroadcastWithoutKernel" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="162" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationViews" />
+  </testsuite>
+  <testsuite name="OperationMaterialization" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="CoversCopyFillAndCastContracts" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="188" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationMaterialization" />
+  </testsuite>
+  <testsuite name="OperationElementwise" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="AppliesBroadcastAndSelectTypeRules" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="211" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationElementwise" />
+    <testcase name="SelectIncludesConditionInBroadcastShape" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="229" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationElementwise" />
+    <testcase name="SoftplusPreservesFloatingDomainAndRejectsInteger" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="257" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationElementwise" />
+  </testsuite>
+  <testsuite name="OperationReductionAndNorm" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="PreserveExplicitAxesAndParameterShapes" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="271" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationReductionAndNorm" />
+    <testcase name="HalfInputPreservesFloat32LearnedParameters" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="288" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationReductionAndNorm" />
+  </testsuite>
+  <testsuite name="OperationQuantizedMatMul" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="InfersSignedAndAffineGroupedLinearProjections" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="324" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationQuantizedMatMul" />
+    <testcase name="RejectsIncompleteAndContradictoryContracts" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="380" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationQuantizedMatMul" />
+    <testcase name="PreservesEmptyOutputsAndChecksOutputOverflow" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="440" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationQuantizedMatMul" />
+    <testcase name="CarriesTheWholeDescriptorAcrossSharedLibrary" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="848" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationQuantizedMatMul" />
+  </testsuite>
+  <testsuite name="OperationHadamard" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="PreservesShapeAndRequiresPowerOfTwoFinalDimension" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="351" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationHadamard" />
+  </testsuite>
+  <testsuite name="OperationMatMul" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="BroadcastsBatchDimensionsWithoutLayoutFlags" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="461" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationMatMul" />
+  </testsuite>
+  <testsuite name="OperationGatedActivation" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="SupportsPackedAndSeparateConsumerShapes" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="474" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationGatedActivation" />
+  </testsuite>
+  <testsuite name="OperationIndexing" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="ScatterAssignmentAndAdditionHaveDistinctPrecision" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="485" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationIndexing" />
+    <testcase name="CoversGatherScatterAndVariadicConcat" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="500" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationIndexing" />
+  </testsuite>
+  <testsuite name="OperationTransformer" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="CoversRoPESoftmaxTopKAndAttentionShapes" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="518" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationTransformer" />
+    <testcase name="GroupedAttentionPreservesQueryHeadsAndMaskDomain" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="562" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationTransformer" />
+  </testsuite>
+  <testsuite name="OperationCustom" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="UsesInlineTypedDescriptorWithoutGlobalRegistry" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="675" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationCustom" />
+    <testcase name="DecodesSchemaIdentityAcrossSharedFactorBoundary" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="862" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationCustom" />
+  </testsuite>
+  <testsuite name="OperationResources" tests="7" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="ReturnsOwnedAccessValuesFromCopiedInlineDescriptor" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="747" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+    <testcase name="ValidatesFullFiniteArityAndRejectsIndexBeforeCallback" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="764" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+    <testcase name="RejectsInvalidEffectAndCountBeforeInference" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="783" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+    <testcase name="RejectsMissingOrPotentiallyThrowingAccessCallback" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="807" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+    <testcase name="RejectsMalformedAccessAtAnyPort" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="820" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+    <testcase name="PureAndUnknownEffectsDoNotRequireResourceCallbacks" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="832" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+    <testcase name="UsesProducerAccessCallbackAcrossSharedFactorBoundary" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="875" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationResources" />
+  </testsuite>
+  <testsuite name="OperationGatedDeltaNet" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="PreservesExplicitStateAndGroupedHeadContract" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="892" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationGatedDeltaNet" />
+    <testcase name="RejectsWrongGatesStateTypesAndArityAtomically" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="926" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationGatedDeltaNet" />
+  </testsuite>
+  <testsuite name="OperationModelOps" tests="5" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="CausalConv1dKeepsNaturalSequenceLayout" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="973" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationModelOps" />
+    <testcase name="BFloatLinearF32KeepsNativeScorePrecision" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="992" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationModelOps" />
+    <testcase name="GroupedExpertAndHyperConnectionKeepModelLayouts" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="1012" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationModelOps" />
+    <testcase name="GroupedExpertAcceptsNativeGgufWeights" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="1064" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationModelOps" />
+    <testcase name="LightningIndexerKeepsSparseModelLayout" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="1093" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationModelOps" />
+  </testsuite>
+  <testsuite name="OperationValidation" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="RequiresExactInputAndOutputSpans" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="1113" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationValidation" />
+    <testcase name="RejectsUnknownTypedModesBeforeShapeInference" file="C:\public\project-hyle\hyle\tests\compute_ops\operation_test.cc" line="1124" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="OperationValidation" />
+  </testsuite>
+  <testsuite name="ComputeOpsTensorDesc" tests="6" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.350">
+    <testcase name="CoversEveryPublicScalarWidth" file="C:\public\project-hyle\hyle\tests\compute_ops\tensor_desc_test.cc" line="20" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="ComputeOpsTensorDesc" />
+    <testcase name="OwnsPortableShapeAndStrideFactsWithoutStorage" file="C:\public\project-hyle\hyle\tests\compute_ops\tensor_desc_test.cc" line="39" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="ComputeOpsTensorDesc" />
+    <testcase name="KeepsBlockedEncodingSeparateFromLogicalType" file="C:\public\project-hyle\hyle\tests\compute_ops\tensor_desc_test.cc" line="53" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="ComputeOpsTensorDesc" />
+    <testcase name="RejectsSchemasThatCannotBeRepresented" file="C:\public\project-hyle\hyle\tests\compute_ops\tensor_desc_test.cc" line="67" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="ComputeOpsTensorDesc" />
+    <testcase name="ZeroExtentMakesElementCountZeroBeforeMultiplication" file="C:\public\project-hyle\hyle\tests\compute_ops\tensor_desc_test.cc" line="79" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.350" classname="ComputeOpsTensorDesc" />
+    <testcase name="TransposeSwapsOnlyMatrixAxesForBatchedLayouts" file="C:\public\project-hyle\hyle\tests\compute_ops\tensor_desc_test.cc" line="90" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.351" classname="ComputeOpsTensorDesc" />
+  </testsuite>
+  <testsuite name="ComputeOpsLowPrecision" tests="5" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-09-26T09:58:09.351">
+    <testcase name="Float8PhysicalSizesAndLogicalOrientation" file="C:\public\project-hyle\hyle\tests\compute_ops\low_precision_test.cc" line="14" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.351" classname="ComputeOpsLowPrecision" />
+    <testcase name="Mxfp4BlockAxisFollowsLogicalK" file="C:\public\project-hyle\hyle\tests\compute_ops\low_precision_test.cc" line="45" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.351" classname="ComputeOpsLowPrecision" />
+    <testcase name="GgufCatalogPreservesExactNativeBlocks" file="C:\public\project-hyle\hyle\tests\compute_ops\low_precision_test.cc" line="70" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.351" classname="ComputeOpsLowPrecision" />
+    <testcase name="GgufGroupedWeightsKeepExpertRowAndKOrder" file="C:\public\project-hyle\hyle\tests\compute_ops\low_precision_test.cc" line="105" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.351" classname="ComputeOpsLowPrecision" />
+    <testcase name="RejectsIncompleteBlocksAndOverflow" file="C:\public\project-hyle\hyle\tests\compute_ops\low_precision_test.cc" line="119" status="run" result="completed" time="0." timestamp="2026-09-26T09:58:09.351" classname="ComputeOpsLowPrecision" />
+  </testsuite>
+</testsuites>

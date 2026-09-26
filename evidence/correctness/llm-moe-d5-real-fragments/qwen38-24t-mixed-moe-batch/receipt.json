@@ -1,0 +1,412 @@
+{
+  "schema_version": 1,
+  "scope": "D5-F21 partial batch: exact Qwen3.8-2.4T mixed GGUF weight roles and complete R10/R11 MoE chain; not a complete profile verdict",
+  "wiring_candidate": "ea5cb8596cf474cdc1a20fc98b71580641f4f8e0",
+  "cpu_product_candidate": "ceef59d866310cd0e6c20f735f028198e4f6e6b4",
+  "cpu_test_expectation_candidate": "2e3d4c8dcdd6622dabf51d04560e4188d28899d1",
+  "cpu_product_tree": "18f00ac241bf23b757bfcb6913d5c79e097c7c02",
+  "machines": {
+    "cpu_cuda_vulkan": "Windows canonical; RTX 4070 for GPU",
+    "apple": "MacBook Air Mac16,12 / Apple M4; canonical clone 2e3d4c8d"
+  },
+  "implementation_loc": 58047,
+  "implementation_files": 228,
+  "profile_ledger": {
+    "RUN_PASS": 48,
+    "VALIDATION_NOT_RUN": 128
+  },
+  "batch_tests": [
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "case": "CpuDefaultDirect.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 5.063,
+      "source": "compute_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "case": "CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 3.017,
+      "source": "compute_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "case": "CpuQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay",
+      "verdict": "PASS",
+      "seconds": 1.868,
+      "source": "compute_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "case": "CpuQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 9.822,
+      "source": "compute_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "case": "CpuDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 5.035,
+      "source": "graph_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "case": "CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 3.009,
+      "source": "graph_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "case": "CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 1.872,
+      "source": "graph_route_cpu-full.xml"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "case": "CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 9.812,
+      "source": "graph_route_cpu-full.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "case": "CudaDefaultCompute.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 5.065,
+      "source": "compute_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "case": "CudaQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 2.83,
+      "source": "compute_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "case": "CudaQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay",
+      "verdict": "PASS",
+      "seconds": 0.923,
+      "source": "compute_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "case": "CudaQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 8.891,
+      "source": "compute_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "case": "CudaDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 5.074,
+      "source": "graph_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "case": "CudaGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 2.83,
+      "source": "graph_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "case": "CudaGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 0.903,
+      "source": "graph_route_cuda-batch.xml"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "case": "CudaGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 8.886,
+      "source": "graph_route_cuda-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "case": "AppleD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 2.379,
+      "source": "compute_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "case": "AppleQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 1.455,
+      "source": "compute_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "case": "AppleQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay",
+      "verdict": "PASS",
+      "seconds": 2.184,
+      "source": "compute_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "case": "AppleQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 4.12,
+      "source": "compute_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "case": "AppleGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 1.477,
+      "source": "graph_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "case": "AppleGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 0.554,
+      "source": "graph_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "case": "AppleGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 3.913,
+      "source": "graph_route_apple-batch.xml"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "case": "AppleGraphD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 2.337,
+      "source": "graph_route_apple-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "case": "VulkanManaged.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 5.184,
+      "source": "compute_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "case": "VulkanQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 3.037,
+      "source": "compute_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "case": "VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay",
+      "verdict": "PASS",
+      "seconds": 1.118,
+      "source": "compute_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "case": "VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 9.564,
+      "source": "compute_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "case": "VulkanGraphD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+      "verdict": "PASS",
+      "seconds": 5.264,
+      "source": "graph_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "case": "VulkanGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds",
+      "verdict": "PASS",
+      "seconds": 3.052,
+      "source": "graph_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "case": "VulkanGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 1.06,
+      "source": "graph_route_vulkan-batch.xml"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "case": "VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay",
+      "verdict": "PASS",
+      "seconds": 9.421,
+      "source": "graph_route_vulkan-batch.xml"
+    }
+  ],
+  "regression": {
+    "compute_ops": {
+      "run": 51,
+      "passed": 51
+    },
+    "compute_provider_ggml": {
+      "run": 41,
+      "passed": 41
+    },
+    "compute_route_cpu": {
+      "run": 78,
+      "passed_initial": 77,
+      "failed_initial": [
+        "CpuDefaultContext.MatMulRulesAndChangedInputReplay"
+      ],
+      "resolution": "Existing native-only expectation migrated to ggml for the new transposed F32 domain; same test reran PASS, product unchanged."
+    },
+    "graph_route_cpu": {
+      "run": 93,
+      "passed_initial": 92,
+      "failed_initial": [
+        "CpuDefaultContext.MatMulRulesAndChangedInputReplay"
+      ],
+      "resolution": "Shared test expectation migration reran PASS; product unchanged."
+    },
+    "gpu_full_owner_suites": "VALIDATION_NOT_RUN in this partial batch"
+  },
+  "pending": [
+    "remaining 2.4T exact-profile regions in their actual per-role dtypes/storage",
+    "quantized grouped invalid-ID failure receipt and complete profile resource/negative boundaries",
+    "D5-A5 source/static/shared",
+    "D5-A6 applicable P1",
+    "remaining non-Qwen profiles"
+  ],
+  "artifacts": [
+    {
+      "path": "compute_ops-full.log",
+      "sha256": "265b7f2a4919f857546209e2e8212cd94006c68e534c779f0ba0a0cc9485f6f3"
+    },
+    {
+      "path": "compute_ops-full.xml",
+      "sha256": "2ba9c96e25e65b7de73acfa8e19c46569244da7e491bcaa6a4b4d68e979361f5"
+    },
+    {
+      "path": "compute_provider_ggml-full.log",
+      "sha256": "c124d2118e06afb64a44fd39687ef9241b94fe9ea1d146bc0bb09936615c5565"
+    },
+    {
+      "path": "compute_provider_ggml-full.xml",
+      "sha256": "581b2105e673060042729f82c1c13d88fe83f417975f00168068a44fee2c2e31"
+    },
+    {
+      "path": "compute_route_cpu-full.log",
+      "sha256": "d33983789c8586a20602872ef7180a6374ef904ba3eadcafe42a11ed5a9e33cf"
+    },
+    {
+      "path": "compute_route_cpu-full.xml",
+      "sha256": "62670ce480eef009246962668e5a9777c92846527f3e3e423310f514d375e9e9"
+    },
+    {
+      "path": "graph_route_cpu-full.log",
+      "sha256": "2bb4e7c4b1c06f4a6b88bb6774b416da8214d2d2a9428a6b21dec6790d64441d"
+    },
+    {
+      "path": "graph_route_cpu-full.xml",
+      "sha256": "bdda6111780a5912fda93b9344294cc9cae6da2a111272442f230fecbc57e6a7"
+    },
+    {
+      "path": "compute_route_cpu-rules-migration.log",
+      "sha256": "3fdea2766840a804faf9411b951184f6a8251810fe9fe0f254c00a18c45c9562"
+    },
+    {
+      "path": "graph_route_cpu-rules-migration.log",
+      "sha256": "3fdea2766840a804faf9411b951184f6a8251810fe9fe0f254c00a18c45c9562"
+    },
+    {
+      "path": "cpu-direct.log",
+      "sha256": "817a19843fa70169f7eedb77ef25fb46df3556614fad312184a420327647ee15"
+    },
+    {
+      "path": "cpu-direct.xml",
+      "sha256": "2eb479133eab85f959ab96c0d93d0ca1e8e44ab3070726bc68d58f11bdcfd4e7"
+    },
+    {
+      "path": "loc.json",
+      "sha256": "9e1897270c37de64ff5ef261470a11f564b9ed11e67f20e6c4828fc0444836a1"
+    },
+    {
+      "path": "compute_route_cuda-batch.log",
+      "sha256": "09d084b95287d43740e87179377451e5d22d437b1eaeca6efd5b1256a8d0ea1a"
+    },
+    {
+      "path": "compute_route_cuda-batch.xml",
+      "sha256": "77885b603f3e2ab6e506e30c48cc25a6bf685eb6e3a5d28e4fabab7abe85ab73"
+    },
+    {
+      "path": "graph_route_cuda-batch.log",
+      "sha256": "647437e19017c695bf32e84f3cdbb6d77c85c4797a4f9c8745ec20d365db8ebb"
+    },
+    {
+      "path": "graph_route_cuda-batch.xml",
+      "sha256": "64e2826bcedc939f2b7ab2545bacf228864fbf2d165006b3163e39ed5423457b"
+    },
+    {
+      "path": "compute_route_vulkan-batch.log",
+      "sha256": "ac3bb87d7c6835e07341f556859244182fe8ce24306a6be4f5633b0666e44b2d"
+    },
+    {
+      "path": "compute_route_vulkan-batch.xml",
+      "sha256": "50c25a049ea5ef0d8d815561b0bff6cef751ed96ad9fff8f515ecda533ca4f91"
+    },
+    {
+      "path": "graph_route_vulkan-batch.log",
+      "sha256": "b78c15691a6bfee4ae2464a3f1f9938c061c3a7ccb026e7614ec07af55e6e746"
+    },
+    {
+      "path": "graph_route_vulkan-batch.xml",
+      "sha256": "34b60b34795a1bb6dd1f26ee88be5f87415a600f6c46f0b9b40f0021060230f1"
+    },
+    {
+      "path": "compute_route_apple-batch.log",
+      "sha256": "2e1f4503ffbc8e331036bbe914543967d70f35e3ef33adffffc0d569d03d6ed1"
+    },
+    {
+      "path": "compute_route_apple-batch.xml",
+      "sha256": "d69c9522de8c64e1267f9c23ed8b61795953bf1a3cc244233a7b5f6a4256c7fa"
+    },
+    {
+      "path": "graph_route_apple-batch.log",
+      "sha256": "acb5eed844b306e8f41b735cb888218866625c1c67e844ec355ed89840b69378"
+    },
+    {
+      "path": "graph_route_apple-batch.xml",
+      "sha256": "1291a23bf5f1a159c92c86e0c43029051f94452b12407f097f2010bc0bb64f3a"
+    }
+  ]
+}

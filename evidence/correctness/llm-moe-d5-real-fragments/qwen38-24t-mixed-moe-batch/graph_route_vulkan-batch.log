@@ -1,0 +1,21 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5GgufGroupedExpert*:*D5FullRouter*:*D5GgufFullRouter*:*D5Qwen38_24TGgufMoeWeightRoles*
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanGraphD5
+[ RUN      ] VulkanGraphD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] VulkanGraphD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (5264 ms)
+[----------] 1 test from VulkanGraphD5 (5264 ms total)
+
+[----------] 3 tests from VulkanGraphQwen38_24T
+[ RUN      ] VulkanGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] VulkanGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (3052 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+[       OK ] VulkanGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (1060 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9421 ms)
+[----------] 3 tests from VulkanGraphQwen38_24T (13535 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 2 test suites ran. (18799 ms total)
+[  PASSED  ] 4 tests.

@@ -762,6 +762,11 @@ GroupedMatMul weight；直接把 caller-owned packed bytes 交给原版 `MUL_MAT
 HYLE decoder、全量重排或常驻浮点副本。CPU/CUDA/Apple 共用公开格式身份，但各自保留原生
 program、resource 和完成语义。
 
+CPU ggml 还接受 plain F32 的 rank-2 MatMul：左输入为连续 `[M,K]`，右输入为连续
+`[N,K]` 权重的转置描述 `[K,N]`，输出和累加均为 F32。普通 CPU Direct/Graph 可直接绑定
+这种 router/shared-gate 权重；准备期选择既有 ggml 程序，重复执行不重新选 Provider。
+这项准入不包含任意 stride 或其它 rank 的 F32 MatMul。
+
 Gather 使用 I32 索引，支持标量或多维索引，以及上述已准入的非连续布局；每次运行都先按实际
 索引 stride 检查边界，再调用原版 get_rows。不同 outer 行必要的索引 repeat 保存在每请求工作区。
 二元运算支持公共推导确认的任意合法广播，仍受上述输入布局准入限制，保持左右操作数顺序。
