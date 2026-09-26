@@ -1061,7 +1061,7 @@ TEST(OperationModelOps, GroupedExpertAndHyperConnectionKeepModelLayouts) {
       infer_single_output(model_ops::hyper_connection_post(), invalid_post));
 }
 
-TEST(OperationModelOps, GroupedExpertAcceptsOnlyCanonicalGgufWeightPort) {
+TEST(OperationModelOps, GroupedExpertAcceptsNativeGgufWeights) {
   const auto f32 = DataType::kFloat32;
   const auto i32 = DataType::kInt32;
   const auto activation = tensor(f32, 1, 10, 8192);

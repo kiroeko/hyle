@@ -20,7 +20,9 @@
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_apple_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
+#include "../compute_models/d5_qwen38_24t_moe_profiles.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen_vocabulary_test.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
@@ -1273,6 +1275,39 @@ TEST_P(AppleGraphQwen38Profiles,
   }
 }
 
+TEST(AppleGraphQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
+  namespace grouped = d5_qwen38_24t_grouped_gguf_fixture;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = a::Context::create().value();
+  const auto activation_desc = dense(c::DataType::kFloat32,
+      {1, grouped::kSlots, grouped::kReduction});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, grouped::kSlots});
+  for (const auto &test : grouped::kCases) {
+    SCOPED_TRACE(test.seed);
+    const auto weight_desc = c::gguf_grouped_weight_description(
+        test.type, c::DataType::kFloat32, grouped::kResidentExperts,
+        grouped::kColumns, grouped::kReduction).value();
+    const auto packed = grouped::pack_weight(
+        test, weight_desc.required_bytes().value());
+    const auto workload = q::workload(*test.profile,
+                                      c::WorkloadPhase::kDecode, 0x0a0b);
+    const Tensor weight{weight_desc, packed_array(packed.bytes)};
+    auto call = prepare(context, workload, c::model_ops::grouped_matmul(),
+                         weight, activation_desc, ids_desc);
+    for (int replay = 0; replay < 2; ++replay) {
+      const auto input = q24::expert_input(3 + replay * 14);
+      const auto selected = grouped::ids(replay);
+      const auto activation = upload(context, activation_desc, std::span(input));
+      const auto ids = upload(context, ids_desc, std::span(selected));
+      const auto output = run(call, activation, ids);
+      ASSERT_EQ(output.size(), 1U);
+      const auto actual = float_values(output[0]);
+      const auto expected = grouped::expected(input, selected, packed.decoded);
+      d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+    }
+  }
+}
+
 TEST(AppleGraphQwen38_24T,
      D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay) {
   constexpr int seed = 71;
@@ -1369,23 +1404,20 @@ TEST(AppleGraphQwen38_24T,
   }
 }
 
-TEST(AppleGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
-  auto full = qfull::make_graph();
-  auto weights = qfull::make_weights();
+void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
+  namespace moe = d5_qwen38_24t_moe_profiles;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto fixture = moe::make(profile);
+  auto full = qfull::make_graph(fixture.layout);
   auto context = a::Context::create().value();
-  const std::array constants{
-      upload(context, full.constant_descs[0], std::span(weights.router)).native,
-      upload(context, full.constant_descs[1], std::span(weights.replication)).native,
-      upload(context, full.constant_descs[2], std::span(weights.routed_gate)).native,
-      upload(context, full.constant_descs[3], std::span(weights.routed_up)).native,
-      upload(context, full.constant_descs[4], std::span(weights.routed_down)).native,
-      upload(context, full.constant_descs[5], std::span(weights.shared_gate)).native,
-      upload(context, full.constant_descs[6], std::span(weights.shared_up)).native,
-      upload(context, full.constant_descs[7], std::span(weights.shared_down)).native,
-      upload(context, full.constant_descs[8], std::span(weights.shared_gate_input)).native,
-      upload(context, full.constant_descs[9], std::span(weights.shared_ids)).native};
-  weights = {};
-  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  std::vector<mx::array> constants;
+  for (std::size_t index = 0; index < fixture.constants.size(); ++index)
+    constants.push_back(full.constant_descs[index].is_plain()
+        ? upload(context, full.constant_descs[index],
+                 std::span<const std::byte>(fixture.constants[index])).native
+        : packed_array(fixture.constants[index]));
+  fixture.constants = {};
+  const auto workload = q::workload(*profile, c::WorkloadPhase::kDecode, 0x0a12);
   ga::CompileReport report;
   auto compiled = ga::compile(context, full.graph, constants,
                               {.report = &report, .workload = workload});
@@ -1395,8 +1427,7 @@ TEST(AppleGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
             std::string::npos);
   EXPECT_EQ(compiled->workload(), workload);
   auto invocation = compiled->create_invocation().value();
-  for (const int replay : {3, 17, 29}) {
-    const auto expected = qfull::expected(replay);
+  for (const auto &expected : fixture.expected) {
     const auto activation =
         upload(context, full.activation_desc, std::span(expected.activation));
     const std::array inputs{native(activation)};
@@ -1417,13 +1448,20 @@ TEST(AppleGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
                            : output == 2 ? expected.combined
                            : output == 3 ? expected.shared
                                          : expected.full;
-      ASSERT_EQ(actual.size(), oracle.size());
-      for (std::size_t i = 0; i < actual.size(); ++i)
-        EXPECT_NEAR(actual[i], oracle[i],
-                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
-                        q24::kExpertAbsoluteTolerance)
-            << "output=" << output << " element=" << i;
+      moe::expect_output(profile, actual, oracle);
     }
+  }
+}
+
+TEST(AppleGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
+  run_full_moe_profile(&q24::kOfficialProfile);
+}
+
+TEST(AppleGraphQwen38_24T, D5GgufFullRouterSharedExpertAndNearTieReplay) {
+  for (const auto *profile : {&d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+                               &d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile}) {
+    SCOPED_TRACE(profile->variant);
+    run_full_moe_profile(profile);
   }
 }
 

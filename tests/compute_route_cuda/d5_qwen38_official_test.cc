@@ -12,7 +12,9 @@
 #include <vector>
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
+#include "../compute_models/d5_qwen38_24t_moe_profiles.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen_vocabulary_fixture.h"
@@ -552,6 +554,58 @@ TEST(CudaQwen38_24T,
   }
 }
 
+TEST(CudaQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
+  namespace gguf = d5_qwen38_24t_grouped_gguf_fixture;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  auto queue = context.create_queue().value();
+  const auto activation_desc = dense(c::DataType::kFloat32,
+                                     {1, gguf::kSlots, gguf::kReduction});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, gguf::kSlots});
+  const auto output_desc = dense(c::DataType::kFloat32,
+                                 {1, gguf::kSlots, gguf::kColumns});
+  for (const auto &test : gguf::kCases) {
+    SCOPED_TRACE(test.profile->variant);
+    const auto weight_desc = c::gguf_grouped_weight_description(
+        test.type, c::DataType::kFloat32, gguf::kResidentExperts,
+        gguf::kColumns, gguf::kReduction).value();
+    const auto workload = q::workload(*test.profile,
+                                     c::WorkloadPhase::kDecode, 0x0b21);
+    auto call = make_call(context, resource, c::model_ops::grouped_matmul(),
+                          std::array{weight_desc, activation_desc, ids_desc},
+                          std::array{output_desc}, workload);
+    EXPECT_EQ(call.prepared.provider().id, c::ggml_cuda::kProviderId);
+    auto packed = gguf::pack_weight(test, weight_desc.required_bytes().value());
+    auto weight_buffer = output_buffer(resource, weight_desc);
+    ASSERT_TRUE(weight_buffer.view().write(packed.bytes).ok());
+    auto activation_buffer = output_buffer(resource, activation_desc);
+    auto ids_buffer = output_buffer(resource, ids_desc);
+    auto result_buffer = output_buffer(resource, output_desc);
+    const std::array inputs{
+        c::ConstTensorView::create(weight_desc, weight_buffer.view()).value(),
+        c::ConstTensorView::create(activation_desc, activation_buffer.view())
+            .value(),
+        c::ConstTensorView::create(ids_desc, ids_buffer.view()).value()};
+    const std::array outputs{
+        c::TensorView::create(output_desc, result_buffer.view()).value()};
+    for (int replay = 0; replay < 2; ++replay) {
+      const auto activation = q24::expert_input(replay);
+      const auto selected = gguf::ids(replay);
+      ASSERT_TRUE(activation_buffer.view()
+                      .write(std::as_bytes(std::span(activation))).ok());
+      ASSERT_TRUE(ids_buffer.view()
+                      .write(std::as_bytes(std::span(selected))).ok());
+      run(call, queue, inputs, outputs);
+      const auto actual = half_test::read<float>(result_buffer);
+      const auto expected = gguf::expected(activation, selected, packed.decoded);
+      d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+    }
+  }
+}
+
 TEST(CudaQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
   const auto activation_desc =
       dense(c::DataType::kBFloat16, {1, q24::kHidden});
@@ -598,15 +652,17 @@ TEST(CudaQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
   }
 }
 
-TEST(CudaQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
-  auto direct = qfull::make_direct_case();
-  auto weights = qfull::make_weights();
+void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
+  namespace moe = d5_qwen38_24t_moe_profiles;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto fixture = moe::make(profile);
+  auto direct = qfull::make_direct_case(fixture.layout);
   auto context = cuda::create_context().value();
   auto memory =
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
   const auto resource = memory.ref();
   auto queue = context.create_queue().value();
-  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  const auto workload = q::workload(*profile, c::WorkloadPhase::kDecode, 0x0a12);
   std::vector<hyle::mem::Buffer> buffers(direct.descriptions.size());
   std::vector<hyle::mem::BufferView> views(direct.descriptions.size());
   const auto allocate = [&](qfull::ValueId id) {
@@ -618,13 +674,13 @@ TEST(CudaQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
     views[id.ordinal()] = buffers[id.ordinal()].view();
   };
   allocate(direct.full.activation);
-  const auto constant_bytes = qfull::constant_bytes(weights);
+  const auto &constant_bytes = fixture.constants;
   for (std::size_t index = 0; index < direct.full.constants.size(); ++index) {
     const auto id = direct.full.constants[index];
     allocate(id);
     ASSERT_TRUE(views[id.ordinal()].write(constant_bytes[index]).ok());
   }
-  weights = {};
+  fixture.constants = {};
 
   std::vector<DirectCall> calls;
   calls.reserve(direct.nodes.size());
@@ -649,8 +705,7 @@ TEST(CudaQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
     expect_mature(calls.back(), workload);
   }
 
-  for (const int replay : {3, 17, 29}) {
-    const auto expected = qfull::expected(replay);
+  for (const auto &expected : fixture.expected) {
     ASSERT_TRUE(views[direct.full.activation.ordinal()]
                     .write(std::as_bytes(std::span(expected.activation)))
                     .ok());
@@ -680,13 +735,20 @@ TEST(CudaQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
                            : output == 2 ? expected.combined
                            : output == 3 ? expected.shared
                                          : expected.full;
-      ASSERT_EQ(actual.size(), oracle.size());
-      for (std::size_t i = 0; i < actual.size(); ++i)
-        EXPECT_NEAR(actual[i], oracle[i],
-                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
-                        q24::kExpertAbsoluteTolerance)
-            << "output=" << output << " element=" << i;
+      moe::expect_output(profile, actual, oracle);
     }
+  }
+}
+
+TEST(CudaQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
+  run_full_moe_profile(&q24::kOfficialProfile);
+}
+
+TEST(CudaQwen38_24T, D5GgufFullRouterSharedExpertAndNearTieReplay) {
+  for (const auto *profile : {&d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+                               &d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile}) {
+    SCOPED_TRACE(profile->variant);
+    run_full_moe_profile(profile);
   }
 }
 

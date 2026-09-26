@@ -16,7 +16,9 @@
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_vulkan_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
+#include "../compute_models/d5_qwen38_24t_moe_profiles.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen_vocabulary_test.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
@@ -1100,6 +1102,40 @@ TEST_P(VulkanQwen38Profiles,
   }
 }
 
+TEST(VulkanQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
+  namespace grouped = d5_qwen38_24t_grouped_gguf_fixture;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto context = vulkan_test::context().value();
+  const auto activation_desc = dense(c::DataType::kFloat32,
+      {1, grouped::kSlots, grouped::kReduction});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, grouped::kSlots});
+  for (const auto &test : grouped::kCases) {
+    SCOPED_TRACE(test.seed);
+    const auto weight_desc = c::gguf_grouped_weight_description(
+        test.type, c::DataType::kFloat32, grouped::kResidentExperts,
+        grouped::kColumns, grouped::kReduction).value();
+    const auto packed = grouped::pack_weight(
+        test, weight_desc.required_bytes().value());
+    const auto workload = q::workload(*test.profile,
+                                      c::WorkloadPhase::kDecode, 0x0a0b);
+    const auto weight = upload(context, weight_desc,
+                                std::span<const std::byte>(packed.bytes));
+    auto call = prepare(context, workload, c::model_ops::grouped_matmul(),
+                         weight, activation_desc, ids_desc);
+    for (int replay = 0; replay < 2; ++replay) {
+      const auto input = q24::expert_input(3 + replay * 14);
+      const auto selected = grouped::ids(replay);
+      const auto activation = upload(context, activation_desc, std::span(input));
+      const auto ids = upload(context, ids_desc, std::span(selected));
+      const auto output = run(call, activation, ids);
+      ASSERT_EQ(output.size(), 1U);
+      const auto actual = float_values(context, output[0]);
+      const auto expected = grouped::expected(input, selected, packed.decoded);
+      d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+    }
+  }
+}
+
 TEST(VulkanQwen38_24T,
      D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay) {
   constexpr int seed = 71;
@@ -1196,18 +1232,20 @@ TEST(VulkanQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
   }
 }
 
-TEST(VulkanQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
-  auto direct = qfull::make_direct_case();
-  auto weights = qfull::make_weights();
+void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
+  namespace moe = d5_qwen38_24t_moe_profiles;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto fixture = moe::make(profile);
+  auto direct = qfull::make_direct_case(fixture.layout);
   auto context = vulkan_test::context().value();
-  const auto workload = q24::workload(c::WorkloadPhase::kDecode, 0x0a12);
+  const auto workload = q::workload(*profile, c::WorkloadPhase::kDecode, 0x0a12);
   std::vector<v::Tensor> tensors(direct.descriptions.size());
-  const auto bytes = qfull::constant_bytes(weights);
+  const auto &bytes = fixture.constants;
   for (std::size_t index = 0; index < direct.full.constants.size(); ++index) {
     const auto id = direct.full.constants[index];
-    tensors[id.ordinal()] = upload(context, direct.description(id), bytes[index]);
+    tensors[id.ordinal()] = upload(context, direct.description(id), std::span<const std::byte>(bytes[index]));
   }
-  weights = {};
+  fixture.constants = {};
 
   std::vector<Call> calls;
   calls.reserve(direct.nodes.size());
@@ -1225,8 +1263,7 @@ TEST(VulkanQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
                             std::span<const v::Argument>(arguments)));
   }
 
-  for (const int replay : {3, 17, 29}) {
-    const auto expected = qfull::expected(replay);
+  for (const auto &expected : fixture.expected) {
     tensors[direct.full.activation.ordinal()] =
         upload(context, direct.full.activation_desc,
                std::span(expected.activation));
@@ -1262,13 +1299,20 @@ TEST(VulkanQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
                            : output == 2 ? expected.combined
                            : output == 3 ? expected.shared
                                          : expected.full;
-      ASSERT_EQ(actual.size(), oracle.size());
-      for (std::size_t i = 0; i < actual.size(); ++i)
-        EXPECT_NEAR(actual[i], oracle[i],
-                    std::abs(oracle[i]) * q24::kExpertRelativeTolerance +
-                        q24::kExpertAbsoluteTolerance)
-            << "output=" << output << " element=" << i;
+      moe::expect_output(profile, actual, oracle);
     }
+  }
+}
+
+TEST(VulkanQwen38_24T, D5FullRouterSharedExpertAndNearTieDirectReplay) {
+  run_full_moe_profile(&q24::kOfficialProfile);
+}
+
+TEST(VulkanQwen38_24T, D5GgufFullRouterSharedExpertAndNearTieReplay) {
+  for (const auto *profile : {&d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+                               &d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile}) {
+    SCOPED_TRACE(profile->variant);
+    run_full_moe_profile(profile);
   }
 }
 

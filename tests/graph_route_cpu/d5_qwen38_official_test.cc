@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
+#include "../compute_models/d5_qwen38_24t_moe_profiles.h"
+#include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_models/d5_qwen_vocabulary_fixture.h"
@@ -27,6 +29,7 @@ namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
+namespace qfull = d5_qwen38_24t_full_router;
 namespace qcase = d5_qwen38_profile_cases;
 namespace vocab = d5_qwen_vocabulary_fixture;
 using BF16 = hyle::simd::bfloat16_t;
@@ -396,6 +399,188 @@ TEST_P(CpuGraphQwen38Profiles, D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays) 
     const auto actual = half_test::read<BF16>(output);
     const auto expected = q::ffn(input, scale_values, seed, shape.hidden, shape.ffn_hidden);
     expect_near(actual, expected, 0.025);
+  }
+}
+
+TEST(CpuGraphQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
+  namespace gguf = d5_qwen38_24t_grouped_gguf_fixture;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  const auto activation_desc = dense(c::DataType::kFloat32,
+                                     {1, gguf::kSlots, gguf::kReduction});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, gguf::kSlots});
+  const auto output_desc = dense(c::DataType::kFloat32,
+                                 {1, gguf::kSlots, gguf::kColumns});
+  for (const auto &test : gguf::kCases) {
+    SCOPED_TRACE(test.profile->variant);
+    const auto weight_desc = c::gguf_grouped_weight_description(
+        test.type, c::DataType::kFloat32, gguf::kResidentExperts,
+        gguf::kColumns, gguf::kReduction).value();
+    auto packed = gguf::pack_weight(test, weight_desc.required_bytes().value());
+    auto weight_buffer = hyle::mem::Buffer::create(
+        hyle::mem::system_resource(), packed.bytes.size(), 64).value();
+    ASSERT_TRUE(weight_buffer.view().write(packed.bytes).ok());
+    auto activation_buffer = output_buffer(activation_desc);
+    auto ids_buffer = output_buffer(ids_desc);
+    auto result_buffer = output_buffer(output_desc);
+
+    auto builder = g::GraphBuilder::create().value();
+    const auto weight = builder.constant(weight_desc).value();
+    const auto activation = builder.input(activation_desc).value();
+    const auto ids = builder.input(ids_desc).value();
+    const std::array ports{weight, activation, ids};
+    const auto node =
+        builder.add_node(c::model_ops::grouped_matmul(), ports).value();
+    const auto result = builder.result(node).value();
+    ASSERT_TRUE(builder.publish(result).ok());
+    auto logical = std::move(builder).finish().value();
+    auto context = g::cpu::create_context().value();
+    const auto workload = q::workload(*test.profile,
+                                     c::WorkloadPhase::kDecode, 0x0b21);
+    const std::array constants{g::ConstantBinding{
+        weight,
+        c::ConstTensorView::create(weight_desc, weight_buffer.view()).value()}};
+    auto compiled_result = g::compile(logical, context,
+                                      {.constants = constants,
+                                       .workload = workload});
+    ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+    auto compiled = std::move(*compiled_result);
+    ASSERT_EQ(compiled.report.step_count(), 1U);
+    EXPECT_EQ(compiled.report.step(0)->provider.id,
+              c::ggml_cpu::kProviderId);
+    auto invocation = compiled.executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(
+        activation, c::ConstTensorView::create(
+                        activation_desc, activation_buffer.view()).value()).ok());
+    ASSERT_TRUE(invocation.bind(
+        ids, c::ConstTensorView::create(ids_desc, ids_buffer.view()).value())
+                    .ok());
+    ASSERT_TRUE(invocation.bind(
+        result, c::TensorView::create(output_desc, result_buffer.view()).value())
+                    .ok());
+    auto queue = context.create_queue().value();
+    const std::array queues{
+        g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    for (int replay = 0; replay < 2; ++replay) {
+      const auto values = q24::expert_input(replay);
+      const auto selected = gguf::ids(replay);
+      ASSERT_TRUE(activation_buffer.view()
+                      .write(std::as_bytes(std::span(values))).ok());
+      ASSERT_TRUE(ids_buffer.view()
+                      .write(std::as_bytes(std::span(selected))).ok());
+      auto completion = invocation.submit(queue);
+      ASSERT_TRUE(completion) << completion.error().message();
+      ASSERT_TRUE(completion->wait().ok());
+      const auto actual = half_test::read<float>(result_buffer);
+      const auto expected = gguf::expected(values, selected, packed.decoded);
+      d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+    }
+  }
+}
+
+void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
+  namespace moe = d5_qwen38_24t_moe_profiles;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  auto fixture = moe::make(profile);
+  auto full = qfull::make_graph(fixture.layout);
+  auto context = g::cpu::create_context().value();
+  std::array<hyle::mem::Buffer, 10> constants;
+  for (std::size_t index = 0; index < constants.size(); ++index)
+    constants[index] = half_test::buffer<std::byte>(fixture.constants[index]);
+  fixture.constants = {};
+  const std::array bindings{
+      g::ConstantBinding{full.constants[0],
+                         c::ConstTensorView::create(full.constant_descs[0],
+                                                    constants[0].view()).value()},
+      g::ConstantBinding{full.constants[1],
+                         c::ConstTensorView::create(full.constant_descs[1],
+                                                    constants[1].view()).value()},
+      g::ConstantBinding{full.constants[2],
+                         c::ConstTensorView::create(full.constant_descs[2],
+                                                    constants[2].view()).value()},
+      g::ConstantBinding{full.constants[3],
+                         c::ConstTensorView::create(full.constant_descs[3],
+                                                    constants[3].view()).value()},
+      g::ConstantBinding{full.constants[4],
+                         c::ConstTensorView::create(full.constant_descs[4],
+                                                    constants[4].view()).value()},
+      g::ConstantBinding{full.constants[5],
+                         c::ConstTensorView::create(full.constant_descs[5],
+                                                    constants[5].view()).value()},
+      g::ConstantBinding{full.constants[6],
+                         c::ConstTensorView::create(full.constant_descs[6],
+                                                    constants[6].view()).value()},
+      g::ConstantBinding{full.constants[7],
+                         c::ConstTensorView::create(full.constant_descs[7],
+                                                    constants[7].view()).value()},
+      g::ConstantBinding{full.constants[8],
+                         c::ConstTensorView::create(full.constant_descs[8],
+                                                    constants[8].view()).value()},
+      g::ConstantBinding{full.constants[9],
+                         c::ConstTensorView::create(full.constant_descs[9],
+                                                    constants[9].view()).value()}};
+  const auto workload = q::workload(*profile, c::WorkloadPhase::kDecode, 0x0a12);
+  auto compiled_result = g::compile(
+      full.graph, context,
+      {.constants = bindings, .workload = workload});
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  auto activation_buffer = output_buffer( full.activation_desc);
+  auto outputs = std::array{
+      output_buffer( full.output_descs[0]),
+      output_buffer( full.output_descs[1]),
+      output_buffer( full.output_descs[2]),
+      output_buffer( full.output_descs[3]),
+      output_buffer( full.output_descs[4])};
+  ASSERT_TRUE(invocation
+                  .bind(full.activation,
+                        c::ConstTensorView::create(full.activation_desc,
+                                                   activation_buffer.view())
+                            .value())
+                  .ok());
+  for (std::size_t i = 0; i < outputs.size(); ++i)
+    ASSERT_TRUE(invocation
+                    .bind(full.outputs[i],
+                          c::TensorView::create(full.output_descs[i],
+                                                outputs[i].view())
+                              .value())
+                    .ok());
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (const auto &expected : fixture.expected) {
+    ASSERT_TRUE(activation_buffer.view()
+                    .write(std::as_bytes(std::span(expected.activation)))
+                    .ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    const auto status = done->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto ids = half_test::read<std::int32_t>(outputs[0]);
+    ASSERT_TRUE(std::ranges::equal(ids, expected.ids));
+    for (std::size_t output = 1; output < outputs.size(); ++output) {
+      const auto actual = half_test::read<float>(outputs[output]);
+      const auto &oracle = output == 1 ? expected.routed
+                           : output == 2 ? expected.combined
+                           : output == 3 ? expected.shared
+                                         : expected.full;
+      moe::expect_output(profile, actual, oracle);
+    }
+  }
+}
+
+TEST(CpuGraphQwen38_24T, D5FullRouterSharedExpertAndNearTieReplay) {
+  run_full_moe_profile(&q24::kOfficialProfile);
+}
+
+TEST(CpuGraphQwen38_24T, D5GgufFullRouterSharedExpertAndNearTieReplay) {
+  for (const auto *profile : {&d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+                               &d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile}) {
+    SCOPED_TRACE(profile->variant);
+    run_full_moe_profile(profile);
   }
 }
 

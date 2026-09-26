@@ -169,19 +169,13 @@ inline Expected expected(int replay) {
   return result;
 }
 
-struct GraphCase final {
-  g::Graph graph;
+struct Layout final {
   c::TensorDesc activation_desc;
   std::array<c::TensorDesc, 10> constant_descs;
-  std::array<c::TensorDesc, 5> output_descs;
-  g::ValueId activation;
-  std::array<g::ValueId, 10> constants;
-  // IDs, per-slot routed result, combined routed result, gated shared result,
-  // and the final sum, in publication order.
-  std::array<g::ValueId, 5> outputs;
+  c::Operation linear;
 };
 
-inline GraphCase make_graph() {
+inline Layout official_layout() {
   const auto activation_desc =
       dense(c::DataType::kBFloat16, std::array<std::int64_t, 2>{1, q::kHidden});
   const auto router_weight_desc = dense(
@@ -212,6 +206,24 @@ inline GraphCase make_graph() {
       routed_weight_desc, routed_down_desc, shared_weight_desc,
       shared_weight_desc, shared_down_desc, shared_gate_input_desc,
       shared_ids_desc};
+  return {activation_desc, constant_descs, c::model_ops::bfloat_linear_f32()};
+}
+
+struct GraphCase final {
+  g::Graph graph;
+  c::TensorDesc activation_desc;
+  std::array<c::TensorDesc, 10> constant_descs;
+  std::array<c::TensorDesc, 5> output_descs;
+  g::ValueId activation;
+  std::array<g::ValueId, 10> constants;
+  // IDs, per-slot routed result, combined routed result, gated shared result,
+  // and the final sum, in publication order.
+  std::array<g::ValueId, 5> outputs;
+};
+
+inline GraphCase make_graph(const Layout &layout = official_layout()) {
+  const auto &activation_desc = layout.activation_desc;
+  const auto &constant_descs = layout.constant_descs;
   const auto ids_desc = dense(
       c::DataType::kInt32, std::array<std::int64_t, 2>{1, q::kTopK});
   const auto routed_desc = dense(
@@ -230,7 +242,7 @@ inline GraphCase make_graph() {
   const auto score =
       builder
           .result(builder
-                      .add_node(c::model_ops::bfloat_linear_f32(),
+                      .add_node(layout.linear,
                                 std::array{activation, constants[0]})
                       .value())
           .value();
@@ -256,7 +268,9 @@ inline GraphCase make_graph() {
                   selected_sum)
           .value();
   const auto token_f32 =
-      builder.add(c::Cast{c::DataType::kFloat32}, activation).value();
+      activation_desc.data_type() == c::DataType::kFloat32
+          ? activation
+          : builder.add(c::Cast{c::DataType::kFloat32}, activation).value();
   const auto replicated =
       builder.add(c::Gather{}, token_f32, constants[1]).value();
   const auto routed_activation =
@@ -359,7 +373,7 @@ inline GraphCase make_graph() {
   const auto shared_gate_score =
       builder
           .result(builder
-                      .add_node(c::model_ops::bfloat_linear_f32(),
+                      .add_node(layout.linear,
                                 std::array{activation, constants[8]})
                       .value())
           .value();
@@ -421,7 +435,7 @@ struct DirectCase final {
   }
 };
 
-inline DirectCase make_direct_case() {
+inline DirectCase make_direct_case(const Layout &layout = official_layout()) {
   DirectCase result{};
   const auto add_value = [&](c::TensorDesc description, ValueKind kind) {
     const auto index = static_cast<std::uint32_t>(result.descriptions.size());
@@ -451,40 +465,17 @@ inline DirectCase make_direct_case() {
     return append(operation, inputs)[0];
   };
 
-  result.full.activation_desc = dense(
-      c::DataType::kBFloat16, std::array<std::int64_t, 2>{1, q::kHidden});
+  result.full.activation_desc = layout.activation_desc;
   result.full.activation =
       add_value(result.full.activation_desc, ValueKind::kInput);
-  const std::array constant_descs{
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 2>{q::kExperts, q::kHidden}),
-      dense(c::DataType::kInt32,
-            std::array<std::int64_t, 1>{q::kTopK}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 3>{q::kRouterResidentExperts,
-                                        q::kExpertHidden, q::kHidden}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 3>{q::kRouterResidentExperts,
-                                        q::kExpertHidden, q::kHidden}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 3>{q::kRouterResidentExperts,
-                                        q::kHidden, q::kExpertHidden}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 3>{1, q::kSharedExpertHidden, q::kHidden}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 3>{1, q::kSharedExpertHidden, q::kHidden}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 3>{1, q::kHidden, q::kSharedExpertHidden}),
-      dense(c::DataType::kBFloat16,
-            std::array<std::int64_t, 2>{1, q::kHidden}),
-      dense(c::DataType::kInt32, std::array<std::int64_t, 2>{1, 1})};
+  const auto &constant_descs = layout.constant_descs;
   for (std::size_t index = 0; index < constant_descs.size(); ++index)
     result.full.constants[index] =
         add_value(constant_descs[index], ValueKind::kConstant);
   const auto &k = result.full.constants;
   const auto activation = result.full.activation;
 
-  const auto score = one(c::model_ops::bfloat_linear_f32(), {activation, k[0]});
+  const auto score = one(layout.linear, {activation, k[0]});
   const auto probability = one(c::Operation(c::Softmax{}), {score});
   const auto topk =
       append(c::Operation(c::TopK{.count = q::kTopK}), {probability}, 2);
@@ -499,7 +490,9 @@ inline DirectCase make_direct_case() {
   const auto normalized = one(c::Operation(c::Binary{c::BinaryKind::kDivide}),
                               {selected, selected_sum});
   const auto token_f32 =
-      one(c::Operation(c::Cast{c::DataType::kFloat32}), {activation});
+      layout.activation_desc.data_type() == c::DataType::kFloat32
+          ? activation
+          : one(c::Operation(c::Cast{c::DataType::kFloat32}), {activation});
   const auto replicated = one(c::Operation(c::Gather{}), {token_f32, k[1]});
   const auto routed_activation =
       one(c::Operation(c::View::reshape(
@@ -554,7 +547,7 @@ inline DirectCase make_direct_case() {
   const auto shared_down =
       one(c::model_ops::grouped_matmul(), {k[7], shared_gated, k[9]});
   const auto shared_score =
-      one(c::model_ops::bfloat_linear_f32(), {activation, k[8]});
+      one(layout.linear, {activation, k[8]});
   const auto shared_probability =
       one(c::Operation(c::Unary{c::UnaryKind::kSigmoid}), {shared_score});
   const auto shared_broadcast =

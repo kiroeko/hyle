@@ -970,9 +970,11 @@ Graph 对齐 FIX 已在 CUDA 真实执行中验证。详见
 expert ID，经 CPU/CUDA/Apple/Vulkan 的 Direct `prepare` 或 Graph `compile` 固定成熟
 `ggml_mul_mat_id`，变化输入重复执行。D5 允许缩小常驻 expert 容量，仍保留内宽、原生
 block、top-10 与全局 ID 到本地槽的保序映射；不承诺整份 2.4T 权重常驻。
-当前 `GroupedMatMul::infer_output_descriptions` 只接受 plain F32/BF16 权重，故由
-`gguf_grouped_weight_description` 生成的合法 blocked `[E,N,K]` 在四路线 Provider 前即被拒绝。
-这是新画像揭示的公共准入缺陷，而非新增算子需求。owner 限于 `compute_ops` 与四个现有
+复核纠正：`GroupedMatMul::infer_output_descriptions` 原有 F32 分支已接受
+`gguf_grouped_weight_description` 生成的合法 blocked `[E,N,K]`；`is_dense()` 也包含
+canonical blocked-dense。因此此前“公共准入拒绝”的判断不成立；撤销 `b20c95bd` 新增的
+格式准入实现，保留真实形状测试。本批是成熟路径接线验收，不是新增算子。owner 限于
+`compute_ops` 与四个现有
 `compute_provider_ggml*`；Graph/route 只消费其已登记的 grouped region，若实际编译暴露
 独立缺陷再按精确 owner 定界。非目标为 HYLE 数学、通用量化器、其它模型的 FP4/FP8、
 热路径重新选择及整模型加载。P0 审计准备期 canonical 格式检查和资源上界；D5-A6 的
@@ -981,13 +983,14 @@ block、top-10 与全局 ID 到本地槽的保序映射；不承诺整份 2.4T �
 **AUDITED，有限 FIX**：固定 ggml CPU/CUDA/Metal/Vulkan 均有原生量化格式映射和
 `ggml_mul_mat_id` 构图；Vulkan 已有 canonical grouped GGUF 权重域，Metal 已允许
 rank-3 block-axis-2 权重；CPU/CUDA 的 logical F32 分支也已允许非 plain 权重，
-并限制为 rank-3、block-axis-2。因此当前唯一已证实的拒绝点是公共 schema。
+并限制为 rank-3、block-axis-2。公共 schema 同样已经接受 F32 blocked 权重，
+当前没有证实产品准入缺陷。
 按同一份固定 header 反证，不改变 operation ID、F32 activation/output、I32
 ID、资源/完成/失败语义。仅允许：
 
-1. `compute_ops` 对权重 port 接纳由 `gguf_grouped_weight_description` 构造的 canonical
-   GGUF `[E,N,K]`、logical F32；拒绝非 canonical stride/block、其它 port 的 packed
-   storage 与不完整 K block。plain F32/BF16 合同保留。
+1. 保留现有 `compute_ops` 产品 schema；以公共测试确认 canonical GGUF `[E,N,K]`、
+   logical F32 的既有准入，错误 dtype/ID shape 及不完整 K block 的拒绝。具体存储与
+   stride 的准入继续由各 Provider 准备期处理，不在本批无依据收紧公共 schema。
 2. 四个现有 ggml adapter 先保持原样；只在真实片段揭示具体准入或资源缺陷时按
    所属路线定向修复。四路线都使用各自 ggml 原生 program，不建 HYLE
    grouped kernel 或共享万能执行器。
@@ -1002,6 +1005,16 @@ ID、资源/完成/失败语义。仅允许：
 及内存边界并按该路线 `BACKEND_REJECTED` 定界；不得用 F32 解包或自研数学伪装 GGUF
 通过。`2cb5d34e` 仅批量写入六个真实权重角色的四路线 Direct/Graph 测试消费者，
 已对照固定 header 6/6；该提交尚无编译或运行 verdict，不改变 48/176 ledger。
+
+**本批接线更新**：公共 schema 已恢复至 `2cb5d34e` 的原有实现；新增语义测试 2/2 与
+CPU IQ4_XS/Q8_0 grouped 定向执行确认原有准入有效。四路线 Direct/Graph 均已接入
+共享 grouped 夹具及完整 MoE 画像夹具：F32 router/shared gate、IQ4_XS routed expert、
+Q5_K/Q6_K shared expert，或 Q8_0 的对应权重角色。官方 BF16 与两种 GGUF 复用相同
+recipe；保留 512-way/top-10、11 个常驻 expert、8192/2048 内宽、三次输入变化及近并列
+ID 边界。原有独立解码 oracle 扩展到完整链，量化结果按既有 chain gate 归一化检查，
+防止极小输出落在绝对容差内而错误接受全零结果。首轮旧 CPU 开发树关闭 oneDNN，
+F32 router 因而选择 native，且误用 BF16 逐元素误差门；该轮不签通过。修正构建配置与
+量化验收合同后集中检查，四路线完整批次尚待运行，不改变 ledger、三交付或 P1 状态。
 
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
