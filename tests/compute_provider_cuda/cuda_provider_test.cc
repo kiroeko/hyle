@@ -788,6 +788,162 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 }
 
 
+TEST(DeepSeekFp8Decode, AllCodesTailAndOutputGuard) {
+  auto owner = context(compute::cuda_native::deepseek_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  constexpr std::int64_t n = 129, k = 256;
+  const auto wd = compute::float8_weight_description(k, n,
+      compute::Float8ScaleMode::kFloat32Block128).value();
+  Tensor source(wd, resource.ref());
+  std::vector<std::byte> storage(wd.required_bytes().value());
+  for (bool bf16 : {false, true}) {
+    const auto type = bf16 ? compute::DataType::kBFloat16 : compute::DataType::kFloat32;
+    const auto od = matrix(type, n, k);
+    const auto size = od.required_bytes().value();
+    auto output = mem::Buffer::create(resource.ref(), size + 64, 256).value();
+    const auto view = compute::TensorView::create(od, output.view().subview(0, size).value()).value();
+    auto program = compute::prepare(owner, compute::model_ops::float8_weight_decode(type),
+        std::array{source.view.as_const()}, std::array{view}).value();
+    auto lane = program.create_invocation().value();
+    for (int replay = 0; replay < 2; ++replay) {
+      SCOPED_TRACE(bf16);
+      SCOPED_TRACE(replay);
+      std::array<float, 4> scales{0, 0.0012345F, -1.75F, 2.03125F};
+      if (replay) std::reverse(scales.begin(), scales.end());
+      std::memcpy(storage.data() + n * k, scales.data(), sizeof(scales));
+      for (std::size_t i = 0; i < n * k; ++i)
+        storage[i] = std::byte{std::uint8_t((i + replay * 37) % 256)};
+      ASSERT_TRUE(source.storage.view().write(storage).ok());
+      const std::vector<std::byte> sentinel(size + 64, std::byte{0x5a});
+      ASSERT_TRUE(output.view().write(sentinel).ok());
+      auto done = lane.submit(queue, std::array{source.view.as_const()}, std::array{view});
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      std::vector<std::byte> actual(size + 64);
+      ASSERT_TRUE(output.view().read(actual).ok());
+      for (std::size_t i = size; i < actual.size(); ++i) ASSERT_EQ(actual[i], std::byte{0x5a});
+      for (std::size_t i = 0; i < n * k; ++i) {
+        const auto code = std::to_integer<unsigned>(storage[i]);
+        float value;
+        if (bf16) {
+          __nv_bfloat16 stored;
+          std::memcpy(&stored, actual.data() + i * 2, 2);
+          value = __bfloat162float(stored);
+        } else std::memcpy(&value, actual.data() + i * 4, 4);
+        if ((code & 127) == 127) { ASSERT_TRUE(std::isnan(value)) << i; continue; }
+        const auto exponent = (code >> 3) & 15, mantissa = code & 7;
+        const float magnitude = exponent ? std::ldexp(1.0F + float(mantissa) / 8, int(exponent) - 7)
+                                          : std::ldexp(float(mantissa), -9);
+        float expected = std::copysign(magnitude, code & 128 ? -1.0F : 1.0F) *
+                         scales[((i / k) / 128) * 2 + (i % k) / 128];
+        if (bf16) expected = __bfloat162float(__float2bfloat16(expected));
+        ASSERT_EQ(value, expected) << i;
+        if (expected == 0) EXPECT_EQ(std::signbit(value), std::signbit(expected)) << i;
+      }
+    }
+  }
+}
+
+TEST(DeepSeekFp8Decode, RejectionsRollbackConcurrentReplayAndCompletionOwnership) {
+  for (bool bf16 : {false, true}) {
+    MetadataAllocator allocator;
+    {
+      const std::array providers{compute::ProviderBinding{compute::cuda_native::deepseek_provider(), 100}};
+      auto owner = compute::Context::create(cuda::device(0).value(),
+          {.metadata_allocator = allocator.ref(), .providers = providers}).value();
+      auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+      const auto type = bf16 ? compute::DataType::kBFloat16 : compute::DataType::kFloat32;
+      constexpr auto mode = compute::Float8ScaleMode::kFloat32Block128;
+      constexpr std::int64_t n = 129, k = 128;
+      const auto wd = compute::float8_weight_description(k, n, mode).value();
+      const auto od = matrix(type, n, k);
+      const auto operation = compute::model_ops::float8_weight_decode(type);
+      Tensor input(wd, resource.ref());
+      std::array output{Tensor(od, resource.ref()), Tensor(od, resource.ref())};
+      const std::array inputs{input.view.as_const()};
+      const auto make = [&] { return compute::prepare(owner, operation, inputs, std::array{output[0].view}); };
+      const auto start = allocator.attempts, live = allocator.live;
+      { auto program = make(); ASSERT_TRUE(program) << program.error().message(); }
+      const auto count = allocator.attempts - start;
+      ASSERT_GT(count, 0u);
+      ASSERT_LT(count, 32u);
+      for (std::size_t i = 0; i < count; ++i) {
+        allocator.fail_at = allocator.attempts + i;
+        auto failed = make();
+        ASSERT_FALSE(failed);
+        EXPECT_TRUE(failed.error().IsResourceExhausted());
+        EXPECT_EQ(allocator.live, live);
+        allocator.fail_at = SIZE_MAX;
+      }
+      for (const auto shape : {std::array<std::int64_t, 2>{1LL << 24, 128}, {1, 65536LL * 128}}) {
+        const auto w = compute::float8_weight_description(shape[1], shape[0], mode).value();
+        auto rejected = compute::prepare(owner, operation, std::array{w},
+            std::array{matrix(type, shape[0], shape[1])}, resource.ref());
+        ASSERT_FALSE(rejected);
+        EXPECT_TRUE(rejected.error().IsUnimplemented()) << rejected.error().message();
+      }
+      auto host = compute::prepare(owner, operation, std::array{wd}, std::array{od}, mem::system_resource());
+      EXPECT_FALSE(host);
+      auto prepared = make().value();
+      EXPECT_EQ(prepared.provider().id, compute::cuda_native::kDeepSeekProviderId);
+      EXPECT_EQ(prepared.workspace_requirement().size, 0u);
+      EXPECT_EQ(prepared.invocation_private_bytes(), 0u);
+      EXPECT_TRUE(prepared.capture_compatible());
+      std::array lanes{prepared.create_invocation().value(), prepared.create_invocation().value()};
+      std::array queues{owner.create_queue().value(), owner.create_queue().value()};
+      for (auto &queue : queues) ASSERT_TRUE(queue.reserve_completions(1).ok());
+      const auto reject = [&](std::span<const compute::ConstTensorView> in,
+                              std::span<const compute::TensorView> out) {
+        auto done = lanes[0].submit(queues[0], in, out);
+        EXPECT_FALSE(done);
+        EXPECT_FALSE(lanes[0].in_flight());
+      };
+      reject({}, std::array{output[0].view});
+      Tensor host_input(wd, mem::system_resource());
+      reject(std::array{host_input.view.as_const()}, std::array{output[0].view});
+      auto unaligned = mem::Buffer::create(resource.ref(), wd.required_bytes().value() + 1, 256).value();
+      reject(std::array{compute::ConstTensorView::create(wd, unaligned.view().subview(1).value()).value()},
+             std::array{output[0].view});
+      reject(std::array{compute::ConstTensorView::create(wd, output[0].storage.view()).value()},
+             std::array{output[0].view});
+      std::vector<std::byte> bytes(wd.required_bytes().value(), std::byte{0x38});
+      const float scale = 1.0F;
+      for (int block = 0; block < 2; ++block) std::memcpy(bytes.data() + n*k + block*4, &scale, 4);
+      for (int replay = 0; replay < 2; ++replay) {
+        std::fill_n(bytes.begin(), n*k, replay ? std::byte{0x40} : std::byte{0x38});
+        ASSERT_TRUE(input.storage.view().write(bytes).ok());
+        const auto before = allocator.attempts;
+        std::array<compute::Completion, 2> done;
+        for (std::size_t i = 0; i < lanes.size(); ++i) {
+          auto result = lanes[i].submit(queues[i], inputs, std::array{output[i].view});
+          ASSERT_TRUE(result) << result.error().message();
+          done[i] = std::move(*result);
+        }
+        if (replay == 1) {
+          prepared = {};
+          lanes = {};
+          ASSERT_TRUE(owner.close().ok());
+        }
+        for (std::size_t i = 0; i < done.size(); ++i) {
+          ASSERT_TRUE(done[i].wait().ok());
+          if (bf16) {
+            std::vector<__nv_bfloat16> actual(n*k);
+            ASSERT_TRUE(output[i].storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+            for (auto value : actual) ASSERT_EQ(__bfloat162float(value), float(replay + 1));
+          } else {
+            std::vector<float> actual(n*k);
+            ASSERT_TRUE(output[i].storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+            for (auto value : actual) ASSERT_EQ(value, float(replay + 1));
+          }
+        }
+        EXPECT_EQ(allocator.attempts, before);
+      }
+    }
+    EXPECT_EQ(allocator.live, 0u);
+  }
+}
+
 TEST(SglangFp8, AllocationRollbackConcurrentReplayAndProgramLifetime) {
   MetadataAllocator allocator;
   {

@@ -1,5 +1,5 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_audit_in_tree_dependencies(sglang_activation)
+  hyle_audit_in_tree_dependencies(sglang_activation deepseek_fp8)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
   endif()
@@ -8,6 +8,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     collectives_provider.cc collectives.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
     router_provider.cc sglang_router_kernel.cu fp8_provider.cc grouped_fp8_provider.cc
+    deepseek_fp8_provider.cc
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu
@@ -18,7 +19,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda"
-    "${PROJECT_SOURCE_DIR}/third_party/sglang_activation")
+    "${PROJECT_SOURCE_DIR}/third_party/sglang_activation"
+    "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8")
   target_link_libraries(hyle_compute_provider_cuda PRIVATE CUDA::cudart CUDA::cuda_driver)
   if(WIN32 AND (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
     # Same CUDA 13.3 driver-loader CRT directive as compute_backend_cuda.
@@ -62,6 +64,14 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/NOTICE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-NOTICE"
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/TRITON-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-triton-LICENSE"
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/FLASHINFER-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-flashinfer-LICENSE")
+  hyle_register_package_dependency(
+    NAME deepseek_fp8
+    OWNER compute_provider_cuda
+    FEATURES compute_cuda
+    LOCKED_DEPENDENCIES deepseek_fp8
+    RUNTIME_FILE_SPECS
+      "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-fp8-LICENSE"
+      "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8/TRITON-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-fp8-TRITON-LICENSE")
 else()
   hyle_add_module(compute_provider_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_cuda PROPERTY

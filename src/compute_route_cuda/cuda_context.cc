@@ -27,6 +27,7 @@ Result<Context> internal::create_context(DefaultContextOptions options,
       ProviderBinding{ggml, 200},
       ProviderBinding{cublas::provider(), 100},
       ProviderBinding{cuda_native::sglang_provider(), 100},
+      ProviderBinding{cuda_native::deepseek_provider(), 100},
       ProviderBinding{cuda_native::cccl_provider(), 100},
       ProviderBinding{cuda_native::provider(), 1000}};
   return Context::create(*selected,

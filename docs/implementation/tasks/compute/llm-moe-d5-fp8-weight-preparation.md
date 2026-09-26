@@ -52,3 +52,7 @@ P0：解码O(NK)只在消费者准备阶段发生，持久BF16缓存2NK bytes，
 存储变换BORROW原DeepSeek程序，native ownership ROUTED到现有CUDA backend；模型K/V拆分与缓存
 生命周期为APPLICATION，View/Copy复用现有能力。默认Provider登记是唯一重开路线的变动。
 上述FIX及成本已冻结；当前普通C++、资源和完整模型链资格尚未运行，不能据native探针写PASS。
+
+新vendor的现有ownership表登记`third_party/deepseek_fp8/ -> compute_provider_cuda`；
+仅补依赖归属数据，不改变selector算法。局部入口批次不签共享package seam所选的全库交付门，
+这些未运行项继续由D5-A5/A6统一执行。

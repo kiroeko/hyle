@@ -19,6 +19,8 @@ inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
                                               0x53474c4143540001ULL};
 inline constexpr ProviderId kCcclProviderId{0x48594c4500000001ULL,
                                             0x4343434c00000001ULL};
+inline constexpr ProviderId kDeepSeekProviderId{0x48594c4500000001ULL,
+                                                0x445345454b000001ULL};
 
 // Expert composition factory for HYLE's native CUDA tensor/gated primitives.
 // Plain View uses the schema's exact storage alias without launching a kernel.
@@ -82,6 +84,13 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
 // native tie selection rather than generic stable TopK. No workspace/aliases;
 // four-byte bindings, count <= INT32_MAX, cold launch binding and capture.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
+
+// Original DeepSeek block128 weight decode for cold model preparation.
+// E4M3FN codes and native F32 scales become dense BF16/F32 [N,K]. One native
+// launch, no workspace, no aliases; input alignment4, output alignment2/4,
+// signed-I32 native offsets and CUDA Y-grid bounds. Qualified AOT domain is
+// SM89 / Driver API13040. Caller owns the resulting cache and its reuse.
+HYLE_COMPUTE_PROVIDER_CUDA_API Provider deepseek_provider() noexcept;
 
 // Original CCCL3.3.4 device collectives, qualified with CUDA13.3
 // toolkit/runtime on SM89. Other versions/architectures decline during cold

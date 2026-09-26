@@ -1,0 +1,154 @@
+{
+  "compiler": "3.8.0",
+  "target": "cuda:89:32",
+  "kernels": [
+    {
+      "label": "decode_bf16",
+      "signature": {
+        "x_ptr": "*fp8e4nv",
+        "s_ptr": "*fp32",
+        "y_ptr": "*bf16",
+        "M": "i32",
+        "N": "i32"
+      },
+      "constexprs": {
+        "BLOCK_SIZE": 128
+      },
+      "options": {
+        "num_warps": 4,
+        "num_stages": 3
+      },
+      "metadata": {
+        "allowed_dot_input_precisions": [
+          "tf32",
+          "tf32x3",
+          "ieee",
+          "bf16x3",
+          "bf16x6"
+        ],
+        "arch": "sm89",
+        "backend_name": "cuda",
+        "debug": false,
+        "default_dot_input_precision": "tf32",
+        "deprecated_fp8_dot_operand_dtypes": [],
+        "enable_fp_fusion": true,
+        "enable_reflect_ftz": true,
+        "extern_libs": [
+          [
+            "libdevice",
+            "/mnt/c/public/project-hyle/hyle/.scratch/tools/d5-triton/unpacked/triton/backends/nvidia/lib/libdevice.10.bc"
+          ]
+        ],
+        "global_scratch_align": 1,
+        "global_scratch_size": 0,
+        "hash": "2abe4fde399dd89ae3f8da63a5f6b7f890d8051f30967b7542590b12a93b2ef5",
+        "instrumentation_mode": "",
+        "ir_override": null,
+        "launch_cooperative_grid": false,
+        "launch_pdl": false,
+        "max_num_imprecise_acc_default": 0,
+        "maxnreg": null,
+        "name": "weight_dequant_kernel",
+        "num_ctas": 1,
+        "num_stages": 3,
+        "num_warps": 4,
+        "profile_scratch_align": 1,
+        "profile_scratch_size": 0,
+        "ptx_options": null,
+        "ptx_version": null,
+        "sanitize_overflow": true,
+        "shared": 0,
+        "supported_fp8_dtypes": [
+          "fp8e4b15",
+          "fp8e4nv",
+          "fp8e5"
+        ],
+        "target": {
+          "backend": "cuda",
+          "arch": 89,
+          "warp_size": 32
+        },
+        "tensordesc_meta": [],
+        "tmem_size": 0,
+        "triton_version": "3.8.0",
+        "warp_size": 32
+      },
+      "sha256": "2ceb62839dd7788ad0b1d1fce8627a9904891f6dadbdb921dbee7799f28d3d57",
+      "seconds": 3.513
+    },
+    {
+      "label": "decode_fp32",
+      "signature": {
+        "x_ptr": "*fp8e4nv",
+        "s_ptr": "*fp32",
+        "y_ptr": "*fp32",
+        "M": "i32",
+        "N": "i32"
+      },
+      "constexprs": {
+        "BLOCK_SIZE": 128
+      },
+      "options": {
+        "num_warps": 4,
+        "num_stages": 3
+      },
+      "metadata": {
+        "allowed_dot_input_precisions": [
+          "tf32",
+          "tf32x3",
+          "ieee",
+          "bf16x3",
+          "bf16x6"
+        ],
+        "arch": "sm89",
+        "backend_name": "cuda",
+        "debug": false,
+        "default_dot_input_precision": "tf32",
+        "deprecated_fp8_dot_operand_dtypes": [],
+        "enable_fp_fusion": true,
+        "enable_reflect_ftz": true,
+        "extern_libs": [
+          [
+            "libdevice",
+            "/mnt/c/public/project-hyle/hyle/.scratch/tools/d5-triton/unpacked/triton/backends/nvidia/lib/libdevice.10.bc"
+          ]
+        ],
+        "global_scratch_align": 1,
+        "global_scratch_size": 0,
+        "hash": "a5834f0908576bd888079e22fa7fb47263e518953bb7dfbecbac11f01473107d",
+        "instrumentation_mode": "",
+        "ir_override": null,
+        "launch_cooperative_grid": false,
+        "launch_pdl": false,
+        "max_num_imprecise_acc_default": 0,
+        "maxnreg": null,
+        "name": "weight_dequant_kernel",
+        "num_ctas": 1,
+        "num_stages": 3,
+        "num_warps": 4,
+        "profile_scratch_align": 1,
+        "profile_scratch_size": 0,
+        "ptx_options": null,
+        "ptx_version": null,
+        "sanitize_overflow": true,
+        "shared": 0,
+        "supported_fp8_dtypes": [
+          "fp8e4b15",
+          "fp8e4nv",
+          "fp8e5"
+        ],
+        "target": {
+          "backend": "cuda",
+          "arch": 89,
+          "warp_size": 32
+        },
+        "tensordesc_meta": [],
+        "tmem_size": 0,
+        "triton_version": "3.8.0",
+        "warp_size": 32
+      },
+      "sha256": "76fc60713efd44f9c3fac6571bd2d0185ac6108d6cd37d36bb64514b776febce",
+      "seconds": 0.531
+    }
+  ]
+}

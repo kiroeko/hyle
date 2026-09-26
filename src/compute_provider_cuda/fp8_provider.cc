@@ -106,7 +106,7 @@ Status qualify_device(CUcontext primary) noexcept {
   // A new architecture/driver domain needs evidence before extending it.
   if (major != 8 || minor != 9 || driver != 13040)
     return Status::Unimplemented(
-        "SGLang FP8 AOT is qualified for SM89 / CUDA Driver 13040");
+        "CUDA block128 AOT is qualified for SM89 / CUDA Driver 13040");
   return Status::Ok();
 }
 

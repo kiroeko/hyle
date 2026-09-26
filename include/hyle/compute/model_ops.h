@@ -14,6 +14,40 @@ namespace hyle::compute::model_ops {
 
 enum class Float8ScaleRounding : std::uint32_t { kNone, kPowerOfTwo };
 
+// Decode an existing block128 weight for one-time native weight preparation.
+// Input is the logical [K,N] encoded weight; output is physical row-major
+// [N,K] in BF16/F32. This explicit layout is ready for model-owned splitting
+// or packing. Execute once, then bind the resulting storage as a constant;
+// descriptor preparation itself never reads payloads or creates a cache.
+struct Float8WeightDecode final {
+  DataType output_type = DataType::kBFloat16;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4650384445430001ULL};
+  static constexpr std::string_view operation_name = "float8-weight-decode";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{1, 1}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 1 || outputs.size() != 1 || inputs[0].rank() != 2 ||
+        (output_type != DataType::kBFloat16 && output_type != DataType::kFloat32))
+      return Status::InvalidArgument("FP8 weight decode requires one block128 matrix and BF16/F32 output");
+    const auto k = inputs[0].dimensions()[0], n = inputs[0].dimensions()[1];
+    auto encoded = float8_weight_description(k, n, Float8ScaleMode::kFloat32Block128);
+    if (!encoded || inputs[0] != *encoded)
+      return Status::InvalidArgument("FP8 weight decode requires the exact E4M3FN/F32 block128 storage");
+    auto output = TensorDesc::dense(output_type, std::array{n, k});
+    if (!output) return std::move(output).error();
+    outputs[0] = *output;
+    return Status::Ok();
+  }
+};
+
+inline Operation float8_weight_decode(DataType output_type = DataType::kBFloat16) noexcept {
+  return Operation::custom(Float8WeightDecode{output_type});
+}
+
 // Complete model linear: dynamically quantize finite [M,K] activations by
 // groups of 128 to E4M3FN, then multiply the already encoded block128 weight.
 // scale = max(group_absmax, absmax_floor)/448, optionally rounded upward to a

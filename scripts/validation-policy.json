@@ -73,6 +73,7 @@
     "third_party/ggml_vulkan_runtime/": ["compute_provider_ggml_vulkan"],
     "third_party/marlin/": ["compute_provider_marlin"],
     "third_party/sglang_activation/": ["compute_provider_cuda"],
+    "third_party/deepseek_fp8/": ["compute_provider_cuda"],
     "third_party/mimalloc/": ["mem"],
     "third_party/xxhash/": ["container"],
     "third_party/wyhash/": ["container"],

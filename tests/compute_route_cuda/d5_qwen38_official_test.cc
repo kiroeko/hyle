@@ -17,6 +17,7 @@
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_dynamic_fp8_fragments.h"
+#include "../compute_models/d5_fp8_weight_preparation.h"
 #include "../compute_models/d5_grouped_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
@@ -125,6 +126,7 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   EXPECT_TRUE(provider == c::ggml_cuda::kProviderId ||
               provider == c::cublas::kProviderId ||
               provider == c::cuda_native::kSglangProviderId ||
+              provider == c::cuda_native::kDeepSeekProviderId ||
               provider == c::cuda_native::kCcclProviderId ||
               provider == c::flashinfer::kProviderId || retained_storage)
       << c::operation_name(call.prepared.kind()) << ": "
@@ -1182,6 +1184,15 @@ TEST(CudaMoeFragments, D5GlmOfficialMixedRemaining) {
       glm::check_mtp_head(model, run_q24_semantic_fragment);
     }
   }
+}
+
+TEST(CudaMoeFragments, D5Fp8WeightPreparation) {
+  for (bool bf16 : {false, true})
+    for (const auto shape : {std::array<std::int64_t, 2>{129, 256}, {576, 6144}, {28672, 512}}) {
+      SCOPED_TRACE(bf16);
+      SCOPED_TRACE(shape[0]);
+      run_q24_semantic_fragment(d5_fp8_weight_preparation::decode_weights(shape[0], shape[1], bf16));
+    }
 }
 
 TEST(CudaMoeFragments, D5GlmFp8AccumulationBoundaries) {

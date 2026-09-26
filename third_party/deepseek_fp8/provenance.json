@@ -1,0 +1,29 @@
+{
+  "repository": "https://github.com/deepseek-ai/DeepSeek-V3",
+  "revision": "9b4e9788e4a3a731f7567338ed15d3ec549ce03b",
+  "upstream_path": "inference/kernel.py",
+  "upstream_sha256": "ffee39fb93658b6ddd783c0932b1445cc4a007a061c0de2a40ac2a3b1563cc00",
+  "function": "weight_dequant_kernel",
+  "body_sha256": "eb3445348e0195dcaf9ccb432a47025a01e34adbbb03dc6fd1065625f4b8526e",
+  "license_path": "LICENSE-CODE",
+  "license_sha256": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+  "source_url": "https://raw.githubusercontent.com/deepseek-ai/DeepSeek-V3/9b4e9788e4a3a731f7567338ed15d3ec549ce03b/inference/kernel.py",
+  "git_tree": "393a9d87f8377722db31b278ef778412fcf24462",
+  "archive": {
+    "url": "https://codeload.github.com/deepseek-ai/DeepSeek-V3/tar.gz/9b4e9788e4a3a731f7567338ed15d3ec549ce03b",
+    "sha256": "05766c4f116a666aeedd2431bbbb797880fc1770521fff45f6efce5e347c26e8"
+  },
+  "adaptations": "Only two standalone Triton imports; original weight_dequant_kernel body unchanged. No PyTorch runtime, model loader or HYLE mathematics.",
+  "native_artifacts": [
+    {
+      "label": "kDeepSeekDecodeBf16",
+      "bytes": 124072,
+      "sha256": "2ceb62839dd7788ad0b1d1fce8627a9904891f6dadbdb921dbee7799f28d3d57"
+    },
+    {
+      "label": "kDeepSeekDecodeF32",
+      "bytes": 118056,
+      "sha256": "76fc60713efd44f9c3fac6571bd2d0185ac6108d6cd37d36bb64514b776febce"
+    }
+  ]
+}

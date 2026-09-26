@@ -18,6 +18,30 @@ namespace {
 
 using namespace hyle::compute;
 
+TEST(ModelFloat8Decode, PhysicalLayoutAndInvalidStorageAreExplicit) {
+  const auto w = float8_weight_description(256, 129, Float8ScaleMode::kFloat32Block128).value();
+  for (auto type : {DataType::kFloat32, DataType::kBFloat16}) {
+    const auto operation = model_ops::float8_weight_decode(type);
+    const auto output = infer_single_output(operation, std::array{w});
+    ASSERT_TRUE(output);
+    EXPECT_EQ(*output, TensorDesc::dense(type, std::array<std::int64_t, 2>{129, 256}).value());
+    EXPECT_EQ(operation_name(operation), "float8-weight-decode");
+    const auto malformed = TensorDesc::opaque(w.data_type(), w.dimensions(), w.storage_format(),
+                                               w.required_bytes().value() + 4).value();
+    const auto plain = TensorDesc::dense(DataType::kFloat32, w.dimensions()).value();
+    const auto ue8 = float8_weight_description(256, 129, Float8ScaleMode::kUnsignedExponent8Group32).value();
+    for (const auto &bad : {TensorDesc{}, malformed, plain, ue8}) {
+      std::array outputs{*output};
+      EXPECT_TRUE(infer_output_descriptions(operation, std::array{bad}, outputs).IsInvalidArgument());
+      EXPECT_EQ(outputs[0], *output);
+    }
+    EXPECT_FALSE(infer_single_output(operation, std::span<const TensorDesc>{}));
+    EXPECT_FALSE(infer_single_output(operation, std::array{w, w}));
+  }
+  for (auto type : {DataType::kFloat16, DataType::kInt32, static_cast<DataType>(255)})
+    EXPECT_FALSE(infer_single_output(model_ops::float8_weight_decode(type), std::array{w}));
+}
+
 TEST(ModelFloat8Linear, InfersDtypeTailAndRejectsMalformedQuantization) {
   const auto w = float8_weight_description(256, 129, Float8ScaleMode::kFloat32Block128).value();
   for (auto type : {DataType::kFloat32, DataType::kBFloat16}) {

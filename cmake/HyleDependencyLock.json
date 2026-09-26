@@ -339,6 +339,37 @@
       ] }
     },
     {
+      "name": "deepseek_fp8",
+      "class": "in_tree",
+      "repository": "https://github.com/deepseek-ai/DeepSeek-V3.git",
+      "version": "deepseek-snapshot-9b4e9788e4a3",
+      "revision": "9b4e9788e4a3a731f7567338ed15d3ec549ce03b",
+      "git_tree": "393a9d87f8377722db31b278ef778412fcf24462",
+      "archive": {
+        "url": "https://codeload.github.com/deepseek-ai/DeepSeek-V3/tar.gz/9b4e9788e4a3a731f7567338ed15d3ec549ce03b",
+        "sha256": "05766c4f116a666aeedd2431bbbb797880fc1770521fff45f6efce5e347c26e8"
+      },
+      "vendored": {
+        "path": "third_party/deepseek_fp8",
+        "tree_sha256": "caa97021f67eba3a9cafaf4727e7a7a89fec665c7d3677ca23b9fd0f1ba4aada"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/deepseek_fp8/LICENSE",
+            "sha256": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/deepseek_fp8/TRITON-LICENSE",
+            "sha256": "92640fb97222fd0a698ff28ce0c3782c172623f8d6c609b557636a80f28fb946"
+          }
+        ]
+      }
+    },
+    {
       "name": "sglang_activation",
       "class": "in_tree",
       "repository": "https://github.com/sgl-project/sglang.git",

@@ -140,6 +140,23 @@ CUDA 默认接入固定 SGLang 原版 AOT 程序，当前资格为 SM89、`drive
 普通入口与资源验收见 [F37](../implementation/tasks/compute/llm-moe-d5-fp8-native-qualification.md)；
 完整官方画像、三交付和性能验收仍分别登记。
 
+### FP8 权重的一次性准备
+
+`model_ops::float8_weight_decode()` 接受上述逻辑 `[K,N]` block128 权重，输出为明确的
+物理 row-major BF16 `[N,K]`；参数 `DataType::kFloat32` 可保留 F32 结果。普通 Direct
+`prepare()` 或 Graph 节点只绑定描述符与原生程序；真正解码发生在提交后，不隐式读取权重。
+
+当模型需要吸收或拆分 K/V 权重时，消费者先执行这个准备操作，用既有 View/Copy 整理布局，
+等 Completion 成功后将结果作为后续图的常量。消费者持有缓存并复用；不要在每个 token 的图里
+重复解码。BF16 完整矩阵占 `2*N*K` 字节，另计布局整理时的临时矩阵和最终缓存峰值。
+
+CUDA 默认绑定固定 DeepSeek 原版程序，当前有限域为 SM89/Driver API 13040、K 整除128、
+`N*K <= INT32_MAX`、`K/128 <= 65535`；输入需4字节对齐，输出按 BF16/F32 需2/4字节对齐。
+一次原生发射，无额外工作区；支持独立 invocation 并发，输出禁止与输入重叠。编码中的 NaN
+保留为 NaN；该入口不进行模型文件读取或有限权重扫描。AOT 程序随 Provider 嵌入，运行时
+无需 Python/Triton，来源及当前验收状态见
+[F41](../implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md)。
+
 ### 动态 FP8 模型投影
 
 浮点激活尚未编码时，将 `model_ops::float8_block_linear()` 作为普通 Direct `prepare()` 或
