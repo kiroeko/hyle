@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：142/176完整格已验；F40在f5d9abd5补齐GLM-5.3-Flash官方FP8的CUDA Direct/Graph，修正测试遗漏的F32累加舍入，原误差门不变。另34格、三交付/P1及D6待完成；GLM DSA FP8 kv_b冷准备继续有限接线。"
+      "summary": "D5 AUDITED：144/176完整格已验；F41在bcea6bce补齐GLM-5.3官方FP8的CUDA Direct/Graph冷解码、真实K/V缓存、MLA/NextN状态反馈及全词表。另32格、三交付/P1及D6待完成；不以局部正确性代签整体收口。"
     },
     {
       "module": "compute_backend_cpu",
@@ -476,13 +476,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5-F41 AUDITED：GLM官方FP8 kv_b缺少一次性成熟解码与缓存准备；有限新增DeepSeek原版block128解码身份及CUDA默认接线，不新增HYLE数学。完整ledger142/176，其它路线、交付/P1和D6仍待完成。"
+      "summary": "D5-F41 AUDITED：DeepSeek原版FP8冷解码与默认CUDA接线在bcea6bce通过普通入口/资源/真实GLM KV缓存和NextN；ledger144/176。三交付/P1等聚合门仍待D5-A5/A6，不提前CLOSED。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5-F41 AUDITED：GLM官方FP8 kv_b缺少一次性成熟解码与缓存准备；有限新增DeepSeek原版block128解码身份及CUDA默认接线，不新增HYLE数学。完整ledger142/176，其它路线、交付/P1和D6仍待完成。"
+      "summary": "D5-F41 AUDITED：DeepSeek原版FP8冷解码与默认CUDA接线在bcea6bce通过普通入口/资源/真实GLM KV缓存和NextN；ledger144/176。三交付/P1等聚合门仍待D5-A5/A6，不提前CLOSED。"
     },
     {
       "module": "graph_route_cuda",

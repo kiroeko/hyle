@@ -60,3 +60,19 @@ P0：解码O(NK)只在消费者准备阶段发生，持久BF16缓存2NK bytes，
 F41首次重新configure发现既有SGLang lock摘要与HEAD已提交的完整source tree不一致；
 逐文件确认工作树与Git对象的规范化hash完全相同、没有额外文件后，只修正lock摘要。
 这属于本卡依赖快照接缝；没有变更旧数学或扩展公共审计。原失败日志保留。
+
+## 当前结果：本地能力接齐，聚合门待 D5
+
+候选`bcea6bce`通过schema、Provider与普通CUDA Direct/Graph共11项GTest，零SKIP；
+四项公开头独立检查通过，原版两份AOT重建与固定hash一致。资源拒绝/OOM回滚、并发、
+Completion保活、全部编码/尾块、变化输入及GLM完整consumer均通过。
+
+官方DSA从同一原始FP8 kv_b执行一次原生解码与既有View/Copy，缓存K/V直接绑定热程序。
+冷阶段的原始设备权重、完整解码临时矩阵和程序在热阶段前释放；热MLA/NextN四轮反馈
+实际状态，真实hidden继续完整154880词表。两入口缓存逐值精确，原整链门不变。
+具体收据、原失败、成本与复用边界见
+[F41证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/README.md)。
+
+新增两格，ledger144/176；其它32格及D5-A5/A6、D6仍未完成。owner继续AUDITED，
+不把本卡局部正确性当作三交付/性能或整个模块CLOSED。统一实现59,829行/238文件，
+不含测试与第三方生成程序。

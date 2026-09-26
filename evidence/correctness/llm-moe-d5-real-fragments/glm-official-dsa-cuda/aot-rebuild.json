@@ -1,0 +1,12 @@
+[
+  {
+    "label": "kDeepSeekDecodeBf16",
+    "sha256": "2ceb62839dd7788ad0b1d1fce8627a9904891f6dadbdb921dbee7799f28d3d57",
+    "matches_pinned": true
+  },
+  {
+    "label": "kDeepSeekDecodeF32",
+    "sha256": "76fc60713efd44f9c3fac6571bd2d0185ac6108d6cd37d36bb64514b776febce",
+    "matches_pinned": true
+  }
+]

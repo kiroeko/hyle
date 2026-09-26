@@ -1,0 +1,153 @@
+{
+  "scope": "Original pinned DeepSeek block128 weight decode, native Windows Driver; not HYLE entry qualification",
+  "device": "NVIDIA GeForce RTX 4070",
+  "sm": 89,
+  "driver_version": 13040,
+  "cases": [
+    {
+      "n": 1,
+      "k": 128,
+      "dtype": "bf16",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 1,
+      "k": 128,
+      "dtype": "fp32",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 1,
+      "k": 128,
+      "dtype": "bf16",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 1,
+      "k": 128,
+      "dtype": "fp32",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 129,
+      "k": 256,
+      "dtype": "bf16",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 129,
+      "k": 256,
+      "dtype": "fp32",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 129,
+      "k": 256,
+      "dtype": "bf16",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 129,
+      "k": 256,
+      "dtype": "fp32",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 576,
+      "k": 6144,
+      "dtype": "bf16",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 576,
+      "k": 6144,
+      "dtype": "fp32",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 576,
+      "k": 6144,
+      "dtype": "bf16",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 576,
+      "k": 6144,
+      "dtype": "fp32",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 28672,
+      "k": 512,
+      "dtype": "bf16",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 28672,
+      "k": 512,
+      "dtype": "fp32",
+      "replay": 0,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 28672,
+      "k": 512,
+      "dtype": "bf16",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    },
+    {
+      "n": 28672,
+      "k": 512,
+      "dtype": "fp32",
+      "replay": 1,
+      "mismatches": 0,
+      "nan_mismatches": 0,
+      "output_guard_unchanged": true
+    }
+  ],
+  "verdict": "PASS_NATIVE_DECODE_ONLY"
+}

@@ -1,0 +1,161 @@
+{
+  "candidate": "bcea6bce8c7f33d224a08d112e017f66150b2b27",
+  "route": "cuda",
+  "factors": [
+    "compute_ops",
+    "compute_provider_cuda",
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f41-complete-consumer\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 12.0
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_ops|compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f41-complete-consumer\\cuda\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 39.36
+    }
+  ],
+  "test_filter": "ModelFloat8Decode.*:DeepSeekFp8Decode.*:*MoeFragments.D5Fp8WeightPreparation:*MoeFragments.D5GlmDsaPreparedKvAndNextN:*MoeFragments.D5GlmOfficialMixedRemaining:*MoeFragments.D5GlmGgufMla*:*MoeFragments.D5GlmGgufNextN*",
+  "schema_version": 1,
+  "tree": "b37129f4280e094f0c91dd77601982f2b3625e10",
+  "verdict": "RUN_PASS",
+  "profile": "glm53:official:official-fp8",
+  "entries": [
+    "direct",
+    "graph"
+  ],
+  "new_complete_cells": 2,
+  "scope": "Complete required-region correctness for fixed GLM-5.3 official FP8 CUDA profile; excludes other routes, three deliveries, P1 and whole-model inference.",
+  "region_receipts": {
+    "R01": [
+      "evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R02": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/receipt.json"
+    ],
+    "R03": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R07": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R08": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R09": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R10": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R11": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R13": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R14": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ],
+    "R15": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json"
+    ]
+  },
+  "source_payload": "Nonzero format-valid synthetic weights preserving official per-role FP8/BF16/F32, H6144/Qrank2048/KVrank512/heads64/NoPE192/V256, block128 and full154880 vocabulary.",
+  "preparation": "Original pinned DeepSeek weight_dequant_kernel once, followed by ordinary View/Copy. A single FP8 [28672,512] payload yields BF16 key [64,512,192] and value [64,256,512]. Cold source/intermediates and program die before four hot model replays. No host-generated cache is uploaded.",
+  "preparation_bytes": {
+    "encoded_source": 14683648,
+    "decoded_temporary": 29360128,
+    "cached_key": 12582912,
+    "cached_value": 16777216,
+    "explicit_direct_payload_peak": 73403904,
+    "resident_cache": 29360128
+  },
+  "numeric": "Exact independent BF16 cache check; existing abs2e-5+rel0.025 whole-chain gate, original inputs and actual cache/hidden feedback. No tolerance or upstream arithmetic changes.",
+  "resource_checks": [
+    "all256FP8 codes and NaN/signed-zero",
+    "BF16/F32 tail/output guard",
+    "metadata OOM rollback",
+    "host/alias/alignment/index/grid rejection",
+    "two independent queues and lanes",
+    "completion retains native module after handle release/close",
+    "allocation-free replay with reserved completions"
+  ],
+  "reused_scope": "R01 gather and F38/F39 dynamic/shared/expert/resource results reused only for unchanged programs, shapes, profiles and SM89 Driver13040 environment. New decoder has its own ID; no previous arithmetic implementation replaced.",
+  "regression": "F40 official mixed regions and four GGUF NextN/full-head consumers reran in both ordinary entries after shared fixture changes.",
+  "initial_failures": "Initial CUDA decoder ordinary entries passed; resource fixture incorrectly value() accessed an already-rejected misaligned public view. Corrected assertion, unchanged product. Configure caught Python cache files and an old stale SGLang lock; sources matched committed objects, only source-cache hygiene and recorded digest corrected.",
+  "costs": "Cold decode/packing and BF16 cache counted explicitly; actual hidden still stages through host readback/upload into sharded full-vocabulary head. No P1 or zero-copy claim.",
+  "remaining": [
+    "32 incomplete profile/route/entry cells",
+    "D5-A5 source/static/shared and remaining selected closure gates",
+    "D5-A6 P1",
+    "D6"
+  ],
+  "ledger_counts_after": {
+    "RUN_PASS": 144,
+    "VALIDATION_NOT_RUN": 32
+  },
+  "files": {
+    "aot-rebuild.json": "2e27e4a4162bf4ab054a9f5729d2c98c2fbb9ab72f991ab0b481e136b11ccb45",
+    "build.log.gz": "62818928b9976d7c3815d3e5771fa6033dbdf685becf7e992f6d2ef8e47cb9a9",
+    "cache-identity.txt.gz": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee",
+    "compilation.json": "2a77a478ffcd83348ab83731d92bc3bd4566a655858f3925d5eb591b9cb6e642",
+    "configure-failure-build.log.gz": "d8901286f225cdb94e08712daa70a1212fff727371dbfcba6bbb8627035bddaa",
+    "configure-failure-receipt.json.gz": "3889aa4f9d79dd59fdb86a8d41412e7d7549471e5c6ad152adcefe0713e668a1",
+    "configure-failure2.log.gz": "d2863d3e4342cd81a7b72ded7351615e16541f11a697e61c0bf9faf3b44fae41",
+    "d5-f41-consumer-run.py": "3418834e586bdd3c376ef3adb3e108e9f24fb6cd5bd463e9eef3e331f4e7382e",
+    "d5-f41-headers.py": "f237c698f3dcd5490fe45c0df9f9affd5e86dcb9e70813a21acfbc002632c437",
+    "d5-f41-native-probe.py": "dca1db881a509863e13900b56440ed6b9f7bb4a05ad7ee01da726e78ba491348",
+    "d5-kimi-owner-windows.py": "6d37ba053a37fdb0e5d6a2de4ab2061f88792e6d8d5632c2646b79060bbed58f",
+    "d5-sglang-fp8-native-probe.py": "013b39d1eaa6719a8aacd2af6bcb4e9bf152103910abce3130dfbd09b636efe8",
+    "headers-headers.log.gz": "1ce7c93b27736a0bf8d87f77d43ca80421cbd2df5bface2c0ee515d55efda05e",
+    "headers-receipt.json.gz": "5a18575a82ea7b4aa028334631fa4f6740a9a1c610666a732d11435913e74350",
+    "initial-native-tests.log.gz": "f4591ecd5c2e5454dc7f14ed168a0039e31044bc4eeb5a6360ce732da3634af7",
+    "initial-receipt.json.gz": "c020e1719f74963d5e730014f11e15d47ba1d620ac27888f5a5ab34202325743",
+    "initial-tests.log.gz": "cd8cb430bc8150d8590c9ec34796217593cb50604716ace8a308f43807ed5852",
+    "initial-tests.xml.gz": "1a8fc0c34c1ac2ea2c88422201cf3eff791abd5d5929b62c99037a1cb55c86fb",
+    "loc.json": "97993cf43ad9fb43b25beba320bdbeb9852be248d5aec14ac307dede5e14f6d7",
+    "native-receipt.json": "af8b369f2eba413c526afd7cd3f697ad4345795fde16d247e5c106d3c7d1a091",
+    "native-tests.log.gz": "dd097bc8074ac7228a4335564427667d61d15632e1e0066fa9468ae0c844b033",
+    "plan.json": "b9f867258221ebeec653bdb09bdec2e2571a5b4d5831330b6f57871209bb1ba6",
+    "README.md": "c19df5888f16542a00664b877eb34808fcc86c536403f0895f900c73e74c9ab5",
+    "receipt.json.gz": "b36cef14cf213b6fb58f1600cc89c74bf43c9f1cf9517acbfce7ea3f6dd380fe",
+    "sglang-lock-correction.json.gz": "3b711141e26417bcb89d84d58e210f45ddb0edea7f938f6ed6c0252a2d69f848",
+    "source.json": "08276e8cc889f031b2a30c40fe02b2213435975c9ed61ca4da45c0f8beaf10b8",
+    "tests.xml.gz": "e5e9ae20c80f8674a24cd9bb13a59a58b0c209b542f0f14ae7360fd0c96570e2"
+  }
+}
