@@ -35,6 +35,14 @@ SiTU 保留 expert width=3584、beta=4、linear_beta=25。这是 F32 运行核�
 `c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad` 的 `models/glm5_next/modeling_glm5_next.py`。
 本批仅测试接线，不新增产品数学，也不触发各 profile 的完整 selector、三交付或 P1。
 
+**KDA 投影角色批次：** 从已保存 tensor header 提取六画像的51个 q/k/v/o、beta、f、g 投影角色，
+按同一 profile、输入/输出形状和原生 dtype 归并为30个 MatMul 签名；每个原权重名均保留于
+`d5_kda_projection_facts.json`，不按 artifact 的 Q 标签推断全部 dtype。普通八入口统一遍历同一张表；
+BF16 保留 BF16 输入/权重/输出舍入，Q8_0 保留 native block，F32 保留物理转置布局。
+CPU 两入口的全部30签名已通过两次变化输入，其它路线待批末验证；本批仍不是完整画像 verdict。
+参数事实另保留 Kimi 官方 A_log[128] 与成熟加载器取前96项、GGUF folded ssm_a[96] 的关系，以及
+GLM Flash 官方 BF16 conv/norm 与 GGUF F32 的区别；这些参数转换不由投影结果代签。
+
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22

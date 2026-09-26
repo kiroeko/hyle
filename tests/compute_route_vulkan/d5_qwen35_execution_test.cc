@@ -1338,6 +1338,16 @@ void run_q24_semantic_fragment(
   }
 }
 
+TEST(VulkanMoeFragments, D5KdaProjectionRoleBatch) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &role : d5_kda_projection_cases::kCases) {
+    SCOPED_TRACE(role.profile->model_repository);
+    SCOPED_TRACE(role.profile->variant);
+    SCOPED_TRACE(role.roles);
+    run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
+  }
+}
+
 TEST(VulkanMoeFragments, D5SixProfilesBoundedKdaActualStateFeedback) {
   namespace moe = d5_moe_semantic_fragments;
   for (auto profile : moe::kKdaProfiles) {

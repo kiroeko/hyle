@@ -1,0 +1,1246 @@
+{
+  "schema_version": 1,
+  "purpose": "Exact KDA projection roles from fixed tensor headers. Group only equal profile/dtype/input/output signatures; every source name retained. Not an execution verdict.",
+  "source_files": {
+    "official-weight-audit.json": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff",
+    "gguf-weight-audit.json": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+  },
+  "cases": [
+    {
+      "profile": "kimi_k3_official",
+      "dtype": "BF16",
+      "columns": 12288,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            7168
+          ],
+          "data_offsets": [
+            1988891648,
+            2165052416
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            7168
+          ],
+          "data_offsets": [
+            1636570112,
+            1812730880
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            7168
+          ],
+          "data_offsets": [
+            2165052416,
+            2341213184
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.g_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            7168
+          ],
+          "data_offsets": [
+            1460409344,
+            1636570112
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_official",
+      "dtype": "BF16",
+      "columns": 7168,
+      "reduction": 12288,
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168,
+            12288
+          ],
+          "data_offsets": [
+            1812730880,
+            1988891648
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_official",
+      "dtype": "BF16",
+      "columns": 96,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.self_attn.b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            96,
+            7168
+          ],
+          "data_offsets": [
+            1454052352,
+            1455428608
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_official",
+      "dtype": "BF16",
+      "columns": 128,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.self_attn.f_a_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            7168
+          ],
+          "data_offsets": [
+            1455428608,
+            1457263616
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_official",
+      "dtype": "BF16",
+      "columns": 12288,
+      "reduction": 128,
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.self_attn.f_b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            128
+          ],
+          "data_offsets": [
+            1457263616,
+            1460409344
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 12288,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "blk.0.attn_q.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.attn_k.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.attn_v.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_g.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 7168,
+      "reduction": 12288,
+      "tensors": [
+        {
+          "name": "blk.0.attn_output.weight",
+          "shape": [
+            "12288",
+            "7168"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "dtype": "F32",
+      "columns": 96,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_beta.weight",
+          "shape": [
+            "7168",
+            "96"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 128,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_a.weight",
+          "shape": [
+            "7168",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 12288,
+      "reduction": 128,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_b.weight",
+          "shape": [
+            "128",
+            "12288"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "dtype": "BF16",
+      "columns": 12288,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "blk.0.attn_q.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "BF16",
+          "role": "full_attention",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.attn_k.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "BF16",
+          "role": "full_attention",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.attn_v.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "BF16",
+          "role": "full_attention",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.ssm_g.weight",
+          "shape": [
+            "7168",
+            "12288"
+          ],
+          "dtype": "BF16",
+          "role": "linear_attention",
+          "shard": 1
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "dtype": "BF16",
+      "columns": 7168,
+      "reduction": 12288,
+      "tensors": [
+        {
+          "name": "blk.0.attn_output.weight",
+          "shape": [
+            "12288",
+            "7168"
+          ],
+          "dtype": "BF16",
+          "role": "lm_head",
+          "shard": 1
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "dtype": "BF16",
+      "columns": 96,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_beta.weight",
+          "shape": [
+            "7168",
+            "96"
+          ],
+          "dtype": "BF16",
+          "role": "linear_attention",
+          "shard": 1
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "dtype": "BF16",
+      "columns": 128,
+      "reduction": 7168,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_a.weight",
+          "shape": [
+            "7168",
+            "128"
+          ],
+          "dtype": "BF16",
+          "role": "linear_attention",
+          "shard": 1
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "dtype": "BF16",
+      "columns": 12288,
+      "reduction": 128,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_b.weight",
+          "shape": [
+            "128",
+            "12288"
+          ],
+          "dtype": "BF16",
+          "role": "linear_attention",
+          "shard": 1
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "dtype": "BF16",
+      "columns": 8192,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "model.language_model.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            4096
+          ],
+          "data_offsets": [
+            194899760,
+            262008624
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            4096
+          ],
+          "data_offsets": [
+            60616240,
+            127725104
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            4096
+          ],
+          "data_offsets": [
+            262074160,
+            329183024
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "dtype": "BF16",
+      "columns": 4096,
+      "reduction": 8192,
+      "tensors": [
+        {
+          "name": "model.language_model.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096,
+            8192
+          ],
+          "data_offsets": [
+            127725360,
+            194834224
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "dtype": "BF16",
+      "columns": 64,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "model.language_model.layers.0.self_attn.b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            4096
+          ],
+          "data_offsets": [
+            53734960,
+            54259248
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "dtype": "BF16",
+      "columns": 128,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "model.language_model.layers.0.self_attn.f_a_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            4096
+          ],
+          "data_offsets": [
+            54259248,
+            55307824
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.g_a_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            4096
+          ],
+          "data_offsets": [
+            57404976,
+            58453552
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "dtype": "BF16",
+      "columns": 8192,
+      "reduction": 128,
+      "tensors": [
+        {
+          "name": "model.language_model.layers.0.self_attn.f_b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            128
+          ],
+          "data_offsets": [
+            55307824,
+            57404976
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.g_b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            128
+          ],
+          "data_offsets": [
+            58453552,
+            60550704
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 8192,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "blk.0.attn_q.weight",
+          "shape": [
+            "4096",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.attn_k.weight",
+          "shape": [
+            "4096",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.attn_v.weight",
+          "shape": [
+            "4096",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 4096,
+      "reduction": 8192,
+      "tensors": [
+        {
+          "name": "blk.0.attn_output.weight",
+          "shape": [
+            "8192",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 64,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_beta.weight",
+          "shape": [
+            "4096",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 128,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_a.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_g_a.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "dtype": "Q8_0",
+      "columns": 8192,
+      "reduction": 128,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_b.weight",
+          "shape": [
+            "128",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_g_b.weight",
+          "shape": [
+            "128",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "dtype": "Q8_0",
+      "columns": 8192,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "blk.0.attn_q.weight",
+          "shape": [
+            "4096",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.attn_k.weight",
+          "shape": [
+            "4096",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.attn_v.weight",
+          "shape": [
+            "4096",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "dtype": "Q8_0",
+      "columns": 4096,
+      "reduction": 8192,
+      "tensors": [
+        {
+          "name": "blk.0.attn_output.weight",
+          "shape": [
+            "8192",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "dtype": "Q8_0",
+      "columns": 64,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_beta.weight",
+          "shape": [
+            "4096",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "dtype": "Q8_0",
+      "columns": 128,
+      "reduction": 4096,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_a.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_g_a.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "dtype": "Q8_0",
+      "columns": 8192,
+      "reduction": 128,
+      "tensors": [
+        {
+          "name": "blk.0.ssm_f_b.weight",
+          "shape": [
+            "128",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_g_b.weight",
+          "shape": [
+            "128",
+            "8192"
+          ],
+          "dtype": "Q8_0",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "profile": "kimi_k3_official",
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.self_attn.A_log",
+          "dtype": "F32",
+          "shape": [
+            128
+          ],
+          "data_offsets": [
+            0,
+            512
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.dt_bias",
+          "dtype": "F32",
+          "shape": [
+            12288
+          ],
+          "data_offsets": [
+            512,
+            49664
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.k_conv1d.weight",
+          "dtype": "F32",
+          "shape": [
+            12288,
+            1,
+            4
+          ],
+          "data_offsets": [
+            49664,
+            246272
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.o_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            128
+          ],
+          "data_offsets": [
+            246272,
+            246784
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.q_conv1d.weight",
+          "dtype": "F32",
+          "shape": [
+            12288,
+            1,
+            4
+          ],
+          "data_offsets": [
+            246784,
+            443392
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.0.self_attn.v_conv1d.weight",
+          "dtype": "F32",
+          "shape": [
+            12288,
+            1,
+            4
+          ],
+          "data_offsets": [
+            443392,
+            640000
+          ],
+          "shard": "model-00001-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "tensors": [
+        {
+          "name": "blk.0.ssm_a",
+          "shape": [
+            "96"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_k.weight",
+          "shape": [
+            "4",
+            "1",
+            "12288"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_q.weight",
+          "shape": [
+            "4",
+            "1",
+            "12288"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_v.weight",
+          "shape": [
+            "4",
+            "1",
+            "12288"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_dt.bias",
+          "shape": [
+            "12288"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "tensors": [
+        {
+          "name": "blk.0.ssm_a",
+          "shape": [
+            "96"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.ssm_dt.bias",
+          "shape": [
+            "12288"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.ssm_conv1d_k.weight",
+          "shape": [
+            "4",
+            "1",
+            "12288",
+            "1"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.ssm_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.ssm_conv1d_q.weight",
+          "shape": [
+            "4",
+            "1",
+            "12288",
+            "1"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 1
+        },
+        {
+          "name": "blk.0.ssm_conv1d_v.weight",
+          "shape": [
+            "4",
+            "1",
+            "12288",
+            "1"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 1
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "tensors": [
+        {
+          "name": "model.language_model.layers.0.self_attn.A_log",
+          "dtype": "F32",
+          "shape": [
+            64
+          ],
+          "data_offsets": [
+            1164632,
+            1164888
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.dt_bias",
+          "dtype": "F32",
+          "shape": [
+            8192
+          ],
+          "data_offsets": [
+            1164888,
+            1197656
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.k_conv1d.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            1,
+            4
+          ],
+          "data_offsets": [
+            60550704,
+            60616240
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.o_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            128
+          ],
+          "data_offsets": [
+            127725104,
+            127725360
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.q_conv1d.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            1,
+            4
+          ],
+          "data_offsets": [
+            194834224,
+            194899760
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.v_conv1d.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            1,
+            4
+          ],
+          "data_offsets": [
+            262008624,
+            262074160
+          ],
+          "shard": "model-00002-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "tensors": [
+        {
+          "name": "blk.0.ssm_a",
+          "shape": [
+            "64"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_k.weight",
+          "shape": [
+            "4",
+            "1",
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_q.weight",
+          "shape": [
+            "4",
+            "1",
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_v.weight",
+          "shape": [
+            "4",
+            "1",
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_dt.bias",
+          "shape": [
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "tensors": [
+        {
+          "name": "blk.0.ssm_a",
+          "shape": [
+            "64"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_k.weight",
+          "shape": [
+            "4",
+            "1",
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_q.weight",
+          "shape": [
+            "4",
+            "1",
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_conv1d_v.weight",
+          "shape": [
+            "4",
+            "1",
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "short_convolution",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_dt.bias",
+          "shape": [
+            "8192"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        },
+        {
+          "name": "blk.0.ssm_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "linear_attention",
+          "shard": 2
+        }
+      ]
+    }
+  ],
+  "parameter_notes": [
+    "Kimi official A_log is padded [128], while H=96. Pinned SGLang kimi_k3.py:1630-1656 explicitly loads the first num_heads entries before TP sharding. GGUF ssm_a is folded -exp(A_log), [96].",
+    "Kimi conv/norm are F32; GLM Flash official conv/norm are BF16, while its GGUF versions store these as F32. Projection receipts do not qualify these conversion boundaries."
+  ]
+}

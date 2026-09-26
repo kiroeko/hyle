@@ -1,0 +1,111 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+
+#include "d5_moe_profile_cases.h"
+
+// Generated from the fixed tensor observations in d5_kda_projection_facts.json.
+// Equal native MatMul signatures share a witness; all weight roles stay named.
+namespace d5_kda_projection_cases {
+namespace c = hyle::compute;
+enum class Storage { kF32, kBFloat16, kQ8_0 };
+struct Case final {
+  const c::ModelArtifactProfileDescription *profile;
+  const char *roles;
+  std::int64_t columns, reduction;
+  Storage storage;
+};
+inline constexpr std::array kCases{
+    Case{&d5_moe_profile_cases::kimi_k3_official,
+         "language_model.model.layers.0.self_attn.q_proj.weight | language_model.model.layers.0.self_attn.k_proj.weight | language_model.model.layers.0.self_attn.v_proj.weight | language_model.model.layers.0.self_attn.g_proj.weight",
+         12288, 7168, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_official,
+         "language_model.model.layers.0.self_attn.o_proj.weight",
+         7168, 12288, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_official,
+         "language_model.model.layers.0.self_attn.b_proj.weight",
+         96, 7168, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_official,
+         "language_model.model.layers.0.self_attn.f_a_proj.weight",
+         128, 7168, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_official,
+         "language_model.model.layers.0.self_attn.f_b_proj.weight",
+         12288, 128, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_primary_gguf,
+         "blk.0.attn_q.weight | blk.0.attn_k.weight | blk.0.attn_v.weight | blk.0.ssm_g.weight",
+         12288, 7168, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::kimi_k3_primary_gguf,
+         "blk.0.attn_output.weight",
+         7168, 12288, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::kimi_k3_primary_gguf,
+         "blk.0.ssm_beta.weight",
+         96, 7168, Storage::kF32},
+    Case{&d5_moe_profile_cases::kimi_k3_primary_gguf,
+         "blk.0.ssm_f_a.weight",
+         128, 7168, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::kimi_k3_primary_gguf,
+         "blk.0.ssm_f_b.weight",
+         12288, 128, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::kimi_k3_fidelity_gguf,
+         "blk.0.attn_q.weight | blk.0.attn_k.weight | blk.0.attn_v.weight | blk.0.ssm_g.weight",
+         12288, 7168, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_fidelity_gguf,
+         "blk.0.attn_output.weight",
+         7168, 12288, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_fidelity_gguf,
+         "blk.0.ssm_beta.weight",
+         96, 7168, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_fidelity_gguf,
+         "blk.0.ssm_f_a.weight",
+         128, 7168, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::kimi_k3_fidelity_gguf,
+         "blk.0.ssm_f_b.weight",
+         12288, 128, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::glm53_flash_official,
+         "model.language_model.layers.0.self_attn.q_proj.weight | model.language_model.layers.0.self_attn.k_proj.weight | model.language_model.layers.0.self_attn.v_proj.weight",
+         8192, 4096, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::glm53_flash_official,
+         "model.language_model.layers.0.self_attn.o_proj.weight",
+         4096, 8192, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::glm53_flash_official,
+         "model.language_model.layers.0.self_attn.b_proj.weight",
+         64, 4096, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::glm53_flash_official,
+         "model.language_model.layers.0.self_attn.f_a_proj.weight | model.language_model.layers.0.self_attn.g_a_proj.weight",
+         128, 4096, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::glm53_flash_official,
+         "model.language_model.layers.0.self_attn.f_b_proj.weight | model.language_model.layers.0.self_attn.g_b_proj.weight",
+         8192, 128, Storage::kBFloat16},
+    Case{&d5_moe_profile_cases::glm53_flash_primary_gguf,
+         "blk.0.attn_q.weight | blk.0.attn_k.weight | blk.0.attn_v.weight",
+         8192, 4096, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_primary_gguf,
+         "blk.0.attn_output.weight",
+         4096, 8192, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_primary_gguf,
+         "blk.0.ssm_beta.weight",
+         64, 4096, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_primary_gguf,
+         "blk.0.ssm_f_a.weight | blk.0.ssm_g_a.weight",
+         128, 4096, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_primary_gguf,
+         "blk.0.ssm_f_b.weight | blk.0.ssm_g_b.weight",
+         8192, 128, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_fidelity_gguf,
+         "blk.0.attn_q.weight | blk.0.attn_k.weight | blk.0.attn_v.weight",
+         8192, 4096, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_fidelity_gguf,
+         "blk.0.attn_output.weight",
+         4096, 8192, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_fidelity_gguf,
+         "blk.0.ssm_beta.weight",
+         64, 4096, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_fidelity_gguf,
+         "blk.0.ssm_f_a.weight | blk.0.ssm_g_a.weight",
+         128, 4096, Storage::kQ8_0},
+    Case{&d5_moe_profile_cases::glm53_flash_fidelity_gguf,
+         "blk.0.ssm_f_b.weight | blk.0.ssm_g_b.weight",
+         8192, 128, Storage::kQ8_0},
+};
+} // namespace d5_kda_projection_cases

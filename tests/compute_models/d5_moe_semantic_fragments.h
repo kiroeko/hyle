@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d5_moe_profile_cases.h"
+#include "d5_kda_projection_cases.h"
 #include "d5_qwen38_24t_semantic_fragments.h"
 
 // Test consumers only: compose public operations, then compare mature Provider
@@ -40,6 +41,31 @@ inline ValueId rows(Fragment &f, ValueId matrix, std::int64_t first,
   return f.one(c::Operation(c::Gather{}), {matrix, ids});
 }
 inline double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
+
+inline Fragment kda_projection(const d5_kda_projection_cases::Case &role) {
+  using Storage = d5_kda_projection_cases::Storage;
+  if (role.storage == Storage::kBFloat16) {
+    // Same public BF16 MatMul boundary and independent storage-rounding
+    // oracle as the existing official Qwen consumer, with exact role width.
+    auto f = sem::official_projection(
+        {role.roles, role.reduction, role.columns, c::GgufQuantizedType::kQ8_0});
+    f.profile = role.profile;
+    f.region = 0x030601;
+    return f;
+  }
+  const bool f32 = role.storage == Storage::kF32;
+  Fragment f{.profile = role.profile, .region = 0x030601, .quantized = !f32};
+  auto w = sem::weight(role.columns, role.reduction,
+                       c::GgufQuantizedType::kQ8_0, f32, 173);
+  auto input = f.input(dense({1, role.reduction}));
+  auto stored = f.constant(w.description, std::move(w.storage));
+  f.outputs = {f.one(c::Operation(c::MatMul{}), {input, stored})};
+  for (int seed : {3, 19}) {
+    auto activation = d5_gguf_test::activation(role.reduction, seed);
+    f.replays.push_back({{bytes(activation)}, {sem::project(activation, w)}});
+  }
+  return f;
+}
 
 inline constexpr std::array kKdaProfiles{
     &profiles::kimi_k3_official, &profiles::kimi_k3_primary_gguf,
