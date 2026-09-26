@@ -4,6 +4,7 @@
 #include "vulkan_tensor.h"
 
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/obs/trace.h"
 
 #include <algorithm>
