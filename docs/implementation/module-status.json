@@ -387,8 +387,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：144/176完整格已验；F41在bcea6bce补齐GLM-5.3官方FP8的CUDA Direct/Graph冷解码、真实K/V缓存、MLA/NextN状态反馈及全词表。另32格、三交付/P1及D6待完成；不以局部正确性代签整体收口。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-official-mixed-fragments.md",
+      "summary": "D5-F43 AUDITED：官方DeepSeek完整混合消费者的有限FIX已冻结；原版group128激活边界、pre-down路由权重及attention/compressor/MTP批量接合。继承144/176格，新增链路未验，三交付/P1继续归D5。"
     },
     {
       "module": "compute_backend_cpu",
@@ -475,8 +475,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-quantization-roundtrip.md",
-      "summary": "D5-F42 AUDITED：fd1a9ac4通过DeepSeek原版FP8/group64与FP4/group32激活量化还原的普通Direct/Graph、资源生命周期和AOT重建；完整官方片段仍待接合，ledger144/176，三交付/P1仍归D5。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-official-mixed-fragments.md",
+      "summary": "D5-F43 AUDITED：官方DeepSeek完整混合消费者的有限FIX已冻结；原版group128激活边界、pre-down路由权重及attention/compressor/MTP批量接合。继承144/176格，新增链路未验，三交付/P1继续归D5。"
     },
     {
       "module": "compute_route_cuda",

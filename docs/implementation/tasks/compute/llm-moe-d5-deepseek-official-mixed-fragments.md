@@ -1,6 +1,6 @@
 # D5-F43：DeepSeek 官方完整混合片段
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`a33823074f56b3f1bbc84bff1e173df0487ff262`；owner 为 `compute_ops` 和
   `compute_provider_cuda`。继承 D5 的144/176格及F38/F41/F42已验能力，其他owner不重开。
@@ -13,7 +13,7 @@
 - 主纵切：官方BF16输入→真实FP8/BF16/FP4混合投影与激活边界→最终输出/实际状态反馈。
   正交纵切：score/hash路由、变化输入/选择专家、压缩比例4/128、cache环绕/reset与完整MTP/head。
 
-## 有限 FIX 草案（实现前冻结）
+## 有限 FIX（实现前已冻结）
 
 1. 原版 `act_quant_kernel` 再固定一次group128 AOT；复用F42的公开roundtrip语义和已有
    DeepSeek Provider，只增加明确格式，不新增数学实现、provider种类或动态编译。
@@ -40,4 +40,7 @@ FP8权重解码只在冷期，prepared常量实际进入热期；完整片段的
 
 ## 当前状态
 
-SCOPED：源程序边界已明确，正在固定本批有限FIX。未新增产品或完整画像资格。
+`4b300218`固定SCOPED文档，当前两个AUDITED owner重新绑定本卡；不制造非法状态回退。
+原版kernel支持block_size128，模型明确在FP4 linear前调用；F42的独立组flatten与workspace ABI
+可复用，源函数不改。GGUF FP4权重lossless repack及投影已验，但其激活近似必须由整链原门裁决。
+上述FIX已冻结，可批量实施；group128及完整链路尚未运行，未新增完整画像资格。
