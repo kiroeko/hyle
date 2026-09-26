@@ -814,6 +814,24 @@ TEST(CpuMoeFragments, D5MatureClampBoundaries) {
   run_q24_semantic_fragment(d5_moe_execution_fragments::clamp_boundaries());
 }
 
+TEST(CpuMoeFragments, D5DeepSeekTokenTableRouting) {
+  for (std::size_t index : {3u, 4u, 5u, 6u}) {
+    const auto &model = d5_moe_execution_cases::kCases[index];
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_moe_execution_fragments::hash_router(model, false));
+  }
+}
+
+TEST(CpuMoeFragments, D5DeepSeekHashRoutingFeedsMixedWeightMoe) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (std::size_t index : {5u, 6u}) {
+    const auto &model = d5_moe_execution_cases::kCases[index];
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_moe_execution_fragments::hash_moe(model, false));
+  }
+}
+
 TEST(CpuMoeFragments, D5ThirteenProfilesModelRouters) {
   for (const auto &model : d5_moe_execution_cases::kCases) {
     SCOPED_TRACE(model.profile->model_repository);

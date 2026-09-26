@@ -89,6 +89,51 @@ inline Operation sqrt_softplus_routing(float scaling = 1.0F) noexcept {
   return Operation::custom(SqrtSoftplusRouting{scaling});
 }
 
+// DeepSeek hash layers select six experts from a token-to-expert table.
+// Inputs: F32 logits [T,E], I64 token IDs [T], I32 table [V,6]. Outputs:
+// F32 weights [T,6] and I32 IDs [T,6], in table order (duplicates retained).
+// Weights use sqrt(softplus(logit))/(sum+1e-20); model scaling is separate.
+// Invalid token/selected-expert IDs fail Completion without an invalid read.
+// Failed outputs cannot be consumed; there is no cross-row rollback promise.
+struct SqrtSoftplusHashRouting final {
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4453344841534801ULL};
+  static constexpr std::string_view operation_name = "sqrt-softplus-hash-routing";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{3, 3}, 2, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 3 || outputs.size() != 2)
+      return Status::InvalidArgument("Hash routing requires three inputs and two outputs");
+    for (const auto &input : inputs)
+      if (!input.valid() || !input.is_plain() || !input.is_dense())
+        return Status::InvalidArgument("Hash routing requires plain dense inputs");
+    if (inputs[0].data_type() != DataType::kFloat32 || inputs[0].rank() != 2 ||
+        inputs[1].data_type() != DataType::kInt64 || inputs[1].rank() != 1 ||
+        inputs[2].data_type() != DataType::kInt32 || inputs[2].rank() != 2)
+      return Status::InvalidArgument("Hash routing requires F32 logits, I64 tokens and an I32 table");
+    const auto logits = inputs[0].dimensions();
+    const auto table = inputs[2].dimensions();
+    if (logits[0] <= 0 || (logits[1] != 256 && logits[1] != 384) ||
+        inputs[1].dimensions()[0] != logits[0] || table[0] <= 0 || table[1] != 6)
+      return Status::InvalidArgument("Hash routing requires nonempty T/V, E256/384 and six table columns");
+    const std::array shape{logits[0], std::int64_t{6}};
+    auto weights = TensorDesc::dense(DataType::kFloat32, shape);
+    auto ids = TensorDesc::dense(DataType::kInt32, shape);
+    if (!weights) return std::move(weights).error();
+    if (!ids) return std::move(ids).error();
+    outputs[0] = *weights;
+    outputs[1] = *ids;
+    return Status::Ok();
+  }
+};
+
+inline Operation sqrt_softplus_hash_routing() noexcept {
+  return Operation::custom(SqrtSoftplusHashRouting{});
+}
+
 // Depthwise causal-window convolution used by recurrent LLM blocks. The
 // caller supplies the K-1 history prefix explicitly, so replay is stateless:
 //   samples [B, T + K - 1, C], weights [C, K] -> output [B, T, C].

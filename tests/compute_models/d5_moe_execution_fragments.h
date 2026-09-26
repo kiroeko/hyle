@@ -63,8 +63,55 @@ inline ValueId gathered_ids(Fragment &f, const Case &model, ValueId ids) {
 }
 
 struct Routing final { ValueId ids, weights; };
+struct HashInputs final { ValueId tokens, table; };
+inline constexpr std::int64_t kHashVocabulary = 129280;
+
+inline Routing hash_routing(Fragment &f, ValueId logits, HashInputs lookup,
+                             bool native, float scaling) {
+  ValueId ids, weights;
+  if (native) {
+    auto outputs = f.append(c::model_ops::sqrt_softplus_hash_routing(),
+                            {logits, lookup.tokens, lookup.table}, 2);
+    weights = outputs[0];
+    ids = outputs[1];
+  } else {
+    // Single-token model consumer: preserve the table's I32 payload and order.
+    // No score sorting, bias, float conversion of IDs, or host selection.
+    const auto shape = f.description(logits).dimensions();
+    if (shape[0] != 1)
+      throw std::runtime_error("portable hash recipe requires one token");
+    const auto experts = shape[1];
+    ids = f.one(c::Operation(c::Gather{}), {lookup.table, lookup.tokens});
+    auto rows = reshape(f, logits, {experts, 1});
+    auto selected = reshape(f, f.one(c::Operation(c::Gather{}), {rows, ids}), {1, 6});
+    auto scores = unary(f, c::UnaryKind::kSqrt,
+                         unary(f, c::UnaryKind::kSoftplus, selected));
+    auto denominator = binary(f, c::BinaryKind::kAdd, sum(f, scores, -1),
+                                filled(f, dense({1, 1}), 1.0e-20F));
+    weights = binary(f, c::BinaryKind::kDivide, scores, denominator);
+  }
+  const auto weight_desc = f.description(weights);
+  weights = binary(f, c::BinaryKind::kMultiply, weights,
+                    filled(f, weight_desc, scaling));
+  return {ids, weights};
+}
+
+inline std::vector<std::int32_t> hash_table(std::int64_t experts, int replay) {
+  std::vector<std::int32_t> result(kHashVocabulary * 6);
+  for (std::int64_t token = 0; token < kHashVocabulary; ++token)
+    for (std::int64_t slot = 0; slot < 6; ++slot)
+      result[token * 6 + slot] = std::int32_t((token * 3 + slot * 2 + replay) % experts);
+  return result;
+}
+inline std::vector<std::byte> hash_tokens(std::span<const std::int64_t> tokens,
+                                          bool native) {
+  if (native) return bytes(tokens);
+  return bytes(std::vector<std::int32_t>(tokens.begin(), tokens.end()));
+}
+
 inline Routing routing(Fragment &f, const Case &model, ValueId input,
-                        bool native_routing = false, float router_gain = 64.0F) {
+                        bool native_routing = false, float router_gain = 64.0F,
+                        std::optional<HashInputs> lookup = std::nullopt) {
   const auto resident = model.top_k + 1;
   auto desc = dense({model.experts, model.hidden}, model.router_bf16
                     ? c::DataType::kBFloat16 : c::DataType::kFloat32);
@@ -88,6 +135,8 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input,
     auto weight = f.constant(desc.transposed().value(), std::move(storage));
     logits = f.one(c::Operation(c::MatMul{}), {input, weight});
   }
+  if (lookup)
+    return hash_routing(f, logits, *lookup, native_routing, model.scaling);
   std::vector<float> bias(model.experts, -4.0F);
   for (std::int64_t e = 0; e < resident; ++e)
     bias[e] = float(e % 3 - 1) / 16.0F;
@@ -142,7 +191,8 @@ struct RouteReference final {
 };
 inline RouteReference route_reference(const Case &model,
                                        std::span<const float> input,
-                                       float router_gain = 64.0F) {
+                                       float router_gain = 64.0F,
+                                       std::span<const std::int32_t> hash_ids = {}) {
   RouteReference r;
   r.scores.resize(model.experts);
   r.ids.resize(model.experts);
@@ -155,11 +205,15 @@ inline RouteReference route_reference(const Case &model,
     r.scores[e] = float(score);
     selection[e] = score + (e <= model.top_k ? double(e % 3 - 1) / 16.0 : -4.0);
   }
-  std::stable_sort(r.ids.begin(), r.ids.end(), [&](auto a, auto b) {
-    return selection[a] > selection[b];
-  });
-  r.ids.resize(model.top_k);
-  double denominator = 0;
+  if (hash_ids.empty()) {
+    std::stable_sort(r.ids.begin(), r.ids.end(), [&](auto a, auto b) {
+      return selection[a] > selection[b];
+    });
+    r.ids.resize(model.top_k);
+  } else {
+    r.ids.assign(hash_ids.begin(), hash_ids.end());
+  }
+  double denominator = hash_ids.empty() ? 0 : 1.0e-20;
   for (auto id : r.ids)
     denominator += r.scores[id];
   for (auto id : r.ids) {
@@ -179,6 +233,50 @@ inline Fragment router(const Case &model, bool native_routing = false) {
     auto reference = route_reference(model, x);
     f.replays.push_back({{bytes(x)}, {std::move(reference.tags),
                                     std::move(reference.weights)}});
+  }
+  return f;
+}
+
+inline Fragment hash_router(const Case &model, bool native_routing = false,
+                              std::int64_t rows = 1, int mode = 0) {
+  Fragment f{.profile = model.profile, .region = 0x0a0605};
+  auto logits = f.input(dense({rows, model.experts}));
+  auto tokens = f.input(dense({rows}, native_routing ? c::DataType::kInt64
+                                                   : c::DataType::kInt32));
+  auto table_input = f.input(dense({kHashVocabulary, 6}, c::DataType::kInt32));
+  auto route = hash_routing(f, logits, {tokens, table_input}, native_routing,
+                            model.scaling);
+  f.outputs = {route.weights, route.ids};
+  f.exact_outputs = {1};
+  for (int replay = 0; replay != 3; ++replay) {
+    auto table = hash_table(model.experts, replay);
+    std::vector<std::int64_t> ids(rows);
+    std::vector<float> x(rows * model.experts), weights(rows * 6), selected(rows * 6);
+    for (std::int64_t row = 0; row < rows; ++row) {
+      ids[row] = replay == 0 ? row % kHashVocabulary
+                 : replay == 1 ? kHashVocabulary - 1 - row % kHashVocabulary
+                               : (row * 13 + 37) % kHashVocabulary;
+      // Duplicate expert IDs are a valid table payload, not a dedup request.
+      if (mode == 4) table[ids[row] * 6 + 1] = table[ids[row] * 6];
+      for (std::int64_t e = 0; e < model.experts; ++e)
+        x[row * model.experts + e] = mode == 1 ? -80.0F + float(e % 7) / 8.0F
+              : mode == 2 ? -1000.0F : mode == 3 ? 1000.0F + float(e)
+              : float((e * 7 + row * 3 + replay * 11) % 81 - 40);
+      std::array<double, 6> scores;
+      double denominator = 1.0e-20;
+      for (std::size_t slot = 0; slot < 6; ++slot) {
+        const auto expert = table[ids[row] * 6 + slot];
+        selected[row * 6 + slot] = float(expert);
+        const double value = x[row * model.experts + expert];
+        scores[slot] = std::sqrt(std::max(value, 0.0) +
+                                   std::log1p(std::exp(-std::abs(value))));
+        denominator += scores[slot];
+      }
+      for (std::size_t slot = 0; slot < 6; ++slot)
+        weights[row * 6 + slot] = float(scores[slot] / denominator * model.scaling);
+    }
+    f.replays.push_back({{bytes(x), hash_tokens(ids, native_routing), bytes(table)},
+                          {std::move(weights), std::move(selected)}});
   }
   return f;
 }
@@ -362,12 +460,20 @@ using MoeReference = std::function<ReferenceOutputs(std::span<const float>)>;
 
 inline Fragment moe_chain(const Case &model, bool native_routing,
                             bool official_fp4, MoeReference *reference_out = nullptr,
-                            float router_gain = 64.0F) {
+                            float router_gain = 64.0F, bool use_hash = false) {
   if (!model.gguf && !(official_fp4 && model.profile == cases::kCases[0].profile))
     throw std::runtime_error("official expert packing is a separate qualification");
-  Fragment f{.profile = model.profile, .region = 0x0a0b0601, .quantized = true};
+  if (use_hash && (!model.sqrt_softplus || reference_out))
+    throw std::runtime_error("hash MoE requires its token/table replay oracle");
+  Fragment f{.profile = model.profile, .region = use_hash ? 0x0a0b0602u : 0x0a0b0601u,
+             .quantized = true};
   auto input = f.input(dense({1, model.hidden}));
-  auto route = routing(f, model, input, native_routing, router_gain);
+  std::optional<HashInputs> lookup;
+  if (use_hash)
+    lookup = HashInputs{f.input(dense({1}, native_routing ? c::DataType::kInt64
+                                                        : c::DataType::kInt32)),
+                         f.input(dense({kHashVocabulary, 6}, c::DataType::kInt32))};
+  auto route = routing(f, model, input, native_routing, router_gain, lookup);
   const auto resident = model.top_k + 1;
   const std::vector<std::int32_t> zero{0};
   auto zero_id = f.constant(dense({1, 1}, c::DataType::kInt32), bytes(zero));
@@ -423,8 +529,8 @@ inline Fragment moe_chain(const Case &model, bool native_routing,
       latent_down = std::move(latent_down), latent_up = std::move(latent_up),
       wg = std::move(wg), wu = std::move(wu), wd = std::move(wd),
       sg = std::move(sg), su = std::move(su), sd = std::move(sd)]
-      (std::span<const float> x) -> ReferenceOutputs {
-    auto reference = route_reference(model, x, router_gain);
+      (std::span<const float> x, std::span<const std::int32_t> hash_ids) -> ReferenceOutputs {
+    auto reference = route_reference(model, x, router_gain, hash_ids);
     auto latent = latent_down ? project(x, *latent_down, zero, model.latent, model.hidden)
                               : std::vector<float>(x.begin(), x.end());
     std::vector<float> replicated;
@@ -462,14 +568,30 @@ inline Fragment moe_chain(const Case &model, bool native_routing,
         std::move(sgate), std::move(sup), std::move(sact)};
   };
   if (reference_out) {
-    *reference_out = std::move(evaluate);
+    *reference_out = [evaluate = std::move(evaluate)](std::span<const float> x) {
+      return evaluate(x, {});
+    };
     return f;
   }
   for (int replay = 0; replay < 3; ++replay) {
     auto x = activation(model, replay);
-    f.replays.push_back({{bytes(x)}, evaluate(x)});
+    if (use_hash) {
+      const std::array<std::int64_t, 3> tokens{0, kHashVocabulary - 1, 37};
+      const std::array token{tokens[replay]};
+      auto table = hash_table(resident, replay);
+      const auto ids = std::span<const std::int32_t>(table).subspan(token[0] * 6, 6);
+      auto expected = evaluate(x, ids);
+      f.replays.push_back({{bytes(x), hash_tokens(token, native_routing), bytes(table)},
+                            std::move(expected)});
+    } else {
+      f.replays.push_back({{bytes(x)}, evaluate(x, {})});
+    }
   }
   return f;
+}
+
+inline Fragment hash_moe(const Case &model, bool native_routing = false) {
+  return moe_chain(model, native_routing, false, nullptr, 64.0F, true);
 }
 
 inline Fragment gguf_moe(const Case &model, bool native_routing = false) {

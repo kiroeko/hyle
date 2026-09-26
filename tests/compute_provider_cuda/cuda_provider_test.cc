@@ -17,6 +17,7 @@
 
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 
@@ -424,6 +425,25 @@ void append_index_operands(compute::Operation operation,
   }
 }
 
+void append_hash_operands(compute::Operation operation, mem::MemoryResourceRef resource,
+                           std::vector<compute::TensorDesc> &descriptions,
+                           std::vector<compute::ConstTensorView> &inputs,
+                           std::optional<Tensor> &tokens, std::optional<Tensor> &table) {
+  if (!operation.custom_as<compute::model_ops::SqrtSoftplusHashRouting>()) return;
+  tokens.emplace(compute::TensorDesc::dense(compute::DataType::kInt64,
+                                            std::array<std::int64_t, 1>{1}).value(), resource);
+  table.emplace(matrix(compute::DataType::kInt32, 129280, 6), resource);
+  const std::array<std::int64_t, 1> token{129279};
+  std::vector<std::int32_t> lookup(129280 * 6);
+  for (std::size_t i = 0; i < lookup.size(); ++i) lookup[i] = std::int32_t(i % 6);
+  ASSERT_TRUE(tokens->storage.view().write(std::as_bytes(std::span(token))).ok());
+  ASSERT_TRUE(table->storage.view().write(std::as_bytes(std::span(lookup))).ok());
+  for (auto *tensor : {&*tokens, &*table}) {
+    descriptions.push_back(tensor->view.description());
+    inputs.push_back(tensor->view.as_const());
+  }
+}
+
 void pending_completion_retains_program(
     compute::Provider selected,
     compute::Operation operation =
@@ -464,6 +484,8 @@ void pending_completion_retains_program(
   std::optional<Tensor> gather_indices, scatter_updates;
   append_index_operands(operation, resource.ref(), input_desc, inputs,
                         gather_indices, scatter_updates);
+  std::optional<Tensor> hash_tokens, hash_table;
+  append_hash_operands(operation, resource.ref(), input_desc, inputs, hash_tokens, hash_table);
   const auto descriptions =
       std::span(output_desc)
           .first(compute::operation_traits(operation).outputs);
@@ -540,7 +562,8 @@ void pending_completion_retains_program(
                     .ok());
   }
   const double expected =
-      operation.kind() == compute::OperationKind::kTopK ||
+      operation.custom_as<compute::model_ops::SqrtSoftplusHashRouting>() ? 1.0 / 6
+      : operation.kind() == compute::OperationKind::kTopK ||
               operation.kind() == compute::OperationKind::kGather ||
               operation.kind() == compute::OperationKind::kScatter ||
               operation.kind() == compute::OperationKind::kConcat
@@ -653,6 +676,8 @@ void metadata_failures_rollback(
     std::optional<Tensor> gather_indices, scatter_updates;
     append_index_operands(operation, resource.ref(), input_desc, inputs,
                           gather_indices, scatter_updates);
+    std::optional<Tensor> hash_tokens, hash_table;
+    append_hash_operands(operation, resource.ref(), input_desc, inputs, hash_tokens, hash_table);
     const auto descriptions =
         std::span(output_desc)
             .first(compute::operation_traits(operation).outputs);
@@ -733,6 +758,8 @@ void metadata_failures_rollback(
 }
 
 TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
+  pending_completion_retains_program(compute::cuda_native::sglang_provider(),
+                                     compute::model_ops::sqrt_softplus_hash_routing());
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Scatter{}));
   pending_completion_retains_program(compute::cuda_native::provider());
@@ -758,6 +785,8 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
+  metadata_failures_rollback(compute::cuda_native::sglang_provider(),
+                             compute::model_ops::sqrt_softplus_hash_routing());
   metadata_failures_rollback(compute::cuda_native::provider(),
                              compute::Operation(compute::Scatter{}));
   metadata_failures_rollback(compute::cuda_native::provider());

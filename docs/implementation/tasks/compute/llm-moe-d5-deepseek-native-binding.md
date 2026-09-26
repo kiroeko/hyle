@@ -35,6 +35,7 @@ token，再以 warp 一致的方式检查六个被选专家，任何非法索引
 源码适配必须注明不是逐字节原文件，不增加另一个数学 kernel。非有限 logits 不承诺有意义权重，
 但仍不能导致非法访问。失败通过真实 Completion 报告；失败 invocation 的输出不可消费，
 不承诺不同 token 行之间的事务回滚。
+失败行先写安全的零 ID/权重，避免已排队的下游拿未初始化 ID 寻址；这不是失败输出可消费的承诺。
 
 | FIX | owner | 有限动作与验收 |
 |---|---|---|
@@ -53,3 +54,19 @@ Provider没有独立可变invocation数据，普通输入/输出由原Completion
 带sink的attention、CSA/HCA压缩状态和官方MTP仍由真实审计列出；它们不由本卡提前签署。
 需要产品端口的sink接缝在写产品代码前另补有限FIX；其它已能用成熟计算表达的模型程序只写consumer。
 本卡不授权用GGUF/BF16代签官方FP8动态激活量化。当前完整画像数仍为128/176。
+
+## 2026-09-27 批内接线检查点（未运行）
+
+F32.1–F32.3 已写入候选：公共描述、固定 SGLang hash kernel 的来源/内容锁、
+prepare 冷绑定及原异步索引失败通道。数学保持成熟源码；没有新增 HYLE 数学实现。
+F32.4 共享消费者已接入四路线 Direct/Graph：四画像的真实词表/专家域查表，
+Flash 两个 GGUF 的完整 routed/shared MoE，下游保留 MXFP4 与 Q8_0/BF16 的逐角色格式。
+官方完整 MoE 仍待 FP8 shared 接缝，不能由 router 局部测试代签。
+
+新增测试代码覆盖变化 token/table/logits、重复专家、极端分数、1/4/5/513 token 的 warp 尾部；
+CUDA 另覆盖两个独立 captured invocation、坏索引后恢复、普通 Direct、分配失败回滚和
+未完成 Completion 保活。这些 C++ 测试**尚未编译或运行**，此检查点不是 PASS。
+与 sink/压缩状态等同一 DeepSeek 批次接齐后统一冻结并验证，不为本小项新建构建树或启动 P1。
+批内轻检查：closure 57组件/schema4、文档合同及模型输入测试13/13通过，diff检查无错误；
+selector WORKTREE plan为READY，影响面与skipped理由保存在本地
+`.scratch/validation/d5-deepseek-f32-plan.json`。这些检查不代签尚未运行的native门。

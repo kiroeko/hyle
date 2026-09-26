@@ -351,7 +351,7 @@
       },
       "vendored": {
         "path": "third_party/sglang_activation",
-        "tree_sha256": "4cb43e353eb29c298d37264b4ac1ed07753d5615a6579e3a90446d501a53a64a"
+        "tree_sha256": "2cb007d7017c3bb2972bdcb2851f68b9039e66f10d92032a35dcaa73c0c13552"
       },
       "license": {
         "expression": "Apache-2.0",

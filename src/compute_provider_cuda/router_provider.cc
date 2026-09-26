@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <climits>
+#include <cstdint>
+#include <limits>
 #include <new>
 #include <utility>
 
@@ -13,6 +15,7 @@
 namespace hyle::compute::cuda_native::routing {
 namespace {
 constexpr std::uint64_t kRoute = 16;
+constexpr std::uint64_t kHashRoute = 17;
 constexpr ProviderRuntimeProperties kRuntime{
     .mode = ProviderRuntimeMode::kSharedQueue,
     .workspace_owner = ProviderWorkspaceOwner::kCaller,
@@ -74,12 +77,127 @@ const detail::ProviderPreparedVTable kVTable{
     .destroy_prepared = &destroy, .alias_support = &alias,
     .create_invocation = &create_invocation, .destroy_invocation = &destroy_invocation,
     .shared_submit = &submit};
+
+struct HashPrepared final {
+  CUcontext primary;
+  native::SglangHashRouterProgram program;
+};
+Status select_hash(Operation operation, std::span<const TensorDesc> inputs,
+                    std::span<const TensorDesc> outputs) noexcept {
+  if (!operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
+    return Status::Unimplemented("SGLang hash router requires the complete table region");
+  std::array<TensorDesc, 2> inferred;
+  HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, inferred));
+  if (!std::ranges::equal(inferred, outputs))
+    return Status::InvalidArgument("SGLang hash router output descriptions differ");
+  const auto count = inputs[0].element_count();
+  if (!count || *count > INT32_MAX ||
+      static_cast<std::uint64_t>(inputs[2].dimensions()[0]) >
+          std::numeric_limits<unsigned>::max())
+    return Status::Unimplemented("SGLang hash router native index capacity exceeded");
+  return Status::Ok();
+}
+void destroy_hash(void *state, mem::AllocatorRef allocator) noexcept {
+  auto *prepared = static_cast<HashPrepared *>(state);
+  if (!prepared) return;
+  prepared->~HashPrepared();
+  allocator.deallocate(prepared, sizeof(HashPrepared), alignof(HashPrepared));
+}
+detail::EnqueueResult submit_hash(void *state, void *, Queue &queue,
+                                  std::span<const ConstTensorView> inputs,
+                                  std::span<const TensorView> outputs) noexcept {
+  const auto &prepared = *static_cast<const HashPrepared *>(state);
+  auto stream = cuda::stream(queue);
+  if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
+  std::array<const void *, 3> in;
+  std::array<void *, 2> out;
+  for (std::size_t i = 0; i < in.size(); ++i) {
+    auto pointer = cuda::detail::const_pointer(inputs[i].storage(), i == 1 ? 8 : 4, 1);
+    if (!pointer) return detail::EnqueueResult::rejected(std::move(pointer).error());
+    in[i] = *pointer;
+  }
+  for (std::size_t i = 0; i < out.size(); ++i) {
+    auto pointer = cuda::detail::mutable_pointer(outputs[i].storage(), 4, 1);
+    if (!pointer) return detail::EnqueueResult::rejected(std::move(pointer).error());
+    out[i] = *pointer;
+  }
+  cuda::detail::ScopedPrimaryContext scope(prepared.primary);
+  if (!scope) return detail::EnqueueResult::rejected(scope.status());
+  unsigned *status_word = nullptr;
+  auto initialized = cuda::detail::acquire_device_status(queue, &status_word);
+  if (!initialized.status.ok()) return initialized;
+  return detail::EnqueueResult::accepted_command(cuda::status(
+      native::sglang_hash_router_launch(prepared.program, in[0], in[1], in[2],
+                                        out[0], out[1], status_word, *stream)));
+}
+const detail::ProviderPreparedVTable kHashVTable{
+    .destroy_prepared = &destroy_hash, .alias_support = &alias,
+    .create_invocation = &create_invocation, .destroy_invocation = &destroy_invocation,
+    .shared_submit = &submit_hash};
+
+Status propose_hash(const detail::ProviderOperationRequest &request,
+                     std::span<detail::ResourceBindingRequirement> inputs,
+                     std::span<detail::ResourceBindingRequirement> outputs,
+                     detail::ProviderOperationProposal *proposal) noexcept {
+  if (!proposal || inputs.size() != 3 || outputs.size() != 2)
+    return Status::InvalidArgument("SGLang hash router binding counts differ");
+  *proposal = {};
+  if (!request.shape.exact())
+    return Status::Unimplemented("SGLang hash router requires an exact shape");
+  HYLE_RETURN_IF_ERROR(select_hash(request.operation, request.inputs, request.outputs));
+  const detail::ResourceBindingRequirement binding{
+      .required_properties = mem::MemoryProperty::kDeviceAccessible,
+      .minimum_alignment = 4};
+  std::ranges::fill(inputs, binding);
+  inputs[1].minimum_alignment = 8;
+  std::ranges::fill(outputs, binding);
+  *proposal = {.route = kHashRoute, .runtime = kRuntime,
+               .cost = {.workspace = WorkspaceRequirement{},
+                        .persistent_bytes = sizeof(HashPrepared), .copy_bytes = 0,
+                        .repack_bytes = 0, .synchronization_count = 0,
+                        .dispatch_count = 2}, // Existing status reset plus native kernel.
+               .implementation = ProviderImplementationId{kHashRoute}};
+  return Status::Ok();
+}
+ProviderPrepareOutcome prepare_hash(void *state,
+                                    const detail::ProviderPrepareRequest &request,
+                                    mem::AllocatorRef allocator,
+                                    detail::ProviderPrepared *output) noexcept {
+  *output = {};
+  auto status = select_hash(request.operation, request.inputs, request.outputs);
+  if (!status.ok())
+    return status.IsUnimplemented() ? ProviderPrepareOutcome::unsupported(status)
+                                     : ProviderPrepareOutcome::error(status);
+  if (request.route != kHashRoute)
+    return ProviderPrepareOutcome::unsupported(Status::Unimplemented("SGLang hash router route mismatch"));
+  const auto primary = static_cast<CUcontext>(state);
+  cuda::detail::ScopedPrimaryContext scope(primary);
+  if (!scope) return ProviderPrepareOutcome::error(scope.status());
+  native::SglangHashRouterProgram program;
+  const auto configured = native::sglang_hash_router_prepare(
+      static_cast<unsigned>(request.inputs[0].dimensions()[0]),
+      static_cast<unsigned>(request.inputs[0].dimensions()[1]),
+      static_cast<unsigned>(request.inputs[2].dimensions()[0]), &program);
+  if (configured == cudaErrorNotSupported)
+    return ProviderPrepareOutcome::unsupported(cuda::status(configured));
+  if (configured != cudaSuccess)
+    return ProviderPrepareOutcome::error(cuda::status(configured));
+  auto *memory = allocator.allocate(sizeof(HashPrepared), alignof(HashPrepared));
+  if (!memory)
+    return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("SGLang hash router program allocation failed"));
+  auto *prepared = ::new (memory) HashPrepared{primary, program};
+  *output = {.vtable = &kHashVTable, .state = prepared, .runtime = kRuntime,
+             .persistent_bytes = sizeof(HashPrepared), .invocation_private_bytes = 0};
+  return ProviderPrepareOutcome::prepared();
+}
 } // namespace
 
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *proposal) noexcept {
+  if (request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
+    return propose_hash(request, inputs, outputs, proposal);
   if (!proposal || inputs.size() != 2 || outputs.size() != 2)
     return Status::InvalidArgument("SGLang router binding counts differ");
   *proposal = {};
@@ -103,6 +221,8 @@ ProviderPrepareOutcome prepare(void *state,
                                const detail::ProviderPrepareRequest &request,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
+  if (request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
+    return prepare_hash(state, request, allocator, output);
   *output = {};
   auto status = select(request.operation, request.inputs, request.outputs);
   if (!status.ok())

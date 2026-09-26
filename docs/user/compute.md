@@ -364,6 +364,16 @@ CPU/Apple/Vulkan 的同一模型片段继续使用各自成熟算子组合，不
 接入和验证边界见 [D5-F25](../implementation/tasks/compute/llm-moe-d5-sglang-router-binding.md)，
 此描述不代表完整模型、三交付或性能验收已经完成。
 
+`model_ops::sqrt_softplus_hash_routing()` 是 DeepSeek 前三层的 token 查表路由描述，
+当前为 [D5-F32 待批量验证候选](../implementation/tasks/compute/llm-moe-d5-deepseek-native-binding.md)。
+输入依次为 plain dense F32 logits `[T,E]`、I64 token IDs `[T]`、I32专家表 `[V,6]`，
+T/V非空、E=256或384；输出依次为 F32 weights `[T,6]`、I32 expert IDs `[T,6]`。
+按表中顺序保留六个专家（包括重复项），以选中 logit 的 `sqrt(softplus)` 分数除以
+`sum+1e-20`；此描述不含模型缩放，消费者另乘一次1.5或2.5。非法 token 或被选专家索引通过
+Completion 报告 `OutOfRange`，失败输出不可消费。非有限 logits 不承诺有效权重。
+CUDA 绑定原 SGLang 程序和现有异步错误通道；其它路线的单 token 消费者用成熟
+Gather/Softplus/Sqrt/Reduce/Divide 组合。禁止输入输出别名，保活至完成；不新增数学 kernel。
+
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context

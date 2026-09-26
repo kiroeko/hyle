@@ -84,6 +84,55 @@ TensorDesc tensor(DataType type, Dimensions... dimensions) {
   return TensorDesc::dense(type, shape).value();
 }
 
+TEST(SqrtSoftplusHashRouting, PreservesTableDomainAndRejectsMalformedPorts) {
+  const auto op = model_ops::sqrt_softplus_hash_routing();
+  const auto tokens = tensor(DataType::kInt64, 5);
+  const auto table = tensor(DataType::kInt32, 129280, 6);
+  std::array<TensorDesc, 2> outputs;
+  for (auto experts : {256, 384}) {
+    const auto logits = tensor(DataType::kFloat32, 5, experts);
+    ASSERT_TRUE(infer_output_descriptions(op, std::array{logits, tokens, table},
+                                          outputs).ok());
+    EXPECT_EQ(outputs[0], tensor(DataType::kFloat32, 5, 6));
+    EXPECT_EQ(outputs[1], tensor(DataType::kInt32, 5, 6));
+  }
+  const std::array valid{tensor(DataType::kFloat32, 5, 256), tokens, table};
+  for (std::size_t port = 0; port != valid.size(); ++port) {
+    auto bad = valid;
+    bad[port] = TensorDesc{};
+    EXPECT_FALSE(infer_output_descriptions(op, bad, outputs).ok());
+    bad[port] = tensor(DataType::kFloat16, 5, 6);
+    EXPECT_FALSE(infer_output_descriptions(op, bad, outputs).ok());
+  }
+  for (const auto &logits : {tensor(DataType::kFloat32, 0, 256),
+                              tensor(DataType::kFloat32, 5, 512),
+                              tensor(DataType::kFloat32, 1, 5, 256),
+                              valid[0].transposed().value()}) {
+    auto bad = valid;
+    bad[0] = logits;
+    EXPECT_FALSE(infer_output_descriptions(op, bad, outputs).ok());
+  }
+  for (const auto &ids : {tensor(DataType::kInt32, 5),
+                           tensor(DataType::kInt64, 4),
+                           tensor(DataType::kInt64, 1, 5)}) {
+    auto bad = valid;
+    bad[1] = ids;
+    EXPECT_FALSE(infer_output_descriptions(op, bad, outputs).ok());
+  }
+  for (const auto &lookup : {tensor(DataType::kInt32, 0, 6),
+                              tensor(DataType::kInt32, 129280, 5),
+                              tensor(DataType::kInt64, 129280, 6),
+                              table.transposed().value()}) {
+    auto bad = valid;
+    bad[2] = lookup;
+    EXPECT_FALSE(infer_output_descriptions(op, bad, outputs).ok());
+  }
+  EXPECT_FALSE(infer_output_descriptions(op, std::span(valid).first(2), outputs).ok());
+  EXPECT_FALSE(infer_output_descriptions(op, valid, std::span(outputs).first(1)).ok());
+  EXPECT_EQ(operation_traits(op).alias, AliasPolicy::kNone);
+  EXPECT_EQ(operation_name(op), "sqrt-softplus-hash-routing");
+}
+
 template <class... Dimensions> TensorShape shape(Dimensions... dimensions) {
   const std::array<std::int64_t, sizeof...(Dimensions)> values{
       static_cast<std::int64_t>(dimensions)...};
