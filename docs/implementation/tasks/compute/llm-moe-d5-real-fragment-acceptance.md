@@ -50,6 +50,8 @@ dense FFN、indexer、可直接消费的混合MLA与NextN；保持各权重角�
 F40在`f5d9abd5`通过两入口的完整混合片段与舍入边界。初始失败源于测试参考省略声明的F32
 累加舍入；修正参考后原精度门不变。合并未变的KDA、mHC、词表及F38/F39资源证据，新增
 GLM Flash官方CUDA两格。GLM DSA FP8 kv_b的冷准备和其余30个官方格仍待完成。
+后续按[F41一次性FP8权重准备](llm-moe-d5-fp8-weight-preparation.md)绑定当前owner与有限FIX，
+公开语义仍由本卡compute_ops持有；原DeepSeek解码程序的native资格不代签普通入口或完整画像。
 
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。

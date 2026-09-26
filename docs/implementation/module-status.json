@@ -475,14 +475,14 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-grouped-fp8-binding.md",
-      "summary": "D5-F39 grouped FP8 CUDA局部通过：原SGLang量化/排序/GEMM接入普通Direct与Graph，224次专家投影和两个GLM完整MoE八次执行通过，资源/非法ID/独立头及AOT重建通过。完整画像仍140/176，其它路线、三交付/P1与D6未签。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
+      "summary": "D5-F41 AUDITED：GLM官方FP8 kv_b缺少一次性成熟解码与缓存准备；有限新增DeepSeek原版block128解码身份及CUDA默认接线，不新增HYLE数学。完整ledger142/176，其它路线、交付/P1和D6仍待完成。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5-F41 SCOPED：GLM官方FP8 kv_b缺少一次性成熟解码与缓存准备；有限新增DeepSeek原版block128解码身份及CUDA默认接线，不新增HYLE数学。完整ledger142/176，其它路线、交付/P1和D6仍待完成。"
+      "summary": "D5-F41 AUDITED：GLM官方FP8 kv_b缺少一次性成熟解码与缓存准备；有限新增DeepSeek原版block128解码身份及CUDA默认接线，不新增HYLE数学。完整ledger142/176，其它路线、交付/P1和D6仍待完成。"
     },
     {
       "module": "graph_route_cuda",

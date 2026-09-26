@@ -1,6 +1,6 @@
 # D5-F41：官方 FP8 KV 权重的一次性准备
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## 合同与 owner
 
@@ -44,3 +44,11 @@ P0：解码O(NK)只在消费者准备阶段发生，持久BF16缓存2NK bytes，
 输出guard），不作为HYLE入口通过。低并行-j2、重型串行、复用现有CUDA树，DLL邻置。
 预声明：owner/schema与直接消费入口、来源事实、AOT重建、selector所选组件/依赖/头检查、docs/closure。
 如果固定程序或实际缓存边界不成立，保留精确缺口并停止该路径；不写自有解码数学或无限扩大调查。
+
+## 审计结论
+
+原版程序已按原BLOCK128、默认4warps/3stages离线编译为BF16/F32两个cubin，native共享内存均为0；
+原算术/索引/掩码未改。Windows实际16案例逐值与独立解码一致，NaN位置和输出guard一致。
+存储变换BORROW原DeepSeek程序，native ownership ROUTED到现有CUDA backend；模型K/V拆分与缓存
+生命周期为APPLICATION，View/Copy复用现有能力。默认Provider登记是唯一重开路线的变动。
+上述FIX及成本已冻结；当前普通C++、资源和完整模型链资格尚未运行，不能据native探针写PASS。
