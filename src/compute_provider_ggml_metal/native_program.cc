@@ -301,6 +301,9 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
                                     t[3], t[4], t[5], 1);
     } else if (operation.custom_as<model_ops::GroupedMatMul>()) {
       result = ggml_mul_mat_id(state->arena.get(), t[0], t[1], t[2]);
+      state->checked_index_port = 2;
+      state->checked_index_count = inputs[2].element_count().value();
+      state->checked_index_extent = inputs[0].dimensions()[0];
     } else if (const auto descriptor =
                    operation.custom_as<model_ops::HyperConnectionCombine>()) {
       result = ggml_dsv4_hc_comb(state->arena.get(), t[0], t[1], t[2],
@@ -397,7 +400,7 @@ Status NativeProgram::run(std::span<const BufferView> ports) noexcept {
         for (std::size_t index = 0; index < s.checked_index_count; ++index)
           if (indices[index] < 0 || indices[index] >= s.checked_index_extent)
             return Status::OutOfRange(
-                "ggml Metal Gather index out of range; output unchanged");
+                "ggml Metal index out of range; output unchanged");
       }
     }
     for (std::size_t i = 0; i < ports.size(); ++i) {

@@ -262,6 +262,11 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         index = end;
         continue;
       }
+      if (checked_grouped_operation(*program, step)) {
+        HYLE_RETURN_IF_ERROR(lower_checked_grouped(*program, step));
+        ++index;
+        continue;
+      }
       if (quantized_gather_operation(*program, step)) {
         HYLE_RETURN_IF_ERROR(lower_gather(*program, step));
         ++index;

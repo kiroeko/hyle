@@ -610,7 +610,8 @@ TEST(CudaQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
       auto selected = gguf::ids(1);
       selected.back() = bad;
       ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(selected))).ok());
-      auto failed = call.invocation.submit(queue, inputs, outputs);
+      auto attempt = call.prepared.create_invocation(call.workspace.view()).value();
+      auto failed = attempt.submit(queue, inputs, outputs);
       ASSERT_TRUE(failed) << failed.error().message();
       EXPECT_TRUE(failed->wait().IsOutOfRange());
       EXPECT_EQ(half_test::read<float>(result_buffer), retained);

@@ -1376,6 +1376,10 @@ void run_q24_semantic_fragment(
     calls.push_back({context.prepare(step.operation, specs, workload).value()});
   }
 
+  std::vector<a::Invocation> invocations;
+  for (auto &call : calls)
+    invocations.push_back(call.program.create_invocation().value());
+
   for (const auto &expected : fixture.replays) {
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
       auto id = fixture.inputs[i];
@@ -1398,8 +1402,13 @@ void run_q24_semantic_fragment(
       std::vector<mx::array> inputs;
       for (const auto id : step.inputs)
         inputs.push_back(*tensors[id.ordinal()]);
-      const auto outputs =
-          run(calls[call_index++], std::span<const mx::array>(inputs));
+      auto &invocation = invocations[call_index++];
+      ASSERT_TRUE(invocation.bind(inputs).ok());
+      auto work = invocation.submit();
+      ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait();
+      ASSERT_TRUE(result) << result.error().message();
+      const auto outputs = result->get()->arrays();
       ASSERT_EQ(outputs.size(), step.outputs.size());
       for (std::size_t index = 0; index < outputs.size(); ++index)
         tensors[step.outputs[index].ordinal()] = outputs[index];

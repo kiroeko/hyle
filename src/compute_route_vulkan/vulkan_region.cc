@@ -1,6 +1,7 @@
 #include "vulkan_iree.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
+#include "hyle/compute/model_ops.h"
 
 #include <algorithm>
 #include <array>
@@ -269,7 +270,55 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
 
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
-  return region_operation(program, step, false);
+  // Dynamic expert IDs need the same checked publication boundary as Gather.
+  return !step.operation.custom_as<model_ops::GroupedMatMul>() &&
+         region_operation(program, step, false);
+}
+
+bool checked_grouped_operation(const ProgramState &program,
+                                const PlanStep &step) noexcept {
+  return step.operation.custom_as<model_ops::GroupedMatMul>() &&
+         region_operation(program, step, false);
+}
+
+Status lower_checked_grouped(ProgramState &program,
+                              const PlanStep &step) noexcept {
+  try {
+    if (!checked_grouped_operation(program, step))
+      return Status::Unimplemented("ggml Vulkan checked grouped domain");
+    while (program.aliases.size() < program.values.size()) {
+      const auto id = static_cast<std::uint32_t>(program.aliases.size());
+      program.aliases.push_back({id, 0});
+    }
+    const auto append = [&](const TensorDesc &description) {
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description, {}});
+      program.aliases.push_back({id, 0});
+      return id;
+    };
+    const auto indices = program.values[step.inputs[2]].description;
+    const auto result = program.values[step.outputs[0]].description;
+    const auto extent = static_cast<std::uint64_t>(
+        program.values[step.inputs[0]].description.dimensions()[0]);
+    if (!program.status_value) {
+      HYLE_ASSIGN_OR_RETURN(auto status, TensorDesc::dense(DataType::kInt32, {}));
+      program.status_value = append(status);
+    }
+    const auto safe = append(indices);
+    const auto intermediate = append(result);
+    HYLE_RETURN_IF_ERROR(
+        lower_index_check(program, step.inputs[2], safe, extent, true));
+    Plan local;
+    local.outputs = {intermediate};
+    local.steps.push_back({step.operation,
+                           {step.inputs[0], step.inputs[1], safe},
+                           {intermediate}, {}, {1, 1, 1}, {}});
+    const std::vector<std::size_t> last_uses(program.values.size(), 0);
+    HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
+    return lower_checked_copy(program, intermediate, step.outputs[0]);
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("ggml Vulkan checked grouped metadata");
+  }
 }
 
 bool quantized_gather_operation(const ProgramState &program,

@@ -116,6 +116,8 @@ bool origins_changed(const Run &run,
                      std::span<const Dispatch> dispatches) noexcept;
 Status lower_operation(ProgramState &program, const PlanStep &step) noexcept;
 bool managed_operation(const ProgramState &, const PlanStep &) noexcept;
+bool checked_grouped_operation(const ProgramState &, const PlanStep &) noexcept;
+Status lower_checked_grouped(ProgramState &, const PlanStep &) noexcept;
 bool quantized_gather_operation(const ProgramState &,
                                 const PlanStep &) noexcept;
 bool bfloat_region_operation(const ProgramState &, const PlanStep &) noexcept;

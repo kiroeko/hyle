@@ -35,6 +35,7 @@ struct Fragment final {
   const c::ModelArtifactProfileDescription *profile;
   std::uint64_t region;
   bool quantized = false;
+  float absolute_tolerance = 8.0e-5F;
   std::vector<c::TensorDesc> descriptions;
   std::vector<ValueId> inputs, constants, outputs;
   std::vector<std::vector<std::byte>> constant_bytes;
@@ -343,7 +344,8 @@ inline Fragment attention(const c::ModelArtifactProfileDescription *profile) {
 
 inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   namespace gd = d5_qwen38_gdn_fixture;
-  Fragment f{.profile = profile, .region = 0x050521};
+  Fragment f{.profile = profile, .region = 0x050521,
+              .absolute_tolerance = 1.0e-7F};
   gd::ConvFixture conv(q::kGdnKeyHeads, q::kGdnValueHeads);
   auto samples = f.input(conv.samples_desc);
   auto weight = f.constant(conv.weights_desc, bytes(conv.weights));
@@ -380,7 +382,7 @@ inline void expect_output(const Fragment &fragment, std::span<const float> actua
   if (fragment.quantized)
     d5_qwen38_24t_moe_profiles::expect_output(fragment.profile, actual, expected);
   else
-    oracle::expect_close(actual, expected, 8.0e-5F, 4.0e-5F);
+    oracle::expect_close(actual, expected, fragment.absolute_tolerance, 4.0e-5F);
 }
 inline constexpr std::array kProfiles{
     &d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,

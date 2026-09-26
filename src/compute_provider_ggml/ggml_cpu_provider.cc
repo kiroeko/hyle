@@ -856,7 +856,7 @@ Status run(Program &program, Invocation &invocation,
       std::memcpy(&index, bytes + offset, sizeof(index));
       if (index < 0 || index >= check.limit)
         return finish(
-            Status::OutOfRange("ggml CPU Gather index is outside its source"));
+            Status::OutOfRange("ggml CPU index is outside its source"));
     }
   }
   for (std::size_t i = 0; i < outputs.size(); ++i) {
@@ -1325,6 +1325,14 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
              elements(recipe.values[node.inputs[1]]),
              inputs[0].dimensions()[static_cast<std::size_t>(
                  axis(scatter->axis, inputs[0].rank()))]});
+      } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
+        const auto index = std::ranges::find(recipe.inputs, node.inputs[2]);
+        if (index == recipe.inputs.end())
+          return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+              "ggml CPU dynamic expert IDs require a checked boundary"));
+        index_checks.push_back(
+            {static_cast<std::uint32_t>(index - recipe.inputs.begin()),
+             elements(inputs[2]), inputs[0].dimensions()[0]});
       }
       for (const auto id : node.outputs)
         available[id] = true;

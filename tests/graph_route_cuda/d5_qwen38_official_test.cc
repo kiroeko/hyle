@@ -517,7 +517,15 @@ TEST(CudaGraphQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
       auto selected = gguf::ids(1);
       selected.back() = bad;
       ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(selected))).ok());
-      auto failed = invocation.submit(queue);
+      auto attempt = compiled.executable.create_invocation().value();
+      ASSERT_TRUE(attempt.bind(activation,
+          c::ConstTensorView::create(activation_desc, activation_buffer.view()).value()).ok());
+      ASSERT_TRUE(attempt.bind(ids,
+          c::ConstTensorView::create(ids_desc, ids_buffer.view()).value()).ok());
+      ASSERT_TRUE(attempt.bind(result,
+          c::TensorView::create(output_desc, result_buffer.view()).value()).ok());
+      ASSERT_TRUE(g::cuda::prepare_replay(attempt, queue).ok());
+      auto failed = attempt.submit(queue);
       ASSERT_TRUE(failed) << failed.error().message();
       EXPECT_TRUE(failed->wait().IsOutOfRange());
       EXPECT_EQ(half_test::read<float>(result_buffer), retained);

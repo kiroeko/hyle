@@ -14,6 +14,7 @@
 #include <ggml.h>
 
 #include "hyle/compute/route_policy.h"
+#include "hyle/compute/model_ops.h"
 #include "metadata_arena.h"
 #include "native_bridge.h"
 #include "native_context.h"
@@ -474,7 +475,7 @@ detail::EnqueueResult submit(void *value, void *lane, Queue &queue,
           return index < 0 || index >= check.extent;
         }))
       return detail::EnqueueResult::accepted_command(Status::OutOfRange(
-          "ggml CUDA Gather index out of range; output unchanged"));
+          "ggml CUDA index out of range; output unchanged"));
   }
 
   terminal = cuda::status(cudaEventRecord(invocation.entry, *stream));
@@ -659,14 +660,18 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
         require(id);
       for (const auto id : node.outputs)
         require(id);
-      if (const auto *gather = node.operation.get_if<Gather>();
-          gather && gather->bounds == IndexBoundsPolicy::kChecked) {
-        const auto input = std::ranges::find(recipe.inputs, node.inputs[1]);
+      const auto *gather = node.operation.get_if<Gather>();
+      const bool grouped =
+          node.operation.custom_as<model_ops::GroupedMatMul>().has_value();
+      if (grouped || (gather && gather->bounds == IndexBoundsPolicy::kChecked)) {
+        const auto index_port = grouped ? 2 : 1;
+        const auto input =
+            std::ranges::find(recipe.inputs, node.inputs[index_port]);
         if (input == recipe.inputs.end())
           return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
-              "ggml CUDA checked Gather indices must be a dynamic input"));
+              "ggml CUDA dynamic indices require a checked boundary"));
         const auto count =
-            recipe.values[node.inputs[1]].element_count().value();
+            recipe.values[node.inputs[index_port]].element_count().value();
         if (count > SIZE_MAX - index_value_count)
           return ProviderPrepareOutcome::error(
               Status::OutOfRange("ggml CUDA index-check size overflows"));
