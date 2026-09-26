@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "candidate": "9f88d8b0211b5faa790aee016b394dfc8b5bf1f1",
+  "scope": "R01 vocabulary boundary only, thirteen non-Qwen fixed profiles, CPU Direct and Graph. Not a complete profile or other-route verdict.",
+  "regions": [
+    "R01"
+  ],
+  "profiles": [
+    "kimi_k3:official:official-mxfp4",
+    "kimi_k3:primary_gguf:UD-Q4_K_XL",
+    "kimi_k3:fidelity_gguf:UD-Q8_K_XL",
+    "deepseek_v4_pro:official:official-fp4-fp8",
+    "deepseek_v4_flash:official:official-fp4-fp8",
+    "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
+    "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
+    "glm53:official:official-fp8",
+    "glm53:primary_gguf:UD-Q4_K_XL",
+    "glm53:fidelity_gguf:Q8_0",
+    "glm53_flash:official:official-fp8",
+    "glm53_flash:primary_gguf:UD-Q4_K_XL",
+    "glm53_flash:fidelity_gguf:Q8_0"
+  ],
+  "entries": {
+    "direct": {
+      "tests": 26,
+      "verdict": "PASS",
+      "log": "cpu-compute.log"
+    },
+    "graph": {
+      "tests": 26,
+      "verdict": "PASS",
+      "log": "cpu-graph.log"
+    }
+  },
+  "other_routes": "VALIDATION_NOT_RUN",
+  "delivery": "VALIDATION_NOT_RUN",
+  "performance": "VALIDATION_NOT_RUN",
+  "whole_profile_cells_added": 0,
+  "files": {
+    "cpu-build.cmd": {
+      "bytes": 267,
+      "sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec"
+    },
+    "cpu-build.log": {
+      "bytes": 179798,
+      "sha256": "03d6fca81677b61ab300088c73025bed755384218220944a4c42196345f511bb"
+    },
+    "cpu-compute.log": {
+      "bytes": 5833,
+      "sha256": "f9dd306dec3e7bf63b35c143b07f0573f08ff081d859b561a870484685909559"
+    },
+    "cpu-graph.log": {
+      "bytes": 6103,
+      "sha256": "e3cf09993fb215adb83c47f05616b01ff1dd13b7e27c1df42b520efd035bbd48"
+    }
+  }
+}

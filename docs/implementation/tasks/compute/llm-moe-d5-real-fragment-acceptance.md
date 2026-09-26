@@ -16,6 +16,9 @@ DeepSeek 129280、GLM 154880 的完整词表和真实 hidden。逐角色 BF16/Q8
 GGUF header 取证，写入 `tests/compute_models/d5_moe_profile_facts.json`，不重新下载模型。
 测试 helper 参数化词表容量并处理整除分片的 Kimi；不增加产品算子或 Provider。
 该批接线/编译检查不改变完整画像 ledger，其余 region 组合后才统一签整格、交付和性能。
+候选 `9f88d8b0` 的 CPU Direct/Graph 定向 R01 各26项通过，见
+[检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/moe-vocabulary-cpu-checkpoint/README.md)；
+其它路线未运行，不据此增加完整验收格。
 
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
