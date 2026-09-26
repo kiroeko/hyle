@@ -938,7 +938,8 @@ TEST(CudaGraphMoeFragments, D5DynamicFp8DenseBatch) {
     SCOPED_TRACE(shape.profile->model_name);
     SCOPED_TRACE(shape.role);
     for (auto m : {1, 3}) for (bool bf16 : {false, true}) {
-      SCOPED_TRACE(m); SCOPED_TRACE(bf16);
+      SCOPED_TRACE(m);
+      SCOPED_TRACE(bf16);
       run_q24_semantic_fragment(dynamic::projection(shape, m, bf16, false));
       if (bf16) run_q24_semantic_fragment(dynamic::projection(shape, m, true, true));
     }
