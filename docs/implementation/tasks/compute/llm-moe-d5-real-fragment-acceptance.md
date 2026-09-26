@@ -26,6 +26,9 @@ N576尾块）×M1/M3×两轮输入，两入口共72次真实执行；元数据�
 动态激活量化、完整官方MoE与其余路线尚未由该批签署；完整ledger仍为140/176。
 统一Compute+Graph实现为59,173行/235文件，不含测试与第三方生成程序。
 
+下一批按[F38动态FP8接线](llm-moe-d5-dynamic-fp8-binding.md)显式区分SGLang普通F32 scale
+与DeepSeek官方幂次scale/floor，再组合原版量化与已接入GEMM。不开HYLE自写数学路线。
+
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。
 Apple修正和静态故障注入已通过；Vulkan分类修正已验，数值失败仍保留。

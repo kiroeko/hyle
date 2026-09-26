@@ -13,6 +13,7 @@
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
+#include "../compute_models/d5_dynamic_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -927,6 +928,29 @@ TEST(CudaGraphMoeFragments, D5ThirteenProfilesExpertActivation) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_moe_execution_fragments::activation_core(model));
+  }
+}
+
+TEST(CudaGraphMoeFragments, D5DynamicFp8DenseBatch) {
+  namespace fp8 = d5_official_fp8_fragments;
+  namespace dynamic = d5_dynamic_fp8_fragments;
+  const auto check = [](const fp8::Case &shape) {
+    SCOPED_TRACE(shape.profile->model_name);
+    SCOPED_TRACE(shape.role);
+    for (auto m : {1, 3}) for (bool bf16 : {false, true}) {
+      SCOPED_TRACE(m); SCOPED_TRACE(bf16);
+      run_q24_semantic_fragment(dynamic::projection(shape, m, bf16, false));
+      if (bf16) run_q24_semantic_fragment(dynamic::projection(shape, m, true, true));
+    }
+  };
+  for (const auto &shape : fp8::kCases) check(shape);
+  check(fp8::kGlmTailCase);
+}
+
+TEST(CudaGraphMoeFragments, D5GlmOfficialDynamicFp8SharedFfn) {
+  for (auto m : {1, 3}) {
+    SCOPED_TRACE(m);
+    run_q24_semantic_fragment(d5_dynamic_fp8_fragments::glm_shared_ffn(m));
   }
 }
 

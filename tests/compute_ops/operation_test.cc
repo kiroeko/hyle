@@ -18,6 +18,34 @@ namespace {
 
 using namespace hyle::compute;
 
+TEST(ModelFloat8Linear, InfersDtypeTailAndRejectsMalformedQuantization) {
+  const auto w = float8_weight_description(256, 129, Float8ScaleMode::kFloat32Block128).value();
+  for (auto type : {DataType::kFloat32, DataType::kBFloat16}) {
+    const auto a = TensorDesc::dense(type, std::array<std::int64_t, 2>{3, 256}).value();
+    for (auto rounding : {model_ops::Float8ScaleRounding::kNone,
+                           model_ops::Float8ScaleRounding::kPowerOfTwo}) {
+      const auto result = infer_single_output(model_ops::float8_block_linear(rounding, 1e-4F),
+                                              std::array{a, w});
+      ASSERT_TRUE(result);
+      EXPECT_EQ(result->data_type(), type);
+      EXPECT_EQ(result->dimensions()[0], 3);
+      EXPECT_EQ(result->dimensions()[1], 129);
+    }
+    for (float floor : {0.0F, -1.0F, std::numeric_limits<float>::denorm_min(),
+                         std::numeric_limits<float>::infinity(),
+                         std::numeric_limits<float>::quiet_NaN()})
+      EXPECT_FALSE(infer_single_output(model_ops::float8_block_linear(
+          model_ops::Float8ScaleRounding::kNone, floor), std::array{a, w}));
+    EXPECT_FALSE(infer_single_output(model_ops::float8_block_linear(
+        static_cast<model_ops::Float8ScaleRounding>(99)), std::array{a, w}));
+    const auto malformed = TensorDesc::opaque(w.data_type(), w.dimensions(), w.storage_format(),
+                                               w.required_bytes().value() + 4).value();
+    EXPECT_FALSE(infer_single_output(model_ops::float8_block_linear(), std::array{a, malformed}));
+  }
+  const auto half = TensorDesc::dense(DataType::kFloat16, std::array<std::int64_t, 2>{3, 256}).value();
+  EXPECT_FALSE(infer_single_output(model_ops::float8_block_linear(), std::array{half, w}));
+}
+
 TEST(ModelClamp, InferenceRejectsMalformedDescriptionsAndBounds) {
   const auto shape = std::array<std::int64_t, 2>{3, 7};
   const auto input = TensorDesc::dense(DataType::kFloat32, shape).value();

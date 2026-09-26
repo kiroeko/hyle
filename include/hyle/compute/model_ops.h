@@ -8,8 +8,59 @@
 #include <utility>
 
 #include "hyle/compute/operation.h"
+#include "hyle/compute/low_precision.h"
 
 namespace hyle::compute::model_ops {
+
+enum class Float8ScaleRounding : std::uint32_t { kNone, kPowerOfTwo };
+
+// Complete model linear: dynamically quantize finite [M,K] activations by
+// groups of 128 to E4M3FN, then multiply the already encoded block128 weight.
+// scale = max(group_absmax, absmax_floor)/448, optionally rounded upward to a
+// power of two; codes use saturated nearest-even conversion. Scales remain
+// F32 values; power-of-two rounding does not mean a group32 storage format.
+// BF16/F32 output preserves activation dtype after F32 accumulation. The
+// floor is explicit: ordinary SGLang uses 1e-10, official DeepSeek uses 1e-4.
+struct Float8BlockLinear final {
+  Float8ScaleRounding scale_rounding = Float8ScaleRounding::kNone;
+  float absmax_floor = 1.0e-10F;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4650384c494e0001ULL};
+  static constexpr std::string_view operation_name = "float8-block-linear";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{2, 2}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 2 || outputs.size() != 1 ||
+        (scale_rounding != Float8ScaleRounding::kNone &&
+         scale_rounding != Float8ScaleRounding::kPowerOfTwo) ||
+        !std::isfinite(absmax_floor) || absmax_floor <= 0 ||
+        !std::isnormal(absmax_floor / 448.0F))
+      return Status::InvalidArgument("FP8 linear requires a known rounding mode and positive normal scale floor");
+    const auto &a = inputs[0];
+    const auto &b = inputs[1];
+    if (!a.valid() || !a.is_plain() || !a.is_dense() || a.rank() != 2 ||
+        b.rank() != 2 || (a.data_type() != DataType::kFloat32 &&
+                         a.data_type() != DataType::kBFloat16))
+      return Status::InvalidArgument("FP8 linear requires dense BF16/F32 [M,K] and block128 weight [K,N]");
+    const auto m = a.dimensions()[0], k = a.dimensions()[1], n = b.dimensions()[1];
+    auto weight = float8_weight_description(k, n, Float8ScaleMode::kFloat32Block128);
+    if (m <= 0 || !weight || b != *weight)
+      return Status::InvalidArgument("FP8 linear requires positive dimensions and the exact E4M3FN/block128 weight layout");
+    auto output = TensorDesc::dense(a.data_type(), std::array{m, n});
+    if (!output) return std::move(output).error();
+    outputs[0] = *output;
+    return Status::Ok();
+  }
+};
+
+inline Operation float8_block_linear(
+    Float8ScaleRounding rounding = Float8ScaleRounding::kNone,
+    float absmax_floor = 1.0e-10F) noexcept {
+  return Operation::custom(Float8BlockLinear{rounding, absmax_floor});
+}
 
 // Native model clamp. Finite values and infinities are clamped to [min,max].
 // NaN data and signed-zero bit patterns follow the selected native backend;

@@ -4,6 +4,7 @@
 
 namespace hyle::compute::cuda_native::fp8 {
 inline constexpr std::uint64_t kRoute = 18;
+inline constexpr std::uint64_t kLinearRoute = 19;
 Status propose(void *state, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,

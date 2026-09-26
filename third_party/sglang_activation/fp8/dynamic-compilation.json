@@ -1,0 +1,252 @@
+{
+  "compiler": "3.8.0",
+  "target": "cuda:89:32",
+  "kernels": [
+    {
+      "label": "quantize_bf16",
+      "signature": {
+        "y_ptr": "*bf16",
+        "y_q_ptr": "*fp8e4nv",
+        "y_s_ptr": "*fp32",
+        "y_stride": "i32",
+        "N": "i32",
+        "eps": "fp32",
+        "bit8_min": "fp32",
+        "bit8_max": "fp32"
+      },
+      "constexprs": {
+        "BLOCK": 128
+      },
+      "options": {
+        "num_warps": 1,
+        "num_stages": 1
+      },
+      "metadata": {
+        "allowed_dot_input_precisions": [
+          "tf32",
+          "tf32x3",
+          "ieee",
+          "bf16x3",
+          "bf16x6"
+        ],
+        "arch": "sm89",
+        "backend_name": "cuda",
+        "debug": false,
+        "default_dot_input_precision": "tf32",
+        "deprecated_fp8_dot_operand_dtypes": [],
+        "enable_fp_fusion": true,
+        "enable_reflect_ftz": true,
+        "extern_libs": [
+          [
+            "libdevice",
+            "/mnt/c/public/project-hyle/hyle/.scratch/tools/d5-triton/unpacked/triton/backends/nvidia/lib/libdevice.10.bc"
+          ]
+        ],
+        "global_scratch_align": 1,
+        "global_scratch_size": 0,
+        "hash": "6012249c029a74a6ac44fa87549f4869a8aecd8d9c1d8d7bf50d8959482e806d",
+        "instrumentation_mode": "",
+        "ir_override": null,
+        "launch_cooperative_grid": false,
+        "launch_pdl": false,
+        "max_num_imprecise_acc_default": 0,
+        "maxnreg": null,
+        "name": "_per_token_group_quant_8bit",
+        "num_ctas": 1,
+        "num_stages": 1,
+        "num_warps": 1,
+        "profile_scratch_align": 1,
+        "profile_scratch_size": 0,
+        "ptx_options": null,
+        "ptx_version": null,
+        "sanitize_overflow": true,
+        "shared": 0,
+        "supported_fp8_dtypes": [
+          "fp8e4b15",
+          "fp8e4nv",
+          "fp8e5"
+        ],
+        "target": {
+          "backend": "cuda",
+          "arch": 89,
+          "warp_size": 32
+        },
+        "tensordesc_meta": [],
+        "tmem_size": 0,
+        "triton_version": "3.8.0",
+        "warp_size": 32
+      },
+      "seconds": 2.760739178
+    },
+    {
+      "label": "quantize_bf16_pow2",
+      "signature": {
+        "y_ptr": "*bf16",
+        "y_q_ptr": "*fp8e4nv",
+        "y_s_ptr": "*fp32",
+        "group_size": "i32",
+        "y_num_columns": "i32",
+        "y_s_col_stride": "i32",
+        "eps": "fp32",
+        "bit8_min": "fp32",
+        "bit8_max": "fp32"
+      },
+      "constexprs": {
+        "BLOCK": 128,
+        "SCALE_UE8M0": true
+      },
+      "options": {
+        "num_warps": 1,
+        "num_stages": 1
+      },
+      "metadata": {
+        "allowed_dot_input_precisions": [
+          "tf32",
+          "tf32x3",
+          "ieee",
+          "bf16x3",
+          "bf16x6"
+        ],
+        "arch": "sm89",
+        "backend_name": "cuda",
+        "debug": false,
+        "default_dot_input_precision": "tf32",
+        "deprecated_fp8_dot_operand_dtypes": [],
+        "enable_fp_fusion": true,
+        "enable_reflect_ftz": true,
+        "extern_libs": [
+          [
+            "libdevice",
+            "/mnt/c/public/project-hyle/hyle/.scratch/tools/d5-triton/unpacked/triton/backends/nvidia/lib/libdevice.10.bc"
+          ]
+        ],
+        "global_scratch_align": 1,
+        "global_scratch_size": 0,
+        "hash": "a55cd00d0ddfa764a327369f7f10fbf01504a360722dd7341e38967b6c5d09d8",
+        "instrumentation_mode": "",
+        "ir_override": null,
+        "launch_cooperative_grid": false,
+        "launch_pdl": false,
+        "max_num_imprecise_acc_default": 0,
+        "maxnreg": null,
+        "name": "_per_token_group_quant_8bit_colmajor",
+        "num_ctas": 1,
+        "num_stages": 1,
+        "num_warps": 1,
+        "profile_scratch_align": 1,
+        "profile_scratch_size": 0,
+        "ptx_options": null,
+        "ptx_version": null,
+        "sanitize_overflow": true,
+        "shared": 0,
+        "supported_fp8_dtypes": [
+          "fp8e4b15",
+          "fp8e4nv",
+          "fp8e5"
+        ],
+        "target": {
+          "backend": "cuda",
+          "arch": 89,
+          "warp_size": 32
+        },
+        "tensordesc_meta": [],
+        "tmem_size": 0,
+        "triton_version": "3.8.0",
+        "warp_size": 32
+      },
+      "seconds": 0.6156724690000006
+    },
+    {
+      "label": "matmul_bf16",
+      "signature": {
+        "A": "*fp8e4nv",
+        "B": "*fp8e4nv",
+        "C": "*bf16",
+        "As": "*fp32",
+        "Bs": "*fp32",
+        "M": "i32",
+        "N": "i32",
+        "K": "i32",
+        "stride_am": "i32",
+        "stride_ak": "i32",
+        "stride_bk": "i32",
+        "stride_bn": "i32",
+        "stride_cm": "i32",
+        "stride_cn": "i32",
+        "stride_As_m": "i32",
+        "stride_As_k": "i32",
+        "stride_Bs_k": "i32",
+        "stride_Bs_n": "i32"
+      },
+      "constexprs": {
+        "group_n": 128,
+        "group_k": 128,
+        "BLOCK_SIZE_M": 64,
+        "BLOCK_SIZE_N": 128,
+        "BLOCK_SIZE_K": 128,
+        "GROUP_SIZE_M": 32,
+        "needs_masking": false
+      },
+      "options": {
+        "num_warps": 4,
+        "num_stages": 3
+      },
+      "metadata": {
+        "allowed_dot_input_precisions": [
+          "tf32",
+          "tf32x3",
+          "ieee",
+          "bf16x3",
+          "bf16x6"
+        ],
+        "arch": "sm89",
+        "backend_name": "cuda",
+        "debug": false,
+        "default_dot_input_precision": "tf32",
+        "deprecated_fp8_dot_operand_dtypes": [],
+        "enable_fp_fusion": true,
+        "enable_reflect_ftz": true,
+        "extern_libs": [
+          [
+            "libdevice",
+            "/mnt/c/public/project-hyle/hyle/.scratch/tools/d5-triton/unpacked/triton/backends/nvidia/lib/libdevice.10.bc"
+          ]
+        ],
+        "global_scratch_align": 1,
+        "global_scratch_size": 0,
+        "hash": "dbfa6979a2a48b574d7c5887a0c22763bd9225f1326a67a9f670c3b52976284a",
+        "instrumentation_mode": "",
+        "ir_override": null,
+        "launch_cooperative_grid": false,
+        "launch_pdl": false,
+        "max_num_imprecise_acc_default": 0,
+        "maxnreg": null,
+        "name": "_w8a8_block_fp8_matmul",
+        "num_ctas": 1,
+        "num_stages": 3,
+        "num_warps": 4,
+        "profile_scratch_align": 1,
+        "profile_scratch_size": 0,
+        "ptx_options": null,
+        "ptx_version": null,
+        "sanitize_overflow": true,
+        "shared": 24576,
+        "supported_fp8_dtypes": [
+          "fp8e4b15",
+          "fp8e4nv",
+          "fp8e5"
+        ],
+        "target": {
+          "backend": "cuda",
+          "arch": 89,
+          "warp_size": 32
+        },
+        "tensordesc_meta": [],
+        "tmem_size": 0,
+        "triton_version": "3.8.0",
+        "warp_size": 32
+      },
+      "seconds": 1.5379993799999996
+    }
+  ]
+}

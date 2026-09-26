@@ -19,3 +19,8 @@ SM89 cubin is embedded in the native HYLE Provider. Triton 3.8.0 generated
 the artifact; its MIT notice is retained in TRITON-LICENSE. Normal builds
 and native use do not run Python, Triton or a model engine. See fp8/ for
 compiler/source identities and explicit maintainer regeneration.
+
+D5-F38 adds the original BF16 quantizer variants and BF16 GEMM output.
+The power-of-two quantizer retains its original column-major F32 scales;
+HYLE passes the matching GEMM strides. The absmax floor remains the original
+runtime argument and is explicitly part of the model operation contract.

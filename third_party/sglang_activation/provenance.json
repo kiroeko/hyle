@@ -34,7 +34,8 @@
     "Bind only E256/384, top6, F32 logits/bias, no fused shared experts, positive-sum normalization and output scaling. Retain native small/large token threshold and launch policy; model tie selection is not generic stable TopK.",
     "Complete DeepSeek hash routing kernel retained with original stable sqrt-softplus, warp SUM, sum+1e-20 normalization, table order and 128-thread launch. TVM host wrapper omitted; namespace and SGL_DEVICE isolated; PDL/fused shared experts disabled; model scale remains in the consumer.",
     "Hash safety adapter adds vocabulary extent and existing HYLE device-status output. Token bounds are checked before table access; all token-warp lanes reject any selected out-of-range expert before score reads. Failed rows receive zero IDs/weights to prevent uninitialized downstream addressing. Valid-input arithmetic is unchanged; failed outputs are not consumable and no cross-token rollback is promised.",
-    "D5-F37 retains the exact original block128 Triton GEMM body. A pinned Triton 3.8.0 offline compiler produces an embedded SM89 cubin; HYLE supplies only CUDA Driver module lifetime, argument binding and native launch. No runtime Python or JIT. Dynamic quantizer source is retained for provenance but is not exposed by this MatMul binding."
+    "D5-F37 retains the exact original block128 Triton GEMM body. A pinned Triton 3.8.0 offline compiler produces an embedded SM89 cubin; HYLE supplies only CUDA Driver module lifetime, argument binding and native launch. No runtime Python or JIT. Dynamic quantizer source is retained for provenance but is not exposed by this MatMul binding.",
+    "D5-F38 adds unchanged BF16 row-major quantization, BF16 column-major power-of-two quantization and BF16-output block128 GEMM. Quantization floor is an original runtime argument, explicitly bound by the model operation. Column-major scales are passed through original GEMM strides; no transpose math or runtime JIT."
   ],
   "configuration": {
     "fast_math": false,
@@ -56,6 +57,29 @@
     "compilation": "fp8/compilation.json",
     "native_cubin_sha256": "24b0e9051883dcd3467ba56fd7aceb803f1d6fc4db9545faeae48cd3403f8cda",
     "native_cubin_bytes": 302752,
-    "qualification": "D5-F37; C++ entry/delivery qualification remains separate"
+    "qualification": "D5-F37; C++ entry/delivery qualification remains separate",
+    "dynamic_compilation": "fp8/dynamic-compilation.json",
+    "dynamic_cubins": [
+      {
+        "name": "kSglangFp8QuantizeF32",
+        "sha256": "d99d949a42ecec0f375afe3b9870434ff0f10f0cf0d89733386e1dbeb1e8fe1d",
+        "bytes": 9632
+      },
+      {
+        "name": "kSglangFp8QuantizeBf16",
+        "sha256": "575c93371fee80d130540898b1ebb9ab5f9a8e16ac20200cb770bdfce2fb393c",
+        "bytes": 10792
+      },
+      {
+        "name": "kSglangFp8QuantizeBf16Pow2",
+        "sha256": "842910be08aaa826d25d88f6eafd6ca60c6ccc1212f3891c5705cbec7bac870b",
+        "bytes": 15664
+      },
+      {
+        "name": "kSglangFp8MatmulBf16",
+        "sha256": "b51f69d78a198fb5d02280c037e85a83bc1b392a6267a5b15abcb585027acd6f",
+        "bytes": 303136
+      }
+    ]
   }
 }

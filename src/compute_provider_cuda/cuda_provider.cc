@@ -139,7 +139,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (Sglang) {
-    if (request.operation.kind() == OperationKind::kMatMul)
+    if (request.operation.kind() == OperationKind::kMatMul ||
+        request.operation.custom_as<model_ops::Float8BlockLinear>())
       return fp8::propose(state, request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||
         request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
@@ -283,7 +284,7 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (Sglang) {
-    if (request.route == fp8::kRoute)
+    if (request.route == fp8::kRoute || request.route == fp8::kLinearRoute)
       return fp8::prepare(state, request, allocator, output);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||
         request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
