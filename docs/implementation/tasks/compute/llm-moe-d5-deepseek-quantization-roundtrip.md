@@ -59,3 +59,6 @@ BORROW 已成立；官方同 revision 的 MIT LICENSE 已取证，SHA256
 和 CUTLASS 模板许可随生成程序保留；两份生成程序接入已有 DeepSeek Provider，不新增公共 Provider
 种类或默认路线注册。Provider owner 从 F41 重新绑定本卡；F41 的已验能力与未完聚合门继续有效。
 源码边界、原生能力、数值舍入和成本已明确，可以按上述有限 FIX 实施；无须继续比较其它数学。
+
+实际接入遇到依赖锁仅允许 GitHub 来源的限制，按独立
+[HF in-tree 来源工具卡](../build/huggingface-vendored-source-v1.md)定向修复，不填写无关 archive。
