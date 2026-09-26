@@ -2,6 +2,9 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
+当前 owner 的 AUDITED 范围另追加[F32完整hash路由接缝](llm-moe-d5-deepseek-native-binding.md)。
+本卡 score TopK 的已验语义保持不变；新增表选择不能借本卡历史收据记为通过。
+
 ## Closure card
 
 - baseline：`41bfdb2800e17aa852f181d726585726a2087313`，Windows canonical 工作树干净。

@@ -431,6 +431,10 @@ Q5_K/Q5_K/Q6_K；Flash的12/44层为前者，第11层为后者。原代表链的
 SGLang 原版 hash kernel 已定位，当前 score TopK 和无 sink 的 SDPA 不能代签该需求。
 这是后续有限接缝定界的输入，不改变当前 ledger，也没有增加产品数学或新的执行通过声明。
 
+当前 `compute_ops` 的 AUDITED 范围追加[F32成熟hash路由接缝](llm-moe-d5-deepseek-native-binding.md)，
+与其余 DeepSeek 接线合批验证，不为单独 carrier 重跑四路线完整套件。`compute_provider_cuda`
+同步追加此有限范围；原 F25 的已验能力和未完成三交付/P1仍有效。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
