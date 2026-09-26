@@ -86,11 +86,16 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
       EXPECT_TRUE(report.provider.name.empty());
       continue;
     }
+    // D4 retained the exact Copy/Bool Select storage boundaries. A residual
+    // step cannot conceal an arithmetic node or a native multi-node region.
+    const bool retained_storage = provider == c::cuda_native::kProviderId &&
+        report.node_count == 1 &&
+        (node.kind == c::OperationKind::kCopy || node.kind == c::OperationKind::kSelect);
     EXPECT_TRUE(provider == c::ggml_cuda::kProviderId ||
                 provider == c::cublas::kProviderId ||
                 provider == c::cuda_native::kSglangProviderId ||
                 provider == c::cuda_native::kCcclProviderId ||
-                provider == c::flashinfer::kProviderId)
+                provider == c::flashinfer::kProviderId || retained_storage)
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)
         << " provider=" << report.provider.name;
@@ -793,7 +798,10 @@ void run_q24_semantic_fragment(
   auto queue = context.create_queue().value();
   ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
   sem::StateFeedback feedback{fixture};
+  std::size_t replay_index = 0;
   for (const auto &expected : fixture.replays) {
+    SCOPED_TRACE(fixture.region);
+    SCOPED_TRACE("replay " + std::to_string(replay_index++));
     for (std::size_t i = 0; i < inputs.size(); ++i)
       ASSERT_TRUE(inputs[i].view().write(feedback.input(expected, i)).ok());
     auto done = invocation.submit(queue);
@@ -801,7 +809,12 @@ void run_q24_semantic_fragment(
     const auto status = done->wait();
     ASSERT_TRUE(status.ok()) << status.message();
     for (std::size_t output = 0; output < outputs.size(); ++output) {
+      SCOPED_TRACE("output " + std::to_string(output));
       const auto actual = sem::decode_output(fixture, output, half_test::read<float>(outputs[output]));
+      ASSERT_EQ(actual.size(), expected.outputs[output].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        if (std::isfinite(expected.outputs[output][i]))
+          ASSERT_TRUE(std::isfinite(actual[i])) << "non-finite output at " << i;
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),

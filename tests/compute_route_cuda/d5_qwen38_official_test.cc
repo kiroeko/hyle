@@ -110,11 +110,21 @@ DirectCall make_call(const c::Context &context,
 
 void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
+  const auto kind = call.prepared.kind();
+  // D4 retained these exact structural boundaries; no arithmetic fallback.
+  bool retained_storage = false;
+  if (provider == c::cuda_native::kProviderId && call.prepared.input_count() > 0) {
+    const auto &input = call.prepared.input_description().value();
+    retained_storage =
+        (kind == c::OperationKind::kCopy && input.data_type() == c::DataType::kInt32) ||
+        (kind == c::OperationKind::kSelect && input.data_type() == c::DataType::kBool &&
+         call.prepared.output_description()->data_type() == c::DataType::kFloat32);
+  }
   EXPECT_TRUE(provider == c::ggml_cuda::kProviderId ||
               provider == c::cublas::kProviderId ||
               provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kCcclProviderId ||
-              provider == c::flashinfer::kProviderId)
+              provider == c::flashinfer::kProviderId || retained_storage)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
   EXPECT_EQ(call.prepared.workload(), workload);
@@ -742,7 +752,10 @@ void run_q24_semantic_fragment(
   }
 
   sem::StateFeedback feedback{fixture};
+  std::size_t replay_index = 0;
   for (const auto &expected : fixture.replays) {
+    SCOPED_TRACE(fixture.region);
+    SCOPED_TRACE("replay " + std::to_string(replay_index++));
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
       ASSERT_TRUE(
           views[fixture.inputs[i].ordinal()].write(feedback.input(expected, i)).ok());
@@ -763,7 +776,12 @@ void run_q24_semantic_fragment(
       run(calls[call_index++], queue, inputs, outputs);
     }
     for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
+      SCOPED_TRACE("output " + std::to_string(output));
       const auto actual = sem::decode_output(fixture, output, half_test::read<float>(buffers[fixture.outputs[output].ordinal()]));
+      ASSERT_EQ(actual.size(), expected.outputs[output].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        if (std::isfinite(expected.outputs[output][i]))
+          ASSERT_TRUE(std::isfinite(actual[i])) << "non-finite output at " << i;
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
