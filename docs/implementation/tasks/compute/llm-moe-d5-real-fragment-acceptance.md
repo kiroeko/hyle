@@ -1016,6 +1016,16 @@ ID 边界。原有独立解码 oracle 扩展到完整链，量化结果按既有
 F32 router 因而选择 native，且误用 BF16 逐元素误差门；该轮不签通过。修正构建配置与
 量化验收合同后集中检查，四路线完整批次尚待运行，不改变 ledger、三交付或 P1 状态。
 
+**F21 定向补充审计（baseline `ea5cb859`，owner `compute_provider_ggml` 已 AUDITED）**：
+开启 oneDNN 后同一 CPU Direct 批次 3/4 通过，GGUF 完整 MoE 的数值门通过，但两个 F32
+router MatMul 仍报告 `hyle-native`。源码确认 oneDNN adapter 仅收 dense row-major 且主动
+拒绝单线程 M<16；ggml CPU 的 plain MatMul 又只收 F16/BF16。这不是上游缺算子，也不能
+把 `KEEP_RESIDUAL` 解释成已证明 HYLE 领先。有限 FIX 仅为 ggml CPU 既有 MatMul 准入补上
+plain F32 rank-2 activation、native output-major 转置 RHS、F32 output 的域；保留原
+`ggml_mul_mat`/F32 accumulation、资源/提交实现和所有其它准入条件。无需改变 oneDNN、
+公共 API、native 实现或数学。用上述两个真实 router 及三次变化输入的完整 Direct/Graph
+断言证明普通入口命中 ggml，已有 owner 测试随批执行；P1 仍只在稳定路线批末执行。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
