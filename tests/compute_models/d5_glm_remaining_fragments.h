@@ -651,8 +651,16 @@ inline Fragment mtp_decoder(const Case &model) {
   auto head_scale = sem::oracle::scale(model.hidden);
   std::reverse(head_scale.begin(), head_scale.end());
   auto next_hidden = norm(f, combined, head_scale);
+  // Quantized upstream projections may swap the order of two selected experts
+  // without changing their membership. Canonicalize only diagnostic ports so
+  // weights are compared by expert ID; the actual MoE retains its native order.
+  auto ordered = f.append(c::Operation(c::TopK{
+      .count = std::size_t(found->top_k), .largest = false}),
+      {reshape(f, feed_forward[0], {1, found->top_k})}, 2);
+  auto ordered_weights = f.one(c::Operation(c::Gather{}),
+      {reshape(f, feed_forward[1], {found->top_k, 1}), ordered[1]});
   f.outputs = {next_hidden, attention[0], eh, attention[5], ffn_input,
-               feed_forward[5], feed_forward[0], feed_forward[1]};
+               feed_forward[5], ordered[0], ordered_weights};
   f.exact_outputs = {6};
   f.state_ports = {{0, 0}, {2, 1}};
   auto hidden_values = d5_gguf_test::activation(model.hidden, 5);
@@ -669,11 +677,19 @@ inline Fragment mtp_decoder(const Case &model) {
       rv[d] = input_values[3][d] + av[5][d];
     auto normalized = sem::oracle::rms_norm_rows(rv, ffn_scale, model.hidden, kNormEpsilon);
     auto mv = feed_forward_reference(normalized);
+    std::vector<std::size_t> order(mv[0].size());
+    std::iota(order.begin(), order.end(), 0);
+    std::sort(order.begin(), order.end(), [&](auto a, auto b) { return mv[0][a] < mv[0][b]; });
+    auto ids = mv[0], weights = mv[1];
+    for (std::size_t i = 0; i < order.size(); ++i) {
+      ids[i] = mv[0][order[i]];
+      weights[i] = mv[1][order[i]];
+    }
     for (std::size_t d = 0; d < rv.size(); ++d) rv[d] += mv[5][d];
     hidden_values = sem::oracle::rms_norm_rows(rv, head_scale, model.hidden, kNormEpsilon);
     past = av[0];
     replay.outputs = {hidden_values, past, std::move(input_values[3]), std::move(av[5]),
-        std::move(normalized), std::move(mv[5]), std::move(mv[0]), std::move(mv[1])};
+        std::move(normalized), std::move(mv[5]), std::move(ids), std::move(weights)};
     f.replays.push_back(std::move(replay));
   }
   return f;
@@ -701,7 +717,9 @@ inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
   auto chosen = f.one(c::Operation(c::Gather{}), {full, ids});
   auto values = kimi::slice_heads(f, chosen, selected, width, 0, kLatent);
   auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
-      .scale = 1.0F / 16.0F, .causal = false,
+      // One decode query attends all already-selected past/current entries;
+      // the right-aligned causal mask contains no future entries to remove.
+      .scale = 1.0F / 16.0F, .causal = true,
       .accumulation_type = c::DataType::kFloat32}),
       {query, reshape(f, chosen, {1, selected, 1, width}),
        reshape(f, values, {1, selected, 1, kLatent})});

@@ -370,6 +370,13 @@ top2048（Flash为512个pool展开并附0..3尾token）直接送入compressed ca
 两个组已同时接入八个普通入口。MTP跨迭代索引carry和R01输出头组合仍未由这些组代签。
 GGUF NextN逐tensor格式已追加到同一facts文件；主干的mHC不能误接进NextN。
 
+首次CPU批验暴露两处consumer错误，原日志保留：①只含过去/当前token的单query SDPA错误声明
+noncausal，超出既有成熟causal入口；改为右对齐causal后所有已选token仍可见，不扩产品准入。
+②Flash Q8完整链中专家2/4的次序随上游量化误差交换，成员与最终输出均未失败；原测试却按位置
+逐项比较ID及权重。只对诊断端口增加原生TopK/Gather按expert ID排列，同时独立参考以相同ID
+对应权重；成员仍精确相等、原误差门不变，实际MoE保留原生次序。额外诊断排序/搬运计入测试
+成本，不宣称它是最优执行。Graph的初始search budget失败先按同一不可用SDPA归因，不改搜索器。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
