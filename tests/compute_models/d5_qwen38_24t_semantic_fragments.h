@@ -47,6 +47,7 @@ struct Fragment final {
   std::vector<Replay> replays;
   std::vector<std::pair<std::size_t, std::size_t>> state_ports{};
   std::vector<std::size_t> exact_outputs{};
+  std::vector<std::size_t> bfloat_chain_outputs{};
   struct UnorderedIds final {
     std::size_t port, row_width;
     std::int64_t extent;
@@ -60,6 +61,11 @@ struct Fragment final {
   bool exact_output(std::size_t port) const {
     return std::find(exact_outputs.begin(), exact_outputs.end(), port) !=
            exact_outputs.end();
+  }
+
+  bool bfloat_chain_output(std::size_t port) const {
+    return std::find(bfloat_chain_outputs.begin(), bfloat_chain_outputs.end(), port) !=
+           bfloat_chain_outputs.end();
   }
 
   const c::TensorDesc &description(ValueId id) const {
@@ -625,7 +631,8 @@ inline void expect_output(const Fragment &fragment,
                           std::span<const float> expected,
                           std::span<const float> native_attention = {},
                           bool exact = false,
-                          const Fragment::UnorderedIds *ids = nullptr) {
+                          const Fragment::UnorderedIds *ids = nullptr,
+                          bool bfloat_chain = false) {
   if (ids) {
     ASSERT_EQ(actual.size(), expected.size());
     ASSERT_EQ(actual.size() % ids->row_width, 0U);
@@ -652,6 +659,12 @@ inline void expect_output(const Fragment &fragment,
     // reference; normalization, RoPE and GDN do not use this allowance.
     oracle::expect_close(actual, expected, 2.0e-4F, 2.0e-3F);
     oracle::expect_close(actual, native_attention, 8.0e-5F, 4.0e-5F);
+  } else if (bfloat_chain) {
+    // Reuse the established BF16 multi-projection accuracy contract. Tiny
+    // admissible F32 errors can cross a BF16 midpoint between projections.
+    // The independent oracle still rounds every declared BF16 boundary.
+    oracle::expect_close(actual, expected, q::kExpertAbsoluteTolerance,
+                         q::kExpertRelativeTolerance);
   } else if (fragment.quantized)
     d5_qwen38_24t_moe_profiles::expect_output(fragment.profile, actual,
                                               expected);

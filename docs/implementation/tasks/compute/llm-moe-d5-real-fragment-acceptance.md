@@ -214,6 +214,28 @@ V/output=512 合法，但 ggml CPU/CUDA/Vulkan `supports` 仍要求 K descriptio
 HYLE 数学绕过失败。R01/KDA/MoE 已有精确收据按身份复用；整画像必须等剩余 region 和对应完整
 owner 验收齐备才更新，三交付/P1仍按 A5/A6。无上述实测证据不宣称画像完成。
 
+### Kimi BF16 验收分类纠正（A2/A3，AUDITED）
+
+`b0cc483d` 的 CPU Direct/Graph 暴露夹具合同问题：相同 F32 norm 中间量仅差
+5.960464477539063e-8，却位于 BF16 的 -0.748046875 中点两侧，分别舍入到0xbf40/0xbf3f；
+SiTU 的0.210449203849/0.210449248552 同样跨0x3e57/0x3e58。原独立 oracle 在每个投影前
+舍入 BF16，但错误地要求整个 BF16 链仍满足 F32 逐点门；数学连续误差不保证离散舍入分支相同。
+ggml 原版 `ggml-cpu/ops.cpp::ggml_compute_forward_rms_norm_f32` 使用 F32 乘法/均值/scale，
+独立 oracle 使用 F64 中间计算；二者的这一差异本身在原 F32 门以内，不能据此修改原数学。
+
+有限纠正撤回上一段对这两个新 BF16 完整链的 F32 数值分类，复用已验 Qwen BF16 三投影链
+`kExpertRelativeTolerance=0.025`、`kExpertAbsoluteTolerance=2e-5`，不根据本次差值调参。
+仅显式标记经过 BF16 投影的输出；独立 F32 输入 norm 仍用8e-5+4e-5*abs(ref)，residual bank
+仍精确比较，Q8 原门不变。独立 oracle 与状态轨迹不读取实际结果；新增正负 BF16 中点及相邻
+F32 的 Cast→Cast 逐值相等控制，防止数值分类掩盖转换错误。四路线共用一份规则，无平台特判。
+新增输出保留 input norm 与 gate projection，诊断日志和旧失败均保留；不将新规则倒签旧候选。
+
+残差失败的原因则是夹具把原模型 append 写成 assignment Scatter；原版 `res_push` 只做 Concat。
+有限容量测试改为 Concat 后 checked Gather 保留8行，输入 indices 只表达有效槽位，数值与原追加
+语义相同。每轮多搬运一行候选及一次8行选择，成本在本批收据记录；不接回冻结自研 Scatter。
+本节仅调整共享测试消费者与验收分类，无公共数学、路由策略或产品 API 变化；新稳定候选必须
+实际完成四路线八入口检查，剩余整画像/交付/P1 不由此代签。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

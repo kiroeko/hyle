@@ -59,6 +59,31 @@ inline ValueId norm(Fragment &f, ValueId input, std::vector<float> &scale,
   return f.one(c::Operation(c::RmsNorm{.epsilon = kEpsilon}), {input, weight});
 }
 
+// Conversion itself is exact even when full low-precision chains diverge at
+// a rounding midpoint. Exercise both tie parities, signs and adjacent floats.
+inline Fragment bfloat_rounding_boundaries() {
+  Fragment f{.profile = core::kKdaProfiles[0], .region = 0x0e0701};
+  std::vector<float> input;
+  for (float midpoint : {0.748046875F, 0.21044921875F, 1.00390625F, 1.01171875F})
+    for (float sign : {-1.0F, 1.0F}) {
+      const float value = sign * midpoint;
+      input.push_back(std::nextafter(value, -std::numeric_limits<float>::infinity()));
+      input.push_back(value);
+      input.push_back(std::nextafter(value, std::numeric_limits<float>::infinity()));
+    }
+  auto x = f.input(dense({1, std::int64_t(input.size())}));
+  auto rounded = f.one(c::Operation(c::Cast{c::DataType::kBFloat16}), {x});
+  f.outputs = {f.one(c::Operation(c::Cast{c::DataType::kFloat32}), {rounded})};
+  f.exact_outputs = {0};
+  for (int replay = 0; replay < 2; ++replay) {
+    auto expected = input;
+    for (auto &value : expected) value = linear::bf16(value);
+    f.replays.push_back({{bytes(input)}, {expected}});
+    std::reverse(input.begin(), input.end());
+  }
+  return f;
+}
+
 // Dense first layer: exact 33792 intermediate, SiTU and three native weights.
 inline Fragment dense_ffn(const c::ModelArtifactProfileDescription *profile) {
   Fragment f{.profile = profile, .region = 0x02030701,
@@ -76,6 +101,8 @@ inline Fragment dense_ffn(const c::ModelArtifactProfileDescription *profile) {
   std::reverse(final_scales.begin(), final_scales.end());
   auto final_norm = norm(f, residual, final_scales, official(profile));
   f.outputs = {normalized, g.output, u.output, activated, down.output, residual, final_norm};
+  if (storage(profile) == Storage::kBFloat16)
+    f.bfloat_chain_outputs = {1, 2, 3, 4, 5, 6};
   for (int seed : {3, 17, 29}) {
     auto values = d5_gguf_test::activation(kHidden, seed);
     auto nx = sem::oracle::rms_norm_rows(values, scales, kHidden, kEpsilon);
@@ -170,7 +197,9 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile) {
                        reshape(f, vb.output, {1, 12288}),
                        unary(f, c::UnaryKind::kSigmoid, gate.output));
   auto out = linear::projection(f, gated, kHidden, 12288, storage(profile), 227);
-  f.outputs = {next_cache, qb.output, kb.output, attention, vb.output, gated, out.output};
+  f.outputs = {next_cache, qb.output, kb.output, attention, vb.output, gated, out.output, normalized, gate.output};
+  if (storage(profile) == Storage::kBFloat16)
+    f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5, 6, 8};
   f.state_ports = {{1, 0}};
   auto cache_values = d5_gguf_test::activation(3 * 576, 23);
   for (int step = 0; step < 4; ++step) {
@@ -211,7 +240,7 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile) {
     auto gv = projected;
     for (std::size_t i = 0; i < gv.size(); ++i) gv[i] *= float(core::sigmoid(gate_values[i]));
     auto result = out.reference(gv);
-    replay.outputs = {cache_values, bq, absorbed, attended, projected, gv, result};
+    replay.outputs = {cache_values, bq, absorbed, attended, projected, gv, result, nx, gate_values};
     f.replays.push_back(std::move(replay));
   }
   return f;
@@ -256,7 +285,7 @@ inline Fragment attention_residual(const c::ModelArtifactProfileDescription *pro
   auto bank = f.input(dense({8, kHidden})), current = f.input(dense({1, kHidden}));
   auto attn = f.input(dense({1, kHidden})), ffn = f.input(dense({1, kHidden}));
   auto before_mask = f.input(dense({1, 9})), after_mask = f.input(dense({1, 9}));
-  auto slot = f.input(dense({1}, c::DataType::kInt32));
+  auto bank_rows = f.input(dense({8}, c::DataType::kInt32));
   std::array<std::vector<float>, 3> score_values;
   std::array<ValueId, 3> scores;
   for (int role = 0; role < 3; ++role) {
@@ -276,7 +305,8 @@ inline Fragment attention_residual(const c::ModelArtifactProfileDescription *pro
   }
   auto attn_input = residual_mix(f, bank, current, before_mask, scores[0]);
   auto next_bank = boundary
-      ? f.one(c::Operation(c::Scatter{.axis = 0}), {bank, slot, current})
+      ? f.one(c::Operation(c::Gather{}),
+              {f.one(c::Operation(c::Concat{.axis = 0}), {bank, current}), bank_rows})
       : f.one(c::Operation(c::Copy{}), {bank});
   auto prefix = boundary ? attn : binary(f, c::BinaryKind::kAdd, current, attn);
   auto ffn_input = residual_mix(f, next_bank, prefix, after_mask, scores[1]);
@@ -294,8 +324,11 @@ inline Fragment attention_residual(const c::ModelArtifactProfileDescription *pro
     auto cur = d5_gguf_test::activation(kHidden, 3 + step * 14);
     auto av = d5_gguf_test::activation(kHidden, 7 + step * 17);
     auto fv = d5_gguf_test::activation(kHidden, 19 + step * 23);
+    std::vector<std::int32_t> rows(8);
+    std::iota(rows.begin(), rows.end(), 0);
+    if (boundary) rows[step] = 8;
     sem::Replay replay{{bytes(bank_values), bytes(cur), bytes(av), bytes(fv),
-                         bytes(bm), bytes(am), bytes(std::vector<std::int32_t>{step})}, {}};
+                         bytes(bm), bytes(am), bytes(rows)}, {}};
     auto ai = residual_reference(bank_values, cur, score_values[0], before);
     if (boundary) std::copy(cur.begin(), cur.end(), bank_values.begin() + step * kHidden);
     auto pv = av;

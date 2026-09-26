@@ -1,0 +1,478 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5Kimi*
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5KimiDenseFfn
+BF16_DIAG profile=official-mxfp4 region=33752833 output=3 index=1477 actual=0.2646484375 expected=0.264648407698 bits=3e88/3e87
+BF16_DIAG profile=official-mxfp4 region=33752833 output=6 index=1300 actual=0.806640684605 expected=0.806640625 bits=3f4f/3f4e
+BF16_DIAG profile=official-mxfp4 region=33752833 output=3 index=20231 actual=0.19775390625 expected=0.197753936052 bits=3e4a/3e4b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=1 actual=0.115111514926 expected=0.114886172116 bits=3dec/3deb
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=2 actual=0.294959425926 expected=0.297278106213 bits=3e97/3e98
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=3 actual=0.637856066227 expected=0.640796065331 bits=3f23/3f24
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=6 actual=1.18713760376 expected=1.19220232964 bits=3f98/3f99
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=11 actual=0.194943919778 expected=0.195887297392 bits=3e48/3e49
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=12 actual=-0.128033697605 expected=-0.128613933921 bits=be03/be04
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=0 actual=-0.0992752537131 expected=-0.100545078516 bits=bdcb/bdce
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=1 actual=0.226216807961 expected=0.225686252117 bits=3e68/3e67
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=3 actual=0.549557507038 expected=0.548691272736 bits=3f0d/3f0c
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=7 actual=0.875634133816 expected=0.87788438797 bits=3f60/3f61
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=8 actual=0.79479688406 expected=0.797503709793 bits=3f4b/3f4c
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=10 actual=0.35950550437 expected=0.362258851528 bits=3eb8/3eb9
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=0 actual=0.0101773235947 expected=0.0103131067008 bits=3c27/3c29
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=1 actual=0.0137644587085 expected=0.0137038547546 bits=3c62/3c61
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=2 actual=0.0552733503282 expected=0.0557231865823 bits=3d62/3d64
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=3 actual=0.227385312319 expected=0.228287518024 bits=3e69/3e6a
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=6 actual=0.786870181561 expected=0.789897561073 bits=3f49/3f4a
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=7 actual=0.591071307659 expected=0.593510866165 bits=3f17/3f18
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=1 actual=0.0400485396385 expected=0.0371361859143 bits=3d24/3d18
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=2 actual=0.476030170918 expected=0.474706918001 bits=3ef4/3ef3
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=4 actual=0.0661657005548 expected=0.0668738558888 bits=3d88/3d89
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=5 actual=0.0904282853007 expected=0.0914267003536 bits=3db9/3dbb
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=6 actual=0.0413335375488 expected=0.0424323044717 bits=3d29/3d2e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=8 actual=0 expected=0.00145851378329 bits=0000/3abf
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=1 actual=0.0403485186398 expected=0.0374361649156 bits=3d25/3d19
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=4 actual=0.0552829504013 expected=0.0559911057353 bits=3d62/3d65
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=5 actual=0.0804870426655 expected=0.0814854577184 bits=3da5/3da7
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=6 actual=0.0323355123401 expected=0.033434279263 bits=3d04/3d09
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=8 actual=-0.00710521033034 expected=-0.00564669631422 bits=bbe9/bbb9
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=9 actual=0.138623356819 expected=0.139261126518 bits=3e0e/3e0f
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=1 actual=0.186861515045 expected=0.173351794481 bits=3e3f/3e32
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=2 actual=1.98406565189 expected=1.97831285 bits=3ffe/3ffd
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=3 actual=1.62117218971 expected=1.61886501312 bits=3fd0/3fcf
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=4 actual=0.235866174102 expected=0.238857120275 bits=3e72/3e75
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=5 actual=0.39036077261 expected=0.395152777433 bits=3ec8/3eca
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=6 actual=0.141497761011 expected=0.146287247539 bits=3e11/3e16
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=0 actual=0.660426855087 expected=0.663380205631 bits=3f29/3f2a
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=2 actual=0.953583657742 expected=0.95073568821 bits=3f74/3f73
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=4 actual=0.955597698689 expected=0.954149127007 bits=3f75/3f74
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=5 actual=0.795318007469 expected=0.792981684208 bits=3f4c/3f4b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=7 actual=0.158715352416 expected=0.157484397292 bits=3e23/3e21
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=8 actual=-0.0526548661292 expected=-0.0542028211057 bits=bd58/bd5e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=0 actual=0.965690791607 expected=0.968861043453 bits=3f77/3f78
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=3 actual=0.709458887577 expected=0.707661628723 bits=3f36/3f35
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=4 actual=0.626863896847 expected=0.628845095634 bits=3f20/3f21
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=7 actual=0.0465431399643 expected=0.0455507189035 bits=3d3f/3d3b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=8 actual=-0.137912899256 expected=-0.138636946678 bits=be0d/be0e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=9 actual=-0.616901874542 expected=-0.619185209274 bits=bf1e/bf1f
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=0 actual=0.416529357433 expected=0.420152485371 bits=3ed5/3ed7
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=1 actual=0.461281627417 expected=0.461972087622 bits=3eec/3eed
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=2 actual=0.475064128637 expected=0.473145186901 bits=3ef3/3ef2
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=3 actual=0.513364553452 expected=0.509653568268 bits=3f03/3f02
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=4 actual=0.42450684309 expected=0.425055146217 bits=3ed9/3eda
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=5 actual=0.283258765936 expected=0.281717330217 bits=3e91/3e90
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=0 actual=0.0451975353062 expected=0.0468159802258 bits=3d39/3d40
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=1 actual=0.250760495663 expected=0.249024048448 bits=3e80/3e7f
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=2 actual=0 expected=-0.000866618123837 bits=0000/ba63
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=3 actual=0.849884152412 expected=0.85375982523 bits=3f5a/3f5b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=4 actual=0.0292569417506 expected=0.0306182112545 bits=3cf0/3cfb
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=5 actual=0.074639223516 expected=0.0755837857723 bits=3d99/3d9b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=0 actual=-0.0106444917619 expected=-0.00902604684234 bits=bc2e/bc14
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=1 actual=0.196449369192 expected=0.194712921977 bits=3e49/3e47
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=2 actual=-0.0527639463544 expected=-0.0536305643618 bits=bd58/bd5c
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=3 actual=0.79868376255 expected=0.802559435368 bits=3f4c/3f4d
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=4 actual=-0.0343633145094 expected=-0.0330020412803 bits=bd0d/bd07
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=5 actual=0.0126157365739 expected=0.0135602988303 bits=3c4f/3c5e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=0 actual=-0.0540902875364 expected=-0.0458652712405 bits=bd5e/bd3c
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=1 actual=0.905567228794 expected=0.897546231747 bits=3f68/3f66
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=2 actual=-0.218327507377 expected=-0.221909329295 bits=be60/be63
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=3 actual=3.76863908768 expected=3.78685688972 bits=4071/4072
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=4 actual=-0.145930886269 expected=-0.140147387981 bits=be15/be10
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=5 actual=0.0609018653631 expected=0.0654604882002 bits=3d79/3d86
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=1 actual=0.807052731514 expected=0.804750263691 bits=3f4f/3f4e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=4 actual=0.876764178276 expected=0.872461378574 bits=3f60/3f5f
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=6 actual=0.498285382986 expected=0.501005887985 bits=3eff/3f00
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=7 actual=0.283405095339 expected=0.284713000059 bits=3e91/3e92
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=8 actual=-0.187542915344 expected=-0.186850115657 bits=be40/be3f
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=1 index=9 actual=-0.21934697032 expected=-0.22064653039 bits=be61/be62
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=0 actual=0.914824903011 expected=0.917602777481 bits=3f6a/3f6b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=4 actual=0.745553612709 expected=0.7481508255 bits=3f3f/3f40
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=5 actual=0.441371679306 expected=0.439921498299 bits=3ee2/3ee1
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=6 actual=0.286707013845 expected=0.288295149803 bits=3e93/3e94
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=7 actual=-0.0589420571923 expected=-0.0579832568765 bits=bd71/bd6d
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=2 index=8 actual=-0.238862797618 expected=-0.237663537264 bits=be75/be73
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=2 actual=0.677212357521 expected=0.678024411201 bits=3f2d/3f2e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=4 actual=0.454205513 expected=0.453045576811 bits=3ee9/3ee8
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=6 actual=0.0884074121714 expected=0.0894692912698 bits=3db5/3db7
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=7 actual=-0.00951198581606 expected=-0.00940557662398 bits=bc1c/bc1a
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=8 actual=0.0202888231725 expected=0.020120119676 bits=3ca6/3ca5
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=3 index=12 actual=0.319977581501 expected=0.321521133184 bits=3ea4/3ea5
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=0 actual=0.0169826112688 expected=0.0145164607093 bits=3c8b/3c6e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=2 actual=0 expected=0.00148121907841 bits=0000/3ac2
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=3 actual=0.92491132021 expected=0.921802937984 bits=3f6d/3f6c
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=4 actual=0.052544247359 expected=0.0518536493182 bits=3d57/3d54
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=5 actual=0.0823107436299 expected=0.081114679575 bits=3da9/3da6
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=4 index=6 actual=0.0967596098781 expected=0.0972578600049 bits=3dc6/3dc7
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=0 actual=-0.0439582578838 expected=-0.0464244075119 bits=bd34/bd3e
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=1 actual=0.213056713343 expected=0.211457967758 bits=3e5a/3e59
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=2 actual=-0.0577839016914 expected=-0.0563026815653 bits=bd6d/bd67
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=4 actual=-0.00201589614153 expected=-0.00270649418235 bits=bb04/bb31
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=5 actual=0.0293878130615 expected=0.0281917490065 bits=3cf1/3ce7
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=5 index=6 actual=0.0314909145236 expected=0.0319891646504 bits=3d01/3d03
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=0 actual=-0.223483264446 expected=-0.236016064882 bits=be65/be72
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=1 actual=0.982596993446 expected=0.975202739239 bits=3f7c/3f7a
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=2 actual=-0.239214882255 expected=-0.233077898622 bits=be75/be6f
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=4 actual=-0.00856506172568 expected=-0.0114990007132 bits=bc0c/bc3c
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=5 actual=0.141936928034 expected=0.136157259345 bits=3e11/3e0b
+BF16_DIAG profile=UD-Q4_K_XL region=33752833 output=6 index=6 actual=0.137228086591 expected=0.139396309853 bits=3e0d/3e0f
+BF16_DIAG profile=UD-Q8_K_XL region=33752833 output=3 index=23025 actual=0.210449203849 expected=0.210449248552 bits=3e57/3e58
+BF16_DIAG profile=UD-Q8_K_XL region=33752833 output=3 index=20231 actual=0.19775390625 expected=0.197753936052 bits=3e4a/3e4b
+BF16_DIAG profile=UD-Q8_K_XL region=33752833 output=3 index=17344 actual=0.210449203849 expected=0.210449248552 bits=3e57/3e58
+BF16_DIAG profile=UD-Q8_K_XL region=33752833 output=3 index=25339 actual=-0.00060844415566 expected=-0.000608444272075 bits=ba1f/ba20
+BF16_DIAG profile=UD-Q8_K_XL region=33752833 output=4 index=1009 actual=0.131225585938 expected=0.1318359375 bits=3e06/3e07
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0006103515625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.1312255859375,
+expected[index] evaluates to 0.1318359375, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.527343743480742e-05.
+1009
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=1009 actual=0.131226 expected=0.131836
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(907): UD-Q8_K_XL
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0006103515625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.16193205118179321,
+expected[index] evaluates to 0.16254240274429321, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.6501691839657724e-05.
+1009
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=1009 actual=0.161932 expected=0.162542
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(907): UD-Q8_K_XL
+
+BF16_DIAG profile=UD-Q8_K_XL region=33752833 output=6 index=1009 actual=0.770687162876 expected=0.773591697216 bits=3f45/3f46
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0029045343399047852, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.77068716287612915,
+expected[index] evaluates to 0.77359169721603394, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011094366345787421.
+1009
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=1009 actual=0.770687 expected=0.773592
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=6
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(907): UD-Q8_K_XL
+
+[  FAILED  ] CpuMoeFragments.D5KimiDenseFfn (7713 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=5488 actual=-0.0143737811595 expected=-0.0143737783656 bits=bc6c/bc6b
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=7004 actual=-1.74650922418e-05 expected=-1.74632259586e-05 bits=b793/b792
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=26472 actual=7.50999897718e-05 expected=7.51024344936e-05 bits=389d/389e
+BF16_DIAG profile=official-mxfp4 region=460545 output=4 index=6545 actual=5.14686107635e-05 expected=5.17964363098e-05 bits=3858/3859
+BF16_DIAG profile=official-mxfp4 region=460545 output=5 index=6545 actual=3.86299070669e-05 expected=3.88759581256e-05 bits=3822/3823
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=12698 actual=-0.00284577952698 expected=-0.00284575787373 bits=bb3b/bb3a
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=26599 actual=-3.32714989781e-06 expected=-3.3370733945e-06 bits=b65f/b660
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=27918 actual=-1.6996928025e-06 expected=-1.86549186765e-06 bits=b5e4/b5fa
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=40760 actual=-1.23525969684e-05 expected=-1.24796060845e-05 bits=b74f/b751
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=43889 actual=0.00630187196657 expected=0.0063019185327 bits=3bce/3bcf
+BF16_DIAG profile=official-mxfp4 region=460545 output=4 index=3107 actual=-0.00160503387451 expected=-0.00159645080566 bits=bad2/bad1
+BF16_DIAG profile=official-mxfp4 region=460545 output=4 index=6999 actual=-1.48639082909e-06 expected=-1.62981450558e-06 bits=b5c8/b5db
+BF16_DIAG profile=official-mxfp4 region=460545 output=5 index=3107 actual=-0.000978586729616 expected=-0.000973353628069 bits=ba80/ba7f
+BF16_DIAG profile=official-mxfp4 region=460545 output=5 index=6999 actual=-5.65186724089e-07 expected=-6.19722300144e-07 bits=b518/b526
+BF16_DIAG profile=official-mxfp4 region=460545 output=6 index=1844 actual=-3.53902578354e-07 expected=-3.86498868465e-07 bits=b4be/b4d0
+BF16_DIAG profile=official-mxfp4 region=460545 output=6 index=5952 actual=-0.0006103515625 expected=-0.000607967376709 bits=ba20/ba1f
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=14606 actual=-0.00514211226255 expected=-0.00514226453379 bits=bba8/bba9
+BF16_DIAG profile=official-mxfp4 region=460545 output=4 index=3671 actual=-0.00448608398438 expected=-0.00451278686523 bits=bb93/bb94
+BF16_DIAG profile=official-mxfp4 region=460545 output=5 index=3671 actual=-0.00318793812767 expected=-0.00320691429079 bits=bb51/bb52
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=25252 actual=-0.23974609375 expected=-0.239746063948 bits=be76/be75
+BF16_DIAG profile=official-mxfp4 region=460545 output=3 index=42038 actual=2.36862688325e-05 expected=2.36135347222e-05 bits=37c7/37c6
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00046342611312866211, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.22528530657291412,
+expected[index] evaluates to 0.22574873268604279, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.9029948867391795e-05.
+3466
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=3466 actual=0.225285 expected=0.225749
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): official-mxfp4
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00028583407402038574, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.21534271538257599,
+expected[index] evaluates to 0.21562854945659637, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.8625136413611472e-05.
+10634
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=3466 actual=0.225285 expected=0.225749
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): official-mxfp4
+
+BF16_DIAG profile=official-mxfp4 region=460545 output=7 index=1801 actual=-0.748046875 expected=-0.748046815395 bits=bf40/bf3f
+BF16_DIAG profile=official-mxfp4 region=460545 output=8 index=3466 actual=-0.609375 expected=-0.606201171875 bits=bf1c/bf1b
+BF16_DIAG profile=official-mxfp4 region=460545 output=8 index=10634 actual=-0.421875 expected=-0.419677734375 bits=bed8/bed7
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.003173828125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.609375,
+expected[index] evaluates to -0.606201171875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00010424804349895567.
+3466
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=3466 actual=-0.609375 expected=-0.606201
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): official-mxfp4
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.002197265625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.421875,
+expected[index] evaluates to -0.419677734375, and
+absolute + relative * std::abs(expected[index]) evaluates to 9.6787109214346856e-05.
+10634
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=3466 actual=-0.609375 expected=-0.606201
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): official-mxfp4
+
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1152 actual=-0.132052630186 expected=-0.13363905251 bits=be07/be09
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1154 actual=0.424300581217 expected=0.422415018082 bits=3ed9/3ed8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1158 actual=1.37801539898 expected=1.38394784927 bits=3fb0/3fb1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1162 actual=0.54593527317 expected=0.541219651699 bits=3f0c/3f0b
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1163 actual=-0.107779286802 expected=-0.106989786029 bits=bddd/bddb
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1164 actual=-0.482963711023 expected=-0.485861957073 bits=bef7/bef9
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=0 actual=0.950447738171 expected=0.955588400364 bits=3f73/3f75
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=3 actual=-0.11466280371 expected=-0.111867554486 bits=bdeb/bde5
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=5 actual=0.528959393501 expected=0.532333493233 bits=3f07/3f08
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=8 actual=0.164378479123 expected=0.167602032423 bits=3e28/3e2c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=10 actual=0.158547997475 expected=0.162473067641 bits=3e22/3e26
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=14 actual=-0.873713552952 expected=-0.868174314499 bits=bf60/bf5e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=0 actual=-0.182770058513 expected=-0.183577597141 bits=be3b/be3c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=1 actual=0.335963964462 expected=0.341216564178 bits=3eac/3eaf
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=3 actual=-0.193647414446 expected=-0.191291153431 bits=be46/be44
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=4 actual=-0.822379469872 expected=-0.82223379612 bits=bf53/bf52
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=6 actual=-0.404328465462 expected=-0.400192141533 bits=becf/becd
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=7 actual=-0.435272842646 expected=-0.438367664814 bits=bedf/bee0
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=0 actual=-0.00894656870514 expected=-0.00936007685959 bits=bc13/bc19
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=1 actual=0.0741884857416 expected=0.0745628103614 bits=3d98/3d99
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=3 actual=0.157431080937 expected=0.157844796777 bits=3e21/3e22
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=4 actual=0.217780992389 expected=0.219132646918 bits=3e5f/3e60
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=5 actual=0.226932868361 expected=0.228931590915 bits=3e68/3e6a
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=6 actual=0.26551347971 expected=0.267835736275 bits=3e88/3e89
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=1 actual=0 expected=6.94604677847e-05 bits=0000/3892
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=2 actual=0.157754972577 expected=0.15871873498 bits=3e22/3e23
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=3 actual=0.0404066219926 expected=0.0407116487622 bits=3d26/3d27
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=4 actual=-0.128533303738 expected=-0.129957020283 bits=be04/be05
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=5 actual=-0.137595355511 expected=-0.138762816787 bits=be0d/be0e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=6 actual=0.0975732505322 expected=0.0983930453658 bits=3dc8/3dca
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=0 actual=-0.070083014667 expected=-0.0700524076819 bits=bd90/bd8f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=1 actual=0 expected=4.73912514281e-05 bits=0000/3847
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=2 actual=0.106867082417 expected=0.10751581192 bits=3ddb/3ddc
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=3 actual=0.0281436052173 expected=0.0283528119326 bits=3ce7/3ce8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=4 actual=-0.0901741310954 expected=-0.0912011787295 bits=bdb9/bdbb
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=5 actual=-0.095170930028 expected=-0.0959439128637 bits=bdc3/bdc4
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=0 actual=-0.0191018842161 expected=-0.0183508414775 bits=bc9c/bc96
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=1 actual=0.0274682138115 expected=0.0264189504087 bits=3ce1/3cd8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=2 actual=-0.0392651446164 expected=-0.0389271974564 bits=bd21/bd1f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=4 actual=-0.0284154955298 expected=-0.0290954578668 bits=bce9/bcee
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=5 actual=0.060375418514 expected=0.0599013902247 bits=3d77/3d75
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=8 actual=-0.0115164089948 expected=-0.0109748104587 bits=bc3d/bc34
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=8 actual=0.239727169275 expected=0.23863299191 bits=3e75/3e74
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=9 actual=-0.224117025733 expected=-0.224680438638 bits=be65/be66
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=10 actual=-0.428822100163 expected=-0.426539748907 bits=bedc/beda
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=13 actual=-0.626967787743 expected=-0.625663638115 bits=bf21/bf20
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=15 actual=-0.763145565987 expected=-0.767110824585 bits=bf43/bf44
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=18 actual=-0.479099601507 expected=-0.481413245201 bits=bef5/bef6
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=576 actual=-0.132052630186 expected=-0.13363905251 bits=be07/be09
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=578 actual=0.424300581217 expected=0.422415018082 bits=3ed9/3ed8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=582 actual=1.37801539898 expected=1.38394784927 bits=3fb0/3fb1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=586 actual=0.54593527317 expected=0.541219651699 bits=3f0c/3f0b
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=587 actual=-0.107779286802 expected=-0.106989786029 bits=bddd/bddb
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=588 actual=-0.482963711023 expected=-0.485861957073 bits=bef7/bef9
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=0 actual=0.720390200615 expected=0.721628129482 bits=3f38/3f39
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=1 actual=0.741976559162 expected=0.747735023499 bits=3f3e/3f3f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=2 actual=-0.559444606304 expected=-0.563026726246 bits=bf0f/bf10
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=3 actual=-0.433040887117 expected=-0.435137748718 bits=bede/bedf
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=4 actual=-0.0812321901321 expected=-0.0820358842611 bits=bda6/bda8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=6 actual=0.39617305994 expected=0.393713504076 bits=3ecb/3eca
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=1 actual=-0.0722802579403 expected=-0.0701222643256 bits=bd94/bd90
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=2 actual=0.236822456121 expected=0.238400042057 bits=3e73/3e74
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=4 actual=-0.181440725923 expected=-0.183472424746 bits=be3a/be3c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=5 actual=-0.606980025768 expected=-0.612228572369 bits=bf1b/bf1d
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=6 actual=-0.687699317932 expected=-0.694665074348 bits=bf30/bf32
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=8 actual=-0.201434239745 expected=-0.20221246779 bits=be4e/be4f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=1 actual=0.27173396945 expected=0.273991346359 bits=3e8b/3e8c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=3 actual=0.309042751789 expected=0.30998134613 bits=3e9e/3e9f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=5 actual=0.311778366566 expected=0.314089268446 bits=3ea0/3ea1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=6 actual=0.313077569008 expected=0.315112054348 bits=3ea0/3ea1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=9 actual=-0.0494949556887 expected=-0.0498910062015 bits=bd4b/bd4c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=10 actual=-0.136396482587 expected=-0.137484043837 bits=be0c/be0d
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=2 actual=0.199306592345 expected=0.201348602772 bits=3e4c/3e4e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=3 actual=0.197721809149 expected=0.199933961034 bits=3e4a/3e4d
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=4 actual=-0.0813556089997 expected=-0.0822978615761 bits=bda7/bda9
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=6 actual=0.0228700358421 expected=0.0215648915619 bits=3cbb/3cb1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=8 actual=0.0840257778764 expected=0.0863837748766 bits=3dac/3db1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=10 actual=-0.129493445158 expected=-0.130707129836 bits=be05/be06
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=1 actual=-0.105878464878 expected=-0.105397850275 bits=bdd9/bdd8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=2 actual=0.126813411713 expected=0.127988323569 bits=3e02/3e03
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=3 actual=0.11956615746 expected=0.120985120535 bits=3df5/3df8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=4 actual=-0.0433465801179 expected=-0.0438313111663 bits=bd32/bd34
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=5 actual=-0.163229689002 expected=-0.163873076439 bits=be27/be28
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=6 actual=0.00987975113094 expected=0.00930890440941 bits=3c22/3c19
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=0 actual=0.0378720276058 expected=0.0386332124472 bits=3d1b/3d1e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=1 actual=0.0722242221236 expected=0.0727843418717 bits=3d94/3d95
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=2 actual=-0.0566104650497 expected=-0.0553078651428 bits=bd68/bd63
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=4 actual=-0.0231142248958 expected=-0.0217373985797 bits=bcbd/bcb2
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=5 actual=0.0840354338288 expected=0.0834657102823 bits=3dac/3dab
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=6 actual=-0.0317945145071 expected=-0.0307015292346 bits=bd02/bcfc
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=0 actual=0.677549004555 expected=0.681107997894 bits=3f2d/3f2e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=1 actual=0.835431873798 expected=0.833630740643 bits=3f56/3f55
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=2 actual=0.559224307537 expected=0.556556463242 bits=3f0f/3f0e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=3 actual=0.425167381763 expected=0.426867574453 bits=3eda/3edb
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=4 actual=0.131404131651 expected=0.130559295416 bits=3e07/3e06
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=5 actual=-0.0538915060461 expected=-0.0542718395591 bits=bd5d/bd5e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=0 actual=-0.132052630186 expected=-0.13363905251 bits=be07/be09
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=2 actual=0.424300581217 expected=0.422415018082 bits=3ed9/3ed8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=6 actual=1.37801539898 expected=1.38394784927 bits=3fb0/3fb1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=10 actual=0.54593527317 expected=0.541219651699 bits=3f0c/3f0b
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=11 actual=-0.107779286802 expected=-0.106989786029 bits=bddd/bddb
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=12 actual=-0.482963711023 expected=-0.485861957073 bits=bef7/bef9
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=1 actual=0.769173920155 expected=0.771930813789 bits=3f45/3f46
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=2 actual=1.02699685097 expected=1.03135287762 bits=3f83/3f84
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=3 actual=-0.252059817314 expected=-0.254113852978 bits=be81/be82
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=4 actual=-0.643045604229 expected=-0.646520614624 bits=bf25/bf26
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=5 actual=0.180078953505 expected=0.181544393301 bits=3e38/3e3a
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=6 actual=0.899607300758 expected=0.901289820671 bits=3f66/3f67
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=2 actual=-0.339700937271 expected=-0.342945337296 bits=beae/beb0
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=3 actual=-0.322965085506 expected=-0.325388818979 bits=bea5/bea7
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=4 actual=0.576609730721 expected=0.573615908623 bits=3f14/3f13
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=5 actual=0.415273576975 expected=0.42141982913 bits=3ed5/3ed8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=6 actual=-0.182483971119 expected=-0.183536827564 bits=be3b/be3c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=8 actual=0.782546937466 expected=0.777568459511 bits=3f48/3f47
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=0 actual=0.603562891483 expected=0.602533400059 bits=3f1b/3f1a
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=3 actual=0.442125588655 expected=0.443855762482 bits=3ee2/3ee3
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=4 actual=0.3623290658 expected=0.365364819765 bits=3eba/3ebb
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=5 actual=0.273383080959 expected=0.278725653887 bits=3e8c/3e8f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=6 actual=0.22660651803 expected=0.232130110264 bits=3e68/3e6e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=7 actual=-0.0436221957207 expected=-0.0421560481191 bits=bd33/bd2d
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=0 actual=-0.1609031111 expected=-0.162487566471 bits=be25/be26
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=2 actual=0.0831333175302 expected=0.087354876101 bits=3daa/3db3
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=3 actual=0.372156322002 expected=0.374087363482 bits=3ebf/3ec0
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=4 actual=0.115319594741 expected=0.110463574529 bits=3dec/3de2
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=5 actual=-0.502327799797 expected=-0.508465945721 bits=bf01/bf02
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=6 actual=-0.161428704858 expected=-0.159136801958 bits=be25/be23
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=0 actual=-0.0878949686885 expected=-0.0886918380857 bits=bdb4/bdb6
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=2 actual=0.0354786589742 expected=0.0373377539217 bits=3d11/3d19
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=4 actual=0.0346400141716 expected=0.0332700833678 bits=3d0e/3d08
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=5 actual=-0.149498432875 expected=-0.151191398501 bits=be19/be1b
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=6 actual=-0.0430846661329 expected=-0.0424178950489 bits=bd30/bd2e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=7 actual=0.0803477466106 expected=0.0809565111995 bits=3da5/3da6
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=1 actual=0.0394052490592 expected=0.0405509695411 bits=3d21/3d26
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=2 actual=-0.014453005977 expected=-0.0125087769702 bits=bc6d/bc4d
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=3 actual=0.271077901125 expected=0.273552179337 bits=3e8b/3e8c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=4 actual=0.036425512284 expected=0.0371901839972 bits=3d15/3d18
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=6 actual=0.0178397726268 expected=0.0175157524645 bits=3c92/3c8f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=8 actual=0.0551096796989 expected=0.0557670071721 bits=3d62/3d64
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=0 actual=0.185571789742 expected=0.183866947889 bits=3e3e/3e3c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=1 actual=0.0592043697834 expected=0.0589620247483 bits=3d73/3d72
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=2 actual=-0.295048832893 expected=-0.292360365391 bits=be97/be96
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=3 actual=-0.411234200001 expected=-0.413676887751 bits=bed3/bed4
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=4 actual=-0.845476031303 expected=-0.841656506062 bits=bf58/bf57
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=6 actual=-1.01042878628 expected=-1.01219820976 bits=bf81/bf82
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=1 actual=1.16356766224 expected=1.16860759258 bits=3f95/3f96
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=2 actual=0.90968644619 expected=0.906059145927 bits=3f69/3f68
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=4 actual=1.00481593609 expected=1.00253093243 bits=3f81/3f80
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=5 actual=0.72937721014 expected=0.732670426369 bits=3f3b/3f3c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=6 actual=0.575934231281 expected=0.57784229517 bits=3f13/3f14
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=0 index=7 actual=0.0638937950134 expected=0.0627634301782 bits=3d83/3d81
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=1 actual=-0.114159159362 expected=-0.107368372381 bits=bdea/bddc
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=2 actual=1.50308680534 expected=1.50540661812 bits=3fc0/3fc1
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=3 actual=0.238007321954 expected=0.234836235642 bits=3e74/3e70
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=4 actual=-0.572574615479 expected=-0.576532840729 bits=bf13/bf14
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=6 actual=0.462328791618 expected=0.461315751076 bits=3eed/3eec
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=1 index=8 actual=-0.153870999813 expected=-0.157222256064 bits=be1e/be21
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=0 actual=0.186327055097 expected=0.1885522753 bits=3e3f/3e41
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=1 actual=-0.248408287764 expected=-0.246456861496 bits=be7e/be7c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=2 actual=-0.527672529221 expected=-0.532149910927 bits=bf07/bf08
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=3 actual=0.27203553915 expected=0.265608787537 bits=3e8b/3e88
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=4 actual=0.630078971386 expected=0.625390946865 bits=3f21/3f20
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=2 index=6 actual=0.573237717152 expected=0.57798153162 bits=3f13/3f14
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=2 actual=0.435119122267 expected=0.43286088109 bits=3edf/3ede
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=5 actual=0.449457287788 expected=0.450627177954 bits=3ee6/3ee7
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=6 actual=0.450195044279 expected=0.451587468386 bits=3ee6/3ee7
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=7 actual=0.12772578001 expected=0.123051285744 bits=3e03/3dfc
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=8 actual=0.0572866871953 expected=0.0563661120832 bits=3d6b/3d67
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=3 index=9 actual=-0.355647683144 expected=-0.35754776001 bits=beb6/beb7
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=0 actual=-0.243583038449 expected=-0.242579251528 bits=be79/be78
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=1 actual=-0.414322346449 expected=-0.41637185216 bits=bed4/bed5
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=2 actual=0.227270618081 expected=0.226649329066 bits=3e69/3e68
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=4 actual=0.00611593201756 expected=0.0070248330012 bits=3bc8/3be6
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=5 actual=-0.651106178761 expected=-0.655126512051 bits=bf27/bf28
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=4 index=6 actual=-0.0933641195297 expected=-0.092618830502 bits=bdbf/bdbe
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=0 actual=-0.0898026525974 expected=-0.0895058214664 bits=bdb8/bdb7
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=1 actual=-0.136175513268 expected=-0.136542826891 bits=be0b/be0c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=2 actual=0.0667584612966 expected=0.0664284527302 bits=3d89/3d88
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=4 actual=0.00164504710119 expected=0.00188932975288 bits=3ad8/3af8
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=5 actual=-0.211342915893 expected=-0.212981432676 bits=be58/be5a
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=5 index=6 actual=-0.0345954596996 expected=-0.0342733152211 bits=bd0e/bd0c
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=1 actual=0.013699138537 expected=0.0128136379644 bits=3c60/3c52
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=2 actual=-0.00586473895237 expected=-0.00498248077929 bits=bbc0/bba3
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=3 actual=0.204718410969 expected=0.206915676594 bits=3e52/3e54
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=4 actual=0.0757720693946 expected=0.0747510865331 bits=3d9b/3d99
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=5 actual=0.128266468644 expected=0.12851691246 bits=3e03/3e04
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=6 index=6 actual=0.0129751395434 expected=0.0145225776359 bits=3c55/3c6e
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=7 index=1801 actual=-0.748046875 expected=-0.748046815395 bits=bf40/bf3f
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=0 actual=-0.537910997868 expected=-0.536614060402 bits=bf0a/bf09
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=1 actual=-0.714204549789 expected=-0.717540383339 bits=bf37/bf38
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=5 actual=-0.732754468918 expected=-0.730433106422 bits=bf3c/bf3b
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=7 actual=-0.368090718985 expected=-0.369702637196 bits=bebc/bebd
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=8 actual=0.0384927131236 expected=0.0377252846956 bits=3d1e/3d1b
+BF16_DIAG profile=UD-Q4_K_XL region=460545 output=8 index=9 actual=0.239908084273 expected=0.239538028836 bits=3e76/3e75
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=12875 actual=0.143066421151 expected=0.14306640625 bits=3e13/3e12
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=25696 actual=4.61395829916e-05 expected=4.61051313323e-05 bits=3842/3841
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=12468 actual=0.0169067420065 expected=0.0169067271054 bits=3c8b/3c8a
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=21998 actual=-0.00217435043305 expected=-0.00217442214489 bits=bb0e/bb0f
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=36958 actual=0.00520323542878 expected=0.00520324939862 bits=3baa/3bab
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=4626 actual=0.0059356354177 expected=0.00593570992351 bits=3bc2/3bc3
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=8916 actual=-6.79492950439e-06 expected=-6.76853005643e-06 bits=b6e4/b6e3
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=13946 actual=8.94293189049e-05 expected=8.94000986591e-05 bits=38bc/38bb
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=15890 actual=0.000127296894789 expected=0.000127325329231 bits=3905/3906
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=32940 actual=-1.62981450558e-05 expected=-1.62300220836e-05 bits=b789/b788
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=3 index=48023 actual=0.000688567757607 expected=0.000688520667609 bits=3a35/3a34
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=4 index=11908 actual=0.000409960746765 expected=0.000407695770264 bits=39d7/39d6
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=5 index=2289 actual=-1.77447691385e-06 expected=-1.766694254e-06 bits=b5ee/b5ed
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=5 index=3466 actual=0.0356952510774 expected=0.0357686802745 bits=3d12/3d13
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=5 index=11908 actual=0.000280910287984 expected=0.000279358297121 bits=3993/3992
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=6 index=2359 actual=0.0311889648438 expected=0.0314025878906 bits=3d00/3d01
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000213623046875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.03118896484375,
+expected[index] evaluates to 0.031402587890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.1256104749627411e-05.
+2359
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=2359 actual=0.031189 expected=0.031403
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=6
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): UD-Q8_K_XL
+
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=7 index=1801 actual=-0.748046875 expected=-0.748046815395 bits=bf40/bf3f
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=8 index=3466 actual=-0.609375 expected=-0.606201171875 bits=bf1c/bf1b
+BF16_DIAG profile=UD-Q8_K_XL region=460545 output=8 index=10634 actual=-0.421875 expected=-0.419677734375 bits=bed8/bed7
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.003173828125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.609375,
+expected[index] evaluates to -0.606201171875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00010424804349895567.
+3466
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=3466 actual=-0.609375 expected=-0.606201
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): UD-Q8_K_XL
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.002197265625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.421875,
+expected[index] evaluates to -0.419677734375, and
+absolute + relative * std::abs(expected[index]) evaluates to 9.6787109214346856e-05.
+10634
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(805): worst index=3466 actual=-0.609375 expected=-0.606201
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(795): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(916): UD-Q8_K_XL
+
+[  FAILED  ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache (2800 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAttentionResidualBanking
+[       OK ] CpuMoeFragments.D5KimiAttentionResidualBanking (64 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAttentionResidualOrdinary
+[       OK ] CpuMoeFragments.D5KimiAttentionResidualOrdinary (68 ms)
+[ RUN      ] CpuMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuMoeFragments.D5KimiThreeProfilesSituActivation (12 ms)
+[----------] 5 tests from CpuMoeFragments (10659 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (10659 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] CpuMoeFragments.D5KimiDenseFfn
+[  FAILED  ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache
+
+ 2 FAILED TESTS

@@ -1,0 +1,49 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+#include <initializer_list>
+
+#include <gtest/gtest.h>
+
+#include "hyle/compute/operation.h"
+
+namespace d5_kimi_mla_admission {
+namespace c = hyle::compute;
+
+inline c::TensorDesc dense(std::initializer_list<std::int64_t> shape,
+                           c::DataType type = c::DataType::kFloat32) {
+  return c::TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
+}
+
+template <class Accept> void check(Accept accept) {
+  const c::Operation operation(c::ScaledDotProductAttention{
+      .scale = 0.072168782F, .causal = true,
+      .accumulation_type = c::DataType::kFloat32});
+  const std::array inputs{dense({1, 1, 96, 576}), dense({1, 4, 1, 576}),
+                          dense({1, 4, 1, 512})};
+  const std::array outputs{dense({1, 1, 96, 512})};
+  EXPECT_TRUE(accept(operation, inputs, outputs));
+  for (const auto &bad_value : {dense({1, 3, 1, 512}),
+                                 dense({1, 4, 2, 512}),
+                                 dense({2, 4, 1, 512})}) {
+    auto changed = inputs;
+    changed[2] = bad_value;
+    EXPECT_FALSE(accept(operation, changed, outputs));
+  }
+  auto changed = inputs;
+  changed[1] = dense({1, 4, 1, 575});
+  EXPECT_FALSE(accept(operation, changed, outputs));
+  EXPECT_FALSE(accept(operation, inputs, std::array{inputs[0]}));
+  // The admitted asymmetric domain is intentionally narrow. These are
+  // schema-valid descriptions, but are outside this qualified native program.
+  changed = inputs;
+  changed[0] = dense({1, 1, 48, 576});
+  EXPECT_FALSE(accept(operation, changed, std::array{dense({1, 1, 48, 512})}));
+  for (std::size_t i = 0; i < changed.size(); ++i)
+    changed[i] = c::TensorDesc::dense(c::DataType::kBFloat16,
+                                      inputs[i].dimensions()).value();
+  EXPECT_FALSE(accept(operation, changed,
+                      std::array{dense({1, 1, 96, 512}, c::DataType::kBFloat16)}));
+}
+} // namespace d5_kimi_mla_admission

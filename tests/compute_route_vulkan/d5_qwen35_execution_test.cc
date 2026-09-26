@@ -1338,7 +1338,8 @@ void run_q24_semantic_fragment(
                          expected.native_outputs.empty()
                              ? std::span<const float>{}
                              : expected.native_outputs[output],
-                         fixture.exact_output(output), fixture.id_validation(output));
+                         fixture.exact_output(output), fixture.id_validation(output),
+                         fixture.bfloat_chain_output(output));
     }
   }
 }
@@ -1411,6 +1412,10 @@ TEST(VulkanMoeFragments, D5KdaProjectionRoleBatch) {
     SCOPED_TRACE(role.roles);
     run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
   }
+}
+
+TEST(VulkanMoeFragments, D5KimiBfloatRoundingBoundaries) {
+  run_q24_semantic_fragment(d5_kimi_remaining_fragments::bfloat_rounding_boundaries());
 }
 
 TEST(VulkanMoeFragments, D5KimiDenseFfn) {

@@ -802,7 +802,8 @@ void run_q24_semantic_fragment(
       const auto actual = half_test::read<float>(outputs[output]);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
-                         fixture.exact_output(output), fixture.id_validation(output));
+                         fixture.exact_output(output), fixture.id_validation(output),
+                         fixture.bfloat_chain_output(output));
     }
   }
 }
@@ -896,6 +897,10 @@ TEST(CudaGraphMoeFragments, D5KdaProjectionRoleBatch) {
     SCOPED_TRACE(role.roles);
     run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
   }
+}
+
+TEST(CudaGraphMoeFragments, D5KimiBfloatRoundingBoundaries) {
+  run_q24_semantic_fragment(d5_kimi_remaining_fragments::bfloat_rounding_boundaries());
 }
 
 TEST(CudaGraphMoeFragments, D5KimiDenseFfn) {

@@ -1,3 +1,5 @@
+#include "../compute_models/d5_kimi_mla_admission.h"
+
 #include "metadata_arena.h"
 #include "native_device.h"
 #include "native_graph.h"
@@ -282,5 +284,10 @@ TEST(GgmlVulkanRegion, ModelWidthNormGateResidualWithChangingInputs) {
     *storage = {};
     ASSERT_TRUE(native_fill(*device, native_input, x.size() * sizeof(float)).ok());
   }
+}
+TEST(GgmlVulkanRegion, D5AbsorbedMlaColdShapeBoundary) {
+  d5_kimi_mla_admission::check([](auto operation, const auto &inputs, const auto &outputs) {
+    return region_supports(operation, inputs, outputs);
+  });
 }
 } // namespace

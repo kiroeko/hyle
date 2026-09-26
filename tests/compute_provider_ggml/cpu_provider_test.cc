@@ -1,3 +1,5 @@
+#include "../compute_models/d5_kimi_mla_admission.h"
+
 #include <ggml.h>
 #include <gtest/gtest.h>
 
@@ -2150,5 +2152,11 @@ template <class T> void causal_gqa_prefill() {
 TEST(GgmlCpuProvider, MatureAttentionAppliesCausalMaskForHalfPrefill) {
   causal_gqa_prefill<hyle::simd::float16_t>();
   causal_gqa_prefill<hyle::simd::bfloat16_t>();
+}
+TEST(GgmlCpuProvider, D5AbsorbedMlaColdShapeBoundary) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  d5_kimi_mla_admission::check([&](auto operation, const auto &inputs, const auto &outputs) {
+    return bool(prepare(context, operation, inputs, outputs, hyle::mem::system_resource()));
+  });
 }
 } // namespace

@@ -1,3 +1,5 @@
+#include "../compute_models/d5_kimi_mla_admission.h"
+
 #include "hyle/compute/providers/ggml_cuda.h"
 
 #include "../compute_provider_flashinfer/attention_test_support.h"
@@ -145,5 +147,13 @@ TEST(GgmlCudaAttention, Qwen38GroupedQueryHeadRatioRuns) {
       EXPECT_NEAR(decode(actual[head * 256 + depth]),
                   decode(values[(head / 6) * 256 + depth]), 0.01)
           << "head=" << head << " depth=" << depth;
+}
+TEST(GgmlCudaAttention, D5AbsorbedMlaColdShapeBoundary) {
+  auto context = compute::Context::create(cuda::device(0).value(),
+                                           compute::ggml_cuda::provider()).value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  d5_kimi_mla_admission::check([&](auto operation, const auto &inputs, const auto &outputs) {
+    return bool(compute::prepare(context, operation, inputs, outputs, memory.ref()));
+  });
 }
 } // namespace

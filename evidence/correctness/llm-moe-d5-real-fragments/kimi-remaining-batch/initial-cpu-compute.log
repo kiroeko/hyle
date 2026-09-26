@@ -1,0 +1,107 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5Kimi*
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5KimiDenseFfn
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0006103515625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.1312255859375,
+expected[index] evaluates to 0.1318359375, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.527343743480742e-05.
+1009
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(804): worst index=1009 actual=0.131226 expected=0.131836
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(794): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(894): UD-Q8_K_XL
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0006103515625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.16193205118179321,
+expected[index] evaluates to 0.16254240274429321, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.6501691839657724e-05.
+1009
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(804): worst index=1009 actual=0.161932 expected=0.162542
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(794): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(894): UD-Q8_K_XL
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0029045343399047852, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.77068716287612915,
+expected[index] evaluates to 0.77359169721603394, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011094366345787421.
+1009
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(804): worst index=1009 actual=0.770687 expected=0.773592
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(794): fragment output=6
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(894): UD-Q8_K_XL
+
+[  FAILED  ] CpuMoeFragments.D5KimiDenseFfn (7675 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00046342611312866211, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.22528530657291412,
+expected[index] evaluates to 0.22574873268604279, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.9029948867391795e-05.
+3466
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(804): worst index=3466 actual=0.225285 expected=0.225749
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(794): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(903): official-mxfp4
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00028583407402038574, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.21534271538257599,
+expected[index] evaluates to 0.21562854945659637, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.8625136413611472e-05.
+10634
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(804): worst index=3466 actual=0.225285 expected=0.225749
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(794): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(903): official-mxfp4
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000213623046875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.03118896484375,
+expected[index] evaluates to 0.031402587890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.1256104749627411e-05.
+2359
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(804): worst index=2359 actual=0.031189 expected=0.031403
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(794): fragment output=6
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(903): UD-Q8_K_XL
+
+[  FAILED  ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache (2512 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAttentionResidualBanking
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(94): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+scatter: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(912): official-mxfp4
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(94): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+scatter: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(912): UD-Q4_K_XL
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(94): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+scatter: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(912): UD-Q8_K_XL
+
+[  FAILED  ] CpuMoeFragments.D5KimiAttentionResidualBanking (66 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAttentionResidualOrdinary
+[       OK ] CpuMoeFragments.D5KimiAttentionResidualOrdinary (68 ms)
+[ RUN      ] CpuMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuMoeFragments.D5KimiThreeProfilesSituActivation (12 ms)
+[----------] 5 tests from CpuMoeFragments (10336 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (10336 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] CpuMoeFragments.D5KimiDenseFfn
+[  FAILED  ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache
+[  FAILED  ] CpuMoeFragments.D5KimiAttentionResidualBanking
+
+ 3 FAILED TESTS
