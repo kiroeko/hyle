@@ -11,6 +11,12 @@ Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-fail
 旧失败及撤回资格保留；下文0/48/72等数字是历史快照，不能覆盖当前 ledger。
 其余10画像、D5 三交付/P1及 D6 尚未完成，不把完整片段正确性当作整个 goal 完成率。
 
+**GLM 新增批次已验：** 六组共享 consumer 在四路线 Direct/Graph 各6/6通过，共48组，
+包括真实宽度 FFN、压缩 MLA、DSA/Flash pool-tail、加权 mHC 和 NextN 输入边界。
+F30 的64-head准入和F31的 CUDA 原生 I32 Concat 已验证；Vulkan布局与原生精度失败已归因。
+见[批量检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/README.md)。
+完整 MTP、官方 FP8剩余域和完整画像门仍未签，ledger维持96/176；实现58,617行/232文件。
+
 **下一共用批次已开始：** 其余13画像的 R01 复用已有八入口词表消费者，保留 Kimi 163840、
 DeepSeek 129280、GLM 154880 的完整词表和真实 hidden。逐角色 BF16/Q8_0 由已保存的官方/
 GGUF header 取证，写入 `tests/compute_models/d5_moe_profile_facts.json`，不重新下载模型。
@@ -327,6 +333,34 @@ query/key/pool/cache 及精确索引成员未失败。有限核验为该 score �
 沿用既有 Vulkan 原生矩阵乘法双门：对完整 F32 oracle 为 abs2e-4/rel2e-3，对原生舍入 oracle
 为 abs8e-5/rel4e-5；不修改归一化、pool/cache、参数或索引验收，不按观测误差拟合阈值。
 若该源码机制不能解释实际结果，保留失败继续定位，不用更宽门代签。其它路线不改验收边界。
+
+**本项结果：** `264e8633` 的 Vulkan Direct/Graph各6/6通过，双数值门和精确成员检查通过；
+CPU同候选各6/6通过。CUDA `7b0fb4f1` 和Apple `5c738eaa` 的各6组按不变程序/输入/原参考公式
+复用；CUDA另有 `f373efce` 单输入 I32 Concat检查。全部失败日志及每个候选身份保存于上述检查点。
+
+### GLM 完整 NextN 共用批次（A2/A3，AUDITED）
+
+baseline `264e8633`；owner `compute_ops` 的共享 consumer，产品 FIX 为零。逐 tensor 审计
+保存为 `tests/compute_models/d5_glm_mtp_facts.json`：普通版 layer78、Flash layer45 均没有
+mHC tensor；Flash官方该层实存17个BF16、871个FP8、872个F32 tensor，不能把全局 FP8标签
+套到所有角色，也不能把其它版本的“BF16 NextN”说明套到本画像。
+
+有界源码依据新增本机已登记 SGLang `06992c92ad4494fe9f9636e75be3e35040512447`：
+`glm5_next_nextn.py` 复用 `deepseek_nextn.py` 的独立双norm→EH→Deepseek decoder→shared head norm；
+Flash无RoPE，decoder使用普通 residual，不复用主干mHC。`index_topk_share.py`明确实现迭代间
+索引carry，其对象与文件hash已记录。固定 llama.cpp 普通GLM的NextN程序也确认双residual和
+最终norm；Flash那个入口尚未实现仅是单一入口限制，不裁为全部成熟路径缺失。
+
+有限动作：①四个GGUF画像共用现有EH、MLA、router/routed/shared MoE与norm recipe组合成
+完整NextN decoder，使用真实H/Q-rank/KV-rank/专家宽度和逐角色格式；②变化embedding与实际上轮
+hidden/cache回送，独立oracle推进，检查首轮索引生成与后续carry/失效边界；③最终norm输出连接
+已有R01全词表/head合同，不用一个截短词表代签；④官方两个画像保留相同消费者图和精确FP8缺口，
+不得把GGUF/BF16结果代签为官方已验。主干DSA选出的索引与attention cache消费也在同一共享
+组合批次接合，不能只靠两个互不相接的小测试签完整稀疏attention。
+
+先完成所有八入口共享接线再固定候选并串行批验；复用已合格片段，不单独重跑P1/三交付或扩建
+仪器。一轮具体失败纠正后按实际结果裁决；若缺原版能力，记录具名格式/设备/程序拒绝及替代路径
+调查边界，不新增HYLE数学。完整画像只在其全部region和完整owner gate完成后增加。
 
 ## Closure card
 

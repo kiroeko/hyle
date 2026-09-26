@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "candidate": "264e86335f691cd25122a7f82c6af5db40befd9b",
+  "tree": "20c61b3c5f3d0358092d231ccbd72ed05c97af26",
+  "verdict": "PARTIAL_PROFILE_COVERAGE",
+  "scope": "Six shared GLM consumer groups through four ordinary Direct/Graph routes; not whole profiles.",
+  "new_complete_profile_cells": 0,
+  "ledger_counts_unchanged": {
+    "RUN_PASS": 96,
+    "VALIDATION_NOT_RUN": 80
+  },
+  "results": [
+    {
+      "route": "cpu",
+      "candidate": "264e86335f691cd25122a7f82c6af5db40befd9b",
+      "verdict": "PASS",
+      "glm_groups_per_entry": 6,
+      "gtest_counts": [
+        6,
+        6
+      ],
+      "kimi_regression_per_entry": 0,
+      "scope": "six new shared GLM groups, not whole profiles"
+    },
+    {
+      "route": "cuda",
+      "candidate": "7b0fb4f1c74ba52ad6765c91f9b40632e4c3c5ca",
+      "verdict": "PASS",
+      "glm_groups_per_entry": 6,
+      "gtest_counts": [
+        6,
+        6
+      ],
+      "kimi_regression_per_entry": 0,
+      "scope": "six new shared GLM groups, not whole profiles"
+    },
+    {
+      "route": "apple",
+      "candidate": "5c738eaa1a83251e25c47bce76c82e74d5297b58",
+      "verdict": "PASS",
+      "glm_groups_per_entry": 6,
+      "gtest_counts": [
+        12,
+        12
+      ],
+      "kimi_regression_per_entry": 6,
+      "scope": "six new shared GLM groups, not whole profiles"
+    },
+    {
+      "route": "vulkan",
+      "candidate": "264e86335f691cd25122a7f82c6af5db40befd9b",
+      "verdict": "PASS",
+      "glm_groups_per_entry": 6,
+      "gtest_counts": [
+        6,
+        6
+      ],
+      "kimi_regression_per_entry": 0,
+      "scope": "six new shared GLM groups, not whole profiles"
+    }
+  ],
+  "files": {
+    "cpu-final-build.cmd.gz": {
+      "raw_sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+      "gz_sha256": "0f503f2831c2a6ac4d36db48d131711951c8805c0925edf3be22a56de9f89246"
+    },
+    "cpu-final-build.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-final-candidate.json.gz": {
+      "raw_sha256": "712323c9549de9922a551b39b60ee67f88650b06a9f8b0d58b57c5784fea544a",
+      "gz_sha256": "c8b2748d376c62bd3ca2c208cb84b9559a973fc8b6a9860c74911ee584108177"
+    },
+    "cpu-final-compute.log.gz": {
+      "raw_sha256": "afe3b06021be820b70986bd998d62212937b04f60dd08213ccdfa1dcdd7b6201",
+      "gz_sha256": "80967c3034402dc4d0eb073c20f610faf420bc1f921b36b74eb1afb091e4aafb"
+    },
+    "cpu-final-graph.log.gz": {
+      "raw_sha256": "5dc8fef7f30b9ec3c3aea292f5e0798c149c8833bb88447897315ef2118b4f38",
+      "gz_sha256": "4282cbab61bbd6591d2a6aeadcac8867b5da8d686aab1a40f38224b5116dce24"
+    },
+    "vulkan-final-build.cmd.gz": {
+      "raw_sha256": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf",
+      "gz_sha256": "c97f609b9820c6808e27351b18e054a53503685a262cd7934299e6cef9239827"
+    },
+    "vulkan-final-build.log.gz": {
+      "raw_sha256": "18223035411bc7cf7eae3bc7eaa4b23a786a5e84e8b9bb3354a9d31ed97448ff",
+      "gz_sha256": "c35f4c3fbf6c4fbc0f99c3f272cf017078c672031529478e085e1f5a4646824c"
+    },
+    "vulkan-final-candidate.json.gz": {
+      "raw_sha256": "712323c9549de9922a551b39b60ee67f88650b06a9f8b0d58b57c5784fea544a",
+      "gz_sha256": "c8b2748d376c62bd3ca2c208cb84b9559a973fc8b6a9860c74911ee584108177"
+    },
+    "vulkan-final-compute.log.gz": {
+      "raw_sha256": "1def5c2ee0da8af938d30d311289ba5377e031da4a960d1891d1bf66355249a5",
+      "gz_sha256": "c2c46348f8057c34c1416648b7f11aebe72a57c6282f8f474e259fcc70cebe95"
+    },
+    "vulkan-final-graph.log.gz": {
+      "raw_sha256": "34d4ac6ea4d432181fc8a404f7bd71a6df866a05123fa092c187e442ecf3202a",
+      "gz_sha256": "f2d5919008df4d589dbb7ba96d8f522f1c6586e31e3251839168ac5ef1dbdf9c"
+    },
+    "vulkan-qualified-before-oracle-cache-build.cmd.gz": {
+      "raw_sha256": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf",
+      "gz_sha256": "c97f609b9820c6808e27351b18e054a53503685a262cd7934299e6cef9239827"
+    },
+    "vulkan-qualified-before-oracle-cache-build.log.gz": {
+      "raw_sha256": "18223035411bc7cf7eae3bc7eaa4b23a786a5e84e8b9bb3354a9d31ed97448ff",
+      "gz_sha256": "c35f4c3fbf6c4fbc0f99c3f272cf017078c672031529478e085e1f5a4646824c"
+    },
+    "vulkan-qualified-before-oracle-cache-candidate.json.gz": {
+      "raw_sha256": "e4c0244f25af964b331515aa51846384bbff3d51634ce7d9c230e5a2d4481956",
+      "gz_sha256": "fbad150f023cc8a458ddede01555b51f3f73beaa60a346a3db39dcbb0826e68a"
+    },
+    "vulkan-qualified-before-oracle-cache-compute.log.gz": {
+      "raw_sha256": "c25d829c9c982a669c810379176f4b49b9643aed57e48b95e41c1001415b593b",
+      "gz_sha256": "ab1bc4c748e16104fe82c3b5a954e34291c5db716805eed9849a616581ec634e"
+    },
+    "vulkan-qualified-before-oracle-cache-graph.log.gz": {
+      "raw_sha256": "4cb3277b304001b9da8ba6b4c2fe1c9cef83a3425314fe9a7dd136037021041f",
+      "gz_sha256": "0fe0f3ebca0e5101bb505484a32fb03eeea678299cf2eab309cf2ddd51d7394c"
+    },
+    "cpu-checkpoint-build-first-fail.log.gz": {
+      "raw_sha256": "0cbc7259a0953f003601f541f27c3e4d2ea5abc04f88a531f7f752b8e6fa70cd",
+      "gz_sha256": "f17f45dbd3adb2b5009a4036fc06f34e98b714a126b20174d22c0d24ab0a13f3"
+    },
+    "cpu-checkpoint-build-first-run.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-checkpoint-build-second-fail.log.gz": {
+      "raw_sha256": "6ae175d0707e79d85c5b08c7cf383796823d291b7637a966cfe26a858b79035f",
+      "gz_sha256": "de06fb3917512e11642d914239b9cb678d46f4eccf52e203eaa54748568917c8"
+    },
+    "cpu-checkpoint-build-second-run.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-checkpoint-build-third-run.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-checkpoint-build.cmd.gz": {
+      "raw_sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+      "gz_sha256": "0f503f2831c2a6ac4d36db48d131711951c8805c0925edf3be22a56de9f89246"
+    },
+    "cpu-checkpoint-build.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-checkpoint-compute-first-run.log.gz": {
+      "raw_sha256": "a6e95436fea88ed77b926833ff4985f5938b8cd7c5d5a85a009d7cf09fa41e77",
+      "gz_sha256": "a95bc28ed6070655513d7dc4669650dad9287cd27e7654e3686cc42825a79773"
+    },
+    "cpu-checkpoint-compute-second-run.log.gz": {
+      "raw_sha256": "5bcb3dfe50ef94a8ea4a4917138cd2ca8fac0ccd7ca1998a071f6636e360ea45",
+      "gz_sha256": "786a770a42f4343721914ce118b705477d197ee60d0c55c1509a43eebf6663cd"
+    },
+    "cpu-checkpoint-compute-third-run.log.gz": {
+      "raw_sha256": "571042db2691ad2c0a0113c9aeab3e6b96e1b2b0791ba3b68a469f9df86331c6",
+      "gz_sha256": "c166a40dde75853d8afadcb9005072dcf9c6725af4a1351e0eef202a86d67e01"
+    },
+    "cpu-checkpoint-compute.log.gz": {
+      "raw_sha256": "93d798e94feb30f385d54334a554f41b1aa24ec1fc54a6cd0e3de1bf1982f522",
+      "gz_sha256": "3273fc7a310c6d3861e2d4f057e35ffa66b491b0f2f68cc470ff55ad94d0f60e"
+    },
+    "cpu-checkpoint-graph-first-run.log.gz": {
+      "raw_sha256": "d87d9e6253dd924b5e7d4567920dd54679900a03d662d81fb4fea8d3e7198ffe",
+      "gz_sha256": "fc586c3ec61a1fe800da93b6371570f6f800dd60c466e0dc5129c5e3b7f25eb4"
+    },
+    "cpu-checkpoint-graph-second-run.log.gz": {
+      "raw_sha256": "2311d8f9f4f54cc3b3a4ba89814253a65acebbcc509c92c976f8f64063fb0f0d",
+      "gz_sha256": "d4037b005cbca1c98ec8671053b79afe15a86586435d2b655ac4eb48601f9adf"
+    },
+    "cpu-checkpoint-graph-third-run.log.gz": {
+      "raw_sha256": "7af8a54b4c299c2953b61e6acf6b2318a5ba6e6c67a27a77066b65714b758b1a",
+      "gz_sha256": "15415bded1e9134cc21815452eccbb2e2b1853a492dc08df69c47d694323b10e"
+    },
+    "cpu-checkpoint-graph.log.gz": {
+      "raw_sha256": "ab5b9c02b3ce3b963175c5c45f31835c7af9df5ea6fd3ae895b73d82aaa6c055",
+      "gz_sha256": "2cfcfcf663e4cf49554667e2ee1bb80214e99848f531de0e9d74328616d85b73"
+    },
+    "cuda-checkpoint-build.cmd.gz": {
+      "raw_sha256": "a50902eeab54a2f250fb14046adc6bf35bfeb21bc05449d23f9f45523a262244",
+      "gz_sha256": "13a24dc917dfb9d7114b3ebe7b7d8783995f5fab4cd81bbfab5e306bbd3c9a2f"
+    },
+    "cuda-checkpoint-build.log.gz": {
+      "raw_sha256": "93336ec3f40e0e4e5ca5252ac5023c2f880ea656826c0b1b78c59c024d4c8a57",
+      "gz_sha256": "0218c258b4e11baeb9152591f6999e62920dee1d9c64cb8318a2d33c25011be9"
+    },
+    "cuda-checkpoint-compute.log.gz": {
+      "raw_sha256": "eece3e3bfc226c4e0aae9dd1056f6b39a25d8263bfd4cd7c63f964f01e6e755e",
+      "gz_sha256": "3008513da6d699d4a34cbba08fb49a3091c51a030ada0e1977d61fbe2381e8eb"
+    },
+    "cuda-checkpoint-graph.log.gz": {
+      "raw_sha256": "19662ff8c832e7875fd4e6cb094df703bf0d0d748044596e334ee211cc09296e",
+      "gz_sha256": "2fea865c6f1ccbfdb0c98eeeb7c0ce8e942bda322db5701949dba8e501eed276"
+    },
+    "vulkan-checkpoint-build.cmd.gz": {
+      "raw_sha256": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf",
+      "gz_sha256": "c97f609b9820c6808e27351b18e054a53503685a262cd7934299e6cef9239827"
+    },
+    "vulkan-checkpoint-build.log.gz": {
+      "raw_sha256": "ac8885d27109dff2d087bde6e941a82a23a6969f795f0e3839d6ae728226ca1a",
+      "gz_sha256": "226cc2ba2af96030be38e199bdc3800a0b4c00d51ac5dd01f965eccff1d82f38"
+    },
+    "vulkan-checkpoint-compute.log.gz": {
+      "raw_sha256": "a1757026d5fdddad8c0125b23ff1ac0d650c51157adbc853a255a612765e1f8f",
+      "gz_sha256": "3b795709260f675f8935d350cc50e3f55c06ec2d0d4f93cfeb519a15b930b167"
+    },
+    "vulkan-checkpoint-graph.log.gz": {
+      "raw_sha256": "f0974b0212bab6e5a941b256f90e22a2b0a056f321afd84dca0cf6d0f047735e",
+      "gz_sha256": "c2af5b028b0a57efda8b1fc9280fa4c636356bbc1b7d14b1716b185d84a3541f"
+    },
+    "apple-checkpoint-build-and-test.log.gz": {
+      "raw_sha256": "64567cf3d1f9b7e4f4ce60567ab857a5f539597987461d793da2fb7fbb74d55a",
+      "gz_sha256": "a04fb9584c9fc47fd644e0b798b938b24d530e38fd79fd1df6c2cdf371ea6a89"
+    },
+    "cuda-corrected-build-first-fail.log.gz": {
+      "raw_sha256": "10c3c776ebc6aede64a14dff8e7082df91b4148f4a14bb604f330ed6cf758b4b",
+      "gz_sha256": "a47a272d1f26ff9e8283a5b6192f75ef9bd749dd56e0aa968a82f961388862c8"
+    },
+    "cuda-corrected-build-first-run.log.gz": {
+      "raw_sha256": "5ccab7e8bb592fa05b9e4ddcc03ef33360dd683930ae34794304689d819a8761",
+      "gz_sha256": "76dcdd250560f4af7f986b086cc2ad304c5775766dba142b6a3a162607bdf3c1"
+    },
+    "cuda-corrected-build-second-run.log.gz": {
+      "raw_sha256": "5ccab7e8bb592fa05b9e4ddcc03ef33360dd683930ae34794304689d819a8761",
+      "gz_sha256": "76dcdd250560f4af7f986b086cc2ad304c5775766dba142b6a3a162607bdf3c1"
+    },
+    "cuda-corrected-build.cmd.gz": {
+      "raw_sha256": "2fca2b2dd1b6ea872099a21329b7260ab074f7548ee9a4bba90d65c084d542e4",
+      "gz_sha256": "0641506a5a1c18d22c2ec40d88a3729ef6ab04669703ca11fe478045a5b49b28"
+    },
+    "cuda-corrected-build.log.gz": {
+      "raw_sha256": "aabb056672b7ff15a22f3d7d8cb1dc9999afbadd6af862d44d16fe1137e81a81",
+      "gz_sha256": "9a2f4311cc0cffb585ae1afe97ee4d46b10fd462252da6183137a710d0bb0d9d"
+    },
+    "cuda-corrected-compute-first-run.log.gz": {
+      "raw_sha256": "880db0547f2cb66056bcc714b84ac0b7c1ad03a2bf0c36a1e0b0c805d66a67d1",
+      "gz_sha256": "c2b4a8f43abc70eb8aca9c75a5227c6804f59c4fa2f27572c6d4a330394a96b8"
+    },
+    "cuda-corrected-compute-second-run.log.gz": {
+      "raw_sha256": "7ef37244a6e85bddd6502f50f1205525ce8a7123db201116762211e750b4565c",
+      "gz_sha256": "7c110e7b957f5c7449774f4fc1781eae3624d40ae89597fe2e80e943270873c4"
+    },
+    "cuda-corrected-compute.log.gz": {
+      "raw_sha256": "6a295bd9a8af1238d73e6b7a8f36704e03fc0c7aa684c267bc07306d7da12e38",
+      "gz_sha256": "7ddf9f705b5dda4644c1a336341cf7eaacfd15bc2ea0c465a51216bde0b5d991"
+    },
+    "cuda-corrected-graph-first-run.log.gz": {
+      "raw_sha256": "8bef8602b1928d14cb125e5e42a092acffa060678fc1ac1e64454ce187b6ab1d",
+      "gz_sha256": "abafa76f506c1234b15361b08593165372d16f5cf711db7bd6e3135470f96fc1"
+    },
+    "cuda-corrected-graph-second-run.log.gz": {
+      "raw_sha256": "ed792d1771fcafe5a87ee7349ce890285ef33817fceb1180c645372fee5fb366",
+      "gz_sha256": "06fee7e772c2deedf0129a66abbb3a8d691ea745367f7c3a0e1994dbe4f0a1be"
+    },
+    "cuda-corrected-graph.log.gz": {
+      "raw_sha256": "b4e411cf87284ba9e685a9c6daf31345f86e41b65ac4df555fa9ab9cf4cbe4c1",
+      "gz_sha256": "265fbb8be42547c64a31629cef60b2c4e9722792e4ad077040337993f0a40fcd"
+    },
+    "cuda-corrected-provider-first-run.log.gz": {
+      "raw_sha256": "63e5fa7c5bcf7df6d11f1556c76ee1a61572b65414d433b79dcdb684f966ad66",
+      "gz_sha256": "aa2fdaacd8a769c982faed422acfee6990fdd963ae55fb34f3eb78bef93466e0"
+    },
+    "cuda-corrected-provider-second-run.log.gz": {
+      "raw_sha256": "3459f66b33833f65627b513d267144c8f1b3f62b2997bb328f7125912038dc51",
+      "gz_sha256": "e167ea06d7d8136e9d4a7e74356e765fe09679dbcc69bd4502ac0a395c915877"
+    },
+    "cuda-corrected-provider.log.gz": {
+      "raw_sha256": "ee03f7bf1fd4783bea15773ab602f51f638826f54ed05ab3730dc011fdd25d70",
+      "gz_sha256": "e1e9778db7d5996a636c4593cbf5ac57f74edfa3bb9833935132ef8f7cd85b8a"
+    },
+    "vulkan-corrected-build.cmd.gz": {
+      "raw_sha256": "9832f1f0bf68bc1bed700c6e5fc43370a661247fb572d5d0f61af8db02f7d416",
+      "gz_sha256": "a3298c857b17569f793e9d63c76c3deba758af9f5aa33e01daeb4a022354f7ca"
+    },
+    "vulkan-corrected-build.log.gz": {
+      "raw_sha256": "23e0064d782aa15b7de231e4a61dc4ed8637980581122f277a046df02866dbc3",
+      "gz_sha256": "cf27fede8d7dbc215de8058f8efce3c13aebe696d83714433166bc5ca89f2c29"
+    },
+    "vulkan-corrected-compute.log.gz": {
+      "raw_sha256": "5a2b42a289742ad1e8314480715efe771ec8bc331cf0975ecd8408b0437b79ac",
+      "gz_sha256": "aa9733cc918600f286c7fe5d7d3878ee9d8d12e1472035a28fe54b31ea0ce265"
+    },
+    "vulkan-corrected-graph.log.gz": {
+      "raw_sha256": "8da11ac51c3cdc1360a9c43dc22f9e0561a4ae35db4e01d70e598657f004e9f3",
+      "gz_sha256": "f8fb880d57ff713305d0a49e198643f127b9403baf5cf95e011ecc05e943c228"
+    },
+    "vulkan-corrected-provider.log.gz": {
+      "raw_sha256": "e5a5978464c6d650652153c77e3f733175fe56bff1db4fb8b7aa77b27531b664",
+      "gz_sha256": "f092508198bc81ffa7f1c9b3dd781367f449b7552f20d48ec623232f83b99065"
+    },
+    "cpu-admission-build.cmd.gz": {
+      "raw_sha256": "6c3ece1fe2200212dc18dc0a1efa88b3fa7bdac7662d83ff1221532e32419fc5",
+      "gz_sha256": "f4102b4587ebc5e2e2421e823c26e85f754b5a690323060f36411925ee6725d3"
+    },
+    "cpu-admission-build.log.gz": {
+      "raw_sha256": "ecad79e88daf73d5b6febaba2df0984f3a1a67e6c2d4c636d3aab96d2881682a",
+      "gz_sha256": "673a8de486e1c03651b2b546ad78043ef16ac7293e375bcfa1e9f68a23eb0dfe"
+    },
+    "cpu-admission-receipt.json.gz": {
+      "raw_sha256": "da78c3de610740b67c716872268d1e881659d10c8aac57610e488038196c9773",
+      "gz_sha256": "326a980b24e96ffa78de4e1ef785dae957dfdcda1364402f249f87ddb5b116df"
+    },
+    "cpu-admission-tests.log.gz": {
+      "raw_sha256": "76cdb2ee085bc6764f417139f1d01947ba558160a53da922cecff2d4d6591766",
+      "gz_sha256": "863284903b819aa68bd75a4588afccc8a6a18221da5cc85a682ff37fbc405abd"
+    },
+    "cuda-admission-build.cmd.gz": {
+      "raw_sha256": "bcf31fd3fce8b398c5873ecd1d1b8caaa3b23686dcb5edf65eac17dcdf440d38",
+      "gz_sha256": "85c72b1a0fe8770e44dbdbe803052ae34a897fe22259bf12f8ebfc0a8b9b240d"
+    },
+    "cuda-admission-build.log.gz": {
+      "raw_sha256": "5ccab7e8bb592fa05b9e4ddcc03ef33360dd683930ae34794304689d819a8761",
+      "gz_sha256": "76dcdd250560f4af7f986b086cc2ad304c5775766dba142b6a3a162607bdf3c1"
+    },
+    "cuda-admission-receipt.json.gz": {
+      "raw_sha256": "62a54551d2427288e88e34b42f0475ff134c96fe69c1cfb5eded83fe2290cd06",
+      "gz_sha256": "199ea56c44aa8ed1dcbec17835c878db38dbfdc5868dcf7446fde841675eb0fe"
+    },
+    "cuda-admission-tests.log.gz": {
+      "raw_sha256": "4aae886cf40f29d78881ca46756130405ee2ca51f04746b2a3685ab59eab281b",
+      "gz_sha256": "d066d594406e4a902c76399c93ab14be5334cae81ded89a90c8ebd99a1bf7cde"
+    },
+    "selected-plan.json.gz": {
+      "raw_sha256": "1adee4cafcd0cf53bb64f2ab5ec2ae16786e527e3bc5ca6b34b9f5ae417ca71f",
+      "gz_sha256": "6f3ac9c99414c959e540cfa80f53481cb987d57d0e92908dd4826fdc187ce72e"
+    }
+  },
+  "consumer_groups": [
+    "GGUF dense FFN",
+    "six-profile NextN input boundary only",
+    "GGUF absorbed MLA with actual cache feedback",
+    "ordinary DSA indexer with full top2048",
+    "Flash K4 pooled indexer with 0..3 tail tokens",
+    "Flash weighted mHC with actual residual feedback"
+  ],
+  "source_facts": "tests/compute_models/d5_glm_remaining_facts.json",
+  "products": {
+    "F30": "ggml CPU/CUDA/Vulkan cold admission adds 64/1 heads to existing F32 QK576/V512 domain; same original attention program.",
+    "F31": "ggml CUDA plain dense nonempty I32 Concat; original CPY instead of unsupported I32 DUP for first/single input. No new kernel."
+  },
+  "strict_checks": [
+    "I32 indices read as I32, exact selected members/uniqueness/-1 padding",
+    "32x128 indexer, top2048; 513 Flash pools choose512 plus0..3 tails",
+    "actual key/gate cache and mHC output feedback; oracle advances independently",
+    "CUDA INT_MIN/MAX, -1 and values above2^24 preserved across changing replays and one-input ownership",
+    "wrong attention heads/sequence/output and unsupported integer domains rejected"
+  ],
+  "vulkan_precision": {
+    "source": "built source-8dc7950171d4c70b/src/ggml-vulkan/ggml-vulkan.cpp:9577-9606",
+    "mechanism": "coopmat2 converts both F32 MatMul operands to F16 before F32 accumulation",
+    "affected_output": "official Flash indexer score port5 only",
+    "full_f32_gate": {
+      "absolute": 0.0002,
+      "relative": 0.002
+    },
+    "independent_half_product_gate": {
+      "absolute": 8e-05,
+      "relative": 4e-05
+    },
+    "qualification": "Existing Vulkan native MatMul dual accuracy rule; not fitted to measured differences. Pool/cache/norm/indices retain their original checks."
+  },
+  "layout_cost": "Two permute/Copy materializations implement contiguous K4 Softmax rows. D4 retained byte-addressed Copy boundary adapters remain explicit. Diagnostic Q/K/score outputs own extra copies. Not a no-copy/performance claim.",
+  "unrun": [
+    "GLM full MTP decoder/head and index carry",
+    "remaining official FP8 projection/expert/dynamic activation domains",
+    "DeepSeek remaining complete chains",
+    "final affected owner batch gates",
+    "D5-A5 source/static/shared",
+    "D5-A6 P1",
+    "D6"
+  ],
+  "weights": "Format-valid nonzero synthetic payloads, exact pinned tensor-role shapes and storage; not giant checkpoint contents or whole-model inference.",
+  "environment_reuse": "../kimi-remaining-batch/receipt.json; same Windows i9-13900K/RTX4070 and MacBookAir Mac16,12, existing route trees, -j2 and serial heavy checks.",
+  "validation_mode": "Targeted batch checkpoint only. Selector plan is retained, not claimed as all selected gates PASS.",
+  "reused_candidates": {
+    "cuda": "Later changes affect Vulkan checks and add an independent Vulkan-only oracle; CUDA product and GLM program/input/full-reference formulas unchanged. f373efce additionally passes single-input I32 Concat ownership.",
+    "apple": "After5c738eaa product changes are confined to CUDA; Vulkan I32 readback/provider checks and native rounded oracle do not change Apple recipes, inputs or assertions.",
+    "cpu_provider": "F30 targeted provider4/4 atf373efce; same product as264e8633.",
+    "vulkan_provider": "F30/resources/metadata provider13/13 at7b0fb4f1; subsequent Vulkan changes are test-only."
+  },
+  "source_identities": {
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "32c7996f55cf8b8b8456a5470ba091a973b8992ed9f79c380c41dcad4042c82c",
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc": "f726ceb27c57b4ff6151b6001f825e862facc82bf0a3ec6319f02e757d71cf53",
+    "src/compute_provider_ggml_cuda/tensor_program.cc": "36b328f453bb8ad9b44c0c0b4d29adfd76a7be6060881e4be5d2084167ebf9f9",
+    "src/compute_provider_ggml_vulkan/region.cc": "4483e931d210f694d7422fbaa3b01ce0460d617063165e52173575f45743f77d",
+    "tests/compute_models/d5_glm_remaining_fragments.h": "7826e1249b901ff8c113597207562a39cc36ba96486b416fec8409c88a236f08"
+  }
+}

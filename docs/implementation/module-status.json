@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：96/176完整格已验；GLM六画像剩余 dense/MLA/DSA/mHC/MTP共享批次接线，保留真实混合格式与官方FP8边界。其余10画像、三交付/P1继续；不新增数学。"
+      "summary": "D5 AUDITED：96/176完整格已验；GLM六组片段四路线八入口48/48通过，含NextN输入边界；完整MTP、官方FP8剩余域、DeepSeek、三交付/P1仍待完成。F30/F31成熟接缝已验证，不新增数学。"
     },
     {
       "module": "compute_backend_cpu",
@@ -541,7 +541,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30 AUDITED：已验F29 Kimi MLA保留；仅追加GLM F32 QK576/V512的64/1 heads冷准入及共享正负测试，原shape/资源检查与原版数学不变。D5剩余范围、三交付/P1待验。"
+      "summary": "D5-F30/F31 AUDITED：64-head压缩MLA与原生I32 Concat已通过GLM Direct/Graph及定向边界；I32首段复制使用原CPY，保留精确整数、单输入ownership和拒绝域。未新增kernel，D5完整画像/三交付/P1待验。"
     },
     {
       "module": "graph_provider_ggml_cuda",
