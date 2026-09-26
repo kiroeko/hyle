@@ -130,7 +130,10 @@ inline Fragment dense_ffn(const Case &model) {
 
 // Independent NextN input boundary. The decoder attention/MoE and final head
 // still require their own complete-chain receipts; this is not a whole MTP.
-inline Fragment mtp_input(const Case &model) {
+using InputReference = std::function<moe::ReferenceOutputs(
+    std::span<const float>, std::span<const float>)>;
+inline Fragment mtp_input(const Case &model, InputReference *reference = nullptr,
+                           bool normalize_output = true) {
   Fragment f{.profile = model.profile, .region = 0x0d030801,
              .quantized = !model.official};
   auto hidden = f.input(dense({1, model.hidden}));
@@ -146,18 +149,26 @@ inline Fragment mtp_input(const Case &model) {
   auto eh = linear::projection(f, joined, model.hidden, 2 * model.hidden,
       model.official ? Storage::kBFloat16 : Storage::kQ8_0, 193);
   auto ns = sem::oracle::scale(model.hidden);
-  auto result = norm(f, eh.output, ns, model.official);
-  f.outputs = {hn, en, joined, eh.output, result};
+  f.outputs = {hn, en, joined, eh.output};
+  if (normalize_output) f.outputs.push_back(norm(f, eh.output, ns, model.official));
   if (model.official) f.bfloat_chain_outputs = {3, 4};
-  for (int seed : {5, 23, 37}) {
-    auto h = d5_gguf_test::activation(model.hidden, seed);
-    auto e = d5_gguf_test::activation(model.hidden, seed + 7);
+  auto evaluate = [model, hs, es, ns, eh = std::move(eh)](
+      std::span<const float> h, std::span<const float> e) -> moe::ReferenceOutputs {
     auto hv = sem::oracle::rms_norm_rows(h, hs, model.hidden, kNormEpsilon);
     auto ev = sem::oracle::rms_norm_rows(e, es, model.hidden, kNormEpsilon);
     auto j = ev; j.insert(j.end(), hv.begin(), hv.end());
     auto projected = eh.reference(j);
     auto expected = sem::oracle::rms_norm_rows(projected, ns, model.hidden, kNormEpsilon);
-    f.replays.push_back({{bytes(h), bytes(e)}, {hv, ev, j, projected, expected}});
+    return {std::move(hv), std::move(ev), std::move(j), std::move(projected), std::move(expected)};
+  };
+  if (reference) {
+    *reference = std::move(evaluate);
+    return f;
+  }
+  for (int seed : {5, 23, 37}) {
+    auto h = d5_gguf_test::activation(model.hidden, seed);
+    auto e = d5_gguf_test::activation(model.hidden, seed + 7);
+    f.replays.push_back({{bytes(h), bytes(e)}, evaluate(h, e)});
   }
   return f;
 }
@@ -480,7 +491,9 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
 
 // Exact ggml absorbed-MLA program. DSA selection is a separate shared region;
 // this cache consumer validates native projection, RoPE and actual feedback.
-inline Fragment mla(const Case &model) {
+using MlaReference = std::function<moe::ReferenceOutputs(
+    std::span<const float>, std::span<const float>, std::int32_t)>;
+inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
   if (model.official)
     throw std::runtime_error("official GLM MLA requires its mixed FP8 roles");
   const std::int64_t rotary = model.flash ? 0 : 64;
@@ -533,10 +546,11 @@ inline Fragment mla(const Case &model) {
                                model.hidden, kHeads * kValue, Storage::kQ8_0, 229);
   f.outputs = {next_cache, qb.output, query, attention, vb.output, out.output};
   f.state_ports = {{1, 0}};
-  auto past = d5_gguf_test::activation(3 * cached_width, 31);
-  for (int step = 0; step < 4; ++step) {
-    auto input = d5_gguf_test::activation(model.hidden, 3 + 14 * step);
-    sem::Replay replay{{bytes(input), bytes(past)}, {}};
+  auto evaluate = [model, rotary, no_pe, cached_width, input_scale, qscale,
+      kvscale, frequency_values, qa = std::move(qa), qb = std::move(qb),
+      kva = std::move(kva), kb = std::move(kb), vb = std::move(vb), out = std::move(out)](
+      std::span<const float> input, std::span<const float> history,
+      std::int32_t position) -> moe::ReferenceOutputs {
     auto xv = sem::oracle::rms_norm_rows(input, input_scale, model.hidden, kNormEpsilon);
     auto av = qa.reference(xv);
     av = sem::oracle::rms_norm_rows(av, qscale, model.query_rank, kNormEpsilon);
@@ -547,10 +561,9 @@ inline Fragment mla(const Case &model) {
     if (rotary) {
       std::vector<float> cs(32), sn(32);
       for (std::size_t p = 0; p < cs.size(); ++p) {
-        const double angle = double(13 + step) * frequency_values[p];
+        const double angle = double(position) * frequency_values[p];
         cs[p] = float(std::cos(angle)); sn[p] = float(std::sin(angle));
       }
-      replay.inputs.push_back(bytes(std::vector<std::int32_t>{13 + step}));
       auto qp = kimi::slice(qv, kHeads, 256, no_pe, 64);
       std::vector<float> kp(kv.begin() + kLatent, kv.end());
       rotate_pairs(qp, cs, sn); rotate_pairs(kp, cs, sn);
@@ -562,8 +575,9 @@ inline Fragment mla(const Case &model) {
       }
       absorbed = std::move(joined);
     }
-    auto full = past; full.insert(full.end(), lv.begin(), lv.end());
-    past.assign(full.begin() + cached_width, full.end());
+    std::vector<float> full(history.begin(), history.end());
+    full.insert(full.end(), lv.begin(), lv.end());
+    std::vector<float> past(full.begin() + cached_width, full.end());
     std::vector<float> attended(kHeads * kLatent);
     for (std::int64_t h = 0; h < kHeads; ++h) {
       std::array<double, 4> score{};
@@ -580,8 +594,161 @@ inline Fragment mla(const Case &model) {
       }
     }
     auto projected = vb.reference(attended);
-    replay.outputs = {past, qv, absorbed, attended, projected, out.reference(projected)};
+    return {std::move(past), std::move(qv), std::move(absorbed), std::move(attended),
+             projected, out.reference(projected)};
+  };
+  if (reference) {
+    *reference = std::move(evaluate);
+    return f;
+  }
+  auto past = d5_gguf_test::activation(3 * cached_width, 31);
+  for (int step = 0; step < 4; ++step) {
+    auto input = d5_gguf_test::activation(model.hidden, 3 + 14 * step);
+    sem::Replay replay{{bytes(input), bytes(past)}, evaluate(input, past, 13 + step)};
+    if (rotary) replay.inputs.push_back(bytes(std::vector<std::int32_t>{13 + step}));
+    past = replay.outputs[0];
     f.replays.push_back(std::move(replay));
+  }
+  return f;
+}
+// NextN is a separate decoder: unlike the Flash trunk it has ordinary
+// attention/FFN residuals and no mHC tensors. Its normalized hidden and MLA
+// cache are actual recurrent ports. Vocabulary/head and sparse-index carry
+// qualification remain separate, explicit consumers of these boundaries.
+inline Fragment mtp_decoder(const Case &model) {
+  if (model.official)
+    throw std::runtime_error("official NextN has real FP8 roles, not a BF16 stand-in");
+  const auto found = std::ranges::find_if(moe::cases::kCases,
+      [&](const auto &candidate) { return candidate.profile == model.profile; });
+  if (found == moe::cases::kCases.end())
+    throw std::runtime_error("NextN MoE profile missing");
+  InputReference input_reference;
+  MlaReference attention_reference;
+  moe::MoeReference feed_forward_reference;
+  auto input_recipe = mtp_input(model, &input_reference, false);
+  auto attention_recipe = mla(model, &attention_reference);
+  // Normalized decoder activations have unit scale. A 0.5 synthetic router
+  // coefficient avoids the saturation produced by the standalone fixture's
+  // gain64, whose deliberately small input has a different scale.
+  auto moe_recipe = moe::moe_chain(*found, false, false, &feed_forward_reference, 0.5F);
+  const auto cached_width = kLatent + (model.flash ? 0 : 64);
+  Fragment f{.profile = model.profile, .region = 0x0d030802, .quantized = true};
+  auto hidden = f.input(dense({1, model.hidden}));
+  auto embedding = f.input(dense({1, model.hidden}));
+  auto history = f.input(dense({3, cached_width}));
+  ValueId position{};
+  if (!model.flash) position = f.input(dense({1}, c::DataType::kInt32));
+  auto eh = attach(f, std::move(input_recipe), {hidden, embedding})[3];
+  auto attention = model.flash
+      ? attach(f, std::move(attention_recipe), {eh, history})
+      : attach(f, std::move(attention_recipe), {eh, history, position});
+  auto residual = binary(f, c::BinaryKind::kAdd, eh, attention[5]);
+  auto ffn_scale = sem::oracle::scale(model.hidden);
+  auto ffn_input = norm(f, residual, ffn_scale);
+  auto feed_forward = attach(f, std::move(moe_recipe), {ffn_input});
+  auto combined = binary(f, c::BinaryKind::kAdd, residual,
+      reshape(f, feed_forward[5], {1, model.hidden}));
+  auto head_scale = sem::oracle::scale(model.hidden);
+  std::reverse(head_scale.begin(), head_scale.end());
+  auto next_hidden = norm(f, combined, head_scale);
+  f.outputs = {next_hidden, attention[0], eh, attention[5], ffn_input,
+               feed_forward[5], feed_forward[0], feed_forward[1]};
+  f.exact_outputs = {6};
+  f.state_ports = {{0, 0}, {2, 1}};
+  auto hidden_values = d5_gguf_test::activation(model.hidden, 5);
+  auto past = d5_gguf_test::activation(3 * cached_width, 31);
+  for (int step = 0; step < 4; ++step) {
+    auto token = d5_gguf_test::activation(model.hidden, 12 + 14 * step);
+    sem::Replay replay{{bytes(hidden_values), bytes(token), bytes(past)}, {}};
+    const std::int32_t pos = 13 + step;
+    if (!model.flash) replay.inputs.push_back(bytes(std::vector<std::int32_t>{pos}));
+    auto input_values = input_reference(hidden_values, token);
+    auto av = attention_reference(input_values[3], past, pos);
+    std::vector<float> rv(model.hidden);
+    for (std::size_t d = 0; d < rv.size(); ++d)
+      rv[d] = input_values[3][d] + av[5][d];
+    auto normalized = sem::oracle::rms_norm_rows(rv, ffn_scale, model.hidden, kNormEpsilon);
+    auto mv = feed_forward_reference(normalized);
+    for (std::size_t d = 0; d < rv.size(); ++d) rv[d] += mv[5][d];
+    hidden_values = sem::oracle::rms_norm_rows(rv, head_scale, model.hidden, kNormEpsilon);
+    past = av[0];
+    replay.outputs = {hidden_values, past, std::move(input_values[3]), std::move(av[5]),
+        std::move(normalized), std::move(mv[5]), std::move(mv[0]), std::move(mv[1])};
+    f.replays.push_back(std::move(replay));
+  }
+  return f;
+}
+// Connect actual DSA-selected token IDs to the compressed MLA cache. Projection
+// outputs are explicit fragment ports; no host readback selects the rows.
+inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
+  if (model.official)
+    throw std::runtime_error("official full MLA projection qualification remains separate");
+  auto f = indexer(model, tail);
+  f.region = 0x07080310 + std::uint64_t(tail);
+  const auto width = kLatent + (model.flash ? 0 : 64);
+  const std::int64_t tokens = 2054 + tail, selected = 2048 + tail;
+  const auto past_port = f.inputs.size() + 1;
+  auto query = f.input(dense({1, 1, kHeads, width}));
+  auto history = f.input(dense({tokens - 1, width}));
+  auto current = f.input(dense({1, width}));
+  auto full = f.one(c::Operation(c::Concat{.axis = 0}), {history, current});
+  auto ids = f.outputs[6];
+  if (model.flash) {
+    // Tail length is known model metadata. Remove the -1 padding by a public
+    // view/copy before checked Gather; never silently treat -1 as row zero.
+    ids = reshape(f, core::rows(f, reshape(f, ids, {2051, 1}), 0, selected), {selected});
+  } else ids = reshape(f, ids, {selected});
+  auto chosen = f.one(c::Operation(c::Gather{}), {full, ids});
+  auto values = kimi::slice_heads(f, chosen, selected, width, 0, kLatent);
+  auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
+      .scale = 1.0F / 16.0F, .causal = false,
+      .accumulation_type = c::DataType::kFloat32}),
+      {query, reshape(f, chosen, {1, selected, 1, width}),
+       reshape(f, values, {1, selected, 1, kLatent})});
+  std::vector<std::int32_t> retained;
+  for (std::int32_t t = 0; t < tokens; ++t) if (t != 2) retained.push_back(t);
+  auto retain_ids = f.constant(dense({tokens - 1}, c::DataType::kInt32), bytes(retained));
+  auto next = f.one(c::Operation(c::Gather{}), {full, retain_ids});
+  const auto next_port = f.outputs.size();
+  f.outputs.push_back(next);
+  f.outputs.push_back(attention);
+  f.state_ports.push_back({past_port, next_port});
+  f.exact_outputs.push_back(next_port);
+  auto past = d5_gguf_test::activation((tokens - 1) * width, 31);
+  for (std::size_t step = 0; step < f.replays.size(); ++step) {
+    auto &replay = f.replays[step];
+    auto q = d5_gguf_test::activation(kHeads * width, 101 + int(step) * 14);
+    auto kv = d5_gguf_test::activation(width, 113 + int(step) * 14);
+    replay.inputs.push_back(bytes(q));
+    replay.inputs.push_back(bytes(past));
+    replay.inputs.push_back(bytes(kv));
+    auto cache = past;
+    cache.insert(cache.end(), kv.begin(), kv.end());
+    const auto &selected_ids = replay.outputs[6];
+    std::vector<float> expected(kHeads * kLatent);
+    for (std::int64_t h = 0; h < kHeads; ++h) {
+      std::vector<double> scores(selected);
+      for (std::int64_t t = 0; t < selected; ++t) {
+        const auto row = std::int64_t(selected_ids[t]);
+        if (row < 0 || row >= tokens) throw std::runtime_error("invalid DSA reference row");
+        for (std::int64_t d = 0; d < width; ++d)
+          scores[t] += double(q[h * width + d]) * cache[row * width + d] / 16.0;
+      }
+      const double largest = *std::max_element(scores.begin(), scores.end());
+      double total = 0;
+      for (auto &score : scores) total += score = std::exp(score - largest);
+      for (std::int64_t d = 0; d < kLatent; ++d) {
+        double value = 0;
+        for (std::int64_t t = 0; t < selected; ++t)
+          value += scores[t] / total * cache[std::int64_t(selected_ids[t]) * width + d];
+        expected[h * kLatent + d] = float(value);
+      }
+    }
+    past.clear();
+    for (auto row : retained)
+      past.insert(past.end(), cache.begin() + row * width, cache.begin() + (row + 1) * width);
+    replay.outputs.push_back(past);
+    replay.outputs.push_back(std::move(expected));
   }
   return f;
 }

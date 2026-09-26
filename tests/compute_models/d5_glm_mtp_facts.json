@@ -831,5 +831,1252 @@
       "python/sglang/srt/models/deepseek_v2.py": "70e3b1e96b683a68261e914ad19e1ca2244bdb2622d6952ad27891688798c3be",
       "python/sglang/srt/layers/attention/index_topk_share.py": "e4b2218c1b0ef472c5dc51c87e889c10742d33360d3fc7215458b64b6d3deebe"
     }
+  },
+  "gguf_header_audit_sha256": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555",
+  "gguf_profiles": {
+    "glm53_ud_q4_k_xl": {
+      "repository": "unsloth/GLM-5.3-GGUF",
+      "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "nextn_layer": 78,
+      "tensors": [
+        {
+          "name": "output.weight",
+          "shape": [
+            "6144",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 2
+        },
+        {
+          "name": "output_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 2
+        },
+        {
+          "name": "token_embd.weight",
+          "shape": [
+            "6144",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "token_embedding",
+          "shard": 2
+        },
+        {
+          "name": "blk.78.attn_k_b.weight",
+          "shape": [
+            "192",
+            "512",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_kv_a_mqa.weight",
+          "shape": [
+            "6144",
+            "576"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_kv_a_norm.weight",
+          "shape": [
+            "512"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_output.weight",
+          "shape": [
+            "16384",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_q_a.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_q_a_norm.weight",
+          "shape": [
+            "2048"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_q_b.weight",
+          "shape": [
+            "2048",
+            "16384"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.attn_v_b.weight",
+          "shape": [
+            "512",
+            "256",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.exp_probs_b.bias",
+          "shape": [
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "6144",
+            "256"
+          ],
+          "dtype": "Q5_K",
+          "role": "moe_routed_expert",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_gate_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_gate_inp.weight",
+          "shape": [
+            "6144",
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_gate_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_up_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.ffn_up_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.indexer.attn_k.weight",
+          "shape": [
+            "6144",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.indexer.attn_q_b.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.indexer.k_norm.bias",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.indexer.k_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.indexer.proj.weight",
+          "shape": [
+            "6144",
+            "32"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.nextn.eh_proj.weight",
+          "shape": [
+            "12288",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "mtp",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.nextn.enorm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.nextn.hnorm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 11
+        },
+        {
+          "name": "blk.78.nextn.shared_head_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 11
+        }
+      ]
+    },
+    "glm53_q8_0": {
+      "repository": "unsloth/GLM-5.3-GGUF",
+      "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "nextn_layer": 78,
+      "tensors": [
+        {
+          "name": "output.weight",
+          "shape": [
+            "6144",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 1
+        },
+        {
+          "name": "token_embd.weight",
+          "shape": [
+            "6144",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "token_embedding",
+          "shard": 1
+        },
+        {
+          "name": "blk.78.nextn.eh_proj.weight",
+          "shape": [
+            "12288",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "mtp",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.nextn.enorm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.nextn.hnorm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "6144",
+            "256"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_gate_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_up_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.exp_probs_b.bias",
+          "shape": [
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_gate_inp.weight",
+          "shape": [
+            "6144",
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_gate_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_up_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.ffn_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.indexer.k_norm.bias",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.indexer.k_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.indexer.proj.weight",
+          "shape": [
+            "6144",
+            "32"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.indexer.attn_k.weight",
+          "shape": [
+            "6144",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.indexer.attn_q_b.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_kv_a_norm.weight",
+          "shape": [
+            "512"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_kv_a_mqa.weight",
+          "shape": [
+            "6144",
+            "576"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_k_b.weight",
+          "shape": [
+            "192",
+            "512",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_v_b.weight",
+          "shape": [
+            "512",
+            "256",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_output.weight",
+          "shape": [
+            "16384",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_q_a_norm.weight",
+          "shape": [
+            "2048"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_q_a.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.attn_q_b.weight",
+          "shape": [
+            "2048",
+            "16384"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 16
+        },
+        {
+          "name": "blk.78.nextn.shared_head_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 16
+        },
+        {
+          "name": "output_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 17
+        }
+      ]
+    },
+    "glm53_flash_ud_q4_k_xl": {
+      "repository": "unsloth/GLM-5.3-Flash-GGUF",
+      "revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+      "nextn_layer": 45,
+      "tensors": [
+        {
+          "name": "output.weight",
+          "shape": [
+            "4096",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 2
+        },
+        {
+          "name": "output_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 2
+        },
+        {
+          "name": "token_embd.weight",
+          "shape": [
+            "4096",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "token_embedding",
+          "shard": 2
+        },
+        {
+          "name": "blk.45.attn_k_b.weight",
+          "shape": [
+            "256",
+            "512",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_kv_a_mqa.weight",
+          "shape": [
+            "4096",
+            "512"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_kv_a_norm.weight",
+          "shape": [
+            "512"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_output.weight",
+          "shape": [
+            "16384",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_q_a.weight",
+          "shape": [
+            "4096",
+            "1536"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_q_a_norm.weight",
+          "shape": [
+            "1536"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_q_b.weight",
+          "shape": [
+            "1536",
+            "16384"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.attn_v_b.weight",
+          "shape": [
+            "512",
+            "256",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.exp_probs_b.bias",
+          "shape": [
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "4096",
+            "288"
+          ],
+          "dtype": "Q5_K",
+          "role": "moe_routed_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.45.ffn_gate_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.ffn_gate_inp.weight",
+          "shape": [
+            "4096",
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.ffn_gate_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.ffn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.ffn_up_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.ffn_up_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer.attn_k.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer.attn_q_b.weight",
+          "shape": [
+            "1536",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer.k_norm.bias",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer.k_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer.proj.weight",
+          "shape": [
+            "4096",
+            "32"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer_compressor_ape.weight",
+          "shape": [
+            "128",
+            "4"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.indexer_compressor_gate.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.nextn.eh_proj.weight",
+          "shape": [
+            "8192",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "mtp",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.nextn.enorm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.nextn.hnorm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 6
+        },
+        {
+          "name": "blk.45.nextn.shared_head_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 6
+        }
+      ]
+    },
+    "glm53_flash_q8_0": {
+      "repository": "unsloth/GLM-5.3-Flash-GGUF",
+      "revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+      "nextn_layer": 45,
+      "tensors": [
+        {
+          "name": "output.weight",
+          "shape": [
+            "4096",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 2
+        },
+        {
+          "name": "output_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 2
+        },
+        {
+          "name": "token_embd.weight",
+          "shape": [
+            "4096",
+            "154880"
+          ],
+          "dtype": "Q8_0",
+          "role": "token_embedding",
+          "shard": 2
+        },
+        {
+          "name": "blk.45.attn_k_b.weight",
+          "shape": [
+            "256",
+            "512",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_kv_a_mqa.weight",
+          "shape": [
+            "4096",
+            "512"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_kv_a_norm.weight",
+          "shape": [
+            "512"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "normalization",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_output.weight",
+          "shape": [
+            "16384",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "lm_head",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_q_a.weight",
+          "shape": [
+            "4096",
+            "1536"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_q_a_norm.weight",
+          "shape": [
+            "1536"
+          ],
+          "dtype": "F32",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_q_b.weight",
+          "shape": [
+            "1536",
+            "16384"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.attn_v_b.weight",
+          "shape": [
+            "512",
+            "256",
+            "64"
+          ],
+          "dtype": "Q8_0",
+          "role": "full_attention",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.exp_probs_b.bias",
+          "shape": [
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "4096",
+            "288"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_gate_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_gate_inp.weight",
+          "shape": [
+            "4096",
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_gate_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_up_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.ffn_up_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer.attn_k.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer.attn_q_b.weight",
+          "shape": [
+            "1536",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer.k_norm.bias",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer.k_norm.weight",
+          "shape": [
+            "128"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer.proj.weight",
+          "shape": [
+            "4096",
+            "32"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer_compressor_ape.weight",
+          "shape": [
+            "128",
+            "4"
+          ],
+          "dtype": "F32",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.indexer_compressor_gate.weight",
+          "shape": [
+            "4096",
+            "128"
+          ],
+          "dtype": "Q8_0",
+          "role": "sparse_attention_index",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.nextn.eh_proj.weight",
+          "shape": [
+            "8192",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "mtp",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.nextn.enorm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.nextn.hnorm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 8
+        },
+        {
+          "name": "blk.45.nextn.shared_head_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "mtp",
+          "shard": 8
+        }
+      ]
+    }
   }
 }

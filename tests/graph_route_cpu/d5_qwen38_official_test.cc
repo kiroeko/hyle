@@ -699,6 +699,29 @@ TEST(CpuGraphMoeFragments, D5GlmGgufDenseFfn) {
   }
 }
 
+TEST(CpuGraphMoeFragments, D5GlmGgufNextNDecoderWithCarry) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::mtp_decoder(model));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmGgufDsaSelectionConsumesMlaCache) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    for (int tail = 0; tail < (model.flash ? 4 : 1); ++tail) {
+      SCOPED_TRACE(tail);
+      run_q24_semantic_fragment(d5_glm_remaining_fragments::sparse_attention(model, tail));
+    }
+  }
+}
+
 TEST(CpuGraphMoeFragments, D5GlmNextNInputBoundary) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (const auto &model : d5_glm_remaining_fragments::kCases) {

@@ -362,6 +362,14 @@ hidden/cache回送，独立oracle推进，检查首轮索引生成与后续carry
 仪器。一轮具体失败纠正后按实际结果裁决；若缺原版能力，记录具名格式/设备/程序拒绝及替代路径
 调查边界，不新增HYLE数学。完整画像只在其全部region和完整owner gate完成后增加。
 
+**接线检查点（尚未运行）：** 四个GGUF共用NextN decoder已连接EH→MLA→residual→norm→
+routed/shared MoE→residual→head norm，四次变化embedding、实际上轮hidden/cache回送；独立
+参考函数复用原有投影/MLA/MoE公式，不以实际输出为oracle。另一个共享consumer把真实DSA
+top2048（Flash为512个pool展开并附0..3尾token）直接送入compressed cache的checked Gather和
+64-head SDPA，索引选择不经宿主读回；压缩cache与indexer cache按相同策略实际反馈。
+两个组已同时接入八个普通入口。MTP跨迭代索引carry和R01输出头组合仍未由这些组代签。
+GGUF NextN逐tensor格式已追加到同一facts文件；主干的mHC不能误接进NextN。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

@@ -2,6 +2,7 @@
 
 #include <numeric>
 #include <limits>
+#include <functional>
 
 #include "d5_moe_execution_cases.h"
 #include "d5_moe_semantic_fragments.h"
@@ -63,7 +64,7 @@ inline ValueId gathered_ids(Fragment &f, const Case &model, ValueId ids) {
 
 struct Routing final { ValueId ids, weights; };
 inline Routing routing(Fragment &f, const Case &model, ValueId input,
-                        bool native_routing = false) {
+                        bool native_routing = false, float router_gain = 64.0F) {
   const auto resident = model.top_k + 1;
   auto desc = dense({model.experts, model.hidden}, model.router_bf16
                     ? c::DataType::kBFloat16 : c::DataType::kFloat32);
@@ -71,10 +72,10 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input,
   for (std::int64_t e = 0; e < resident; ++e) {
     const auto offset = e * model.hidden + e;
     if (model.router_bf16) {
-      const auto value = sem::q::encode(64.0);
+      const auto value = sem::q::encode(router_gain);
       std::memcpy(storage.data() + offset * sizeof(value), &value, sizeof(value));
     } else {
-      const float value = 64.0F;
+      const float value = router_gain;
       std::memcpy(storage.data() + offset * sizeof(value), &value, sizeof(value));
     }
   }
@@ -140,14 +141,15 @@ struct RouteReference final {
   std::vector<float> scores, weights, tags;
 };
 inline RouteReference route_reference(const Case &model,
-                                       std::span<const float> input) {
+                                       std::span<const float> input,
+                                       float router_gain = 64.0F) {
   RouteReference r;
   r.scores.resize(model.experts);
   r.ids.resize(model.experts);
   std::iota(r.ids.begin(), r.ids.end(), 0);
   std::vector<double> selection(model.experts);
   for (std::int64_t e = 0; e < model.experts; ++e) {
-    const double logit = e <= model.top_k ? input[e] * 64.0 : 0;
+    const double logit = e <= model.top_k ? double(input[e]) * router_gain : 0;
     const double score = model.sqrt_softplus ? std::sqrt(std::log1p(std::exp(logit)))
                                              : core::sigmoid(logit);
     r.scores[e] = float(score);
@@ -354,18 +356,22 @@ inline Fragment official_fp4_projection(const Case &model, bool down) {
   return f;
 }
 
+using ReferenceOutputs = std::vector<std::vector<float>>;
+using MoeReference = std::function<ReferenceOutputs(std::span<const float>)>;
+
 inline Fragment moe_chain(const Case &model, bool native_routing,
-                            bool official_fp4) {
+                            bool official_fp4, MoeReference *reference_out = nullptr,
+                            float router_gain = 64.0F) {
   if (!model.gguf && !(official_fp4 && model.profile == cases::kCases[0].profile))
     throw std::runtime_error("official expert packing is a separate qualification");
   Fragment f{.profile = model.profile, .region = 0x0a0b0601, .quantized = true};
   auto input = f.input(dense({1, model.hidden}));
-  auto route = routing(f, model, input, native_routing);
+  auto route = routing(f, model, input, native_routing, router_gain);
   const auto resident = model.top_k + 1;
   const std::vector<std::int32_t> zero{0};
   auto zero_id = f.constant(dense({1, 1}, c::DataType::kInt32), bytes(zero));
-  const auto grouped = [&](const sem::Weight &w, ValueId x, ValueId ids) {
-    auto stored = f.constant(w.description, w.storage);
+  const auto grouped = [&](sem::Weight &w, ValueId x, ValueId ids) {
+    auto stored = f.constant(w.description, std::move(w.storage));
     return f.one(c::model_ops::grouped_matmul(), {stored, x, ids});
   };
   std::optional<sem::Weight> latent_down, latent_up;
@@ -412,10 +418,14 @@ inline Fragment moe_chain(const Case &model, bool native_routing,
                 shared, output, gate, up, activated,
                 shared_gate, shared_up, shared_activated};
   f.exact_outputs = {0};
-  for (int replay = 0; replay < 3; ++replay) {
-    auto x = activation(model, replay);
-    auto reference = route_reference(model, x);
-    auto latent = latent_down ? project(x, *latent_down, zero, model.latent, model.hidden) : x;
+  auto evaluate = [model, router_gain, zero, norm_values,
+      latent_down = std::move(latent_down), latent_up = std::move(latent_up),
+      wg = std::move(wg), wu = std::move(wu), wd = std::move(wd),
+      sg = std::move(sg), su = std::move(su), sd = std::move(sd)]
+      (std::span<const float> x) -> ReferenceOutputs {
+    auto reference = route_reference(model, x, router_gain);
+    auto latent = latent_down ? project(x, *latent_down, zero, model.latent, model.hidden)
+                              : std::vector<float>(x.begin(), x.end());
     std::vector<float> replicated;
     for (std::int64_t slot = 0; slot < model.top_k; ++slot)
       replicated.insert(replicated.end(), latent.begin(), latent.end());
@@ -444,11 +454,19 @@ inline Fragment moe_chain(const Case &model, bool native_routing,
     std::vector<float> full(model.hidden);
     for (std::int64_t d = 0; d < model.hidden; ++d)
       full[d] = combined_value[d] + shared_value[d];
-    f.replays.push_back({{bytes(x)}, {std::move(reference.tags),
+    return {std::move(reference.tags),
         std::move(reference.weights), std::move(routed_value),
         std::move(combined_value), std::move(shared_value), std::move(full),
         std::move(g), std::move(u), std::move(act),
-        std::move(sgate), std::move(sup), std::move(sact)}});
+        std::move(sgate), std::move(sup), std::move(sact)};
+  };
+  if (reference_out) {
+    *reference_out = std::move(evaluate);
+    return f;
+  }
+  for (int replay = 0; replay < 3; ++replay) {
+    auto x = activation(model, replay);
+    f.replays.push_back({{bytes(x)}, evaluate(x)});
   }
   return f;
 }
