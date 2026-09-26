@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "d5_qwen_gguf_vocabulary_fixture.h"
+#include "d5_qwen38_24t_moe_profiles.h"
 
 namespace d5_qwen_gguf_vocabulary_test {
 namespace cases = d5_qwen_gguf_vocabulary_cases;
@@ -75,7 +76,16 @@ void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
         // ggml also quantizes the F32 activation for its native Q8 dot path.
         // Use the same decoded-weight oracle and error contract as the other
         // GGUF projection consumers, over every output row of every shard.
-        d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+        if (reference_inputs.empty()) {
+          d5_gguf_test::expect_quantized_matmul_close(actual, expected);
+        } else {
+          // Keep the original single-head gate on its actual input. The
+          // independent end-to-end reference also contains all preceding
+          // decoder quantization and uses that established whole-chain gate.
+          const auto local = rows.logits(activations[replay], shard);
+          d5_gguf_test::expect_quantized_matmul_close(actual, local);
+          d5_qwen38_24t_moe_profiles::expect_output(profile.profile, actual, expected);
+        }
         continue;
       }
       for (std::size_t local = 0; local < actual.size(); ++local) {

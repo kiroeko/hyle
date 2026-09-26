@@ -402,6 +402,13 @@ I32端口与实际反馈重复驱动compressed-cache Gather/Attention，保留Fl
 这验证已有计算/绑定机制，迭代策略仍在测试consumer，不向库增加推理引擎状态机。
 本批一次接齐八入口，冻结候选后串行验证上述组合、已有GLM与共享状态消费者回归；门不放宽。
 
+首次 `c0a5ffae` CPU两入口均12/13通过，carry/reset和所有回归通过；完整head测试错误地把
+原单次MatMul的max0.008/RMSE0.002绝对门用于含整条decoder累计量化差的最终logits。
+有限分类纠正为双门：head相对实际hidden输入的独立解码权重参考仍用该原门；最终logits相对
+独立decoder轨迹用原MTP/FFN已固定的 `expect_output` 归一化量化整链门。没有根据观测差值
+新增阈值，不改原两种门。这样同时检查head接缝和整链误差，不把实际hidden替换进整链oracle。
+旧失败保留，纠正候选仍须完成八入口；若head局部门失败，不能用整链门覆盖它。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
