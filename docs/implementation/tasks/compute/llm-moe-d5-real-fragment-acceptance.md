@@ -89,6 +89,25 @@ region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplu
 追加四个 ggml Provider 与 Apple/Vulkan Direct/Graph 当前 AUDITED 范围；不新增数学，
 不放宽 MoE 数值门，完整片段数值失败另按中间输出定位。
 
+### 官方专家格式共用批次（A2/A3 的有限测试接线）
+
+baseline `2715701f`；owner 仍为 D5 `compute_ops` 的共享消费者，不修改产品或重开已关闭路线。
+已保存官方 header 与固定 llama.cpp `4c9233c034fc450dcf34c7c0988aebe6da5cdf1a`
+的 `conversion/base.py::repack_mxfp4_blocks`、Kimi/DeepSeek 调用点确认：三者 FP4 codes 相同，
+源布局为相邻元素高低半字节加独立 UE8M0 scale，ggml 布局为前后16元素配对加同一 scale。
+该转换只移动位，既不反量化也不重新量化；属于模型消费层的准备动作，不增建产品 loader。
+
+本批固定：①共享源 payload/scale 夹具和独立源格式数值 oracle，使用原版 Python 转换生成
+逐字节 golden；②Kimi、DeepSeek Pro/Flash 的 gate/up 与 down 六个真实内宽签名，resident
+expert 数仅缩为 top-k+1，普通八入口各两次变化输入/成员；③Kimi 官方完整 MoE 复用现有
+router/latent/shared/SiTU 链，routed 权重改为上述真实 FP4，shared/latent 保持官方 BF16。
+源 payload 与目标 storage 同时仅存在于准备夹具，执行不重排、不保留全量 F32 权重副本。
+测试权重内容为合成值，不宣称巨型 checkpoint 内容正确性或原模型部署的激活量化策略。
+一个共享接线批次后串行运行四路线两入口；原 GGUF MoE 同批回归。既有资源与公共 schema
+未改，证据复用；不启动本批独立三交付/P1。具体失败只定向修正一次，否则保留精确缺口。
+DeepSeek shared FP8 的 UE8M0 128×128 scale、GLM FP8 的 F32 128×128 scale 另行审计，
+不能以 BF16、UE8M0 group32 或本批 FP4 代签。完整画像 ledger 不因单独专家格式通过而增加。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

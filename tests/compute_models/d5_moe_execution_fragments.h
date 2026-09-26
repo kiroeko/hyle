@@ -5,6 +5,7 @@
 
 #include "d5_moe_execution_cases.h"
 #include "d5_moe_semantic_fragments.h"
+#include "d5_official_fp4_storage.h"
 
 // Model consumer recipes and independent numerical oracles, never product math.
 namespace d5_moe_execution_fragments {
@@ -329,8 +330,33 @@ inline std::vector<float> project(std::span<const float> input,
   return out;
 }
 
-inline Fragment gguf_moe(const Case &model, bool native_routing = false) {
-  if (!model.gguf)
+inline Fragment official_fp4_projection(const Case &model, bool down) {
+  if (model.gguf || (model.profile != cases::kCases[0].profile &&
+                    model.profile != cases::kCases[3].profile &&
+                    model.profile != cases::kCases[4].profile))
+    throw std::runtime_error("profile has no audited official FP4 expert packing");
+  Fragment f{.profile = model.profile, .region = 0x0b0602, .quantized = true};
+  const auto n = down ? model.latent : model.intermediate;
+  const auto k = down ? model.intermediate : model.latent;
+  const auto resident = model.top_k + 1;
+  auto w = d5_official_fp4_storage::weight(resident, n, k, down ? 83 : 71);
+  auto stored = f.constant(w.description, std::move(w.storage));
+  auto input = f.input(dense({1, model.top_k, k}));
+  auto ids = f.input(dense({1, model.top_k}, c::DataType::kInt32));
+  f.outputs = {f.one(c::model_ops::grouped_matmul(), {stored, input, ids})};
+  for (int replay = 0; replay < 2; ++replay) {
+    auto x = d5_gguf_test::activation(model.top_k * k, 17 + replay * 31);
+    std::vector<std::int32_t> selected(model.top_k);
+    for (std::int64_t slot = 0; slot < model.top_k; ++slot)
+      selected[slot] = std::int32_t(replay ? resident - 1 - slot : slot);
+    f.replays.push_back({{bytes(x), bytes(selected)}, {project(x, w, selected, n, k)}});
+  }
+  return f;
+}
+
+inline Fragment moe_chain(const Case &model, bool native_routing,
+                            bool official_fp4) {
+  if (!model.gguf && !(official_fp4 && model.profile == cases::kCases[0].profile))
     throw std::runtime_error("official expert packing is a separate qualification");
   Fragment f{.profile = model.profile, .region = 0x0a0b0601, .quantized = true};
   auto input = f.input(dense({1, model.hidden}));
@@ -354,9 +380,13 @@ inline Fragment gguf_moe(const Case &model, bool native_routing = false) {
                                bytes(std::vector<std::int32_t>(model.top_k, 0)));
   auto slots = reshape(f, f.one(c::Operation(c::Gather{}), {flat_input, replicate}),
                         {1, model.top_k, model.latent});
-  auto wg = weight(resident, model.intermediate, model.latent, model.gate, 71);
-  auto wu = weight(resident, model.intermediate, model.latent, model.up, 79);
-  auto wd = weight(resident, model.latent, model.intermediate, model.down, 83);
+  const auto expert_weight = [&](std::int64_t n, std::int64_t k, Storage type, int seed) {
+    return official_fp4 ? d5_official_fp4_storage::weight(resident, n, k, seed)
+                         : weight(resident, n, k, type, seed);
+  };
+  auto wg = expert_weight(model.intermediate, model.latent, model.gate, 71);
+  auto wu = expert_weight(model.intermediate, model.latent, model.up, 79);
+  auto wd = expert_weight(model.latent, model.intermediate, model.down, 83);
   auto gate = grouped(wg, slots, route.ids), up = grouped(wu, slots, route.ids);
   auto activated = gated(f, model, gate, up);
   auto routed = grouped(wd, activated, route.ids);
@@ -421,5 +451,12 @@ inline Fragment gguf_moe(const Case &model, bool native_routing = false) {
         std::move(sgate), std::move(sup), std::move(sact)}});
   }
   return f;
+}
+
+inline Fragment gguf_moe(const Case &model, bool native_routing = false) {
+  return moe_chain(model, native_routing, false);
+}
+inline Fragment official_kimi_moe() {
+  return moe_chain(cases::kCases[0], false, true);
 }
 } // namespace d5_moe_execution_fragments

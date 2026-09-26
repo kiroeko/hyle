@@ -1360,6 +1360,23 @@ TEST(VulkanMoeFragments, D5ThirteenProfilesExpertActivation) {
   }
 }
 
+TEST(VulkanMoeFragments, D5OfficialFp4ExpertBatch) {
+  ASSERT_TRUE(d5_official_fp4_storage::matches_original_converter());
+  for (auto index : {0, 3, 4}) {
+    const auto &model = d5_moe_execution_cases::kCases[index];
+    SCOPED_TRACE(model.profile->model_name);
+    for (bool down : {false, true}) {
+      SCOPED_TRACE(down ? "down" : "gate/up");
+      run_q24_semantic_fragment(
+          d5_moe_execution_fragments::official_fp4_projection(model, down));
+    }
+  }
+}
+
+TEST(VulkanMoeFragments, D5OfficialKimiMixedStorageFullMoe) {
+  run_q24_semantic_fragment(d5_moe_execution_fragments::official_kimi_moe());
+}
+
 TEST(VulkanMoeFragments, D5EightGgufProfilesFullMoe) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (const auto &model : d5_moe_execution_cases::kCases) {
