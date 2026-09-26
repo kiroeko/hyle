@@ -1052,9 +1052,12 @@ TEST(CudaMoeFragments, D5DynamicFp8DenseBatch) {
 }
 
 TEST(CudaMoeFragments, D5GlmOfficialDynamicFp8SharedFfn) {
-  for (auto m : {1, 3}) {
-    SCOPED_TRACE(m);
-    run_q24_semantic_fragment(d5_dynamic_fp8_fragments::glm_shared_ffn(m));
+  for (bool flash : {false, true}) {
+    SCOPED_TRACE(flash);
+    for (auto m : {1, 3}) {
+      SCOPED_TRACE(m);
+      run_q24_semantic_fragment(d5_dynamic_fp8_fragments::glm_shared_ffn(m, flash));
+    }
   }
 }
 

@@ -139,9 +139,9 @@ inline sem::Fragment projection(const fp8::Case &shape, std::int64_t m,
   return f;
 }
 
-inline sem::Fragment glm_shared_ffn(std::int64_t m) {
-  const auto &up_shape = fp8::kCases[4];
-  const auto &down_shape = fp8::kCases[5];
+inline sem::Fragment glm_shared_ffn(std::int64_t m, bool flash = false) {
+  const auto &up_shape = fp8::kCases[flash ? 6 : 4];
+  const auto &down_shape = fp8::kCases[flash ? 7 : 5];
   const fp8::Case packed{up_shape.profile, up_shape.n * 2, up_shape.k, false, "packed gate/up"};
   sem::Fragment f{.profile = up_shape.profile, .region = 0x0b0605};
   auto input = f.input(sem::dense({m, packed.k}, c::DataType::kBFloat16));

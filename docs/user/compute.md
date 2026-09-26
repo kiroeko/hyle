@@ -140,6 +140,24 @@ CUDA 默认接入固定 SGLang 原版 AOT 程序，当前资格为 SM89、`drive
 普通入口与资源验收见 [F37](../implementation/tasks/compute/llm-moe-d5-fp8-native-qualification.md)；
 完整官方画像、三交付和性能验收仍分别登记。
 
+### 动态 FP8 模型投影
+
+浮点激活尚未编码时，将 `model_ops::float8_block_linear()` 作为普通 Direct `prepare()` 或
+Graph 节点的 operation，输入为 dense BF16/F32 `[M,K]` 和上述 block128 权重，输出保留激活
+dtype `[M,N]`。它显式包含动态量化，普通 `MatMul` 不暗中量化输入。
+
+默认逐 token/group128 使用 F32 scale 和 absmax floor `1e-10`；
+`model_ops::float8_block_linear(model_ops::Float8ScaleRounding::kPowerOfTwo, 1e-4F)`
+表达 DeepSeek 官方的 BF16 幂次 scale 语义。后者的 F32 激活域尚未资格化，准备时拒绝。
+权重的128×128分组保持不变，不把幂次scale解释成group32存储。
+
+当前 CUDA 资格仍为 SM89/Driver API 13040，有限激活域。准备绑定原版 SGLang 程序，执行为
+量化和 GEMM 两次发射，使用每 invocation 独占的 caller workspace：`M*K + 4*M*(K/128)`
+字节、4字节对齐；没有 host 同步或常驻展开权重。普通scale输入需要16字节对齐，BF16幂次
+scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定的错位输入在提交前拒绝。
+该接口不加载模型。完整官方模型画像及三交付/P1状态见
+[当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
+
 ### 执行前检查具体请求
 
 CPU/CUDA 用描述符和 memory resource 调用普通 `prepare()`，即可检查所选设备上实际的
