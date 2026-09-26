@@ -80,3 +80,11 @@ baseline `23b32233`。候选 `87f2cb03` 的 CUDA Direct 144项中142项通过；
 同批hash消费者的失败槽复用已按公开合同纠正，`27f37130`定向1/1通过；详见
 [CUDA前后证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/explicit-rope-phase/cuda/README.md)。
 未再运行大型MoE整批，Apple/Vulkan及A5/A6仍待验收，完整画像计数未变。
+
+### Apple 首批消费者纠正
+
+`27f37130`的Apple完整owner中，Direct168/170、Graph141/143通过；各自相同两个新DeepSeek
+测试在执行前抛出`unsupported Qwen3.5 Apple fixture type`。共享上传夹具缺少Bool分支，
+不能上传新增的压缩cache发布掩码；产品既有Select和MLX Bool入口不缺失。
+本次仅补两个测试上传adapter的Bool字节→MLX Bool转换，不改数学、产品源码或误差门；
+然后只运行这四个失败项。原完整批次证据保留，其余通过项不因测试adapter变化重跑。

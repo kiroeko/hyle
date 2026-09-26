@@ -86,6 +86,12 @@ Tensor upload(const a::Context &, const c::TensorDesc &description,
   const auto shape = native_shape(description, transposed);
   mx::array result = [&]() -> mx::array {
     switch (description.data_type()) {
+    case c::DataType::kBool: {
+      std::vector<std::uint8_t> data(bytes.size());
+      std::memcpy(data.data(), bytes.data(), bytes.size());
+      return mx::astype(mx::array(data.data(), shape, mx::uint8), mx::bool_,
+                        stream());
+    }
     case c::DataType::kFloat16: {
       std::vector<std::uint16_t> data(bytes.size() / sizeof(std::uint16_t));
       std::memcpy(data.data(), bytes.data(), bytes.size());
