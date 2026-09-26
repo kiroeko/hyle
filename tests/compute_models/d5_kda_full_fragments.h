@@ -26,7 +26,7 @@ inline ValueId parameter(Fragment &f, c::TensorDesc desc,
                          std::vector<float> &values, bool bfloat) {
   if (!bfloat)
     return f.constant(desc, bytes(values));
-  std::vector<std::uint16_t> encoded;
+  std::vector<sem::q::BF16> encoded;
   for (auto &value : values) {
     encoded.push_back(sem::q::encode(value));
     value = float(sem::q::decode(encoded.back()));
