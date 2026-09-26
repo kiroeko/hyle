@@ -65,7 +65,8 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
   auto down_input = roundtrip(f, core::reshape(f, weighted, {model.top_k, model.intermediate}),
                               quant::Format::kFloat8E4M3Block128);
   auto routed = grouped(wd, core::reshape(f, down_input, {1, model.top_k, model.intermediate}));
-  auto combined = core::reshape(f, moe::sum(f, routed, 1), {1, model.hidden});
+  auto combined = f.one(c::Operation(c::Copy{}),
+      {core::reshape(f, moe::sum(f, routed, 1), {1, model.hidden})});
 
   auto sg = fp8::model_linear(f, x, model.shared_intermediate, model.hidden, 113, true);
   auto su = fp8::model_linear(f, x, model.shared_intermediate, model.hidden, 127, true);
