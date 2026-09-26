@@ -478,6 +478,12 @@ F34后续已补两份GGUF的raw/CSA/HCA完整attention消费者：真实Q/K投�
 本批首次冻结F32-F34合并候选，按CPU→CUDA→Apple→Vulkan串行运行受影响owner；重用既有
 Release/WERROR build树、低并行和相邻DLL。尚无本批运行PASS，不单独启动P1或三交付。
 
+F34 的 CPU 初批已通过 hash router/MoE、sink attention、weighted mHC/head；两个新测试消费者
+的 slice view 与输入/输出别名问题已修正。余下长位置 RoPE 失败形成独立具名产品缺陷，
+本项退回 AUDITED 并按 [F35 显式频率修正](llm-moe-d5-explicit-rope-phase.md)的有限预算处理，
+不继续消耗原 F34 修正预算。三个 ggml Provider 的当前 owner 将 F35.1–F35.3 纳入有限 FIX。
+完整 ledger 仍为128/176；未运行项、三交付/P1和官方FP8/MTP范围均保持。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

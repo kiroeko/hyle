@@ -532,10 +532,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-metal-buffer-failure.md",
-      "summary": "MB1-MB3 native Metal buffer rollback candidate: static allocation fault suite and shared recurrent regression pass; D5-A5 external deliveries remain pending.",
-      "candidate": "969c56c05881146efa416e9121c1ee3b462b97ec"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-explicit-rope-phase.md",
+      "summary": "F35 AUDITED: shared private ggml construction for explicit-frequency RoPE without reciprocal phase loss; MB1-MB3 Metal rollback candidate evidence and pending D5-A5 deliveries are carried forward unchanged."
     },
     {
       "module": "compute_provider_ggml_cuda",
