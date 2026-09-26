@@ -1,6 +1,6 @@
 # D5：原版模型门控的完整片段资格
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -40,7 +40,7 @@
 6. 这是声明片段和输入族的工程数值资格，不是所有权重数值、所有上下文长度或整模型精度证明。
    未验证形状/精度域不能自动扩张；源自公开模型的精确身份仍由既有 `WorkloadContext` 冷绑定。
 
-## 接线前审计项
+## 接线前审计项（原拟 gate 接口已否决）
 
 资格通过后固定一个具名模型 gate 操作，显式区别于通用 Unary。候选自然调用是
 `model_ops::recurrent_gate()`，四个 F32 端口 a/b/negative_a/dt_bias、两个输出 g/beta；
@@ -49,3 +49,38 @@
 候选端口与 owner 的最终有限 FIX 必须在产品修改前写入 AUDITED。
 
 三交付、资源/失败检查与 D5-A5/A6 的适用门保留；本卡不会以数值探针代签这些门。
+
+## 数值审计与最终公共边界
+
+原拟独立 `recurrent_gate()` **REJECT**，不创建此接口：原版 CUDA gate 的少量中间 g 在反偏置
+输入中超过上述门，最大门限比 `1.00884305`；原始探针整体 verdict 保持 FAIL，不能改写。
+本地真实16头参数的全部观察通过；六组64步中的 GDN output、完整实际反馈 state、后续归一化/
+输出 gate 均通过同一门，最大门限比分别约 `0.00335 / 0.02940 / 0.30907`。
+
+最终选择用户已批准的**完整模型片段边界**：`model_ops::recurrent_gated_delta_net()`。
+这是不同的公开语义，直接对应固定 SGLang `cutedsl_gdn.py` 已有的 raw gate + recurrent update
+入口，以及 llama.cpp 的同一原生组合。它只返回 attended output 和 next state，g/beta 是 Provider
+内部量；不公开一个没有合格数值保证的 gate。所有公开输出门限仍为 `2e-6 + 4e-5*abs(ref)`，
+不放宽阈值；此前 probe 的中间量失败保留为不能独立发布 gate 的证据。
+
+### AUDITED 有限 FIX
+
+| ID | owner | 固定动作 | 必验边界 |
+|---|---|---|---|
+| MG1 | compute_ops | 添加一个 Custom Operation schema；八个 F32 输入 Q/K/V、raw a、raw b、negative_a、dt_bias、state；两个输出 attended/state | 复用既有 GDN shape inference；scalar gate、plain dense、参数 `[1,1,H,1]`；拒绝不匹配 shape/type/arity |
+| MG2 | 四个 ggml Provider | 原版 Add/Softplus/Mul/Sigmoid 连接原版 GDN，复用现有输出拆分和执行资源 | 不改 Unary 准入、不补数学、不公开 g/beta；按各路线原生容量与失败规则准备 |
+| MG3 | Apple Direct/Graph、Vulkan Graph | 已有原生分类增加此 schema；Vulkan 仅为此成熟 schema 允许两个 custom outputs | 未知 custom、多输出或错误 alias 仍拒绝；不重构公共路由 |
+| MG4 | ggml Metal | 八输入加一个 packed output 的私有端口容量；四个 gate 中间 tensor 的原生冷期分配/完整释放 | 不在 submit 分配 workspace；backend 销毁前释放；沿用 checked completion |
+| MG5 | 测试消费者 | 共享 R05 recipe 改用完整 region；批量扩展 Qwen 九画像并检查实际状态反馈 | 四路线 Direct/Graph、变化输入、原独立 oracle、资源和普通 Unary 拒绝；其它片段按身份复用 |
+
+公共语义沿用 GDN 的 grouped-head 对应；官方与 GGUF 的 head 重排仍由已经明确的模型边界表达，
+不隐藏转换。初始准入限定已资格化的 F32、D128、K16或等头、V16/48/128、单 token/sequence；
+不以一个有限探针覆盖任意模型、token容量或低精度。参数为负 decay coefficient，Q/K 为模型已
+归一化输入，数值合同的有限输入族见前节；普通通用 GDN 仍保留其原有功能域。
+
+Metal 当前原生 one-op bridge 的七端口与无中间 tensor 假设是具名接缝：此 FIX 扩为九端口，
+只为新 region 冷期取得四个 native scratch buffer，随 Program 保活/释放。CPU/CUDA/Vulkan 已有
+region workspace 管理，直接复用。准备只绑定，不计时选择；重复执行不重建图。
+
+本轮其他 owner 原有 AUDITED 卡在[D5 主卡](llm-moe-d5-real-fragment-acceptance.md)增加 F23
+重新定界，既有未签三交付/P1 不丢失。先完成全组接线再增量编译；数值探针不是 profile RUN_PASS。

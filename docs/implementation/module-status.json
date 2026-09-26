@@ -386,9 +386,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md",
-      "summary": "D5 模型门控 SCOPED：用户已选择完整片段误差资格；固定原版 ggml、真实本地参数、三种头数、64步实际状态反馈及既有误差门，资格通过后再审计模型专用接线。"
+      "summary": "D5 模型完整门控 AUDITED：独立 gate 数值资格失败，拒绝发布；原版 gate+GDN 的输出/连续状态通过既定门，固定 MG1-MG5 四路线接线，普通 Softplus 不变。"
     },
     {
       "module": "compute_backend_cpu",

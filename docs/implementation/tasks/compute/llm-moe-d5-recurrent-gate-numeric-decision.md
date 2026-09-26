@@ -2,6 +2,9 @@
 
 <!-- MODULE REVIEW: BLOCKED -->
 
+**已满足恢复条件：** 用户明确选择“完整片段误差资格化”。后续当前施工见
+[模型完整门控片段卡](llm-moe-d5-model-gate-qualification.md)；本页保留原阻塞事实，不再是当前 owner record。
+
 ## 当前结论
 
 - owner：`compute_ops`；baseline / 测试候选：`59e7fd87e2564bcae893d6e159b57dd96aa80d9f`。

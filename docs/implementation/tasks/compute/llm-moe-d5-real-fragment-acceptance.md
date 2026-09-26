@@ -2,12 +2,18 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
-**2026-09-26 当前状态纠正：** `compute_ops` 已因 recurrent gate 数值合同进入
-[`BLOCKED` 待决卡](llm-moe-d5-recurrent-gate-numeric-decision.md)。2.4T 新共享批次的
+**2026-09-26 当前状态纠正：** recurrent gate 数值合同的
+[`BLOCKED` 待决项](llm-moe-d5-recurrent-gate-numeric-decision.md)已由用户选择完整片段资格；
+`compute_ops` 按合法状态恢复到[模型完整门控片段 AUDITED 卡](llm-moe-d5-model-gate-qualification.md)。2.4T 新共享批次的
 CPU/Apple/Vulkan 六入口通过，CUDA 两入口只在成熟 Softplus 断言失败。旧 Qwen 六画像的
 R05 使用主机预计算 gate/decay，48 个整格退回未完整资格；非 R05 片段收据保留。
 当前 ledger 为 **0/176 RUN_PASS、176/176 VALIDATION_NOT_RUN**。下文48格数字保留为历史快照，
 不能继续用作当前完整覆盖。既有 Provider/Graph owner 的有限 FIX 不随此待决项自动扩张。
+
+**D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Graph
+当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
+region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22
+验证事实和 D5 三交付/P1 待办保留。
 
 ## Closure card
 
