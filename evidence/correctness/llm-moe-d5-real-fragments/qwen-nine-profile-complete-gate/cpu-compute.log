@@ -1,0 +1,171 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 63 tests from 13 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from Completion
+[ RUN      ] Completion.ImmediateSuccessAndFailureRemainInline
+[       OK ] Completion.ImmediateSuccessAndFailureRemainInline (0 ms)
+[ RUN      ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse
+[       OK ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse (0 ms)
+[ RUN      ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel
+[       OK ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel (0 ms)
+[ RUN      ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal
+[       OK ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal
+[       OK ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend
+[       OK ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend (0 ms)
+[----------] 6 tests from Completion (0 ms total)
+
+[----------] 7 tests from OwnedResult
+[ RUN      ] OwnedResult.RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite
+[       OK ] OwnedResult.RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite (0 ms)
+[ RUN      ] OwnedResult.AbandonmentKeepsNativeOwnerUntilRealTerminal
+[       OK ] OwnedResult.AbandonmentKeepsNativeOwnerUntilRealTerminal (0 ms)
+[ RUN      ] OwnedResult.FailureAndCancellationDoNotPublishReadyLease
+[       OK ] OwnedResult.FailureAndCancellationDoNotPublishReadyLease (0 ms)
+[ RUN      ] OwnedResult.InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover
+[       OK ] OwnedResult.InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover (0 ms)
+[ RUN      ] OwnedResult.ColdAllocationFailureAndUnsubmittedRollback
+[       OK ] OwnedResult.ColdAllocationFailureAndUnsubmittedRollback (0 ms)
+[ RUN      ] OwnedResult.OveralignedOwnerAndConcurrentBeginAdmission
+[       OK ] OwnedResult.OveralignedOwnerAndConcurrentBeginAdmission (0 ms)
+[ RUN      ] OwnedResult.ProducerDsoOwnsDestructionAfterConsumerLeaseOutlivesSubmission
+[       OK ] OwnedResult.ProducerDsoOwnsDestructionAfterConsumerLeaseOutlivesSubmission (0 ms)
+[----------] 7 tests from OwnedResult (0 ms total)
+
+[----------] 1 test from ProviderImplementationId
+[ RUN      ] ProviderImplementationId.IsAnOptionalImplementationIdentityNotAProviderSlot
+[       OK ] ProviderImplementationId.IsAnOptionalImplementationIdentityNotAProviderSlot (0 ms)
+[----------] 1 test from ProviderImplementationId (0 ms total)
+
+[----------] 3 tests from ProviderCostFacts
+[ RUN      ] ProviderCostFacts.UnknownIsNotAnExactZero
+[       OK ] ProviderCostFacts.UnknownIsNotAnExactZero (0 ms)
+[ RUN      ] ProviderCostFacts.WorkspaceAlignmentAndDispatchHaveOneSharedValidator
+[       OK ] ProviderCostFacts.WorkspaceAlignmentAndDispatchHaveOneSharedValidator (0 ms)
+[ RUN      ] ProviderCostFacts.CompilationStorageBoundsAreOptionalAndConsistent
+[       OK ] ProviderCostFacts.CompilationStorageBoundsAreOptionalAndConsistent (0 ms)
+[----------] 3 tests from ProviderCostFacts (0 ms total)
+
+[----------] 2 tests from ProviderProperties
+[ RUN      ] ProviderProperties.ReplayCostDoesNotFollowOwnershipOrCaptureFlags
+[       OK ] ProviderProperties.ReplayCostDoesNotFollowOwnershipOrCaptureFlags (0 ms)
+[ RUN      ] ProviderProperties.EqualityIncludesAllFactsAndInvalidEnumsAreRejected
+[       OK ] ProviderProperties.EqualityIncludesAllFactsAndInvalidEnumsAreRejected (0 ms)
+[----------] 2 tests from ProviderProperties (0 ms total)
+
+[----------] 8 tests from RoutePolicy
+[ RUN      ] RoutePolicy.FullEnvironmentProfileOperationAndPortsMatch
+[       OK ] RoutePolicy.FullEnvironmentProfileOperationAndPortsMatch (0 ms)
+[ RUN      ] RoutePolicy.UnknownAndDifferentEnvironmentFactsAreDistinct
+[       OK ] RoutePolicy.UnknownAndDifferentEnvironmentFactsAreDistinct (0 ms)
+[ RUN      ] RoutePolicy.ProfileOperationAndArbitraryPortMismatchesAreLocated
+[       OK ] RoutePolicy.ProfileOperationAndArbitraryPortMismatchesAreLocated (0 ms)
+[ RUN      ] RoutePolicy.MalformedAndDuplicateSelectorsAreRejected
+[       OK ] RoutePolicy.MalformedAndDuplicateSelectorsAreRejected (0 ms)
+[ RUN      ] RoutePolicy.FourNativeRoutesRemainIndependentColdFacts
+[       OK ] RoutePolicy.FourNativeRoutesRemainIndependentColdFacts (0 ms)
+[ RUN      ] RoutePolicy.HighIndexOutputAndMultipleOfShapeAreFirstClass
+[       OK ] RoutePolicy.HighIndexOutputAndMultipleOfShapeAreFirstClass (0 ms)
+[ RUN      ] RoutePolicy.ExactArtifactAndActualWeightFormatSeparateQwen35Variants
+[       OK ] RoutePolicy.ExactArtifactAndActualWeightFormatSeparateQwen35Variants (0 ms)
+[ RUN      ] RoutePolicy.OneArtifactCanRouteDifferentTensorRolesIndependently
+[       OK ] RoutePolicy.OneArtifactCanRouteDifferentTensorRolesIndependently (0 ms)
+[----------] 8 tests from RoutePolicy (0 ms total)
+
+[----------] 13 tests from ProviderShapeDomain
+[ RUN      ] ProviderShapeDomain.RangesAdmitMultiplesWithoutEndpointOverflow
+[       OK ] ProviderShapeDomain.RangesAdmitMultiplesWithoutEndpointOverflow (0 ms)
+[ RUN      ] ProviderShapeDomain.RepeatedIndicesShareValuesAndEqualRangesStayIndependent
+[       OK ] ProviderShapeDomain.RepeatedIndicesShareValuesAndEqualRangesStayIndependent (0 ms)
+[ RUN      ] ProviderShapeDomain.DerivedAxesAndGuardsDoNotRequireAnAdmittedEnvelopePoint
+[       OK ] ProviderShapeDomain.DerivedAxesAndGuardsDoNotRequireAnAdmittedEnvelopePoint (0 ms)
+[ RUN      ] ProviderShapeDomain.RejectsMalformedMapsBeforeBinding
+[       OK ] ProviderShapeDomain.RejectsMalformedMapsBeforeBinding (0 ms)
+[ RUN      ] ProviderShapeDomain.DenseBindingIncludesEmptyTensorsAndInPlaceScratch
+[       OK ] ProviderShapeDomain.DenseBindingIncludesEmptyTensorsAndInPlaceScratch (0 ms)
+[ RUN      ] ProviderShapeDomain.BlockedDimensionsRequireWholeBlocksAcrossTheDomain
+[       OK ] ProviderShapeDomain.BlockedDimensionsRequireWholeBlocksAcrossTheDomain (0 ms)
+[ RUN      ] ProviderShapeDomain.ExactStridesAndOpaqueStorageArePreservedNotRecreated
+[       OK ] ProviderShapeDomain.ExactStridesAndOpaqueStorageArePreservedNotRecreated (0 ms)
+[ RUN      ] ProviderShapeDomain.SuppliedDenseLayoutsMatchAutomaticBinding
+[       OK ] ProviderShapeDomain.SuppliedDenseLayoutsMatchAutomaticBinding (0 ms)
+[ RUN      ] ProviderShapeDomain.FixedExtentsDoNotMakeAStridedFamilyExact
+[       OK ] ProviderShapeDomain.FixedExtentsDoNotMakeAStridedFamilyExact (0 ms)
+[ RUN      ] ProviderShapeDomain.StridedFamilyChecksReachableSpanIncludingEmptyAndZeroStrides
+[       OK ] ProviderShapeDomain.StridedFamilyChecksReachableSpanIncludingEmptyAndZeroStrides (0 ms)
+[ RUN      ] ProviderShapeDomain.RejectsMalformedLayoutFamiliesAndFalseBounds
+[       OK ] ProviderShapeDomain.RejectsMalformedLayoutFamiliesAndFalseBounds (0 ms)
+[ RUN      ] ProviderShapeDomain.SuppliedLayoutsEvaluateDerivedAxesAndGuards
+[       OK ] ProviderShapeDomain.SuppliedLayoutsEvaluateDerivedAxesAndGuards (0 ms)
+[ RUN      ] ProviderShapeDomain.SuppliedExactDescriptionsDoNotChangeLayout
+[       OK ] ProviderShapeDomain.SuppliedExactDescriptionsDoNotChangeLayout (0 ms)
+[----------] 13 tests from ProviderShapeDomain (0 ms total)
+
+[----------] 4 tests from ShapeProgram
+[ RUN      ] ShapeProgram.EvaluatesFiniteChainAndGuardsInCallerScratch
+[       OK ] ShapeProgram.EvaluatesFiniteChainAndGuardsInCallerScratch (0 ms)
+[ RUN      ] ShapeProgram.RejectsMalformedProgramsWithoutReadingInvalidReferences
+[       OK ] ShapeProgram.RejectsMalformedProgramsWithoutReadingInvalidReferences (0 ms)
+[ RUN      ] ShapeProgram.ChecksOverflowAndZeroWithoutUndefinedIntegerArithmetic
+[       OK ] ShapeProgram.ChecksOverflowAndZeroWithoutUndefinedIntegerArithmetic (0 ms)
+[ RUN      ] ShapeProgram.SmallDomainEnumerationNeverExcludesALegalDerivedValue
+[       OK ] ShapeProgram.SmallDomainEnumerationNeverExcludesALegalDerivedValue (1 ms)
+[----------] 4 tests from ShapeProgram (1 ms total)
+
+[----------] 9 tests from TensorDesc
+[ RUN      ] TensorDesc.DenseOwnsCanonicalShapeStrideAndByteFacts
+[       OK ] TensorDesc.DenseOwnsCanonicalShapeStrideAndByteFacts (0 ms)
+[ RUN      ] TensorDesc.EqualityUsesEveryLogicalShapeAndStrideFact
+[       OK ] TensorDesc.EqualityUsesEveryLogicalShapeAndStrideFact (0 ms)
+[ RUN      ] TensorDesc.ScalarsAndZeroExtentsHaveExplicitStorageSemantics
+[       OK ] TensorDesc.ScalarsAndZeroExtentsHaveExplicitStorageSemantics (0 ms)
+[ RUN      ] TensorDesc.StridedAndBroadcastDescriptionsReportPhysicalExtent
+[       OK ] TensorDesc.StridedAndBroadcastDescriptionsReportPhysicalExtent (0 ms)
+[ RUN      ] TensorDesc.PermutationDescribesZeroCopyLogicalViews
+[       OK ] TensorDesc.PermutationDescribesZeroCopyLogicalViews (0 ms)
+[ RUN      ] TensorDesc.RejectsInvalidPermutationsAndRankOneTranspose
+[       OK ] TensorDesc.RejectsInvalidPermutationsAndRankOneTranspose (0 ms)
+[ RUN      ] TensorDesc.RejectsInvalidAndUnrepresentableSchemas
+[       OK ] TensorDesc.RejectsInvalidAndUnrepresentableSchemas (0 ms)
+[ RUN      ] TensorDesc.BlockedLayoutKeepsLogicalShapeAndPhysicalBlockFactsApart
+[       OK ] TensorDesc.BlockedLayoutKeepsLogicalShapeAndPhysicalBlockFactsApart (0 ms)
+[ RUN      ] TensorDesc.OpaqueLayoutExposesOnlyIdentityAlignmentAndExactExtent
+[       OK ] TensorDesc.OpaqueLayoutExposesOnlyIdentityAlignmentAndExactExtent (0 ms)
+[----------] 9 tests from TensorDesc (0 ms total)
+
+[----------] 1 test from StorageFormat
+[ RUN      ] StorageFormat.ValidatesStableBlockedAndOpaqueIdentities
+[       OK ] StorageFormat.ValidatesStableBlockedAndOpaqueIdentities (0 ms)
+[----------] 1 test from StorageFormat (0 ms total)
+
+[----------] 3 tests from TensorView
+[ RUN      ] TensorView.BorrowsAndNarrowsMemStorageWithoutTakingOwnership
+[       OK ] TensorView.BorrowsAndNarrowsMemStorageWithoutTakingOwnership (0 ms)
+[ RUN      ] TensorView.RejectsMissingOrShortStorageAndSupportsOwnedEmptyBuffers
+[       OK ] TensorView.RejectsMissingOrShortStorageAndSupportsOwnedEmptyBuffers (0 ms)
+[ RUN      ] TensorView.RejectsObviouslyMisalignedPhysicalSubviewOffsets
+[       OK ] TensorView.RejectsObviouslyMisalignedPhysicalSubviewOffsets (0 ms)
+[----------] 3 tests from TensorView (0 ms total)
+
+[----------] 5 tests from ModelArtifactProfile
+[ RUN      ] ModelArtifactProfile.OwnsAllFieldsAndSharesBackingUntilLastRelease
+[       OK ] ModelArtifactProfile.OwnsAllFieldsAndSharesBackingUntilLastRelease (0 ms)
+[ RUN      ] ModelArtifactProfile.EmptyIsFreeAndPartialOrNonCanonicalIsRejected
+[       OK ] ModelArtifactProfile.EmptyIsFreeAndPartialOrNonCanonicalIsRejected (0 ms)
+[ RUN      ] ModelArtifactProfile.ExactIdentitySeparatesModelAndArtifactVariants
+[       OK ] ModelArtifactProfile.ExactIdentitySeparatesModelAndArtifactVariants (0 ms)
+[ RUN      ] ModelArtifactProfile.OomDoesNotCreatePartialOwner
+[       OK ] ModelArtifactProfile.OomDoesNotCreatePartialOwner (0 ms)
+[ RUN      ] ModelArtifactProfile.IndependentHandlesSupportConcurrentReads
+[       OK ] ModelArtifactProfile.IndependentHandlesSupportConcurrentReads (0 ms)
+[----------] 5 tests from ModelArtifactProfile (0 ms total)
+
+[----------] 1 test from WorkloadContext
+[ RUN      ] WorkloadContext.ProfilePhaseAndRegionAreIndependentColdFacts
+[       OK ] WorkloadContext.ProfilePhaseAndRegionAreIndependentColdFacts (0 ms)
+[----------] 1 test from WorkloadContext (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 63 tests from 13 test suites ran. (2 ms total)
+[  PASSED  ] 63 tests.

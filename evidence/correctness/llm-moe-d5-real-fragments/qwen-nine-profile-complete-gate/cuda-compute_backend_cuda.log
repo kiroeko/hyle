@@ -1,0 +1,66 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 27 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 17 tests from CudaBackend
+[ RUN      ] CudaBackend.ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot
+[       OK ] CudaBackend.ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot (64 ms)
+[ RUN      ] CudaBackend.OwnedKernelResultWaitAndAbandonmentPreserveNativeStorage
+[       OK ] CudaBackend.OwnedKernelResultWaitAndAbandonmentPreserveNativeStorage (4 ms)
+[ RUN      ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion
+[       OK ] CudaBackend.SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion (217 ms)
+[ RUN      ] CudaBackend.PreservesPortableAndNativeErrorIdentity
+[       OK ] CudaBackend.PreservesPortableAndNativeErrorIdentity (0 ms)
+[ RUN      ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue
+[       OK ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue (1 ms)
+[ RUN      ] CudaBackend.EnumeratesExplicitDevices
+[       OK ] CudaBackend.EnumeratesExplicitDevices (0 ms)
+[ RUN      ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip
+[       OK ] CudaBackend.QueueTransferNativeSubmitAndMemoryRoundTrip (0 ms)
+[ RUN      ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext
+[       OK ] CudaBackend.CompletionEndpointIdentifiesQueueNotContext (0 ms)
+[ RUN      ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier
+[       OK ] CudaBackend.TwoQueuesImportACompletionWithoutAHostBarrier (4 ms)
+[ RUN      ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed
+[       OK ] CudaBackend.BorrowedStreamUsesExactContextAndIsNotDestroyed (0 ms)
+[ RUN      ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal
+[       OK ] CudaBackend.StreamImportRejectsDefaultsAndBlockingStreamsWithoutSteal (0 ms)
+[ RUN      ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion
+[       OK ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion (1 ms)
+[ RUN      ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics
+[       OK ] CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics (51 ms)
+[ RUN      ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership
+[       OK ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership (0 ms)
+[ RUN      ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand
+[       OK ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand (0 ms)
+[ RUN      ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage
+[       OK ] CudaBackend.AbandonedPendingCompletionRetainsQueueAndStorage (4 ms)
+[ RUN      ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces
+[       OK ] CudaBackend.ConcurrentContextsRetirePendingPrefixesWithoutRaces (42 ms)
+[----------] 17 tests from CudaBackend (394 ms total)
+
+[----------] 10 tests from CudaDeviceStatus
+[ RUN      ] CudaDeviceStatus.GpuChecksReportOnlyAfterCompletionAndFreshRunsRecover
+[       OK ] CudaDeviceStatus.GpuChecksReportOnlyAfterCompletionAndFreshRunsRecover (48 ms)
+[ RUN      ] CudaDeviceStatus.OnePrefixKeepsItsFirstDeviceFailure
+[       OK ] CudaDeviceStatus.OnePrefixKeepsItsFirstDeviceFailure (0 ms)
+[ RUN      ] CudaDeviceStatus.ImportsRetainSourceWordsAfterEarlyObservationAndSlotReuse
+[       OK ] CudaDeviceStatus.ImportsRetainSourceWordsAfterEarlyObservationAndSlotReuse (45 ms)
+[ RUN      ] CudaDeviceStatus.CapturedSlotsResetStateAndRetainArtifactsThroughClose
+[       OK ] CudaDeviceStatus.CapturedSlotsResetStateAndRetainArtifactsThroughClose (1 ms)
+[ RUN      ] CudaDeviceStatus.MixedCapturesAndRuntimeWorkAggregateIntoOnePrefix
+[       OK ] CudaDeviceStatus.MixedCapturesAndRuntimeWorkAggregateIntoOnePrefix (0 ms)
+[ RUN      ] CudaDeviceStatus.PureCaptureAndPrefixAddNoStatusCommands
+[       OK ] CudaDeviceStatus.PureCaptureAndPrefixAddNoStatusCommands (0 ms)
+[ RUN      ] CudaDeviceStatus.CapturedStatusRejectsOverlappingReuseAndAbortIsClean
+[       OK ] CudaDeviceStatus.CapturedStatusRejectsOverlappingReuseAndAbortIsClean (1 ms)
+[ RUN      ] CudaDeviceStatus.ReservedReferenceBudgetRejectsWithoutLosingAcceptedWork
+[       OK ] CudaDeviceStatus.ReservedReferenceBudgetRejectsWithoutLosingAcceptedWork (2 ms)
+[ RUN      ] CudaDeviceStatus.KnownTailFailureAndUnknownDeviceCodeRemainErrors
+[       OK ] CudaDeviceStatus.KnownTailFailureAndUnknownDeviceCodeRemainErrors (0 ms)
+[ RUN      ] CudaDeviceStatus.ColdMetadataOomRollsBackPoolAndNativeCapturedStorage
+[       OK ] CudaDeviceStatus.ColdMetadataOomRollsBackPoolAndNativeCapturedStorage (0 ms)
+[----------] 10 tests from CudaDeviceStatus (102 ms total)
+
+[----------] Global test environment tear-down
+[==========] 27 tests from 2 test suites ran. (497 ms total)
+[  PASSED  ] 27 tests.

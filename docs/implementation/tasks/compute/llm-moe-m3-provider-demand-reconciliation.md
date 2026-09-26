@@ -2,6 +2,12 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
+**当前施工：D5。** D1–D4 已完成；九个 Qwen 画像在四路线 Direct/Graph 的完整片段通过，
+当前为72/176验收格，其余13画像104格、三交付及适用 P1 仍未完成。
+见[D5 当前卡](llm-moe-d5-real-fragment-acceptance.md)与
+[本批证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
+D6 尚未开始。后文各包的旧 candidate 和进展数字是历史，不替代当前 ledger。
+
 ## Closure card
 
 - component / owner：第一包由 `compute_ops` 持有需求矩阵；只有审计证明需要产品接线或删除时，才以

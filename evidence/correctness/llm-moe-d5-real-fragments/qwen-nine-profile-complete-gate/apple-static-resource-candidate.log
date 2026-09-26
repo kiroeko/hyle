@@ -1,0 +1,120 @@
+-- HYLE developer factors: requested='compute_provider_ggml_metal' resolved='core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- ggml source: 2263 files, 12 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products= | factors=core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal
+-- Configuring done (2.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/d5-model-gate-metal-static
+[0/2] Re-checking globbed directories...
+[1/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[2/71] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[3/71] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[4/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[5/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[6/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[7/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[8/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[9/71] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[10/71] Linking CXX static library bin/libggml-base.a
+[11/71] Generate embedded Metal library for mul_mv
+[12/71] Generate embedded Metal library for fa
+[13/71] Generate embedded Metal library for mul_mm
+[14/71] Generate embedded Metal library for quantize
+[15/71] Generate embedded Metal library for softmax
+[16/71] Generate embedded Metal library for norm
+[17/71] Generate embedded Metal library for binbcast
+[18/71] Generate embedded Metal library for unary
+[19/71] Generate embedded Metal library for reduce
+[20/71] Generate embedded Metal library for tri
+[21/71] Generate embedded Metal library for wkv
+[22/71] Generate embedded Metal library for ssm
+[23/71] Generate embedded Metal library for solve_tri
+[24/71] Generate embedded Metal library for gated_delta_net
+[25/71] Generate embedded Metal library for rope
+[26/71] Generate embedded Metal library for conv
+[27/71] Generate embedded Metal library for upscale
+[28/71] Generate embedded Metal library for argsort
+[29/71] Generate embedded Metal library for pool
+[30/71] Generate embedded Metal library for misc
+[31/71] Building OBJC object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.m.o
+[32/71] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal.cpp.o
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-metal/ggml-metal.cpp:841:34: warning: no previous prototype for function 'ggml_hyle_metal_import' [-Wmissing-prototypes]
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |                                  ^
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-metal/ggml-metal.cpp:841:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-metal/ggml-metal.cpp:853:20: warning: no previous prototype for function 'ggml_hyle_metal_checked_sync' [-Wmissing-prototypes]
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |                    ^
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-metal/ggml-metal.cpp:853:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-metal/ggml-metal.cpp:856:17: warning: no previous prototype for function 'ggml_hyle_metal_prepare_gdn' [-Wmissing-prototypes]
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |                 ^
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-metal/ggml-metal.cpp:856:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |            ^
+      |            static 
+3 warnings generated.
+[33/71] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.cpp.o
+[34/71] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-common.cpp.o
+[35/71] Building OBJC object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-context.m.o
+[36/71] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-fusion.cpp.o
+[37/71] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-tuning.cpp.o
+[38/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-fa.s.o
+[39/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mv.s.o
+[40/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mm.s.o
+[41/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-quantize.s.o
+[42/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-softmax.s.o
+[43/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-norm.s.o
+[44/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-unary.s.o
+[45/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-binbcast.s.o
+[46/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-reduce.s.o
+[47/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-tri.s.o
+[48/71] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-ops.cpp.o
+[49/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-ssm.s.o
+[50/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-wkv.s.o
+[51/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-gated_delta_net.s.o
+[52/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-solve_tri.s.o
+[53/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-rope.s.o
+[54/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-conv.s.o
+[55/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-upscale.s.o
+[56/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-argsort.s.o
+[57/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-pool.s.o
+[58/71] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-misc.s.o
+[59/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[60/71] Linking CXX static library bin/libggml-metal.a
+[61/71] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[62/71] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[63/71] Linking CXX static library bin/libggml.a
+[64/71] Linking CXX static library bin/libhyle_compute_ggml_runtime.a
+[65/71] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[66/71] Linking CXX static library bin/libhyle_compute_provider_ggml_metal.a
+[67/71] Building OBJC object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/resource_faults.m.o
+[68/71] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/native_program_test.mm.o
+[69/71] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/resource_faults_test.mm.o
+[70/71] Linking CXX executable bin/hyle_compute_provider_ggml_metal_test
+ld: warning: ignoring duplicate libraries: 'bin/libggml.a', 'bin/libhyle_error.a', 'bin/libhyle_mem.a'
+Test project /Users/kiro/hyle-scratch/d5-model-gate-metal-static
+    Start 30: hyle_compute_provider_ggml_metal_test
+1/1 Test #30: hyle_compute_provider_ggml_metal_test ...   Passed    0.74 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+compute_provider_ggml_metal    =   0.74 sec*proc (1 test)
+
+Total Test time (real) =   0.74 sec

@@ -1,6 +1,6 @@
 # D5：Metal 原生 workspace 分配失败
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -40,3 +40,13 @@ MB3 复用同文件已存在的 checked import 异常清理模式，不改变后
 
 正常路径只增加一次空指针分支和零成本异常清理区域；没有新 allocation、copy、锁或热执行成本。
 manifest 与中央锁哈希随这三个限定修改更新；其它路线未采用 Metal manifest，实际源码输入不变。
+
+## Candidate 与验证
+
+产品候选 `969c56c05` 固定 MB1–MB3 与依赖内容/NOTICE 哈希。Air static Provider 11项通过，
+shared Provider 7项以及 Direct/Graph 各一个包含九画像的完整 recurrent 测试通过。
+最终测试断言候选 `877c9f5b0`：原生 backend 构造返回 null 时仍为既有 `Unavailable`，
+本次新增 workspace 的失败为 `ResourceExhausted`，两者均检查回滚；不更改原生不可区分的错误合同。
+初始 SIGSEGV、NOTICE 哈希遗漏、过强错误类型断言及最终原始日志均保留在
+[合并证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
+P0 成本结构通过；没有新增热执行工作。三交付仍并入 D5-A5，故当前为 CANDIDATE，未写 CLOSED。

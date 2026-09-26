@@ -1,0 +1,511 @@
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE developer factors: requested='compute_provider_ggml_metal' resolved='core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal' products=''
+-- The C compiler identification is AppleClang 21.0.0.21000334
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- The OBJC compiler identification is AppleClang 21.0.0.21000334
+-- Detecting OBJC compiler ABI info
+-- Detecting OBJC compiler ABI info - done
+-- Check for working OBJC compiler: /usr/bin/clang - skipped
+-- The OBJCXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting OBJCXX compiler ABI info
+-- Detecting OBJCXX compiler ABI info - done
+-- Check for working OBJCXX compiler: /usr/bin/clang++ - skipped
+-- Found Python3: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 (found version "3.9.6") found components: Interpreter
+-- ggml source: 2263 files, 12 exact patches
+
+-- The ASM compiler identification is AppleClang
+-- Found assembler: /usr/bin/cc
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products= | factors=core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal
+-- Configuring done (3.5s)
+-- Generating done (0.0s)
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    HYLE_COMPUTE_CUDA
+    HYLE_COMPUTE_VULKAN
+
+
+-- Build files have been written to: /Users/kiro/hyle-scratch/d5-model-gate-metal-static
+[0/2] Re-checking globbed directories...
+[1/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[2/104] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[3/104] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[4/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[5/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[6/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[7/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[8/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[9/104] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[10/104] Linking CXX static library bin/libhyle_error.a
+[11/104] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[12/104] Linking CXX static library bin/libggml-base.a
+[13/104] Generate embedded Metal library for fa
+[14/104] Generate embedded Metal library for mul_mv
+[15/104] Generate embedded Metal library for mul_mm
+[16/104] Generate embedded Metal library for quantize
+[17/104] Generate embedded Metal library for softmax
+[18/104] Generate embedded Metal library for norm
+[19/104] Generate embedded Metal library for unary
+[20/104] Generate embedded Metal library for binbcast
+[21/104] Generate embedded Metal library for reduce
+[22/104] Generate embedded Metal library for tri
+[23/104] Generate embedded Metal library for ssm
+[24/104] Generate embedded Metal library for wkv
+[25/104] Generate embedded Metal library for gated_delta_net
+[26/104] Generate embedded Metal library for solve_tri
+[27/104] Generate embedded Metal library for rope
+[28/104] Generate embedded Metal library for conv
+[29/104] Generate embedded Metal library for upscale
+[30/104] Generate embedded Metal library for argsort
+[31/104] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[32/104] Generate embedded Metal library for pool
+[33/104] Generate embedded Metal library for misc
+[34/104] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[35/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[36/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[37/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[38/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[39/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[40/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[41/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[42/104] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[43/104] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal.cpp.o
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-b9d43bc809551dde/src/ggml-metal/ggml-metal.cpp:832:34: warning: no previous prototype for function 'ggml_hyle_metal_import' [-Wmissing-prototypes]
+  832 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |                                  ^
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-b9d43bc809551dde/src/ggml-metal/ggml-metal.cpp:832:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  832 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-b9d43bc809551dde/src/ggml-metal/ggml-metal.cpp:844:20: warning: no previous prototype for function 'ggml_hyle_metal_checked_sync' [-Wmissing-prototypes]
+  844 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |                    ^
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-b9d43bc809551dde/src/ggml-metal/ggml-metal.cpp:844:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  844 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-b9d43bc809551dde/src/ggml-metal/ggml-metal.cpp:847:17: warning: no previous prototype for function 'ggml_hyle_metal_prepare_gdn' [-Wmissing-prototypes]
+  847 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |                 ^
+/Users/kiro/hyle-scratch/d5-model-gate-metal-static/src/compute_ggml_runtime/source-b9d43bc809551dde/src/ggml-metal/ggml-metal.cpp:847:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  847 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |            ^
+      |            static 
+3 warnings generated.
+[44/104] Building OBJC object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.m.o
+[45/104] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[46/104] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.cpp.o
+[47/104] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-common.cpp.o
+[48/104] Building OBJC object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-context.m.o
+[49/104] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-fusion.cpp.o
+[50/104] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-tuning.cpp.o
+[51/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-fa.s.o
+[52/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mv.s.o
+[53/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mm.s.o
+[54/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-quantize.s.o
+[55/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-softmax.s.o
+[56/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-norm.s.o
+[57/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-unary.s.o
+[58/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-binbcast.s.o
+[59/104] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-ops.cpp.o
+[60/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-reduce.s.o
+[61/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-tri.s.o
+[62/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-ssm.s.o
+[63/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-wkv.s.o
+[64/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-gated_delta_net.s.o
+[65/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-solve_tri.s.o
+[66/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-rope.s.o
+[67/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-conv.s.o
+[68/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-upscale.s.o
+[69/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-argsort.s.o
+[70/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-pool.s.o
+[71/104] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-misc.s.o
+[72/104] Linking CXX static library bin/libhyle_platform.a
+[73/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[74/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[75/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[76/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[77/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[78/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[79/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[80/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[81/104] Linking C static library bin/libmimalloc_static.a
+[82/104] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[83/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[84/104] Linking CXX static library bin/libggml-metal.a
+[85/104] Linking CXX static library bin/libhyle_mem.a
+[86/104] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[87/104] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[88/104] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[89/104] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[90/104] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[91/104] Linking CXX static library bin/libggml.a
+[92/104] Linking CXX static library bin/libhyle_compute_ops.a
+[93/104] Linking CXX static library bin/libhyle_compute_ggml_runtime.a
+[94/104] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[95/104] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[96/104] Linking CXX static library bin/libhyle_compute_provider_ggml_metal.a
+[97/104] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/native_program_test.mm.o
+[98/104] Building OBJC object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/resource_faults.m.o
+[99/104] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[100/104] Linking CXX static library lib/libgtest.a
+[101/104] Linking CXX static library lib/libgtest_main.a
+[102/104] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/resource_faults_test.mm.o
+[103/104] Linking CXX executable bin/hyle_compute_provider_ggml_metal_test
+ld: warning: ignoring duplicate libraries: 'bin/libggml.a', 'bin/libhyle_error.a', 'bin/libhyle_mem.a'
+Test project /Users/kiro/hyle-scratch/d5-model-gate-metal-static
+    Start 30: hyle_compute_provider_ggml_metal_test
+1/1 Test #30: hyle_compute_provider_ggml_metal_test ...***Exception: SegFault 14.46 sec
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 11 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 7 tests from GgmlMetalProgram
+[ RUN      ] GgmlMetalProgram.OriginalRecurrentRealModelShapeAndUnlabelledDomain
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 13.618 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.824 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.996 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.297 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.109 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.109 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.138 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 0.150 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 0.066 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 0.069 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 0.101 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 0.071 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.083 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 0.995 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 0.096 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 0.144 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 0.072 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 0.146 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 0.138 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 0.133 sec
+ggml_metal_library_compile_all: loaded 20 libraries from embedded data in 13.618 sec (max single = 13.618 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple M4)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple9  (1009)
+ggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)
+ggml_metal_device_init: simdgroup reduction   = true
+ggml_metal_device_init: simdgroup matrix mul. = true
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = true
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 12713.12 MB
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_gated_delta_net_f32_4', name = 'kernel_gated_delta_net_f32_4_ne20=128_ne30=1_K=1'
+ggml_metal_library_compile_pipeline: loaded kernel_gated_delta_net_f32_4_ne20=128_ne30=1_K=1      0x104c243e0 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_gated_delta_net_f32_1', name = 'kernel_gated_delta_net_f32_1_ne20=32_ne30=1_K=1'
+ggml_metal_library_compile_pipeline: loaded kernel_gated_delta_net_f32_1_ne20=32_ne30=1_K=1     0x790f2c0000 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalProgram.OriginalRecurrentRealModelShapeAndUnlabelledDomain (13656 ms)
+[ RUN      ] GgmlMetalProgram.EveryCatalogFormatRunsPackedMatMulAndReplays
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_q3_K_f32', name = 'kernel_mul_mv_q3_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_q3_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x790f2c0380 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_q4_K_f32', name = 'kernel_mul_mv_q4_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_q4_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x790f2c0e00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_q5_K_f32', name = 'kernel_mul_mv_q5_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_q5_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x790f2c1180 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_q6_K_f32', name = 'kernel_mul_mv_q6_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_q6_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x790f2c1500 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_ext_q8_0_f32_r1_2', name = 'kernel_mul_mv_ext_q8_0_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_ext_q8_0_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1     0x790f2c1880 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_iq3_xxs_f32', name = 'kernel_mul_mv_iq3_xxs_f32_nsg=2_ne12=1_r2=1_r3=1_split=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_iq3_xxs_f32_nsg=2_ne12=1_r2=1_r3=1_split=1     0x790f2c1c00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_iq3_s_f32', name = 'kernel_mul_mv_iq3_s_f32_nsg=2_ne12=1_r2=1_r3=1_split=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_iq3_s_f32_nsg=2_ne12=1_r2=1_r3=1_split=1     0x790f2c1f80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_ext_iq4_nl_f32_r1_2', name = 'kernel_mul_mv_ext_iq4_nl_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_ext_iq4_nl_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1     0x790f2c2300 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_iq4_xs_f32', name = 'kernel_mul_mv_iq4_xs_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_iq4_xs_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x790f2c2680 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_ext_mxfp4_f32_r1_2', name = 'kernel_mul_mv_ext_mxfp4_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_ext_mxfp4_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1     0x790f2c2a00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalProgram.EveryCatalogFormatRunsPackedMatMulAndReplays (209 ms)
+[ RUN      ] GgmlMetalProgram.TargetEmbeddingFormatsUseNativeGetRowsAndCheckBoundsBeforeSubmit
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_get_rows_q4_K', name = 'kernel_get_rows_q4_K'
+ggml_metal_library_compile_pipeline: loaded kernel_get_rows_q4_K                         0x790f2c2d80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_get_rows_q6_K', name = 'kernel_get_rows_q6_K'
+ggml_metal_library_compile_pipeline: loaded kernel_get_rows_q6_K                         0x790f2c3100 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_get_rows_q8_0', name = 'kernel_get_rows_q8_0'
+ggml_metal_library_compile_pipeline: loaded kernel_get_rows_q8_0                         0x790f2c3480 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalProgram.TargetEmbeddingFormatsUseNativeGetRowsAndCheckBoundsBeforeSubmit (3 ms)
+[ RUN      ] GgmlMetalProgram.PackedIq4XsGroupedExpertsUseNativeMulMatId
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_iq4_xs_f32', name = 'kernel_mul_mv_id_iq4_xs_f32_nsg=2_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_iq4_xs_f32_nsg=2_split=0     0x790f2c3800 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalProgram.PackedIq4XsGroupedExpertsUseNativeMulMatId (1 ms)
+[ RUN      ] GgmlMetalProgram.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_bf16_f32_4', name = 'kernel_mul_mv_id_bf16_f32_4_nsg=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_bf16_f32_4_nsg=1_split=0     0x790f2c0a80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalProgram.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (1 ms)
+[ RUN      ] GgmlMetalProgram.BfloatRouterLinearRetainsNativeF32Score
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_bf16_bf16_short', name = 'kernel_mul_mv_bf16_bf16_short_nsg=1_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_bf16_bf16_short_nsg=1_ne12=1_r2=1_r3=1_split=0     0x790f2c3b80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalProgram.BfloatRouterLinearRetainsNativeF32Score (0 ms)
+[ RUN      ] GgmlMetalProgram.DeclinesUnqualifiedShapesAndMetadataOomIsRecoverable
+[       OK ] GgmlMetalProgram.DeclinesUnqualifiedShapesAndMetadataOomIsRecoverable (0 ms)
+[----------] 7 tests from GgmlMetalProgram (13872 ms total)
+
+[----------] 4 tests from GgmlMetalFaults
+[ RUN      ] GgmlMetalFaults.ColdNativeOwnerAllocationsRollBack
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_backend_metal_init: error: failed to allocate context
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_backend_metal_init: error: failed to allocate context
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_backend_metal_init: error: failed to allocate context
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+[       OK ] GgmlMetalFaults.ColdNativeOwnerAllocationsRollBack (0 ms)
+[ RUN      ] GgmlMetalFaults.CompleteGateColdWorkspaceAllocationsRollBack
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_backend_metal_init: error: failed to allocate context
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_backend_metal_init: error: failed to allocate context
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+
+
+0% tests passed, 1 tests failed out of 1
+
+Label Time Summary:
+compute_provider_ggml_metal    =  14.46 sec*proc (1 test)
+
+Total Test time (real) =  14.46 sec
+
+The following tests FAILED:
+	 30 - hyle_compute_provider_ggml_metal_test (SEGFAULT)  compute_provider_ggml_metal
+Errors while running CTest

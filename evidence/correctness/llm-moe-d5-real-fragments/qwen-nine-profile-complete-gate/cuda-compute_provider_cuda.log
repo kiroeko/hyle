@@ -1,0 +1,114 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 42 tests from 8 test suites.
+[----------] Global test environment set-up.
+[----------] 8 tests from CudaKernels
+[ RUN      ] CudaKernels.FloatAndHalfPackedSeparateTailsAndChangedInputs
+[       OK ] CudaKernels.FloatAndHalfPackedSeparateTailsAndChangedInputs (142 ms)
+[ RUN      ] CudaKernels.PreciseSglangVectorsUseIndependentOracleAndSlots
+[       OK ] CudaKernels.PreciseSglangVectorsUseIndependentOracleAndSlots (62 ms)
+[ RUN      ] CudaKernels.AllGatesBfloatAndRealWidthsKeepFloatIntermediates
+[       OK ] CudaKernels.AllGatesBfloatAndRealWidthsKeepFloatIntermediates (101 ms)
+[ RUN      ] CudaKernels.EmptyGatesDoNotRequireDevicePayloadAllocations
+[       OK ] CudaKernels.EmptyGatesDoNotRequireDevicePayloadAllocations (1 ms)
+[ RUN      ] CudaKernels.VectorRejectionPreservesSlotAndScalarAlignmentCapability
+[       OK ] CudaKernels.VectorRejectionPreservesSlotAndScalarAlignmentCapability (2 ms)
+[ RUN      ] CudaKernels.RejectsUnsupportedShapesResourcesAndAliasing
+[       OK ] CudaKernels.RejectsUnsupportedShapesResourcesAndAliasing (0 ms)
+[ RUN      ] CudaKernels.PendingCompletionRetainsProgramAndSlotAfterClose
+[       OK ] CudaKernels.PendingCompletionRetainsProgramAndSlotAfterClose (29 ms)
+[ RUN      ] CudaKernels.ColdMetadataFailuresRollbackAndReplayUsesReservedState
+[       OK ] CudaKernels.ColdMetadataFailuresRollbackAndReplayUsesReservedState (9 ms)
+[----------] 8 tests from CudaKernels (350 ms total)
+
+[----------] 3 tests from CudaConcat
+[ RUN      ] CudaConcat.LaterGroupPointerFailureKeepsRealPrefixCompletion
+[       OK ] CudaConcat.LaterGroupPointerFailureKeepsRealPrefixCompletion (0 ms)
+[ RUN      ] CudaConcat.VariadicStorageBitsAcrossAxesByteStridesAndEmptyGroups
+[       OK ] CudaConcat.VariadicStorageBitsAcrossAxesByteStridesAndEmptyGroups (52 ms)
+[ RUN      ] CudaConcat.BroadcastSharedInputsAndUnsupportedBindingsAreExplicit
+[       OK ] CudaConcat.BroadcastSharedInputsAndUnsupportedBindingsAreExplicit (1 ms)
+[----------] 3 tests from CudaConcat (54 ms total)
+
+[----------] 8 tests from CudaTensor
+[ RUN      ] CudaTensor.UnaryFloatAndHalfMathIncludesStridesTailsAndSpecialValues
+[       OK ] CudaTensor.UnaryFloatAndHalfMathIncludesStridesTailsAndSpecialValues (86 ms)
+[ RUN      ] CudaTensor.BinaryBroadcastsStridedInputsAndAllowsOnlySafeExactAliases
+[       OK ] CudaTensor.BinaryBroadcastsStridedInputsAndAllowsOnlySafeExactAliases (12 ms)
+[ RUN      ] CudaTensor.FloatStorageConversionsMatchIndependentRounding
+[       OK ] CudaTensor.FloatStorageConversionsMatchIndependentRounding (3 ms)
+[ RUN      ] CudaTensor.SelectCopyFillPreserveBitsWithBroadcastMaskAndOddStride
+[       OK ] CudaTensor.SelectCopyFillPreserveBitsWithBroadcastMaskAndOddStride (2 ms)
+[ RUN      ] CudaTensor.ViewUsesRequiredStorageOffsetAndCopyRejectsOverlap
+[       OK ] CudaTensor.ViewUsesRequiredStorageOffsetAndCopyRejectsOverlap (0 ms)
+[ RUN      ] CudaTensor.NormalizationUsesFloatAccumulationAndIndependentParameterTypes
+[       OK ] CudaTensor.NormalizationUsesFloatAccumulationAndIndependentParameterTypes (800 ms)
+[ RUN      ] CudaTensor.FloatNormParametersAreNotNarrowedBeforeAffineArithmetic
+[       OK ] CudaTensor.FloatNormParametersAreNotNarrowedBeforeAffineArithmetic (5 ms)
+[ RUN      ] CudaTensor.NormalizationHandlesSpecialValuesAndStableVariance
+[       OK ] CudaTensor.NormalizationHandlesSpecialValuesAndStableVariance (1 ms)
+[----------] 8 tests from CudaTensor (913 ms total)
+
+[----------] 6 tests from CudaReduction
+[ RUN      ] CudaReduction.AxesKeepDimensionsStridesEmptyAndHalfAccumulation
+[       OK ] CudaReduction.AxesKeepDimensionsStridesEmptyAndHalfAccumulation (156 ms)
+[ RUN      ] CudaReduction.NonFiniteValuesPropagateAcrossWarpAndTileBoundaries
+[       OK ] CudaReduction.NonFiniteValuesPropagateAcrossWarpAndTileBoundaries (46 ms)
+[ RUN      ] CudaReduction.SoftmaxFloatAndHalfMasksAxesCacheBoundaryAndLongRows
+[       OK ] CudaReduction.SoftmaxFloatAndHalfMasksAxesCacheBoundaryAndLongRows (870 ms)
+[ RUN      ] CudaReduction.PreparationRejectsPrecisionAndUnsafeAliasesWithoutWriting
+[       OK ] CudaReduction.PreparationRejectsPrecisionAndUnsafeAliasesWithoutWriting (0 ms)
+[ RUN      ] CudaReduction.LogSoftmaxPreservesNearOneTailsAndCountsEqualMaxima
+[       OK ] CudaReduction.LogSoftmaxPreservesNearOneTailsAndCountsEqualMaxima (13 ms)
+[ RUN      ] CudaReduction.EmptyStorageWithHugeDimensionStillWritesIdentities
+[       OK ] CudaReduction.EmptyStorageWithHugeDimensionStillWritesIdentities (1 ms)
+[----------] 6 tests from CudaReduction (1089 ms total)
+
+[----------] 4 tests from CudaScatter
+[ RUN      ] CudaScatter.AssignPreservesBitsAxesStridesLastWriterAndExactAlias
+[       OK ] CudaScatter.AssignPreservesBitsAxesStridesLastWriterAndExactAlias (24 ms)
+[ RUN      ] CudaScatter.AddPreservesEveryRoundingStepAndStableSkewedUpdateOrder
+[       OK ] CudaScatter.AddPreservesEveryRoundingStepAndStableSkewedUpdateOrder (505 ms)
+[ RUN      ] CudaScatter.CheckedFailurePreservesAllOutputAndFreshSortSlotRecovers
+[       OK ] CudaScatter.CheckedFailurePreservesAllOutputAndFreshSortSlotRecovers (2 ms)
+[ RUN      ] CudaScatter.ZeroStrideUncheckedEmptyWorkspaceAndAliasBoundaries
+[       OK ] CudaScatter.ZeroStrideUncheckedEmptyWorkspaceAndAliasBoundaries (1 ms)
+[----------] 4 tests from CudaScatter (534 ms total)
+
+[----------] 3 tests from SglangPrimitives
+[ RUN      ] SglangPrimitives.AllHalfRmsWidthsPreserveWeightsAliasAndReuse
+[       OK ] SglangPrimitives.AllHalfRmsWidthsPreserveWeightsAliasAndReuse (14813 ms)
+[ RUN      ] SglangPrimitives.UnaryStableTailsSpecialValuesAndInplace
+[       OK ] SglangPrimitives.UnaryStableTailsSpecialValuesAndInplace (8 ms)
+[ RUN      ] SglangPrimitives.RejectsUnmatchedNormAndUnaryDomains
+[       OK ] SglangPrimitives.RejectsUnmatchedNormAndUnaryDomains (1 ms)
+[----------] 3 tests from SglangPrimitives (14823 ms total)
+
+[----------] 7 tests from CudaCccl
+[ RUN      ] CudaCccl.EveryMetadataAllocationFailureReleasesPartialConstruction
+[       OK ] CudaCccl.EveryMetadataAllocationFailureReleasesPartialConstruction (0 ms)
+[ RUN      ] CudaCccl.ScanAxesByteStridesBroadcastAndHighRanks
+[       OK ] CudaCccl.ScanAxesByteStridesBroadcastAndHighRanks (34 ms)
+[ RUN      ] CudaCccl.TopKFourTypesStableTiesNaNsAndOriginalBits
+[       OK ] CudaCccl.TopKFourTypesStableTiesNaNsAndOriginalBits (165 ms)
+[ RUN      ] CudaCccl.OverflowChecksEveryPrefixAndPreservesEntireOutput
+[       OK ] CudaCccl.OverflowChecksEveryPrefixAndPreservesEntireOutput (2 ms)
+[ RUN      ] CudaCccl.WorkspaceAliasesAndExternalCaptureRejectBeforeWriting
+[       OK ] CudaCccl.WorkspaceAliasesAndExternalCaptureRejectBeforeWriting (0 ms)
+[ RUN      ] CudaCccl.FloatingSpecialPrefixesAndInvalidDescriptions
+[       OK ] CudaCccl.FloatingSpecialPrefixesAndInvalidDescriptions (1 ms)
+[ RUN      ] CudaCccl.PendingCompletionRetainsPreparedOwnersWithCallerWorkspace
+[       OK ] CudaCccl.PendingCompletionRetainsPreparedOwnersWithCallerWorkspace (1 ms)
+[----------] 7 tests from CudaCccl (205 ms total)
+
+[----------] 3 tests from CudaCcclGather
+[ RUN      ] CudaCcclGather.EveryStorageTypeAndIndexWidthPreserveBitsAcrossAxesAndStrides
+[       OK ] CudaCcclGather.EveryStorageTypeAndIndexWidthPreserveBitsAcrossAxesAndStrides (491 ms)
+[ RUN      ] CudaCcclGather.CheckedFailurePreservesAllOutputAndFreshSlotRecovers
+[       OK ] CudaCcclGather.CheckedFailurePreservesAllOutputAndFreshSlotRecovers (1 ms)
+[ RUN      ] CudaCcclGather.EmptyUncheckedAndAliasesUseThePublicContract
+[       OK ] CudaCcclGather.EmptyUncheckedAndAliasesUseThePublicContract (1 ms)
+[----------] 3 tests from CudaCcclGather (493 ms total)
+
+[----------] Global test environment tear-down
+[==========] 42 tests from 8 test suites ran. (18464 ms total)
+[  PASSED  ] 42 tests.

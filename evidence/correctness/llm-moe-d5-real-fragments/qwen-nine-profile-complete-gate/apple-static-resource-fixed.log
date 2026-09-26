@@ -1,0 +1,18 @@
+-- HYLE developer factors: requested='compute_provider_ggml_metal' resolved='core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+CMake Error at cmake/HyleDependencyVersions.cmake:843 (message):
+  HYLE in-tree dependency audit failed:
+
+  Vendored dependency 'ggml_runtime_patches' license hash mismatch:
+
+    path:     /Users/kiro/hyle/third_party/ggml_runtime/NOTICE.md
+    expected: 7cf85e86b617535bf6f1db460db83a80a903693b46f37296abe11693fa77644e
+    actual:   260c3882f6833eda067f34825cb926c117ed7da4c323cb3a7e56537002e712af
+
+  Refresh complete snapshots and their provenance atomically.
+Call Stack (most recent call first):
+  src/compute_ggml_runtime/CMakeLists.txt:25 (hyle_audit_in_tree_dependencies)
+
+
+-- Configuring incomplete, errors occurred!

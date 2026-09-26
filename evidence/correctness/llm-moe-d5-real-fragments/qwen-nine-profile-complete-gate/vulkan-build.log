@@ -1,0 +1,11 @@
+[0/2] Re-checking globbed directories...
+[1/12] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/12] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/Release/vulkan-shaders-gen.exe
+[3/12] Completed 'vulkan-shaders-gen'
+[4/12] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_provider_ggml_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_provider_ggml_vulkan/hyle-runtime/hyle_compute_provider_ggml_vulkan_test-Release.cmake"
+[5/12] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_provider_iree_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_provider_iree_vulkan/hyle-runtime/hyle_compute_provider_iree_vulkan_test-Release.cmake"
+[6/12] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[7/12] Linking CXX shared library bin\hyle_compute_route_vulkan.dll
+[8/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"

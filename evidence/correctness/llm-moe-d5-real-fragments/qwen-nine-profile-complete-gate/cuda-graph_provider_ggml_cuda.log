@@ -1,0 +1,37 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 8 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 8 tests from GgmlCudaGraph
+[ RUN      ] GgmlCudaGraph.NativeQ8GraphImportsGgufBytesAndReplays
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.NativeQ8GraphImportsGgufBytesAndReplays (81 ms)
+[ RUN      ] GgmlCudaGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry
+[       OK ] GgmlCudaGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry (52 ms)
+[ RUN      ] GgmlCudaGraph.MatureLightningIndexerUsesOrdinaryGraphEntry
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.MatureLightningIndexerUsesOrdinaryGraphEntry (2 ms)
+[ RUN      ] GgmlCudaGraph.SoftmaxRegionPublishesLogicalAxesAndRetainsOldResults
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.SoftmaxRegionPublishesLogicalAxesAndRetainsOldResults (11 ms)
+[ RUN      ] GgmlCudaGraph.WholeOriginalRegionUsesIndependentInvocations
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.WholeOriginalRegionUsesIndependentInvocations (2 ms)
+[ RUN      ] GgmlCudaGraph.TensorRegionPreservesRoundingPublishedIntermediatesAndOldResults
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.TensorRegionPreservesRoundingPublishedIntermediatesAndOldResults (7 ms)
+[ RUN      ] GgmlCudaGraph.VariadicPortsReserveMetadataEvenWhenValuesRepeat
+[       OK ] GgmlCudaGraph.VariadicPortsReserveMetadataEvenWhenValuesRepeat (2 ms)
+[ RUN      ] GgmlCudaGraph.TypedSliceCopyBindsBeforeAlignedNativeMath
+[       OK ] GgmlCudaGraph.TypedSliceCopyBindsBeforeAlignedNativeMath (4 ms)
+[----------] 8 tests from GgmlCudaGraph (165 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test suite ran. (165 ms total)
+[  PASSED  ] 8 tests.

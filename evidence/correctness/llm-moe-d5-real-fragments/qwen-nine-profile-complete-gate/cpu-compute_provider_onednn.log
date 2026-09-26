@@ -1,0 +1,73 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 29 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 14 tests from OneDnnProvider
+[ RUN      ] OneDnnProvider.ExposesStableIdentity
+[       OK ] OneDnnProvider.ExposesStableIdentity (0 ms)
+[ RUN      ] OneDnnProvider.MatMulRejectsUnsupportedAccumulationAtBothColdStages
+[       OK ] OneDnnProvider.MatMulRejectsUnsupportedAccumulationAtBothColdStages (0 ms)
+[ RUN      ] OneDnnProvider.DirectBrgemmDeclinesNonExactShapeDomains
+[       OK ] OneDnnProvider.DirectBrgemmDeclinesNonExactShapeDomains (0 ms)
+[ RUN      ] OneDnnProvider.InternalPlanExecutesSharedLeftPairInOneEpisode
+[       OK ] OneDnnProvider.InternalPlanExecutesSharedLeftPairInOneEpisode (0 ms)
+[ RUN      ] OneDnnProvider.PreparesAndRunsRowMajorFloat32MatMul
+[       OK ] OneDnnProvider.PreparesAndRunsRowMajorFloat32MatMul (0 ms)
+[ RUN      ] OneDnnProvider.RejectsContiguousKWeightsWithoutAnotherProvider
+[       OK ] OneDnnProvider.RejectsContiguousKWeightsWithoutAnotherProvider (0 ms)
+[ RUN      ] OneDnnProvider.RejectsEncodedWeightsBeforeCallingOneDnn
+[       OK ] OneDnnProvider.RejectsEncodedWeightsBeforeCallingOneDnn (0 ms)
+[ RUN      ] OneDnnProvider.UsesTheBorrowedSynchronousExecutor
+[       OK ] OneDnnProvider.UsesTheBorrowedSynchronousExecutor (0 ms)
+[ RUN      ] OneDnnProvider.RejectsSmallSerialDecodeWithoutAnotherProvider
+[       OK ] OneDnnProvider.RejectsSmallSerialDecodeWithoutAnotherProvider (0 ms)
+[ RUN      ] OneDnnProvider.ValidatesCallerOwnedWorkspaceSizeAndAlignment
+[       OK ] OneDnnProvider.ValidatesCallerOwnedWorkspaceSizeAndAlignment (0 ms)
+[ RUN      ] OneDnnProvider.RejectsUnsupportedEmptyOperationsWithoutAnotherProvider
+[       OK ] OneDnnProvider.RejectsUnsupportedEmptyOperationsWithoutAnotherProvider (0 ms)
+[ RUN      ] OneDnnProvider.SharesPreparedArtifactAcrossIndependentInvocations
+[       OK ] OneDnnProvider.SharesPreparedArtifactAcrossIndependentInvocations (0 ms)
+[ RUN      ] OneDnnProvider.ReportsMetadataOomWithoutLeakingOwnedState
+[       OK ] OneDnnProvider.ReportsMetadataOomWithoutLeakingOwnedState (0 ms)
+[ RUN      ] OneDnnProvider.NormalizationPartialOwnersRollbackOnMetadataOom
+[       OK ] OneDnnProvider.NormalizationPartialOwnersRollbackOnMetadataOom (0 ms)
+[----------] 14 tests from OneDnnProvider (1 ms total)
+
+[----------] 8 tests from OneDnnNormalization
+[ RUN      ] OneDnnNormalization.Float32NormsUseIndependentDoubleOracle
+[       OK ] OneDnnNormalization.Float32NormsUseIndependentDoubleOracle (12 ms)
+[ RUN      ] OneDnnNormalization.HalfIsaAdmissionAndAvailableNumerics
+[       OK ] OneDnnNormalization.HalfIsaAdmissionAndAvailableNumerics (0 ms)
+[ RUN      ] OneDnnNormalization.ExactInputAliasRetainsOriginalReductionInput
+[       OK ] OneDnnNormalization.ExactInputAliasRetainsOriginalReductionInput (0 ms)
+[ RUN      ] OneDnnNormalization.BorrowedExecutorAndConcurrentArtifacts
+[       OK ] OneDnnNormalization.BorrowedExecutorAndConcurrentArtifacts (2 ms)
+[ RUN      ] OneDnnNormalization.RejectsUnsupportedPrecisionAtBothColdStages
+[       OK ] OneDnnNormalization.RejectsUnsupportedPrecisionAtBothColdStages (0 ms)
+[ RUN      ] OneDnnNormalization.IndependentInvocationsShareCodeAndRebindData
+[       OK ] OneDnnNormalization.IndependentInvocationsShareCodeAndRebindData (0 ms)
+[ RUN      ] OneDnnNormalization.NestedBorrowedExecutorMakesProgress
+[       OK ] OneDnnNormalization.NestedBorrowedExecutorMakesProgress (0 ms)
+[ RUN      ] OneDnnNormalization.StableCenteredVarianceAndSpecialValues
+[       OK ] OneDnnNormalization.StableCenteredVarianceAndSpecialValues (0 ms)
+[----------] 8 tests from OneDnnNormalization (16 ms total)
+
+[----------] 7 tests from OneDnnTensor
+[ RUN      ] OneDnnTensor.StableSoftplusPreservesTailsAndSpecialValues
+[       OK ] OneDnnTensor.StableSoftplusPreservesTailsAndSpecialValues (4 ms)
+[ RUN      ] OneDnnTensor.SoftplusUsesDenseScalarAndEmptyDescriptors
+[       OK ] OneDnnTensor.SoftplusUsesDenseScalarAndEmptyDescriptors (0 ms)
+[ RUN      ] OneDnnTensor.SoftplusRejectsUnqualifiedStorageAndByteStrides
+[       OK ] OneDnnTensor.SoftplusRejectsUnqualifiedStorageAndByteStrides (0 ms)
+[ RUN      ] OneDnnTensor.CopyPreservesEveryStorageBitWithOddByteStrides
+[       OK ] OneDnnTensor.CopyPreservesEveryStorageBitWithOddByteStrides (1 ms)
+[ RUN      ] OneDnnTensor.SelectBroadcastsStorageBitsAndReusesIndependentRequests
+[       OK ] OneDnnTensor.SelectBroadcastsStorageBitsAndReusesIndependentRequests (0 ms)
+[ RUN      ] OneDnnTensor.ScalarBranchesRankEightAndEmptyShapes
+[       OK ] OneDnnTensor.ScalarBranchesRankEightAndEmptyShapes (0 ms)
+[ RUN      ] OneDnnTensor.OverlapIsRejectedBeforeOutputChanges
+[       OK ] OneDnnTensor.OverlapIsRejectedBeforeOutputChanges (0 ms)
+[----------] 7 tests from OneDnnTensor (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 29 tests from 3 test suites ran. (26 ms total)
+[  PASSED  ] 29 tests.

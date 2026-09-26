@@ -1,0 +1,36 @@
+[0/2] Re-checking globbed directories...
+[1/37] Building CXX object src\compute_provider_ggml_cuda\CMakeFiles\hyle_compute_provider_ggml_cuda.dir\tensor_program.cc.obj
+[2/37] Building CXX object src\compute_provider_ggml_cuda\CMakeFiles\hyle_compute_provider_ggml_cuda.dir\ggml_cuda_provider.cc.obj
+[3/37] Linking CXX shared library bin\hyle_compute_provider_ggml_cuda.dll
+[4/32] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\b-cuda-d5\tests\compute_provider_ggml_cuda && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_provider_ggml_cuda/hyle-runtime/hyle_compute_provider_ggml_cuda_test-Release.cmake"
+[5/32] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\b-cuda-d5\tests\graph_provider_ggml_cuda && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/graph_provider_ggml_cuda/hyle-runtime/hyle_graph_provider_ggml_cuda_test-Release.cmake"
+[6/32] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\cuda_backend_test.cc.obj
+[7/32] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\device_status_test.cc.obj
+[8/32] Building CUDA object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\cuda_test_kernel.cu.obj
+cuda_test_kernel.cu
+tmpxft_00005168_00000000-8_cuda_test_kernel.cudafe1.cpp
+[9/32] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_late_failure_test.dir\cuda_failure_test.cc.obj
+[10/32] Building CUDA object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_late_failure_test.dir\cuda_failure_kernel.cu.obj
+cuda_failure_kernel.cu
+tmpxft_00003424_00000000-8_cuda_failure_kernel.cudafe1.cpp
+[11/32] Building CXX object tests\compute_provider_cublas\CMakeFiles\hyle_compute_provider_cublas_test.dir\cublas_provider_test.cc.obj
+[12/32] Building CXX object tests\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda_test.dir\cuda_provider_test.cc.obj
+[13/32] Building CXX object tests\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda_test.dir\tensor_test.cc.obj
+[14/32] Building CXX object tests\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda_test.dir\scatter_test.cc.obj
+[15/32] Building CXX object tests\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda_test.dir\sglang_primitives_test.cc.obj
+[16/32] Building CXX object tests\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda_test.dir\collectives_test.cc.obj
+[17/32] Building CXX object tests\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda_test.dir\gather_collectives_test.cc.obj
+[18/32] Building CXX object tests\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda_test.dir\d5_qwen35_profile_test.cc.obj
+[19/32] Building CXX object tests\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda_test.dir\d5_qwen35_execution_test.cc.obj
+[20/32] Building CXX object tests\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda_test.dir\d5_qwen_gguf_vocabulary_test.cc.obj
+[21/32] Building CXX object tests\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda_test.dir\d5_qwen35_gguf_fragment_test.cc.obj
+[22/32] Building CXX object tests\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda_test.dir\d5_qwen38_official_test.cc.obj
+[23/32] Building CXX object tests\graph_route_cuda\CMakeFiles\hyle_graph_route_cuda_test.dir\d5_qwen35_profile_test.cc.obj
+[24/32] Building CXX object tests\graph_route_cuda\CMakeFiles\hyle_graph_route_cuda_test.dir\d5_qwen35_gguf_fragment_test.cc.obj
+[25/32] Linking CXX executable bin\hyle_compute_backend_cuda_test.exe
+[26/32] Linking CXX executable bin\hyle_compute_backend_cuda_late_failure_test.exe
+[27/32] Linking CXX executable bin\hyle_compute_provider_cublas_test.exe
+[28/32] Linking CXX executable bin\hyle_compute_provider_cuda_test.exe
+[29/32] Linking CXX executable bin\hyle_compute_route_cuda_test.exe
+[30/32] Building CXX object tests\graph_route_cuda\CMakeFiles\hyle_graph_route_cuda_test.dir\d5_qwen38_official_test.cc.obj
+[31/32] Linking CXX executable bin\hyle_graph_route_cuda_test.exe

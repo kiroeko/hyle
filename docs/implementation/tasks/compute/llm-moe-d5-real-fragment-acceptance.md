@@ -2,13 +2,14 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
-**2026-09-26 当前状态纠正：** recurrent gate 数值合同的
-[`BLOCKED` 待决项](llm-moe-d5-recurrent-gate-numeric-decision.md)已由用户选择完整片段资格；
-`compute_ops` 按合法状态恢复到[模型完整门控片段 AUDITED 卡](llm-moe-d5-model-gate-qualification.md)。2.4T 新共享批次的
-CPU/Apple/Vulkan 六入口通过，CUDA 两入口只在成熟 Softplus 断言失败。旧 Qwen 六画像的
-R05 使用主机预计算 gate/decay，48 个整格退回未完整资格；非 R05 片段收据保留。
-当前 ledger 为 **0/176 RUN_PASS、176/176 VALIDATION_NOT_RUN**。下文48格数字保留为历史快照，
-不能继续用作当前完整覆盖。既有 Provider/Graph owner 的有限 FIX 不随此待决项自动扩张。
+**2026-09-26 当前进展：** 用户选择的完整 recurrent 数值边界已完成 MG1–MG5，
+九个 Qwen 画像均通过四路线 Direct/Graph 普通入口和实际状态反馈。
+当前 ledger 为 **72/176 RUN_PASS、104/176 VALIDATION_NOT_RUN**，详见
+[本批收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
+Metal 新 workspace 的分配失败崩溃已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复，
+静态故障测试和 shared 定向回归通过。原独立 gate 数值失败与旧48格撤回记录保留，
+以新完整片段收据替代；通用 Softplus 精度不变。
+下文0/48格数字是历史快照，不能覆盖当前 ledger。其余13画像、三交付和 P1 尚未完成。
 
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent

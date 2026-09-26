@@ -1,0 +1,135 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 54 tests from 7 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from Device
+[ RUN      ] Device.CpuDiscoveryIsScopedToTheExplicitBackend
+[       OK ] Device.CpuDiscoveryIsScopedToTheExplicitBackend (0 ms)
+[----------] 1 test from Device (0 ms total)
+
+[----------] 3 tests from Context
+[ RUN      ] Context.ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation
+[       OK ] Context.ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation (0 ms)
+[ RUN      ] Context.RejectsInvalidDeviceAndReportsMetadataOom
+[       OK ] Context.RejectsInvalidDeviceAndReportsMetadataOom (0 ms)
+[ RUN      ] Context.MoveAssignmentClosesTheReplacedRuntime
+[       OK ] Context.MoveAssignmentClosesTheReplacedRuntime (0 ms)
+[----------] 3 tests from Context (0 ms total)
+
+[----------] 3 tests from Queue
+[ RUN      ] Queue.CloseIsLocalButContextCloseInvalidatesEveryQueue
+[       OK ] Queue.CloseIsLocalButContextCloseInvalidatesEveryQueue (0 ms)
+[ RUN      ] Queue.InvalidAndMovedFromOperationsAreObservable
+[       OK ] Queue.InvalidAndMovedFromOperationsAreObservable (0 ms)
+[ RUN      ] Queue.CpuAsyncByteOperationsUseTheOrderedCompletionContract
+[       OK ] Queue.CpuAsyncByteOperationsUseTheOrderedCompletionContract (0 ms)
+[----------] 3 tests from Queue (0 ms total)
+
+[----------] 2 tests from HostKernel
+[ RUN      ] HostKernel.TypedVoidAndStatusCallablesCompleteSynchronously
+[       OK ] HostKernel.TypedVoidAndStatusCallablesCompleteSynchronously (0 ms)
+[ RUN      ] HostKernel.ClosedAndInvalidQueuesRejectBeforeInvoking
+[       OK ] HostKernel.ClosedAndInvalidQueuesRejectBeforeInvoking (0 ms)
+[----------] 2 tests from HostKernel (0 ms total)
+
+[----------] 1 test from Completion
+[ RUN      ] Completion.MoveMakesTheSourceInvalid
+[       OK ] Completion.MoveMakesTheSourceInvalid (0 ms)
+[----------] 1 test from Completion (0 ms total)
+
+[----------] 15 tests from CustomKernel
+[ RUN      ] CustomKernel.WorkloadIsBoundOnceAndRetainedThroughInvocation
+[       OK ] CustomKernel.WorkloadIsBoundOnceAndRetainedThroughInvocation (0 ms)
+[ RUN      ] CustomKernel.OwnsMoveOnlyFactoryAndCopiesIdentityText
+[       OK ] CustomKernel.OwnsMoveOnlyFactoryAndCopiesIdentityText (0 ms)
+[ RUN      ] CustomKernel.InvalidOrAllocationFailureDoesNotConsumeNamedFactory
+[       OK ] CustomKernel.InvalidOrAllocationFailureDoesNotConsumeNamedFactory (0 ms)
+[ RUN      ] CustomKernel.ConstCopyableFactoryIsCapturedOnceNotCopiedByHandles
+[       OK ] CustomKernel.ConstCopyableFactoryIsCapturedOnceNotCopiedByHandles (0 ms)
+[ RUN      ] CustomKernel.SerialArtifactDeclaresDirectCallerCompletionConstraint
+[       OK ] CustomKernel.SerialArtifactDeclaresDirectCallerCompletionConstraint (0 ms)
+[ RUN      ] CustomKernel.InvocationPrivateBoundPreservesUnknownZeroAndExplicitSize
+[       OK ] CustomKernel.InvocationPrivateBoundPreservesUnknownZeroAndExplicitSize (0 ms)
+[ RUN      ] CustomKernel.IndependentInvocationAllocatorOwnsTypedStateAndWrapper
+[       OK ] CustomKernel.IndependentInvocationAllocatorOwnsTypedStateAndWrapper (0 ms)
+[ RUN      ] CustomKernel.WrongBackendRejectedAndProviderOwnerRemainsValid
+[       OK ] CustomKernel.WrongBackendRejectedAndProviderOwnerRemainsValid (0 ms)
+[ RUN      ] CustomKernel.DirectPublicJourneyKeepsFactoryUntilLastExecutionOwner
+[       OK ] CustomKernel.DirectPublicJourneyKeepsFactoryUntilLastExecutionOwner (0 ms)
+[ RUN      ] CustomKernel.RejectedAndAcceptedFailuresHaveDifferentCompletionBoundaries
+[       OK ] CustomKernel.RejectedAndAcceptedFailuresHaveDifferentCompletionBoundaries (0 ms)
+[ RUN      ] CustomKernel.PreparationDeclinesFallbackButFatalFailuresStopBinding
+[       OK ] CustomKernel.PreparationDeclinesFallbackButFatalFailuresStopBinding (0 ms)
+[ RUN      ] CustomKernel.DescriptorPreparationPreservesQualifiedDeclineDiagnostics
+[       OK ] CustomKernel.DescriptorPreparationPreservesQualifiedDeclineDiagnostics (0 ms)
+[ RUN      ] CustomKernel.InvalidPropertiesDoNotMoveKernelAndInvocationErrorRollsBack
+[       OK ] CustomKernel.InvalidPropertiesDoNotMoveKernelAndInvocationErrorRollsBack (0 ms)
+[ RUN      ] CustomKernel.EveryColdAllocationFailureReleasesAllOwnedObjects
+[       OK ] CustomKernel.EveryColdAllocationFailureReleasesAllOwnedObjects (0 ms)
+[ RUN      ] CustomKernel.IndependentInvocationsShareImmutableKernelConcurrently
+[       OK ] CustomKernel.IndependentInvocationsShareImmutableKernelConcurrently (0 ms)
+[----------] 15 tests from CustomKernel (0 ms total)
+
+[----------] 29 tests from RuntimeProviders
+[ RUN      ] RuntimeProviders.ExtensionIsVersionedContextLocalAndRetainsItsOwner
+[       OK ] RuntimeProviders.ExtensionIsVersionedContextLocalAndRetainsItsOwner (0 ms)
+[ RUN      ] RuntimeProviders.ExtensionSubmissionRequiresItsExactOpenContext
+[       OK ] RuntimeProviders.ExtensionSubmissionRequiresItsExactOpenContext (0 ms)
+[ RUN      ] RuntimeProviders.BackendExtensionIsVersionedAndContextLocal
+[       OK ] RuntimeProviders.BackendExtensionIsVersionedAndContextLocal (0 ms)
+[ RUN      ] RuntimeProviders.ContextCopiesExplicitProviderBindings
+[       OK ] RuntimeProviders.ContextCopiesExplicitProviderBindings (0 ms)
+[ RUN      ] RuntimeProviders.InstanceIdsDistinguishSlotsAndSurviveHandleMoves
+[       OK ] RuntimeProviders.InstanceIdsDistinguishSlotsAndSurviveHandleMoves (0 ms)
+[ RUN      ] RuntimeProviders.ConcurrentContextCreationDoesNotReuseInstanceIds
+[       OK ] RuntimeProviders.ConcurrentContextCreationDoesNotReuseInstanceIds (0 ms)
+[ RUN      ] RuntimeProviders.ProposalCannotBeSplicedIntoAnotherSameFamilySlot
+[       OK ] RuntimeProviders.ProposalCannotBeSplicedIntoAnotherSameFamilySlot (0 ms)
+[ RUN      ] RuntimeProviders.ProviderExtensionRetainsItsExactInstanceIdentity
+[       OK ] RuntimeProviders.ProviderExtensionRetainsItsExactInstanceIdentity (0 ms)
+[ RUN      ] RuntimeProviders.PreparationAttemptClassifiesDeclinesAndOwnsPartialArtifacts
+[       OK ] RuntimeProviders.PreparationAttemptClassifiesDeclinesAndOwnsPartialArtifacts (0 ms)
+[ RUN      ] RuntimeProviders.ReplayCostIsPreservedAndCannotChangeDuringPreparation
+[       OK ] RuntimeProviders.ReplayCostIsPreservedAndCannotChangeDuringPreparation (0 ms)
+[ RUN      ] RuntimeProviders.DirectPreparationRetriesDeclaredSafeDeclines
+[       OK ] RuntimeProviders.DirectPreparationRetriesDeclaredSafeDeclines (0 ms)
+[ RUN      ] RuntimeProviders.DirectErrorCodesDoNotBecomeSafeDeclines
+[       OK ] RuntimeProviders.DirectErrorCodesDoNotBecomeSafeDeclines (0 ms)
+[ RUN      ] RuntimeProviders.DirectBindingUsesPreferenceAndRejectsTies
+[       OK ] RuntimeProviders.DirectBindingUsesPreferenceAndRejectsTies (0 ms)
+[ RUN      ] RuntimeProviders.ContextCreationRollsBackInReverseOrder
+[       OK ] RuntimeProviders.ContextCreationRollsBackInReverseOrder (0 ms)
+[ RUN      ] RuntimeProviders.RejectsProviderWithoutRequiredDrainContract
+[       OK ] RuntimeProviders.RejectsProviderWithoutRequiredDrainContract (0 ms)
+[ RUN      ] RuntimeProviders.RejectsPrivateContractMismatchAndUnwindsEarlierContexts
+[       OK ] RuntimeProviders.RejectsPrivateContractMismatchAndUnwindsEarlierContexts (0 ms)
+[ RUN      ] RuntimeProviders.ShapeRequestsNeedExplicitWholeDomainCoverage
+[       OK ] RuntimeProviders.ShapeRequestsNeedExplicitWholeDomainCoverage (0 ms)
+[ RUN      ] RuntimeProviders.RejectsMalformedEffectsBeforeExactOrBoundedProposal
+[       OK ] RuntimeProviders.RejectsMalformedEffectsBeforeExactOrBoundedProposal (0 ms)
+[ RUN      ] RuntimeProviders.GuardedEnvelopeIsNotUsedForConcreteSchemaInference
+[       OK ] RuntimeProviders.GuardedEnvelopeIsNotUsedForConcreteSchemaInference (0 ms)
+[ RUN      ] RuntimeProviders.OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime
+[       OK ] RuntimeProviders.OrderedQueueAdmitsOnlyOneRecordingSequenceAtATime (0 ms)
+[ RUN      ] RuntimeProviders.QueueSequenceEnqueuesOnlyCompatibleCompletionWaits
+[       OK ] RuntimeProviders.QueueSequenceEnqueuesOnlyCompatibleCompletionWaits (0 ms)
+[ RUN      ] RuntimeProviders.DirectAsyncCompletionRetainsAndSerializesItsOperationInvocation
+[       OK ] RuntimeProviders.DirectAsyncCompletionRetainsAndSerializesItsOperationInvocation (0 ms)
+[ RUN      ] RuntimeProviders.InferenceScratchDoesNotBypassTheSelectedAllocator
+[       OK ] RuntimeProviders.InferenceScratchDoesNotBypassTheSelectedAllocator (0 ms)
+[ RUN      ] RuntimeProviders.MetadataOverrideRetainsStorageUntilRealCompletion
+[       OK ] RuntimeProviders.MetadataOverrideRetainsStorageUntilRealCompletion (0 ms)
+[ RUN      ] RuntimeProviders.InvocationFailureDestroysPartialWithItsSelectedOwner
+[       OK ] RuntimeProviders.InvocationFailureDestroysPartialWithItsSelectedOwner (0 ms)
+[ RUN      ] RuntimeProviders.PublicDelegatedDirectChecksBindingsAndRetainsBothOwners
+[       OK ] RuntimeProviders.PublicDelegatedDirectChecksBindingsAndRetainsBothOwners (0 ms)
+[ RUN      ] RuntimeProviders.DelegatedDirectRejectsClosedContextAndInvalidPreparation
+[       OK ] RuntimeProviders.DelegatedDirectRejectsClosedContextAndInvalidPreparation (0 ms)
+[ RUN      ] RuntimeProviders.AbandonedDelegatedFailureRetiresOnlyItsOwnSlot
+[       OK ] RuntimeProviders.AbandonedDelegatedFailureRetiresOnlyItsOwnSlot (0 ms)
+[ RUN      ] RuntimeProviders.DelegatedCompletionOwnsEndpointCancellationDrainAndAbandonment
+[       OK ] RuntimeProviders.DelegatedCompletionOwnsEndpointCancellationDrainAndAbandonment (0 ms)
+[----------] 29 tests from RuntimeProviders (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 54 tests from 7 test suites ran. (1 ms total)
+[  PASSED  ] 54 tests.

@@ -1,0 +1,26 @@
+[0/2] Re-checking globbed directories...
+[1/26] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/26] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/Release/vulkan-shaders-gen.exe
+[3/26] Completed 'vulkan-shaders-gen'
+[4/26] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\region.cc.obj
+[5/26] Linking CXX shared library bin\hyle_compute_provider_ggml_vulkan.dll
+[6/24] Building CXX object src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[7/24] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_provider_ggml_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_provider_ggml_vulkan/hyle-runtime/hyle_compute_provider_ggml_vulkan_test-Release.cmake"
+[8/24] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_provider_iree_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_provider_iree_vulkan/hyle-runtime/hyle_compute_provider_iree_vulkan_test-Release.cmake"
+[9/24] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[10/24] Linking CXX shared library bin\hyle_compute_route_vulkan.dll
+[11/24] Linking CXX shared library bin\hyle_graph_route_vulkan.dll
+[12/24] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"
+[13/24] Building CXX object tests\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan_test.dir\region_test.cc.obj
+[14/24] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_profile_test.cc.obj
+[15/24] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\recurrent_test.cc.obj
+[16/24] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+[17/24] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\gguf_test.cc.obj
+[18/24] Building CXX object tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\recurrent_test.cc.obj
+[19/24] Building CXX object tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\gguf_test.cc.obj
+[20/24] Linking CXX executable bin\hyle_compute_route_vulkan_test.exe
+[21/24] Linking CXX executable bin\hyle_compute_provider_ggml_vulkan_test.exe
+[22/24] Building CXX object tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+[23/24] Linking CXX executable bin\hyle_graph_route_vulkan_test.exe

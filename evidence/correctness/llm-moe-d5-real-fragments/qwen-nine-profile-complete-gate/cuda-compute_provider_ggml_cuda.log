@@ -1,0 +1,102 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 28 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from GgmlCuda
+[ RUN      ] GgmlCuda.ColdAllocationsRollBackWithoutRetainingNativeResources
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+[       OK ] GgmlCuda.ColdAllocationsRollBackWithoutRetainingNativeResources (64 ms)
+[ RUN      ] GgmlCuda.IndependentInvocationsReplayAndRetainBorrowedPayload
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCuda.IndependentInvocationsReplayAndRetainBorrowedPayload (2 ms)
+[----------] 2 tests from GgmlCuda (68 ms total)
+
+[----------] 4 tests from GgmlCudaAttention
+[ RUN      ] GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays (381 ms)
+[ RUN      ] GgmlCudaAttention.ZeroAndNegativeScalePreserveCausalMask
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaAttention.ZeroAndNegativeScalePreserveCausalMask (251 ms)
+[ RUN      ] GgmlCudaAttention.Bfloat16ValuesOutsideFloat16RangeRemainFinite
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaAttention.Bfloat16ValuesOutsideFloat16RangeRemainFinite (93 ms)
+[ RUN      ] GgmlCudaAttention.Qwen38GroupedQueryHeadRatioRuns
+[       OK ] GgmlCudaAttention.Qwen38GroupedQueryHeadRatioRuns (3 ms)
+[----------] 4 tests from GgmlCudaAttention (730 ms total)
+
+[----------] 22 tests from GgmlCudaTensor
+[ RUN      ] GgmlCudaTensor.FloatingNormAffineAndUnaryConversions
+[       OK ] GgmlCudaTensor.FloatingNormAffineAndUnaryConversions (21 ms)
+[ RUN      ] GgmlCudaTensor.MatureSwiGluCoversStorageTypesAndInputLayouts
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.MatureSwiGluCoversStorageTypesAndInputLayouts (3 ms)
+[ RUN      ] GgmlCudaTensor.MatureRopeCoversQualifiedTypesAndLayouts
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.MatureRopeCoversQualifiedTypesAndLayouts (15 ms)
+[ RUN      ] GgmlCudaTensor.MatureCausalConvUsesNaturalSequenceLayout
+[       OK ] GgmlCudaTensor.MatureCausalConvUsesNaturalSequenceLayout (1 ms)
+[ RUN      ] GgmlCudaTensor.MatureKdaPublishesScoresAndStateIndependently
+[       OK ] GgmlCudaTensor.MatureKdaPublishesScoresAndStateIndependently (1 ms)
+[ RUN      ] GgmlCudaTensor.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet
+[       OK ] GgmlCudaTensor.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet (14 ms)
+[ RUN      ] GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry
+[       OK ] GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry (14 ms)
+[ RUN      ] GgmlCudaTensor.MatureLightningIndexerUsesOrdinaryEntryAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.MatureLightningIndexerUsesOrdinaryEntryAndReplays (1 ms)
+[ RUN      ] GgmlCudaTensor.LayerNormRetainsSmallVarianceAtLargeOffset
+[       OK ] GgmlCudaTensor.LayerNormRetainsSmallVarianceAtLargeOffset (1 ms)
+[ RUN      ] GgmlCudaTensor.BroadcastUsesLogicalAxesAndBothOperandOrders
+[       OK ] GgmlCudaTensor.BroadcastUsesLogicalAxesAndBothOperandOrders (67 ms)
+[ RUN      ] GgmlCudaTensor.SelectedReductionsUseDenseAndStridedLogicalCoordinates
+[       OK ] GgmlCudaTensor.SelectedReductionsUseDenseAndStridedLogicalCoordinates (148 ms)
+[ RUN      ] GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits
+[       OK ] GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits (3 ms)
+[ RUN      ] GgmlCudaTensor.UnsupportedNumericDomainsDeclineBeforeNativeExecution
+[       OK ] GgmlCudaTensor.UnsupportedNumericDomainsDeclineBeforeNativeExecution (0 ms)
+[ RUN      ] GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry
+[       OK ] GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry (7 ms)
+[ RUN      ] GgmlCudaTensor.NativeQ4KMatMulImportsGgufBytesAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.NativeQ4KMatMulImportsGgufBytesAndReplays (12 ms)
+[ RUN      ] GgmlCudaTensor.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds (4 ms)
+[ RUN      ] GgmlCudaTensor.NativeQ8GroupedExpertsUseExactExpertIds
+[       OK ] GgmlCudaTensor.NativeQ8GroupedExpertsUseExactExpertIds (1 ms)
+[ RUN      ] GgmlCudaTensor.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+[       OK ] GgmlCudaTensor.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (51 ms)
+[ RUN      ] GgmlCudaTensor.BfloatRouterMatMulRetainsNativeF32Score
+[       OK ] GgmlCudaTensor.BfloatRouterMatMulRetainsNativeF32Score (1 ms)
+[ RUN      ] GgmlCudaTensor.MalformedNativeGgufFormatIsRejectedAtPrepare
+[       OK ] GgmlCudaTensor.MalformedNativeGgufFormatIsRejectedAtPrepare (0 ms)
+[ RUN      ] GgmlCudaTensor.SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias
+[       OK ] GgmlCudaTensor.SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias (166 ms)
+[ RUN      ] GgmlCudaTensor.SoftmaxRejectsPartialOverlapAndMaskAlias
+[       OK ] GgmlCudaTensor.SoftmaxRejectsPartialOverlapAndMaskAlias (0 ms)
+[----------] 22 tests from GgmlCudaTensor (542 ms total)
+
+[----------] Global test environment tear-down
+[==========] 28 tests from 3 test suites ran. (1340 ms total)
+[  PASSED  ] 28 tests.

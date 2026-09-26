@@ -1,0 +1,78 @@
+Start testing: Sep 26 15:17 中国标准时间
+----------------------------------------------------------
+66/99 Testing: hyle_compute_provider_onednn_composition_test
+66/99 Test: hyle_compute_provider_onednn_composition_test
+Command: "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/bin/hyle_compute_provider_onednn_composition_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_provider_onednn
+"hyle_compute_provider_onednn_composition_test" start time: Sep 26 15:17 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from OneDnnComposition
+[ RUN      ] OneDnnComposition.UnsupportedShapeAdvancesToExplicitNativeProvider
+[       OK ] OneDnnComposition.UnsupportedShapeAdvancesToExplicitNativeProvider (0 ms)
+[----------] 1 test from OneDnnComposition (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_onednn_composition_test" end time: Sep 26 15:17 中国标准时间
+"hyle_compute_provider_onednn_composition_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+67/99 Testing: hyle_compute_provider_onednn_graph_test
+67/99 Test: hyle_compute_provider_onednn_graph_test
+Command: "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/bin/hyle_compute_provider_onednn_graph_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_provider_onednn
+"hyle_compute_provider_onednn_graph_test" start time: Sep 26 15:17 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from OneDnnGraph
+[ RUN      ] OneDnnGraph.PlansProviderScratchpadAndExecutesWithoutHiddenFallback
+[       OK ] OneDnnGraph.PlansProviderScratchpadAndExecutesWithoutHiddenFallback (0 ms)
+[----------] 1 test from OneDnnGraph (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_onednn_graph_test" end time: Sep 26 15:17 中国标准时间
+"hyle_compute_provider_onednn_graph_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+72/99 Testing: hyle_compute_ops_header_self_contained_test
+72/99 Test: hyle_compute_ops_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_ops" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "ops_visibility.h" "--header" "tensor_desc.h" "--header" "low_precision.h" "--header" "operation.h" "--header" "model_ops.h"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_ops
+"hyle_compute_ops_header_self_contained_test" start time: Sep 26 15:17 中国标准时间
+Output:
+----------------------------------------------------------
+compute_ops C++ headers self-contained: 5
+<end of output>
+Test time =   3.07 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_ops_header_self_contained_test" end time: Sep 26 15:17 中国标准时间
+"hyle_compute_ops_header_self_contained_test" time elapsed: 00:00:03
+----------------------------------------------------------
+
+End testing: Sep 26 15:17 中国标准时间
+
+compute_ops =   3.07 sec*proc
+
+compute_provider_onednn =   0.06 sec*proc
+
+headers =   3.07 sec*proc
+

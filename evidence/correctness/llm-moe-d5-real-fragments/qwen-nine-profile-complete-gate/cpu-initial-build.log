@@ -1,0 +1,13 @@
+[0/2] Re-checking globbed directories...
+[1/62] Building CXX object tests\compute\CMakeFiles\hyle_compute_result_fixture.dir\result_owner_producer.cc.obj
+[2/62] Linking CXX shared library bin\hyle_compute_result_fixture.dll
+[3/62] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj
+FAILED: [code=2] src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DGGML_USE_CPU -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_GGML_CPU=1 -DHYLE_COMPUTE_PROVIDER_GGML_BUILD -Dhyle_compute_provider_ggml_EXPORTS -IC:\public\project-hyle\hyle\include -IC:\public\project-hyle\hyle\src\compute_provider_ggml -IC:\public\project-hyle\hyle\src\compute -IC:\public\project-hyle\hyle\src\compute_ggml_runtime -IC:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\src\compute_ggml_runtime\source-b9d43bc809551dde\src\..\include /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /WX /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fosrc\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj /Fdsrc\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ /FS -c C:\public\project-hyle\hyle\src\compute_provider_ggml\ggml_cpu_provider.cc
+C:\public\project-hyle\hyle\src\compute_provider_ggml\ggml_cpu_provider.cc(656): error C2220: the following warning is treated as an error
+C:\public\project-hyle\hyle\src\compute_provider_ggml\ggml_cpu_provider.cc(656): warning C4456: declaration of 'input' hides previous local declaration
+C:\public\project-hyle\hyle\src\compute_provider_ggml\ggml_cpu_provider.cc(379): note: see declaration of 'input'
+C:\public\project-hyle\hyle\src\compute_provider_ggml\ggml_cpu_provider.cc(659): warning C4456: declaration of 'gate' hides previous local declaration
+C:\public\project-hyle\hyle\src\compute_provider_ggml\ggml_cpu_provider.cc(448): note: see declaration of 'gate'
+[4/62] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\completion_test.cc.obj
+ninja: build stopped: subcommand failed.

@@ -1,6 +1,6 @@
 # D5：原版模型门控的完整片段资格
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -84,3 +84,11 @@ region workspace 管理，直接复用。准备只绑定，不计时选择；重
 
 本轮其他 owner 原有 AUDITED 卡在[D5 主卡](llm-moe-d5-real-fragment-acceptance.md)增加 F23
 重新定界，既有未签三交付/P1 不丢失。先完成全组接线再增量编译；数值探针不是 profile RUN_PASS。
+
+## Candidate 与批次结果
+
+共同语义候选 `83be4e1bf1112441c6266edc6dd0551565f87648` 固定后未再改变；MG1–MG5 已完成。
+九画像×四路线×两入口的完整 gate、实际状态反馈及其它必要 region 已得到
+[72格普通入口收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
+compute_ops 53 项、逐头编译及四路线受影响消费者通过；Vulkan 接缝纠正和 Metal 冷分配修复
+分别保留初跑失败及定向通过证据。当前只是 CANDIDATE：D5-A5 三交付和 A6 完整成本 P1 仍未签。

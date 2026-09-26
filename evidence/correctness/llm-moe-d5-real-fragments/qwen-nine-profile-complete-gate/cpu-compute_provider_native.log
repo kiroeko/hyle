@@ -1,0 +1,259 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 104 tests from 15 test suites.
+[----------] Global test environment set-up.
+[----------] 15 tests from PreparedOperation
+[ RUN      ] PreparedOperation.ExposesColdRouteAndShapeDiagnostics
+[       OK ] PreparedOperation.ExposesColdRouteAndShapeDiagnostics (0 ms)
+[ RUN      ] PreparedOperation.DescriptorCapabilityUsesResourcesWithoutPayloadAccess
+[       OK ] PreparedOperation.DescriptorCapabilityUsesResourcesWithoutPayloadAccess (0 ms)
+[ RUN      ] PreparedOperation.RejectsUnsupportedOrInconsistentPreparation
+[       OK ] PreparedOperation.RejectsUnsupportedOrInconsistentPreparation (0 ms)
+[ RUN      ] PreparedOperation.LeavesValidEncodedWeightsForAQualifiedProvider
+[       OK ] PreparedOperation.LeavesValidEncodedWeightsForAQualifiedProvider (0 ms)
+[ RUN      ] PreparedOperation.NativeCpuResultLeaseRetainsComputedOutput
+[       OK ] PreparedOperation.NativeCpuResultLeaseRetainsComputedOutput (0 ms)
+[ RUN      ] PreparedOperation.RunsRowWiseWeightedRmsNorm
+[       OK ] PreparedOperation.RunsRowWiseWeightedRmsNorm (0 ms)
+[ RUN      ] PreparedOperation.RunsRowMajorAndTransposedWeightMatMul
+[       OK ] PreparedOperation.RunsRowMajorAndTransposedWeightMatMul (0 ms)
+[ RUN      ] PreparedOperation.RowMajorMatMulCoversEveryNativeTileAndTail
+[       OK ] PreparedOperation.RowMajorMatMulCoversEveryNativeTileAndTail (0 ms)
+[ RUN      ] PreparedOperation.RunsPackedSiluGatedActivationAcrossRows
+[       OK ] PreparedOperation.RunsPackedSiluGatedActivationAcrossRows (0 ms)
+[ RUN      ] PreparedOperation.RunsUnweightedWeightedAndExactInPlaceRmsNorm
+[       OK ] PreparedOperation.RunsUnweightedWeightedAndExactInPlaceRmsNorm (0 ms)
+[ RUN      ] PreparedOperation.RejectsWrongBindingContextAndUnsafeAlias
+[       OK ] PreparedOperation.RejectsWrongBindingContextAndUnsafeAlias (0 ms)
+[ RUN      ] PreparedOperation.UsesExplicitCoherenceAndReportsProviderFailureInCompletion
+[       OK ] PreparedOperation.UsesExplicitCoherenceAndReportsProviderFailureInCompletion (0 ms)
+[ RUN      ] PreparedOperation.RejectsAnActuallyMisalignedHostMapping
+[       OK ] PreparedOperation.RejectsAnActuallyMisalignedHostMapping (0 ms)
+[ RUN      ] PreparedOperation.RejectsStorageThatCpuCannotMapDuringPrepare
+[       OK ] PreparedOperation.RejectsStorageThatCpuCannotMapDuringPrepare (0 ms)
+[ RUN      ] PreparedOperation.ContextDestructionRejectsRetainedPreparedAndQueueHandles
+[       OK ] PreparedOperation.ContextDestructionRejectsRetainedPreparedAndQueueHandles (0 ms)
+[----------] 15 tests from PreparedOperation (0 ms total)
+
+[----------] 1 test from OperationShape
+[ RUN      ] OperationShape.InfersNaturalInferenceShapesAndRejectsMismatches
+[       OK ] OperationShape.InfersNaturalInferenceShapesAndRejectsMismatches (0 ms)
+[----------] 1 test from OperationShape (0 ms total)
+
+[----------] 5 tests from NativeCast
+[ RUN      ] NativeCast.CoversCompleteInferenceStorageConversionGraph
+[       OK ] NativeCast.CoversCompleteInferenceStorageConversionGraph (0 ms)
+[ RUN      ] NativeCast.ConvertsDenseFloat32ToFloat16Bits
+[       OK ] NativeCast.ConvertsDenseFloat32ToFloat16Bits (0 ms)
+[ RUN      ] NativeCast.MaterializesStridedFloat16ToFloat32
+[       OK ] NativeCast.MaterializesStridedFloat16ToFloat32 (0 ms)
+[ RUN      ] NativeCast.RejectsUnfrozenIntegerConversionSemantics
+[       OK ] NativeCast.RejectsUnfrozenIntegerConversionSemantics (0 ms)
+[ RUN      ] NativeCast.RejectsOverlappingInputAndOutputStorage
+[       OK ] NativeCast.RejectsOverlappingInputAndOutputStorage (0 ms)
+[----------] 5 tests from NativeCast (0 ms total)
+
+[----------] 12 tests from NativeElementwise
+[ RUN      ] NativeElementwise.ExecutesEveryDenseUnaryModeAndExactAlias
+[       OK ] NativeElementwise.ExecutesEveryDenseUnaryModeAndExactAlias (0 ms)
+[ RUN      ] NativeElementwise.SoftplusHasStableTailsSpecialValuesAndExactAlias
+[       OK ] NativeElementwise.SoftplusHasStableTailsSpecialValuesAndExactAlias (0 ms)
+[ RUN      ] NativeElementwise.HalfStorageExecutesAllModesAndRoundsOnce
+[       OK ] NativeElementwise.HalfStorageExecutesAllModesAndRoundsOnce (16 ms)
+[ RUN      ] NativeElementwise.HalfStorageSupportsOddByteStridesAndBroadcast
+[       OK ] NativeElementwise.HalfStorageSupportsOddByteStridesAndBroadcast (0 ms)
+[ RUN      ] NativeElementwise.MaterializesUnalignedStridedUnary
+[       OK ] NativeElementwise.MaterializesUnalignedStridedUnary (0 ms)
+[ RUN      ] NativeElementwise.ExecutesEveryDenseBinaryModeAndAliasesSecondInput
+[       OK ] NativeElementwise.ExecutesEveryDenseBinaryModeAndAliasesSecondInput (0 ms)
+[ RUN      ] NativeElementwise.BroadcastsBinaryOperands
+[       OK ] NativeElementwise.BroadcastsBinaryOperands (0 ms)
+[ RUN      ] NativeElementwise.BroadcastsSelectWithoutChangingBranchBits
+[       OK ] NativeElementwise.BroadcastsSelectWithoutChangingBranchBits (0 ms)
+[ RUN      ] NativeElementwise.SupportsDenseSelectAliasingABranch
+[       OK ] NativeElementwise.SupportsDenseSelectAliasingABranch (0 ms)
+[ RUN      ] NativeElementwise.ExecutesDenseF32SelectAcrossVectorBlocksAndTail
+[       OK ] NativeElementwise.ExecutesDenseF32SelectAcrossVectorBlocksAndTail (0 ms)
+[ RUN      ] NativeElementwise.RejectsUnsafeStridedAliasAndUnsupportedArithmeticType
+[       OK ] NativeElementwise.RejectsUnsafeStridedAliasAndUnsupportedArithmeticType (0 ms)
+[ RUN      ] NativeElementwise.ExecutesZeroElementFamiliesWithoutTouchingStorage
+[       OK ] NativeElementwise.ExecutesZeroElementFamiliesWithoutTouchingStorage (0 ms)
+[----------] 12 tests from NativeElementwise (16 ms total)
+
+[----------] 4 tests from NativeIndexing
+[ RUN      ] NativeIndexing.GatherCopiesDenseSuffixBlocksAndChecksIndices
+[       OK ] NativeIndexing.GatherCopiesDenseSuffixBlocksAndChecksIndices (0 ms)
+[ RUN      ] NativeIndexing.ScatterAssignsOrAddsAndSupportsExactSourceAlias
+[       OK ] NativeIndexing.ScatterAssignsOrAddsAndSupportsExactSourceAlias (0 ms)
+[ RUN      ] NativeIndexing.ConcatenatesVariadicDenseInputsAlongMiddleAxis
+[       OK ] NativeIndexing.ConcatenatesVariadicDenseInputsAlongMiddleAxis (0 ms)
+[ RUN      ] NativeIndexing.HalfScatterUsesOrderedRoundingAndChecksBeforeWriting
+[       OK ] NativeIndexing.HalfScatterUsesOrderedRoundingAndChecksBeforeWriting (0 ms)
+[----------] 4 tests from NativeIndexing (0 ms total)
+
+[----------] 5 tests from NativeMatMul
+[ RUN      ] NativeMatMul.BroadcastsBothBatchOperandsAndSupportsTransposedWeights
+[       OK ] NativeMatMul.BroadcastsBothBatchOperandsAndSupportsTransposedWeights (0 ms)
+[ RUN      ] NativeMatMul.AcceptsAnEmptyBroadcastBatch
+[       OK ] NativeMatMul.AcceptsAnEmptyBroadcastBatch (0 ms)
+[ RUN      ] NativeMatMul.ZeroInnerDimensionProducesZeroWithoutReadingInputs
+[       OK ] NativeMatMul.ZeroInnerDimensionProducesZeroWithoutReadingInputs (0 ms)
+[ RUN      ] NativeMatMul.BroadcastsAnOperandWithNoExplicitBatchAxes
+[       OK ] NativeMatMul.BroadcastsAnOperandWithNoExplicitBatchAxes (0 ms)
+[ RUN      ] NativeMatMul.RejectsUnsupportedAccumulationAtBothColdStages
+[       OK ] NativeMatMul.RejectsUnsupportedAccumulationAtBothColdStages (0 ms)
+[----------] 5 tests from NativeMatMul (0 ms total)
+
+[----------] 2 tests from NativeGatedActivation
+[ RUN      ] NativeGatedActivation.ExecutesEveryModeForPackedAndSeparateInputs
+[       OK ] NativeGatedActivation.ExecutesEveryModeForPackedAndSeparateInputs (0 ms)
+[ RUN      ] NativeGatedActivation.HalfStoragePreservesPackedAndSeparateSemantics
+[       OK ] NativeGatedActivation.HalfStoragePreservesPackedAndSeparateSemantics (9 ms)
+[----------] 2 tests from NativeGatedActivation (9 ms total)
+
+[----------] 5 tests from NativeLayerNorm
+[ RUN      ] NativeLayerNorm.ExecutesNonAffineScaleOnlyAndAffineRows
+[       OK ] NativeLayerNorm.ExecutesNonAffineScaleOnlyAndAffineRows (0 ms)
+[ RUN      ] NativeLayerNorm.SupportsExactInputOutputAlias
+[       OK ] NativeLayerNorm.SupportsExactInputOutputAlias (0 ms)
+[ RUN      ] NativeLayerNorm.AcceptsAnEmptyLastDimension
+[       OK ] NativeLayerNorm.AcceptsAnEmptyLastDimension (0 ms)
+[ RUN      ] NativeLayerNorm.RejectsUnsupportedStorageAndAccumulation
+[       OK ] NativeLayerNorm.RejectsUnsupportedStorageAndAccumulation (0 ms)
+[ RUN      ] NativeLayerNorm.PinsExecutorAndUsesOneBoundedSynchronousFanOut
+[       OK ] NativeLayerNorm.PinsExecutorAndUsesOneBoundedSynchronousFanOut (0 ms)
+[----------] 5 tests from NativeLayerNorm (0 ms total)
+
+[----------] 1 test from NativeNormalization
+[ RUN      ] NativeNormalization.HalfStorageKeepsParametersAndIndependentInvocations
+[       OK ] NativeNormalization.HalfStorageKeepsParametersAndIndependentInvocations (205 ms)
+[----------] 1 test from NativeNormalization (205 ms total)
+
+[----------] 15 tests from NativeProviderShape
+[ RUN      ] NativeProviderShape.DoesNotMistakeUpperPointSupportForABoundedArtifact
+[       OK ] NativeProviderShape.DoesNotMistakeUpperPointSupportForABoundedArtifact (0 ms)
+[ RUN      ] NativeProviderShape.ExecutesEveryAdmittedDerivedPointWithAndWithoutScale
+[       OK ] NativeProviderShape.ExecutesEveryAdmittedDerivedPointWithAndWithoutScale (0 ms)
+[ RUN      ] NativeProviderShape.OwnsProgramAndAxesAfterSourceMutationAndDestruction
+[       OK ] NativeProviderShape.OwnsProgramAndAxesAfterSourceMutationAndDestruction (0 ms)
+[ RUN      ] NativeProviderShape.RejectsInvalidPointsWithoutMetadataAllocation
+[       OK ] NativeProviderShape.RejectsInvalidPointsWithoutMetadataAllocation (0 ms)
+[ RUN      ] NativeProviderShape.EqualBoundsAreNotEqualSymbolsAndHiddenWidthIsFixed
+[       OK ] NativeProviderShape.EqualBoundsAreNotEqualSymbolsAndHiddenWidthIsFixed (0 ms)
+[ RUN      ] NativeProviderShape.ZeroHiddenWidthRemainsAValidEmptyExecution
+[       OK ] NativeProviderShape.ZeroHiddenWidthRemainsAValidEmptyExecution (0 ms)
+[ RUN      ] NativeProviderShape.BindsMultiplePrefixAxesWithoutChangingTheRowKernel
+[       OK ] NativeProviderShape.BindsMultiplePrefixAxesWithoutChangingTheRowKernel (0 ms)
+[ RUN      ] NativeProviderShape.ConcreteRowsReuseTheExistingExecutorPartition
+[       OK ] NativeProviderShape.ConcreteRowsReuseTheExistingExecutorPartition (0 ms)
+[ RUN      ] NativeProviderShape.OrdinaryExactArtifactsDoNotBecomeDomains
+[       OK ] NativeProviderShape.OrdinaryExactArtifactsDoNotBecomeDomains (0 ms)
+[ RUN      ] NativeProviderShape.EveryColdAllocationFailureCleansUpAndCanRetry
+[       OK ] NativeProviderShape.EveryColdAllocationFailureCleansUpAndCanRetry (0 ms)
+[ RUN      ] NativeProviderShape.IndependentInstancesShareOneImmutableDomain
+[       OK ] NativeProviderShape.IndependentInstancesShareOneImmutableDomain (0 ms)
+[ RUN      ] NativeProviderShape.SuppliedMetadataExecutesAndRetainsItsOwnDescriptors
+[       OK ] NativeProviderShape.SuppliedMetadataExecutesAndRetainsItsOwnDescriptors (0 ms)
+[ RUN      ] NativeProviderShape.SuppliedMetadataAllocationFailureAndOwnerLifetime
+[       OK ] NativeProviderShape.SuppliedMetadataAllocationFailureAndOwnerLifetime (0 ms)
+[ RUN      ] NativeProviderShape.DenseEnvelopeDoesNotProveAStridedFamily
+[       OK ] NativeProviderShape.DenseEnvelopeDoesNotProveAStridedFamily (0 ms)
+[ RUN      ] NativeProviderShape.BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions
+[       OK ] NativeProviderShape.BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions (0 ms)
+[----------] 15 tests from NativeProviderShape (1 ms total)
+
+[----------] 5 tests from NativeMetadataOwner
+[ RUN      ] NativeMetadataOwner.ExactAndDomainArtifactsUseTheirOwnAllocator
+[       OK ] NativeMetadataOwner.ExactAndDomainArtifactsUseTheirOwnAllocator (0 ms)
+[ RUN      ] NativeMetadataOwner.EveryOverrideAllocationCanFailAndRetry
+[       OK ] NativeMetadataOwner.EveryOverrideAllocationCanFailAndRetry (0 ms)
+[ RUN      ] NativeMetadataOwner.InvalidOverrideIsNotSilentlyInherited
+[       OK ] NativeMetadataOwner.InvalidOverrideIsNotSilentlyInherited (0 ms)
+[ RUN      ] NativeMetadataOwner.OrdinaryInvocationKeepsItsSizeAndAllocationCount
+[       OK ] NativeMetadataOwner.OrdinaryInvocationKeepsItsSizeAndAllocationCount (0 ms)
+[ RUN      ] NativeMetadataOwner.ConcurrentInstancesHaveIndependentOwners
+[       OK ] NativeMetadataOwner.ConcurrentInstancesHaveIndependentOwners (0 ms)
+[----------] 5 tests from NativeMetadataOwner (0 ms total)
+
+[----------] 8 tests from PreparedDomainContract
+[ RUN      ] PreparedDomainContract.RequiresInstantiationBeforeAcceptingADomainArtifact
+[       OK ] PreparedDomainContract.RequiresInstantiationBeforeAcceptingADomainArtifact (0 ms)
+[ RUN      ] PreparedDomainContract.RejectsBrokenInstancesAndDestroysOwnedPartials
+[       OK ] PreparedDomainContract.RejectsBrokenInstancesAndDestroysOwnedPartials (0 ms)
+[ RUN      ] PreparedDomainContract.ChecksShapeBeforeCallbackAndInvocationRetainsRoot
+[       OK ] PreparedDomainContract.ChecksShapeBeforeCallbackAndInvocationRetainsRoot (0 ms)
+[ RUN      ] PreparedDomainContract.ConcretePrivateStorageCannotExceedDomainBound
+[       OK ] PreparedDomainContract.ConcretePrivateStorageCannotExceedDomainBound (0 ms)
+[ RUN      ] PreparedDomainContract.SchemaIsRecheckedBeforeAConcreteProviderCallback
+[       OK ] PreparedDomainContract.SchemaIsRecheckedBeforeAConcreteProviderCallback (0 ms)
+[ RUN      ] PreparedDomainContract.RejectsPointOnlyAndInvalidCoverageBeforePreparation
+[       OK ] PreparedDomainContract.RejectsPointOnlyAndInvalidCoverageBeforePreparation (0 ms)
+[ RUN      ] PreparedDomainContract.SuppliedMetadataIsCheckedBeforeTheProvider
+[       OK ] PreparedDomainContract.SuppliedMetadataIsCheckedBeforeTheProvider (0 ms)
+[ RUN      ] PreparedDomainContract.StridedMembershipDoesNotOverrideOperationSchema
+[       OK ] PreparedDomainContract.StridedMembershipDoesNotOverrideOperationSchema (0 ms)
+[----------] 8 tests from PreparedDomainContract (0 ms total)
+
+[----------] 7 tests from NativeReduction
+[ RUN      ] NativeReduction.ExecutesEveryModeAcrossTheLastAxis
+[       OK ] NativeReduction.ExecutesEveryModeAcrossTheLastAxis (0 ms)
+[ RUN      ] NativeReduction.ReducesMultipleAxesWithAndWithoutKeptDimensions
+[       OK ] NativeReduction.ReducesMultipleAxesWithAndWithoutKeptDimensions (0 ms)
+[ RUN      ] NativeReduction.HandlesUnalignedStrideNaNAndSignedZero
+[       OK ] NativeReduction.HandlesUnalignedStrideNaNAndSignedZero (0 ms)
+[ RUN      ] NativeReduction.DefinesEmptyReductionIdentities
+[       OK ] NativeReduction.DefinesEmptyReductionIdentities (0 ms)
+[ RUN      ] NativeReduction.RejectsUnsupportedStorageAndAccumulation
+[       OK ] NativeReduction.RejectsUnsupportedStorageAndAccumulation (0 ms)
+[ RUN      ] NativeReduction.HalfAccumulatesInFloat32AcrossDenseAndStridedAxes
+[       OK ] NativeReduction.HalfAccumulatesInFloat32AcrossDenseAndStridedAxes (0 ms)
+[ RUN      ] NativeReduction.HalfPreservesEmptyAndNonFiniteRules
+[       OK ] NativeReduction.HalfPreservesEmptyAndNonFiniteRules (0 ms)
+[----------] 7 tests from NativeReduction (1 ms total)
+
+[----------] 3 tests from NativeTransform
+[ RUN      ] NativeTransform.ValidatesAndExecutesZeroKernelSliceView
+[       OK ] NativeTransform.ValidatesAndExecutesZeroKernelSliceView (0 ms)
+[ RUN      ] NativeTransform.MaterializesPlainStridedCopy
+[       OK ] NativeTransform.MaterializesPlainStridedCopy (0 ms)
+[ RUN      ] NativeTransform.FillsExactTypedScalarBits
+[       OK ] NativeTransform.FillsExactTypedScalarBits (0 ms)
+[----------] 3 tests from NativeTransform (0 ms total)
+
+[----------] 16 tests from NativeTransformer
+[ RUN      ] NativeTransformer.ExecutesBothRopeLayoutsAndPreservesTheTail
+[       OK ] NativeTransformer.ExecutesBothRopeLayoutsAndPreservesTheTail (0 ms)
+[ RUN      ] NativeTransformer.RopeExercisesVectorBlocksAndPairTail
+[       OK ] NativeTransformer.RopeExercisesVectorBlocksAndPairTail (0 ms)
+[ RUN      ] NativeTransformer.RopeMaterializesPlainStridedInputs
+[       OK ] NativeTransformer.RopeMaterializesPlainStridedInputs (0 ms)
+[ RUN      ] NativeTransformer.SoftmaxSupportsBroadcastMasksScaleAndExactAlias
+[       OK ] NativeTransformer.SoftmaxSupportsBroadcastMasksScaleAndExactAlias (0 ms)
+[ RUN      ] NativeTransformer.LogSoftmaxSupportsANonTrailingAxis
+[       OK ] NativeTransformer.LogSoftmaxSupportsANonTrailingAxis (0 ms)
+[ RUN      ] NativeTransformer.SoftmaxSupportsAdditiveMasksAndUndefinedRows
+[       OK ] NativeTransformer.SoftmaxSupportsAdditiveMasksAndUndefinedRows (0 ms)
+[ RUN      ] NativeTransformer.SdpaExecutesBlockedOnlineSoftmaxInBothLayouts
+[       OK ] NativeTransformer.SdpaExecutesBlockedOnlineSoftmaxInBothLayouts (0 ms)
+[ RUN      ] NativeTransformer.SdpaKeepsBatchAndHeadRowsSeparateInBothLayouts
+[       OK ] NativeTransformer.SdpaKeepsBatchAndHeadRowsSeparateInBothLayouts (0 ms)
+[ RUN      ] NativeTransformer.SdpaUsesBottomRightCausalAndExplicitMasks
+[       OK ] NativeTransformer.SdpaUsesBottomRightCausalAndExplicitMasks (0 ms)
+[ RUN      ] NativeTransformer.SdpaSupportsPlainStridedReferenceInputs
+[       OK ] NativeTransformer.SdpaSupportsPlainStridedReferenceInputs (0 ms)
+[ RUN      ] NativeTransformer.SdpaUsesDisjointWorkspacePerExecutorTask
+[       OK ] NativeTransformer.SdpaUsesDisjointWorkspacePerExecutorTask (0 ms)
+[ RUN      ] NativeTransformer.SdpaDefinesAnEmptyKeyRowAsInvalid
+[       OK ] NativeTransformer.SdpaDefinesAnEmptyKeyRowAsInvalid (0 ms)
+[ RUN      ] NativeTransformer.SdpaDeclinesGroupedHeadsBeforeAnyExecution
+[       OK ] NativeTransformer.SdpaDeclinesGroupedHeadsBeforeAnyExecution (0 ms)
+[ RUN      ] NativeTransformer.SdpaRejectsUnsupportedStorageAndAccumulation
+[       OK ] NativeTransformer.SdpaRejectsUnsupportedStorageAndAccumulation (0 ms)
+[ RUN      ] NativeTransformer.HalfSoftmaxUsesDeclaredWorkspaceAndMaskSemantics
+[       OK ] NativeTransformer.HalfSoftmaxUsesDeclaredWorkspaceAndMaskSemantics (2 ms)
+[ RUN      ] NativeTransformer.EmptyHalfWorkloadRequiresNoWorkspace
+[       OK ] NativeTransformer.EmptyHalfWorkloadRequiresNoWorkspace (0 ms)
+[----------] 16 tests from NativeTransformer (3 ms total)
+
+[----------] Global test environment tear-down
+[==========] 104 tests from 15 test suites ran. (238 ms total)
+[  PASSED  ] 104 tests.

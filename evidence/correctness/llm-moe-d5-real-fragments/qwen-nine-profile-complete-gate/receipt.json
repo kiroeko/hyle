@@ -1,0 +1,372 @@
+{
+  "schema_version": 1,
+  "id": "d5-qwen-nine-profile-complete-gate",
+  "verdict": "RUN_PASS",
+  "scope": "Required ordinary-entry fragments of nine fixed Qwen profiles, four routes, Direct and Graph; not whole-model inference.",
+  "profiles": [
+    "qwen35_2b:official:official-bf16",
+    "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
+    "qwen38_27b:official:official-bf16",
+    "qwen38_27b:primary_gguf:UD-Q4_K_M",
+    "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
+    "qwen38_24t:official:official-bf16",
+    "qwen38_24t:primary_gguf:UD-IQ4_XS",
+    "qwen38_24t:fidelity_gguf:Q8_0"
+  ],
+  "cell_count": 72,
+  "entries": {
+    "cpu:direct": {
+      "candidate": "83be4e1bf1112441c6266edc6dd0551565f87648",
+      "tests": 82,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "cpu-compute_route_cpu.log"
+      ]
+    },
+    "cpu:graph": {
+      "candidate": "83be4e1bf1112441c6266edc6dd0551565f87648",
+      "tests": 97,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "cpu-graph_route_cpu.log"
+      ]
+    },
+    "cuda:direct": {
+      "candidate": "83be4e1bf1112441c6266edc6dd0551565f87648",
+      "tests": 81,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "cuda-compute_route_cuda.log"
+      ]
+    },
+    "cuda:graph": {
+      "candidate": "83be4e1bf1112441c6266edc6dd0551565f87648",
+      "tests": 98,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "cuda-graph_route_cuda.log"
+      ]
+    },
+    "apple:direct": {
+      "candidate": "969c56c05881146efa416e9121c1ee3b462b97ec",
+      "original_candidate": "2ed078cee81c59fbe513e49da33f057f87544587",
+      "tests": 111,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "apple-full.log",
+        "apple-shared-resource-regression.log"
+      ],
+      "reuse": "Full ordinary suite plus native-buffer rollback fix targeted Provider and nine-profile regression. Product inputs otherwise unchanged."
+    },
+    "apple:graph": {
+      "candidate": "969c56c05881146efa416e9121c1ee3b462b97ec",
+      "original_candidate": "2ed078cee81c59fbe513e49da33f057f87544587",
+      "tests": 84,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "apple-full.log",
+        "apple-shared-resource-regression.log"
+      ],
+      "reuse": "Full ordinary suite plus native-buffer rollback fix targeted Provider and nine-profile regression. Product inputs otherwise unchanged."
+    },
+    "vulkan:direct": {
+      "candidate": "cb16f566917bb5d3c6ac3607aa1e1ad49deb5d5c",
+      "verdict": "RUN_PASS_BY_REUSE_AND_CORRECTION",
+      "original_tests": 195,
+      "original_pass": 183,
+      "original_fail": 12,
+      "corrected_tests": 16,
+      "corrected_fail": 0,
+      "covered_original_failures": [
+        "D5FidelityGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0",
+        "D5Official24T/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0",
+        "D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0",
+        "D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/1",
+        "VulkanManaged.D5Qwen35OfficialAllRegionShapesReachMatureProvidersInOneBatch",
+        "VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls",
+        "VulkanQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes",
+        "VulkanQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch",
+        "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback",
+        "VulkanRecurrent.OriginalDirectStateAndIndependentRetainedOutputs",
+        "VulkanRecurrent.PerChannelKdaGateUsesMatureManagedRegion",
+        "VulkanRecurrent.RejectsUnsupportedDomainAndPreservesSuccessfulBinding"
+      ],
+      "logs": [
+        "vulkan-initial-direct.log",
+        "vulkan-direct-correction.log"
+      ],
+      "reuse": "Only active-input span and known recurrent output arity changed; initial whole-suite failure retained, not relabeled as a full rerun."
+    },
+    "vulkan:graph": {
+      "candidate": "cb16f566917bb5d3c6ac3607aa1e1ad49deb5d5c",
+      "tests": 106,
+      "verdict": "RUN_PASS",
+      "logs": [
+        "vulkan-graph-full.log"
+      ]
+    }
+  },
+  "resource": {
+    "apple_static": {
+      "candidate": "877c9f5b0fa641295220e80ae08812248ad63749",
+      "tests": 11,
+      "verdict": "PASS",
+      "log": "apple-static-resource-final-full.log"
+    },
+    "initial_crash": "apple-static-fault.ips",
+    "fix": "Metal exact manifest MB1-MB3: null metadata check and native buffer ownership rollback.",
+    "limits": "Native MTL allocation and residency-set system failures are source-audited, not claimed to be injected. Existing backend-constructor null remains Unavailable; new workspace failures return ResourceExhausted."
+  },
+  "numeric": {
+    "formula": "abs_error <= 2e-6 + 4e-5 * abs(reference)",
+    "ordinary_steps_per_profile": 8,
+    "state": "Actual route output feeds the next invocation; oracle state evolves independently.",
+    "native_probe": "evidence/correctness/llm-moe-d5-real-fragments/native-recurrent-gate-qualification/README.md",
+    "limits": "Independent gate admission was rejected. No generic Softplus precision change. Qualified recurrent domain F32 D128, K16 or equal heads, V16/48/128, one token/sequence."
+  },
+  "coverage": {
+    "R01": "Complete 248320-row vocabulary streaming head and global-row gather, all nine profiles; dense BF16 or exact GGUF roles.",
+    "R02_R03": "Real-width norm/projection/FFN and native stored weight-role recipes; local official 2B checkpoint slices, others fixed-profile synthetic nonzero payloads.",
+    "R04": "Q/K norm, partial RoPE, two-position causal GQA, value/output gate; official and converted GGUF roles separately checked.",
+    "R05": "Connected conv, activation, Q/K normalization and head mapping, raw gate plus original GDN, actual state feedback, output norm/gate. New shared nine-profile test.",
+    "R10_R11": "2.4T full 512-expert/top10 router, changing and near-tied selections, native grouped expert gate/up/down, weighted reduction and shared expert; BF16, IQ4_XS and Q8_0.",
+    "R13": "MTP norm/concat/projection at full 2H-to-H width where declared by the profile.",
+    "R14_R15": "Changed-input replay of prepared artifacts, retained outputs, bounds/invalid expert ID failure publication, teardown and cold allocation suites."
+  },
+  "reuse_sources": [
+    "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json (non-R05 regions only)",
+    "evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-semantic-and-checked-id-batch/receipt.json (non-R05 regions)",
+    "evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-recurrent-boundary/receipt.json (official role input facts only; failed mature gate assertions are superseded by this batch)"
+  ],
+  "selector": "Plans retained. Manually batched owner checks are not a fabricated full selector-run verdict. Dependency lock conservatively selects other products; effective non-Metal source inputs are unchanged by the Metal-only manifest.",
+  "delivery": "VALIDATION_NOT_RUN",
+  "performance": "VALIDATION_NOT_RUN",
+  "pending": [
+    "Other 13 fixed profiles / 104 cells",
+    "D5-A5 source/static/shared external consumers",
+    "D5-A6 applicable P1",
+    "D6 final review"
+  ],
+  "files": {
+    "apple-build.log": {
+      "bytes": 2301,
+      "sha256": "7a775105b07e0a05b0214606262c9cdc04e38e0a691ad8e4730bd5f7e1c53206"
+    },
+    "apple-full.log": {
+      "bytes": 351468,
+      "sha256": "1d1c2ef817b53c5c613b01a0b08732f87abaab2d1da4d0e2394dad900cfc77ad"
+    },
+    "apple-shared-resource-regression.log": {
+      "bytes": 65172,
+      "sha256": "3acf84a6cda4396b96c7ac0a03d2129f662ba648545c1e0c484959865afd3f2e"
+    },
+    "apple-static-fault.ips": {
+      "bytes": 15539,
+      "sha256": "30e899dae3e5e5451411b94d667669348aa32c869950b42519686379a3c45618"
+    },
+    "apple-static-resource-candidate.log": {
+      "bytes": 10716,
+      "sha256": "35bf4f566879a7243630aefa189b8ea061d080cbd104c866bc0636f9eb16fde4"
+    },
+    "apple-static-resource-final-full.log": {
+      "bytes": 28554,
+      "sha256": "271d2ddd626c9c661bb947d7b40b14cb77a9b82a4a79c8b8e68bf768c23f889c"
+    },
+    "apple-static-resource-final.log": {
+      "bytes": 1625,
+      "sha256": "bc821000a8a32e4808685771513e4e240fb2cf80960ad33de339fee981beb999"
+    },
+    "apple-static-resource-fixed.log": {
+      "bytes": 897,
+      "sha256": "027c661bf7af266f2855f963a4b22ae8cf00b9fadb3e52d099e6a1b7bb210fac"
+    },
+    "apple-static-resource-full.log": {
+      "bytes": 28554,
+      "sha256": "7154318f2602dbb8c4ddbf017f1a0d0dced5fe23f0233f779ccac90ea4554cae"
+    },
+    "apple-static-resource-status-full.log": {
+      "bytes": 29750,
+      "sha256": "b7c255e42fc55437e2d785e6a1db4e713a9591dd40065707bc15ccf02fe410e4"
+    },
+    "apple-static-resource-status.log": {
+      "bytes": 30604,
+      "sha256": "88aac18373b14059653f9ae65effcdd1585bf43ab4c39f851d2f21413e25e81d"
+    },
+    "apple-static-resource.log": {
+      "bytes": 33548,
+      "sha256": "593113d367fa55c7f57a3cda56b9df75a1aeae3add9d93a62929c2cadc2f5ac6"
+    },
+    "apple-test.log": {
+      "bytes": 701,
+      "sha256": "0f885cacead71690f6404e6911d69f22cc0d4ed614f438fe7e7d35939be61114"
+    },
+    "cpu-build.log": {
+      "bytes": 6053,
+      "sha256": "ed88fe248ef590bf47c883bd82bb9988bc336edc9d0639c7ea61208672199b7f"
+    },
+    "cpu-compute.log": {
+      "bytes": 11787,
+      "sha256": "13e10aa36faa911387030850276b6691858499d24657fa1976575ae8429985ab"
+    },
+    "cpu-compute_backend_cpu.log": {
+      "bytes": 9818,
+      "sha256": "42d894ea5ae2380cc7ddde24e63f96c854620f97da4931b0424cb25d6518465d"
+    },
+    "cpu-compute_ops.log": {
+      "bytes": 11174,
+      "sha256": "00b7a95d4e0c97cc63b5091b3f9a9f151de15cbf878196cb95276ab051907887"
+    },
+    "cpu-compute_provider_ggml.log": {
+      "bytes": 7053,
+      "sha256": "f4dc992ed5d52154381cfd143727f2b95fd94065fa53ad62cc37a1890753d4c9"
+    },
+    "cpu-compute_provider_native.log": {
+      "bytes": 18365,
+      "sha256": "881f002b6acba0190e05481e08e8da513da508c788e76a2f3145f4f0682463e1"
+    },
+    "cpu-compute_provider_onednn.log": {
+      "bytes": 5124,
+      "sha256": "7e86e1a36a5d9efe3e431bc560515a19b9d4e35d9aae2ccefd58bd0058e92933"
+    },
+    "cpu-compute_route_cpu.log": {
+      "bytes": 17408,
+      "sha256": "c49353657070c2a82e79e9aa12ceae16390c1919f16eb37a8ca5a1e7bead0a14"
+    },
+    "cpu-graph.log": {
+      "bytes": 5605,
+      "sha256": "0a9cb2f813c2ea865ecc6a6b8d4530f0c2c9015bd1d5743a65ffac06b31ad946"
+    },
+    "cpu-graph_executable.log": {
+      "bytes": 48377,
+      "sha256": "80b214a2fea70babe5a0596f351b3a8abdcca6fecb0485d596f785c70df777bb"
+    },
+    "cpu-graph_provider_onednn.log": {
+      "bytes": 3870,
+      "sha256": "f39d6e7881865d64c9c8b280478adcb634f2fed7a60302c4ad254fea86158dd4"
+    },
+    "cpu-graph_route_cpu.log": {
+      "bytes": 20593,
+      "sha256": "9af906b3b7d292c8fef1dbc02702baad0f50b953f84cbb4bc6d7c331f8a21dbb"
+    },
+    "cpu-header-and-onednn-consumers.log": {
+      "bytes": 4399,
+      "sha256": "fd962c40d982bc16e4cd685ca484a92e09bce1e89c506016f9734473b04ba4d7"
+    },
+    "cpu-initial-build.log": {
+      "bytes": 2233,
+      "sha256": "4a11b351608747f2940fb44870605bbc6af5f64af0b201943d1878b87307198a"
+    },
+    "cuda-build.log": {
+      "bytes": 4207,
+      "sha256": "4edb9c4f134522c23151d7aea81e50ac51e9a0b3a029f45dec7841810d4c29a8"
+    },
+    "cuda-compute_backend_cuda.log": {
+      "bytes": 4949,
+      "sha256": "ba5c7a517e5cb4723b0e49a4c1e004b59cce75317476627060feda9dec7ef75b"
+    },
+    "cuda-compute_provider_cublas.log": {
+      "bytes": 1435,
+      "sha256": "ab37cd57824633cf91a3aa9a4f70880e4b58274e99fbca19ca570e5af90a7f00"
+    },
+    "cuda-compute_provider_cuda.log": {
+      "bytes": 8000,
+      "sha256": "9bdd6fee67e8b56c3151b86afd455217940b2fdabb341e009a54a28cfb98ce41"
+    },
+    "cuda-compute_provider_ggml_cuda.log": {
+      "bytes": 6979,
+      "sha256": "5aef0c58ad54d5a62d5fca0ff018a79a3f4008d6abe1577297e04ab425ee94cf"
+    },
+    "cuda-compute_route_cuda.log": {
+      "bytes": 37320,
+      "sha256": "b8ea9f48eeaf2465216f53c30c6f93f643b73d6c997ccdf05452954d9b4c13a1"
+    },
+    "cuda-graph_provider_ggml_cuda.log": {
+      "bytes": 2531,
+      "sha256": "e2e08234c8aca7fd3ccf5c22eceeb0469d2ca0e1955ee7982c42a76a431b4e70"
+    },
+    "cuda-graph_route_cuda.log": {
+      "bytes": 62358,
+      "sha256": "a5c8a1c2b3a786e80bdf17ccb4aab2f3504f3c0248fde9201a18b9e2f983634f"
+    },
+    "cuda-late-failure.log": {
+      "bytes": 338,
+      "sha256": "e9ae2c2acad692719c6a67ceb5a26efffded68d436fa051b6683d5ca8e2aea7c"
+    },
+    "d5-metal-buffer-fix-plan.json": {
+      "bytes": 216605,
+      "sha256": "bbc46475457e5a6d06c41a16898c530fb9ea2d8b478d119228507ccab143198f"
+    },
+    "d5-metal-buffer-shared.py": {
+      "bytes": 1107,
+      "sha256": "47c4a27b2e20baf2f298eaa5c2f083730a03606708779ca7cad9829919bafa8e"
+    },
+    "d5-model-gate-build.py": {
+      "bytes": 1660,
+      "sha256": "cdba873f93d6b29622bec180686690140d5b69f8dc2b8b13a6e4ffae7aeaef03"
+    },
+    "d5-model-gate-final-plan.json": {
+      "bytes": 222027,
+      "sha256": "1c690ae2ef9f667c6e24dd0856cf3320528c621edd0c4c520d08f2b83dc710cb"
+    },
+    "d5-model-gate-metal-static.py": {
+      "bytes": 1289,
+      "sha256": "6bd11423f0e249ac0b89e5c2bd0068f849969cdbbb4e4417c641535997365352"
+    },
+    "d5-model-gate-tests.py": {
+      "bytes": 2167,
+      "sha256": "07ad36455da849922139c4b3f56ed44634181012306315b2ade3f0d84e70e526"
+    },
+    "d5-model-gate-vulkan-followup.py": {
+      "bytes": 1700,
+      "sha256": "3e41fe50f86e9a592530e98e5fd31d066b494691e5e786ef8f46bcddd17c2591"
+    },
+    "vulkan-build.log": {
+      "bytes": 1533,
+      "sha256": "ce6410c713036935bca336070707186a5ee8bcc63687f13d4335e71c1a80bec3"
+    },
+    "vulkan-compute_provider_ggml_vulkan.log": {
+      "bytes": 5589,
+      "sha256": "677e7432f6dd15ec5cd0a36b74b977d07d44e7c077399f1d6556823a17edb530"
+    },
+    "vulkan-compute_provider_iree_vulkan.log": {
+      "bytes": 1596,
+      "sha256": "ba2341faf20acf955a781b81e3f1b2bdeed4fe24cb5c7cb2157cdc807b36cf1e"
+    },
+    "vulkan-compute_route_vulkan.log": {
+      "bytes": 42178,
+      "sha256": "a9b18c09f1ff79a05c7c97002048d395ad326de0ff04aa1ea9a0bc6ca0e0c4e6"
+    },
+    "vulkan-direct-correction.log": {
+      "bytes": 4196,
+      "sha256": "c8f63ba36e05dba6244b97c3404cfc7e33305d56c9601cb714c122a3c1558848"
+    },
+    "vulkan-graph-full.log": {
+      "bytes": 22671,
+      "sha256": "4849f7379cf161150762730a3710f0f4f7d531b7a0b234e3e7b949c059d62600"
+    },
+    "vulkan-initial-build.log": {
+      "bytes": 3147,
+      "sha256": "fd687dc846d9556516bf86071bf8cf07bcd0c3ddcb1c70a85f388d6ebe940211"
+    },
+    "vulkan-initial-direct.log": {
+      "bytes": 42178,
+      "sha256": "a9b18c09f1ff79a05c7c97002048d395ad326de0ff04aa1ea9a0bc6ca0e0c4e6"
+    },
+    "vulkan-validation-layer.log": {
+      "bytes": 685,
+      "sha256": "21bfafa928e51d8abc5e86e62d399fcc3a43d7591ffae5e24d5b90291965fb6d"
+    },
+    "loc.json": {
+      "bytes": 4131,
+      "sha256": "42a4c9e052df9812f227878e6637ab654caa0b791f5565dbd56c16334c8b23e6"
+    }
+  },
+  "implementation_loc": {
+    "lines": 58255,
+    "files": 228,
+    "excludes": "tests, benchmarks, third_party",
+    "tool": "scripts/loc-report.py --self-check",
+    "snapshot": "877c9f5b0"
+  }
+}

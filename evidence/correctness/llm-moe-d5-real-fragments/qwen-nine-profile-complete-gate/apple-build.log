@@ -1,0 +1,22 @@
+[0/2] Re-checking globbed directories...
+[1/22] cd /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/d5-graph-825c41f8/bin/mlx.metallib
+[2/22] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[3/22] Linking CXX shared library bin/libhyle_compute_provider_ggml_metal.0.1.0.dylib
+[4/22] Creating library symlink bin/libhyle_compute_provider_ggml_metal.dylib
+[5/22] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[6/22] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[7/22] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[8/22] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[9/22] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[10/22] Linking CXX shared library bin/libhyle_graph_route_apple.0.1.0.dylib
+[11/22] Creating library symlink bin/libhyle_graph_route_apple.dylib
+[12/22] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/operations_test.cc.o
+[13/22] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/recurrent_test.cc.o
+[14/22] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[15/22] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/graph_test.cc.o
+[16/22] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/recurrent_test.cc.o
+[17/22] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/native_program_test.mm.o
+[18/22] Linking CXX executable bin/hyle_compute_route_apple_test
+[19/22] Linking CXX executable bin/hyle_compute_provider_ggml_metal_test
+[20/22] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[21/22] Linking CXX executable bin/hyle_graph_route_apple_test

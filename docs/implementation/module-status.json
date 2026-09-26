@@ -386,9 +386,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md",
-      "summary": "D5 模型完整门控 AUDITED：独立 gate 数值资格失败，拒绝发布；原版 gate+GDN 的输出/连续状态通过既定门，固定 MG1-MG5 四路线接线，普通 Softplus 不变。"
+      "summary": "MG1-MG5 complete recurrent schema candidate: nine Qwen profiles pass four-route Direct/Graph fragments and actual state feedback; D5 external deliveries and P1 remain pending.",
+      "candidate": "83be4e1bf1112441c6266edc6dd0551565f87648"
     },
     {
       "module": "compute_backend_cpu",
@@ -532,9 +533,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-metal-buffer-failure.md",
-      "summary": "D5 MB1-MB3 audited: repair Metal cold workspace allocation failure and adjacent native buffer ownership rollback; static fault and shared recurrent validation required."
+      "summary": "MB1-MB3 native Metal buffer rollback candidate: static allocation fault suite and shared recurrent regression pass; D5-A5 external deliveries remain pending.",
+      "candidate": "969c56c05881146efa416e9121c1ee3b462b97ec"
     },
     {
       "module": "compute_provider_ggml_cuda",

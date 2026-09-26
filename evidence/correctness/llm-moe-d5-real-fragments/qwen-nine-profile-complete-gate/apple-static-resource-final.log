@@ -1,0 +1,30 @@
+-- HYLE developer factors: requested='compute_provider_ggml_metal' resolved='core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- ggml source: 2263 files, 12 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products= | factors=core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal
+-- Configuring done (2.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/d5-model-gate-metal-static
+[0/2] Re-checking globbed directories...
+[1/3] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/resource_faults_test.mm.o
+[2/3] Linking CXX executable bin/hyle_compute_provider_ggml_metal_test
+ld: warning: ignoring duplicate libraries: 'bin/libggml.a', 'bin/libhyle_error.a', 'bin/libhyle_mem.a'
+Test project /Users/kiro/hyle-scratch/d5-model-gate-metal-static
+    Start 30: hyle_compute_provider_ggml_metal_test
+1/1 Test #30: hyle_compute_provider_ggml_metal_test ...   Passed    0.73 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+compute_provider_ggml_metal    =   0.73 sec*proc (1 test)
+
+Total Test time (real) =   0.73 sec

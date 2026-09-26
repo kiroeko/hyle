@@ -1,0 +1,77 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 31 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 25 tests from GraphBuilder
+[ RUN      ] GraphBuilder.BuildsNaturalMultiNodeTransformerFragment
+[       OK ] GraphBuilder.BuildsNaturalMultiNodeTransformerFragment (0 ms)
+[ RUN      ] GraphBuilder.DescribesAffineQuantizedProjectionWithAllParameterPorts
+[       OK ] GraphBuilder.DescribesAffineQuantizedProjectionWithAllParameterPorts (0 ms)
+[ RUN      ] GraphBuilder.BuildsBoundedSymbolicGraphWithExplicitOutputSpecs
+[       OK ] GraphBuilder.BuildsBoundedSymbolicGraphWithExplicitOutputSpecs (0 ms)
+[ RUN      ] GraphBuilder.RejectsInvalidAndForeignSymbolicDimensions
+[       OK ] GraphBuilder.RejectsInvalidAndForeignSymbolicDimensions (0 ms)
+[ RUN      ] GraphBuilder.DerivedDimensionsShareFiniteProgramAndRemainGraphLocal
+[       OK ] GraphBuilder.DerivedDimensionsShareFiniteProgramAndRemainGraphLocal (0 ms)
+[ RUN      ] GraphBuilder.ShapeGrowthFailureLeavesNoHalfDimensionOrGuard
+[       OK ] GraphBuilder.ShapeGrowthFailureLeavesNoHalfDimensionOrGuard (0 ms)
+[ RUN      ] GraphBuilder.FixedSpecsShareConcreteValidationAndInference
+[       OK ] GraphBuilder.FixedSpecsShareConcreteValidationAndInference (0 ms)
+[ RUN      ] GraphBuilder.SupportsBranchesSharedValuesAndMultipleOutputs
+[       OK ] GraphBuilder.SupportsBranchesSharedValuesAndMultipleOutputs (0 ms)
+[ RUN      ] GraphBuilder.RepresentsConstantsGeneralArityAndMultiResultNodes
+[       OK ] GraphBuilder.RepresentsConstantsGeneralArityAndMultiResultNodes (0 ms)
+[ RUN      ] GraphBuilder.PublishesInputAndConstantWithoutManufacturingNodes
+[       OK ] GraphBuilder.PublishesInputAndConstantWithoutManufacturingNodes (0 ms)
+[ RUN      ] GraphBuilder.RequiresExplicitOrderingBetweenExternalEffects
+[       OK ] GraphBuilder.RequiresExplicitOrderingBetweenExternalEffects (0 ms)
+[ RUN      ] GraphBuilder.ResourceDomainsMustOrderUnknownEffectsInBothDirections
+[       OK ] GraphBuilder.ResourceDomainsMustOrderUnknownEffectsInBothDirections (0 ms)
+[ RUN      ] GraphBuilder.IndependentDomainsAndSameDomainReadersNeedNoArtificialEdges
+[       OK ] GraphBuilder.IndependentDomainsAndSameDomainReadersNeedNoArtificialEdges (0 ms)
+[ RUN      ] GraphBuilder.EveryConflictingAccessPairRequiresOrderAndBindingsAreFallible
+[       OK ] GraphBuilder.EveryConflictingAccessPairRequiresOrderAndBindingsAreFallible (0 ms)
+[ RUN      ] GraphBuilder.WriterMustJoinAllReadersNotJustTheLatestOrdinal
+[       OK ] GraphBuilder.WriterMustJoinAllReadersNotJustTheLatestOrdinal (0 ms)
+[ RUN      ] GraphBuilder.ResourceRebindingAndRepeatedPortsDoNotCreateNewDomains
+[       OK ] GraphBuilder.ResourceRebindingAndRepeatedPortsDoNotCreateNewDomains (0 ms)
+[ RUN      ] GraphBuilder.ResourceOrderingMatchesPairwiseDagOracle
+[       OK ] GraphBuilder.ResourceOrderingMatchesPairwiseDagOracle (1 ms)
+[ RUN      ] GraphBuilder.ResourceBindingAllocationFailureLeavesNodeRetryable
+[       OK ] GraphBuilder.ResourceBindingAllocationFailureLeavesNodeRetryable (0 ms)
+[ RUN      ] GraphBuilder.EffectAnalysisAllocationFailuresLeaveTheBuilderRetryable
+[       OK ] GraphBuilder.EffectAnalysisAllocationFailuresLeaveTheBuilderRetryable (0 ms)
+[ RUN      ] GraphBuilder.SymbolicOutputCannotBypassResourceSchemaValidation
+[       OK ] GraphBuilder.SymbolicOutputCannotBypassResourceSchemaValidation (0 ms)
+[ RUN      ] GraphBuilder.PreservesProviderNeutralBlockedWeightMetadata
+[       OK ] GraphBuilder.PreservesProviderNeutralBlockedWeightMetadata (0 ms)
+[ RUN      ] GraphBuilder.RejectsForeignIdsAndShapeErrorsWithoutLogicalMutation
+[       OK ] GraphBuilder.RejectsForeignIdsAndShapeErrorsWithoutLogicalMutation (0 ms)
+[ RUN      ] GraphBuilder.OutputRoleAndPublicationAreExplicit
+[       OK ] GraphBuilder.OutputRoleAndPublicationAreExplicit (0 ms)
+[ RUN      ] GraphBuilder.MoveAndGraphCopiesPreserveOriginAndLifetime
+[       OK ] GraphBuilder.MoveAndGraphCopiesPreserveOriginAndLifetime (0 ms)
+[ RUN      ] GraphBuilder.AllocationFailureDoesNotPublishPartialLogicalState
+[       OK ] GraphBuilder.AllocationFailureDoesNotPublishPartialLogicalState (0 ms)
+[----------] 25 tests from GraphBuilder (2 ms total)
+
+[----------] 1 test from Graph
+[ RUN      ] Graph.InvalidOutOfRangeAndForeignQueriesAreRecoverable
+[       OK ] Graph.InvalidOutOfRangeAndForeignQueriesAreRecoverable (0 ms)
+[----------] 1 test from Graph (0 ms total)
+
+[----------] 5 tests from GraphViewSpec
+[ RUN      ] GraphViewSpec.ValidatesStaticContractsAndOutputOnlyLayouts
+[       OK ] GraphViewSpec.ValidatesStaticContractsAndOutputOnlyLayouts (0 ms)
+[ RUN      ] GraphViewSpec.LogicalIntrospectionDoesNotInventAConcreteOperation
+[       OK ] GraphViewSpec.LogicalIntrospectionDoesNotInventAConcreteOperation (0 ms)
+[ RUN      ] GraphViewSpec.ConcreteCallsUseTheExistingViewSchemaImmediately
+[       OK ] GraphViewSpec.ConcreteCallsUseTheExistingViewSchemaImmediately (0 ms)
+[ RUN      ] GraphViewSpec.RejectsForeignParametersAndInvalidAxesTransactionally
+[       OK ] GraphViewSpec.RejectsForeignParametersAndInvalidAxesTransactionally (0 ms)
+[ RUN      ] GraphViewSpec.AllocationFailureDoesNotAppendAHalfView
+[       OK ] GraphViewSpec.AllocationFailureDoesNotAppendAHalfView (0 ms)
+[----------] 5 tests from GraphViewSpec (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 31 tests from 3 test suites ran. (2 ms total)
+[  PASSED  ] 31 tests.

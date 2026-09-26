@@ -1,0 +1,147 @@
+{"app_name":"hyle_compute_provider_ggml_metal_test","timestamp":"2026-09-26 15:39:49.00 +0800","app_version":"","slice_uuid":"be584eea-e756-3990-91ce-20db0d5dc080","build_version":"","platform":1,"share_with_app_devs":0,"is_first_party":1,"bug_type":"309","os_version":"macOS 27.0 (26A428)","roots_installed":0,"incident_id":"37FFB8CF-9370-4B00-B582-27E3B90A1FF1","name":"hyle_compute_provider_ggml_metal_test"}
+{
+  "uptime" : 930000,
+  "procRole" : "Unspecified",
+  "version" : 2,
+  "userID" : 501,
+  "deployVersion" : 210,
+  "modelCode" : "Mac16,12",
+  "coalitionID" : 58224,
+  "osVersion" : {
+    "train" : "macOS 27.0",
+    "build" : "26A428",
+    "releaseType" : "User"
+  },
+  "captureTime" : "2026-09-26 15:39:48.8929 +0800",
+  "codeSigningMonitor" : 2,
+  "incident" : "37FFB8CF-9370-4B00-B582-27E3B90A1FF1",
+  "pid" : 11180,
+  "translated" : false,
+  "cpuType" : "ARM-64",
+  "procLaunch" : "2026-09-26 15:39:34.3778 +0800",
+  "procStartAbsTime" : 22473434190639,
+  "procExitAbsTime" : 22473781114487,
+  "procName" : "hyle_compute_provider_ggml_metal_test",
+  "procPath" : "\/Users\/USER\/*\/hyle_compute_provider_ggml_metal_test",
+  "parentProc" : "Exited process",
+  "parentPid" : 10352,
+  "coalitionName" : "com.openssh.sshd.9954A81A-C113-4F9B-9884-F3CB6936FE5F",
+  "crashReporterKey" : "0A0FDC56-CED4-9327-8D50-147A592689A9",
+  "chargingStatus" : {"externalSourceConnected":true},
+  "developerMode" : 1,
+  "responsiblePid" : 10348,
+  "codeSigningID" : "hyle_compute_provider_ggml_metal_test",
+  "codeSigningTeamID" : "",
+  "codeSigningFlags" : 570556929,
+  "codeSigningValidationCategory" : 10,
+  "codeSigningTrustLevel" : 4294967295,
+  "codeSigningAuxiliaryInfo" : 0,
+  "instructionByteStream" : {"beforePC":"CgAAFAgAgBIIAAC5QBgAkADAP5EIAED5AAE\/1hMAgNIoAIBSCAAAuQ==","atPC":"dBYD+aADgFIoHASUqArAmgjVAJsJAAjLHwEA8egDiZoXARWL1gIANA=="},
+  "bootSessionUUID" : "045FE0F1-57C4-4CFA-A344-4E8C83D0734A",
+  "sip" : "enabled",
+  "vmRegionInfo" : "0x628 is not in any region.  Bytes before following region: 4364138968\n      REGION TYPE                    START - END         [ VSIZE] PRT\/MAX SHRMOD  REGION DETAIL\n      UNUSED SPACE AT START\n--->  \n      __TEXT                      1041f8000-10434c000    [ 1360K] r-x\/r-x SM=COW  \/Users\/USER\/*\/hyle_compute_provider_ggml_metal_test",
+  "exception" : {"codes":"0x0000000000000001, 0x0000000000000628","rawCodes":[1,1576],"type":"EXC_BAD_ACCESS","signal":"SIGSEGV","subtype":"KERN_INVALID_ADDRESS at 0x0000000000000628"},
+  "termination" : {"flags":0,"code":11,"namespace":"SIGNAL","indicator":"Segmentation fault: 11","byProc":"exc handler","byPid":11180},
+  "vmregioninfo" : "0x628 is not in any region.  Bytes before following region: 4364138968\n      REGION TYPE                    START - END         [ VSIZE] PRT\/MAX SHRMOD  REGION DETAIL\n      UNUSED SPACE AT START\n--->  \n      __TEXT                      1041f8000-10434c000    [ 1360K] r-x\/r-x SM=COW  \/Users\/USER\/*\/hyle_compute_provider_ggml_metal_test",
+  "extMods" : {"caller":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"system":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"targeted":{"thread_create":0,"thread_set_state":0,"task_for_pid":0},"warnings":0},
+  "faultingThread" : 0,
+  "threads" : [{"triggered":true,"id":9761820,"threadState":{"x":[{"value":4374668528},{"value":64},{"value":1},{"value":5754183222768},{"value":0},{"value":0},{"value":519945617408},{"value":18446744072367376383},{"value":1},{"value":2},{"value":0},{"value":2},{"value":0},{"value":0},{"value":4365548360,"symbolLocation":0,"symbol":"type_traits"},{"value":1},{"value":32},{"value":4374668496},{"value":0},{"value":0},{"value":4374754864},{"value":64},{"value":1},{"value":5754183225328},{"value":5754183224224},{"value":519926278216},{"value":6102738224},{"value":519942931296},{"value":519944028320}],"flavor":"ARM_THREAD_STATE64","lr":{"value":4364227068},"cpsr":{"value":1610612736},"fp":{"value":6102737520},"sp":{"value":6102737408},"esr":{"value":2449473606,"description":"(Data Abort) byte write Translation fault"},"pc":{"value":4364227080,"matchesCrashFrame":1},"far":{"value":1576}},"queue":"com.apple.main-thread","frames":[{"imageOffset":86536,"symbol":"ggml_metal_buffer_init","symbolLocation":292,"imageIndex":0},{"imageOffset":362720,"symbol":"ggml_backend_metal_buffer_type_shared_alloc_buffer(ggml_backend_buffer_type*, unsigned long)","symbolLocation":44,"imageIndex":0},{"imageOffset":135380,"symbol":"hyle::compute::ggml_metal::NativeProgram::create(hyle::compute::Operation, std::__1::span<hyle::compute::TensorDesc const, 18446744073709551615ul>, hyle::mem::AllocatorRef)","symbolLocation":1984,"imageIndex":0},{"imageOffset":101724,"symbol":"(anonymous namespace)::check_cold_allocations(hyle::compute::Operation, std::__1::span<hyle::compute::TensorDesc const, 18446744073709551615ul>)","symbolLocation":504,"imageIndex":0},{"imageOffset":108476,"symbol":"(anonymous namespace)::GgmlMetalFaults_CompleteGateColdWorkspaceAllocationsRollBack_Test::TestBody()","symbolLocation":1024,"imageIndex":0},{"imageOffset":955812,"symbol":"void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*)","symbolLocation":132,"imageIndex":0},{"imageOffset":955508,"symbol":"testing::Test::Run()","symbolLocation":220,"imageIndex":0},{"imageOffset":960944,"symbol":"testing::TestInfo::Run()","symbolLocation":360,"imageIndex":0},{"imageOffset":965160,"symbol":"testing::TestSuite::Run()","symbolLocation":972,"imageIndex":0},{"imageOffset":1045768,"symbol":"testing::internal::UnitTestImpl::RunAllTests()","symbolLocation":2580,"imageIndex":0},{"imageOffset":1042788,"symbol":"bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*)","symbolLocation":132,"imageIndex":0},{"imageOffset":1042604,"symbol":"testing::UnitTest::Run()","symbolLocation":124,"imageIndex":0},{"imageOffset":139960,"symbol":"main","symbolLocation":68,"imageIndex":0},{"imageOffset":204416,"symbol":"start","symbolLocation":6688,"imageIndex":1}]},{"id":9761836,"threadState":{"x":[{"value":4},{"value":0},{"value":1},{"value":1},{"value":0},{"value":5000000},{"value":0},{"value":0},{"value":8608621512,"symbolLocation":0,"symbol":"clock_sem"},{"value":3},{"value":17},{"value":2},{"value":1},{"value":519942734016},{"value":72057602646691617,"symbolLocation":72057594037927937,"symbol":"OBJC_CLASS_$_NSLock"},{"value":8608763680,"symbolLocation":0,"symbol":"OBJC_CLASS_$_NSLock"},{"value":334},{"value":8638182720},{"value":0},{"value":0},{"value":6103871088},{"value":4294967295},{"value":1000},{"value":284},{"value":6103871712},{"value":18446744073709551615},{"value":4293984255},{"value":0},{"value":4}],"flavor":"ARM_THREAD_STATE64","lr":{"value":6900887636},"cpsr":{"value":2684354560},"fp":{"value":6103871072},"sp":{"value":6103871024},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6902104840},"far":{"value":0}},"queue":"com.apple.root.default-qos","frames":[{"imageOffset":17160,"symbol":"__semwait_signal","symbolLocation":8,"imageIndex":3},{"imageOffset":57428,"symbol":"nanosleep","symbolLocation":220,"imageIndex":4},{"imageOffset":57196,"symbol":"usleep","symbolLocation":68,"imageIndex":4},{"imageOffset":78012,"symbol":"__ggml_metal_rsets_init_block_invoke","symbolLocation":124,"imageIndex":0},{"imageOffset":6708,"symbol":"_dispatch_call_block_and_release","symbolLocation":32,"imageIndex":5},{"imageOffset":112032,"symbol":"_dispatch_client_callout","symbolLocation":16,"imageIndex":5},{"imageOffset":234308,"symbol":"<deduplicated_symbol>","symbolLocation":76,"imageIndex":5},{"imageOffset":80904,"symbol":"_dispatch_root_queue_drain","symbolLocation":708,"imageIndex":5},{"imageOffset":82504,"symbol":"_dispatch_worker_thread2","symbolLocation":184,"imageIndex":5},{"imageOffset":12128,"symbol":"_pthread_wqthread","symbolLocation":232,"imageIndex":6},{"imageOffset":7392,"symbol":"start_wqthread","symbolLocation":8,"imageIndex":6}]},{"id":9761844,"frames":[],"threadState":{"x":[{"value":6107312128},{"value":13827},{"value":6106775552},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6107312128},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6902353112},"far":{"value":0}}},{"id":9761848,"frames":[],"threadState":{"x":[{"value":6109605888},{"value":13315},{"value":6109069312},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6109605888},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6902353112},"far":{"value":0}}},{"id":9761868,"frames":[],"threadState":{"x":[{"value":6120501248},{"value":28675},{"value":6119964672},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6120501248},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6902353112},"far":{"value":0}}},{"id":9761871,"frames":[],"threadState":{"x":[{"value":6122221568},{"value":27907},{"value":6121684992},{"value":0},{"value":409604},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6122221568},"esr":{"value":1442840704,"description":"(Syscall)"},"pc":{"value":6902353112},"far":{"value":0}}},{"id":9761872,"frames":[],"threadState":{"x":[{"value":6122795008},{"value":0},{"value":6122258432},{"value":0},{"value":278532},{"value":18446744073709551615},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0},{"value":0}],"flavor":"ARM_THREAD_STATE64","lr":{"value":0},"cpsr":{"value":0},"fp":{"value":0},"sp":{"value":6122795008},"esr":{"value":0},"pc":{"value":6902353112},"far":{"value":0}}}],
+  "usedImages" : [
+  {
+    "source" : "P",
+    "arch" : "arm64",
+    "base" : 4364140544,
+    "size" : 1392640,
+    "uuid" : "be584eea-e756-3990-91ce-20db0d5dc080",
+    "path" : "\/Users\/USER\/*\/hyle_compute_provider_ggml_metal_test",
+    "name" : "hyle_compute_provider_ggml_metal_test"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6898147328,
+    "size" : 784100,
+    "uuid" : "d341ddcb-7969-3a9c-8e03-0cf4751398a9",
+    "path" : "\/usr\/lib\/dyld",
+    "name" : "dyld"
+  },
+  {
+    "size" : 0,
+    "source" : "A",
+    "base" : 0,
+    "uuid" : "00000000-0000-0000-0000-000000000000"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6902087680,
+    "size" : 256428,
+    "uuid" : "f63bf418-8f75-34a4-aaf1-8caf2b9b6a05",
+    "path" : "\/usr\/lib\/system\/libsystem_kernel.dylib",
+    "name" : "libsystem_kernel.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6900830208,
+    "size" : 535716,
+    "uuid" : "fba7b23e-aa60-3a90-9aa4-a7a2e0ad63ee",
+    "path" : "\/usr\/lib\/system\/libsystem_c.dylib",
+    "name" : "libsystem_c.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6900527104,
+    "size" : 287136,
+    "uuid" : "022bf08f-0b3a-3225-9e65-16d1553ce90d",
+    "path" : "\/usr\/lib\/system\/libdispatch.dylib",
+    "name" : "libdispatch.dylib"
+  },
+  {
+    "source" : "P",
+    "arch" : "arm64e",
+    "base" : 6902345728,
+    "size" : 51484,
+    "uuid" : "5a1828c3-cbc2-3b85-bd07-c8ed10021a41",
+    "path" : "\/usr\/lib\/system\/libsystem_pthread.dylib",
+    "name" : "libsystem_pthread.dylib"
+  }
+],
+  "sharedCache" : {
+  "base" : 6893404160,
+  "size" : 7410352128,
+  "uuid" : "ea2c265e-297c-39c2-8646-7d8a2dff648a"
+},
+  "vmSummary" : "ReadOnly portion of Libraries: Total=1.9G resident=0K(0%) swapped_out_or_unallocated=1.9G(100%)\nWritable regions: Total=1.2G written=641K(0%) resident=641K(0%) swapped_out=0K(0%) unallocated=1.2G(100%)\n\n                                VIRTUAL   REGION \nREGION TYPE                        SIZE    COUNT (non-coalesced) \n===========                     =======  ======= \nActivity Tracing                   256K        1 \nDeferred Reclaim                  64.0M        1 \nGuard                            385.0G        1 \nIOAccelerator                    132.3M        3 \nIOAccelerator (reserved)         896.0M        1         reserved VM address space (unallocated)\nMalloc                           101.6M       26 \nMalloc Guard Page                 3808K        4 \nOS Alloc Once                       32K        1 \nStack                             67.2M        7 \nStack Guard                        112K        7 \nUntagged                            16K        1 \n__AUTH                            1996K      221 \n__AUTH_CONST                      34.0M      399 \n__CTF                               824        1 \n__DATA                            8880K      406 \n__DATA_CONST                      23.7M      397 \n__DATA_DIRTY                      2145K      351 \n__FONT_DATA                        2352        1 \n__LINKEDIT                         1.6G        2 \n__OBJC_RO                        118.0M        1 \n__OBJC_RW                         2735K        1 \n__TEXT                           389.8M      470 \n__TPRO_CONST                       132K        4 \nmapped file                        1.1G        8 \npage table in kernel               641K        1 \nshared memory                      720K       12 \n===========                     =======  ======= \nTOTAL                            389.5G     2328 \nTOTAL, minus reserved VM space   388.6G     2328 \n",
+  "legacyInfo" : {
+  "threadTriggered" : {
+    "queue" : "com.apple.main-thread"
+  }
+},
+  "logWritingSignature" : "5304eae273f3faf74bfd5b1e76c75decffa8fdeb",
+  "bug_type" : "309",
+  "roots_installed" : 0,
+  "trmStatus" : 1,
+  "trialInfo" : {
+  "rollouts" : [
+    {
+      "rolloutId" : "6785b622614dbd65bffd025a",
+      "factorPackIds" : [
+
+      ],
+      "deploymentId" : 240000017
+    },
+    {
+      "rolloutId" : "63508950b3714d3622fc77f7",
+      "factorPackIds" : [
+        "6526e111d0c9ce2f459b54a8"
+      ],
+      "deploymentId" : 240000015
+    }
+  ],
+  "experiments" : [
+
+  ]
+}
+}

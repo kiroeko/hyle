@@ -1,0 +1,49 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 20 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 20 tests from OneDnnRegionProvider
+[ RUN      ] OneDnnRegionProvider.ExecutesExactGatedMlpAndReportsItsCosts
+[       OK ] OneDnnRegionProvider.ExecutesExactGatedMlpAndReportsItsCosts (1 ms)
+[ RUN      ] OneDnnRegionProvider.SupportsDecodeAndNonTileMultipleShapes
+[       OK ] OneDnnRegionProvider.SupportsDecodeAndNonTileMultipleShapes (2 ms)
+[ RUN      ] OneDnnRegionProvider.RegionAndExplicitLeafExecutionPreserveResults
+[       OK ] OneDnnRegionProvider.RegionAndExplicitLeafExecutionPreserveResults (0 ms)
+[ RUN      ] OneDnnRegionProvider.MaterializesWeightsBeforeSourceRelease
+[       OK ] OneDnnRegionProvider.MaterializesWeightsBeforeSourceRelease (0 ms)
+[ RUN      ] OneDnnRegionProvider.LimitedRegionDiscoveryRetainsCorrectLeafExecution
+[       OK ] OneDnnRegionProvider.LimitedRegionDiscoveryRetainsCorrectLeafExecution (0 ms)
+[ RUN      ] OneDnnRegionProvider.MatchesDataflowWithUnrelatedAndReorderedNodes
+[       OK ] OneDnnRegionProvider.MatchesDataflowWithUnrelatedAndReorderedNodes (0 ms)
+[ RUN      ] OneDnnRegionProvider.DoesNotFuseAcrossAControlDependencyReentry
+[       OK ] OneDnnRegionProvider.DoesNotFuseAcrossAControlDependencyReentry (0 ms)
+[ RUN      ] OneDnnRegionProvider.DoesNotInterceptSingleOperationPreparation
+[       OK ] OneDnnRegionProvider.DoesNotInterceptSingleOperationPreparation (0 ms)
+[ RUN      ] OneDnnRegionProvider.RejectsPublishedIntermediateWithoutForcedFusion
+[       OK ] OneDnnRegionProvider.RejectsPublishedIntermediateWithoutForcedFusion (0 ms)
+[ RUN      ] OneDnnRegionProvider.ExtraIntermediateConsumerIsNotForcedIntoRegion
+[       OK ] OneDnnRegionProvider.ExtraIntermediateConsumerIsNotForcedIntoRegion (0 ms)
+[ RUN      ] OneDnnRegionProvider.ExplicitlyDisabledRegionsUseTheConfiguredLeafProviders
+[       OK ] OneDnnRegionProvider.ExplicitlyDisabledRegionsUseTheConfiguredLeafProviders (0 ms)
+[ RUN      ] OneDnnRegionProvider.ComposesAfterRmsNormAsOneMixedExecutionPlan
+[       OK ] OneDnnRegionProvider.ComposesAfterRmsNormAsOneMixedExecutionPlan (0 ms)
+[ RUN      ] OneDnnRegionProvider.MixedDecodeReselectsByRealWorkspaceAndRetainsOwners
+[       OK ] OneDnnRegionProvider.MixedDecodeReselectsByRealWorkspaceAndRetainsOwners (0 ms)
+[ RUN      ] OneDnnRegionProvider.MixedPrefillKeepsFeasibleRegionUnderRealWorkspaceLimit
+[       OK ] OneDnnRegionProvider.MixedPrefillKeepsFeasibleRegionUnderRealWorkspaceLimit (0 ms)
+[ RUN      ] OneDnnRegionProvider.WarmSubmitDoesNotGrowContextMetadata
+[       OK ] OneDnnRegionProvider.WarmSubmitDoesNotGrowContextMetadata (0 ms)
+[ RUN      ] OneDnnRegionProvider.BorrowedNestedExecutorRunsTwoEpisodes
+[       OK ] OneDnnRegionProvider.BorrowedNestedExecutorRunsTwoEpisodes (0 ms)
+[ RUN      ] OneDnnRegionProvider.SharedExecutableSupportsConcurrentInvocations
+[       OK ] OneDnnRegionProvider.SharedExecutableSupportsConcurrentInvocations (0 ms)
+[ RUN      ] OneDnnRegionProvider.DiscoveryUsesCompilerScratchAndRollsBackEveryFailure
+[       OK ] OneDnnRegionProvider.DiscoveryUsesCompilerScratchAndRollsBackEveryFailure (0 ms)
+[ RUN      ] OneDnnRegionProvider.EveryCompileAllocationFailureRollsBackAndRetries
+[       OK ] OneDnnRegionProvider.EveryCompileAllocationFailureRollsBackAndRetries (5 ms)
+[ RUN      ] OneDnnRegionProvider.EveryInvocationAllocationFailureRollsBackAndRetries
+[       OK ] OneDnnRegionProvider.EveryInvocationAllocationFailureRollsBackAndRetries (0 ms)
+[----------] 20 tests from OneDnnRegionProvider (15 ms total)
+
+[----------] Global test environment tear-down
+[==========] 20 tests from 1 test suite ran. (15 ms total)
+[  PASSED  ] 20 tests.
