@@ -4,6 +4,7 @@
 #include <array>
 #include <climits>
 
+#include "explicit_rope.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
@@ -672,21 +673,10 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
-    auto *data = values[node.inputs[0]];
-    if (data->type == GGML_TYPE_BF16)
-      data = as_float(context, data);
-    auto *positions = values[node.inputs[1]];
-    auto *frequencies = values[node.inputs[2]];
-    auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
-    constants.push_back({one, 1.0F});
-    auto *factors =
-        ggml_div(context, ggml_repeat(context, one, frequencies), frequencies);
-    const int mode = rope->layout == RopeLayout::kInterleaved
-                         ? GGML_ROPE_TYPE_NORMAL
-                         : GGML_ROPE_TYPE_NEOX;
-    result = ggml_rope_ext(context, data, positions, factors,
-                           static_cast<int>(rope->rotary_dimensions), mode, 0,
-                           1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
+    result = ggml_runtime::explicit_rope(
+        context, values[node.inputs[0]], values[node.inputs[1]],
+        values[node.inputs[2]], rope->rotary_dimensions,
+        rope->layout == RopeLayout::kInterleaved);
   } else if (node.operation.get_if<Hadamard>()) {
     const auto width = columns(output);
     if (hadamard.size() != static_cast<std::size_t>(width * width))

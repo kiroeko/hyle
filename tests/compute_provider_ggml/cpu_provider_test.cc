@@ -1614,6 +1614,52 @@ TEST(GgmlCpuProvider, Bfloat16AndFloatRopeMatchQualifiedUpstreamTypes) {
   rope_type_boundary<float>(RopeLayout::kHalfSplit);
 }
 
+TEST(GgmlCpuProvider, ExplicitRopePreservesLongPositionPhaseAndPartialTail) {
+  const auto data_desc = dense(DataType::kFloat32, {2, 3, 2, 10});
+  const auto position_desc = dense(DataType::kInt32, {3});
+  const auto frequency_desc = dense(DataType::kFloat32, {4});
+  const std::array<std::int32_t, 3> position_values{0, 2380, 65536};
+  const std::array<float, 4> frequency_values{0.4728708267211914F, -0.25F,
+                                             0.0F, 0.00137F};
+  std::array<float, 120> values{};
+  for (std::size_t i = 0; i < values.size(); ++i)
+    values[i] = static_cast<float>(static_cast<int>(i % 29) - 14) / 8.0F;
+  auto data = half_test::buffer<float>(values);
+  auto positions = half_test::buffer<std::int32_t>(position_values);
+  auto frequencies = half_test::buffer<float>(frequency_values);
+  auto output = output_buffer(data_desc);
+  const std::array inputs{
+      ConstTensorView::create(data_desc, data.view()).value(),
+      ConstTensorView::create(position_desc, positions.view()).value(),
+      ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  for (auto layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
+    SCOPED_TRACE(static_cast<int>(layout));
+    ASSERT_TRUE(execute(context,
+                        RoPE{.rotary_dimensions = 8,
+                             .sequence_axis = 1,
+                             .layout = layout},
+                        inputs,
+                        TensorView::create(data_desc, output.view()).value())
+                    .ok());
+    const auto actual = half_test::read<float>(output);
+    for (std::size_t row = 0; row < values.size() / 10; ++row) {
+      for (std::size_t pair = 0; pair < 4; ++pair) {
+        const auto first = row * 10 +
+                           (layout == RopeLayout::kInterleaved ? 2 * pair : pair);
+        const auto second = first + (layout == RopeLayout::kInterleaved ? 1 : 4);
+        const double phase = static_cast<float>(position_values[(row / 2) % 3]) *
+                             frequency_values[pair];
+        const double a = values[first], b = values[second];
+        EXPECT_NEAR(actual[first], a * std::cos(phase) - b * std::sin(phase), 1e-5);
+        EXPECT_NEAR(actual[second], a * std::sin(phase) + b * std::cos(phase), 1e-5);
+      }
+      EXPECT_EQ(actual[row * 10 + 8], values[row * 10 + 8]);
+      EXPECT_EQ(actual[row * 10 + 9], values[row * 10 + 9]);
+    }
+  }
+}
+
 TEST(GgmlCpuProvider, NativeQ4KMatMulImportsGgufBytesAndReplays) {
   constexpr std::int64_t rows = 2;
   constexpr std::int64_t reduction = 256;

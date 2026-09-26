@@ -8,5 +8,7 @@ endif()
 # Locked vendor source and metadata storage are owned by compute_ggml_runtime.
 hyle_add_module(compute_provider_ggml_vulkan
   SOURCES native_device.cc native_graph.cc region.cc)
+target_include_directories(hyle_compute_provider_ggml_vulkan PRIVATE
+  "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
 target_link_libraries(hyle_compute_provider_ggml_vulkan PRIVATE ggml
   "$<BUILD_INTERFACE:Vulkan-Headers>")

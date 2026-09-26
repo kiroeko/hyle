@@ -9,6 +9,7 @@
 
 #include "ggml-backend.h"
 #include "ggml.h"
+#include "explicit_rope.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
@@ -784,15 +785,9 @@ Result<Region> Region::create(NativeDevice device,
         output = product->type == target ? product
                                          : ggml_cast(context, product, target);
       } else if (const auto *rope = node.operation.get_if<RoPE>()) {
-        auto *frequencies = arguments[2];
-        auto *factors = ggml_div(context, ggml_fill(context, frequencies, 1.0F),
-                                 frequencies);
-        output = ggml_rope_ext(context, left, arguments[1], factors,
-                               static_cast<int>(rope->rotary_dimensions),
-                               rope->layout == RopeLayout::kInterleaved
-                                   ? GGML_ROPE_TYPE_NORMAL
-                                   : GGML_ROPE_TYPE_NEOX,
-                               0, 1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
+        output = ggml_runtime::explicit_rope(
+            context, left, arguments[1], arguments[2], rope->rotary_dimensions,
+            rope->layout == RopeLayout::kInterleaved);
       } else if (node.operation.get_if<Hadamard>()) {
         const auto width = recipe.values[node.inputs[0]].dimensions().back();
         auto *source = left->type == GGML_TYPE_F32

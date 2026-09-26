@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "cpu_execution.h"
+#include "explicit_rope.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
@@ -590,22 +591,10 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       return {};
     (void)matmul;
   } else if (const auto *rope = node.operation.get_if<RoPE>()) {
-    auto *values = invocation.values[node.inputs[0]];
-    if (values->type == GGML_TYPE_BF16)
-      values = as_float(context, values);
-    auto *positions = invocation.values[node.inputs[1]];
-    auto *frequencies = invocation.values[node.inputs[2]];
-    auto *one = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
-    one->data = &program.one;
-    auto *factors =
-        ggml_div(context, ggml_repeat(context, one, frequencies), frequencies);
-    const int mode = rope->layout == RopeLayout::kInterleaved
-                         ? GGML_ROPE_TYPE_NORMAL
-                         : GGML_ROPE_TYPE_NEOX;
-    result =
-        ggml_rope_ext(context, values, positions, factors,
-                      static_cast<int>(rope->rotary_dimensions), mode, 0,
-                      1.0F, 1.0F, 0.0F, 1.0F, 0.0F, 0.0F);
+    result = ggml_runtime::explicit_rope(
+        context, invocation.values[node.inputs[0]],
+        invocation.values[node.inputs[1]], invocation.values[node.inputs[2]],
+        rope->rotary_dimensions, rope->layout == RopeLayout::kInterleaved);
   } else if (node.operation.get_if<Hadamard>()) {
     const auto &values = program.hadamards[node_index];
     if (values.empty())
