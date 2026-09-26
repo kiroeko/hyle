@@ -56,3 +56,15 @@ Pro/Flash的score/hash四种完整MoE消费者与group128共享语义/资源测�
 一次CUDA增量build/test；shared FP8使用源UE8M0无损扩宽scale，FP4参考不借用ggml中间量。
 attention/compressor/MTP消费者继续按FIX3/4接合后统一下一组验证；不逐原子重建。
 当前完整画像仍144/176，尚未验收MoE、三交付或P1。
+
+### 当前裁决：原子通过，ggml完整MoE候选FAIL，返回AUDITED
+
+`a4b70bc2`的group128普通入口/资源、三份AOT重建、12个新增native案例和4项独立头通过；
+两入口的完整MoE均未通过既有数值门，最终输出归一化误差最高约7.13%，原门4%。
+不提高容差或换输入；初次诊断View绑定问题修成Copy后数值失败仍在，完整ledger仍144/176。
+见[完整检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-moe-checkpoint/README.md)。
+
+本批ggml MoE候选停止重复试验，owner继续AUDITED。其CUDA MXFP4点积还有Q8_1激活转换；
+独立有界检查已确认官方原版 `fp4_gemm_kernel` 可在SM89执行，N4096/K2048的6个native案例
+逐BF16精确一致。下一轮先固定该原版程序的动态专家接线、格式与成本，再改产品；不扩成自研。
+原子资格不受消费者失败撤销；其它shape、普通专家入口和完整画像未验。A5/A6/D6继续未决。

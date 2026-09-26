@@ -1,0 +1,92 @@
+{
+  "candidate": "a4b70bc28f1b7f24d93201f926cde1eced5ed2dc",
+  "scope": "DeepSeek official CUDA mixed MoE checkpoint; failed numerical qualification, not complete model coverage",
+  "verdict": "FAIL_MIXED_MOE_NUMERICS",
+  "roundtrip": {
+    "verdict": "PASS_LOCAL_CAPABILITY",
+    "formats": [
+      "E4M3-group64",
+      "E2M1-group32",
+      "E4M3-group128"
+    ],
+    "new_native_cases": 12,
+    "rebuilt_cubins": 3,
+    "independent_headers": 4
+  },
+  "entry_gtests": {
+    "passed": 8,
+    "failed": 2,
+    "skipped": 0
+  },
+  "mixed_moe": {
+    "profiles": [
+      "DeepSeek-V4-Pro official",
+      "DeepSeek-V4-Flash official"
+    ],
+    "entry_paths": [
+      "Direct",
+      "Graph"
+    ],
+    "routing_modes": [
+      "score",
+      "hash"
+    ],
+    "replays_per_case": 3,
+    "final_max_normalized_error": 0.0712669641,
+    "unchanged_max_error_gate": 0.04
+  },
+  "new_complete_profile_cells": 0,
+  "ledger": {
+    "RUN_PASS": 144,
+    "VALIDATION_NOT_RUN": 32
+  },
+  "initial_fixture_failure": "A diagnostic output was an alias-only View. Materializing it with an ordinary Copy fixed binding/readback; numerical failures remained.",
+  "source_lead": "ggml CUDA MXFP4 mmvq consumes Q8_1 activations, introducing another quantization after the original E4M3 boundary; not yet proven to be the unique cause.",
+  "bounded_followup": {
+    "candidate": "unmodified official DeepSeek fp4_gemm_kernel",
+    "shape": [
+      4096,
+      2048
+    ],
+    "native_cases": 6,
+    "native_result": "exact BF16 PASS",
+    "status": "native-only; ordinary indexed expert binding and other shapes unverified"
+  },
+  "tool_results": [
+    {
+      "command": "python tests/compute_models/inputs_test.py",
+      "tests": 13,
+      "verdict": "PASS"
+    }
+  ],
+  "pending": [
+    "qualify official full MoE with a mature accurate FP4 path",
+    "attention/compressor/MTP",
+    "other official routes",
+    "DeepSeek GGUF Vulkan",
+    "D5-A5 remaining selected gates and deliveries",
+    "D5-A6 performance",
+    "D6"
+  ],
+  "uncompressed_sha256": {
+    "build.log.gz": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+    "tests.log.gz": "63260ac7cc3cb595f0ba9dd4a9fcad46a6ce0f8b390f185ab167c24c34b4f231",
+    "tests.xml.gz": "ec6cf6075679aa52752b88ba7c6372edcf7d67fcdc23f58353ffbc6e17d407d0",
+    "entry-receipt.json.gz": "0ce52c7f99f2c051d0b63114a130d47acbca52c62f48bddbd2e2c7dea43b45ce",
+    "cache-identity.txt.gz": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+    "initial-build.log.gz": "6b21e298f05fa0e007133562e512f63cbf33a79ca4a6cd247a74bd0302604d63",
+    "initial-tests.log.gz": "69665f5b388b8fe758801046c52c88077e61c48dce8c5579dafe423d5a940b3f",
+    "initial-native-tests.log.gz": "960364ced954409dce28a00042b9321e0f57b615b668ce1cd3789cf9ba151d44",
+    "initial-receipt.json.gz": "df2942c05e02348077fa9075fee7b48fb39a0d52d147824cb4799675cd3e2ffc",
+    "headers.log.gz": "8dcbd5e611e03dfe4ba29668a58abed00b839d44ab73624106e8ecd17b8d39b4",
+    "headers-receipt.json.gz": "d92e821790eb0da062ad2bee9cb95ea0e5fe6051751c5348bcc93d7fb4e83ad9",
+    "native-roundtrip-receipt.json.gz": "577a40b2690f551183f0a7c3d2d0837d7591420cf4b9db1b11b19ffe01bdef6b",
+    "rebuild-receipt.json.gz": "4f710f2bb590d946bf12db35e022e4edfc25a5b0d63e40f66ad3722f96418ea5",
+    "roundtrip-compile.json.gz": "0c3acc07381bbc632d3f33416903656dd882022b9c9d21f885b66ddd5e2461cb",
+    "group128.cu.gz": "4faa0616c7dc319587fd5b294f283c2d56577a23e6f3aff96ecb09d51a4cc42e",
+    "selector-plan.json.gz": "f7e7e21de8f220cf6ca585ebc1a0b1c26653cbac8378cfe6f90dd6391ebeb8a4",
+    "fp4-gemm-native-receipt.json.gz": "feb332a6a2885d46f137d49401b949927e99e75e9805e33385e4012c42cb8688",
+    "fp4-gemm-compile.json.gz": "95a064d9312ae10027b7194417f8a1f7349eeab8d6c66b81a8334cd1eb1b85f5",
+    "fp4-gemm.cu.gz": "0bc0ec2105df48f56e990b0e8cb2e6763f8b341d08a683f1c6c7b8206a55673a"
+  }
+}
