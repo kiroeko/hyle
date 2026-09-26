@@ -683,21 +683,23 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       return {};
   } else if (node.operation.get_if<GatedDeltaNet>() ||
              node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
-    const auto input = [&](std::size_t port) {
+    const auto recurrent_input = [&](std::size_t port) {
       return values[node.inputs[port]];
     };
-    auto *gate = input(3);
-    auto *beta = input(4);
-    auto *initial = input(5);
+    auto *decay = recurrent_input(3);
+    auto *beta = recurrent_input(4);
+    auto *initial = recurrent_input(5);
     if (node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
-      gate = ggml_mul(context,
-                      ggml_softplus(context, ggml_add(context, gate, input(6))),
-                      input(5));
+      decay = ggml_mul(context,
+                       ggml_softplus(context, ggml_add(context, decay,
+                                                       recurrent_input(6))),
+                       recurrent_input(5));
       beta = ggml_sigmoid(context, beta);
-      initial = input(7);
+      initial = recurrent_input(7);
     }
     auto *packed = ggml_gated_delta_net(
-        context, input(0), input(1), input(2), gate, beta, initial, 1);
+        context, recurrent_input(0), recurrent_input(1), recurrent_input(2),
+        decay, beta, initial, 1);
     const auto score_count = static_cast<std::int64_t>(
         *recipe.values[node.outputs[0]].element_count());
     const auto state_count = static_cast<std::int64_t>(
