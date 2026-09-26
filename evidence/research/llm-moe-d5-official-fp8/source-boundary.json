@@ -1,0 +1,24 @@
+{
+  "kind": "source_boundary_only",
+  "execution_verdict": "NOT_RUN",
+  "sources": {
+    "sglang": {
+      "commit": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "files": {
+        "python/sglang/srt/layers/quantization/fp8_utils.py": "dad19725ab4dde72170c9c4b6e1320898a9687f1c75857607193b19b9e021776",
+        "python/sglang/kernels/ops/quantization/fp8_kernel.py": "70e77198045fb8b7308be9c314392dee972ffd910260c53a36e2fd596f8b43bc",
+        "python/sglang/kernels/ops/gemm/fp8_blockwise_gemm.py": "a1994439dc53b92074ff3a3d380a921ed2ac500eaf3e8d21ca7da9f2a2542521",
+        "python/sglang/kernels/ops/quantization/per_token_group_quant.py": "5b0f1f929a1e142d4fcdcfcb1445a641847e6697861e6d7c2fcf21871fa2d15e"
+      }
+    },
+    "mlx": {
+      "commit": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "checkout_head": "8f76a0aa2bbf9c29698337078db333c9bea1c1bf",
+      "read_method": "git show pinned blob",
+      "files": {
+        "mlx/ops.h": "7c10ea9c9e223e393903ff27285aa4939cb3ca53aa3ec5a78aa9c4a6d7113813",
+        "mlx/ops.cpp": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2"
+      }
+    }
+  }
+}

@@ -12,6 +12,9 @@ Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-fail
 旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
 其余6画像（GLM官方FP8两个、DeepSeek四个）、D5 三交付/P1及 D6 尚未完成，不把完整片段正确性当作整个 goal 完成率。
 
+官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
+Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。该候选尚未取得HYLE C++资格。
+
 **GLM GGUF 完整批次已验：** `7af6eae4` 完成全词表head接合、MTP索引carry/reset和逐层混合专家格式。
 CPU完整325项复用`b52ff8d1`，最终候选的新增格式两入口各1项通过；CUDA327、Apple308、Vulkan439项
 均通过，全部零失败/零跳过，另有所选executor/source/MASM合同通过。四画像全部region已齐备，新增32格。
