@@ -139,6 +139,9 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   # Explicit-frequency RoPE needs full-range sinf/cosf. Compile the unchanged
   # upstream unary unit without its global intrinsic substitution; preserve
   # every other ggml CUDA unit's options and existing object files.
+  # ggml enables CUDA in its child directory; this sibling object target also
+  # needs the language's compile rules in the current directory scope.
+  enable_language(CUDA)
   get_target_property(_cuda_sources ggml-cuda SOURCES)
   set(_precise_unary "${_cuda_sources}")
   list(FILTER _precise_unary INCLUDE REGEX "/unary\\.cu$")

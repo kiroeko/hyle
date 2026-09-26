@@ -70,3 +70,12 @@ CUDA 另覆盖两个独立 captured invocation、坏索引后恢复、普通 Dir
 批内轻检查：closure 57组件/schema4、文档合同及模型输入测试13/13通过，diff检查无错误；
 selector WORKTREE plan为READY，影响面与skipped理由保存在本地
 `.scratch/validation/d5-deepseek-f32-plan.json`。这些检查不代签尚未运行的native门。
+
+## 首批 CUDA 的恢复流程纠正
+
+候选 `87f2cb03` 完整 CUDA 批次中，原生 Provider 通过；Graph hash 测试在首个坏索引完成后，
+错误地复用已退役的 Invocation，第二轮 submit 因而被拒绝。公开 `graph/executable.h` 明确要求
+终态失败后从同一 Executable 新建 Invocation；源码 `Invocation::submit` 也拒绝 failed phase。
+这不是 hash 数学或执行器缺陷，不重开 CLOSED route。沿 F32.4 的一轮具体纠正，仅修消费者：
+断言失败槽不可再提交，然后重新创建、绑定和 capture 该槽；另一个槽及 Queue/Executable 保持，
+直接 Compute 仍检验其本来的可恢复合同。保留失败证据，与 F35 定向 CUDA 批次合验。

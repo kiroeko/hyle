@@ -69,7 +69,7 @@ TEST(CudaDefaultGraph, HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsInd
     std::array lanes{compiled.executable.create_invocation().value(),
                       compiled.executable.create_invocation().value()};
     std::array queues{owner.create_queue().value(), owner.create_queue().value()};
-    for (std::size_t lane = 0; lane < 2; ++lane) {
+    const auto bind_and_capture = [&](std::size_t lane) {
       ASSERT_TRUE(lanes[lane].bind(ports[0], logits[lane].view.as_const()).ok());
       ASSERT_TRUE(lanes[lane].bind(ports[1], tokens[lane].view.as_const()).ok());
       ASSERT_TRUE(lanes[lane].bind(ports[2], tables[lane].view.as_const()).ok());
@@ -80,7 +80,8 @@ TEST(CudaDefaultGraph, HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsInd
           {.mode = graph::ReplayMode::kRequireCapture,
            .host_wait = graph::HostWaitPolicy::kReject}).ok());
       EXPECT_EQ(lanes[lane].replay_route(), graph::ReplayRoute::kCaptured);
-    }
+    };
+    for (std::size_t lane = 0; lane < 2; ++lane) bind_and_capture(lane);
     const std::array direct_inputs{logits[0].view.as_const(), tokens[0].view.as_const(),
                                     tables[0].view.as_const()};
     const std::array direct_outputs{weights[0].view, ids[0].view};
@@ -89,9 +90,10 @@ TEST(CudaDefaultGraph, HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsInd
     EXPECT_EQ(prepared.workspace_requirement().size, 0u);
     EXPECT_EQ(prepared.invocation_private_bytes(), 0u);
     auto direct = prepared.create_invocation().value();
-    // Each bad run is followed by a valid run using the same compiled graph,
-    // invocation and queue. The second lane remains valid throughout.
+    // A failed Graph slot is retired. Recreate only that Invocation while
+    // retaining the Executable, queues and independently replaying second lane.
     for (int round = 0; round < 12; ++round) {
+      SCOPED_TRACE(round);
       const bool invalid = round % 2 == 0;
       std::array<std::vector<std::int64_t>, 2> token_values;
       std::array<std::vector<std::int32_t>, 2> table_values;
@@ -117,8 +119,8 @@ TEST(CudaDefaultGraph, HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsInd
       }
       auto first = lanes[0].submit(queues[0]);
       auto second = lanes[1].submit(queues[1]);
-      ASSERT_TRUE(first);
-      ASSERT_TRUE(second);
+      ASSERT_TRUE(first) << first.error().message();
+      ASSERT_TRUE(second) << second.error().message();
       auto status = first->wait();
       EXPECT_EQ(status.IsOutOfRange(), invalid) << status.message();
       EXPECT_EQ(status.ok(), !invalid) << status.message();
@@ -135,6 +137,13 @@ TEST(CudaDefaultGraph, HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsInd
       };
       check(1);
       if (!invalid) check(0);
+      if (invalid) {
+        auto retired = lanes[0].submit(queues[0]);
+        ASSERT_FALSE(retired);
+        EXPECT_TRUE(retired.error().IsFailedPrecondition());
+        lanes[0] = compiled.executable.create_invocation().value();
+        bind_and_capture(0);
+      }
       auto direct_done = direct.submit(queues[0], direct_inputs, direct_outputs);
       ASSERT_TRUE(direct_done);
       status = direct_done->wait();
