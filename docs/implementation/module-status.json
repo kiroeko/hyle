@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F29 AUDITED: Kimi F32 absorbed MLA QK576/V512 cold admission; preserve original native attention lowering. Shared exact-profile consumer and resource regressions pending; D5 deliveries/P1 remain pending."
+      "summary": "D5-F29 已验：Kimi F32 absorbed MLA QK576/V512冷准入、错配拒绝、原attention及资源失败回归通过；四路线三Kimi画像完成。原数学不变；D5剩余范围、三交付/P1仍未完成，保留AUDITED。"
     },
     {
       "module": "graph_provider_onednn",
@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：F25 完整 SGLang 路由与四路线回归通过；A2/A3 官方 FP4 六签名、Kimi 混合 MoE 及八 GGUF 回归24/24组通过。完整画像72/176，继续剩余真实片段、三交付与P1；不新增产品数学。"
+      "summary": "D5 AUDITED：九Qwen及三Kimi画像四路线普通Direct/Graph完整片段96/176格通过；Kimi真实MLA/FFN/残差、原转换和完整owner回归收口。其余10画像、三交付和P1继续；不新增产品数学。"
     },
     {
       "module": "compute_backend_cpu",
@@ -528,7 +528,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F29 AUDITED: Kimi F32 absorbed MLA QK576/V512 cold admission; preserve original native attention lowering. Shared exact-profile consumer and resource regressions pending; D5 deliveries/P1 remain pending."
+      "summary": "D5-F29 已验：Kimi F32 absorbed MLA QK576/V512冷准入、错配拒绝、原attention及资源失败回归通过；四路线三Kimi画像完成。原数学不变；D5剩余范围、三交付/P1仍未完成，保留AUDITED。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -541,7 +541,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F29 AUDITED: Kimi F32 absorbed MLA QK576/V512 cold admission; preserve original native attention lowering. Shared exact-profile consumer and resource regressions pending; D5 deliveries/P1 remain pending."
+      "summary": "D5-F29 已验：Kimi F32 absorbed MLA QK576/V512冷准入、错配拒绝、原attention及资源失败回归通过；四路线三Kimi画像完成。原数学不变；D5剩余范围、三交付/P1仍未完成，保留AUDITED。"
     },
     {
       "module": "graph_provider_ggml_cuda",

@@ -2,14 +2,14 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
-**2026-09-26 当前进展：** 用户选择的完整 recurrent 数值边界已完成 MG1–MG5，
-九个 Qwen 画像均通过四路线 Direct/Graph 普通入口和实际状态反馈。
-当前 ledger 为 **72/176 RUN_PASS、104/176 VALIDATION_NOT_RUN**，详见
-[本批收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
-Metal 新 workspace 的分配失败崩溃已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复，
-静态故障测试和 shared 定向回归通过。原独立 gate 数值失败与旧48格撤回记录保留，
-以新完整片段收据替代；通用 Softplus 精度不变。
-下文0/48格数字是历史快照，不能覆盖当前 ledger。其余13画像、三交付和 P1 尚未完成。
+**2026-09-26 当前进展：** 用户选择的完整 recurrent 数值边界已完成 MG1–MG5；
+九个 Qwen 与三个 Kimi 画像已通过四路线 Direct/Graph 普通入口、变化输入和实际状态反馈。
+当前 ledger 为 **96/176 RUN_PASS、80/176 VALIDATION_NOT_RUN**。Qwen 见
+[九画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)，
+Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/README.md)。
+Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
+旧失败及撤回资格保留；下文0/48/72等数字是历史快照，不能覆盖当前 ledger。
+其余10画像、D5 三交付/P1及 D6 尚未完成，不把完整片段正确性当作整个 goal 完成率。
 
 **下一共用批次已开始：** 其余13画像的 R01 复用已有八入口词表消费者，保留 Kimi 163840、
 DeepSeek 129280、GLM 154880 的完整词表和真实 hidden。逐角色 BF16/Q8_0 由已保存的官方/
@@ -243,6 +243,13 @@ F32 的 Cast→Cast 逐值相等控制，防止数值分类掩盖转换错误。
 保留 F32 激活；产品 recipe、输入、Provider、误差门均不变。其它路线保持已验参考；原 Apple
 失败保留，修正后的 Direct/Graph 必须实际运行。官方完整形状 KV-B 拆分/转置及三种残差参数融合
 已执行锁定原 converter 的五项逐值相等检查；全层 header 复核确认本批20/18/18个签名无遗漏异型。
+
+**Kimi 三画像收口结果：** `9d8d90e4` 的 CPU/CUDA/Vulkan/Apple 完整受影响 owner suite
+全部通过，零失败/零跳过；此前本批八入口48/48组通过。F29 只增加原版 MLA 的冷准入，
+BF16 分类及 Metal 原生激活精度的参考纠正、完整原 converter 检查、全层权重签名、R01/KDA/MoE
+回归和资源失败证据均保留于上述三画像收据。ledger 新增24格到96/176；Kimi 的旧 `expert_ffn=3584`
+标签改为 latent3584/expert3072/shared6144/dense33792，不修改已正确接线的产品数学。
+统一实现为58,606行/232文件。剩余10画像、三交付和 P1 继续执行，本批不代签。
 
 ## Closure card
 

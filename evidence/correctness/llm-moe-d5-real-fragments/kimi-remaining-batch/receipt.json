@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "candidate": "9d8d90e42194e5f30b04eb7cc2892c3dda58f8f4",
+  "tree": "716ff3b836b616368d4b374a4bc2382d876e3311",
+  "targeted_candidates": {
+    "windows": "a51041c085394a702c455783f9f8343d21e163f7",
+    "apple": "9d8d90e42194e5f30b04eb7cc2892c3dda58f8f4"
+  },
+  "verdict": "RUN_PASS",
+  "scope": "Three exact Kimi profiles, all required regions through four ordinary Direct/Graph routes; fragment correctness and lifecycle only.",
+  "new_complete_profile_cells": 24,
+  "results": [
+    {
+      "route": "cpu",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        42,
+        125,
+        140
+      ],
+      "gtest_total": 307,
+      "receipt": "cpu-owner-receipt.json.gz"
+    },
+    {
+      "route": "cuda",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        127,
+        142,
+        29,
+        8
+      ],
+      "gtest_total": 306,
+      "receipt": "cuda-owner-receipt.json.gz"
+    },
+    {
+      "route": "vulkan",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        239,
+        149,
+        24,
+        7
+      ],
+      "gtest_total": 419,
+      "receipt": "vulkan-owner-receipt.json.gz"
+    },
+    {
+      "route": "apple",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        154,
+        127,
+        7
+      ],
+      "gtest_total": 288,
+      "receipt": "apple-owner-owner-receipt.json.gz"
+    }
+  ],
+  "files": {
+    "cpu-owner-build.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-owner-cache-identity.txt.gz": {
+      "raw_sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72",
+      "gz_sha256": "47ee49b8413c4fcd81234fb529c955956a9e927ff545384b3b0b2cc1ba4802d4"
+    },
+    "cpu-owner-configure-receipt.json.gz": {
+      "raw_sha256": "fed62bfc9babd665fa1df923a68b332422fbe5526d3ece2cce4077f7a74f00fe",
+      "gz_sha256": "365c42a3bc9b13ef070fb00adea10502a373e80a29dd2465ab2ca5570e1eb797"
+    },
+    "cpu-owner-configure.log.gz": {
+      "raw_sha256": "f03aa1428440374a3e9a6945605029c89850dd66d38fad7ecece70920e24245a",
+      "gz_sha256": "17b67af7aec93513daad8d7e49d3872aa71db0bc6fdb7414eb77edb831253b84"
+    },
+    "cpu-owner-native-tests.log.gz": {
+      "raw_sha256": "1de6c6c1b13d7696e38833871005d204333160d0f4b9ea6097d8499ab49de714",
+      "gz_sha256": "c0e8b5c9618f11b1f6d6c54c88d41a357b9e629c40b0a0fee12fc85fc5577a1f"
+    },
+    "cpu-owner-receipt.json.gz": {
+      "raw_sha256": "5187d8fe0f566e28254a3ec25f59de0709c64c2a09aa6f906538bf2940641643",
+      "gz_sha256": "aede87ed49ab1f20ff127089d51a7b0f906218cb71a9a2f05d5a1b3acd08cddf"
+    },
+    "cpu-owner-tests.log.gz": {
+      "raw_sha256": "2a1cd5875403b73db4e84347949bed4c14bf169f2cc9a0a030bb2ce5900f3e85",
+      "gz_sha256": "5c410911ddad2e78aa765efbf31b2e91e9fd87620adcb819e6576d2d15dbca3c"
+    },
+    "cpu-owner-tests.xml.gz": {
+      "raw_sha256": "0f7f69997ed20a2b4c90514bafb1e723cde072a21592f76156ca3326b0a11f00",
+      "gz_sha256": "48f8615a5abd2763046e844064752a3e893f1d8cc7720db06ab6a041346b60ee"
+    },
+    "cpu-targeted-build.log.gz": {
+      "raw_sha256": "3985af72499fad263dc56b38e7ac717edfdc085bb86cb972f1cf53abdfb549fe",
+      "gz_sha256": "b1fdd39acf1d5a682009f6e0c6af841ae54f5ad2b965c67db45893f143e8b63f"
+    },
+    "cpu-targeted-compute.log.gz": {
+      "raw_sha256": "3c2f8e56bddfc72966ddd5390a96488430eb776248f5602ab4cb4f0011ba2c9f",
+      "gz_sha256": "8da576b59508b17b150d3bb2703936f4bb5e6ff6454d35dfe835e598003e782f"
+    },
+    "cpu-targeted-graph.log.gz": {
+      "raw_sha256": "4d4b70b17f1c7f215ad0c5f4e68e2f4dfceb646d1143c41312e9eea8165afe8a",
+      "gz_sha256": "36c4a180ef6fc0acd150d4e69c50a8c9bea3807128ed3585b515e8bc753a4018"
+    },
+    "cpu-targeted-provider.log.gz": {
+      "raw_sha256": "9dcc7f13524617f714c88e371f95127544330fe5ff7b44a7981fbfc097bae204",
+      "gz_sha256": "4628570a75d56b6ae0dbd2ee04c1dcb4e91a3a9d5a8e6a8976b30c69ea52f8d0"
+    },
+    "cuda-owner-build.log.gz": {
+      "raw_sha256": "646f4c3547229e57446fe7ed4ffc3ba938f292555567aa01cd58af9c72bb915f",
+      "gz_sha256": "7c91725f57bb4b3c2aae7a6c8f6dd55705651614cf57557a455d8bdd49144ea9"
+    },
+    "cuda-owner-cache-identity.txt.gz": {
+      "raw_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+      "gz_sha256": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee"
+    },
+    "cuda-owner-configure-receipt.json.gz": {
+      "raw_sha256": "0d9aa4eee55d250e77f75beb60bc0383a9b3921bc3b88b039c12ab0c069ad1f6",
+      "gz_sha256": "e6496161307691ab131b0955bbdb448489cb18a5ce7e2b68481e9143acf53006"
+    },
+    "cuda-owner-configure.log.gz": {
+      "raw_sha256": "540711ae5a0e4fb7316e41f163e45a3a844bef416b28c9fa9d89f6b5721625c0",
+      "gz_sha256": "214c257b24cb0ebe515f98c1fd3403d8d4f345f60aae8579b886026dfeca0df2"
+    },
+    "cuda-owner-native-tests.log.gz": {
+      "raw_sha256": "7814db38be6f8f110256febe727c45b6b92049b4e6937556290963bbe2cd8e41",
+      "gz_sha256": "d94786098f220b21dd38f1d92d497abcce890f198ab94014da0f224b315b3acc"
+    },
+    "cuda-owner-receipt.json.gz": {
+      "raw_sha256": "31e585c4c43df93b32754fcb9163e63ae51e8d1835376f61183b5d4b0b30ded5",
+      "gz_sha256": "b1513c0a02e66dd986acceda390b764749e3fbab3c4dc429528581e8317d883c"
+    },
+    "cuda-owner-tests.log.gz": {
+      "raw_sha256": "7e68ffcb2a3290915708a49154fff91d1c8f681f9c50446f87b27f4756145aa5",
+      "gz_sha256": "aa41ab9e35f36277516a8a75106dbf8fba3fbe1343ec06bdb35965726b2f76e8"
+    },
+    "cuda-owner-tests.xml.gz": {
+      "raw_sha256": "b8148ea404a1541f7eda9d129d735e0f34506827af3c65c630f210e82ef63134",
+      "gz_sha256": "6de7b654eaf591592a920cdeed627e93978c7a6c52ac8fb7aea6d0e5f247998c"
+    },
+    "cuda-targeted-build.log.gz": {
+      "raw_sha256": "bd37cc4ad1176e8ed79b2a6c388747b45bff89387435554c78080b5c44d27eb9",
+      "gz_sha256": "c2883e9804ac22a68c71de1d12d1888fd0818868484ade8527b1a71d50b54382"
+    },
+    "cuda-targeted-compute.log.gz": {
+      "raw_sha256": "e2d8bff0f4d0447c2c2a935fa84a535dabf7302af95511f718f5d7de451bc0f2",
+      "gz_sha256": "05cacca75a89b0200d761aeb447aafc68f23f84b48d0ea6242434ef50e7f1ced"
+    },
+    "cuda-targeted-graph.log.gz": {
+      "raw_sha256": "e2f0ddcfb748024d9549d4bb2fb0f6279f772aca322fb2fdb2a932e36d8b4dfd",
+      "gz_sha256": "746de5417c07178ff3422dfe66bc1cd266d6044a6f6da00d71892fd35914bc69"
+    },
+    "cuda-targeted-provider.log.gz": {
+      "raw_sha256": "dce4e4050933fa61e8b1704130db19410866aa69a7c19d77b6d3807c4d20176a",
+      "gz_sha256": "693e9c089ca40876629f17265fca9f830d967be221468397bb11dc3cf3230d30"
+    },
+    "vulkan-owner-build.log.gz": {
+      "raw_sha256": "d03761029295bb77d58183c0ff3849a1402ac9990a2aeec026bca35bfb324486",
+      "gz_sha256": "5347779ffb16e828230e0cb30509e5d411a6a37b1a96a9631805087a56f2c25f"
+    },
+    "vulkan-owner-cache-identity.txt.gz": {
+      "raw_sha256": "5b9e996c25b4253e74d270805b70741b7cbcc0397ca14ab7f6cba65edec87313",
+      "gz_sha256": "ce1bb409c71e43a9c0eaba4b27270832185eb388bd3a79ddc546f0e73c7a70ca"
+    },
+    "vulkan-owner-configure-receipt.json.gz": {
+      "raw_sha256": "6cc9b9c97a8c6f326ec571a9e76bc45ffcfba5f44346d2e09caf85e7a195b662",
+      "gz_sha256": "eaa09141f42ef913fd0ceb06f6fbeb8614480dcd94e29af37553287cb5423ddd"
+    },
+    "vulkan-owner-configure.log.gz": {
+      "raw_sha256": "f12e04a014a51820f0927f981915008389d45bd9f10700cc90f68a444a57b34c",
+      "gz_sha256": "bc502489dd8c07ed6ace18284cf418469ac16c40469576f91f78db36a9aa0b61"
+    },
+    "vulkan-owner-native-tests.log.gz": {
+      "raw_sha256": "ce9580aea5350375b4f36428dc6d541fd76906e2ebee560a1088d3fba5561cb9",
+      "gz_sha256": "b333981a0c96ee39ce5b12fb4f680f7a3af23ce6c42ce2e3a4bf0d211e7d3af2"
+    },
+    "vulkan-owner-receipt.json.gz": {
+      "raw_sha256": "be7033a49f9ede4ac401ad90f2a5b5ce35c9ad2c867332c203cdfdca0972ec5f",
+      "gz_sha256": "dcedfe59289a5c7a5dda121b7d752a4a5ee5a236119e06f120ccc0b6ee2541c6"
+    },
+    "vulkan-owner-tests.log.gz": {
+      "raw_sha256": "0c46aea44f34eb61969a5ee5abf4e9cc3738d784ec3c80ba84f11e20676cfe46",
+      "gz_sha256": "5d52cf4527a103dbf2fa0872940d3c2085aa4077cb3e3b3a59253c772d73188d"
+    },
+    "vulkan-owner-tests.xml.gz": {
+      "raw_sha256": "2061269f8332ecf0cbe9914417c429a76fe6f5dc68526af7aed8a415fa387f8a",
+      "gz_sha256": "ea1b2be7050d1e5e728369abbe42b2c8b1fab2938761c01135c989d14ad94ebe"
+    },
+    "vulkan-targeted-build.log.gz": {
+      "raw_sha256": "483ac819921b51b0760fa28b5be01e86fa7aa8059135a755549f102d736e03f4",
+      "gz_sha256": "930ebe34380d6a2cc44cf7891ad3a0191985d60c8d49fec0cefe3057fd10b5f3"
+    },
+    "vulkan-targeted-compute.log.gz": {
+      "raw_sha256": "114f97aa79c332e28c857f6377713382592f3b63d1c250e9d443ac2d65a1ec71",
+      "gz_sha256": "819483dec45a843938f52b031a6fbd547e4dd049e7d7320b810757e186f59561"
+    },
+    "vulkan-targeted-graph.log.gz": {
+      "raw_sha256": "5e0cddaa38c95f08b81ed0b76c2153b5e7aa6638bc68e90da2ceba9298c6e141",
+      "gz_sha256": "6488a1cdbd9af1c15be41bb6898956d58a10da96da5d5b9a41321394ffc92c0e"
+    },
+    "vulkan-targeted-provider.log.gz": {
+      "raw_sha256": "a7abfde18f6ead48c3d6f18f2f31065c2223038fd2ceb02b1b3c4762f7558cb4",
+      "gz_sha256": "59953f7844c7b60e18c4fc62aa347c639187b105b9e88528a031c737740f32b3"
+    },
+    "apple-owner-cache-identity.txt.gz": {
+      "raw_sha256": "73691224fe64f0d6e9443abfbc6279e6659472b84f042bb57245893b9eb31bce",
+      "gz_sha256": "ad1c345131d6fd88249230449c0ee5a16336ecbba0d71374d7fad78a64a39761"
+    },
+    "apple-owner-driver.log.gz": {
+      "raw_sha256": "b383f93184ec6a83c28b312b2d0e777d67672ae78fb7bba30b5c67b987e249f2",
+      "gz_sha256": "3f04d1585ecc9012a2d3aa0c28beabdc3fb4276a8d99db17e9059ee3f37669a9"
+    },
+    "apple-owner-owner-build.log.gz": {
+      "raw_sha256": "650b8840b70b8804452639e954954473d97961bebdefeeedda623be162d57683",
+      "gz_sha256": "cec7587a6de81b91f7208733cadda6f64f97517d83cd91d91c071b6425f3c603"
+    },
+    "apple-owner-owner-configure.log.gz": {
+      "raw_sha256": "f825dd0efde96d06a4b5defab62a1ff1f8b82e3915271633f4393c2453a6eb8c",
+      "gz_sha256": "0b293a10e5550f5880a2d5e315d4177dbe2f1751481226610ad0eacb3321e406"
+    },
+    "apple-owner-owner-native.log.gz": {
+      "raw_sha256": "80a9f7a433c03dc604c84ecc2d532072f7a42641031953496d3edde9c130e21c",
+      "gz_sha256": "d0a86cb950679f08de00c239189d8d9c1a2763479d343b6f94b2b1ee38f20df4"
+    },
+    "apple-owner-owner-receipt.json.gz": {
+      "raw_sha256": "89d43637e168869daeddde01b4ef0ed075ee5c4703f7c836a950c0cb267c3359",
+      "gz_sha256": "d39db2f32065b13a8e52b55ba0dfd3cd0c7ebbe2b098326fc53caf11c7991ecb"
+    },
+    "apple-owner-owner-tests.log.gz": {
+      "raw_sha256": "5e0bff49fb1691b2f08e3341317dea71f3a125d9b01e8624cf3fadd7d6d34fc4",
+      "gz_sha256": "2bb719a93f5abc54a64037afbd4985638b23e32ef66e3472c21756f0fe4f7602"
+    },
+    "apple-owner-owner.xml.gz": {
+      "raw_sha256": "5b95eb213273b5e3f1f8dbad4f8aea826571cdb1e91b75e4a3640674aedec007",
+      "gz_sha256": "6ff99ad2484afe6f499f4d5784a14c43d9bd62ebb3e474bf3da7da4465f28feb"
+    },
+    "apple-targeted.log.gz": {
+      "raw_sha256": "7578c4373ca93defe6f7e47aee12c49de90ef6c6ac77f63f4d58b4f756fa2e38",
+      "gz_sha256": "016c5b2723540185b5fe31f48ed4a40964bf4c9d84f4d709bb98b5f5aae67c5c"
+    },
+    "selected-plan.json.gz": {
+      "raw_sha256": "590f065719ec71b52c02486bf5d43452dd95d0e213345703a401b91286b3a949",
+      "gz_sha256": "aee63184ded082a79267386baaccedf575185f68ba7dae96757ef258aec27428"
+    }
+  },
+  "replays": {
+    "dense_ffn": 3,
+    "mla": 4,
+    "attention_residual": 8,
+    "bf16_rounding_control": 2
+  },
+  "actual_feedback": [
+    "compressed_MLA_cache",
+    "raw_residual_bank"
+  ],
+  "unrun": [
+    "D5-A5 final source/static/shared external consumers",
+    "D5-A6 P1",
+    "D6 final review"
+  ],
+  "product_change": "F29 ggml CPU/CUDA/Vulkan cold admission for F32 QK576/V512 and 96/1 heads; original native lowering, kernels and API unchanged.",
+  "precision": {
+    "model_rms_norm_epsilon": 1e-05,
+    "bf16_chain": "Existing abs<=2e-5+0.025*abs(reference) multi-projection contract; independent rounded oracle, no observed-output oracle.",
+    "f32_input_norm": "abs<=8e-5+4e-5*abs(reference)",
+    "bf16_cast_and_residual_bank": "exact equality",
+    "metal_grouped_activation": "Pinned mul_mv_id_bf16_f32 keeps F32 input; independently modeled. Same declared graph and thresholds."
+  },
+  "capacity": "Full H7168, dense33792, heads96, Q-rank1536, KV-rank512, per-head K128/V128; 163840 vocabulary rows via retained R01/full owner suite. Context capacity3 plus current, batch/token1; routed resident experts top-k+1 per prior qualified MoE.",
+  "source_weights": "Nonzero synthetic payloads bound to exact official and GGUF headers; not downloaded Kimi checkpoint or whole-model inference.",
+  "test_consumer_cost": "Residual bank uses fixed capacity8: Concat materializes9*7168 F32 elements then checked Gather writes8*7168; original append semantics retained, extra consumer copies disclosed. No runtime HYLE math added.",
+  "hardware": {
+    "windows": "Core i9-13900K / RTX4070 SM89; MSVC19.50 Release WERROR; CUDA13.3.73, VulkanSDK1.4.357.0",
+    "apple": "MacBook Air Mac16,12 M4; AppleClang21 Release WERROR"
+  },
+  "environment_reuse": "../sglang-router-batch/receipt.json; unchanged pinned providers and reused build trees; current cache identities retained.",
+  "validation_mode": "Selected factors manually batched in existing route-isolated trees, serial heavy execution, build -j2. Not a fabricated automatic selector run.",
+  "profiles": [
+    "kimi_k3:official:official-mxfp4",
+    "kimi_k3:primary_gguf:UD-Q4_K_XL",
+    "kimi_k3:fidelity_gguf:UD-Q8_K_XL"
+  ],
+  "profile_anchor_correction": "Kimi expert_ffn was the stale latent3584; fixed to expert3072, with latent/shared/dense and MLA dimensions recorded separately from original configs.",
+  "region_receipts": {
+    "R01": [
+      "evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/receipt.json"
+    ],
+    "R02": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json"
+    ],
+    "R03": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-projection-role-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/official-fp4-expert-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json"
+    ],
+    "R06": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+    ],
+    "R07": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json"
+    ],
+    "R10": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-router-batch/receipt.json"
+    ],
+    "R11": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+    ],
+    "R12": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json"
+    ],
+    "R14": [
+      "evidence/correctness/llm-moe-d5-real-fragments/official-fp4-expert-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/converter-golden.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json"
+    ],
+    "R15": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json"
+    ]
+  },
+  "reuse": {
+    "R01": "Full vocabulary/head and failed Gather are rerun in owner suites.",
+    "R06_R10_R11_R14": "Full owner suites include corrected-epsilon KDA, official Kimi mixed MoE and all GGUF MoE. Prior receipts retain native source-format qualification; no product math changed.",
+    "R03": "All-layer audit verifies remaining 20/18/18 signatures. Prior projection role batch and new exact-width full chains cover their storage domains."
+  },
+  "ledger_counts_after": {
+    "RUN_PASS": 96,
+    "VALIDATION_NOT_RUN": 80
+  }
+}
