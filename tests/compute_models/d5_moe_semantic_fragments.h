@@ -262,6 +262,60 @@ inline constexpr std::array kHyperProfiles{
 // Sinkhorn(20), collapse and expansion with the original residual. The branch
 // input is independently supplied (an attention/FFN consumer), not identity.
 // Projection weights and the enclosed attention/FFN have separate receipts.
+// Shared independent oracle for the post-projection core and weighted model chains.
+inline std::vector<std::vector<float>> hyper_reference(
+    std::span<const float> m, std::span<const float> x,
+    std::span<const float> branch_values, std::int64_t hidden,
+    std::span<const float> scales, std::span<const float> bases) {
+  std::vector<float> collapsed_values(hidden), expanded_values(4 * hidden);
+  std::array<double, 16> matrix;
+  for (int row = 0; row < 4; ++row) {
+    double maximum = -INFINITY, sum = 0;
+    for (int col = 0; col < 4; ++col) {
+      const int i = row * 4 + col;
+      matrix[i] = m[8 + i] * double(scales[2]) + bases[8 + i];
+      maximum = std::max(maximum, matrix[i]);
+    }
+    for (int col = 0; col < 4; ++col) {
+      auto &v = matrix[row * 4 + col];
+      v = std::exp(v - maximum);
+      sum += v;
+    }
+    for (int col = 0; col < 4; ++col)
+      matrix[row * 4 + col] = matrix[row * 4 + col] / sum + 1.0e-6;
+  }
+  const auto normalize = [&](bool columns) {
+    for (int i = 0; i < 4; ++i) {
+      double sum = 1.0e-6;
+      for (int j = 0; j < 4; ++j)
+        sum += matrix[columns ? j * 4 + i : i * 4 + j];
+      for (int j = 0; j < 4; ++j)
+        matrix[columns ? j * 4 + i : i * 4 + j] /= sum;
+    }
+  };
+  normalize(true);
+  for (int iteration = 1; iteration < 20; ++iteration) {
+    normalize(false);
+    normalize(true);
+  }
+  for (std::int64_t d = 0; d < hidden; ++d) {
+    double sum = 0;
+    for (int src = 0; src < 4; ++src)
+      sum += x[src * hidden + d] *
+          (sigmoid(m[src] * double(scales[0]) + bases[src]) + 1.0e-6);
+    collapsed_values[d] = float(sum);
+    for (int dst = 0; dst < 4; ++dst) {
+      double expanded_value = branch_values[d] * 2.0 *
+          sigmoid(m[4 + dst] * double(scales[1]) + bases[4 + dst]);
+      for (int src = 0; src < 4; ++src)
+        expanded_value += x[src * hidden + d] * matrix[src * 4 + dst];
+      expanded_values[dst * hidden + d] = float(expanded_value);
+    }
+  }
+  return {sem::as_float(matrix), std::move(collapsed_values),
+          std::move(expanded_values)};
+}
+
 inline Fragment hyper_connection(const HyperProfile &profile) {
   Fragment f{.profile = profile.profile, .region = 0x0c0601};
   const auto hidden = profile.hidden;
@@ -302,56 +356,11 @@ inline Fragment hyper_connection(const HyperProfile &profile) {
   for (int seed : {3, 19}) {
     auto x = d5_gguf_test::values(4, hidden, seed);
     auto branch_values = d5_gguf_test::activation(hidden, seed + 5);
-    std::vector<float> m(24), collapsed_values(hidden), expanded_values(4 * hidden);
+    std::vector<float> m(24);
     for (int i = 0; i < 24; ++i)
       m[i] = float((i * 11 + seed) % 31 - 15) / 4.0F;
-    std::array<double, 16> matrix;
-    for (int row = 0; row < 4; ++row) {
-      double maximum = -INFINITY, sum = 0;
-      for (int col = 0; col < 4; ++col) {
-        const int i = row * 4 + col;
-        matrix[i] = m[8 + i] * double(scales[2]) + bases[8 + i];
-        maximum = std::max(maximum, matrix[i]);
-      }
-      for (int col = 0; col < 4; ++col) {
-        auto &v = matrix[row * 4 + col];
-        v = std::exp(v - maximum);
-        sum += v;
-      }
-      for (int col = 0; col < 4; ++col)
-        matrix[row * 4 + col] = matrix[row * 4 + col] / sum + 1.0e-6;
-    }
-    const auto normalize = [&](bool columns) {
-      for (int i = 0; i < 4; ++i) {
-        double sum = 1.0e-6;
-        for (int j = 0; j < 4; ++j)
-          sum += matrix[columns ? j * 4 + i : i * 4 + j];
-        for (int j = 0; j < 4; ++j)
-          matrix[columns ? j * 4 + i : i * 4 + j] /= sum;
-      }
-    };
-    normalize(true);
-    for (int iteration = 1; iteration < 20; ++iteration) {
-      normalize(false);
-      normalize(true);
-    }
-    for (std::int64_t d = 0; d < hidden; ++d) {
-      double sum = 0;
-      for (int src = 0; src < 4; ++src)
-        sum += x[src * hidden + d] *
-            (sigmoid(m[src] * double(scales[0]) + bases[src]) + 1.0e-6);
-      collapsed_values[d] = float(sum);
-      for (int dst = 0; dst < 4; ++dst) {
-        double expanded_value = branch_values[d] * 2.0 *
-            sigmoid(m[4 + dst] * double(scales[1]) + bases[4 + dst]);
-        for (int src = 0; src < 4; ++src)
-          expanded_value += x[src * hidden + d] * matrix[src * 4 + dst];
-        expanded_values[dst * hidden + d] = float(expanded_value);
-      }
-    }
     f.replays.push_back({{bytes(m), bytes(x), bytes(branch_values)},
-                         {sem::as_float(matrix), std::move(collapsed_values),
-                          std::move(expanded_values)}});
+                         hyper_reference(m, x, branch_values, hidden, scales, bases)});
   }
   return f;
 }

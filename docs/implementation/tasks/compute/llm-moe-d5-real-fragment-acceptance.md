@@ -284,6 +284,23 @@ converter 展开 FP8 的事实也不等于 HYLE native FP8 已支持。本批不
 物理布局和原生精度，不扩大容差。三交付/P1按 A5/A6 在对应完整路线稳定后统一执行。
 96/176已验格直接保留；DeepSeek和本批未完成 region 不因本次审计标为 PASS。
 
+**GLM 共享接线检查点：** 六组 consumer 已同时接入四路线 Direct/Graph：GGUF dense FFN、
+NextN 输入边界、GGUF absorbed MLA、普通 DSA indexer、Flash K4 pool/tail、Flash 加权 mHC。
+DSA 保留32×128、top2048，使用2052个以上有效 cache token；Flash 从513个完整 pool 中选512个，
+另检查左 padding 和0/1/2/3个尾 token。key/gate cache 和 mHC stream 均反馈实际上轮输出；
+索引检查比较完整成员集合、唯一性和-1 padding，不只检查索引落在范围内。
+
+CPU Direct/Graph 的本批六组和 Kimi 六组回归各12/12通过（工作树检查点，尚非整画像裁决）。
+首轮失败是 consumer 接缝：RoPE改为现有原生 rank4/axis1，K4 Softmax 显式转成原生连续行，
+加权 head 求和使用现有 Multiply/Reduce，ReLU 使用原版 Clamp，整数索引直接发布并在宿主检查。
+诊断输出中的 view 显式 Copy 后再独立绑定；这些诊断搬运不能冒充最终无额外成本执行。
+未增加产品数学或放宽误差；F30仍只有64-head准入。其余三路线待同一候选串行验证。
+
+NextN当前只验证双 norm/Concat/EH/输入 norm，不能代签完整R13。原 `glm-dsa.cpp` 明确按
+embedding、hidden 顺序拼接，转换器不交换 EH 的列，已纠正最初测试的相反顺序。
+固定 GLM Flash 上游还显式拒绝 NextN graph；需继续核对其它已登记模型程序及状态边界，
+不能仅凭该拒绝判定所有成熟路径不可用。官方 FP8 与完整 MTP、A5/A6仍未验收，ledger保持96/176。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

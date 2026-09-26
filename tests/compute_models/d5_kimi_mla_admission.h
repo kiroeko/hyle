@@ -24,6 +24,16 @@ template <class Accept> void check(Accept accept) {
                           dense({1, 4, 1, 512})};
   const std::array outputs{dense({1, 1, 96, 512})};
   EXPECT_TRUE(accept(operation, inputs, outputs));
+  // GLM DSA has 64 query heads with the same compressed latent and RoPE
+  // dimensions. It consumes the same original native attention program.
+  auto glm_inputs = inputs;
+  glm_inputs[0] = dense({1, 1, 64, 576});
+  const std::array glm_outputs{dense({1, 1, 64, 512})};
+  EXPECT_TRUE(accept(operation, glm_inputs, glm_outputs));
+  auto bad_glm = glm_inputs;
+  bad_glm[2] = dense({1, 3, 1, 512});
+  EXPECT_FALSE(accept(operation, bad_glm, glm_outputs));
+  EXPECT_FALSE(accept(operation, glm_inputs, outputs));
   for (const auto &bad_value : {dense({1, 3, 1, 512}),
                                  dense({1, 4, 2, 512}),
                                  dense({2, 4, 1, 512})}) {

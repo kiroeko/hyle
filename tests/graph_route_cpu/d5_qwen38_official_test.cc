@@ -2,6 +2,7 @@
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
+#include "../compute_models/d5_glm_remaining_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include <gtest/gtest.h>
@@ -568,7 +569,7 @@ void run_q24_semantic_fragment(
     const auto status = done->wait();
     ASSERT_TRUE(status.ok()) << status.message();
     for (std::size_t output = 0; output < outputs.size(); ++output) {
-      const auto actual = half_test::read<float>(outputs[output]);
+      const auto actual = sem::decode_output(fixture, output, half_test::read<float>(outputs[output]));
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
@@ -651,6 +652,69 @@ TEST(CpuGraphMoeFragments, D5KdaProjectionRoleBatch) {
     SCOPED_TRACE(role.profile->variant);
     SCOPED_TRACE(role.roles);
     run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmFlashWeightedHyperConnection) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (!model.flash) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::hyper_connection(model));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmDsaIndexerWithCache) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.flash || model.official) continue;
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model));
+    // The fidelity artifact has both F32 and Q8_0 indexer score projections.
+    if (model.profile == &d5_moe_profile_cases::glm53_fidelity_gguf)
+      run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model, 0, true));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmFlashPooledIndexerWithTail) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (!model.flash) continue;
+    SCOPED_TRACE(model.profile->variant);
+    for (int tail = 0; tail < 4; ++tail) {
+      SCOPED_TRACE(tail);
+      run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model, tail));
+    }
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmGgufDenseFfn) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::dense_ffn(model));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmNextNInputBoundary) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::mtp_input(model));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5GlmGgufAbsorbedMlaWithCache) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::mla(model));
   }
 }
 

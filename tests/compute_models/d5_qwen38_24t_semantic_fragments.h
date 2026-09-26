@@ -51,6 +51,8 @@ struct Fragment final {
   struct UnorderedIds final {
     std::size_t port, row_width;
     std::int64_t extent;
+    bool compare_members = false;
+    bool allow_padding = false;
   };
   std::optional<UnorderedIds> unordered_ids{};
 
@@ -626,6 +628,15 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile,
   return f;
 }
 
+// CPU/CUDA Buffer readers return raw F32-sized words. Keep integer model
+// outputs as integers in the program; convert only in the host test checker.
+inline std::vector<float> decode_output(const Fragment &fragment, std::size_t port,
+                                        std::vector<float> words) {
+  if (fragment.description(fragment.outputs[port]).data_type() == c::DataType::kInt32)
+    for (auto &word : words) word = float(std::bit_cast<std::int32_t>(word));
+  return words;
+}
+
 inline void expect_output(const Fragment &fragment,
                           std::span<const float> actual,
                           std::span<const float> expected,
@@ -643,10 +654,17 @@ inline void expect_output(const Fragment &fragment,
         ASSERT_TRUE(std::isfinite(value));
       std::sort(selected.begin(), selected.end());
       for (std::size_t i = 0; i < selected.size(); ++i) {
+        if (ids->allow_padding && selected[i] == -1.0F) continue;
         EXPECT_EQ(selected[i], std::floor(selected[i]));
         EXPECT_GE(selected[i], 0);
         EXPECT_LT(selected[i], ids->extent);
         if (i) EXPECT_NE(selected[i], selected[i - 1]);
+      }
+      if (ids->compare_members) {
+        std::vector<float> members(expected.begin() + row,
+                                   expected.begin() + row + ids->row_width);
+        std::sort(members.begin(), members.end());
+        EXPECT_EQ(selected, members);
       }
     }
   } else if (exact) {

@@ -26,6 +26,7 @@
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
+#include "../compute_models/d5_glm_remaining_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -1403,8 +1404,15 @@ void run_q24_semantic_fragment(
       if (step.operation.kind() == c::OperationKind::kView) {
         ASSERT_EQ(step.inputs.size(), 1U);
         ASSERT_EQ(step.outputs.size(), 1U);
-        ASSERT_EQ(step.operation.get_if<c::View>()->kind(),
-                  c::ViewKind::kReshape);
+        ASSERT_TRUE(step.operation.get_if<c::View>()->kind() == c::ViewKind::kReshape ||
+                  step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute);
+        if (step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute) {
+          const auto axes = step.operation.get_if<c::View>()->permutation();
+          tensors[step.outputs[0].ordinal()] = ready(mx::transpose(
+              *tensors[step.inputs[0].ordinal()], std::vector<int>(axes.begin(), axes.end()),
+              stream()));
+          continue;
+        }
         tensors[step.outputs[0].ordinal()] = ready(mx::reshape(
             *tensors[step.inputs[0].ordinal()],
             native_shape(fixture.description(step.outputs[0]), false),
@@ -1508,6 +1516,69 @@ TEST(AppleMoeFragments, D5KdaProjectionRoleBatch) {
     SCOPED_TRACE(role.profile->variant);
     SCOPED_TRACE(role.roles);
     run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmFlashWeightedHyperConnection) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (!model.flash) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::hyper_connection(model));
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmDsaIndexerWithCache) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.flash || model.official) continue;
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model));
+    // The fidelity artifact has both F32 and Q8_0 indexer score projections.
+    if (model.profile == &d5_moe_profile_cases::glm53_fidelity_gguf)
+      run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model, 0, true));
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmFlashPooledIndexerWithTail) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (!model.flash) continue;
+    SCOPED_TRACE(model.profile->variant);
+    for (int tail = 0; tail < 4; ++tail) {
+      SCOPED_TRACE(tail);
+      run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model, tail));
+    }
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmGgufDenseFfn) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::dense_ffn(model));
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmNextNInputBoundary) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::mtp_input(model));
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmGgufAbsorbedMlaWithCache) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::mla(model));
   }
 }
 
@@ -1682,8 +1753,15 @@ void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
       if (step.operation.kind() == c::OperationKind::kView) {
         ASSERT_EQ(step.inputs.size(), 1U);
         ASSERT_EQ(step.outputs.size(), 1U);
-        ASSERT_EQ(step.operation.get_if<c::View>()->kind(),
-                  c::ViewKind::kReshape);
+        ASSERT_TRUE(step.operation.get_if<c::View>()->kind() == c::ViewKind::kReshape ||
+                  step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute);
+        if (step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute) {
+          const auto axes = step.operation.get_if<c::View>()->permutation();
+          tensors[step.outputs[0].ordinal()] = ready(mx::transpose(
+              *tensors[step.inputs[0].ordinal()], std::vector<int>(axes.begin(), axes.end()),
+              stream()));
+          continue;
+        }
         tensors[step.outputs[0].ordinal()] = ready(mx::reshape(
             *tensors[step.inputs[0].ordinal()],
             native_shape(direct.description(step.outputs[0]), false), stream()));

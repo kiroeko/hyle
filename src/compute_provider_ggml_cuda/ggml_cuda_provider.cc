@@ -628,7 +628,8 @@ bool supports(void *value, Operation operation,
     const auto v = inputs[2].dimensions();
     const std::array mla_shape{q[0], q[1], q[2], std::int64_t{512}};
     const auto mla_output = TensorDesc::dense(DataType::kFloat32, mla_shape);
-    const bool absorbed_mla = type == DataType::kFloat32 && q[2] == 96 &&
+    const bool absorbed_mla = type == DataType::kFloat32 &&
+        (q[2] == 64 || q[2] == 96) &&
         k[2] == 1 && q[3] == 576 && v[3] == 512 && v[0] == k[0] &&
         v[1] == k[1] && v[2] == k[2] && mla_output && outputs[0] == *mla_output;
     if (q[0] <= 0 || q[0] > 65535 || q[1] <= 0 || k[1] < q[1] ||
