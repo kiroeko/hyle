@@ -221,7 +221,9 @@ inline Fragment compressor(const moe::Case &model, std::int64_t ratio,
                               f.constant(dense({depth}), bytes(norm)), positions,
                               ratio, depth, indexer);
   auto next_cache = f.one(c::Operation(c::Select{}), {publish, compressed, cache});
-  f.outputs = {next_cache, new_kv, new_score};
+  // An official semantic input is also new_kv. Publish a copy so Graph's
+  // distinct output binding cannot replace that input's storage binding.
+  f.outputs = {next_cache, f.one(c::Operation(c::Copy{}), {new_kv}), new_score};
   f.state_ports = {{past_kv_port, 1}, {past_score_port, 2}, {cache_port, 0}};
 
   std::vector<float> old_kv(chunk * channels), old_score(chunk * channels), old_cache(depth);
