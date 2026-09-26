@@ -1,0 +1,20 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5MatureClamp*:*MoeFragments.D5Thirteen*:*MoeFragments.D5Eight*:*MoeFragments.D5KimiThreeProfilesSituActivation
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuGraphMoeFragments
+[ RUN      ] CpuGraphMoeFragments.D5MatureClampBoundaries
+[       OK ] CpuGraphMoeFragments.D5MatureClampBoundaries (1 ms)
+[ RUN      ] CpuGraphMoeFragments.D5ThirteenProfilesModelRouters
+[       OK ] CpuGraphMoeFragments.D5ThirteenProfilesModelRouters (97 ms)
+[ RUN      ] CpuGraphMoeFragments.D5ThirteenProfilesExpertActivation
+[       OK ] CpuGraphMoeFragments.D5ThirteenProfilesExpertActivation (2 ms)
+[ RUN      ] CpuGraphMoeFragments.D5EightGgufProfilesFullMoe
+[       OK ] CpuGraphMoeFragments.D5EightGgufProfilesFullMoe (32074 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuGraphMoeFragments.D5KimiThreeProfilesSituActivation (12 ms)
+[----------] 5 tests from CpuGraphMoeFragments (32189 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (32189 ms total)
+[  PASSED  ] 5 tests.

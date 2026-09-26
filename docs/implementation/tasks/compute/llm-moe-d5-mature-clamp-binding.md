@@ -45,4 +45,10 @@ NaN 输入和 signed-zero 的位模式遵循原生 backend，不承诺跨路线�
 
 ## 当前 verdict
 
-AUDITED；尚未完成产品接线/四路线验证。既有 CPU 失败记录保留于本轮 MoE 批次，不能改写为 PASS。
+候选 `a11aac6a88a9a32265ce230e094f12d09299d061` 已完成 F24.1–F24.4 接线。
+Clamp 四路线 Direct/Graph 边界/变化输入通过；公共 schema 和独立头2项 ctest 通过。
+CPU/Apple/Vulkan 的整个新批次各入口5/5；CUDA数值通过，但 DeepSeek router 的旧 HYLE Softplus
+触发成熟 Provider 断言，因此该路线整个批次仍 FAIL。该问题不在 Clamp 内扩大修复范围。
+完整日志和初始 CPU 夹具量化反例见
+[部分收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/moe-execution-batch/README.md)。
+当前 owner 仍在 D5 AUDITED；完整 selected owner gates、三交付、P1 未完成，不能关闭或增加整格。

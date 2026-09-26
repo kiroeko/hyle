@@ -1,0 +1,544 @@
+[0/2] Re-checking globbed directories...
+[1/5] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+注意: 包含文件:  C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstddef
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\yvals_core.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\sal.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concurrencysal.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vadefs.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xkeycheck.h
+注意: 包含文件:    C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stddef.h
+注意: 包含文件:     C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xtr1common
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstdint
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stdint.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\limits
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cfloat
+注意: 包含文件:     C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\float.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\climits
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\limits.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cwchar
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstdio
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stdio.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstdio.h
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_stdio_config.h
+注意: 包含文件:     C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\wchar.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_memcpy_s.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\errno.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_string.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wconio.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wctype.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wdirect.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wio.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_share.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wprocess.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstdlib.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstring.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wtime.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\sys/stat.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\sys/types.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\intrin.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\intrin0.inl.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\setjmp.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\immintrin.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\wmmintrin.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\nmmintrin.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\smmintrin.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\tmmintrin.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\pmmintrin.h
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\emmintrin.h
+注意: 包含文件:              C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmmintrin.h
+注意: 包含文件:               C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\mmintrin.h
+注意: 包含文件:               C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\malloc.h
+注意: 包含文件:                C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_malloc.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\zmmintrin.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ammintrin.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\intrin0.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\memory
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\exception
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\yvals.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\crtdbg.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_new_debug.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_new.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\crtdefs.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\use_ansi.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstdlib
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\math.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_math.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stdlib.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_search.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\type_traits
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_exception.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\eh.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_terminate.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iosfwd
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstring
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\string.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_memory.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\typeinfo
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_typeinfo.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\new
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xatomic.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_iter_core.hpp
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\utility
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\initializer_list
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\compare
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concepts
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\tuple
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\atomic
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xatomic_wait.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xthreads.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_threads_core.hpp
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xtimec.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ctime
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\time.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ostream
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_ostream.hpp
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ios
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocnum
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cmath
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iterator
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\streambuf
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xiosbase
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\share.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\system_error
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_system_error_abi.hpp
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cerrno
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stdexcept
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xstring
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_sanitizer_annotate_container.hpp
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_string_view.hpp
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xpolymorphic_allocator.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcall_once.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xerrc.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocale
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xfacet
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocinfo
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_xlocinfo_types.hpp
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cctype
+注意: 包含文件:            C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\ctype.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\clocale
+注意: 包含文件:            C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\locale.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_filebuf.hpp
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_print.hpp
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xfilesystem_abi.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\format
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_format_ucd_tables.hpp
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_formatter.hpp
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_ranges_tuple_formatter.hpp
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\bit
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_bit_utils.hpp
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\charconv
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xbit_ops.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv_ryu.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv_ryu_tables.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv_tables.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\locale
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocbuf
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocmes
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocmon
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xloctime
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\set
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xtree
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xnode_handle.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\sstream
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\istream
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\string
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\string_view
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vector
+注意: 包含文件:   C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-assertion-result.h
+注意: 包含文件:    C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-message.h
+注意: 包含文件:     C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-port.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\version
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iostream
+注意: 包含文件:      C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/custom/gtest-port.h
+注意: 包含文件:      C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-port-arch.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\direct.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\io.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_io.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\condition_variable
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_chrono.hpp
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ratio
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\mutex
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\thread
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\process.h
+注意: 包含文件:          C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_startup.h
+注意: 包含文件:           C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\math.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_startup.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stop_token
+注意: 包含文件:   C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-death-test.h
+注意: 包含文件:    C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-death-test-internal.h
+注意: 包含文件:     C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-matchers.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\functional
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\unordered_map
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xhash
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\list
+注意: 包含文件:      C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-printers.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\any
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\optional
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xsmf_control.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\variant
+注意: 包含文件:       C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-internal.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\map
+注意: 包含文件:        C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-filepath.h
+注意: 包含文件:         C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-string.h
+注意: 包含文件:        C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-type-util.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\span
+注意: 包含文件:       C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/custom/gtest-printers.h
+注意: 包含文件:   C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-param-test.h
+注意: 包含文件:    C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-param-util.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cassert
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\assert.h
+注意: 包含文件:     C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-test-part.h
+注意: 包含文件:   C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-typed-test.h
+注意: 包含文件:   C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest_pred_impl.h
+注意: 包含文件:   C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest_prod.h
+注意: 包含文件:  C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\algorithm
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_heap_algorithms.hpp
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_minmax.hpp
+注意: 包含文件:  C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\array
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/d5_qwen38_24t_fixture.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_official_fixture.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_gdn_fixture.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/tensor_desc.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/compute/ops_visibility.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/visibility.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/error/result.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\expected
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/core/compiler.h
+注意: 包含文件:        C:\public\project-hyle\hyle\include\hyle/core/detail/compiler_attributes.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/core/environment.h
+注意: 包含文件:        C:\public\project-hyle\hyle\include\hyle/core/assert.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/core/detail/preprocessor.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/error/status.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/workload.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/compute/visibility.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/mem/allocator.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/mem/visibility.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\../compute_provider_native/half_test_support.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/tensor.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/mem/buffer.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/mem/resource.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/simd/dtype.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/simd/types.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h
+注意: 包含文件:    C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\src\compute_ggml_runtime\source-b9d43bc809551dde\src\..\include\ggml.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stdbool.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/low_precision.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_qwen_gguf_vocabulary_cases.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_fixture.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\filesystem
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\chrono
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_tzdb.hpp
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\forward_list
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iomanip
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\fstream
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\../compute/workload_fixture.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/d5_moe_execution_fragments.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\numeric
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_moe_execution_cases.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_moe_profile_cases.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_moe_semantic_fragments.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_kda_projection_cases.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_semantic_fragments.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_full_router.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/compute/model_ops.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/compute/operation.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/graph/graph.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/graph/visibility.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_moe_profiles.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/d5_qwen38_profile_cases.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/d5_qwen_vocabulary_fixture.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/d5_qwen_vocabulary_compute_test.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_qwen_vocabulary_test.h
+注意: 包含文件:   C:\public\project-hyle\hyle\include\hyle/compute/prepared_operation.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/completion.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/device.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/provider.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/compute/cpu.h
+注意: 包含文件:   C:\public\project-hyle\hyle\include\hyle/compute/backends/cpu.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/detail/queue_sequence.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/detail/completion_access.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/compute/providers/ggml_cpu.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/compute/providers/onednn.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/mem/stats.h
+[2/5] Linking CXX executable bin\hyle_compute_route_cpu_test.exe
+[3/5] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/d5_moe_execution_fragments.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\numeric
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\yvals_core.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\sal.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concurrencysal.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vadefs.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xkeycheck.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\yvals.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\crtdbg.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_new_debug.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_new.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\crtdefs.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\use_ansi.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_iter_core.hpp
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\utility
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\initializer_list
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstddef
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stddef.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xtr1common
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\type_traits
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstdint
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stdint.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\compare
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concepts
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstdlib
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\math.h
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_math.h
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stdlib.h
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_malloc.h
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_search.h
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstdlib.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\limits.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\climits
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstring
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\string.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_memory.h
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_memcpy_s.h
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\errno.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_string.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstring.h
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cwchar
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cstdio
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\stdio.h
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wstdio.h
+注意: 包含文件:         C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_stdio_config.h
+注意: 包含文件:      C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\wchar.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wconio.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wctype.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wdirect.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wio.h
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_share.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wprocess.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_wtime.h
+注意: 包含文件:       C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\sys/stat.h
+注意: 包含文件:        C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\sys/types.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\intrin.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\intrin0.inl.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\setjmp.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\immintrin.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\wmmintrin.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\nmmintrin.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\smmintrin.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\tmmintrin.h
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\pmmintrin.h
+注意: 包含文件:              C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\emmintrin.h
+注意: 包含文件:               C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmmintrin.h
+注意: 包含文件:                C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\mmintrin.h
+注意: 包含文件:                C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\malloc.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\zmmintrin.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ammintrin.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_bit_utils.hpp
+注意: 包含文件:     C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\intrin0.h
+注意: 包含文件:   C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\limits
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cfloat
+注意: 包含文件:     C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\float.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_moe_execution_cases.h
+注意: 包含文件:    C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\array
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_moe_profile_cases.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen_gguf_vocabulary_cases.h
+注意: 包含文件:      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\string_view
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_string_view.hpp
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iosfwd
+注意: 包含文件:      C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_fixture.h
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\filesystem
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\algorithm
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_heap_algorithms.hpp
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_minmax.hpp
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\new
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\exception
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_exception.h
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\eh.h
+注意: 包含文件:              C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_terminate.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xatomic.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\tuple
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\optional
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xsmf_control.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\chrono
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_chrono.hpp
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ctime
+注意: 包含文件:           C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\time.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ratio
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xtimec.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\system_error
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_system_error_abi.hpp
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cerrno
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stdexcept
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xstring
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_sanitizer_annotate_container.hpp
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xpolymorphic_allocator.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcall_once.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xerrc.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\atomic
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xatomic_wait.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xthreads.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_threads_core.hpp
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xfilesystem_abi.h
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_tzdb.hpp
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cmath
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\format
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_format_ucd_tables.hpp
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_formatter.hpp
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_print.hpp
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_ranges_tuple_formatter.hpp
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\bit
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iterator
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocale
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\memory
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\typeinfo
+注意: 包含文件:              C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_typeinfo.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xfacet
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocinfo
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_xlocinfo_types.hpp
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cctype
+注意: 包含文件:              C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\ctype.h
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\clocale
+注意: 包含文件:              C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\locale.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\charconv
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xbit_ops.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv_ryu.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv_ryu_tables.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xcharconv_tables.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\locale
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocbuf
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\streambuf
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xiosbase
+注意: 包含文件:              C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\share.h
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocmes
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocmon
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xlocnum
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xloctime
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\forward_list
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iomanip
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\istream
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_ostream.hpp
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ios
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\sstream
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\string
+注意: 包含文件:         C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vector
+注意: 包含文件:       C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\fstream
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\__msvc_filebuf.hpp
+注意: 包含文件:       C:\public\project-hyle\hyle\tests\compute_models\../compute/workload_fixture.h
+注意: 包含文件:        C:\public\project-hyle\hyle\include\hyle/compute/workload.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/compute/visibility.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/visibility.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/error/result.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\expected
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\functional
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\unordered_map
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xhash
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\list
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xnode_handle.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/core/compiler.h
+注意: 包含文件:           C:\public\project-hyle\hyle\include\hyle/core/detail/compiler_attributes.h
+注意: 包含文件:            C:\public\project-hyle\hyle\include\hyle/core/environment.h
+注意: 包含文件:           C:\public\project-hyle\hyle\include\hyle/core/assert.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\span
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/core/detail/preprocessor.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/error/status.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/mem/allocator.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/mem/visibility.h
+注意: 包含文件:      C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_fixture.h
+注意: 包含文件:       C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_official_fixture.h
+注意: 包含文件:        C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_gdn_fixture.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/compute/tensor_desc.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/compute/ops_visibility.h
+注意: 包含文件:        C:\public\project-hyle\hyle\tests\compute_models\../compute_provider_native/half_test_support.h
+注意: 包含文件:         C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest.h
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\ostream
+注意: 包含文件:          C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\set
+注意: 包含文件:           C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xtree
+注意: 包含文件:          C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-assertion-result.h
+注意: 包含文件:           C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-message.h
+注意: 包含文件:            C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-port.h
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\version
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\iostream
+注意: 包含文件:             C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/custom/gtest-port.h
+注意: 包含文件:             C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-port-arch.h
+注意: 包含文件:             C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\direct.h
+注意: 包含文件:             C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\io.h
+注意: 包含文件:              C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_io.h
+注意: 包含文件:             C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\condition_variable
+注意: 包含文件:              C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\mutex
+注意: 包含文件:               C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\thread
+注意: 包含文件:                C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\process.h
+注意: 包含文件:                 C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\corecrt_startup.h
+注意: 包含文件:                  C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\math.h
+注意: 包含文件:                  C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vcruntime_startup.h
+注意: 包含文件:                C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stop_token
+注意: 包含文件:          C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-death-test.h
+注意: 包含文件:           C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-death-test-internal.h
+注意: 包含文件:            C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-matchers.h
+注意: 包含文件:             C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-printers.h
+注意: 包含文件:              C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\any
+注意: 包含文件:              C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\variant
+注意: 包含文件:              C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-internal.h
+注意: 包含文件:               C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\map
+注意: 包含文件:               C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-filepath.h
+注意: 包含文件:                C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-string.h
+注意: 包含文件:               C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-type-util.h
+注意: 包含文件:              C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/custom/gtest-printers.h
+注意: 包含文件:          C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-param-test.h
+注意: 包含文件:           C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/internal/gtest-param-util.h
+注意: 包含文件:            C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\cassert
+注意: 包含文件:             C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt\assert.h
+注意: 包含文件:            C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-test-part.h
+注意: 包含文件:          C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest-typed-test.h
+注意: 包含文件:          C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest_pred_impl.h
+注意: 包含文件:          C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include\gtest/gtest_prod.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/compute/tensor.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/mem/buffer.h
+注意: 包含文件:           C:\public\project-hyle\hyle\include\hyle/mem/resource.h
+注意: 包含文件:         C:\public\project-hyle\hyle\include\hyle/simd/dtype.h
+注意: 包含文件:          C:\public\project-hyle\hyle\include\hyle/simd/types.h
+注意: 包含文件:   C:\public\project-hyle\hyle\tests\compute_models\d5_moe_semantic_fragments.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_kda_projection_cases.h
+注意: 包含文件:    C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_semantic_fragments.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_full_router.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/compute/model_ops.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/compute/operation.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/graph/graph.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/graph/visibility.h
+注意: 包含文件:     C:\public\project-hyle\hyle\tests\compute_models\d5_qwen38_24t_moe_profiles.h
+注意: 包含文件:      C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h
+注意: 包含文件:       C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\src\compute_ggml_runtime\source-b9d43bc809551dde\src\..\include\ggml.h
+注意: 包含文件:        C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\stdbool.h
+注意: 包含文件:       C:\public\project-hyle\hyle\include\hyle/compute/low_precision.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/d5_qwen38_profile_cases.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/d5_qwen_vocabulary_fixture.h
+注意: 包含文件:  C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/d5_qwen_vocabulary_graph_test.h
+注意: 包含文件:   C:\public\project-hyle\hyle\include\hyle/graph/executable.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/completion.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/device.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/provider.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/prepared_operation.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/graph/compile_report.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/compute/providers/ggml_cpu.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/compute/providers/onednn.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/graph/cpu.h
+注意: 包含文件:   C:\public\project-hyle\hyle\include\hyle/compute/cpu.h
+注意: 包含文件:    C:\public\project-hyle\hyle\include\hyle/compute/backends/cpu.h
+注意: 包含文件:     C:\public\project-hyle\hyle\include\hyle/compute/detail/queue_sequence.h
+注意: 包含文件:      C:\public\project-hyle\hyle\include\hyle/compute/detail/completion_access.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/graph/providers/onednn.h
+注意: 包含文件:  C:\public\project-hyle\hyle\include\hyle/mem/stats.h
+[4/5] Linking CXX executable bin\hyle_graph_route_cpu_test.exe

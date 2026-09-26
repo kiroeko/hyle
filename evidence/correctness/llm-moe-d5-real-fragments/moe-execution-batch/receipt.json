@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "candidate": "a11aac6a88a9a32265ce230e094f12d09299d061",
+  "baseline": "b319d4b729d457d01d69f64bbb8b53e69f28d901",
+  "scope": "D5 thirteen router/activation profiles, eight GGUF mixed MoE chains, corrected Kimi widths, native Clamp",
+  "verdict": "PARTIAL",
+  "complete_profile_ledger_changes": 0,
+  "whole_profile_run_pass": 72,
+  "whole_profile_total": 176,
+  "routes": {
+    "cpu": {
+      "compute": "PASS",
+      "graph": "PASS",
+      "tests_each": 5
+    },
+    "cuda": {
+      "compute": "FAIL",
+      "graph": "FAIL",
+      "passed_each": 3,
+      "failed_each": 2,
+      "failure": "DeepSeek stable Softplus selects frozen hyle-cuda; mature provider assertion fails; no numerical assertions failed"
+    },
+    "vulkan": {
+      "compute": "PASS",
+      "graph": "PASS",
+      "tests_each": 5
+    },
+    "apple": {
+      "compute": "PASS",
+      "graph": "PASS",
+      "tests_each": 5,
+      "machine": "MacBook Air Mac16,12 Apple M4"
+    }
+  },
+  "schema_and_header": "PASS (2 ctests)",
+  "numeric_gate": "unchanged existing scale-normalized quantized-chain gate; expert IDs exact",
+  "fixture_correction": "Router weight 1 -> 64 and selected input /64 preserve logits, IDs and probabilities; remove artificial FFN outliers. Original failure retained.",
+  "diagnostic": "Independent original Q8_0 activation rounding predicts observed -0.016981997 versus unrounded-input oracle -0.009653848",
+  "limitations": [
+    "synthetic nonzero weights with exact real role shapes/storage",
+    "resident experts top-k+1; full router expert count",
+    "official expert packing not covered",
+    "hash routers, attention/MTP remainder pending",
+    "full selected owner closure gates pending",
+    "D5 external source/static/shared and P1 not run"
+  ],
+  "implementation_loc": {
+    "lines": 58309,
+    "files": 228,
+    "tests_and_vendor_excluded": true
+  },
+  "files_sha256": {
+    "cpu-build.cmd": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+    "cpu-build.log": "9b1f90d9dfd9a40d882a10f4329aede286c2d832106db4f65fbee77a3fffe0cd",
+    "cpu-compute.log": "0449d2a60e224d9109c3d9cfcc7f86fe666a50c3bc03987d35f2efec9113c9d5",
+    "cpu-graph.log": "85c88c4d25a0f415c6e131b51a6b30ba7c9c035cebaab010cf25e417d8f1718d",
+    "cuda-build.cmd": "a50902eeab54a2f250fb14046adc6bf35bfeb21bc05449d23f9f45523a262244",
+    "cuda-build.log": "80b805fe7f23d0345ab3b8fb774cdf508aac983839404df9c636175808d9be00",
+    "cuda-compute.log": "e644dbfb55d2913a2c4eed36834cd313a9d393fcc4b0bcf509caf7e3fd475d27",
+    "cuda-graph.log": "714e7507a5d01d1e093035ca5665d19b0abb8de9e67845f34f609ef483748da6",
+    "vulkan-build.cmd": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf",
+    "vulkan-build.log": "07ba1c4a0ae8c0766de8af10e0edb8feab761d60a6a7dede8d4e6a9b7f120c57",
+    "vulkan-compute.log": "631f2977d20b552b748eeec4600e7b1b11174dc69b5f47a55a6eb58d81dff85f",
+    "vulkan-graph.log": "58931d08d3ee6a23a02fe1cd4f6b58e13b378501143b031c46e9850cad6454df",
+    "apple-build-and-test.log": "9a17124b16edcca940af5c433525cf80104e9a42d2cee7234cb7aea5e750ec7d",
+    "schema-check.log": "7418bbf39c92bd0f2800245f1745640d3531c2c55d99a4d1628b459927aea34f",
+    "plan.json": "9b05dadfe6b08edf0de9a7de6437484a10ea901120170ed423e450289bcb1e30",
+    "loc.json": "5c0f7bff3d264b8609734bed4dfea8b993fecde4c0d29486254ec5838e970af2",
+    "initial-cpu-compute-FAIL.log": "369036ecf551f683e582666595b4a7318f0d0756112e9f8565ac715c1cd3287d",
+    "initial-cpu-graph-FAIL.log": "9664056260ba221bcd41bda537e695191b870bdfa05b1a4521a8009da42732e1",
+    "diagnostic-cpu-output-FAIL.log": "0ebcd389d58cef7de491c493229f509729f6ce1f772557bad1bbe310527a3c5e",
+    "q8-cause.json": "ca942f78123956a5ddeb1d91c6b60e73e484f88832f47c9809017ec16fbe4282",
+    "q8-cause.py": "2a33cfc597bba060a9a5d5c3cc38dd201758fd4c38b244cbfc32565b8e0ff5c2",
+    "generate-cases.py": "63826d18e36061f8a6d5b73d2c8b26ab0c0641ed291916b9d3c5a8df093145a1",
+    "windows-base.py": "798b6ff7124fc8620bac34267b09eca9c4dc5281b4fc56cbe9c632279e2b9483",
+    "apple-base.py": "91b259f38907188eb4d999e5bd0e61590504974c3a29ea00aaf682df046d780e",
+    "windows-batch.py": "f69b2bd9ff1a38725b8d544947a69de954dfaed81630ebf4532b4a873c4cd451",
+    "apple-batch.py": "9bc271e8f5d242f609010e951be5ee884b7002186376f1e901f09dc487d2e0d5"
+  }
+}

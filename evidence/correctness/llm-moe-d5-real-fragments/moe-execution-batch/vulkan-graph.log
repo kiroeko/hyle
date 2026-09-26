@@ -1,0 +1,20 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5MatureClamp*:*MoeFragments.D5Thirteen*:*MoeFragments.D5Eight*:*MoeFragments.D5KimiThreeProfilesSituActivation
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from VulkanGraphMoeFragments
+[ RUN      ] VulkanGraphMoeFragments.D5MatureClampBoundaries
+[       OK ] VulkanGraphMoeFragments.D5MatureClampBoundaries (176 ms)
+[ RUN      ] VulkanGraphMoeFragments.D5ThirteenProfilesModelRouters
+[       OK ] VulkanGraphMoeFragments.D5ThirteenProfilesModelRouters (1301 ms)
+[ RUN      ] VulkanGraphMoeFragments.D5ThirteenProfilesExpertActivation
+[       OK ] VulkanGraphMoeFragments.D5ThirteenProfilesExpertActivation (758 ms)
+[ RUN      ] VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe
+[       OK ] VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe (28451 ms)
+[ RUN      ] VulkanGraphMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] VulkanGraphMoeFragments.D5KimiThreeProfilesSituActivation (579 ms)
+[----------] 5 tests from VulkanGraphMoeFragments (31268 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (31268 ms total)
+[  PASSED  ] 5 tests.

@@ -57,6 +57,16 @@ latent down → experts → norm → up。只将 resident expert capacity 缩为
 三个变化输入改变成员和次序，输出 expert ID 单独精确比较，不使用量化数值容差蒙混成员错误。
 本批尚未完成四路线验收，官方 expert 打包、DeepSeek hash 层、其它 attention/MTP 仍待完成。
 
+候选 `a11aac6a` 的 CPU/Apple/Vulkan Direct/Graph 本批各5/5通过；CUDA各3/5，数值均通过，
+失败仅为 DeepSeek 普通 Softplus 仍落到冻结 HYLE 实现的成熟 Provider 断言。
+原生 Clamp 的四路线边界已通过；初始 Q8 反例已由独立激活量化计算解释，修正合成 router
+权重/输入比例并保持相同分数和原误差门，旧失败保留。详见
+[MoE 部分收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/moe-execution-batch/README.md)。
+下一有限接缝为固定 SGLang 原版 `moe_fused_gate` 的完整 DeepSeek routing 接入审计；
+先确认 bias dtype/转换、tie/归一化合同、原 kernel 依赖与现有 owner，再固定有限 FIX，
+不抽 helper 新写数学，不为该缺口重做全平台历史审计。官方 expert 等其余项目继续按上段保留。
+整格 ledger 不变；统一 Compute+Graph 实现统计为58,309行／228文件。
+
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22

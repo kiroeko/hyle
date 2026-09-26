@@ -1,0 +1,32 @@
+[
+  {
+    "replay": 0,
+    "row": 1921,
+    "column": 16,
+    "input": -0.013427734375,
+    "block_max": 3.0,
+    "activation_quant_step": 0.02362060546875,
+    "decoded_weight_oracle": -0.00965384766459465,
+    "independent_q8_activation_prediction": -0.016981996595859528
+  },
+  {
+    "replay": 1,
+    "row": 1921,
+    "column": 16,
+    "input": -0.057373046875,
+    "block_max": 3.0,
+    "activation_quant_step": 0.02362060546875,
+    "decoded_weight_oracle": -0.04124825820326805,
+    "independent_q8_activation_prediction": -0.033963993191719055
+  },
+  {
+    "replay": 2,
+    "row": 1921,
+    "column": 16,
+    "input": -0.034912109375,
+    "block_max": 5,
+    "activation_quant_step": 0.03936767578125,
+    "decoded_weight_oracle": -0.02510000392794609,
+    "independent_q8_activation_prediction": -0.028303325176239014
+  }
+]

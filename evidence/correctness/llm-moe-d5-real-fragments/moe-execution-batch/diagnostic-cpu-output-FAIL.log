@@ -1,0 +1,1208 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5Eight*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5EightGgufProfilesFullMoe
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0040065303856364684 vs 0.0024360338197464645
+reference_rms=0.021801690987323218
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=39487 actual=-0.033564 expected=-0.027326
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.228309631 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=39487 actual=-0.033564 expected=-0.027326
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.010401082568647546 vs 0.003251948807441056
+reference_rms=0.062597440372052782
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.239815 expected=-2.652756
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.221301317 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.239815 expected=-2.652756
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.010403133717424984 vs 0.0032735326851447344
+reference_rms=0.063676634257236714
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.239503 expected=-2.652442
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.221328616 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.239503 expected=-2.652442
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0046011627476161224 vs 0.0024978761667941718
+reference_rms=0.024893808339708574
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=8834 actual=-0.044765 expected=-0.036434
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.228646278 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=8834 actual=-0.044765 expected=-0.036434
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034278152916966077 vs 0.0024264495305906563
+reference_rms=0.02132247652953282
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.040059 expected=-0.033896
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.181820512 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.040059 expected=-0.033896
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084376498088061577 vs 0.0031298248668399095
+reference_rms=0.056491243341995484
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.330634 expected=-1.926031
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.179877639 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.330634 expected=-1.926031
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084389143764472905 vs 0.0031487595329306064
+reference_rms=0.057437976646530317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.330480 expected=-1.925878
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.179892 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.330480 expected=-1.925878
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0038854470685952694 vs 0.0024790640654158867
+reference_rms=0.023953203270794324
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.053410 expected=-0.045195
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.181764841 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.053410 expected=-0.045195
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034402872798857901 vs 0.0024796058100614244
+reference_rms=0.023980290503071221
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.041853 expected=-0.032376
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.201884031 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.041853 expected=-0.032376
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0079026111826258193 vs 0.0031689695033318109
+reference_rms=0.05844847516659054
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.627464 expected=-2.844510
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.169062793 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.627464 expected=-2.844510
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0078426970872912862 vs 0.0031876863678959267
+reference_rms=0.059384318394796333
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.626592 expected=-2.843644
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.167770743 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.626592 expected=-2.843644
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0038542722089778348 vs 0.0025435586961594947
+reference_rms=0.027177934807974733
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.055801 expected=-0.043169
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.201827228 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.055801 expected=-0.043169
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0040299009050975207 vs 0.0024359416217979062
+reference_rms=0.021797081089895313
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=39487 actual=-0.033564 expected=-0.027329
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.228150845 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=39487 actual=-0.033564 expected=-0.027329
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.010442821691130656 vs 0.0032518658969441961
+reference_rms=0.062593294847209796
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.243164 expected=-2.652502
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.222680926 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.243164 expected=-2.652502
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.01044406773990211 vs 0.0032734471496031897
+reference_rms=0.063672357480159494
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.242849 expected=-2.652188
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.222707272 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4482 actual=-3.242849 expected=-2.652188
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0046302760495916797 vs 0.0024977667054597724
+reference_rms=0.024888335272988612
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=8834 actual=-0.044765 expected=-0.036439
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.228487492 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=8834 actual=-0.044765 expected=-0.036439
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034325605228069946 vs 0.0024264359985788028
+reference_rms=0.021321799928940129
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.040059 expected=-0.033889
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.182074547 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.040059 expected=-0.033889
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084192273453732279 vs 0.003129601398626107
+reference_rms=0.056480069931305346
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.333008 expected=-1.924263
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.17865032 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.333008 expected=-1.924263
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084199038250880529 vs 0.0031485381108747202
+reference_rms=0.057426905543736015
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.332854 expected=-1.924110
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.178664446 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1967 actual=-1.332854 expected=-1.924110
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0038904590757502899 vs 0.0024790465865157513
+reference_rms=0.023952329325787572
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.053410 expected=-0.045185
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.182018757 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.053410 expected=-0.045185
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034149840608473704 vs 0.0024796446441405591
+reference_rms=0.023982232207027939
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.041808 expected=-0.032370
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.201102853 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=9767 actual=-0.041808 expected=-0.032370
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0078394138110137093 vs 0.0031693216671323425
+reference_rms=0.058466083356617127
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.632812 expected=-2.844122
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.170381248 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.632812 expected=-2.844122
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.007777040680437503 vs 0.0031876573317440524
+reference_rms=0.059382866587202612
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.631947 expected=-2.843257
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.169025421 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2282 actual=-3.631947 expected=-2.843257
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0038254116496100376 vs 0.0025435976699068213
+reference_rms=0.027179883495341062
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.055742 expected=-0.043159
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.201066613 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6378 actual=-0.055742 expected=-0.043159
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084774591199219141 vs 0.0027586425844983217
+reference_rms=0.037932129224916088
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=11964 actual=-0.022289 expected=-0.015831
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.407403529 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=11964 actual=-0.022289 expected=-0.015831
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.013089184635378101 vs 0.003329060312801552
+reference_rms=0.066453015640077606
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3772 actual=-0.013298 expected=-0.009426
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.362629235 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3772 actual=-0.013298 expected=-0.009426
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.016487281541514173 vs 0.0030736492200764305
+reference_rms=0.053682461003821513
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.015534 expected=-0.009620
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.614678144 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.015534 expected=-0.009620
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.020548090497739323 vs 0.0038396802011824945
+reference_rms=0.091984010059124724
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.015205 expected=-0.009294
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.574639857 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.015205 expected=-0.009294
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0097922252740531186 vs 0.0028654472352860234
+reference_rms=0.043272361764301166
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4815 actual=-0.029713 expected=-0.021109
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.407127202 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4815 actual=-0.029713 expected=-0.021109
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.137389 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=235 actual=-0.018273 expected=-0.026373
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.018826519021027187 vs 0.0032074825284102507
+reference_rms=0.060374126420512521
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.019872 expected=-0.012311
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.614168763 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.019872 expected=-0.012311
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0028915352188308729 vs 0.0025730681052025623
+reference_rms=0.028653405260128127
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=15160 actual=-0.039401 expected=-0.049116
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165219128 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=15160 actual=-0.039401 expected=-0.049116
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0051157892944376608 vs 0.0030259565615251348
+reference_rms=0.051297828076256734
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025464 expected=-0.031827
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.185995579 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025464 expected=-0.031827
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0029631874953604045 vs 0.0026238718436523163
+reference_rms=0.031193592182615807
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.052907 expected=-0.046975
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.108498394 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.052907 expected=-0.046975
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0043781394469076486 vs 0.0029060513604375849
+reference_rms=0.045302568021879236
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025285 expected=-0.031651
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.116849601 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025285 expected=-0.031651
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.003321037911652175 vs 0.0026559044330115092
+reference_rms=0.032795221650575461
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=7947 actual=-0.052536 expected=-0.065488
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165196419 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=7947 actual=-0.052536 expected=-0.065488
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.131421447 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=234 actual=-0.052774 expected=-0.045026
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0036309507184053209 vs 0.0027581365388336079
+reference_rms=0.037906826941680391
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.067715 expected=-0.060112
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.117343485 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.067715 expected=-0.060112
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0839790106 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=7542 actual=-0.081118 expected=-0.088555
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0037381212982878437 vs 0.0028518961169460306
+reference_rms=0.04259480584730152
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=250 actual=-0.030470 expected=-0.035377
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.133313179 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=250 actual=-0.030470 expected=-0.035377
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0416351259 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.028110 expected=-0.025013
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0669119656 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=250 actual=-0.030310 expected=-0.035218
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0838674903 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3369 actual=-0.108170 expected=-0.118073
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.230370983 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1440 actual=0.000000 expected=-0.013779
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0449500084 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.035970 expected=-0.032009
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084774591199219141 vs 0.0027586425844983217
+reference_rms=0.037932129224916088
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=11964 actual=-0.022289 expected=-0.015831
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.407403529 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=11964 actual=-0.022289 expected=-0.015831
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.013089184635378101 vs 0.003329060312801552
+reference_rms=0.066453015640077606
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3772 actual=-0.013298 expected=-0.009426
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.362629235 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3772 actual=-0.013298 expected=-0.009426
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.013587139516169458 vs 0.0038394431110002239
+reference_rms=0.091972155550011189
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3772 actual=-0.012677 expected=-0.008804
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.376590967 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3772 actual=-0.012677 expected=-0.008804
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0097922252740531186 vs 0.0028654472352860234
+reference_rms=0.043272361764301166
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4815 actual=-0.029713 expected=-0.021109
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.407127202 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=4815 actual=-0.029713 expected=-0.021109
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0028915352188308729 vs 0.0025730681052025623
+reference_rms=0.028653405260128127
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=15160 actual=-0.039401 expected=-0.049116
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165219128 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=15160 actual=-0.039401 expected=-0.049116
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0051157892944376608 vs 0.0030259565615251348
+reference_rms=0.051297828076256734
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025464 expected=-0.031827
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.185995579 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025464 expected=-0.031827
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.003215034540284619 vs 0.0029063771278645119
+reference_rms=0.045318856393225589
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025288 expected=-0.031651
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.116860658 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2872 actual=-0.025288 expected=-0.031651
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.003321037911652175 vs 0.0026559044330115092
+reference_rms=0.032795221650575461
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=7947 actual=-0.052536 expected=-0.065488
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165196419 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=7947 actual=-0.052536 expected=-0.065488
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0839790106 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=7542 actual=-0.081118 expected=-0.088555
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0037381212982878437 vs 0.0028518961169460306
+reference_rms=0.04259480584730152
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=250 actual=-0.030470 expected=-0.035377
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.133313179 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=250 actual=-0.030470 expected=-0.035377
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=3
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0669201612 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=250 actual=-0.030312 expected=-0.035218
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=5
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0838674903 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3369 actual=-0.108170 expected=-0.118073
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0042861668244596907 vs 0.0026682182663397627
+reference_rms=0.033410913316988131
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.014770 expected=-0.009571
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.204369217 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.014770 expected=-0.009571
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0041005682386148021 vs 0.0027621728358886372
+reference_rms=0.038108641794431859
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.016883 expected=-0.010939
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.175236315 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.016883 expected=-0.010939
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0039233172707561345 vs 0.0026041803976686768
+reference_rms=0.030209019883433837
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.073650 expected=-0.063192
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.073650 expected=-0.063192
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0046456479383300544 vs 0.0027571349970623867
+reference_rms=0.037856749853119327
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.084182 expected=-0.072223
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165574312 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.084182 expected=-0.072223
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0722144246 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3067 actual=-0.044553 expected=-0.038984
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0843699574 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1078 actual=-0.059418 expected=-0.051982
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0042861668244596907 vs 0.0026682182663397627
+reference_rms=0.033410913316988131
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.014770 expected=-0.009571
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.204369217 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.014770 expected=-0.009571
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0041005682386148021 vs 0.0027621728358886372
+reference_rms=0.038108641794431859
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.016883 expected=-0.010939
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.175236315 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.016883 expected=-0.010939
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0039233172707561345 vs 0.0026041803976686768
+reference_rms=0.030209019883433837
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.073650 expected=-0.063192
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=6100 actual=-0.073650 expected=-0.063192
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0046456479383300544 vs 0.0027571349970623867
+reference_rms=0.037856749853119327
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.084182 expected=-0.072223
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165574312 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1439 actual=-0.084182 expected=-0.072223
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0722144246 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=3067 actual=-0.044553 expected=-0.038984
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0843699574 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1078 actual=-0.059418 expected=-0.051982
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.020904724218058019 vs 0.0030736492200764305
+reference_rms=0.053682461003821513
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.016871 expected=-0.009620
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.753641367 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.016871 expected=-0.009620
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.124297857 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.016982 expected=-0.009654
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.023839557718230917 vs 0.0032074825284102507
+reference_rms=0.060374126420512521
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.021582 expected=-0.012311
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.753085852 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.021582 expected=-0.012311
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.005489942865376401 vs 0.0026222788190525159
+reference_rms=0.031113940952625797
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2004 actual=-0.071040 expected=-0.060952
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2004 actual=-0.071040 expected=-0.060952
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.124094129 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=717 actual=-0.062000 expected=-0.054684
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0067527736984885562 vs 0.0027562643651188701
+reference_rms=0.037813218255943498
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1680 actual=-0.082684 expected=-0.068748
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.192954957 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1680 actual=-0.082684 expected=-0.068748
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0416351259 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.028110 expected=-0.025013
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.230370983 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1440 actual=0.000000 expected=-0.013779
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0449500084 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.035970 expected=-0.032009
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.020904724218058019 vs 0.0030736492200764305
+reference_rms=0.053682461003821513
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.016871 expected=-0.009620
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.753641367 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.016871 expected=-0.009620
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.124297857 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.016982 expected=-0.009654
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.023839557718230917 vs 0.0032074825284102507
+reference_rms=0.060374126420512521
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.021582 expected=-0.012311
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.753085852 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.021582 expected=-0.012311
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.005489942865376401 vs 0.0026222788190525159
+reference_rms=0.031113940952625797
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2004 actual=-0.071040 expected=-0.060952
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=2004 actual=-0.071040 expected=-0.060952
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.124094129 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=717 actual=-0.062000 expected=-0.054684
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0067527736984885562 vs 0.0027562643651188701
+reference_rms=0.037813218255943498
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1680 actual=-0.082684 expected=-0.068748
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.192954957 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1680 actual=-0.082684 expected=-0.068748
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0416351259 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1430 actual=-0.028110 expected=-0.025013
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.230370983 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1440 actual=0.000000 expected=-0.013779
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=10
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0449500084 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(801): worst index=1921 actual=-0.035970 expected=-0.032009
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(791): fragment output=11
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(831): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(830): zai-org/GLM-5.3-Flash
+
+[  FAILED  ] CpuMoeFragments.D5EightGgufProfilesFullMoe (32219 ms)
+[----------] 1 test from CpuMoeFragments (32219 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (32219 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CpuMoeFragments.D5EightGgufProfilesFullMoe
+
+ 1 FAILED TEST

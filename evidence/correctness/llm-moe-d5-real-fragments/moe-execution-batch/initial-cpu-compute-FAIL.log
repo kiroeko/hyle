@@ -1,0 +1,1110 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5Thirteen*:*MoeFragments.D5Eight*:*MoeFragments.D5KimiThreeProfilesSituActivation
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5ThirteenProfilesModelRouters
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): official-mxfp4
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): deepseek-ai/DeepSeek-V4-Pro
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): official-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): official-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(803): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(802): zai-org/GLM-5.3-Flash
+
+[  FAILED  ] CpuMoeFragments.D5ThirteenProfilesModelRouters (94 ms)
+[ RUN      ] CpuMoeFragments.D5ThirteenProfilesExpertActivation
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Pro
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Pro
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Pro
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp4-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): official-fp8
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(811): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(810): zai-org/GLM-5.3-Flash
+
+[  FAILED  ] CpuMoeFragments.D5ThirteenProfilesExpertActivation (2 ms)
+[ RUN      ] CpuMoeFragments.D5EightGgufProfilesFullMoe
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0040065303856364684 vs 0.0024360338197464645
+reference_rms=0.021801690987323218
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.228309631 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.010401082568647546 vs 0.003251948807441056
+reference_rms=0.062597440372052782
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.221301317 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.010403133717424984 vs 0.0032735326851447344
+reference_rms=0.063676634257236714
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.221328616 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034278152916966077 vs 0.0024264495305906563
+reference_rms=0.02132247652953282
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.181820512 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084376498088061577 vs 0.0031298248668399095
+reference_rms=0.056491243341995484
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.179877639 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084389143764472905 vs 0.0031487595329306064
+reference_rms=0.057437976646530317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.179892 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034402872798857901 vs 0.0024796058100614244
+reference_rms=0.023980290503071221
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.201884031 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0079026111826258193 vs 0.0031689695033318109
+reference_rms=0.05844847516659054
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.169062793 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0078426970872912862 vs 0.0031876863678959267
+reference_rms=0.059384318394796333
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.167770743 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0040299009050975207 vs 0.0024359416217979062
+reference_rms=0.021797081089895313
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.228150845 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.010442821691130656 vs 0.0032518658969441961
+reference_rms=0.062593294847209796
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.222680926 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.01044406773990211 vs 0.0032734471496031897
+reference_rms=0.063672357480159494
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.222707272 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034325605228069946 vs 0.0024264359985788028
+reference_rms=0.021321799928940129
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.182074547 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084192273453732279 vs 0.003129601398626107
+reference_rms=0.056480069931305346
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.17865032 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084199038250880529 vs 0.0031485381108747202
+reference_rms=0.057426905543736015
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.178664446 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0034149840608473704 vs 0.0024796446441405591
+reference_rms=0.023982232207027939
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.201102853 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0078394138110137093 vs 0.0031693216671323425
+reference_rms=0.058466083356617127
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.170381248 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.007777040680437503 vs 0.0031876573317440524
+reference_rms=0.059382866587202612
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.169025421 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): moonshotai/Kimi-K3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084774591199219141 vs 0.0027586425844983217
+reference_rms=0.037932129224916088
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.407403529 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.013089184635378101 vs 0.003329060312801552
+reference_rms=0.066453015640077606
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.362629235 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.016487281541514173 vs 0.0030736492200764305
+reference_rms=0.053682461003821513
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.614678144 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.020548090497739323 vs 0.0038396802011824945
+reference_rms=0.091984010059124724
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.574639857 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0028915352188308729 vs 0.0025730681052025623
+reference_rms=0.028653405260128127
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165219128 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0051157892944376608 vs 0.0030259565615251348
+reference_rms=0.051297828076256734
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.185995579 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0029631874953604045 vs 0.0026238718436523163
+reference_rms=0.031193592182615807
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.108498394 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0043781394469076486 vs 0.0029060513604375849
+reference_rms=0.045302568021879236
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.116849601 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0839790106 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0037381212982878437 vs 0.0028518961169460306
+reference_rms=0.04259480584730152
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.133313179 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0416351259 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0669119656 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0084774591199219141 vs 0.0027586425844983217
+reference_rms=0.037932129224916088
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.407403529 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.013089184635378101 vs 0.003329060312801552
+reference_rms=0.066453015640077606
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.362629235 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.013587139516169458 vs 0.0038394431110002239
+reference_rms=0.091972155550011189
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.376590967 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0028915352188308729 vs 0.0025730681052025623
+reference_rms=0.028653405260128127
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165219128 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0051157892944376608 vs 0.0030259565615251348
+reference_rms=0.051297828076256734
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.185995579 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.003215034540284619 vs 0.0029063771278645119
+reference_rms=0.045318856393225589
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.116860658 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0839790106 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0037381212982878437 vs 0.0028518961169460306
+reference_rms=0.04259480584730152
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.133313179 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0669201612 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q8_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): deepseek-ai/DeepSeek-V4-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0042861668244596907 vs 0.0026682182663397627
+reference_rms=0.033410913316988131
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.204369217 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0039233172707561345 vs 0.0026041803976686768
+reference_rms=0.030209019883433837
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0722144246 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0042861668244596907 vs 0.0026682182663397627
+reference_rms=0.033410913316988131
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.204369217 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.0039233172707561345 vs 0.0026041803976686768
+reference_rms=0.030209019883433837
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0722144246 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.020904724218058019 vs 0.0030736492200764305
+reference_rms=0.053682461003821513
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.753641367 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.005489942865376401 vs 0.0026222788190525159
+reference_rms=0.031113940952625797
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0416351259 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): UD-Q4_K_XL
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(91): error: Value of: provider == c::ggml_cpu::kProviderId || provider == c::onednn::kProviderId
+  Actual: false
+Expected: true
+binary: hyle-native
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.020904724218058019 vs 0.0030736492200764305
+reference_rms=0.053682461003821513
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.753641367 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(277): error: Expected: (rmse) <= (2.0e-3 + 2.0e-2 * reference_rms), actual: 0.005489942865376401 vs 0.0026222788190525159
+reference_rms=0.031113940952625797
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.165495992 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(279): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0416351259 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(822): Q8_0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(821): zai-org/GLM-5.3-Flash
+
+[  FAILED  ] CpuMoeFragments.D5EightGgufProfilesFullMoe (32305 ms)
+[ RUN      ] CpuMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuMoeFragments.D5KimiThreeProfilesSituActivation (11 ms)
+[----------] 4 tests from CpuMoeFragments (32414 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (32414 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] CpuMoeFragments.D5ThirteenProfilesModelRouters
+[  FAILED  ] CpuMoeFragments.D5ThirteenProfilesExpertActivation
+[  FAILED  ] CpuMoeFragments.D5EightGgufProfilesFullMoe
+
+ 3 FAILED TESTS
