@@ -532,14 +532,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-m1-apple-admission.md",
-      "summary": "M1-A CLOSED：原版Metal whole recurrent与MLX普通Direct/Graph、独立资源/checked失败、Air/Mini三交付、host插桩及Windows/WSL和119 selected门通过；有限域/P0，覆盖0，自研冻结。",
-      "candidate": "140054b13ce2515a05bc6eedac7e03e56bbc3662",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-llm-moe-m1-apple-admission/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-metal-buffer-failure.md",
+      "summary": "D5 MG4 static fault injection reproduces a null dereference in ggml_metal_buffer_init; scope is this native workspace constructor and partial rollback only."
     },
     {
       "module": "compute_provider_ggml_cuda",
