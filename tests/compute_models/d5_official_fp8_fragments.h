@@ -30,6 +30,9 @@ inline constexpr std::array kCases{
     Case{cases::kCases[10].profile, 2048, 4096, false, "expert/shared gate/up"},
     Case{cases::kCases[10].profile, 4096, 2048, false, "expert/shared down"}};
 
+inline constexpr Case kGlmTailCase{
+    cases::kCases[7].profile, 576, 6144, false, "kv-a projection"};
+
 inline auto descriptions(const Case &shape, std::int64_t m) {
   return std::array{
       c::float8_activation_description(m, shape.k, c::Float8ScaleMode::kFloat32Block128).value(),
@@ -74,7 +77,7 @@ inline sem::Fragment projection(const Case &shape, std::int64_t m) {
   auto input = f.input(desc[0]);
   std::vector<std::byte> w(desc[1].required_bytes().value());
   const auto blocks = std::size_t(shape.k / 128);
-  for (std::size_t row = 0; row < std::size_t(shape.n / 128); ++row)
+  for (std::size_t row = 0; row < std::size_t((shape.n + 127) / 128); ++row)
     for (std::size_t group = 0; group < blocks; ++group) {
       const auto value = scale(shape, row, group, 13);
       std::memcpy(w.data() + shape.n * shape.k + (row * blocks + group) * 4, &value, 4);

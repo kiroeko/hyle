@@ -12,3 +12,10 @@ binding and primitive CUDA shims replace TVM/Python glue; the Blackwell-only
 adapted stable-tail formula and -infinity limiting value for HYLE's ordinary
 Unary contract. Unary input/output restrict qualifiers are removed to permit
 the documented exact in-place alias. See provenance.json for source hashes.
+
+D5-F37 additionally retains the unchanged group128 quantizer and block128
+FP8 GEMM Python source bodies for offline AOT. Only the original GEMM's
+SM89 cubin is embedded in the native HYLE Provider. Triton 3.8.0 generated
+the artifact; its MIT notice is retained in TRITON-LICENSE. Normal builds
+and native use do not run Python, Triton or a model engine. See fp8/ for
+compiler/source identities and explicit maintainer regeneration.

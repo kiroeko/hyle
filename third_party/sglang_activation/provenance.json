@@ -18,7 +18,8 @@
     "python/sglang/kernels/jit/csrc/moe/moe_fused_gate.cuh": "d7a9ebe683a0faaf838e6747ecb4df028ba0678fe20296b0db5be0c8ac0ccc82",
     "python/sglang/kernels/ops/moe/moe_fused_gate.py": "e982ae69457fd3b9c6290e0c756a6c6271600a25b25b6d9875179701d37fd174",
     "python/sglang/kernels/jit/csrc/deepseek_v4/hash_topk.cuh": "ff3d7080fd2e342197876fa23f85176d9020b0a6e0fa75ff437dee434d4e6452",
-    "python/sglang/srt/layers/moe/hash_topk.py": "6a6a92fb62de9ac6321a4abcb69601908618b028a825154b84c5cd2dae5368e1"
+    "python/sglang/srt/layers/moe/hash_topk.py": "6a6a92fb62de9ac6321a4abcb69601908618b028a825154b84c5cd2dae5368e1",
+    "python/sglang/kernels/ops/quantization/fp8_kernel.py": "70e77198045fb8b7308be9c314392dee972ffd910260c53a36e2fd596f8b43bc"
   },
   "hash_semantics": "SHA-256 of the original upstream Git blob",
   "adaptations": [
@@ -32,7 +33,8 @@
     "Move the small-token expert score load inside the existing expert-ID range check; invalid model data cannot read index -1. Normal input arithmetic, selection and reduction remain unchanged.",
     "Bind only E256/384, top6, F32 logits/bias, no fused shared experts, positive-sum normalization and output scaling. Retain native small/large token threshold and launch policy; model tie selection is not generic stable TopK.",
     "Complete DeepSeek hash routing kernel retained with original stable sqrt-softplus, warp SUM, sum+1e-20 normalization, table order and 128-thread launch. TVM host wrapper omitted; namespace and SGL_DEVICE isolated; PDL/fused shared experts disabled; model scale remains in the consumer.",
-    "Hash safety adapter adds vocabulary extent and existing HYLE device-status output. Token bounds are checked before table access; all token-warp lanes reject any selected out-of-range expert before score reads. Failed rows receive zero IDs/weights to prevent uninitialized downstream addressing. Valid-input arithmetic is unchanged; failed outputs are not consumable and no cross-token rollback is promised."
+    "Hash safety adapter adds vocabulary extent and existing HYLE device-status output. Token bounds are checked before table access; all token-warp lanes reject any selected out-of-range expert before score reads. Failed rows receive zero IDs/weights to prevent uninitialized downstream addressing. Valid-input arithmetic is unchanged; failed outputs are not consumable and no cross-token rollback is promised.",
+    "D5-F37 retains the exact original block128 Triton GEMM body. A pinned Triton 3.8.0 offline compiler produces an embedded SM89 cubin; HYLE supplies only CUDA Driver module lifetime, argument binding and native launch. No runtime Python or JIT. Dynamic quantizer source is retained for provenance but is not exposed by this MatMul binding."
   ],
   "configuration": {
     "fast_math": false,
@@ -47,5 +49,13 @@
       "bfloat16"
     ]
   },
-  "qualification": "C1-AB implementation candidate; correctness/delivery/full-cost performance qualification tracked by owning card. Existing packed gate evidence remains separate."
+  "qualification": "C1-AB implementation candidate; correctness/delivery/full-cost performance qualification tracked by owning card. Existing packed gate evidence remains separate.",
+  "fp8_aot": {
+    "source": "fp8/source.json",
+    "compiler": "fp8/compiler-wheel.json",
+    "compilation": "fp8/compilation.json",
+    "native_cubin_sha256": "24b0e9051883dcd3467ba56fd7aceb803f1d6fc4db9545faeae48cd3403f8cda",
+    "native_cubin_bytes": 302752,
+    "qualification": "D5-F37; C++ entry/delivery qualification remains separate"
+  }
 }

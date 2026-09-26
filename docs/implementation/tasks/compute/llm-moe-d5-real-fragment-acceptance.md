@@ -17,6 +17,8 @@ DeepSeek两个GGUF的Vulkan四格、四个官方FP8画像的32格、D5三交付/
 
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。该候选尚未取得HYLE C++资格。
+该具名候选现按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)检查AOT与Windows
+Driver执行，不新增产品数学或提前增加完整画像格。
 
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。

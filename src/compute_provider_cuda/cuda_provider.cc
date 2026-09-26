@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "concat_provider.h"
+#include "fp8_provider.h"
 #include "native_context.h"
 #include "native_kernel.h"
 #include "norm_provider.h"
@@ -130,7 +131,7 @@ constexpr ProviderRuntimeProperties kRuntime{
 };
 
 template <bool Sglang>
-Status propose(void *, const detail::ProviderOperationRequest &request,
+Status propose(void *state, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *proposal) noexcept {
@@ -138,6 +139,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (Sglang) {
+    if (request.operation.kind() == OperationKind::kMatMul)
+      return fp8::propose(state, request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||
         request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
       return routing::propose(request, inputs, outputs, proposal);
@@ -280,6 +283,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (Sglang) {
+    if (request.route == fp8::kRoute)
+      return fp8::prepare(state, request, allocator, output);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||
         request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
       return routing::prepare(state, request, allocator, output);
@@ -379,7 +384,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-model-router" : "v10-scan"},
+                 .version = Sglang ? "06992c92-block128-aot" : "v10-scan"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

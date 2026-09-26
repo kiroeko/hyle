@@ -7,7 +7,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_module(compute_provider_cuda SOURCES
     collectives_provider.cc collectives.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
-    router_provider.cc sglang_router_kernel.cu
+    router_provider.cc sglang_router_kernel.cu fp8_provider.cc
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu
@@ -19,7 +19,14 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda"
     "${PROJECT_SOURCE_DIR}/third_party/sglang_activation")
-  target_link_libraries(hyle_compute_provider_cuda PRIVATE CUDA::cudart)
+  target_link_libraries(hyle_compute_provider_cuda PRIVATE CUDA::cudart CUDA::cuda_driver)
+  if(WIN32 AND (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
+    # Same CUDA 13.3 driver-loader CRT directive as compute_backend_cuda.
+    target_link_options(hyle_compute_provider_cuda PRIVATE /NODEFAULTLIB:LIBCMT)
+    if(HYLE_STATIC)
+      target_link_options(hyle_compute_provider_cuda INTERFACE /NODEFAULTLIB:LIBCMT)
+    endif()
+  endif()
   target_compile_options(hyle_compute_provider_cuda PRIVATE
     "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
   if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")
@@ -52,7 +59,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     LOCKED_DEPENDENCIES sglang_activation
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-LICENSE"
-      "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/NOTICE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-NOTICE")
+      "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/NOTICE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-NOTICE"
+      "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/TRITON-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-triton-LICENSE")
 else()
   hyle_add_module(compute_provider_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_cuda PROPERTY

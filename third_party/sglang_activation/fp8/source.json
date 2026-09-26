@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/sgl-project/sglang",
+  "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+  "path": "python/sglang/kernels/ops/quantization/fp8_kernel.py",
+  "source_sha256": "70e77198045fb8b7308be9c314392dee972ffd910260c53a36e2fd596f8b43bc",
+  "functions": [
+    {
+      "function": "_per_token_group_quant_8bit",
+      "lines": [
+        155,
+        195
+      ],
+      "sha256": "b4fb7875ce27d82ac97f60be014eafeff1639eb9cf623b078de3ef55360bcd00"
+    },
+    {
+      "function": "_w8a8_block_fp8_matmul",
+      "lines": [
+        940,
+        1029
+      ],
+      "sha256": "a6a841ea90a6a891dbd92df11fc7ff6a9e80684d8ba4991d6bf772aee16cf5d2"
+    }
+  ],
+  "module_sha256": "24d16a16a8f952a10c0a746d87e70dc39e64f4f9479b87f23d13ccc2433c2eb8"
+}

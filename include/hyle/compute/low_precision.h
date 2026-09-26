@@ -77,8 +77,9 @@ float8_activation_description(std::int64_t m, std::int64_t k,
                               Float8ScaleMode mode) noexcept;
 
 // Logical F32 [K,N], for ordinary MatMul. Physical storage is E4M3FN [N,K],
-// followed by F32 [N/128,K/128] or UE8M0 [N,K/32] scales. F32 mode requires
-// both N and K divisible by 128; UE8 mode requires K divisible by 32.
+// followed by F32 [ceil(N/128),K/128] or UE8M0 [N,K/32] scales. F32 mode
+// requires K divisible by 128; its last N scale block may be partial.
+// UE8 mode requires K divisible by 32.
 // F32 scales use the host's native float representation and 4-byte alignment.
 HYLE_COMPUTE_OPS_API Result<TensorDesc>
 float8_weight_description(std::int64_t k, std::int64_t n,

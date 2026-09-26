@@ -67,6 +67,22 @@ TEST(ComputeOpsLowPrecision, Mxfp4BlockAxisFollowsLogicalK) {
   EXPECT_EQ(output->dimensions()[1], 5);
 }
 
+TEST(ComputeOpsLowPrecision, Float8WeightTailKeepsCeilingScaleRows) {
+  for (std::int64_t n : {1, 127, 128, 129, 576}) {
+    const auto weight = float8_weight_description(6144, n,
+        Float8ScaleMode::kFloat32Block128);
+    ASSERT_TRUE(weight);
+    EXPECT_EQ(*weight->required_bytes(),
+              std::size_t(n * 6144 + ((n + 127) / 128) * 48 * 4));
+    const auto activation = float8_activation_description(3, 6144,
+        Float8ScaleMode::kFloat32Block128).value();
+    const auto output = infer_single_output(Operation(MatMul{}),
+                                            std::array{activation, *weight});
+    ASSERT_TRUE(output);
+    EXPECT_EQ(output->dimensions()[1], n);
+  }
+}
+
 TEST(ComputeOpsLowPrecision, GgufCatalogPreservesExactNativeBlocks) {
   struct Case final {
     GgufQuantizedType type;
@@ -122,7 +138,7 @@ TEST(ComputeOpsLowPrecision, RejectsIncompleteBlocksAndOverflow) {
   EXPECT_FALSE(float8_activation_description(0, 128, block));
   EXPECT_FALSE(float8_activation_description(-1, 128, block));
   EXPECT_FALSE(float8_activation_description(1, 129, block));
-  EXPECT_FALSE(float8_weight_description(128, 1, block));
+  EXPECT_FALSE(float8_weight_description(128, 0, block));
   EXPECT_FALSE(float8_weight_description(33, 1, group));
   EXPECT_FALSE(
       float8_weight_description(32, 1, static_cast<Float8ScaleMode>(255)));

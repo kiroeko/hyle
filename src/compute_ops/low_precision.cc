@@ -52,10 +52,9 @@ Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
   if (!f32 && mode != Float8ScaleMode::kUnsignedExponent8Group32)
     return std::unexpected(Status::InvalidArgument("unknown FP8 scale mode"));
   const std::int64_t block = f32 ? 128 : 32;
-  if (rows <= 0 || k <= 0 || k % block != 0 ||
-      (weight && f32 && rows % block != 0))
+  if (rows <= 0 || k <= 0 || k % block != 0)
     return std::unexpected(Status::InvalidArgument(
-        "FP8 matrices require positive dimensions and complete scale blocks"));
+        "FP8 matrices require positive dimensions and complete K scale blocks"));
 
   const auto r = math::try_integer_cast<std::size_t>(rows);
   const auto width = math::try_integer_cast<std::size_t>(k);
@@ -63,7 +62,8 @@ Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
     return std::unexpected(Status::OutOfRange("FP8 dimensions exceed size_t"));
   const auto payload = math::try_multiply(*r, *width);
   const auto scales = math::try_multiply(
-      weight && f32 ? *r / 128 : *r, *width / static_cast<std::size_t>(block));
+      weight && f32 ? *r / 128 + (*r % 128 != 0) : *r,
+      *width / static_cast<std::size_t>(block));
   const auto scale_bytes =
       scales ? math::try_multiply(*scales, std::size_t{f32 ? 4u : 1u})
              : std::nullopt;

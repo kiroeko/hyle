@@ -930,24 +930,20 @@ TEST(CudaGraphMoeFragments, D5ThirteenProfilesExpertActivation) {
   }
 }
 
-TEST(CudaGraphMoeFragments, D5OfficialFp8DenseColdRejection) {
+TEST(CudaGraphMoeFragments, D5OfficialFp8DenseNativeBatch) {
   namespace fp8 = d5_official_fp8_fragments;
-  auto context = cuda::create_context().value();
-  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
-  const auto resource = memory.ref();
   for (const auto &shape : fp8::kCases) {
     SCOPED_TRACE(shape.profile->model_name);
     SCOPED_TRACE(shape.role);
     for (auto m : {1, 3}) {
       SCOPED_TRACE(m);
-      const auto workload = q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x0b0603);
-      auto fragment = fp8::boundary(shape, m);
-      auto full = fp8::sem::make_graph(fragment);
-      auto result = g::cuda::compile(full.graph, context, resource, {.workload = workload});
-      ASSERT_FALSE(result);
-      fp8::record_rejection(shape, m, result.error());
-      EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+      run_q24_semantic_fragment(fp8::projection(shape, m));
     }
+  }
+  for (auto m : {1, 3}) {
+    SCOPED_TRACE("GLM partial N block");
+    SCOPED_TRACE(m);
+    run_q24_semantic_fragment(fp8::projection(fp8::kGlmTailCase, m));
   }
 }
 

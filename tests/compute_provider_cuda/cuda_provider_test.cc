@@ -1,10 +1,12 @@
 #include "hyle/compute/providers/cuda.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <limits>
 #include <optional>
 #include <span>
@@ -18,6 +20,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
 
@@ -782,6 +785,107 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
                                      compute::Operation(compute::Softmax{}));
   pending_completion_retains_program(compute::cuda_native::provider(),
                                      compute::Operation(compute::Concat{}));
+}
+
+
+TEST(SglangFp8, AllocationRollbackConcurrentReplayAndProgramLifetime) {
+  MetadataAllocator allocator;
+  {
+    const std::array providers{compute::ProviderBinding{
+        compute::cuda_native::sglang_provider(), 100}};
+    auto owner = compute::Context::create(cuda::device(0).value(),
+        {.metadata_allocator = allocator.ref(), .providers = providers}).value();
+    auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+    constexpr auto mode = compute::Float8ScaleMode::kFloat32Block128;
+    constexpr std::int64_t m = 3, n = 129, k = 128;
+    const auto ad = compute::float8_activation_description(m, k, mode).value();
+    const auto bd = compute::float8_weight_description(k, n, mode).value();
+    const auto cd = matrix(compute::DataType::kFloat32, m, n);
+    Tensor a(ad, resource.ref()), b(bd, resource.ref());
+    std::array output{Tensor(cd, resource.ref()), Tensor(cd, resource.ref())};
+    const std::array inputs{a.view.as_const(), b.view.as_const()};
+    const auto make = [&] {
+      return compute::prepare(owner, compute::Operation(compute::MatMul{}),
+                              inputs, std::array{output[0].view});
+    };
+    const auto start = allocator.attempts, live = allocator.live;
+    { auto program = make(); ASSERT_TRUE(program) << program.error().message(); }
+    const auto count = allocator.attempts - start;
+    ASSERT_GT(count, 0u);
+    ASSERT_LT(count, 32u);
+    for (std::size_t i = 0; i < count; ++i) {
+      SCOPED_TRACE(i);
+      allocator.fail_at = allocator.attempts + i;
+      auto failed = make();
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsResourceExhausted());
+      EXPECT_EQ(allocator.live, live);
+      allocator.fail_at = SIZE_MAX;
+    }
+    auto prepared = make().value();
+    EXPECT_EQ(prepared.provider().id, compute::cuda_native::kSglangProviderId);
+    EXPECT_EQ(prepared.workspace_requirement().size, 0u);
+    EXPECT_EQ(prepared.invocation_private_bytes(), 0u);
+    EXPECT_TRUE(prepared.capture_compatible());
+    std::array lanes{prepared.create_invocation().value(), prepared.create_invocation().value()};
+    std::array queues{owner.create_queue().value(), owner.create_queue().value()};
+    for (auto &queue : queues) ASSERT_TRUE(queue.reserve_completions(1).ok());
+    std::vector<std::byte> ab(ad.required_bytes().value(), std::byte{0x38});
+    std::vector<std::byte> bb(bd.required_bytes().value(), std::byte{0x38});
+    const float scale = 1.0F;
+    for (int i = 0; i < m; ++i) std::memcpy(ab.data() + m*k + i*4, &scale, 4);
+    for (int i = 0; i < 2; ++i) std::memcpy(bb.data() + n*k + i*4, &scale, 4);
+    ASSERT_TRUE(b.storage.view().write(bb).ok());
+    for (int replay = 0; replay < 2; ++replay) {
+      std::fill_n(ab.begin(), m*k, replay ? std::byte{0x40} : std::byte{0x38});
+      ASSERT_TRUE(a.storage.view().write(ab).ok());
+      const auto before = allocator.attempts;
+      std::array<compute::Completion, 2> done;
+      for (std::size_t i = 0; i < lanes.size(); ++i) {
+        auto result = lanes[i].submit(queues[i], inputs, std::array{output[i].view});
+        ASSERT_TRUE(result) << result.error().message();
+        done[i] = std::move(*result);
+      }
+      if (replay == 1) {
+        prepared = {};
+        lanes = {};
+        // Only real pending completions now retain native modules and slots.
+        ASSERT_TRUE(owner.close().ok());
+      }
+      for (std::size_t i = 0; i < done.size(); ++i) {
+        ASSERT_TRUE(done[i].wait().ok());
+        std::vector<float> actual(m*n);
+        ASSERT_TRUE(output[i].storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+        for (float value : actual) EXPECT_EQ(value, float(k * (replay + 1)));
+      }
+      EXPECT_EQ(allocator.attempts, before);
+    }
+  }
+  EXPECT_EQ(allocator.live, 0u);
+}
+
+TEST(SglangFp8, RejectsDifferentEncodingMalformedPayloadAndIndexOverflow) {
+  auto owner = context(compute::cuda_native::sglang_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto rejected = [&](compute::TensorDesc a, compute::TensorDesc b) {
+    const auto c = matrix(compute::DataType::kFloat32, a.dimensions()[0], b.dimensions()[1]);
+    auto result = compute::prepare(owner, compute::Operation(compute::MatMul{}),
+                                  std::array{a, b}, std::array{c}, resource.ref());
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+  };
+  constexpr auto f32 = compute::Float8ScaleMode::kFloat32Block128;
+  constexpr auto ue8 = compute::Float8ScaleMode::kUnsignedExponent8Group32;
+  rejected(compute::float8_activation_description(3, 128, ue8).value(),
+           compute::float8_weight_description(128, 129, ue8).value());
+  rejected(matrix(compute::DataType::kFloat32, 3, 128),
+           compute::float8_weight_description(128, 129, f32).value());
+  auto a = compute::float8_activation_description(3, 128, f32).value();
+  auto malformed = compute::TensorDesc::opaque(a.data_type(), a.dimensions(),
+      a.storage_format(), a.required_bytes().value() + 4).value();
+  rejected(malformed, compute::float8_weight_description(128, 129, f32).value());
+  rejected(compute::float8_activation_description(1LL << 25, 128, f32).value(),
+           compute::float8_weight_description(128, 129, f32).value());
 }
 
 TEST(CudaKernels, ColdMetadataFailuresRollbackAndReplayUsesReservedState) {
