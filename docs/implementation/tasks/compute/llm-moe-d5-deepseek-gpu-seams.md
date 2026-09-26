@@ -31,3 +31,11 @@ ResourceExhausted，已分配部分由 State 析构释放。Vulkan 仅修冷分�
 不再执行耗时大型 MoE 整批。Vulkan 长位置三角函数误差和 attention 数值差异是独立未决项，
 本卡不授权修改其数学、误差门或扩大上游版本。未通过项不计入完整画像。
 执行 change-impact selector、closure、docs。无需重写公共验证驱动。
+
+## 验证结果
+
+不可变候选`91af7569`：Apple Direct19、Graph13、Provider7项定向全部通过；静态Provider12项
+全部通过，包括新增BF16 activation workspace的逐分配故障注入及既有recurrent/完成失败。
+Vulkan Graph原先拒绝的sink用例与两个custom拒绝回归通过；两入口attention/压缩仍有数值失败，
+不由本卡分类修正代签。三交付/P1待办保留。原失败、增量复验及12个完整画像新增格见
+[三路线收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/README.md)。

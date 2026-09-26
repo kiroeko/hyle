@@ -1,0 +1,416 @@
+{
+  "scope": "Bounded original IREE compiler trig probe; not HYLE product qualification",
+  "commands": [
+    {
+      "argv": [
+        "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+        "--version"
+      ],
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\trig.mlir",
+        "--iree-hal-target-device=vulkan",
+        "--iree-vulkan-target=vp_android_baseline_2022",
+        "--iree-vulkan-dispatch-abi=descriptors",
+        "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\spirv",
+        "-o",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\trig.vmfb"
+      ],
+      "returncode": 0
+    },
+    {
+      "argv": [
+        "C:\\hv\\m2vk-tools\\iree\\_runtime_libs\\iree-run-module.exe",
+        "--device=vulkan",
+        "--module=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\trig.vmfb",
+        "--function=trig",
+        "--input=@C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\input.npy",
+        "--output=@C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\sin.npy",
+        "--output=@C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-vulkan-trig-source-probe\\cos.npy"
+      ],
+      "returncode": 0
+    }
+  ],
+  "values": [
+    {
+      "function": "sin",
+      "phase": 0.0,
+      "actual": 0.0,
+      "reference": 0.0
+    },
+    {
+      "function": "sin",
+      "phase": 1.0,
+      "actual": 0.8414709568023682,
+      "reference": 0.8414709848078965
+    },
+    {
+      "function": "sin",
+      "phase": -1.0,
+      "actual": -0.8414709568023682,
+      "reference": -0.8414709848078965
+    },
+    {
+      "function": "sin",
+      "phase": 3.1415927410125732,
+      "actual": -0.0,
+      "reference": -8.742278000372475e-08
+    },
+    {
+      "function": "sin",
+      "phase": 2380.0,
+      "actual": -0.9705004096031189,
+      "reference": -0.9704844170480315
+    },
+    {
+      "function": "sin",
+      "phase": 4096.0,
+      "actual": -0.5947335958480835,
+      "reference": -0.5946419876082146
+    },
+    {
+      "function": "sin",
+      "phase": 65536.0,
+      "actual": 0.6933807134628296,
+      "reference": 0.6920654538227232
+    },
+    {
+      "function": "sin",
+      "phase": 65663.0,
+      "actual": -0.5397331714630127,
+      "reference": -0.5412704749220958
+    },
+    {
+      "function": "sin",
+      "phase": -65536.0,
+      "actual": -0.6933807134628296,
+      "reference": -0.6920654538227232
+    },
+    {
+      "function": "sin",
+      "phase": 131072.0,
+      "actual": -0.999260663986206,
+      "reference": -0.9991137889507709
+    },
+    {
+      "function": "sin",
+      "phase": 30990.0625,
+      "actual": 0.9840055704116821,
+      "reference": 0.9841587968771998
+    },
+    {
+      "function": "sin",
+      "phase": 14654.296875,
+      "actual": 0.9435740113258362,
+      "reference": 0.9434388754795796
+    },
+    {
+      "function": "sin",
+      "phase": 6929.58935546875,
+      "actual": -0.6919821500778198,
+      "reference": -0.6918429613484287
+    },
+    {
+      "function": "sin",
+      "phase": 3276.800537109375,
+      "actual": -0.11902538686990738,
+      "reference": -0.11911591997904601
+    },
+    {
+      "function": "sin",
+      "phase": 1549.50341796875,
+      "actual": -0.6428373456001282,
+      "reference": -0.642870375645392
+    },
+    {
+      "function": "sin",
+      "phase": 732.7149658203125,
+      "actual": -0.6622796058654785,
+      "reference": -0.662294859853638
+    },
+    {
+      "function": "sin",
+      "phase": 346.4795227050781,
+      "actual": 0.7860056757926941,
+      "reference": 0.786011630007884
+    },
+    {
+      "function": "sin",
+      "phase": 163.84005737304688,
+      "actual": 0.4593247175216675,
+      "reference": 0.4593287687793086
+    },
+    {
+      "function": "sin",
+      "phase": 77.47518157958984,
+      "actual": 0.8746129274368286,
+      "reference": 0.8746119095609033
+    },
+    {
+      "function": "sin",
+      "phase": 36.6357536315918,
+      "actual": -0.8739928007125854,
+      "reference": -0.8739922960728793
+    },
+    {
+      "function": "sin",
+      "phase": 17.3239803314209,
+      "actual": -0.9989777207374573,
+      "reference": -0.9989777167118779
+    },
+    {
+      "function": "sin",
+      "phase": 8.192004203796387,
+      "actual": 0.9434123635292053,
+      "reference": 0.9434122693453472
+    },
+    {
+      "function": "sin",
+      "phase": 3.8737599849700928,
+      "actual": -0.6684830188751221,
+      "reference": -0.6684831073541064
+    },
+    {
+      "function": "sin",
+      "phase": 1.8317880630493164,
+      "actual": 0.9661345481872559,
+      "reference": 0.9661345468307425
+    },
+    {
+      "function": "sin",
+      "phase": 0.8661991357803345,
+      "actual": 0.7618725299835205,
+      "reference": 0.761872523816737
+    },
+    {
+      "function": "sin",
+      "phase": 0.40960031747817993,
+      "actual": 0.3982427418231964,
+      "reference": 0.3982427389927592
+    },
+    {
+      "function": "cos",
+      "phase": 0.0,
+      "actual": 1.0,
+      "reference": 1.0
+    },
+    {
+      "function": "cos",
+      "phase": 1.0,
+      "actual": 0.5403022766113281,
+      "reference": 0.5403023058681398
+    },
+    {
+      "function": "cos",
+      "phase": -1.0,
+      "actual": 0.5403023362159729,
+      "reference": 0.5403023058681398
+    },
+    {
+      "function": "cos",
+      "phase": 3.1415927410125732,
+      "actual": -1.0,
+      "reference": -0.9999999999999962
+    },
+    {
+      "function": "cos",
+      "phase": 2380.0,
+      "actual": 0.24109956622123718,
+      "reference": 0.24116383698005492
+    },
+    {
+      "function": "cos",
+      "phase": 4096.0,
+      "actual": 0.8039228320121765,
+      "reference": 0.803990613485849
+    },
+    {
+      "function": "cos",
+      "phase": 65536.0,
+      "actual": -0.7205714583396912,
+      "reference": -0.7218347509126642
+    },
+    {
+      "function": "cos",
+      "phase": 65663.0,
+      "actual": -0.841836154460907,
+      "reference": -0.8408485434236114
+    },
+    {
+      "function": "cos",
+      "phase": -65536.0,
+      "actual": -0.7205713987350464,
+      "reference": -0.7218347509126642
+    },
+    {
+      "function": "cos",
+      "phase": 131072.0,
+      "actual": 0.03844636678695679,
+      "reference": 0.04209081525029623
+    },
+    {
+      "function": "cos",
+      "phase": 30990.0625,
+      "actual": 0.17813783884048462,
+      "reference": 0.17728920590160796
+    },
+    {
+      "function": "cos",
+      "phase": 14654.296875,
+      "actual": -0.331161767244339,
+      "reference": -0.33154650991048945
+    },
+    {
+      "function": "cos",
+      "phase": 6929.58935546875,
+      "actual": 0.7219145894050598,
+      "reference": 0.722048001751017
+    },
+    {
+      "function": "cos",
+      "phase": 3276.800537109375,
+      "actual": -0.9928911924362183,
+      "reference": -0.9928803541250806
+    },
+    {
+      "function": "cos",
+      "phase": 1549.50341796875,
+      "actual": -0.7660027146339417,
+      "reference": -0.7659749866135007
+    },
+    {
+      "function": "cos",
+      "phase": 732.7149658203125,
+      "actual": -0.7492567896842957,
+      "reference": -0.7492432973416913
+    },
+    {
+      "function": "cos",
+      "phase": 346.4795227050781,
+      "actual": 0.618219256401062,
+      "reference": 0.6182117092811729
+    },
+    {
+      "function": "cos",
+      "phase": 163.84005737304688,
+      "actual": 0.8882684111595154,
+      "reference": 0.88826633515612
+    },
+    {
+      "function": "cos",
+      "phase": 77.47518157958984,
+      "actual": -0.48482179641723633,
+      "reference": -0.48482368718352686
+    },
+    {
+      "function": "cos",
+      "phase": 36.6357536315918,
+      "actual": 0.4859389066696167,
+      "reference": 0.4859397765209763
+    },
+    {
+      "function": "cos",
+      "phase": 17.3239803314209,
+      "actual": 0.04520484805107117,
+      "reference": 0.04520532615879667
+    },
+    {
+      "function": "cos",
+      "phase": 8.192004203796387,
+      "actual": -0.33162200450897217,
+      "reference": -0.3316222098241644
+    },
+    {
+      "function": "cos",
+      "phase": 3.8737599849700928,
+      "actual": -0.7437273859977722,
+      "reference": -0.7437273258272807
+    },
+    {
+      "function": "cos",
+      "phase": 1.8317880630493164,
+      "actual": -0.25803878903388977,
+      "reference": -0.2580388292876789
+    },
+    {
+      "function": "cos",
+      "phase": 0.8661991357803345,
+      "actual": 0.6477270126342773,
+      "reference": 0.6477269929940511
+    },
+    {
+      "function": "cos",
+      "phase": 0.40960031747817993,
+      "actual": 0.9172800779342651,
+      "reference": 0.9172800667405485
+    }
+  ],
+  "sin_max_absolute_error": 0.0015373034590830947,
+  "cos_max_absolute_error": 0.0036444484633394447,
+  "files": {
+    "trig.mlir": "c34fb111ec8427bd19f354c1af4f2e87618427ea345713acc915c2467d2a2460",
+    "trig.vmfb": "53a790d6f0b1fda1a4a34b965078034e120e4f9045765f22e5de79e44eb09500",
+    "iree-compile.exe": "24ab8976bfd35e5dec124417ba94016fcc2078ed3ac7140318cc9440b5bd3ba9",
+    "iree-run-module.exe": "57d4d00a8d2a55f94dc7e60199acca8f0d644bcfbac7234e1f1919cf2934bbe2"
+  },
+  "published_files": [
+    {
+      "file": "trig.mlir.gz",
+      "source_bytes": 946,
+      "sha256": "c34fb111ec8427bd19f354c1af4f2e87618427ea345713acc915c2467d2a2460"
+    },
+    {
+      "file": "trig.vmfb.gz",
+      "source_bytes": 12581,
+      "sha256": "53a790d6f0b1fda1a4a34b965078034e120e4f9045765f22e5de79e44eb09500"
+    },
+    {
+      "file": "input.npy.gz",
+      "source_bytes": 232,
+      "sha256": "46b3a41d80aa6eaa28c17e9253af611677c711b7af3b904c32d01259bf52a05f"
+    },
+    {
+      "file": "sin.npy.gz",
+      "source_bytes": 232,
+      "sha256": "9a65b5b9d622b38537b2aeac802dba1f7c9391199962284017683917e27adee2"
+    },
+    {
+      "file": "cos.npy.gz",
+      "source_bytes": 232,
+      "sha256": "7ab9e455b9e1ebe6221126e3c4530d426c7a2159c9671b0014ad9041bd6284e9"
+    },
+    {
+      "file": "version.log.gz",
+      "source_bytes": 152,
+      "sha256": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446"
+    },
+    {
+      "file": "compile.log.gz",
+      "source_bytes": 249,
+      "sha256": "e26fd3a3e42bce862bbae1126438bd4b14dabe702fb3a9800b550c9a7c6aff2f"
+    },
+    {
+      "file": "execute.log.gz",
+      "source_bytes": 12,
+      "sha256": "2e03f3e7cc9cc2f4d15257a71df19526986f6d4cc5a7bfc182e468482cc70524"
+    },
+    {
+      "file": "d5-vulkan-trig-probe.py.gz",
+      "source_bytes": 3403,
+      "sha256": "d95c24ddf88a6af7722c09d11828db81a390a4c32492653d02a86e789df087c1"
+    },
+    {
+      "file": "module_trig_dispatch_0_trig_dispatch_0_elementwise_D_f32.spirv.mlir.gz",
+      "source_bytes": 6637,
+      "sha256": "4e8841966fffdf4c127f65aaca23e2dd7bd7d5180ce95f3a7dc416b92f18085b"
+    },
+    {
+      "file": "module_trig_dispatch_1_trig_dispatch_1_elementwise_D_f32.spirv.mlir.gz",
+      "source_bytes": 7090,
+      "sha256": "e1aa6cad483e25fec42d7e33ae2dc1318c301a6bc34c6f4ccbb75271a51584ff"
+    }
+  ]
+}

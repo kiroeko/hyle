@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "llm-moe-d5-real-fragment-acceptance-v1",
   "baseline": "deae2ed23fd3bf9ebc30364874d94881fc8f16c3",
-  "generated_at": "2026-09-26",
+  "generated_at": "2026-09-27",
   "authority": {
     "closure_card": "llm-moe-d5-real-fragment-acceptance.md",
     "model_facts": "llm-moe-model-sources.json",
@@ -7482,54 +7482,390 @@
       "profile": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL:cpu:graph",
       "profile": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL:cuda:direct",
       "profile": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL:cuda:graph",
       "profile": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL:apple:direct",
       "profile": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL:apple:graph",
       "profile": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL:vulkan:direct",
@@ -7554,54 +7890,390 @@
       "profile": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:cpu:graph",
       "profile": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:cuda:direct",
       "profile": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:cuda:graph",
       "profile": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:apple:direct",
       "profile": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:apple:graph",
       "profile": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:vulkan:direct",
@@ -10228,10 +10900,10 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 128,
+    "RUN_PASS": 140,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 48
+    "VALIDATION_NOT_RUN": 36
   },
   "qualification_correction": {
     "reason": "The 48 former Qwen3.5-2B and Qwen3.8-27B complete cells used seven R01 vocabulary rows; the fixed real-profile capacity policy does not permit reducing the 248320-row vocabulary. Their non-R01 successful regions remain linked as partial receipts.",

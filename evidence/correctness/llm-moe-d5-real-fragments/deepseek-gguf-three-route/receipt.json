@@ -1,0 +1,3709 @@
+{
+  "candidate": "91af756942857472f951f19804d6cf1a44fb1d1c",
+  "scope": "Two exact DeepSeek Flash GGUF profiles, CPU/CUDA/Apple Direct and Graph correctness; Vulkan not qualified",
+  "added_complete_cells": 12,
+  "batches": [
+    {
+      "label": "cpu-owner",
+      "execution": {
+        "candidate": "b111e3b7f2b3e714d888442c136a9d9eed94648c",
+        "route": "cpu",
+        "factors": [
+          "compute_ops",
+          "compute_ggml_runtime",
+          "compute_provider_ggml",
+          "compute_route_cpu",
+          "graph_route_cpu"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-r3\\cpu\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 3.08
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_ops|compute_ggml_runtime|compute_provider_ggml|compute_route_cpu|graph_route_cpu)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-r3\\cpu\\tests.xml"
+            ],
+            "returncode": 0,
+            "seconds": 522.98
+          }
+        ]
+      },
+      "gtests_ran": [
+        43,
+        57,
+        141,
+        156,
+        7
+      ],
+      "gtests_passed": [
+        43,
+        57,
+        141,
+        156,
+        7
+      ],
+      "failed_tests": [],
+      "files": [
+        {
+          "file": "cpu-owner-build.cmd.gz",
+          "source_bytes": 355,
+          "source_sha256": "2c9f31c0ce8e043415782eee726a4a12022246eb90cd270aa8d819ad3a97947a"
+        },
+        {
+          "file": "cpu-owner-build.log.gz",
+          "source_bytes": 1061,
+          "source_sha256": "ac9e6484146ba5ec753b27c0ecdfe5ed4a91fc1671dd42c04bf2ce77a56001d6"
+        },
+        {
+          "file": "cpu-owner-cache-identity.txt.gz",
+          "source_bytes": 2205,
+          "source_sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72"
+        },
+        {
+          "file": "cpu-owner-native-tests.log.gz",
+          "source_bytes": 92686,
+          "source_sha256": "2acfa63433f51ea4528b12552f54a246ec085b27e0c6a00b21459442ff4c6acc"
+        },
+        {
+          "file": "cpu-owner-tests.log.gz",
+          "source_bytes": 1518,
+          "source_sha256": "e44653f80dfe5fac41e69737da77c6978bdb084179fde4ce71d15f71aa9145f5"
+        },
+        {
+          "file": "cpu-owner-tests.xml.gz",
+          "source_bytes": 9412,
+          "source_sha256": "8c9ee546d7c0b9d74ae2ce58637f317c24783a068e4a4871d650e171cef5bf3a"
+        }
+      ]
+    },
+    {
+      "label": "cuda-owner",
+      "execution": {
+        "candidate": "87f2cb031ba4ea89bb9006e38bac76917eb32c40",
+        "route": "cuda",
+        "factors": [
+          "compute_provider_cuda",
+          "compute_provider_ggml_cuda",
+          "graph_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-f35\\cuda\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 60.06
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_provider_cuda|compute_provider_ggml_cuda|graph_provider_ggml_cuda|compute_route_cuda|graph_route_cuda)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-f35\\cuda\\tests.xml"
+            ],
+            "returncode": 8,
+            "seconds": 1434.25
+          }
+        ]
+      },
+      "gtests_ran": [
+        42,
+        144,
+        160,
+        30,
+        8
+      ],
+      "gtests_passed": [
+        42,
+        142,
+        157,
+        30,
+        8
+      ],
+      "failed_tests": [
+        "CudaDefaultGraph.HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsIndependent",
+        "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "CudaGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "CudaMoeFragments.D5DeepSeekFullAttentionChain",
+        "CudaMoeFragments.D5DeepSeekStatefulCompression"
+      ],
+      "files": [
+        {
+          "file": "cuda-owner-build.cmd.gz",
+          "source_bytes": 365,
+          "source_sha256": "c88b8c8606da692377a7785224c556a221fc725e6510a57d425255e591a3039e"
+        },
+        {
+          "file": "cuda-owner-build.log.gz",
+          "source_bytes": 6491,
+          "source_sha256": "44e19066234e883cb66658340eeb16c4683078b8dae7ad3f254902821db494ca"
+        },
+        {
+          "file": "cuda-owner-cache-identity.txt.gz",
+          "source_bytes": 1487,
+          "source_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65"
+        },
+        {
+          "file": "cuda-owner-native-tests.log.gz",
+          "source_bytes": 2469738,
+          "source_sha256": "1b29450ebf2e7e45ca3908b7cb38c65c1d7a86db201416e501590a3ceba8abbd"
+        },
+        {
+          "file": "cuda-owner-tests.log.gz",
+          "source_bytes": 2416263,
+          "source_sha256": "7978cff74880f541e4ad4e394b9f94b0befb97dce208dbe9bb92dc20da3894c7"
+        },
+        {
+          "file": "cuda-owner-tests.xml.gz",
+          "source_bytes": 627945,
+          "source_sha256": "df31a4d25a596fa4d105a8b70bc211a8758b89a942b9deadae21db4f1debef3c"
+        }
+      ]
+    },
+    {
+      "label": "cuda-precise",
+      "execution": {
+        "candidate": "889e0c4cacd9eb30ee84cc613dc0cc255fe3175e",
+        "route": "cuda",
+        "factors": [
+          "compute_provider_ggml_cuda",
+          "graph_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-cuda-focused-r3\\cuda\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 25.73
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_provider_ggml_cuda|graph_provider_ggml_cuda|compute_route_cuda|graph_route_cuda)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-cuda-focused-r3\\cuda\\tests.xml"
+            ],
+            "returncode": 8,
+            "seconds": 10.14
+          }
+        ],
+        "test_filter": "GgmlCuda*.*:*MoeFragments.D5DeepSeekFullAttentionChain:*MoeFragments.D5DeepSeekStatefulCompression:*.*Rope*:*.*Unary*:*.*HashRouter*:*.*D5Qwen35OfficialGqaNormRopeAndAttention*"
+      },
+      "gtests_ran": [
+        8,
+        10,
+        30,
+        8
+      ],
+      "gtests_passed": [
+        8,
+        9,
+        30,
+        8
+      ],
+      "failed_tests": [
+        "CudaDefaultGraph.HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsIndependent"
+      ],
+      "files": [
+        {
+          "file": "cuda-precise-build.cmd.gz",
+          "source_bytes": 332,
+          "source_sha256": "9c939a56261d18a233f2a7656cad9fc7c6a066344001659e4e9a290bdc315c67"
+        },
+        {
+          "file": "cuda-precise-build.log.gz",
+          "source_bytes": 26336,
+          "source_sha256": "daa4e3f73aa485cdb5688e82675b82e32afe0247ca83f097bc31ed79b47fc62b"
+        },
+        {
+          "file": "cuda-precise-cache-identity.txt.gz",
+          "source_bytes": 1487,
+          "source_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65"
+        },
+        {
+          "file": "cuda-precise-native-tests.log.gz",
+          "source_bytes": 92934,
+          "source_sha256": "9511c4e9272aadec213a4f1523e08f914e19b7252f564238d0701ba03936b3bb"
+        },
+        {
+          "file": "cuda-precise-tests.log.gz",
+          "source_bytes": 40543,
+          "source_sha256": "4ee832d8e9d999c66685d632d0982e9591328927e4839a57240a0586654dba89"
+        },
+        {
+          "file": "cuda-precise-tests.xml.gz",
+          "source_bytes": 44876,
+          "source_sha256": "1b84a7cfe308b9ae6d20d4280da189434da2699eadb38cc703148a961e302fcd"
+        }
+      ]
+    },
+    {
+      "label": "apple-owner",
+      "execution": {
+        "candidate": "27f371303a4d3d76c15d79f1b4ea59da59a1b55b",
+        "steps": [
+          {
+            "name": "owner-build",
+            "argv": [
+              "cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+              "--target",
+              "hyle_compute_provider_ggml_metal_tests",
+              "hyle_compute_route_apple_tests",
+              "hyle_graph_route_apple_tests",
+              "-j",
+              "2"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 21.945
+          },
+          {
+            "name": "owner-tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-j",
+              "1",
+              "-L",
+              "^(compute_provider_ggml_metal|compute_route_apple|graph_route_apple)$",
+              "-LE",
+              "headers",
+              "--output-junit",
+              "/Users/kiro/hyle-scratch/d5-deepseek-owner/owner.xml"
+            ],
+            "returncode": 8,
+            "elapsed_seconds": 183.316
+          }
+        ]
+      },
+      "gtests_ran": [
+        170,
+        143,
+        7
+      ],
+      "gtests_passed": [
+        168,
+        141,
+        7
+      ],
+      "failed_tests": [
+        "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "AppleGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "AppleMoeFragments.D5DeepSeekFullAttentionChain",
+        "AppleMoeFragments.D5DeepSeekStatefulCompression"
+      ],
+      "files": [
+        {
+          "file": "apple-owner-driver.log.gz",
+          "source_bytes": 10690,
+          "source_sha256": "d05c09ca1291835a1701f08921d13aae5df28c695c29fa8eeec6b46eb65a466e"
+        },
+        {
+          "file": "apple-owner-owner-build.log.gz",
+          "source_bytes": 4438,
+          "source_sha256": "222b5ff9e9bc8ca40a68767ee34dcc0eddd81b2e364c17bafd292fa3588f49de"
+        },
+        {
+          "file": "apple-owner-owner-native.log.gz",
+          "source_bytes": 1782034,
+          "source_sha256": "aa9fc1299e6ae30c634e7092e5823b737948d18deb77d4a28b9325d288ac257b"
+        },
+        {
+          "file": "apple-owner-owner-tests.log.gz",
+          "source_bytes": 1765962,
+          "source_sha256": "4f5502236f865689450fbc38888c0c7a83d25d5bb8fe647411860bbb95c74921"
+        },
+        {
+          "file": "apple-owner-owner.py.gz",
+          "source_bytes": 2266,
+          "source_sha256": "cc719baf0fdebb9ec23cce52a1de906c3cec2ba4ba8213e6047fc8ac937ab0c2"
+        },
+        {
+          "file": "apple-owner-owner.xml.gz",
+          "source_bytes": 616741,
+          "source_sha256": "6b74d24b68fe6a49854e06ddca8795ce582e03eceeb97b39f988e98c252b3cc2"
+        },
+        {
+          "file": "apple-owner-sync.log.gz",
+          "source_bytes": 676,
+          "source_sha256": "35ada60a362f8cb35e76e13eabfa8b63cab3fa1521a60d1a1d5e1051375c5797"
+        }
+      ]
+    },
+    {
+      "label": "apple-bool",
+      "execution": {
+        "candidate": "92372a9404fcb6326385deb640cf156b67ed215b",
+        "steps": [
+          {
+            "name": "owner-build",
+            "argv": [
+              "cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+              "--target",
+              "hyle_compute_provider_ggml_metal_tests",
+              "hyle_compute_route_apple_tests",
+              "hyle_graph_route_apple_tests",
+              "-j",
+              "2"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 8.964
+          },
+          {
+            "name": "owner-tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-j",
+              "1",
+              "-L",
+              "^(compute_route_apple|graph_route_apple)$",
+              "-LE",
+              "headers",
+              "--output-junit",
+              "/Users/kiro/hyle-scratch/d5-deepseek-focused-f35/owner.xml"
+            ],
+            "returncode": 8,
+            "elapsed_seconds": 5.63
+          }
+        ],
+        "test_filter": "*MoeFragments.D5DeepSeekFullAttentionChain:*MoeFragments.D5DeepSeekStatefulCompression"
+      },
+      "gtests_ran": [
+        2,
+        2
+      ],
+      "gtests_passed": [
+        0,
+        0
+      ],
+      "failed_tests": [
+        "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "AppleGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "AppleMoeFragments.D5DeepSeekFullAttentionChain",
+        "AppleMoeFragments.D5DeepSeekStatefulCompression"
+      ],
+      "files": [
+        {
+          "file": "apple-bool-driver.log.gz",
+          "source_bytes": 10664,
+          "source_sha256": "80d6ebddd949927f6afa0e81bddcbf612f31c7f2d79937c8b96e91fbd3a60552"
+        },
+        {
+          "file": "apple-bool-owner-build.log.gz",
+          "source_bytes": 697,
+          "source_sha256": "fad061677f0a4d312b2237f70afdaa6fc82855f8ba2488fc3988b3566b67c1e4"
+        },
+        {
+          "file": "apple-bool-owner-native.log.gz",
+          "source_bytes": 152266,
+          "source_sha256": "3fa8cd5b479e73e9bd74b76947f1a68d92df70ed42650bc03dca0ef95425aea9"
+        },
+        {
+          "file": "apple-bool-owner-tests.log.gz",
+          "source_bytes": 151438,
+          "source_sha256": "314bf20bc3529ac8d301054fe629c3f811fe4317f91ba58f029fa55e237839f7"
+        },
+        {
+          "file": "apple-bool-owner.py.gz",
+          "source_bytes": 2406,
+          "source_sha256": "f4dbcd9f4373accbbe7d70297e90d4b3b9bff98e3f581090f838e8cf0891f273"
+        },
+        {
+          "file": "apple-bool-owner.xml.gz",
+          "source_bytes": 151496,
+          "source_sha256": "c525f4843be98a244685fb01911c6a9fb8b604263aece098baf8c80376c3546c"
+        },
+        {
+          "file": "apple-bool-sync.log.gz",
+          "source_bytes": 4880,
+          "source_sha256": "3b494756f5af66d902c7748dcaf5e83a5161dcd94756e6caf58ddba9937be769"
+        }
+      ]
+    },
+    {
+      "label": "apple-final",
+      "execution": {
+        "candidate": "91af756942857472f951f19804d6cf1a44fb1d1c",
+        "steps": [
+          {
+            "name": "owner-build",
+            "argv": [
+              "cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+              "--target",
+              "hyle_compute_provider_ggml_metal_tests",
+              "hyle_compute_route_apple_tests",
+              "hyle_graph_route_apple_tests",
+              "-j",
+              "2"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 0.803
+          },
+          {
+            "name": "owner-tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-j",
+              "1",
+              "-L",
+              "^(compute_provider_ggml_metal|compute_route_apple|graph_route_apple)$",
+              "-LE",
+              "headers",
+              "--output-junit",
+              "/Users/kiro/hyle-scratch/d5-deepseek-f36/owner.xml"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 15.229
+          }
+        ],
+        "test_filter": "GgmlMetal*.*:AppleRecurrent.*:*.*OriginalRecurrent*:*.*Gdn*:*.*Gated*:*MoeFragments.D5DeepSeekFullAttentionChain:*MoeFragments.D5DeepSeekStatefulCompression:*MoeFragments.D5KdaProjectionRoleBatch:*.*BfloatRouter*"
+      },
+      "gtests_ran": [
+        19,
+        13,
+        7
+      ],
+      "gtests_passed": [
+        19,
+        13,
+        7
+      ],
+      "failed_tests": [],
+      "files": [
+        {
+          "file": "apple-final-cache-identity.txt.gz",
+          "source_bytes": 1171,
+          "source_sha256": "73691224fe64f0d6e9443abfbc6279e6659472b84f042bb57245893b9eb31bce"
+        },
+        {
+          "file": "apple-final-driver.log.gz",
+          "source_bytes": 685,
+          "source_sha256": "81f11f90ac3f4ec31d0b439c68c21120ada7fb4b3c6ea6015e9f99a0056f0418"
+        },
+        {
+          "file": "apple-final-owner-build.log.gz",
+          "source_bytes": 1107,
+          "source_sha256": "ac2baa8bb6f4293369b712e8979d0a024fca8ec73bdc9405c69f6a8f7a62ae87"
+        },
+        {
+          "file": "apple-final-owner-native.log.gz",
+          "source_bytes": 259475,
+          "source_sha256": "8ec413e2fe2a3e778dda1fd072156282cc94544f4d7769a85ba7e385a56de71d"
+        },
+        {
+          "file": "apple-final-owner-tests.log.gz",
+          "source_bytes": 701,
+          "source_sha256": "41afe1a34d168a61be2252c8c72f5ece0a0b9272f57fc7e948f4a0efc4d8b796"
+        },
+        {
+          "file": "apple-final-owner.py.gz",
+          "source_bytes": 2552,
+          "source_sha256": "f06d85740e3ca63888f934869d7ba1a516071847527dd58b2215834efde04a0c"
+        },
+        {
+          "file": "apple-final-owner.xml.gz",
+          "source_bytes": 4322,
+          "source_sha256": "120144dbcf2d0d2f9711ca846121d86a5cf38797889f4750340fc42e9145b24a"
+        },
+        {
+          "file": "apple-final-sync.log.gz",
+          "source_bytes": 656,
+          "source_sha256": "1ec5d7ab4205de23cf1842c0367cdb69c133796a6013ce8531076447992ddd6a"
+        }
+      ]
+    },
+    {
+      "label": "apple-resource",
+      "execution": {
+        "candidate": "91af756942857472f951f19804d6cf1a44fb1d1c",
+        "steps": [
+          {
+            "name": "owner-configure",
+            "argv": [
+              "cmake",
+              "-S",
+              "/Users/kiro/hyle",
+              "-B",
+              "/Users/kiro/hyle-scratch/d5-model-gate-metal-static",
+              "-G",
+              "Ninja",
+              "-DCMAKE_BUILD_TYPE=Release",
+              "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+              "-DHYLE_DEV_FACTORS=compute_provider_ggml_metal",
+              "-DHYLE_STATIC=ON",
+              "-DHYLE_BUILD_TESTS=ON",
+              "-DHYLE_WERROR=ON",
+              "-DHYLE_COMPUTE_APPLE=ON",
+              "-DHYLE_COMPUTE_CPU=OFF",
+              "-DHYLE_COMPUTE_CUDA=OFF",
+              "-DHYLE_COMPUTE_VULKAN=OFF"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 3.578
+          },
+          {
+            "name": "owner-build",
+            "argv": [
+              "cmake",
+              "--build",
+              "/Users/kiro/hyle-scratch/d5-model-gate-metal-static",
+              "--target",
+              "hyle_compute_provider_ggml_metal_tests",
+              "-j",
+              "2"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 11.937
+          },
+          {
+            "name": "owner-tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "/Users/kiro/hyle-scratch/d5-model-gate-metal-static",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-j",
+              "1",
+              "-L",
+              "^compute_provider_ggml_metal$",
+              "-LE",
+              "headers",
+              "--output-junit",
+              "/Users/kiro/hyle-scratch/d5-deepseek-f36-static/owner.xml"
+            ],
+            "returncode": 0,
+            "elapsed_seconds": 14.808
+          }
+        ]
+      },
+      "gtests_ran": [
+        12
+      ],
+      "gtests_passed": [
+        12
+      ],
+      "failed_tests": [],
+      "files": [
+        {
+          "file": "apple-resource-cache-identity.txt.gz",
+          "source_bytes": 1294,
+          "source_sha256": "80b375b25cce515573ab1ed50ebdb0b4fa403ae208506fc203f11b6cb0033f44"
+        },
+        {
+          "file": "apple-resource-driver.log.gz",
+          "source_bytes": 1105,
+          "source_sha256": "0bbd46e47136a4515f89b69cd2a89e6c06c545dca05e61ed3b1f18743d796abc"
+        },
+        {
+          "file": "apple-resource-missing-build-first.log.gz",
+          "source_bytes": 933,
+          "source_sha256": "e1162f1a957ac33ac04c46fd13c81e12f8e480f66cdbe52a388aea0c710d4fed"
+        },
+        {
+          "file": "apple-resource-owner-build.log.gz",
+          "source_bytes": 12165,
+          "source_sha256": "b2040720114fe221556b9afb8e1a86a47d5ba435fa35ff83d13fd5813f063b81"
+        },
+        {
+          "file": "apple-resource-owner-configure.log.gz",
+          "source_bytes": 2370,
+          "source_sha256": "b5e9862b87b37485ceb69dc2f37acba1ccf2cbe3ba3717438f43d0f7dbe16f17"
+        },
+        {
+          "file": "apple-resource-owner-native.log.gz",
+          "source_bytes": 31932,
+          "source_sha256": "e353dd6ff107a38d1cf219b925456f14604a6e046667069bc170f0914321f838"
+        },
+        {
+          "file": "apple-resource-owner-tests.log.gz",
+          "source_bytes": 354,
+          "source_sha256": "c9a4dd3e1d0cf59863a982e32c881a8b3b176916d2bd98d6f5fc5a727aad830a"
+        },
+        {
+          "file": "apple-resource-owner.py.gz",
+          "source_bytes": 2481,
+          "source_sha256": "04e1f13c09c54ce1a01807782a57d0a6f35f5a2e97d407f82c04aecdde035d02"
+        },
+        {
+          "file": "apple-resource-owner.xml.gz",
+          "source_bytes": 1585,
+          "source_sha256": "9c70fc7917a4b709fee59c71a45b6768bb8475164faf5076201b350590780186"
+        }
+      ]
+    },
+    {
+      "label": "vulkan-owner",
+      "execution": {
+        "candidate": "6c27e59222d8d8a929bed6889fabd4cdc012703d",
+        "route": "vulkan",
+        "factors": [
+          "compute_provider_ggml_vulkan",
+          "compute_provider_iree_vulkan",
+          "compute_route_vulkan",
+          "graph_route_vulkan"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-f35\\vulkan\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 216.61
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build\\m2-vulkan-indexed",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_provider_ggml_vulkan|compute_provider_iree_vulkan|compute_route_vulkan|graph_route_vulkan)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-f35\\vulkan\\tests.xml"
+            ],
+            "returncode": 8,
+            "seconds": 1144.08
+          }
+        ]
+      },
+      "gtests_ran": [
+        255,
+        165,
+        24,
+        7
+      ],
+      "gtests_passed": [
+        253,
+        162,
+        24,
+        7
+      ],
+      "failed_tests": [
+        "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "VulkanGraphMoeFragments.D5DeepSeekNativeSinkAttention",
+        "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+        "VulkanMoeFragments.D5DeepSeekStatefulCompression"
+      ],
+      "files": [
+        {
+          "file": "vulkan-owner-build.cmd.gz",
+          "source_bytes": 356,
+          "source_sha256": "0b3a47b438d12d545f6f40eb04b7d59d982499d8f65859eaa818356ae4800d91"
+        },
+        {
+          "file": "vulkan-owner-build.log.gz",
+          "source_bytes": 5926,
+          "source_sha256": "9747b6f2c736eb98eb7a7d199663a8d5644fd18fda8630603f3070b48661c999"
+        },
+        {
+          "file": "vulkan-owner-cache-identity.txt.gz",
+          "source_bytes": 1561,
+          "source_sha256": "5b9e996c25b4253e74d270805b70741b7cbcc0397ca14ab7f6cba65edec87313"
+        },
+        {
+          "file": "vulkan-owner-owner-native.log.gz",
+          "source_bytes": 2417561,
+          "source_sha256": "d768b2017c49aafa9cd7778efdcbbd0a5bfd0d2a9360a0254e585f22a448f043"
+        },
+        {
+          "file": "vulkan-owner-tests.log.gz",
+          "source_bytes": 2326249,
+          "source_sha256": "c76b1e174037ef0e280818b57174776b9a55b77d9df33100c55ce2a8b6d1658c"
+        },
+        {
+          "file": "vulkan-owner-tests.xml.gz",
+          "source_bytes": 628670,
+          "source_sha256": "45554089871643e474cce93ebacac13b43022b88c2cf73bf02aef2e5c2ec2149"
+        }
+      ]
+    },
+    {
+      "label": "vulkan-focused",
+      "execution": {
+        "candidate": "91af756942857472f951f19804d6cf1a44fb1d1c",
+        "route": "vulkan",
+        "factors": [
+          "compute_route_vulkan",
+          "graph_route_vulkan"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-f36\\vulkan\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 8.41
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\build\\m2-vulkan-indexed",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_route_vulkan|graph_route_vulkan)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-f36\\vulkan\\tests.xml"
+            ],
+            "returncode": 8,
+            "seconds": 15.53
+          }
+        ],
+        "test_filter": "VulkanGraphMoeFragments.D5DeepSeekNativeSinkAttention:VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain:VulkanGraphMoeFragments.D5DeepSeekStatefulCompression:VulkanMoeFragments.D5DeepSeekFullAttentionChain:VulkanMoeFragments.D5DeepSeekStatefulCompression:VulkanGraph.*Custom*"
+      },
+      "gtests_ran": [
+        2,
+        5
+      ],
+      "gtests_passed": [
+        0,
+        3
+      ],
+      "failed_tests": [
+        "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+        "VulkanMoeFragments.D5DeepSeekStatefulCompression"
+      ],
+      "files": [
+        {
+          "file": "vulkan-focused-build.cmd.gz",
+          "source_bytes": 276,
+          "source_sha256": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf"
+        },
+        {
+          "file": "vulkan-focused-build.log.gz",
+          "source_bytes": 1030,
+          "source_sha256": "34faa6023b2b3f8bc0cda30713580e08c8831e94df7e6dc957e2ec7563d5db00"
+        },
+        {
+          "file": "vulkan-focused-cache-identity.txt.gz",
+          "source_bytes": 1561,
+          "source_sha256": "5b9e996c25b4253e74d270805b70741b7cbcc0397ca14ab7f6cba65edec87313"
+        },
+        {
+          "file": "vulkan-focused-owner-native.log.gz",
+          "source_bytes": 2274450,
+          "source_sha256": "50bc266456951890cb04bc803e5f58c789f56400173563036846ba1aaa9acf26"
+        },
+        {
+          "file": "vulkan-focused-tests.log.gz",
+          "source_bytes": 2245351,
+          "source_sha256": "c085766dde14c7b92207e025e4dfccb11b8d8cfdcd7c284b0aa38046e65a029c"
+        },
+        {
+          "file": "vulkan-focused-tests.xml.gz",
+          "source_bytes": 623043,
+          "source_sha256": "35d5a5e856406b71a3a6c6002f96117983606f61f50075f0ef5e321cfd73f75d"
+        }
+      ]
+    }
+  ],
+  "region_mapping": {
+    "cpu:direct": {
+      "R01": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        },
+        {
+          "consumer": "HeadRunsEntireLogicalVocabulary",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ]
+          ]
+        }
+      ],
+      "R02": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R03": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R07": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekNativeSinkAttention",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekNativeSinkAttention"
+            ]
+          ]
+        }
+      ],
+      "R08": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R09": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        }
+      ],
+      "R10": [
+        {
+          "consumer": "D5DeepSeekTokenTableRouting",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekTokenTableRouting"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5ThirteenProfilesModelRouters",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5ThirteenProfilesModelRouters"
+            ]
+          ]
+        }
+      ],
+      "R11": [
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R12": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R14": [
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R15": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ]
+          ]
+        }
+      ]
+    },
+    "cpu:graph": {
+      "R01": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        },
+        {
+          "consumer": "HeadRunsEntireLogicalVocabulary",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ]
+          ]
+        }
+      ],
+      "R02": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R03": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R07": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekNativeSinkAttention",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekNativeSinkAttention"
+            ]
+          ]
+        }
+      ],
+      "R08": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R09": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        }
+      ],
+      "R10": [
+        {
+          "consumer": "D5DeepSeekTokenTableRouting",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekTokenTableRouting"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5ThirteenProfilesModelRouters",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5ThirteenProfilesModelRouters"
+            ]
+          ]
+        }
+      ],
+      "R11": [
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R12": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R14": [
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R15": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "CpuGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cpu-owner",
+              "D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ]
+          ]
+        }
+      ]
+    },
+    "cuda:direct": {
+      "R01": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        },
+        {
+          "consumer": "HeadRunsEntireLogicalVocabulary",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ]
+          ]
+        }
+      ],
+      "R02": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R03": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R07": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekNativeSinkAttention",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekNativeSinkAttention"
+            ]
+          ]
+        }
+      ],
+      "R08": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R09": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        }
+      ],
+      "R10": [
+        {
+          "consumer": "D5DeepSeekTokenTableRouting",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekTokenTableRouting"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5ThirteenProfilesModelRouters",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5ThirteenProfilesModelRouters"
+            ]
+          ]
+        }
+      ],
+      "R11": [
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R12": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R14": [
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R15": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ]
+          ]
+        }
+      ]
+    },
+    "cuda:graph": {
+      "R01": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        },
+        {
+          "consumer": "HeadRunsEntireLogicalVocabulary",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ]
+          ]
+        }
+      ],
+      "R02": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R03": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R07": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekNativeSinkAttention",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekNativeSinkAttention"
+            ]
+          ]
+        }
+      ],
+      "R08": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R09": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        }
+      ],
+      "R10": [
+        {
+          "consumer": "D5DeepSeekTokenTableRouting",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekTokenTableRouting"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5ThirteenProfilesModelRouters",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5ThirteenProfilesModelRouters"
+            ]
+          ]
+        }
+      ],
+      "R11": [
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R12": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R14": [
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R15": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "cuda-precise",
+              "CudaGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "cuda-owner",
+              "D5ExactMoeVocabulary/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ]
+          ]
+        }
+      ]
+    },
+    "apple:direct": {
+      "R01": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        },
+        {
+          "consumer": "HeadRunsEntireLogicalVocabulary",
+          "passed_in": [
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ]
+          ]
+        }
+      ],
+      "R02": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R03": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R07": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekNativeSinkAttention",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekNativeSinkAttention"
+            ]
+          ]
+        }
+      ],
+      "R08": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R09": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        }
+      ],
+      "R10": [
+        {
+          "consumer": "D5DeepSeekTokenTableRouting",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekTokenTableRouting"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5ThirteenProfilesModelRouters",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5ThirteenProfilesModelRouters"
+            ]
+          ]
+        }
+      ],
+      "R11": [
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R12": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R14": [
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R15": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ]
+          ]
+        }
+      ]
+    },
+    "apple:graph": {
+      "R01": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        },
+        {
+          "consumer": "HeadRunsEntireLogicalVocabulary",
+          "passed_in": [
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ]
+          ]
+        }
+      ],
+      "R02": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R03": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R07": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekNativeSinkAttention",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekNativeSinkAttention"
+            ]
+          ]
+        }
+      ],
+      "R08": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R09": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        }
+      ],
+      "R10": [
+        {
+          "consumer": "D5DeepSeekTokenTableRouting",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekTokenTableRouting"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5ThirteenProfilesModelRouters",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5ThirteenProfilesModelRouters"
+            ]
+          ]
+        }
+      ],
+      "R11": [
+        {
+          "consumer": "D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        }
+      ],
+      "R12": [
+        {
+          "consumer": "D5DeepSeekWeightedHyperConnectionAndHead",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead"
+            ]
+          ]
+        }
+      ],
+      "R14": [
+        {
+          "consumer": "D5EightGgufProfilesFullMoe",
+          "passed_in": [
+            [
+              "apple-owner",
+              "AppleGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        }
+      ],
+      "R15": [
+        {
+          "consumer": "D5DeepSeekFullAttentionChain",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekFullAttentionChain"
+            ]
+          ]
+        },
+        {
+          "consumer": "D5DeepSeekStatefulCompression",
+          "passed_in": [
+            [
+              "apple-final",
+              "AppleGraphMoeFragments.D5DeepSeekStatefulCompression"
+            ]
+          ]
+        },
+        {
+          "consumer": "GatherMapsGlobalRowsAndRejectsOutOfBounds",
+          "passed_in": [
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4"
+            ],
+            [
+              "apple-owner",
+              "D5ExactMoeVocabulary/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6"
+            ],
+            [
+              "apple-owner",
+              "D5ExactQwenGguf/AppleGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "delivery": "NOT_RUN",
+  "performance": "NOT_RUN",
+  "retained_cuda_precision_and_failure_recovery": "evidence/correctness/llm-moe-d5-real-fragments/explicit-rope-phase/cuda/receipt.json",
+  "reuse_rule": "CPU product unchanged since b111e3b7; CUDA unchanged since precise original unary; Apple changes limited to Bool fixture and original cast with owned workspace, affected consumers and static faults rerun at 91af7569. Passing cases in failed batches are retained individually; batch failure is never relabelled PASS.",
+  "limits": [
+    "Not full giant-checkpoint inference; nonzero payloads are tied to pinned weight headers.",
+    "GGUF NextN is absent from both full headers; official DeepSeek MTP remains required and unqualified.",
+    "Vulkan numerical failures remain unqualified, including after cold SinkAttention classification fix.",
+    "No new HYLE math; explicit phase and Apple cast workspace cost await A6."
+  ]
+}
