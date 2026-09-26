@@ -831,19 +831,22 @@ TEST(DeepSeekRoundtrip, WorkspaceRejectionsRollbackConcurrencyAndLifetime) {
       EXPECT_FALSE(program.create_invocation(short_workspace.view()));
       auto host_workspace = mem::Buffer::create(mem::system_resource(), 132, 256).value();
       EXPECT_FALSE(program.create_invocation(host_workspace.view()));
+      std::array workspace{mem::Buffer::create(resource.ref(), 132, 256).value(),
+                           mem::Buffer::create(resource.ref(), 132, 256).value()};
       const auto before_lane = allocator.attempts, lane_live = allocator.live;
-      { auto lane = program.create_invocation(); ASSERT_TRUE(lane); }
+      { auto lane = program.create_invocation(workspace[0].view()); ASSERT_TRUE(lane) << lane.error().message(); }
       const auto lane_count = allocator.attempts - before_lane;
       ASSERT_LT(lane_count, 16u);
       for (std::size_t i = 0; i < lane_count; ++i) {
         allocator.fail_at = allocator.attempts + i;
-        auto failed = program.create_invocation();
+        auto failed = program.create_invocation(workspace[0].view());
         ASSERT_FALSE(failed);
         EXPECT_TRUE(failed.error().IsResourceExhausted());
         EXPECT_EQ(allocator.live, lane_live);
         allocator.fail_at = SIZE_MAX;
       }
-      std::array lanes{program.create_invocation().value(), program.create_invocation().value()};
+      std::array lanes{program.create_invocation(workspace[0].view()).value(),
+                       program.create_invocation(workspace[1].view()).value()};
       std::array queues{owner.create_queue().value(), owner.create_queue().value()};
       for (auto &queue : queues) ASSERT_TRUE(queue.reserve_completions(1).ok());
       auto reject = [&](const auto &in, const auto &out) {
