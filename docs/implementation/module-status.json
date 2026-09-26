@@ -386,9 +386,13 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：48/176 完整格；2.4T 混合权重 MoE 的四路线八入口 32/32 批次检查通过，完整其它角色、负例、三交付和 P1 仍待批末验收；公共 schema 误判已纠正。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-recurrent-gate-numeric-decision.md",
+      "summary": "M3-D5 recurrent gate BLOCKED：2.4T 新批 CPU/Apple/Vulkan 六入口通过，CUDA Softplus 命中冻结实现；旧六画像 R05 门控预计算，48 格退回未完整资格，其它片段证据保留。",
+      "blocked_from": "AUDITED",
+      "blocker": "CUDA 成熟 gate 的数值合同待决；ggml/SGLang 原版 log(1+exp) 与当前通用稳定尾数要求不相容，cuDNN 9.24 有界探针同样失败。",
+      "blocker_owner": "compute_ops / 用户选择模型专用数值合同或接受具名成熟缺口",
+      "resume_condition": "用户选择模型专用完整片段数值资格方案，或接受该精确成熟缺口后，按 BLOCKED -> SCOPED -> AUDITED 绑定有限后续工作；不新增或优化 HYLE 数学。"
     },
     {
       "module": "compute_backend_cpu",

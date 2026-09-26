@@ -1,0 +1,23 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5OfficialAttentionAndGdnProjectionRoleBatch:*D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CpuGraphQwen38_24T
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+unknown file: error: C++ exception with description "operation input count does not match its typed contract" thrown in the test body.
+
+[  FAILED  ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (61 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch
+unknown file: error: C++ exception with description "operation input count does not match its typed contract" thrown in the test body.
+
+[  FAILED  ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch (2017 ms)
+[----------] 2 tests from CpuGraphQwen38_24T (2079 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (2079 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[  FAILED  ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch
+
+ 2 FAILED TESTS

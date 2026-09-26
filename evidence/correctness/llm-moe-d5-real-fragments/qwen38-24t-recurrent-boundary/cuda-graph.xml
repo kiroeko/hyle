@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="2" disabled="0" errors="0" time="2.646" timestamp="2026-09-26T12:08:07.873" name="AllTests">
+  <testsuite name="CudaGraphQwen38_24T" tests="2" failures="2" disabled="0" skipped="0" errors="0" time="2.646" timestamp="2026-09-26T12:08:07.873">
+    <testcase name="D5GgufAttentionGdnAndMtpUseRealRoleTypes" file="C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc" line="802" status="run" result="completed" time="1.508" timestamp="2026-09-26T12:08:07.873" classname="CudaGraphQwen38_24T">
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc:86&#x0A;Value of: provider == c::ggml_cuda::kProviderId || provider == c::cublas::kProviderId || provider == c::cuda_native::kSglangProviderId || provider == c::cuda_native::kCcclProviderId || provider == c::flashinfer::kProviderId&#x0A;  Actual: false&#x0A;Expected: true&#x0A;step=14 node=14 operation=unary provider=hyle-cuda&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(812): gdn&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc:86
+Value of: provider == c::ggml_cuda::kProviderId || provider == c::cublas::kProviderId || provider == c::cuda_native::kSglangProviderId || provider == c::cuda_native::kCcclProviderId || provider == c::flashinfer::kProviderId
+  Actual: false
+Expected: true
+step=14 node=14 operation=unary provider=hyle-cuda
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(812): gdn
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc:86&#x0A;Value of: provider == c::ggml_cuda::kProviderId || provider == c::cublas::kProviderId || provider == c::cuda_native::kSglangProviderId || provider == c::cuda_native::kCcclProviderId || provider == c::flashinfer::kProviderId&#x0A;  Actual: false&#x0A;Expected: true&#x0A;step=14 node=14 operation=unary provider=hyle-cuda&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(812): gdn&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc:86
+Value of: provider == c::ggml_cuda::kProviderId || provider == c::cublas::kProviderId || provider == c::cuda_native::kSglangProviderId || provider == c::cuda_native::kCcclProviderId || provider == c::flashinfer::kProviderId
+  Actual: false
+Expected: true
+step=14 node=14 operation=unary provider=hyle-cuda
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(812): gdn
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): Q8_0
+]]></failure>
+    </testcase>
+    <testcase name="D5OfficialAttentionAndGdnProjectionRoleBatch" file="C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc" line="834" status="run" result="completed" time="1.138" timestamp="2026-09-26T12:08:09.382" classname="CudaGraphQwen38_24T">
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc:86&#x0A;Value of: provider == c::ggml_cuda::kProviderId || provider == c::cublas::kProviderId || provider == c::cuda_native::kSglangProviderId || provider == c::cuda_native::kCcclProviderId || provider == c::flashinfer::kProviderId&#x0A;  Actual: false&#x0A;Expected: true&#x0A;step=18 node=18 operation=unary provider=hyle-cuda&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc:86
+Value of: provider == c::ggml_cuda::kProviderId || provider == c::cublas::kProviderId || provider == c::cuda_native::kSglangProviderId || provider == c::cuda_native::kCcclProviderId || provider == c::flashinfer::kProviderId
+  Actual: false
+Expected: true
+step=18 node=18 operation=unary provider=hyle-cuda
+]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

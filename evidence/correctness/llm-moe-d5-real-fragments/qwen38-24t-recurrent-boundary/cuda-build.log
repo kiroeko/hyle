@@ -1,0 +1,5 @@
+[0/2] Re-checking globbed directories...
+[1/5] Building CXX object tests\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda_test.dir\d5_qwen38_official_test.cc.obj
+[2/5] Linking CXX executable bin\hyle_compute_route_cuda_test.exe
+[3/5] Building CXX object tests\graph_route_cuda\CMakeFiles\hyle_graph_route_cuda_test.dir\d5_qwen38_official_test.cc.obj
+[4/5] Linking CXX executable bin\hyle_graph_route_cuda_test.exe

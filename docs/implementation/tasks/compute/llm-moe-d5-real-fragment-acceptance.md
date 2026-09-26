@@ -2,6 +2,13 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
+**2026-09-26 当前状态纠正：** `compute_ops` 已因 recurrent gate 数值合同进入
+[`BLOCKED` 待决卡](llm-moe-d5-recurrent-gate-numeric-decision.md)。2.4T 新共享批次的
+CPU/Apple/Vulkan 六入口通过，CUDA 两入口只在成熟 Softplus 断言失败。旧 Qwen 六画像的
+R05 使用主机预计算 gate/decay，48 个整格退回未完整资格；非 R05 片段收据保留。
+当前 ledger 为 **0/176 RUN_PASS、176/176 VALIDATION_NOT_RUN**。下文48格数字保留为历史快照，
+不能继续用作当前完整覆盖。既有 Provider/Graph owner 的有限 FIX 不随此待决项自动扩张。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

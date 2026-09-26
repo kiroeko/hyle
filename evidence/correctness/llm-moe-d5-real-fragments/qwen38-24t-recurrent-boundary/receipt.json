@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "candidate": "59e7fd87e2564bcae893d6e159b57dd96aa80d9f",
+  "baseline": "0ac662ce0",
+  "scope": "Qwen3.8-2.4T official nine BF16 projection roles and official/two GGUF connected recurrent boundaries",
+  "execution": "Filtered stable batch in reused Release WERROR route trees. Not a full owner suite or validation-select run receipt.",
+  "windows_device": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "sm": "8.9",
+    "driver": "617.14"
+  },
+  "apple_device": {
+    "host": "MacBook Air Mac16,12",
+    "gpu": "Apple M4"
+  },
+  "product_tree_unchanged_since": "9e7c579282030db876dac98ca20b6e20e189ce70",
+  "delivery": "VALIDATION_NOT_RUN",
+  "performance": "VALIDATION_NOT_RUN",
+  "aggregate": "INCONCLUSIVE",
+  "entries": {
+    "cpu:direct": {
+      "tests": 2,
+      "failures": 0,
+      "status": "RUN_PASS",
+      "xml": "cpu-direct.xml",
+      "log": "cpu-direct.log",
+      "numeric_checks": "PASS"
+    },
+    "cpu:graph": {
+      "tests": 2,
+      "failures": 0,
+      "status": "RUN_PASS",
+      "xml": "cpu-graph.xml",
+      "log": "cpu-graph.log",
+      "numeric_checks": "PASS"
+    },
+    "cuda:direct": {
+      "tests": 2,
+      "failures": 2,
+      "status": "MATURE_PROVIDER_ASSERTION_FAIL",
+      "xml": "cuda-direct.xml",
+      "log": "cuda-direct.log",
+      "numeric_checks": "PASS"
+    },
+    "cuda:graph": {
+      "tests": 2,
+      "failures": 2,
+      "status": "MATURE_PROVIDER_ASSERTION_FAIL",
+      "xml": "cuda-graph.xml",
+      "log": "cuda-graph.log",
+      "numeric_checks": "PASS"
+    },
+    "vulkan:direct": {
+      "tests": 2,
+      "failures": 0,
+      "status": "RUN_PASS",
+      "xml": "vulkan-direct.xml",
+      "log": "vulkan-direct.log",
+      "numeric_checks": "PASS"
+    },
+    "vulkan:graph": {
+      "tests": 2,
+      "failures": 0,
+      "status": "RUN_PASS",
+      "xml": "vulkan-graph.xml",
+      "log": "vulkan-graph.log",
+      "numeric_checks": "PASS"
+    },
+    "apple:direct": {
+      "tests": 2,
+      "failures": 0,
+      "status": "RUN_PASS",
+      "xml": "apple-direct.xml",
+      "log": "apple-direct.log",
+      "numeric_checks": "PASS"
+    },
+    "apple:graph": {
+      "tests": 2,
+      "failures": 0,
+      "status": "RUN_PASS",
+      "xml": "apple-graph.xml",
+      "log": "apple-graph.log",
+      "numeric_checks": "PASS"
+    }
+  },
+  "files": {
+    "apple-build.log": {
+      "bytes": 697,
+      "sha256": "3aa050be4ce63fd8324328393db964e9f5eee027f51907803d07d2f4c1b9bdaa"
+    },
+    "apple-direct.log": {
+      "bytes": 8055,
+      "sha256": "d6ee6f8f1c2a403aa8c56fc9f5b15a1898f97df9c2d7151344095552a74da055"
+    },
+    "apple-direct.xml": {
+      "bytes": 870,
+      "sha256": "72079e844bb35bee7442f0e96cce59c2a566c16fb0c3dace5faedff010252458"
+    },
+    "apple-graph.log": {
+      "bytes": 6700,
+      "sha256": "b7b5aa4f53821edc47c6650f47e825e259a6f63a0ab7f8e041ddd0e4eb23faa0"
+    },
+    "apple-graph.xml": {
+      "bytes": 880,
+      "sha256": "a1621e2addd63deb46aa96884e3cff3e64e7cd6ec8b6d3247997aafa7e353803"
+    },
+    "cpu-build.log": {
+      "bytes": 418,
+      "sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4"
+    },
+    "cpu-direct.log": {
+      "bytes": 891,
+      "sha256": "abc2d77fe1c398a97ab5a158afc6406bcdff400e2703bef3a9e0770c326e49d4"
+    },
+    "cpu-direct.xml": {
+      "bytes": 885,
+      "sha256": "b7da927462b919b058bd6de085b6eec18588cc76fcd3a3ffc1c18dc1d176af43"
+    },
+    "cpu-graph.log": {
+      "bytes": 921,
+      "sha256": "6b2316b4464c73849538b3b37ba1eda1efb05b052f194351e666147be93abc1c"
+    },
+    "cpu-graph.xml": {
+      "bytes": 895,
+      "sha256": "03c20a4a1d095df8c53b99af88821ff1b20b927fce261d6cc6f47d275b57620b"
+    },
+    "cuda-build.log": {
+      "bytes": 424,
+      "sha256": "f6e200d167fb452e74c863a4a602e17b37092ff70c9574a4e0dfaad7d2166659"
+    },
+    "cuda-direct.log": {
+      "bytes": 6737,
+      "sha256": "528e9323bd090075c3a3bc5777c256f696a750752d01cb6da6fcf8d71ee80ff1"
+    },
+    "cuda-direct.xml": {
+      "bytes": 4166,
+      "sha256": "723b7528e1fe43db37b9669a250d2058ba16d73340e88b1b47b0333ab20c796a"
+    },
+    "cuda-graph.log": {
+      "bytes": 6374,
+      "sha256": "7b913a48f29305742e3cd4603cb0312c0090711ae7de0fb0d90371db71f6b526"
+    },
+    "cuda-graph.xml": {
+      "bytes": 4347,
+      "sha256": "c6473133ff6966f2c05c745b96b8ae4e4e0f79131f30a85984f494ffd96b1ff6"
+    },
+    "development-cpu-build-2.log": {
+      "bytes": 418,
+      "sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4"
+    },
+    "development-cpu-build.log": {
+      "bytes": 418,
+      "sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4"
+    },
+    "development-cpu-direct-2.log": {
+      "bytes": 1363,
+      "sha256": "b38af066e6ef12151aed1ab09422e1c6141a79496da735290a555a33b45680d3"
+    },
+    "development-cpu-direct-2.xml": {
+      "bytes": 1581,
+      "sha256": "3bc720fecd99967c4d5388f6b647247912972c330d114c82a4711f49e8c79639"
+    },
+    "development-cpu-direct.log": {
+      "bytes": 3295,
+      "sha256": "d86562d4eca08ca0f3f39bd7f1cd014614cc59f425e289924dabc98c6e3c59f1"
+    },
+    "development-cpu-direct.xml": {
+      "bytes": 5723,
+      "sha256": "34bfcc8fa9188430b2e8e588a1451e1d32159ba9b511379aab17b1647f18e281"
+    },
+    "development-cpu-graph.log": {
+      "bytes": 1403,
+      "sha256": "010d009bff8b3942543b61afa4f5d1e7e13f7c59d0ee0d967a5bdfbd73bb4f3b"
+    },
+    "development-cpu-graph.xml": {
+      "bytes": 1594,
+      "sha256": "896ac48c0e920a7f657733210ddf177aa86ee1dcd24ae2ab3185fdeabb7158bc"
+    },
+    "loc.json": {
+      "bytes": 4106,
+      "sha256": "edd946938dd77706cc8a11cbfbb0590c357f48267bdc606379cba638fb188221"
+    },
+    "selected-plan.json": {
+      "bytes": 805249,
+      "sha256": "02a98ef1f057f43e5c4f60827bb4a7839a230a7150dc9ad57f40b4a1c8ff855d"
+    },
+    "vulkan-build.log": {
+      "bytes": 1042,
+      "sha256": "d1d780ca0eb0d725dcee07602b75615deb95d7fa8a7c6a1c98afdc4f6540147c"
+    },
+    "vulkan-direct.log": {
+      "bytes": 897,
+      "sha256": "a8ebcc6da2070d0a3fb31fb113486fc28f8a49ed95a47d2e57836dd5a198cdb3"
+    },
+    "vulkan-direct.xml": {
+      "bytes": 904,
+      "sha256": "d980357532749688421ebcd847e527b99652af7f643d28a25bcd017cf2201f44"
+    },
+    "vulkan-graph.log": {
+      "bytes": 927,
+      "sha256": "07b4d7e7705ee9c2f8348088ebb31512a4108669dd2d694a04e479b6b6758428"
+    },
+    "vulkan-graph.xml": {
+      "bytes": 915,
+      "sha256": "9d16147a0d14dce7a7e04749fc98357eee0bdb3a2258a7846980a51181114c4e"
+    },
+    "cudnn-probe/build.log": {
+      "bytes": 2218,
+      "sha256": "5e1cf3161249d2ae5631a4c78821c585fd6ea3f45490698110664b3a09592f47"
+    },
+    "cudnn-probe/cudnn-softplus-probe.cc": {
+      "bytes": 8675,
+      "sha256": "74d8519b580780a2a48918bea2264c4ba2f5e3e91696dc868b6fe2f5684afb3f"
+    },
+    "cudnn-probe/cudnn-softplus-probe.py": {
+      "bytes": 1778,
+      "sha256": "b1b8a077d1e02ebf877f4581beb2b9c2e0a439637b89cd8e5966658709c2432f"
+    },
+    "cudnn-probe/original-layout-backend.log": {
+      "bytes": 217929,
+      "sha256": "8b731e3a625eef39e5ec3fc2a9522a1b2f53e49b9ea30f110b066643f97d73dd"
+    },
+    "cudnn-probe/original-layout.log": {
+      "bytes": 176,
+      "sha256": "7731d359e92933d67c343398ead742190bd168b20fc051f616a7b1f5f3a5f04a"
+    },
+    "cudnn-probe/run.log": {
+      "bytes": 11646,
+      "sha256": "b70f8152d84bfade515096e3eb758f68758612fc379bee372cda6f31231dbaf3"
+    }
+  },
+  "ledger_correction": {
+    "previous_RUN_PASS": 48,
+    "RUN_PASS": 0,
+    "VALIDATION_NOT_RUN": 176,
+    "reason": "Previous six Qwen profiles supplied host-precomputed gate/decay to the GDN core. They do not cover the connected R05 runtime gate boundary. Unaffected region receipts retained."
+  },
+  "cudnn_probe": {
+    "version": 92400,
+    "cuda_toolkit": "13.3",
+    "original_shape": [
+      1,
+      1,
+      128,
+      1
+    ],
+    "view_shape": [
+      1,
+      128,
+      1,
+      1
+    ],
+    "heuristic": "MODE_A",
+    "available_configs": 4,
+    "engine": 1,
+    "workspace_bytes": 0,
+    "observations_per_config": 256,
+    "failures_per_config": 25,
+    "status": "NUMERIC_INCOMPATIBLE_WITH_STABLE_TAIL_PROBE",
+    "scope_limit": "This does not establish whole-model/state error or all possible cuDNN engines."
+  },
+  "upstream": [
+    {
+      "repository": "https://github.com/sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/ops/attention/fla/fused_gdn_gating.py",
+      "sha256": "c7736d1e506fb2c3e5c0496a2ed8c23347c2507ebe73c08bc6745517495d0957"
+    },
+    {
+      "repository": "https://github.com/sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/kernels/ops/attention/cutedsl_gdn.py",
+      "sha256": "309913901b7f9787d3e5066bb3417f4d7e5412267562acbbfa9d3b6294961866"
+    },
+    {
+      "repository": "https://github.com/sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "path": "python/sglang/srt/layers/attention/linear/kernels/gdn_flashinfer.py",
+      "sha256": "6db787654af7953b5572520b9b1b048f8939e3587e8fdb287e82bcce4d168b02"
+    }
+  ]
+}

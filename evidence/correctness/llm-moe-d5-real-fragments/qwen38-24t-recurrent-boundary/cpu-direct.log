@@ -1,0 +1,14 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5OfficialAttentionAndGdnProjectionRoleBatch:*D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CpuQwen38_24T
+[ RUN      ] CpuQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] CpuQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (1564 ms)
+[ RUN      ] CpuQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch (2129 ms)
+[----------] 2 tests from CpuQwen38_24T (3694 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (3694 ms total)
+[  PASSED  ] 2 tests.
