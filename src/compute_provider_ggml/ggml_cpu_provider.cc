@@ -1184,6 +1184,10 @@ bool supports(void *context, Operation operation,
            output.data_type() == inputs[0].data_type();
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const bool quantized_rhs = native_quantized(inputs[1]);
+    const bool native_f32 = inputs[0].data_type() == DataType::kFloat32 &&
+                            inputs[0].rank() == 2 && inputs[1].rank() == 2 &&
+                            inputs[0].is_dense() && inputs[0].is_plain() &&
+                            inputs[1].is_plain() && native_matmul_rhs(inputs[1]);
     if (!nonempty || elements(output) == 0 || inputs.size() != 2 ||
         inputs[0].rank() < 2 || inputs[0].rank() > 4 || inputs[1].rank() < 2 ||
         inputs[1].rank() > 4 ||
@@ -1195,7 +1199,7 @@ bool supports(void *context, Operation operation,
           native_quantized(inputs[0]))) ||
         matmul->accumulation_type != DataType::kFloat32 ||
         (!quantized_rhs && inputs[0].data_type() != DataType::kFloat16 &&
-         inputs[0].data_type() != DataType::kBFloat16) ||
+         inputs[0].data_type() != DataType::kBFloat16 && !native_f32) ||
         (quantized_rhs && !floating(inputs[0].data_type())) ||
         inputs[1].data_type() != inputs[0].data_type() ||
         output.data_type() != inputs[0].data_type())
