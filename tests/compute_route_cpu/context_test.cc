@@ -274,6 +274,10 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
         if (rows >= 16 && !transposed)
           expected = onednn::kProviderId;
 #endif
+#if defined(HYLE_COMPUTE_GGML_CPU)
+        if (transposed)
+          expected = ggml_cpu::kProviderId;
+#endif
         EXPECT_EQ(prepared->provider().id, expected);
         auto left =
             hyle::mem::Buffer::create(hyle::mem::system_resource(),
