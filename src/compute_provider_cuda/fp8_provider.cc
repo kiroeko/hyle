@@ -42,7 +42,7 @@ struct Invocation final { void *workspace; };
 Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
                      std::span<const TensorDesc> outputs) noexcept {
   const auto *matmul = operation.get_if<MatMul>();
-  const auto *linear = operation.custom_as<model_ops::Float8BlockLinear>();
+  const auto linear = operation.custom_as<model_ops::Float8BlockLinear>();
   if ((!matmul && !linear) ||
       (matmul && matmul->accumulation_type != DataType::kFloat32) ||
       inputs.size() != 2 || outputs.size() != 1 ||
