@@ -590,7 +590,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_runtime",
-        "tree_sha256": "742f1d334031bf17974f2f0892be1e54d92e7f45af9d01da37e228c84f318518"
+        "tree_sha256": "2fc731e2c30f54e730c945a680959ff4292493a4b17ab9f025725882cad1bbc2"
       },
       "license": {
         "expression": "MIT",

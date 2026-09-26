@@ -31,7 +31,7 @@
     {
       "path": "src/ggml-metal/ggml-metal-device.m",
       "before_sha256": "1c129311f152c88bb455e14a720aac731196a76450e4b0da0791f1cce2bcbc47",
-      "after_sha256": "f14160b3082e8f1b5a6d691339f472a35df2df543f4862a234d42c9c4ab82adb",
+      "after_sha256": "bcf70f581595f29e3257ffe998d295996c57a3b75551c82c229bbe7a7e8181aa",
       "edits": [
         {
           "before": "void ggml_metal_buffer_free(ggml_metal_buffer_t buf) {",
@@ -152,6 +152,10 @@
         {
           "before": "    res->d_group = dispatch_group_create();",
           "after": "    res->d_group = dispatch_group_create();\n    if (!res->d_group) { [res->lock release]; [res->data release]; free(res); return NULL; }"
+        },
+        {
+          "before": "ggml_metal_buffer_t ggml_metal_buffer_init(ggml_metal_device_t dev, size_t size, bool shared) {\n    ggml_metal_buffer_t res = calloc(1, sizeof(struct ggml_metal_buffer));\n\n    res->dev = dev;\n\n    const size_t size_page = sysconf(_SC_PAGESIZE);\n\n    size_t size_aligned = size;\n    if ((size_aligned % size_page) != 0) {\n        size_aligned += (size_page - (size_aligned % size_page));\n    }\n\n    const struct ggml_metal_device_props * props_dev = ggml_metal_device_get_props(dev);\n\n    shared = shared && props_dev->use_shared_buffers;\n\n    // allocate shared buffer if the device supports it and it is required by the buffer type\n    if (shared) {\n        res->all_data = ggml_metal_host_malloc(size_aligned);\n        res->is_shared = true;\n    } else {\n        // use virtual address\n        res->all_data = (void *) atomic_fetch_add_explicit(&dev->addr_virt, size_aligned, memory_order_relaxed);\n        res->is_shared = false;\n    }\n    res->all_size = size_aligned;\n\n    res->owned = true;\n\n    res->n_buffers = 1;\n\n    if (res->all_data != NULL) {\n        res->buffers[0].size  = size;\n        res->buffers[0].metal = nil;\n\n        if (size_aligned > 0) {\n            if (props_dev->use_shared_buffers && shared) {\n                res->buffers[0].metal = [res->dev->mtl_device newBufferWithBytesNoCopy:res->all_data\n                                                                  length:size_aligned\n                                                                 options:MTLResourceStorageModeShared\n                                                             deallocator:nil];\n            } else {\n                res->buffers[0].metal = [res->dev->mtl_device newBufferWithLength:size_aligned options:MTLResourceStorageModePrivate];\n            }\n        }\n\n        res->buffers[0].data = res->all_data;\n    }\n\n    if (size_aligned > 0 && (res->all_data == NULL || res->buffers[0].metal == nil)) {\n        GGML_LOG_ERROR(\"%s: error: failed to allocate buffer, size = %8.2f MiB\\n\", __func__, size_aligned / 1024.0 / 1024.0);\n        free(res);\n        return NULL;\n    }\n\n    res->use_residency_sets = props_dev->use_residency_sets;\n\n    if (!ggml_metal_buffer_rset_init(res)) {\n        GGML_LOG_ERROR(\"%s: error: failed to initialize residency set\\n\", __func__);\n        free(res);\n        return NULL;\n    }\n\n    ggml_metal_device_rsets_add(dev, res->rset);\n\n    //ggml_metal_log_allocated_size(device, size_aligned);\n\n    return res;\n}\n",
+          "after": "ggml_metal_buffer_t ggml_metal_buffer_init(ggml_metal_device_t dev, size_t size, bool shared) {\n    ggml_metal_buffer_t res = calloc(1, sizeof(struct ggml_metal_buffer));\n\n    if (res == NULL) {\n        return NULL;\n    }\n\n    res->dev = dev;\n\n    const size_t size_page = sysconf(_SC_PAGESIZE);\n\n    size_t size_aligned = size;\n    if ((size_aligned % size_page) != 0) {\n        size_aligned += (size_page - (size_aligned % size_page));\n    }\n\n    const struct ggml_metal_device_props * props_dev = ggml_metal_device_get_props(dev);\n\n    shared = shared && props_dev->use_shared_buffers;\n\n    // allocate shared buffer if the device supports it and it is required by the buffer type\n    if (shared) {\n        res->all_data = ggml_metal_host_malloc(size_aligned);\n        res->is_shared = true;\n    } else {\n        // use virtual address\n        res->all_data = (void *) atomic_fetch_add_explicit(&dev->addr_virt, size_aligned, memory_order_relaxed);\n        res->is_shared = false;\n    }\n    res->all_size = size_aligned;\n\n    res->owned = true;\n\n    res->n_buffers = 1;\n\n    if (res->all_data != NULL) {\n        res->buffers[0].size  = size;\n        res->buffers[0].metal = nil;\n\n        if (size_aligned > 0) {\n            if (props_dev->use_shared_buffers && shared) {\n                res->buffers[0].metal = [res->dev->mtl_device newBufferWithBytesNoCopy:res->all_data\n                                                                  length:size_aligned\n                                                                 options:MTLResourceStorageModeShared\n                                                             deallocator:nil];\n            } else {\n                res->buffers[0].metal = [res->dev->mtl_device newBufferWithLength:size_aligned options:MTLResourceStorageModePrivate];\n            }\n        }\n\n        res->buffers[0].data = res->all_data;\n    }\n\n    if (size_aligned > 0 && (res->all_data == NULL || res->buffers[0].metal == nil)) {\n        GGML_LOG_ERROR(\"%s: error: failed to allocate buffer, size = %8.2f MiB\\n\", __func__, size_aligned / 1024.0 / 1024.0);\n        ggml_metal_buffer_free(res);\n        return NULL;\n    }\n\n    res->use_residency_sets = props_dev->use_residency_sets;\n\n    if (!ggml_metal_buffer_rset_init(res)) {\n        GGML_LOG_ERROR(\"%s: error: failed to initialize residency set\\n\", __func__);\n        ggml_metal_buffer_free(res);\n        return NULL;\n    }\n\n    ggml_metal_device_rsets_add(dev, res->rset);\n\n    //ggml_metal_log_allocated_size(device, size_aligned);\n\n    return res;\n}\n"
         }
       ]
     },
@@ -254,7 +258,7 @@
     {
       "path": "src/ggml-metal/ggml-metal.cpp",
       "before_sha256": "4331ba068dd06691214a7f7e00ff6946114006623b4057a104892387bfac0343",
-      "after_sha256": "35abc3dc925b5a4800594ecb8fc3bcea07c2b7f89bba3587efa50e4374c8ef98",
+      "after_sha256": "6da5f1f772e47e8c860b3a14c5e626e616bfe14932f880cdec27f8170dab7ecd",
       "edits": [
         {
           "before": "// backend\n",
@@ -279,6 +283,10 @@
         {
           "before": "            for (int i = 0; i < g_devices; ++i) {\n                auto * dev = ggml_backend_metal_device_init(&reg, i);",
           "after": "            devs.reserve(g_devices);\n            reg_ctx->devices.reserve(g_devices);\n            for (int i = 0; i < g_devices; ++i) {\n                auto * dev = ggml_backend_metal_device_init(&reg, i);"
+        },
+        {
+          "before": "    return ggml_backend_buffer_init(buft, buf_i, res, size);",
+          "after": "    try {\n        ggml_backend_buffer_t buffer = ggml_backend_buffer_init(buft, buf_i, res, size);\n        if (buffer == nullptr) {\n            ggml_metal_buffer_free(res);\n        }\n        return buffer;\n    } catch (...) {\n        ggml_metal_buffer_free(res);\n        throw;\n    }"
         }
       ]
     },
