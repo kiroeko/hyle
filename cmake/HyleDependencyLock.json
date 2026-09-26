@@ -351,7 +351,7 @@
       },
       "vendored": {
         "path": "third_party/sglang_activation",
-        "tree_sha256": "03172e2197d0269948ca9c4d88c9a31f5a1bbf125e6b2f5eee39c64f9950f8e3"
+        "tree_sha256": "40ccc3671a45b1c71d789a3186215018a6474b7f9e6f514d0b92bd07caea439d"
       },
       "license": {
         "expression": "Apache-2.0 AND MIT",
@@ -364,12 +364,17 @@
           {
             "root": "hyle",
             "path": "third_party/sglang_activation/NOTICE",
-            "sha256": "1deddfb66f49c481c068c8e41eab5765cba8e9f1064b08a92ff25ebb63a17eba"
+            "sha256": "c1432062aa9c5499b569a49ef218db45c7d936e0ae3af49bde6de7104b82f5bd"
           },
           {
             "root": "hyle",
             "path": "third_party/sglang_activation/TRITON-LICENSE",
             "sha256": "92640fb97222fd0a698ff28ce0c3782c172623f8d6c609b557636a80f28fb946"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/sglang_activation/FLASHINFER-LICENSE",
+            "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7"
           }
         ]
       }

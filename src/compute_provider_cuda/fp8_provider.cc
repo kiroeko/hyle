@@ -13,6 +13,7 @@
 #include "native_context.h"
 #include "fp8/sglang_fp8_sm89.h"
 #include "fp8/sglang_fp8_dynamic_sm89.h"
+#include "fp8/sglang_fp8_quantize_cuda_sm89.h"
 
 namespace hyle::compute::cuda_native::fp8 {
 namespace {
@@ -28,6 +29,7 @@ struct Shape final {
   bool dynamic = false, bfloat = false, power2 = false;
   float floor = 1.0e-10F;
   std::size_t workspace_bytes = 0;
+  int quant_groups = 1;
 };
 struct Prepared final {
   CUcontext primary = nullptr;
@@ -75,6 +77,13 @@ Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
     shape.power2 = linear->scale_rounding == model_ops::Float8ScaleRounding::kPowerOfTwo;
     shape.floor = linear->absmax_floor;
     shape.workspace_bytes = *encoded->required_bytes();
+    // Original CUDA wrapper chooses the largest whole number of groups from
+    // 16/8/4/2/1. Bind it cold; the quantizer has no partial-block mask.
+    if (!shape.power2) {
+      const auto groups = m * (k / 128);
+      shape.quant_groups = 16;
+      while (groups % shape.quant_groups != 0) shape.quant_groups /= 2;
+    }
     if (shape.power2 && !shape.bfloat)
       return std::unexpected(Status::Unimplemented(
           "SGLang FP8 power-of-two activation scales are qualified for BF16 input"));
@@ -142,7 +151,8 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   auto stream = cuda::stream(queue);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   const auto alignment = prepared.shape.bfloat ? 2u : 4u;
-  auto a = cuda::detail::const_pointer(inputs[0].storage(), alignment, 1);
+  const auto input_alignment = prepared.shape.dynamic && !prepared.shape.power2 ? 16u : alignment;
+  auto a = cuda::detail::const_pointer(inputs[0].storage(), input_alignment, 1);
   if (!a) return detail::EnqueueResult::rejected(std::move(a).error());
   auto b = cuda::detail::const_pointer(inputs[1].storage(), 4, 1);
   if (!b) return detail::EnqueueResult::rejected(std::move(b).error());
@@ -171,19 +181,23 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
   if (prepared.shape.dynamic) {
     auto input = reinterpret_cast<CUdeviceptr>(*a);
-    int group = 128, columns = prepared.shape.power2 ? k : 128, scale_stride = m;
+    int group = 128, columns = k, scale_stride = m;
+    int num_groups = m * (k / 128), groups_per_block = prepared.shape.quant_groups;
+    int unused = 0;
     float floor = prepared.shape.floor, minimum = -448, maximum = 448;
-    std::array<void *, 11> quant_args{&input, &pointers[0], &pointers[3], &group, &columns};
-    const std::size_t begin = prepared.shape.power2 ? 6 : 5;
-    if (prepared.shape.power2) quant_args[5] = &scale_stride;
-    quant_args[begin] = &floor;
-    quant_args[begin + 1] = &minimum;
-    quant_args[begin + 2] = &maximum;
-    quant_args[begin + 3] = &pointers[5];
-    quant_args[begin + 4] = &pointers[6];
+    std::array<void *, 11> quant_args{&input, &pointers[0], &pointers[3], &group,
+        &num_groups, &groups_per_block, &floor, &minimum, &maximum, &unused, &unused};
+    if (prepared.shape.power2) {
+      // The unchanged Triton pow2 ABI ends with two null scratch pointers.
+      quant_args[4] = &columns;
+      quant_args[5] = &scale_stride;
+      quant_args[9] = &pointers[5];
+      quant_args[10] = &pointers[6];
+    }
     const auto result = cuLaunchKernel(prepared.quant_function,
-        unsigned(m * (k / 128)), 1, 1, prepared.shape.bfloat ? 32 : 128, 1, 1,
-        prepared.shape.bfloat ? 0 : 16, *stream, quant_args.data(), nullptr);
+        unsigned(num_groups / groups_per_block), 1, 1,
+        prepared.shape.power2 ? 32U : unsigned(groups_per_block * 16), 1, 1,
+        0, *stream, quant_args.data(), nullptr);
     if (result != CUDA_SUCCESS)
       return detail::EnqueueResult::accepted_command(cuda::status(result));
   }
@@ -215,6 +229,7 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
   std::ranges::fill(inputs, binding);
   std::ranges::fill(outputs, binding);
   if (shape.bfloat) inputs[0].minimum_alignment = outputs[0].minimum_alignment = 2;
+  if (shape.dynamic && !shape.power2) inputs[0].minimum_alignment = 16;
   const auto route = shape.dynamic ? kLinearRoute : kRoute;
   *proposal = {.route = route, .runtime = kRuntime,
                .workspace_resource = binding,
@@ -259,12 +274,12 @@ ProviderPrepareOutcome prepare(void *state,
   // Finish lazy native code allocation before capture/replay and concurrent use.
   if (result == CUDA_SUCCESS) result = cuFuncLoad(prepared->function);
   if (result == CUDA_SUCCESS && shape->dynamic) {
-    const auto *image = shape->power2 ? kSglangFp8QuantizeBf16Pow2
-                        : shape->bfloat ? kSglangFp8QuantizeBf16 : kSglangFp8QuantizeF32;
+    const auto *image = shape->power2 ? kSglangFp8QuantizeBf16Pow2 : kSglangFp8QuantizeCuda;
     result = cuModuleLoadData(&prepared->quant_module, image);
     if (result == CUDA_SUCCESS)
       result = cuModuleGetFunction(&prepared->quant_function, prepared->quant_module,
-          shape->power2 ? "_per_token_group_quant_8bit_colmajor" : "_per_token_group_quant_8bit");
+          shape->power2 ? "_per_token_group_quant_8bit_colmajor"
+          : shape->bfloat ? kSglangFp8QuantizeBf16Name : kSglangFp8QuantizeF32Name);
     if (result == CUDA_SUCCESS) result = cuFuncLoad(prepared->quant_function);
   }
   if (result != CUDA_SUCCESS) {

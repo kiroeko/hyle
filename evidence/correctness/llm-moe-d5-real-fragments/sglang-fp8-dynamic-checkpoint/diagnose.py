@@ -15,6 +15,10 @@ header = (root/'third_party/sglang_activation/fp8/sglang_fp8_dynamic_sm89.h').re
 names = {'quantize_bf16':'kSglangFp8QuantizeBf16',
          'quantize_bf16_pow2':'kSglangFp8QuantizeBf16Pow2', 'matmul_bf16':'kSglangFp8MatmulBf16'}
 for label, symbol in names.items():
+    if label == 'quantize_bf16':
+        # Preserve the failed artifact after removing it from the product.
+        (out/(label+'.cubin')).write_bytes((here/'failed-quantize-bf16.cubin').read_bytes())
+        continue
     body = header.split(symbol+'[] = {',1)[1].split('};',1)[0]
     blob = bytes(int(x,16) for x in re.findall(r'0x([0-9a-f]{2})',body))
     (out/(label+'.cubin')).write_bytes(blob)

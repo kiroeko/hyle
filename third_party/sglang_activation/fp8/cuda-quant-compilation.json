@@ -1,0 +1,17 @@
+{
+  "source_revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+  "source_path": "original_cuda_quant.cu",
+  "source_sha256": "2d749ad319dd0cc9c9805a621e81c264c5203c31d6d150a90d7ed482536dc7f4",
+  "body_sha256": "d93d0b1cc185cf21849ea5798b7b371085edd00a0a7ec14315ab300af182bd8d",
+  "vec_header_sha256": "78b8658bac4b7e1a99ed28e3d531c78f52e9d5be1c3784b21c55f2696b89ae4d",
+  "symbols": [
+    "_Z33per_token_group_quant_8bit_kernelIf13__nv_fp8_e4m3Lb0ELb0EfEvPKT_PvPT3_iiifffii",
+    "_Z33per_token_group_quant_8bit_kernelI13__nv_bfloat1613__nv_fp8_e4m3Lb0ELb0EfEvPKT_PvPT3_iiifffii"
+  ],
+  "cubin_sha256": "6cd3f33634812bee71a86171978f2142e5fe409cb0712d9c567ce24330d563dc",
+  "flashinfer_revision": "69ff11fc4954396d98326656dc85debd2223f637",
+  "vec_header_upstream_sha256": "3e292b05f261f29287cb18871fe62f6a9a59cf1f47e885bee45524776a984f2c",
+  "vec_header_adaptation": "FLASHINFER_INLINE uses CUDA __forceinline__ __device__ instead of GNU always_inline attribute for MSVC. All vector load/conversion bodies unchanged.",
+  "upstream_source_sha256": "fbc0d20e0bb890b0c84b665c92069399e2fd9ae6d9ab6fed4487ddd9ae43fc54",
+  "compiler": "NVIDIA CUDA 13.3 nvcc, Windows x64, SM89; no fast math"
+}

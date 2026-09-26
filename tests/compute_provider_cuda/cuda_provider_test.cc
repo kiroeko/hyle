@@ -953,6 +953,55 @@ TEST(SglangFp8, DynamicWorkspaceOomIsolationReplayAndCompletionOwnership) {
   }
 }
 
+template <class T>
+void dynamic_fp8_vector_boundaries(compute::DataType type) {
+  auto owner = context(compute::cuda_native::sglang_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto weight_desc = compute::float8_weight_description(
+      128, 1, compute::Float8ScaleMode::kFloat32Block128).value();
+  Tensor weight(weight_desc, resource.ref());
+  std::vector<std::byte> weights(132, std::byte{0x38});
+  const float scale = 1;
+  std::memcpy(weights.data() + 128, &scale, sizeof(scale));
+  ASSERT_TRUE(weight.storage.view().write(weights).ok());
+  for (int rows : {1, 2, 3, 4, 8, 16}) {
+    SCOPED_TRACE(rows);
+    const auto desc = matrix(type, rows, 128);
+    const auto size = desc.required_bytes().value();
+    auto input = mem::Buffer::create(resource.ref(), size + 16, 256).value();
+    const auto aligned = compute::ConstTensorView::create(
+        desc, input.view().subview(0, size).value()).value();
+    const auto shifted = compute::ConstTensorView::create(
+        desc, input.view().subview(sizeof(T), size).value()).value();
+    std::vector<T> values(rows * 128, from_float<T>(1));
+    ASSERT_TRUE(input.view().subview(0, size).value().write(std::as_bytes(std::span(values))).ok());
+    Tensor output(matrix(type, rows, 1), resource.ref());
+    auto program = compute::prepare(owner, compute::model_ops::float8_block_linear(),
+        std::array{aligned, weight.view.as_const()}, std::array{output.view}).value();
+    const auto need = program.workspace_requirement();
+    auto workspace = mem::Buffer::create(resource.ref(), need.size, need.alignment).value();
+    auto lane = program.create_invocation(workspace.view()).value();
+    auto queue = owner.create_queue().value();
+    const auto rejected = lane.submit(queue, std::array{shifted, weight.view.as_const()},
+                                      std::array{output.view});
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsInvalidArgument());
+    EXPECT_FALSE(lane.in_flight());
+    auto done = lane.submit(queue, std::array{aligned, weight.view.as_const()},
+                            std::array{output.view});
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    std::vector<T> actual(rows);
+    ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    for (auto value : actual) EXPECT_NEAR(to_float(value), 128.0F, 1e-4F);
+  }
+}
+
+TEST(SglangFp8, DynamicVectorAlignmentAndWholeGroupLaunch) {
+  dynamic_fp8_vector_boundaries<float>(compute::DataType::kFloat32);
+  dynamic_fp8_vector_boundaries<__nv_bfloat16>(compute::DataType::kBFloat16);
+}
+
 TEST(SglangFp8, RejectsDifferentEncodingMalformedPayloadAndIndexOverflow) {
   auto owner = context(compute::cuda_native::sglang_provider());
   auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();

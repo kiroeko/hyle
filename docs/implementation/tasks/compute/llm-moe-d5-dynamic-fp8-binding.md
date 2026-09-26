@@ -62,3 +62,8 @@ GEMM独立double block求和转F32，F32输出绝对2e-6+相对2e-6；BF16输出
 runtime eps；保持原算法和host的groups-per-block规则，复用已有GEMM及workspace生命周期。
 先用保留反例与原边界集核验，通过才接入；候选仍未运行，不预写PASS。
 若仍不满足严格门，停止该纠正，记录具体边界再裁决；不得继续换姿势试验或新增自研数学。
+
+原版CUDA候选的72个BF16/幂次案例、36个F32案例及4组原失败激活已通过原编码门，普通scale
+与参考一致；产品接线正在复验。其原生向量读取要求16字节输入对齐，已绑定到冷期资源约束和
+提交前检查，追加F32/BF16错位拒绝以及1/2/3/4/8/16组原launch覆盖；输出与workspace对齐不扩大。
+FlashInfer vector header仅将GNU inline属性映射为CUDA `__forceinline__`，加载及转换正文不变。

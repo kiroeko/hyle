@@ -24,3 +24,13 @@ D5-F38 adds the original BF16 quantizer variants and BF16 GEMM output.
 The power-of-two quantizer retains its original column-major F32 scales;
 HYLE passes the matching GEMM strides. The absmax floor remains the original
 runtime argument and is explicitly part of the model operation contract.
+
+The F38 finite correction replaces ordinary-scale quantization with unchanged
+SGLang CUDA GroupReduceMax/per_token_group_quant_8bit_kernel bodies. Their
+CUDA FP8 constructor avoids Triton's SM89 intermediate F16 truncation.
+FlashInfer vec_dtypes.cuh at 69ff11fc4954396d98326656dc85debd2223f637 supplies
+the original vector loads during offline compilation; its Apache-2.0 notice
+is in FLASHINFER-LICENSE. The inline attribute is expressed with CUDA
+__forceinline__ for MSVC; vector bodies are unchanged. The two superseded
+ordinary Triton cubins are removed from the current product. Pow2/GEMM
+artifacts retain their qualified identities. See fp8/cuda-quant-compilation.json.

@@ -28,6 +28,9 @@ spec.loader.exec_module(module)
 args.output.mkdir(parents=True, exist_ok=True)
 jobs = json.loads((root/'compilation.json').read_text())['kernels']
 jobs += json.loads((root/'dynamic-compilation.json').read_text())['kernels']
+jobs = [job for job in jobs if job['label'] not in ('quantize', 'quantize_bf16')]
+# Ordinary quantization uses the original CUDA kernel after F38 qualification;
+# its separate maintainer generator is rebuild_cuda_quant.py.
 names = {'matmul':'kSglangFp8Sm89', 'quantize':'kSglangFp8QuantizeF32',
          'matmul_bf16':'kSglangFp8MatmulBf16', 'quantize_bf16':'kSglangFp8QuantizeBf16',
          'quantize_bf16_pow2':'kSglangFp8QuantizeBf16Pow2'}

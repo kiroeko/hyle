@@ -60,7 +60,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-LICENSE"
       "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/NOTICE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-activation-NOTICE"
-      "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/TRITON-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-triton-LICENSE")
+      "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/TRITON-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-triton-LICENSE"
+      "${PROJECT_SOURCE_DIR}/third_party/sglang_activation/FLASHINFER-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|sglang-flashinfer-LICENSE")
 else()
   hyle_add_module(compute_provider_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_cuda PROPERTY

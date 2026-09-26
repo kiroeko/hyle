@@ -3,7 +3,8 @@
   "scope": "Partial dynamic FP8 correctness and preserved strict-quantization failure; not complete model qualification",
   "files": {
     "compilation.json": "68ab5ec998e7252f41f70f31bf17f4ce4b8892d1ec3a7247a89caf5c76ce9266",
-    "diagnose.py": "8fe9a704a9801e9f8127d310ce58191fe36899027369f902dc2cc65445bc6c52",
+    "diagnose.py": "6557d40bdeb2c13ef236e2fa05fc22792e3faf3eb35f38e0beedcb7aaa83a654",
+    "failed-quantize-bf16.cubin": "575c93371fee80d130540898b1ebb9ab5f9a8e16ac20200cb770bdfce2fb393c",
     "ffn-1-0-0.bin": "04f823c22e472dc1da88e2c5e6205457804907b2c220f79148a2c1ccd9e49c3d",
     "ffn-1-0-1.bin": "5b4787cb64cff989fc260b6dae1dd4347e2189938574039396e35983c13d3fd4",
     "ffn-1-0-2.bin": "055311deb0317cbee0511d51c28b67501006547987418599df047ed2270dd536",
