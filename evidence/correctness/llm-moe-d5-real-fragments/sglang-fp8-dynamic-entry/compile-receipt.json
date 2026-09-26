@@ -1,0 +1,25 @@
+{
+  "candidate": "8b27f97e",
+  "source_revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+  "source_path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\kernels\\aot\\csrc\\gemm\\per_token_group_quant_8bit.cu",
+  "source_sha256": "fbc0d20e0bb890b0c84b665c92069399e2fd9ae6d9ab6fed4487ddd9ae43fc54",
+  "body_sha256": "d93d0b1cc185cf21849ea5798b7b371085edd00a0a7ec14315ab300af182bd8d",
+  "vec_header_sha256": "78b8658bac4b7e1a99ed28e3d531c78f52e9d5be1c3784b21c55f2696b89ae4d",
+  "returncode": 0,
+  "seconds": 2.34,
+  "argv": [
+    "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe",
+    "-std=c++20",
+    "-arch=sm_89",
+    "-Xcompiler=/utf-8",
+    "-DFLASHINFER_ENABLE_BF16",
+    "-DFLASHINFER_ENABLE_F16",
+    "-IC:\\public\\project-hyle\\hyle\\.scratch\\m1c-fi\\include",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f38-cuda-quant\\original_quant.cu"
+  ],
+  "symbols": [
+    "_Z33per_token_group_quant_8bit_kernelIf13__nv_fp8_e4m3Lb0ELb0EfEvPKT_PvPT3_iiifffii",
+    "_Z33per_token_group_quant_8bit_kernelI13__nv_bfloat1613__nv_fp8_e4m3Lb0ELb0EfEvPKT_PvPT3_iiifffii"
+  ],
+  "cubin_sha256": "6cd3f33634812bee71a86171978f2142e5fe409cb0712d9c567ce24330d563dc"
+}

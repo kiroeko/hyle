@@ -64,6 +64,12 @@ runtime eps；保持原算法和host的groups-per-block规则，复用已有GEMM
 若仍不满足严格门，停止该纠正，记录具体边界再裁决；不得继续换姿势试验或新增自研数学。
 
 原版CUDA候选的72个BF16/幂次案例、36个F32案例及4组原失败激活已通过原编码门，普通scale
-与参考一致；产品接线正在复验。其原生向量读取要求16字节输入对齐，已绑定到冷期资源约束和
+与参考一致。其原生向量读取要求16字节输入对齐，已绑定到冷期资源约束和
 提交前检查，追加F32/BF16错位拒绝以及1/2/3/4/8/16组原launch覆盖；输出与workspace对齐不扩大。
 FlashInfer vector header仅将GNU inline属性映射为CUDA `__forceinline__`，加载及转换正文不变。
+
+**有限纠正已验：** `896200a9` 的17项/4个CTest全部通过，包含216次动态投影、72次预编码回归，
+两种GLM完整共享FFN的16次两入口执行，以及对齐/整组launch/OOM/并发/Completion检查。
+维护者重建cubin头逐字节一致；原误差门、输入和旧失败均保留，见
+[最终局部收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/README.md)。
+本卡的CUDA动态接线修正停止扩展；完整官方专家/其它路线及D5-A5/A6另行推进，不增加完整画像格。

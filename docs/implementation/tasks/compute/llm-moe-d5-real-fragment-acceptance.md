@@ -29,11 +29,12 @@ N576尾块）×M1/M3×两轮输入，两入口共72次真实执行；元数据�
 下一批按[F38动态FP8接线](llm-moe-d5-dynamic-fp8-binding.md)显式区分SGLang普通F32 scale
 与DeepSeek官方幂次scale/floor，再组合原版量化与已接入GEMM。不开HYLE自写数学路线。
 
-F38在`deac9fd0`已通过216次动态投影普通入口及资源测试；完整GLM共享FFN的严格编码/输出门
-仍未通过，原版Triton在SM89的中间舍入差异已定位，见
-[局部检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-checkpoint/README.md)。
-不增加完整画像格；统一实现更新为59,300行/235文件。接下来仅核验同pin具名CUDA量化候选，
-不改数值门或新增HYLE数学。
+F38已在`896200a9`完成有限纠正：原版CUDA量化替换存在SM89中间舍入差异的普通Triton量化，
+216次动态投影、GLM-5.3/Flash完整共享FFN两入口16次执行及资源边界全部通过原门，见
+[最终局部收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/README.md)。
+[旧失败](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-checkpoint/README.md)
+保留；没有新增HYLE数学，两个被替代的Triton量化程序已退出产品。
+统一实现59,312行/235文件。完整官方专家、其它路线、三交付/P1仍待验，不增加完整画像格。
 
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。

@@ -1,0 +1,249 @@
+Start testing: Sep 27 04:28 中国标准时间
+----------------------------------------------------------
+48/66 Testing: hyle_compute_ops_test
+48/66 Test: hyle_compute_ops_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_compute_ops_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_ops
+"hyle_compute_ops_test" start time: Sep 27 04:28 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+[==========] Running 7 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from ModelFloat8Linear
+[ RUN      ] ModelFloat8Linear.InfersDtypeTailAndRejectsMalformedQuantization
+[       OK ] ModelFloat8Linear.InfersDtypeTailAndRejectsMalformedQuantization (0 ms)
+[----------] 1 test from ModelFloat8Linear (0 ms total)
+
+[----------] 6 tests from ComputeOpsLowPrecision
+[ RUN      ] ComputeOpsLowPrecision.Float8PhysicalSizesAndLogicalOrientation
+[       OK ] ComputeOpsLowPrecision.Float8PhysicalSizesAndLogicalOrientation (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.Mxfp4BlockAxisFollowsLogicalK
+[       OK ] ComputeOpsLowPrecision.Mxfp4BlockAxisFollowsLogicalK (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.Float8WeightTailKeepsCeilingScaleRows
+[       OK ] ComputeOpsLowPrecision.Float8WeightTailKeepsCeilingScaleRows (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.GgufCatalogPreservesExactNativeBlocks
+[       OK ] ComputeOpsLowPrecision.GgufCatalogPreservesExactNativeBlocks (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.GgufGroupedWeightsKeepExpertRowAndKOrder
+[       OK ] ComputeOpsLowPrecision.GgufGroupedWeightsKeepExpertRowAndKOrder (0 ms)
+[ RUN      ] ComputeOpsLowPrecision.RejectsIncompleteBlocksAndOverflow
+[       OK ] ComputeOpsLowPrecision.RejectsIncompleteBlocksAndOverflow (0 ms)
+[----------] 6 tests from ComputeOpsLowPrecision (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 7 tests.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_ops_test" end time: Sep 27 04:28 中国标准时间
+"hyle_compute_ops_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+55/66 Testing: hyle_compute_provider_cuda_test
+55/66 Test: hyle_compute_provider_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_compute_provider_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_provider_cuda
+"hyle_compute_provider_cuda_test" start time: Sep 27 04:28 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from SglangFp8
+[ RUN      ] SglangFp8.AllocationRollbackConcurrentReplayAndProgramLifetime
+[       OK ] SglangFp8.AllocationRollbackConcurrentReplayAndProgramLifetime (79 ms)
+[ RUN      ] SglangFp8.DynamicWorkspaceOomIsolationReplayAndCompletionOwnership
+[       OK ] SglangFp8.DynamicWorkspaceOomIsolationReplayAndCompletionOwnership (11 ms)
+[ RUN      ] SglangFp8.DynamicVectorAlignmentAndWholeGroupLaunch
+[       OK ] SglangFp8.DynamicVectorAlignmentAndWholeGroupLaunch (18 ms)
+[ RUN      ] SglangFp8.RejectsDifferentEncodingMalformedPayloadAndIndexOverflow
+[       OK ] SglangFp8.RejectsDifferentEncodingMalformedPayloadAndIndexOverflow (0 ms)
+[----------] 4 tests from SglangFp8 (108 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (108 ms total)
+[  PASSED  ] 4 tests.
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_cuda_test" end time: Sep 27 04:28 中国标准时间
+"hyle_compute_provider_cuda_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+57/66 Testing: hyle_compute_route_cuda_test
+57/66 Test: hyle_compute_route_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_compute_route_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_route_cuda
+"hyle_compute_route_cuda_test" start time: Sep 27 04:28 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from CudaMoeFragments
+[ RUN      ] CudaMoeFragments.D5DynamicFp8DenseBatch
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5DynamicFp8DenseBatch (1001 ms)
+[ RUN      ] CudaMoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5GlmOfficialDynamicFp8SharedFfn (144 ms)
+[ RUN      ] CudaMoeFragments.D5OfficialFp8DenseNativeBatch
+[       OK ] CudaMoeFragments.D5OfficialFp8DenseNativeBatch (146 ms)
+[----------] 3 tests from CudaMoeFragments (1291 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (1291 ms total)
+[  PASSED  ] 3 tests.
+<end of output>
+Test time =   1.42 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_cuda_test" end time: Sep 27 04:28 中国标准时间
+"hyle_compute_route_cuda_test" time elapsed: 00:00:01
+----------------------------------------------------------
+
+59/66 Testing: hyle_graph_route_cuda_test
+59/66 Test: hyle_graph_route_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_graph_route_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/graph_route_cuda
+"hyle_graph_route_cuda_test" start time: Sep 27 04:28 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from CudaGraphMoeFragments
+[ RUN      ] CudaGraphMoeFragments.D5DynamicFp8DenseBatch
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5DynamicFp8DenseBatch (994 ms)
+[ RUN      ] CudaGraphMoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5GlmOfficialDynamicFp8SharedFfn (134 ms)
+[ RUN      ] CudaGraphMoeFragments.D5OfficialFp8DenseNativeBatch
+[       OK ] CudaGraphMoeFragments.D5OfficialFp8DenseNativeBatch (142 ms)
+[----------] 3 tests from CudaGraphMoeFragments (1271 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (1271 ms total)
+[  PASSED  ] 3 tests.
+<end of output>
+Test time =   1.38 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_cuda_test" end time: Sep 27 04:28 中国标准时间
+"hyle_graph_route_cuda_test" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Sep 27 04:28 中国标准时间
+
+compute_ops =   0.01 sec*proc
+
+compute_provider_cuda =   0.14 sec*proc
+
+compute_route_cuda =   1.42 sec*proc
+
+graph_route_cuda =   1.38 sec*proc
+

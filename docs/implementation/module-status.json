@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：128/176完整格已验；四个GLM GGUF完成四路线Direct/Graph、完整NextN/head、索引carry/reset及逐层混合专家格式，全部owner套件通过且零跳过。GLM官方FP8两画像、DeepSeek四画像、三交付/P1和D6仍待完成；DeepSeek真实剩余接缝已审计。"
+      "summary": "D5 AUDITED：140/176完整格已验；F38在896200a9通过CUDA动态FP8投影及GLM-5.3/Flash完整共享FFN，原数值门与资源检查通过。DeepSeek GGUF Vulkan四格、四个官方FP8画像32格、三交付/P1及D6仍待完成。"
     },
     {
       "module": "compute_backend_cpu",
@@ -475,8 +475,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-sglang-router-binding.md",
-      "summary": "D5-F25 AUDITED：完整 SGLang 路由、schema/资源/失败及四路线 MoE 回归已通过 e25c5188；后续官方 FP4 批次无产品修改。完整 D5 三交付/P1 待办保留。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-dynamic-fp8-binding.md",
+      "summary": "D5-F38 AUDITED：896200a9已通过原版CUDA动态FP8量化/GEMM、两种GLM完整共享FFN和对齐/OOM/并发/Completion验收；原Triton舍入失败保留且被替代的普通量化程序已移出产品。完整官方专家与D5三交付/P1待验。"
     },
     {
       "module": "compute_route_cuda",

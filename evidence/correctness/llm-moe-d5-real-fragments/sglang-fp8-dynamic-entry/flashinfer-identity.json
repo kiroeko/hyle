@@ -1,0 +1,12 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/LICENSE",
+    "sha256": "f3514f24f2b94d09c409abbf4020cf600e4059098c697110eb91a4a2b235fbb7",
+    "bytes": 12390
+  },
+  {
+    "url": "https://raw.githubusercontent.com/flashinfer-ai/flashinfer/69ff11fc4954396d98326656dc85debd2223f637/include/flashinfer/vec_dtypes.cuh",
+    "sha256": "3e292b05f261f29287cb18871fe62f6a9a59cf1f47e885bee45524776a984f2c",
+    "bytes": 77917
+  }
+]

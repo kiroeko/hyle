@@ -1,0 +1,20 @@
+{
+  "candidate": "896200a9d88b3cad858a179a0f087a42679bb28a",
+  "files": {
+    "bf16-receipt.json": "b30902d8c5fb0eae1d6205382613f2a243051b0e69930ee4d0ad99a2f29eb708",
+    "build.log": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+    "cache-identity.txt": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+    "compile-receipt.json": "f9cd43b8c61228f8e25a02b1b5ccb13c5a2f1354dbf639d21c8de1697c7825cf",
+    "f32-receipt.json": "913df5081bbec53b3ef1b24f003fc39fade879e9da148a32d436d8de76f8c208",
+    "failure-input-receipt.json": "9589c55428154d8b0a088e1a9fce8c72f33452a976b7f3390a07152563b765a7",
+    "flashinfer-identity.json": "332e7d1487820e451b3c40c653256577845e3356c369223fb46a0305265cc319",
+    "loc.json": "919e80c3df41d1d72699602309b14afa7d533398815d74c3c008bd0d70163649",
+    "native-tests.log": "fefee9e9840a635bd87b3be12d6d49bbaeca306fb8618f9e3b39bc6d00c4297f",
+    "README.md": "f5c1df79141dc2c721fcc2a973ef045116599f2277bc45772b1b80308f9e9c7a",
+    "receipt.json": "f4581e722541886d4a5ac1da4c6c35e8d1cb49d82ef47e5a1b495f1dc6ed68d6",
+    "regeneration-receipt.json": "09ecad1d1910232b226797c18f962b40f1b707a61cc1262b40c8a10a8808aff3",
+    "tests.log": "454e9ee4e161ebf2834ca469de82904ef5796a4f782683d0c7379c9e45c801b3",
+    "tests.xml": "432bfce704bb86bdaa35be37851dfcd6c5ffee78c65f2a6b5e3ee4134518b7e9",
+    "validation-plan.json": "ba7b54e0bd16dc67958532edd484db288b83c2a2ba22e832218a4d6f1c840523"
+  }
+}

@@ -1,0 +1,110 @@
+[
+  {
+    "m": 1,
+    "replay": 0,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 127,
+        "max_absolute_error": 1.52587890625e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 0.0,
+    "codes_divide_mismatch": 0,
+    "codes_reciprocal_mismatch": 0,
+    "codes_half_rtz_mismatch": 13,
+    "down_from_actual_codes_max_bf16_ulps": 69,
+    "examples": []
+  },
+  {
+    "m": 1,
+    "replay": 1,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 28,
+        "max_absolute_error": 3.0517578125e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 0.0,
+    "codes_divide_mismatch": 0,
+    "codes_reciprocal_mismatch": 2,
+    "codes_half_rtz_mismatch": 2,
+    "down_from_actual_codes_max_bf16_ulps": 60,
+    "examples": []
+  },
+  {
+    "m": 3,
+    "replay": 0,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 252,
+        "max_absolute_error": 3.0517578125e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 0.0,
+    "codes_divide_mismatch": 0,
+    "codes_reciprocal_mismatch": 7,
+    "codes_half_rtz_mismatch": 28,
+    "down_from_actual_codes_max_bf16_ulps": 33236,
+    "examples": []
+  },
+  {
+    "m": 3,
+    "replay": 1,
+    "ports": [
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 0,
+        "max_absolute_error": 0.0,
+        "fails_shared_gate": 0
+      },
+      {
+        "different": 80,
+        "max_absolute_error": 6.103515625e-05,
+        "fails_shared_gate": 0
+      }
+    ],
+    "scale_max_relative": 0.0,
+    "codes_divide_mismatch": 0,
+    "codes_reciprocal_mismatch": 2,
+    "codes_half_rtz_mismatch": 3,
+    "down_from_actual_codes_max_bf16_ulps": 32699,
+    "examples": []
+  }
+]

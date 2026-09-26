@@ -1,0 +1,11 @@
+{
+  "candidate": "896200a9d88b3cad858a179a0f087a42679bb28a",
+  "command": "python .scratch/d5-moe-semantic-loc.py",
+  "module": "compute-graph",
+  "implementation_code_lines": 59312,
+  "implementation_files": 235,
+  "excludes": [
+    "tests",
+    "third_party source/generated artifacts"
+  ]
+}

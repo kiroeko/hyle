@@ -1,0 +1,19 @@
+Test project C:/public/project-hyle/hyle/.scratch/b-cuda-d5
+    Start 48: hyle_compute_ops_test
+1/4 Test #48: hyle_compute_ops_test .............   Passed    0.01 sec
+    Start 55: hyle_compute_provider_cuda_test
+2/4 Test #55: hyle_compute_provider_cuda_test ...   Passed    0.14 sec
+    Start 57: hyle_compute_route_cuda_test
+3/4 Test #57: hyle_compute_route_cuda_test ......   Passed    1.42 sec
+    Start 59: hyle_graph_route_cuda_test
+4/4 Test #59: hyle_graph_route_cuda_test ........   Passed    1.38 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+compute_ops              =   0.01 sec*proc (1 test)
+compute_provider_cuda    =   0.14 sec*proc (1 test)
+compute_route_cuda       =   1.42 sec*proc (1 test)
+graph_route_cuda         =   1.38 sec*proc (1 test)
+
+Total Test time (real) =   2.99 sec
