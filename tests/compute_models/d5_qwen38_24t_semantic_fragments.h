@@ -432,7 +432,7 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   auto ones = f.constant(f.description(convolution),
                          bytes(std::vector<float>(channels, 1.0F)));
   auto activated =
-      f.one(c::Operation(c::GatedActivation{}), {convolution, ones});
+      f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}), {convolution, ones});
   const auto reshape = [&](ValueId input,
                            std::initializer_list<std::int64_t> shape) {
     return f.one(
@@ -508,7 +508,7 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   auto norm = f.constant(dense({depth}), bytes(norm_values));
   auto normalized =
       f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {recurrent[0], norm});
-  auto result = f.one(c::Operation(c::GatedActivation{}), {z, normalized});
+  auto result = f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}), {z, normalized});
   f.outputs = {convolution, gate, beta, recurrent[0], recurrent[1], result};
   std::vector<float> state;
   for (int seed : {3, 17}) {
