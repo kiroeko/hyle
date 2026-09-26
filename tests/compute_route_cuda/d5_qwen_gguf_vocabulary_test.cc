@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "../compute_models/d5_moe_profile_cases.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_direct_test.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
@@ -39,4 +40,8 @@ INSTANTIATE_TEST_SUITE_P(
     D5ExactQwenGguf, CudaQwenGgufVocabulary,
     ::testing::Values(&cases::kCases[0], &cases::kCases[1], &cases::kCases[2],
                       &cases::kCases[3], &cases::kCases[4], &cases::kCases[5]));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5ExactMoeVocabulary, CudaQwenGgufVocabulary,
+    ::testing::ValuesIn(d5_moe_profile_cases::kVocabularyPointers));
 } // namespace

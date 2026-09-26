@@ -20,6 +20,7 @@ struct Case final {
   Storage embedding;
   Storage output;
   bool tied_output;
+  std::int64_t vocabulary_rows = 248320;
 };
 
 // The two digests hash the audited tensor table sorted by name, using compact

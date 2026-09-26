@@ -1,0 +1,548 @@
+{
+  "schema_version": 1,
+  "purpose": "D5 thirteen remaining profile identities and R01 real tensor facts; no execution verdict.",
+  "source_files": {
+    "official-weight-audit.json": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff",
+    "gguf-weight-audit.json": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+  },
+  "manifest_digest_contract": "SHA256 of compact sorted-key JSON array, tensors sorted by name, each object has dtype/name/shape (integer dimensions).",
+  "profiles": [
+    {
+      "id": "kimi_k3:official:official-mxfp4",
+      "symbol": "kimi_k3_official",
+      "profile": {
+        "model_publisher": "moonshotai",
+        "model_repository": "moonshotai/Kimi-K3",
+        "model_family": "kimi_linear",
+        "model_name": "Kimi-K3",
+        "model_revision": "f831ab66814297da540d832a5235f8e904f29d06",
+        "configuration_digest": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+        "artifact_repository": "moonshotai/Kimi-K3",
+        "artifact_revision": "f831ab66814297da540d832a5235f8e904f29d06",
+        "variant": "official-mxfp4",
+        "manifest_digest": "ca7a26533de68addb8d51194afb9841e1ccb9b5b8e6769b3972bb59c996b602f",
+        "format_family": "safetensors"
+      },
+      "hidden": 7168,
+      "vocabulary_rows": 163840,
+      "embedding": {
+        "name": "language_model.model.embed_tokens.weight",
+        "dtype": "BF16",
+        "shape": [
+          163840,
+          7168
+        ],
+        "data_offsets": [
+          2348810240,
+          4697620480
+        ],
+        "shard": "model-00094-of-000096.safetensors"
+      },
+      "output": {
+        "name": "language_model.lm_head.weight",
+        "dtype": "BF16",
+        "shape": [
+          163840,
+          7168
+        ],
+        "data_offsets": [
+          0,
+          2348810240
+        ],
+        "shard": "model-00094-of-000096.safetensors"
+      }
+    },
+    {
+      "id": "kimi_k3:primary_gguf:UD-Q4_K_XL",
+      "symbol": "kimi_k3_primary_gguf",
+      "profile": {
+        "model_publisher": "moonshotai",
+        "model_repository": "moonshotai/Kimi-K3",
+        "model_family": "kimi_linear",
+        "model_name": "Kimi-K3",
+        "model_revision": "f831ab66814297da540d832a5235f8e904f29d06",
+        "configuration_digest": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+        "artifact_repository": "unsloth/Kimi-K3-GGUF",
+        "artifact_revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+        "variant": "UD-Q4_K_XL",
+        "manifest_digest": "54e46f96077adb0e323ca09ab0bbcb29788da246fae496c71ea9b9ec86c29c3b",
+        "format_family": "gguf"
+      },
+      "hidden": 7168,
+      "vocabulary_rows": 163840,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "7168",
+          "163840"
+        ],
+        "dtype": "Q8_0",
+        "role": "token_embedding",
+        "shard": 2
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "7168",
+          "163840"
+        ],
+        "dtype": "Q8_0",
+        "role": "lm_head",
+        "shard": 2
+      }
+    },
+    {
+      "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL",
+      "symbol": "kimi_k3_fidelity_gguf",
+      "profile": {
+        "model_publisher": "moonshotai",
+        "model_repository": "moonshotai/Kimi-K3",
+        "model_family": "kimi_linear",
+        "model_name": "Kimi-K3",
+        "model_revision": "f831ab66814297da540d832a5235f8e904f29d06",
+        "configuration_digest": "9710e121a58d03ac92c8d6da287a19541994319afbbe6d6202af001ffd379213",
+        "artifact_repository": "unsloth/Kimi-K3-GGUF",
+        "artifact_revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+        "variant": "UD-Q8_K_XL",
+        "manifest_digest": "1fec4eb2b43a64faeecb57998fbf5c59f0f3b1626596e720adb5f36d7bc3e28a",
+        "format_family": "gguf"
+      },
+      "hidden": 7168,
+      "vocabulary_rows": 163840,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "7168",
+          "163840"
+        ],
+        "dtype": "BF16",
+        "role": "token_embedding",
+        "shard": 34
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "7168",
+          "163840"
+        ],
+        "dtype": "BF16",
+        "role": "lm_head",
+        "shard": 34
+      }
+    },
+    {
+      "id": "deepseek_v4_pro:official:official-fp4-fp8",
+      "symbol": "deepseek_v4_pro_official",
+      "profile": {
+        "model_publisher": "deepseek-ai",
+        "model_repository": "deepseek-ai/DeepSeek-V4-Pro",
+        "model_family": "deepseek_v4",
+        "model_name": "DeepSeek-V4-Pro",
+        "model_revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+        "configuration_digest": "5fe4568daee51c208cb8a79538eaeda090ae011ade1dee2c386aa95f569c810e",
+        "artifact_repository": "deepseek-ai/DeepSeek-V4-Pro",
+        "artifact_revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+        "variant": "official-fp4-fp8",
+        "manifest_digest": "40884c4e913d4dcba82c5539092755fab780b808820eab7101a6c275dc796384",
+        "format_family": "safetensors"
+      },
+      "hidden": 7168,
+      "vocabulary_rows": 129280,
+      "embedding": {
+        "name": "embed.weight",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          7168
+        ],
+        "data_offsets": [
+          0,
+          1853358080
+        ],
+        "shard": "model-00001-of-00064.safetensors"
+      },
+      "output": {
+        "name": "head.weight",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          7168
+        ],
+        "data_offsets": [
+          458772,
+          1853816852
+        ],
+        "shard": "model-00063-of-00064.safetensors"
+      }
+    },
+    {
+      "id": "deepseek_v4_flash:official:official-fp4-fp8",
+      "symbol": "deepseek_v4_flash_official",
+      "profile": {
+        "model_publisher": "deepseek-ai",
+        "model_repository": "deepseek-ai/DeepSeek-V4-Flash",
+        "model_family": "deepseek_v4",
+        "model_name": "DeepSeek-V4-Flash",
+        "model_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+        "configuration_digest": "b628e63398a645abc711d92207f8737dd8140f7a4ef1e0a5b3616019e0ddd818",
+        "artifact_repository": "deepseek-ai/DeepSeek-V4-Flash",
+        "artifact_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+        "variant": "official-fp4-fp8",
+        "manifest_digest": "278d715ba88c69afd98d5182045f38d9c92661375424a222322d73e7a3879630",
+        "format_family": "safetensors"
+      },
+      "hidden": 4096,
+      "vocabulary_rows": 129280,
+      "embedding": {
+        "name": "embed.weight",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          4096
+        ],
+        "data_offsets": [
+          0,
+          1059061760
+        ],
+        "shard": "model-00001-of-00046.safetensors"
+      },
+      "output": {
+        "name": "head.weight",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          4096
+        ],
+        "data_offsets": [
+          262164,
+          1059323924
+        ],
+        "shard": "model-00045-of-00046.safetensors"
+      }
+    },
+    {
+      "id": "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
+      "symbol": "deepseek_v4_flash_primary_gguf",
+      "profile": {
+        "model_publisher": "deepseek-ai",
+        "model_repository": "deepseek-ai/DeepSeek-V4-Flash",
+        "model_family": "deepseek_v4",
+        "model_name": "DeepSeek-V4-Flash",
+        "model_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+        "configuration_digest": "b628e63398a645abc711d92207f8737dd8140f7a4ef1e0a5b3616019e0ddd818",
+        "artifact_repository": "unsloth/DeepSeek-V4-Flash-GGUF",
+        "artifact_revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0",
+        "variant": "UD-Q4_K_XL",
+        "manifest_digest": "73d1e17f912decd1ff0e3c668265166fc4f284d9cea64ed3a9c63f6b27941417",
+        "format_family": "gguf"
+      },
+      "hidden": 4096,
+      "vocabulary_rows": 129280,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "4096",
+          "129280"
+        ],
+        "dtype": "Q8_0",
+        "role": "token_embedding",
+        "shard": 2
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "4096",
+          "129280"
+        ],
+        "dtype": "Q8_0",
+        "role": "lm_head",
+        "shard": 2
+      }
+    },
+    {
+      "id": "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
+      "symbol": "deepseek_v4_flash_fidelity_gguf",
+      "profile": {
+        "model_publisher": "deepseek-ai",
+        "model_repository": "deepseek-ai/DeepSeek-V4-Flash",
+        "model_family": "deepseek_v4",
+        "model_name": "DeepSeek-V4-Flash",
+        "model_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+        "configuration_digest": "b628e63398a645abc711d92207f8737dd8140f7a4ef1e0a5b3616019e0ddd818",
+        "artifact_repository": "unsloth/DeepSeek-V4-Flash-GGUF",
+        "artifact_revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0",
+        "variant": "UD-Q8_K_XL",
+        "manifest_digest": "3db0a9874cb4adad2d9525c63bfac3279ab791ca823f452fff1a588442e934af",
+        "format_family": "gguf"
+      },
+      "hidden": 4096,
+      "vocabulary_rows": 129280,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "4096",
+          "129280"
+        ],
+        "dtype": "BF16",
+        "role": "token_embedding",
+        "shard": 2
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "4096",
+          "129280"
+        ],
+        "dtype": "BF16",
+        "role": "lm_head",
+        "shard": 2
+      }
+    },
+    {
+      "id": "glm53:official:official-fp8",
+      "symbol": "glm53_official",
+      "profile": {
+        "model_publisher": "zai-org",
+        "model_repository": "zai-org/GLM-5.3",
+        "model_family": "glm_moe_dsa",
+        "model_name": "GLM-5.3",
+        "model_revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+        "configuration_digest": "3ac72612095574542f7fff847ada8e59d9199dd8af44bdf625d7e02615572e69",
+        "artifact_repository": "zai-org/GLM-5.3",
+        "artifact_revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+        "variant": "official-fp8",
+        "manifest_digest": "eed7f19a7a3eafc78bc8f2c1fb029e4af437b6b0c3a9a8ea5aee2a183e8a7cce",
+        "format_family": "safetensors"
+      },
+      "hidden": 6144,
+      "vocabulary_rows": 154880,
+      "embedding": {
+        "name": "model.embed_tokens.weight",
+        "dtype": "BF16",
+        "shape": [
+          154880,
+          6144
+        ],
+        "data_offsets": [
+          1903545600,
+          3806711040
+        ],
+        "shard": "model-00001-of-00141.safetensors"
+      },
+      "output": {
+        "name": "lm_head.weight",
+        "dtype": "BF16",
+        "shape": [
+          154880,
+          6144
+        ],
+        "data_offsets": [
+          380160,
+          1903545600
+        ],
+        "shard": "model-00001-of-00141.safetensors"
+      }
+    },
+    {
+      "id": "glm53:primary_gguf:UD-Q4_K_XL",
+      "symbol": "glm53_primary_gguf",
+      "profile": {
+        "model_publisher": "zai-org",
+        "model_repository": "zai-org/GLM-5.3",
+        "model_family": "glm_moe_dsa",
+        "model_name": "GLM-5.3",
+        "model_revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+        "configuration_digest": "3ac72612095574542f7fff847ada8e59d9199dd8af44bdf625d7e02615572e69",
+        "artifact_repository": "unsloth/GLM-5.3-GGUF",
+        "artifact_revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+        "variant": "UD-Q4_K_XL",
+        "manifest_digest": "19c10ac0fccdeacda4ba7321b85fcca494ce038072ff049dacfb9920f0c109a3",
+        "format_family": "gguf"
+      },
+      "hidden": 6144,
+      "vocabulary_rows": 154880,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "6144",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "token_embedding",
+        "shard": 2
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "6144",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "lm_head",
+        "shard": 2
+      }
+    },
+    {
+      "id": "glm53:fidelity_gguf:Q8_0",
+      "symbol": "glm53_fidelity_gguf",
+      "profile": {
+        "model_publisher": "zai-org",
+        "model_repository": "zai-org/GLM-5.3",
+        "model_family": "glm_moe_dsa",
+        "model_name": "GLM-5.3",
+        "model_revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+        "configuration_digest": "3ac72612095574542f7fff847ada8e59d9199dd8af44bdf625d7e02615572e69",
+        "artifact_repository": "unsloth/GLM-5.3-GGUF",
+        "artifact_revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+        "variant": "Q8_0",
+        "manifest_digest": "0a8a982a9375f3c647c118150561b1773ac023615f39db9853852f7d8b83796b",
+        "format_family": "gguf"
+      },
+      "hidden": 6144,
+      "vocabulary_rows": 154880,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "6144",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "token_embedding",
+        "shard": 1
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "6144",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "lm_head",
+        "shard": 1
+      }
+    },
+    {
+      "id": "glm53_flash:official:official-fp8",
+      "symbol": "glm53_flash_official",
+      "profile": {
+        "model_publisher": "zai-org",
+        "model_repository": "zai-org/GLM-5.3-Flash",
+        "model_family": "glm5_next_text",
+        "model_name": "GLM-5.3-Flash",
+        "model_revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+        "configuration_digest": "bb8f01c42cb92a52ca72e65afb4d5bd8d11aef083cd210e8de25dfb904f23e9f",
+        "artifact_repository": "zai-org/GLM-5.3-Flash",
+        "artifact_revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+        "variant": "official-fp8",
+        "manifest_digest": "2e4a1effe3b70cf08f456cd80db609d71d23f2cbb344d26dd39a6a292c4fa23b",
+        "format_family": "safetensors"
+      },
+      "hidden": 4096,
+      "vocabulary_rows": 154880,
+      "embedding": {
+        "name": "model.language_model.embed_tokens.weight",
+        "dtype": "BF16",
+        "shape": [
+          154880,
+          4096
+        ],
+        "data_offsets": [
+          1269450752,
+          2538227712
+        ],
+        "shard": "model-00001-of-00062.safetensors"
+      },
+      "output": {
+        "name": "lm_head.weight",
+        "dtype": "BF16",
+        "shape": [
+          154880,
+          4096
+        ],
+        "data_offsets": [
+          673792,
+          1269450752
+        ],
+        "shard": "model-00001-of-00062.safetensors"
+      }
+    },
+    {
+      "id": "glm53_flash:primary_gguf:UD-Q4_K_XL",
+      "symbol": "glm53_flash_primary_gguf",
+      "profile": {
+        "model_publisher": "zai-org",
+        "model_repository": "zai-org/GLM-5.3-Flash",
+        "model_family": "glm5_next_text",
+        "model_name": "GLM-5.3-Flash",
+        "model_revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+        "configuration_digest": "bb8f01c42cb92a52ca72e65afb4d5bd8d11aef083cd210e8de25dfb904f23e9f",
+        "artifact_repository": "unsloth/GLM-5.3-Flash-GGUF",
+        "artifact_revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+        "variant": "UD-Q4_K_XL",
+        "manifest_digest": "72cf4f09694303e01389e0e60cda591f42266b54b8422521d6ec422132ef03d3",
+        "format_family": "gguf"
+      },
+      "hidden": 4096,
+      "vocabulary_rows": 154880,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "4096",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "token_embedding",
+        "shard": 2
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "4096",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "lm_head",
+        "shard": 2
+      }
+    },
+    {
+      "id": "glm53_flash:fidelity_gguf:Q8_0",
+      "symbol": "glm53_flash_fidelity_gguf",
+      "profile": {
+        "model_publisher": "zai-org",
+        "model_repository": "zai-org/GLM-5.3-Flash",
+        "model_family": "glm5_next_text",
+        "model_name": "GLM-5.3-Flash",
+        "model_revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+        "configuration_digest": "bb8f01c42cb92a52ca72e65afb4d5bd8d11aef083cd210e8de25dfb904f23e9f",
+        "artifact_repository": "unsloth/GLM-5.3-Flash-GGUF",
+        "artifact_revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+        "variant": "Q8_0",
+        "manifest_digest": "bc4e88f3eb7a36105b7ffff98fe524eaae303519edba2fd844d371a9746783b2",
+        "format_family": "gguf"
+      },
+      "hidden": 4096,
+      "vocabulary_rows": 154880,
+      "embedding": {
+        "name": "token_embd.weight",
+        "shape": [
+          "4096",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "token_embedding",
+        "shard": 2
+      },
+      "output": {
+        "name": "output.weight",
+        "shape": [
+          "4096",
+          "154880"
+        ],
+        "dtype": "Q8_0",
+        "role": "lm_head",
+        "shard": 2
+      }
+    }
+  ]
+}

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_models/d5_moe_profile_cases.h"
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_cases.h"
@@ -1760,5 +1761,9 @@ INSTANTIATE_TEST_SUITE_P(
                       &d5_qwen_gguf_vocabulary_cases::kCases[3],
                       &d5_qwen_gguf_vocabulary_cases::kCases[4],
                       &d5_qwen_gguf_vocabulary_cases::kCases[5]));
+
+INSTANTIATE_TEST_SUITE_P(
+    D5ExactMoeVocabulary, VulkanQwenGgufVocabulary,
+    ::testing::ValuesIn(d5_moe_profile_cases::kVocabularyPointers));
 
 } // namespace

@@ -25,12 +25,14 @@ void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
                 Execute execute) {
   fixture::SparseRows rows(profile.output, profile.hidden);
   auto full = prepare(vocab::kShardRows);
-  auto tail = prepare(vocab::kVocabularyRows % vocab::kShardRows);
+  const auto last_shard = vocab::shard_for(profile.vocabulary_rows - 1,
+                                           profile.vocabulary_rows).value();
+  auto tail = prepare(last_shard.rows);
   auto activations = std::array{fixture::activation(profile.hidden, 3),
                                 fixture::activation(profile.hidden, 17)};
   std::array<std::vector<float>, 2> logical{
-      std::vector<float>(vocab::kVocabularyRows),
-      std::vector<float>(vocab::kVocabularyRows)};
+      std::vector<float>(profile.vocabulary_rows),
+      std::vector<float>(profile.vocabulary_rows)};
   for (std::size_t replay = 0; replay < activations.size(); ++replay) {
     if (!fixture::is_quantized(profile.output)) {
       const auto encoded = fixture::encode_dense(profile.output,
@@ -39,7 +41,7 @@ void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
     }
   }
   std::int64_t visited = 0;
-  for (const auto shard : vocab::shards()) {
+  for (const auto shard : vocab::shards(profile.vocabulary_rows)) {
     auto weight = upload(shard, rows.shard(shard));
     auto &call = shard.rows == vocab::kShardRows ? full : tail;
     for (std::size_t replay = 0; replay < activations.size(); ++replay) {
@@ -49,9 +51,9 @@ void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
     }
     visited += shard.rows;
   }
-  ASSERT_EQ(visited, vocab::kVocabularyRows);
+  ASSERT_EQ(visited, profile.vocabulary_rows);
   for (std::size_t replay = 0; replay < activations.size(); ++replay) {
-    for (const auto shard : vocab::shards()) {
+    for (const auto shard : vocab::shards(profile.vocabulary_rows)) {
       auto expected = rows.logits(activations[replay], shard);
       if (!fixture::is_quantized(profile.output)) {
         const auto encoded = fixture::encode_dense(profile.output, expected);
@@ -83,9 +85,16 @@ void check_gather(const cases::Case &profile, Prepare prepare, Upload upload,
                   float relative_tolerance = 0.0F) {
   fixture::SparseRows rows(profile.embedding, profile.hidden);
   auto full = prepare(vocab::kShardRows);
-  auto tail = prepare(vocab::kVocabularyRows % vocab::kShardRows);
-  for (const auto global_id : vocab::kGatherIds) {
-    const auto located = vocab::shard_for(global_id);
+  const auto tail_shard = vocab::shard_for(profile.vocabulary_rows - 1,
+                                           profile.vocabulary_rows).value();
+  auto tail = prepare(tail_shard.rows);
+  const std::array<std::int64_t, 6> ids{
+      0, vocab::kShardRows + 1,
+      (std::min)(std::int64_t{131071}, profile.vocabulary_rows - 4),
+      profile.vocabulary_rows - 3, profile.vocabulary_rows - 2,
+      profile.vocabulary_rows - 1};
+  for (const auto global_id : ids) {
+    const auto located = vocab::shard_for(global_id, profile.vocabulary_rows);
     ASSERT_TRUE(located);
     const auto shard = *located;
     auto table = upload(shard, rows.shard(shard));
@@ -100,9 +109,8 @@ void check_gather(const cases::Case &profile, Prepare prepare, Upload upload,
           << profile.name << " global row " << global_id
           << " column " << column;
   }
-  EXPECT_FALSE(vocab::shard_for(-1));
-  EXPECT_FALSE(vocab::shard_for(vocab::kVocabularyRows));
-  const auto tail_shard = vocab::shard_for(vocab::kVocabularyRows - 1).value();
+  EXPECT_FALSE(vocab::shard_for(-1, profile.vocabulary_rows));
+  EXPECT_FALSE(vocab::shard_for(profile.vocabulary_rows, profile.vocabulary_rows));
   auto table = upload(tail_shard, rows.shard(tail_shard));
   reject(tail, tail_shard.rows, table, tail_shard);
 }

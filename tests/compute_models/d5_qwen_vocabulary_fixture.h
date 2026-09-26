@@ -41,20 +41,21 @@ struct Shard final {
   std::int64_t rows;
 };
 
-inline std::vector<Shard> shards() {
+inline std::vector<Shard> shards(std::int64_t vocabulary_rows = kVocabularyRows) {
   std::vector<Shard> result;
-  for (std::int64_t first = 0; first < kVocabularyRows;
+  for (std::int64_t first = 0; first < vocabulary_rows;
        first += kShardRows)
     result.push_back(
-        {first, (std::min)(kShardRows, kVocabularyRows - first)});
+        {first, (std::min)(kShardRows, vocabulary_rows - first)});
   return result;
 }
 
-inline std::optional<Shard> shard_for(std::int64_t global_row) {
-  if (global_row < 0 || global_row >= kVocabularyRows)
+inline std::optional<Shard> shard_for(
+    std::int64_t global_row, std::int64_t vocabulary_rows = kVocabularyRows) {
+  if (global_row < 0 || global_row >= vocabulary_rows)
     return std::nullopt;
   const auto first = (global_row / kShardRows) * kShardRows;
-  return Shard{first, (std::min)(kShardRows, kVocabularyRows - first)};
+  return Shard{first, (std::min)(kShardRows, vocabulary_rows - first)};
 }
 
 inline BF16 encode(double value) { return half_test::encode<BF16>(value); }

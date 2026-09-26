@@ -11,6 +11,12 @@ Metal 新 workspace 的分配失败崩溃已按[有限修复卡](llm-moe-d5-meta
 以新完整片段收据替代；通用 Softplus 精度不变。
 下文0/48格数字是历史快照，不能覆盖当前 ledger。其余13画像、三交付和 P1 尚未完成。
 
+**下一共用批次已开始：** 其余13画像的 R01 复用已有八入口词表消费者，保留 Kimi 163840、
+DeepSeek 129280、GLM 154880 的完整词表和真实 hidden。逐角色 BF16/Q8_0 由已保存的官方/
+GGUF header 取证，写入 `tests/compute_models/d5_moe_profile_facts.json`，不重新下载模型。
+测试 helper 参数化词表容量并处理整除分片的 Kimi；不增加产品算子或 Provider。
+该批接线/编译检查不改变完整画像 ledger，其余 region 组合后才统一签整格、交付和性能。
+
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22
