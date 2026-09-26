@@ -73,7 +73,8 @@ void check_cold_allocations(c::Operation operation,
     const bool injected = hyle_metal_fault_disarm();
     if (!injected) { ASSERT_TRUE(result); completed = true; break; }
     ++failed_c;
-    EXPECT_FALSE(result);
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsResourceExhausted());
     EXPECT_EQ(hyle_metal_fault_live(), baseline);
   }
   EXPECT_TRUE(completed);
@@ -87,7 +88,8 @@ void check_cold_allocations(c::Operation operation,
     new_left = -1;
     if (!new_failed) { ASSERT_TRUE(result); completed = true; break; }
     ++failed_cpp;
-    EXPECT_FALSE(result);
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsResourceExhausted());
     EXPECT_EQ(hyle_metal_fault_live(), baseline);
   }
   EXPECT_TRUE(completed);
