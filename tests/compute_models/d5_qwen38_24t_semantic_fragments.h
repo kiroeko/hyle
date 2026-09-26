@@ -46,6 +46,12 @@ struct Fragment final {
   std::vector<recipe::DirectNode> nodes;
   std::vector<Replay> replays;
   std::optional<std::pair<std::size_t, std::size_t>> state_ports{};
+  std::vector<std::size_t> exact_outputs{};
+
+  bool exact_output(std::size_t port) const {
+    return std::find(exact_outputs.begin(), exact_outputs.end(), port) !=
+           exact_outputs.end();
+  }
 
   const c::TensorDesc &description(ValueId id) const {
     return descriptions[id.ordinal()];
@@ -606,8 +612,13 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile,
 inline void expect_output(const Fragment &fragment,
                           std::span<const float> actual,
                           std::span<const float> expected,
-                          std::span<const float> native_attention = {}) {
-  if (!native_attention.empty()) {
+                          std::span<const float> native_attention = {},
+                          bool exact = false) {
+  if (exact) {
+    ASSERT_EQ(actual.size(), expected.size());
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      EXPECT_EQ(actual[i], expected[i]) << i;
+  } else if (!native_attention.empty()) {
     // This pin's Vulkan coopmat2 path rounds both multiplicands to F16.
     // Retain the full F32 accuracy gate as well as an independent rounded
     // reference; normalization, RoPE and GDN do not use this allowance.

@@ -1,5 +1,6 @@
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
+#include "hyle/compute/model_ops.h"
 
 #include <algorithm>
 #include <array>
@@ -40,7 +41,7 @@ bool managed_elementwise_limits(const ProgramState &program,
   } else if (const auto *gate = step.operation.get_if<GatedActivation>()) {
     if (gate->activation != GatedActivationKind::kSilu)
       return false;
-  } else {
+  } else if (!step.operation.custom_as<model_ops::Clamp>()) {
     return false;
   }
   const auto *unary = step.operation.get_if<Unary>();

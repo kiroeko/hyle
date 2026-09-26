@@ -203,7 +203,8 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
         return false;
   }
   if ((step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
-       step.operation.get_if<GatedActivation>()) &&
+       step.operation.get_if<GatedActivation>() ||
+       step.operation.custom_as<model_ops::Clamp>()) &&
       !managed_elementwise_limits(program, step))
     return false;
   if ((promote_bfloat || step.operation.get_if<Copy>() ||

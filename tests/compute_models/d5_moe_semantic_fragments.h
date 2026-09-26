@@ -207,8 +207,9 @@ inline Fragment kda(const c::ModelArtifactProfileDescription *profile,
 
 // Kimi SiTU is not ordinary SwiGLU. Pinned llama.cpp kimi-k3.cpp uses
 // 4*tanh(g/4)*sigmoid(g) * 25*tanh(u/25).
-inline Fragment situ(const c::ModelArtifactProfileDescription *profile) {
-  constexpr std::int64_t width = 3584;
+inline constexpr std::array<std::int64_t, 3> kSituWidths{3072, 6144, 33792};
+inline Fragment situ(const c::ModelArtifactProfileDescription *profile,
+                      std::int64_t width) {
   Fragment f{.profile = profile, .region = 0x020601};
   const auto desc = dense({1, width});
   auto gate = f.input(desc), up = f.input(desc);

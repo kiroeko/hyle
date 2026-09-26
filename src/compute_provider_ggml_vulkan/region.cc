@@ -324,6 +324,12 @@ bool region_supports(const Operation &operation,
            floating(outputs[0].data_type()) &&
            (outputs[0].data_type() != DataType::kBFloat16 ||
             inputs[0].data_type() == DataType::kBFloat16);
+  if (operation.custom_as<model_ops::Clamp>()) {
+    std::array<TensorDesc, 1> inferred;
+    return outputs.size() == 1 &&
+           infer_output_descriptions(operation, inputs, inferred).ok() &&
+           inferred[0] == outputs[0];
+  }
   if (operation.custom_as<model_ops::CausalConv1d>())
     return inputs.size() == 2 && outputs.size() == 1 &&
            inputs[0].data_type() == DataType::kFloat32 &&
@@ -708,6 +714,8 @@ Result<Region> Region::create(NativeDevice device,
         }
         if (node.inputs.size() == 1)
           output = ggml_dup(context, output);
+      } else if (const auto clamp = node.operation.custom_as<model_ops::Clamp>()) {
+        output = ggml_clamp(context, arguments[0], clamp->minimum, clamp->maximum);
       } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
         auto *samples =
             ggml_cont(context, ggml_permute(context, arguments[0], 1, 0, 2, 3));

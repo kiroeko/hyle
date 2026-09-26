@@ -541,6 +541,8 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       result = restore_indexed_rows(
           context, ggml_add(context, base_rows, updates), inner, extent, outer);
     }
+  } else if (const auto clamp = node.operation.custom_as<model_ops::Clamp>()) {
+    result = ggml_clamp(context, input(0), clamp->minimum, clamp->maximum);
   } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
     auto *samples = ggml_cont(
         context,
@@ -1073,6 +1075,8 @@ bool supports(void *context, Operation operation,
       !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if (operation.custom_as<model_ops::Clamp>())
+    return true; // Public inference has already validated the entire domain.
   if (operation.custom_as<model_ops::CausalConv1d>())
     return outputs.size() == 1 && inputs.size() == 2 &&
            inputs[0].data_type() == DataType::kFloat32 &&
@@ -1279,6 +1283,7 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<ScaledDotProductAttention>() ||
          operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
+         operation.custom_as<model_ops::Clamp>().has_value() ||
          operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::GroupedMatMul>().has_value() ||
          operation.custom_as<model_ops::BFloatLinearF32>().has_value() ||

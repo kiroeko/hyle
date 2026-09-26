@@ -145,6 +145,7 @@ bool mature_model_operation(Operation operation) noexcept {
   return operation.get_if<MatMul>() || operation.get_if<Gather>() ||
          operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
+         operation.custom_as<model_ops::Clamp>() ||
          operation.custom_as<model_ops::GroupedMatMul>() ||
          operation.custom_as<model_ops::BFloatLinearF32>() ||
          operation.custom_as<model_ops::HyperConnectionCombine>() ||
@@ -337,6 +338,8 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
       }
       result = ggml_gated_delta_net(context, t[0], t[1], t[2], gate, beta,
                                     initial, 1);
+    } else if (const auto clamp = operation.custom_as<model_ops::Clamp>()) {
+      result = ggml_clamp(state->arena.get(), t[0], clamp->minimum, clamp->maximum);
     } else if (operation.custom_as<model_ops::GroupedMatMul>()) {
       result = ggml_mul_mat_id(state->arena.get(), t[0], t[1], t[2]);
       state->checked_index_port = 2;

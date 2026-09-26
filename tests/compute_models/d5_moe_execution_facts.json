@@ -1,0 +1,2110 @@
+{
+  "schema_version": 1,
+  "source_files": {
+    "official-weight-audit.json": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff",
+    "gguf-weight-audit.json": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+  },
+  "cases": [
+    {
+      "profile": "kimi_k3_official",
+      "model": "kimi_k3",
+      "hidden": 7168,
+      "experts": 896,
+      "top_k": 16,
+      "latent": 3584,
+      "intermediate": 3072,
+      "shared_intermediate": 6144,
+      "scoring": "sigmoid",
+      "scaling": 1,
+      "router_dtype": "BF16",
+      "gguf": false,
+      "formats": {},
+      "tensors": [
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.experts.0.w1.weight_packed",
+          "dtype": "U8",
+          "shape": [
+            3072,
+            1792
+          ],
+          "data_offsets": [
+            844335616,
+            849840640
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.experts.0.w1.weight_scale",
+          "dtype": "U8",
+          "shape": [
+            3072,
+            112
+          ],
+          "data_offsets": [
+            849840640,
+            850184704
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.experts.0.w2.weight_packed",
+          "dtype": "U8",
+          "shape": [
+            3584,
+            1536
+          ],
+          "data_offsets": [
+            850184704,
+            855689728
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.experts.0.w2.weight_scale",
+          "dtype": "U8",
+          "shape": [
+            3584,
+            96
+          ],
+          "data_offsets": [
+            855689728,
+            856033792
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.experts.0.w3.weight_packed",
+          "dtype": "U8",
+          "shape": [
+            3072,
+            1792
+          ],
+          "data_offsets": [
+            856033792,
+            861538816
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.experts.0.w3.weight_scale",
+          "dtype": "U8",
+          "shape": [
+            3072,
+            112
+          ],
+          "data_offsets": [
+            861538816,
+            861882880
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.gate.e_score_correction_bias",
+          "dtype": "F32",
+          "shape": [
+            896
+          ],
+          "data_offsets": [
+            0,
+            3584
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            896,
+            7168
+          ],
+          "data_offsets": [
+            3584,
+            12848640
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.routed_expert_down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            3584,
+            7168
+          ],
+          "data_offsets": [
+            12848640,
+            64228864
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.routed_expert_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            3584
+          ],
+          "data_offsets": [
+            64228864,
+            64236032
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.routed_expert_up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168,
+            3584
+          ],
+          "data_offsets": [
+            64236032,
+            115616256
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.shared_experts.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168,
+            6144
+          ],
+          "data_offsets": [
+            115616256,
+            203696640
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.shared_experts.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            6144,
+            7168
+          ],
+          "data_offsets": [
+            203696640,
+            291777024
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        },
+        {
+          "name": "language_model.model.layers.3.block_sparse_moe.shared_experts.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            6144,
+            7168
+          ],
+          "data_offsets": [
+            291777024,
+            379857408
+          ],
+          "shard": "model-00004-of-000096.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_primary_gguf",
+      "model": "kimi_k3",
+      "hidden": 7168,
+      "experts": 896,
+      "top_k": 16,
+      "latent": 3584,
+      "intermediate": 3072,
+      "shared_intermediate": 6144,
+      "scoring": "sigmoid",
+      "scaling": 1,
+      "router_dtype": "F32",
+      "gguf": true,
+      "formats": {
+        "gate": "MXFP4",
+        "up": "MXFP4",
+        "down": "MXFP4",
+        "shared_gate": "Q8_0",
+        "shared_up": "Q8_0",
+        "shared_down": "Q8_0",
+        "latent": "Q8_0"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "896"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "3072",
+            "3584",
+            "896"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "6144",
+            "7168"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "3584",
+            "3072",
+            "896"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "7168",
+            "896"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "7168",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "7168"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_res_score.weight",
+          "shape": [
+            "7168"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_routed_down.weight",
+          "shape": [
+            "7168",
+            "3584"
+          ],
+          "dtype": "Q8_0",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_routed_norm.weight",
+          "shape": [
+            "3584"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_routed_up.weight",
+          "shape": [
+            "3584",
+            "7168"
+          ],
+          "dtype": "Q8_0",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "3584",
+            "3072",
+            "896"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 3
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "7168",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 3
+        }
+      ]
+    },
+    {
+      "profile": "kimi_k3_fidelity_gguf",
+      "model": "kimi_k3",
+      "hidden": 7168,
+      "experts": 896,
+      "top_k": 16,
+      "latent": 3584,
+      "intermediate": 3072,
+      "shared_intermediate": 6144,
+      "scoring": "sigmoid",
+      "scaling": 1,
+      "router_dtype": "F32",
+      "gguf": true,
+      "formats": {
+        "gate": "MXFP4",
+        "up": "MXFP4",
+        "down": "MXFP4",
+        "shared_gate": "BF16",
+        "shared_up": "BF16",
+        "shared_down": "BF16",
+        "latent": "BF16"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "3584",
+            "3072",
+            "896"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 1
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "3072",
+            "3584",
+            "896"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 1
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "3584",
+            "3072",
+            "896"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "896"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "7168",
+            "896"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_routed_down.weight",
+          "shape": [
+            "7168",
+            "3584"
+          ],
+          "dtype": "BF16",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_routed_norm.weight",
+          "shape": [
+            "3584"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_routed_up.weight",
+          "shape": [
+            "3584",
+            "7168"
+          ],
+          "dtype": "BF16",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "6144",
+            "7168"
+          ],
+          "dtype": "BF16",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "7168",
+            "6144"
+          ],
+          "dtype": "BF16",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "7168",
+            "6144"
+          ],
+          "dtype": "BF16",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_res_score.weight",
+          "shape": [
+            "7168"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "7168"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "deepseek_v4_pro_official",
+      "model": "deepseek_v4_pro",
+      "hidden": 7168,
+      "experts": 384,
+      "top_k": 6,
+      "latent": 7168,
+      "intermediate": 3072,
+      "shared_intermediate": 3072,
+      "scoring": "sqrtsoftplus",
+      "scaling": 2.5,
+      "router_dtype": "BF16",
+      "gguf": false,
+      "formats": {},
+      "tensors": [
+        {
+          "name": "layers.3.ffn.experts.0.w1.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            3072,
+            224
+          ],
+          "data_offsets": [
+            26006616,
+            26694744
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w1.weight",
+          "dtype": "I8",
+          "shape": [
+            3072,
+            3584
+          ],
+          "data_offsets": [
+            1184687128,
+            1195697176
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w2.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            7168,
+            96
+          ],
+          "data_offsets": [
+            26694744,
+            27382872
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w2.weight",
+          "dtype": "I8",
+          "shape": [
+            7168,
+            1536
+          ],
+          "data_offsets": [
+            1195697176,
+            1206707224
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w3.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            3072,
+            224
+          ],
+          "data_offsets": [
+            27382872,
+            28071000
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w3.weight",
+          "dtype": "I8",
+          "shape": [
+            3072,
+            3584
+          ],
+          "data_offsets": [
+            1206707224,
+            1217717272
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.gate.bias",
+          "dtype": "F32",
+          "shape": [
+            384
+          ],
+          "data_offsets": [
+            262656,
+            264192
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            384,
+            7168
+          ],
+          "data_offsets": [
+            20468952,
+            25973976
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w1.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            24,
+            56
+          ],
+          "data_offsets": [
+            818730072,
+            818731416
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w1.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            3072,
+            7168
+          ],
+          "data_offsets": [
+            1118626840,
+            1140646936
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w2.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            56,
+            24
+          ],
+          "data_offsets": [
+            818731416,
+            818732760
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w2.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            7168,
+            3072
+          ],
+          "data_offsets": [
+            1140646936,
+            1162667032
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w3.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            24,
+            56
+          ],
+          "data_offsets": [
+            818732760,
+            818734104
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w3.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            3072,
+            7168
+          ],
+          "data_offsets": [
+            1162667032,
+            1184687128
+          ],
+          "shard": "model-00005-of-00064.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "deepseek_v4_flash_official",
+      "model": "deepseek_v4_flash",
+      "hidden": 4096,
+      "experts": 256,
+      "top_k": 6,
+      "latent": 4096,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sqrtsoftplus",
+      "scaling": 1.5,
+      "router_dtype": "BF16",
+      "gguf": false,
+      "formats": {},
+      "tensors": [
+        {
+          "name": "layers.3.ffn.experts.0.w1.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            2048,
+            128
+          ],
+          "data_offsets": [
+            13922136,
+            14184280
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w1.weight",
+          "dtype": "I8",
+          "shape": [
+            2048,
+            2048
+          ],
+          "data_offsets": [
+            347370840,
+            351565144
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w2.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            4096,
+            64
+          ],
+          "data_offsets": [
+            14184280,
+            14446424
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w2.weight",
+          "dtype": "I8",
+          "shape": [
+            4096,
+            1024
+          ],
+          "data_offsets": [
+            351565144,
+            355759448
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w3.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            2048,
+            128
+          ],
+          "data_offsets": [
+            14446424,
+            14708568
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.experts.0.w3.weight",
+          "dtype": "I8",
+          "shape": [
+            2048,
+            2048
+          ],
+          "data_offsets": [
+            355759448,
+            359953752
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.gate.bias",
+          "dtype": "F32",
+          "shape": [
+            256
+          ],
+          "data_offsets": [
+            262400,
+            263424
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            256,
+            4096
+          ],
+          "data_offsets": [
+            11810264,
+            13907416
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w1.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            16,
+            32
+          ],
+          "data_offsets": [
+            215248728,
+            215249240
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w1.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            4096
+          ],
+          "data_offsets": [
+            322205016,
+            330593624
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w2.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            32,
+            16
+          ],
+          "data_offsets": [
+            215249240,
+            215249752
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w2.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            4096,
+            2048
+          ],
+          "data_offsets": [
+            330593624,
+            338982232
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w3.scale",
+          "dtype": "F8_E8M0",
+          "shape": [
+            16,
+            32
+          ],
+          "data_offsets": [
+            215249752,
+            215250264
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        },
+        {
+          "name": "layers.3.ffn.shared_experts.w3.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            4096
+          ],
+          "data_offsets": [
+            338982232,
+            347370840
+          ],
+          "shard": "model-00005-of-00046.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "deepseek_v4_flash_primary_gguf",
+      "model": "deepseek_v4_flash",
+      "hidden": 4096,
+      "experts": 256,
+      "top_k": 6,
+      "latent": 4096,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sqrtsoftplus",
+      "scaling": 1.5,
+      "router_dtype": "BF16",
+      "gguf": true,
+      "formats": {
+        "gate": "MXFP4",
+        "up": "MXFP4",
+        "down": "MXFP4",
+        "shared_gate": "Q8_0",
+        "shared_up": "Q8_0",
+        "shared_down": "Q8_0"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "4096",
+            "256"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "256"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "4096",
+            "256"
+          ],
+          "dtype": "BF16",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "256"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_base.weight",
+          "shape": [
+            "24"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_fn.weight",
+          "shape": [
+            "16384",
+            "24"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_scale.weight",
+          "shape": [
+            "3"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "deepseek_v4_flash_fidelity_gguf",
+      "model": "deepseek_v4_flash",
+      "hidden": 4096,
+      "experts": 256,
+      "top_k": 6,
+      "latent": 4096,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sqrtsoftplus",
+      "scaling": 1.5,
+      "router_dtype": "BF16",
+      "gguf": true,
+      "formats": {
+        "gate": "MXFP4",
+        "up": "MXFP4",
+        "down": "MXFP4",
+        "shared_gate": "BF16",
+        "shared_up": "BF16",
+        "shared_down": "BF16"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "4096",
+            "256"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "BF16",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "256"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "4096",
+            "256"
+          ],
+          "dtype": "BF16",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "BF16",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "256"
+          ],
+          "dtype": "MXFP4",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "BF16",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_base.weight",
+          "shape": [
+            "24"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_fn.weight",
+          "shape": [
+            "16384",
+            "24"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_scale.weight",
+          "shape": [
+            "3"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_official",
+      "model": "glm53",
+      "hidden": 6144,
+      "experts": 256,
+      "top_k": 8,
+      "latent": 6144,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sigmoid",
+      "scaling": 2.5,
+      "router_dtype": "BF16",
+      "gguf": false,
+      "formats": {},
+      "tensors": [
+        {
+          "name": "model.layers.3.mlp.experts.0.down_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            6144,
+            2048
+          ],
+          "data_offsets": [
+            4057625024,
+            4070207936
+          ],
+          "shard": "model-00038-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.experts.0.down_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            48,
+            16
+          ],
+          "data_offsets": [
+            990656,
+            993728
+          ],
+          "shard": "model-00038-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.experts.0.gate_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            6144
+          ],
+          "data_offsets": [
+            4070207936,
+            4082790848
+          ],
+          "shard": "model-00038-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.experts.0.gate_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            48
+          ],
+          "data_offsets": [
+            993728,
+            996800
+          ],
+          "shard": "model-00038-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.experts.0.up_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            6144
+          ],
+          "data_offsets": [
+            4082790848,
+            4095373760
+          ],
+          "shard": "model-00038-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.experts.0.up_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            48
+          ],
+          "data_offsets": [
+            996800,
+            999872
+          ],
+          "shard": "model-00038-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.gate.e_score_correction_bias",
+          "dtype": "F32",
+          "shape": [
+            256
+          ],
+          "data_offsets": [
+            731136,
+            732160
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            256,
+            6144
+          ],
+          "data_offsets": [
+            1310144,
+            4455872
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.shared_experts.down_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            6144,
+            2048
+          ],
+          "data_offsets": [
+            2999218624,
+            3011801536
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.shared_experts.down_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            48,
+            16
+          ],
+          "data_offsets": [
+            732160,
+            735232
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.shared_experts.gate_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            6144
+          ],
+          "data_offsets": [
+            3011801536,
+            3024384448
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.shared_experts.gate_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            48
+          ],
+          "data_offsets": [
+            735232,
+            738304
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.shared_experts.up_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            6144
+          ],
+          "data_offsets": [
+            3024384448,
+            3036967360
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        },
+        {
+          "name": "model.layers.3.mlp.shared_experts.up_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            48
+          ],
+          "data_offsets": [
+            738304,
+            741376
+          ],
+          "shard": "model-00040-of-00141.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_primary_gguf",
+      "model": "glm53",
+      "hidden": 6144,
+      "experts": 256,
+      "top_k": 8,
+      "latent": 6144,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sigmoid",
+      "scaling": 2.5,
+      "router_dtype": "F32",
+      "gguf": true,
+      "formats": {
+        "gate": "Q4_K",
+        "up": "Q4_K",
+        "down": "Q5_K",
+        "shared_gate": "Q8_0",
+        "shared_up": "Q8_0",
+        "shared_down": "Q8_0"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "6144",
+            "256"
+          ],
+          "dtype": "Q5_K",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "6144",
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_fidelity_gguf",
+      "model": "glm53",
+      "hidden": 6144,
+      "experts": 256,
+      "top_k": 8,
+      "latent": 6144,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sigmoid",
+      "scaling": 2.5,
+      "router_dtype": "F32",
+      "gguf": true,
+      "formats": {
+        "gate": "Q8_0",
+        "up": "Q8_0",
+        "down": "Q8_0",
+        "shared_gate": "Q8_0",
+        "shared_up": "Q8_0",
+        "shared_down": "Q8_0"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "6144",
+            "256"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "6144",
+            "2048",
+            "256"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "6144",
+            "256"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "6144"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "6144",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 5
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "6144"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 5
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_official",
+      "model": "glm53_flash",
+      "hidden": 4096,
+      "experts": 288,
+      "top_k": 8,
+      "latent": 4096,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sigmoid",
+      "scaling": 2.5,
+      "router_dtype": "BF16",
+      "gguf": false,
+      "formats": {},
+      "tensors": [
+        {
+          "name": "model.language_model.layers.3.mlp.experts.0.down_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            4096,
+            2048
+          ],
+          "data_offsets": [
+            909817688,
+            918206296
+          ],
+          "shard": "model-00031-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.experts.0.down_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            32,
+            16
+          ],
+          "data_offsets": [
+            187992,
+            190040
+          ],
+          "shard": "model-00031-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.experts.0.gate_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            4096
+          ],
+          "data_offsets": [
+            918206296,
+            926594904
+          ],
+          "shard": "model-00031-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.experts.0.gate_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            32
+          ],
+          "data_offsets": [
+            190040,
+            192088
+          ],
+          "shard": "model-00031-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.experts.0.up_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            4096
+          ],
+          "data_offsets": [
+            926594904,
+            934983512
+          ],
+          "shard": "model-00031-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.experts.0.up_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            32
+          ],
+          "data_offsets": [
+            192088,
+            194136
+          ],
+          "shard": "model-00031-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.gate.e_score_correction_bias",
+          "dtype": "F32",
+          "shape": [
+            288
+          ],
+          "data_offsets": [
+            681984,
+            683136
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            288,
+            4096
+          ],
+          "data_offsets": [
+            1297752,
+            3657048
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.shared_experts.down_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            4096,
+            2048
+          ],
+          "data_offsets": [
+            2847155032,
+            2855543640
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.shared_experts.down_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            32,
+            16
+          ],
+          "data_offsets": [
+            683136,
+            685184
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.shared_experts.gate_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            4096
+          ],
+          "data_offsets": [
+            2855543640,
+            2863932248
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.shared_experts.gate_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            32
+          ],
+          "data_offsets": [
+            685184,
+            687232
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.shared_experts.up_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            2048,
+            4096
+          ],
+          "data_offsets": [
+            2863932248,
+            2872320856
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        },
+        {
+          "name": "model.language_model.layers.3.mlp.shared_experts.up_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            16,
+            32
+          ],
+          "data_offsets": [
+            687232,
+            689280
+          ],
+          "shard": "model-00032-of-00062.safetensors"
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_primary_gguf",
+      "model": "glm53_flash",
+      "hidden": 4096,
+      "experts": 288,
+      "top_k": 8,
+      "latent": 4096,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sigmoid",
+      "scaling": 2.5,
+      "router_dtype": "F32",
+      "gguf": true,
+      "formats": {
+        "gate": "Q4_K",
+        "up": "Q4_K",
+        "down": "Q5_K",
+        "shared_gate": "Q8_0",
+        "shared_up": "Q8_0",
+        "shared_down": "Q8_0"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "4096",
+            "288"
+          ],
+          "dtype": "Q5_K",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "4096",
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q4_K",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_base.weight",
+          "shape": [
+            "24"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_fn.weight",
+          "shape": [
+            "16384",
+            "24"
+          ],
+          "dtype": "Q8_0",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_scale.weight",
+          "shape": [
+            "3"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        }
+      ]
+    },
+    {
+      "profile": "glm53_flash_fidelity_gguf",
+      "model": "glm53_flash",
+      "hidden": 4096,
+      "experts": 288,
+      "top_k": 8,
+      "latent": 4096,
+      "intermediate": 2048,
+      "shared_intermediate": 2048,
+      "scoring": "sigmoid",
+      "scaling": 2.5,
+      "router_dtype": "F32",
+      "gguf": true,
+      "formats": {
+        "gate": "Q8_0",
+        "up": "Q8_0",
+        "down": "Q8_0",
+        "shared_gate": "Q8_0",
+        "shared_up": "Q8_0",
+        "shared_down": "Q8_0"
+      },
+      "tensors": [
+        {
+          "name": "blk.3.exp_probs_b.bias",
+          "shape": [
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "bias",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_exps.weight",
+          "shape": [
+            "2048",
+            "4096",
+            "288"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_down_shexp.weight",
+          "shape": [
+            "2048",
+            "4096"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_inp.weight",
+          "shape": [
+            "4096",
+            "288"
+          ],
+          "dtype": "F32",
+          "role": "moe_router",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_gate_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_norm.weight",
+          "shape": [
+            "4096"
+          ],
+          "dtype": "F32",
+          "role": "dense_mlp",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_exps.weight",
+          "shape": [
+            "4096",
+            "2048",
+            "288"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_routed_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.ffn_up_shexp.weight",
+          "shape": [
+            "4096",
+            "2048"
+          ],
+          "dtype": "Q8_0",
+          "role": "moe_shared_expert",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_base.weight",
+          "shape": [
+            "24"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_fn.weight",
+          "shape": [
+            "16384",
+            "24"
+          ],
+          "dtype": "Q8_0",
+          "role": "hyperconnection",
+          "shard": 2
+        },
+        {
+          "name": "blk.3.hc_ffn_scale.weight",
+          "shape": [
+            "3"
+          ],
+          "dtype": "F32",
+          "role": "hyperconnection",
+          "shard": 2
+        }
+      ]
+    }
+  ],
+  "scope": "Full expert populations and true inner widths. Resident expert capacity may be reduced to top_k+1; selection still scores the complete population. No run verdict.",
+  "correction": "Kimi 3584 is latent expert input/output width; intermediate SiTU width is 3072, shared width is 6144, dense width is 33792."
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -9,6 +10,40 @@
 #include "hyle/compute/operation.h"
 
 namespace hyle::compute::model_ops {
+
+// Native model clamp. Finite values and infinities are clamped to [min,max].
+// NaN data and signed-zero bit patterns follow the selected native backend;
+// this operation does not promise Binary minimum/maximum's NaN semantics.
+struct Clamp final {
+  float minimum;
+  float maximum;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x434c414d50000001ULL};
+  static constexpr std::string_view operation_name = "model-clamp";
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{1, 1}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32,
+            true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (std::isnan(minimum) || std::isnan(maximum) || minimum > maximum ||
+        inputs.size() != 1 || outputs.size() != 1)
+      return Status::InvalidArgument("Clamp requires ordered non-NaN bounds and one input/output");
+    const auto &input = inputs[0];
+    if (!input.valid() || !input.is_plain() || !input.is_dense() ||
+        input.data_type() != DataType::kFloat32 || input.rank() < 1 ||
+        input.rank() > 4 || !input.element_count() || *input.element_count() == 0)
+      return Status::InvalidArgument("Clamp requires nonempty plain dense rank 1-4 F32");
+    outputs[0] = input;
+    return Status::Ok();
+  }
+};
+
+inline Operation clamp(float minimum, float maximum) noexcept {
+  return Operation::custom(Clamp{minimum, maximum});
+}
 
 // Depthwise causal-window convolution used by recurrent LLM blocks. The
 // caller supplies the K-1 history prefix explicitly, so replay is stateless:

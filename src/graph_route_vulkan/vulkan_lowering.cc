@@ -148,6 +148,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       const bool mature_custom =
           node->operation.custom_as<compute::model_ops::CausalConv1d>() ||
           node->operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||
+          node->operation.custom_as<compute::model_ops::Clamp>() ||
           node->operation.custom_as<compute::model_ops::GroupedMatMul>() ||
           node->operation.custom_as<compute::model_ops::BFloatLinearF32>() ||
           node->operation

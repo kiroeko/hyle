@@ -22,6 +22,7 @@
 #include "../compute_models/d5_qwen_gguf_vocabulary_apple_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
+#include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -1420,8 +1421,40 @@ void run_q24_semantic_fragment(
       const auto actual =
           float_values(*tensors[fixture.outputs[output].ordinal()]);
       feedback.observe(output, actual);
-      sem::expect_output(fixture, actual, expected.outputs[output]);
+      sem::expect_output(fixture, actual, expected.outputs[output], {},
+                         fixture.exact_output(output));
     }
+  }
+}
+
+TEST(AppleMoeFragments, D5MatureClampBoundaries) {
+  run_q24_semantic_fragment(d5_moe_execution_fragments::clamp_boundaries());
+}
+
+TEST(AppleMoeFragments, D5ThirteenProfilesModelRouters) {
+  for (const auto &model : d5_moe_execution_cases::kCases) {
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_moe_execution_fragments::router(model));
+  }
+}
+
+TEST(AppleMoeFragments, D5ThirteenProfilesExpertActivation) {
+  for (const auto &model : d5_moe_execution_cases::kCases) {
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_moe_execution_fragments::activation_core(model));
+  }
+}
+
+TEST(AppleMoeFragments, D5EightGgufProfilesFullMoe) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_moe_execution_cases::kCases) {
+    if (!model.gguf)
+      continue;
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model));
   }
 }
 
@@ -1449,7 +1482,10 @@ TEST(AppleMoeFragments, D5KimiThreeProfilesSituActivation) {
   for (std::size_t i = 0; i < 3; ++i) {
     auto profile = moe::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
-    run_q24_semantic_fragment(moe::situ(profile));
+    for (auto width : moe::kSituWidths) {
+      SCOPED_TRACE(width);
+      run_q24_semantic_fragment(moe::situ(profile, width));
+    }
   }
 }
 

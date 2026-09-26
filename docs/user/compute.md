@@ -345,6 +345,13 @@ a/b/negative_a/dt_bias 均为 `[1,1,Hv,1]`，其它 shape 沿用上面的 GDN �
 四路线普通入口及精确数值资格进展见[当前验收卡](../implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)；
 此接口描述不代替整模型或尚未运行的交付/性能验收。
 
+`model_ops::clamp(minimum, maximum)` 为 MoE 归一化下限、clamped SwiGLU 等模型程序绑定原生
+ggml 限幅：单个非空 plain dense F32 张量，rank 1–4，输出同描述。bounds 可为无穷，
+NaN bounds 或下限大于上限会在准备时拒绝。有限值和 ±Inf 按闭区间限幅；NaN 数据及 signed-zero
+位模式遵循原生 backend，不承诺跨路线一致，也不替代普通 Binary minimum/maximum 的合同。
+调用方无须创建阈值张量；Direct/Graph 复用相同描述和各路线既有资源/完成路径。当前接线资格见
+[D5-F24](../implementation/tasks/compute/llm-moe-d5-mature-clamp-binding.md)。
+
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context

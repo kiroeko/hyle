@@ -289,6 +289,8 @@ bool tensor_operation_supports(Operation operation,
       !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if (operation.custom_as<model_ops::Clamp>())
+    return true; // Public inference has already validated the entire domain.
   if (operation.custom_as<model_ops::CausalConv1d>())
     return outputs.size() == 1 && inputs.size() == 2 &&
            inputs[0].data_type() == DataType::kFloat32 &&
@@ -616,6 +618,8 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
   } else if (node.operation.get_if<Gather>()) {
     result =
         ggml_get_rows(context, values[node.inputs[0]], values[node.inputs[1]]);
+  } else if (const auto clamp = node.operation.custom_as<model_ops::Clamp>()) {
+    result = ggml_clamp(context, input(0), clamp->minimum, clamp->maximum);
   } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
     auto *samples = ggml_cont(
         context, ggml_permute(context, values[node.inputs[0]], 1, 0, 2, 3));

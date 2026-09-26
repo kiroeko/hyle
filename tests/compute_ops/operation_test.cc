@@ -18,6 +18,39 @@ namespace {
 
 using namespace hyle::compute;
 
+TEST(ModelClamp, InferenceRejectsMalformedDescriptionsAndBounds) {
+  const auto shape = std::array<std::int64_t, 2>{3, 7};
+  const auto input = TensorDesc::dense(DataType::kFloat32, shape).value();
+  const std::array inputs{input};
+  const auto infinity = std::numeric_limits<float>::infinity();
+  const auto nan = std::numeric_limits<float>::quiet_NaN();
+  for (const auto operation : {model_ops::clamp(-10, 10),
+                               model_ops::clamp(-infinity, 10),
+                               model_ops::clamp(0, infinity),
+                               model_ops::clamp(1, 1)}) {
+    auto result = infer_single_output(operation, inputs);
+    ASSERT_TRUE(result);
+    EXPECT_EQ(*result, input);
+    EXPECT_EQ(operation_name(operation), "model-clamp");
+  }
+  for (const auto operation : {model_ops::clamp(1, -1),
+                               model_ops::clamp(nan, 1),
+                               model_ops::clamp(0, nan)})
+    EXPECT_FALSE(infer_single_output(operation, inputs));
+  const auto operation = model_ops::clamp(-1, 1);
+  for (auto invalid : {
+         TensorDesc::dense(DataType::kBFloat16, shape).value(),
+         TensorDesc::dense(DataType::kFloat32,
+                           std::array<std::int64_t, 2>{0, 7}).value(),
+         input.transposed().value(),
+         TensorDesc::dense(DataType::kFloat32,
+                           std::array<std::int64_t, 5>{1, 1, 1, 1, 1}).value(),
+         TensorDesc{}})
+    EXPECT_FALSE(infer_single_output(operation, std::array{invalid}));
+  EXPECT_FALSE(infer_single_output(operation, std::span<const TensorDesc>{}));
+  EXPECT_FALSE(infer_single_output(operation, std::array{input, input}));
+}
+
 template <class... Dimensions>
 TensorDesc tensor(DataType type, Dimensions... dimensions) {
   const std::array<std::int64_t, sizeof...(Dimensions)> shape{
