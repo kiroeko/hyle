@@ -603,7 +603,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_runtime/NOTICE.md",
-            "sha256": "7cf85e86b617535bf6f1db460db83a80a903693b46f37296abe11693fa77644e"
+            "sha256": "260c3882f6833eda067f34825cb926c117ed7da4c323cb3a7e56537002e712af"
           }
         ]
       }
