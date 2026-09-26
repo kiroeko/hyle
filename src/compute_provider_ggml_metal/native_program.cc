@@ -161,7 +161,7 @@ struct NativeProgram::State {
   ggml_cgraph *graph = nullptr;
   std::array<ggml_tensor *, 9> tensors{};
   std::array<BufferOwner, 9> buffers;
-  std::array<BufferOwner, 4> gate_buffers;
+  std::array<BufferOwner, 4> workspace_buffers;
   std::array<void *, 9> native_buffers{};
   std::array<std::size_t, 9> bytes{};
   std::array<std::size_t, 9> alignments{};
@@ -182,7 +182,7 @@ struct NativeProgram::State {
       // Imported buffers are released while the original device owner exists.
       for (auto &buffer : buffers)
         ggml_backend_buffer_free(std::exchange(buffer.value, nullptr));
-      for (auto &buffer : gate_buffers)
+      for (auto &buffer : workspace_buffers)
         ggml_backend_buffer_free(std::exchange(buffer.value, nullptr));
       ggml_backend_free(backend);
     }
@@ -293,10 +293,33 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
                                  : data_type_size(inputs[i].data_type());
     }
     auto &t = state->tensors;
+    auto allocate_intermediate = [&](ggml_tensor *tensor,
+                                     std::size_t index) -> Status {
+      if (!ggml_backend_supports_op(state->backend, tensor))
+        return Status::Unimplemented("ggml Metal intermediate capability unavailable");
+      const auto type = ggml_backend_get_default_buffer_type(state->backend);
+      auto &buffer = state->workspace_buffers[index].value;
+      buffer = ggml_backend_alloc_buffer(
+          state->backend, ggml_backend_buft_get_alloc_size(type, tensor));
+      if (buffer == nullptr)
+        return Status::ResourceExhausted("ggml Metal intermediate workspace allocation failed");
+      if (ggml_backend_tensor_alloc(buffer, tensor,
+                                    ggml_backend_buffer_get_base(buffer)) !=
+          GGML_STATUS_SUCCESS)
+        return Status::ResourceExhausted("ggml Metal intermediate tensor allocation failed");
+      return Status::Ok();
+    };
     ggml_tensor *result = nullptr;
     if (operation.get_if<MatMul>() ||
         operation.custom_as<model_ops::BFloatLinearF32>()) {
-      result = ggml_mul_mat(state->arena.get(), t[1], t[0]);
+      auto *activation = t[0];
+      if (activation->type == GGML_TYPE_BF16) {
+        // The pinned Metal backend provides BF16 weights with F32 activation.
+        // Widen the already-rounded activation exactly; keep weights packed.
+        activation = ggml_cast(state->arena.get(), activation, GGML_TYPE_F32);
+        HYLE_RETURN_IF_ERROR(allocate_intermediate(activation, 0));
+      }
+      result = ggml_mul_mat(state->arena.get(), t[1], activation);
       if (result != nullptr && !ggml_prec_set_acc(result, GGML_PREC_F32))
         return std::unexpected(Status::Unimplemented(
             "ggml Metal MatMul cannot apply F32 accumulation"));
@@ -317,24 +340,8 @@ NativeProgram::create(Operation operation, std::span<const TensorDesc> inputs,
         beta = ggml_sigmoid(context, beta);
         initial = t[7];
         const std::array intermediates{shifted, softplus, gate, beta};
-        const auto type = ggml_backend_get_default_buffer_type(state->backend);
-        for (std::size_t i = 0; i < intermediates.size(); ++i) {
-          auto *tensor = intermediates[i];
-          if (!ggml_backend_supports_op(state->backend, tensor))
-            return std::unexpected(Status::Unimplemented(
-                "ggml Metal recurrent gate capability unavailable"));
-          auto &buffer = state->gate_buffers[i].value;
-          buffer = ggml_backend_alloc_buffer(
-              state->backend, ggml_backend_buft_get_alloc_size(type, tensor));
-          if (buffer == nullptr)
-            return std::unexpected(Status::ResourceExhausted(
-                "ggml Metal recurrent gate workspace allocation failed"));
-          if (ggml_backend_tensor_alloc(buffer, tensor,
-                                         ggml_backend_buffer_get_base(buffer)) !=
-              GGML_STATUS_SUCCESS)
-            return std::unexpected(Status::ResourceExhausted(
-                "ggml Metal recurrent gate tensor allocation failed"));
-        }
+        for (std::size_t i = 0; i < intermediates.size(); ++i)
+          HYLE_RETURN_IF_ERROR(allocate_intermediate(intermediates[i], i));
       }
       result = ggml_gated_delta_net(context, t[0], t[1], t[2], gate, beta,
                                     initial, 1);

@@ -118,6 +118,15 @@ TEST(GgmlMetalFaults, CompleteGateColdWorkspaceAllocationsRollBack) {
   check_cold_allocations(c::model_ops::recurrent_gated_delta_net(), inputs);
 }
 
+TEST(GgmlMetalFaults, BfloatActivationWorkspaceAllocationsRollBack) {
+  const auto activation = c::TensorDesc::dense(
+      c::DataType::kBFloat16, std::array<std::int64_t, 2>{64, 128}).value();
+  const auto weight = c::TensorDesc::dense(
+      c::DataType::kBFloat16, std::array<std::int64_t, 2>{32, 128}).value();
+  const std::array inputs{activation, weight};
+  check_cold_allocations(c::model_ops::bfloat_linear_f32(), inputs);
+}
+
 TEST(GgmlMetalFaults, PipelineCacheFailureUnlocksAndReleasesNativeOwner) {
   auto backend = ggml_backend_metal_init();
   ASSERT_NE(backend, nullptr);

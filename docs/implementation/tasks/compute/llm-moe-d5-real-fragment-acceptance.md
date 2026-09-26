@@ -15,6 +15,10 @@ Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-fail
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。该候选尚未取得HYLE C++资格。
 
+DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
+当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。
+Vulkan 数值失败另行保留，未通过完整画像数不变。
+
 **GLM GGUF 完整批次已验：** `7af6eae4` 完成全词表head接合、MTP索引carry/reset和逐层混合专家格式。
 CPU完整325项复用`b52ff8d1`，最终候选的新增格式两入口各1项通过；CUDA327、Apple308、Vulkan439项
 均通过，全部零失败/零跳过，另有所选executor/source/MASM合同通过。四画像全部region已齐备，新增32格。
