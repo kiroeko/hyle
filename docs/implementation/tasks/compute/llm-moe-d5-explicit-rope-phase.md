@@ -71,3 +71,12 @@ baseline `23b32233`。候选 `87f2cb03` 的 CUDA Direct 144项中142项通过；
 单节点Copy/Select残余step，其余算术继续要求成熟Provider。增加replay/output诊断和非有限值
 失败断言，保持全部原误差门。沿本卡已声明的一轮具体失败纠正执行；未改变的CPU证据复用。
 先以新失败用例和同编译单元的直接消费者定向验证，不重新运行未受影响的大型MoE批次。
+
+### CUDA 修正结果
+
+候选 `889e0c4c` 的CUDA定向批次中，完整DeepSeek attention/压缩状态的Direct与Graph全部通过，
+原门与65536位置未改；全部38项ggml Direct/Graph Provider回归通过。只重编原版unary单元，
+生成规则确认C++17且没有fast-math，其它原生单元仍保留原选项。两次构建接线失败均保留。
+同批hash消费者的失败槽复用已按公开合同纠正，`27f37130`定向1/1通过；详见
+[CUDA前后证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/explicit-rope-phase/cuda/README.md)。
+未再运行大型MoE整批，Apple/Vulkan及A5/A6仍待验收，完整画像计数未变。

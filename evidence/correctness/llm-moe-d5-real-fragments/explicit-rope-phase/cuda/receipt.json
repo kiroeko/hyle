@@ -1,0 +1,364 @@
+{
+  "published_at_candidate": "27f371303a4d3d76c15d79f1b4ea59da59a1b55b",
+  "batches": [
+    {
+      "label": "first-owner",
+      "receipt": {
+        "candidate": "87f2cb031ba4ea89bb9006e38bac76917eb32c40",
+        "route": "cuda",
+        "factors": [
+          "compute_provider_cuda",
+          "compute_provider_ggml_cuda",
+          "graph_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-f35\\cuda\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 60.06
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_provider_cuda|compute_provider_ggml_cuda|graph_provider_ggml_cuda|compute_route_cuda|graph_route_cuda)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-owner-f35\\cuda\\tests.xml"
+            ],
+            "returncode": 8,
+            "seconds": 1434.25
+          }
+        ]
+      },
+      "batch_pass": false,
+      "files": [
+        {
+          "file": "first-owner-build.log.gz",
+          "source_bytes": 6491,
+          "source_sha256": "44e19066234e883cb66658340eeb16c4683078b8dae7ad3f254902821db494ca",
+          "archive_sha256": "f14cd0fbbeaebac97e13270095f41bddc109ca276dcb628591378a555506a39d"
+        },
+        {
+          "file": "first-owner-tests.log.gz",
+          "source_bytes": 2416263,
+          "source_sha256": "7978cff74880f541e4ad4e394b9f94b0befb97dce208dbe9bb92dc20da3894c7",
+          "archive_sha256": "b88ff3de1323d723c0a2e184f65e5607e6cd659e327391592696de7fee50f7fb"
+        },
+        {
+          "file": "first-owner-tests.xml.gz",
+          "source_bytes": 627945,
+          "source_sha256": "df31a4d25a596fa4d105a8b70bc211a8758b89a942b9deadae21db4f1debef3c",
+          "archive_sha256": "827706a09d945cb91fcb597eb0aaab190fdff9a74a60ad7fd45153e9638a34a9"
+        },
+        {
+          "file": "first-owner-native-tests.log.gz",
+          "source_bytes": 2469738,
+          "source_sha256": "1b29450ebf2e7e45ca3908b7cb38c65c1d7a86db201416e501590a3ceba8abbd",
+          "archive_sha256": "26ed837b3007e0efb344376a7b42054752b6af8f637846c19160d3ef153a9f8a"
+        },
+        {
+          "file": "first-owner-cache-identity.txt.gz",
+          "source_bytes": 1487,
+          "source_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+          "archive_sha256": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee"
+        }
+      ],
+      "gtests_ran": [
+        42,
+        144,
+        160,
+        30,
+        8
+      ],
+      "gtests_passed": [
+        42,
+        142,
+        157,
+        30,
+        8
+      ],
+      "failed_tests": [
+        "CudaDefaultGraph.HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsIndependent",
+        "CudaGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "CudaGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "CudaMoeFragments.D5DeepSeekFullAttentionChain",
+        "CudaMoeFragments.D5DeepSeekStatefulCompression"
+      ]
+    },
+    {
+      "label": "language-scope",
+      "receipt": {
+        "candidate": "32fbe07cd79e8a7fd85a6210877decbdfb36635d",
+        "route": "cuda",
+        "factors": [
+          "compute_provider_ggml_cuda",
+          "graph_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-cuda-focused-r1\\cuda\\build.cmd"
+            ],
+            "returncode": 1,
+            "seconds": 39.53
+          }
+        ],
+        "test_filter": "GgmlCuda*.*:*MoeFragments.D5DeepSeekFullAttentionChain:*MoeFragments.D5DeepSeekStatefulCompression:*.*Rope*:*.*Unary*:*.*HashRouter*:*.*D5Qwen35OfficialGqaNormRopeAndAttention*"
+      },
+      "batch_pass": false,
+      "files": [
+        {
+          "file": "language-scope-build.log.gz",
+          "source_bytes": 9552,
+          "source_sha256": "b6cf15f305e93c8f7e869292d38fa9a062c953512db43cbe94fdb674b3503c58",
+          "archive_sha256": "48b64395db33c0eef435bbb3c3e23ba219eeb71dd0f712ea7d0cf5acd4c7e603"
+        }
+      ]
+    },
+    {
+      "label": "language-standard",
+      "receipt": {
+        "candidate": "e55b05069ccebdb3309340a5839ac44e13a08c7a",
+        "route": "cuda",
+        "factors": [
+          "compute_provider_ggml_cuda",
+          "graph_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-cuda-focused-r2\\cuda\\build.cmd"
+            ],
+            "returncode": 2,
+            "seconds": 26.01
+          }
+        ],
+        "test_filter": "GgmlCuda*.*:*MoeFragments.D5DeepSeekFullAttentionChain:*MoeFragments.D5DeepSeekStatefulCompression:*.*Rope*:*.*Unary*:*.*HashRouter*:*.*D5Qwen35OfficialGqaNormRopeAndAttention*"
+      },
+      "batch_pass": false,
+      "files": [
+        {
+          "file": "language-standard-build.log.gz",
+          "source_bytes": 41385,
+          "source_sha256": "a5d135fb2def9c729bc36cdf79096157b57dae8896c0ba00a81ac262b0939ba0",
+          "archive_sha256": "831c9131d1f2b853e3e84c74a0a35b1bf2f46fae712f570c7bb07840f15309d3"
+        }
+      ]
+    },
+    {
+      "label": "precision-focused",
+      "receipt": {
+        "candidate": "889e0c4cacd9eb30ee84cc613dc0cc255fe3175e",
+        "route": "cuda",
+        "factors": [
+          "compute_provider_ggml_cuda",
+          "graph_provider_ggml_cuda",
+          "compute_route_cuda",
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-cuda-focused-r3\\cuda\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 25.73
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(compute_provider_ggml_cuda|graph_provider_ggml_cuda|compute_route_cuda|graph_route_cuda)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-cuda-focused-r3\\cuda\\tests.xml"
+            ],
+            "returncode": 8,
+            "seconds": 10.14
+          }
+        ],
+        "test_filter": "GgmlCuda*.*:*MoeFragments.D5DeepSeekFullAttentionChain:*MoeFragments.D5DeepSeekStatefulCompression:*.*Rope*:*.*Unary*:*.*HashRouter*:*.*D5Qwen35OfficialGqaNormRopeAndAttention*"
+      },
+      "batch_pass": false,
+      "files": [
+        {
+          "file": "precision-focused-build.log.gz",
+          "source_bytes": 26336,
+          "source_sha256": "daa4e3f73aa485cdb5688e82675b82e32afe0247ca83f097bc31ed79b47fc62b",
+          "archive_sha256": "302f5e3985898c62d3854e6482e902a436d6ea3af9b72a5780edbfa19088aef9"
+        },
+        {
+          "file": "precision-focused-tests.log.gz",
+          "source_bytes": 40543,
+          "source_sha256": "4ee832d8e9d999c66685d632d0982e9591328927e4839a57240a0586654dba89",
+          "archive_sha256": "a0547793ce29f6a2fe56dbce2a0a8a2a3fa8599f65385a4b80065c13af240b39"
+        },
+        {
+          "file": "precision-focused-tests.xml.gz",
+          "source_bytes": 44876,
+          "source_sha256": "1b84a7cfe308b9ae6d20d4280da189434da2699eadb38cc703148a961e302fcd",
+          "archive_sha256": "d63ba2abc7fe24f00cafbdaa774e08d3dcdefe12dfeaef72b3b5bc6c06b94695"
+        },
+        {
+          "file": "precision-focused-native-tests.log.gz",
+          "source_bytes": 92934,
+          "source_sha256": "9511c4e9272aadec213a4f1523e08f914e19b7252f564238d0701ba03936b3bb",
+          "archive_sha256": "ea671f202818002f4a894e44c5de40f6c0ce07a95838173843490c56563327bd"
+        },
+        {
+          "file": "precision-focused-cache-identity.txt.gz",
+          "source_bytes": 1487,
+          "source_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+          "archive_sha256": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee"
+        }
+      ],
+      "gtests_ran": [
+        8,
+        10,
+        30,
+        8
+      ],
+      "gtests_passed": [
+        8,
+        9,
+        30,
+        8
+      ],
+      "failed_tests": [
+        "CudaDefaultGraph.HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsIndependent"
+      ]
+    },
+    {
+      "label": "hash-recovery",
+      "receipt": {
+        "candidate": "27f371303a4d3d76c15d79f1b4ea59da59a1b55b",
+        "route": "cuda",
+        "factors": [
+          "graph_route_cuda"
+        ],
+        "steps": [
+          {
+            "name": "build",
+            "argv": [
+              "cmd",
+              "/c",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-hash-recovery\\cuda\\build.cmd"
+            ],
+            "returncode": 0,
+            "seconds": 3.75
+          },
+          {
+            "name": "tests",
+            "argv": [
+              "ctest",
+              "--test-dir",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+              "-C",
+              "Release",
+              "--output-on-failure",
+              "--no-tests=error",
+              "-L",
+              "^(graph_route_cuda)$",
+              "-LE",
+              "headers",
+              "-j",
+              "1",
+              "--output-junit",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-deepseek-hash-recovery\\cuda\\tests.xml"
+            ],
+            "returncode": 0,
+            "seconds": 0.3
+          }
+        ],
+        "test_filter": "*.*HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsIndependent"
+      },
+      "batch_pass": true,
+      "files": [
+        {
+          "file": "hash-recovery-build.log.gz",
+          "source_bytes": 229,
+          "source_sha256": "ab771d8f883187e3bbfe3a408a1632973aff599af180faa8eec97446dcbcdfd6",
+          "archive_sha256": "e6467bc1d2ca21298910b38b758d571d9584b8b0751228e9d3f30a1bf7921101"
+        },
+        {
+          "file": "hash-recovery-tests.log.gz",
+          "source_bytes": 304,
+          "source_sha256": "7604f687b55fc85bc651d49bf86a9b265e4fde23155119267310fe238b4dc106",
+          "archive_sha256": "305d389b53779bd59f06f3d334af20c6e9b12cc0765970d94d9b5eee6c4387a2"
+        },
+        {
+          "file": "hash-recovery-tests.xml.gz",
+          "source_bytes": 1373,
+          "source_sha256": "1277b5254ebd6a43a03daa297612aaad01b9524a02de5c7cddd517dd543b4559",
+          "archive_sha256": "c311a3cb760074cf0697e902e54ce5959efe4f2a5a3abd7453f5cdc37b4bccf9"
+        },
+        {
+          "file": "hash-recovery-native-tests.log.gz",
+          "source_bytes": 1795,
+          "source_sha256": "9197c60ffc403b77610ee9f045e1df5b2a3bce5246d7a34c90a0f4cd3964d00c",
+          "archive_sha256": "601f46b0840e756bc11ab0e921a5a722fe3fb3cfa328369c47ff26ee8c4f40d9"
+        },
+        {
+          "file": "hash-recovery-cache-identity.txt.gz",
+          "source_bytes": 1487,
+          "source_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+          "archive_sha256": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee"
+        }
+      ],
+      "gtests_ran": [
+        1
+      ],
+      "gtests_passed": [
+        1
+      ],
+      "failed_tests": []
+    }
+  ],
+  "profile_cells_added": 0,
+  "limitations": [
+    "A5 delivery not run",
+    "A6 P1 not run",
+    "Apple/Vulkan pending"
+  ]
+}
