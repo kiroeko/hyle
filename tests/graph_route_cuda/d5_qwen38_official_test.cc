@@ -1061,6 +1061,26 @@ TEST(CudaGraphMoeFragments, D5GlmFlashPooledIndexerWithTail) {
   }
 }
 
+TEST(CudaGraphMoeFragments, D5GlmOfficialMixedRemaining) {
+  namespace glm = d5_glm_remaining_fragments;
+  run_q24_semantic_fragment(glm::official_flash_clamped_activation());
+  for (const auto &model : glm::kCases) {
+    if (!model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    run_q24_semantic_fragment(glm::dense_ffn(model));
+    for (int tail : {0, 3}) {
+      if (!model.flash && tail) continue;
+      run_q24_semantic_fragment(glm::indexer(model, tail));
+      run_q24_semantic_fragment(glm::sparse_attention(model, tail));
+    }
+    glm::check_index_carry(model, run_q24_semantic_fragment);
+    if (model.flash) {
+      run_q24_semantic_fragment(glm::mla(model));
+      glm::check_mtp_head(model, run_q24_semantic_fragment);
+    }
+  }
+}
+
 TEST(CudaGraphMoeFragments, D5GlmGgufDenseFfn) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (const auto &model : d5_glm_remaining_fragments::kCases) {

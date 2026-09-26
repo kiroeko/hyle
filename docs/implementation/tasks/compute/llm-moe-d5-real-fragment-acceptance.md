@@ -43,6 +43,9 @@ F39已在`9a7d5e5c`完成CUDA普通两入口：224次专家投影、两个完整
 [收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/README.md)。
 统一实现59,645行/237文件。该批不代签其它官方片段、其它路线、三交付和P1，ledger仍140/176。
 
+后续按[F40官方混合片段](llm-moe-d5-glm-official-mixed-fragments.md)批量连接两种GLM的
+dense FFN、indexer、可直接消费的混合MLA与NextN；保持各权重角色真实FP8/BF16边界。
+
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。
 Apple修正和静态故障注入已通过；Vulkan分类修正已验，数值失败仍保留。

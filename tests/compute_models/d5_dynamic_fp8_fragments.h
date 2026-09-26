@@ -139,6 +139,70 @@ inline sem::Fragment projection(const fp8::Case &shape, std::int64_t m,
   return f;
 }
 
+// Test consumer for arbitrary official FP8 linear roles. The encoded bytes
+// stay on the selected route; the independent host math is an oracle only.
+struct ModelLinear final {
+  sem::ValueId output;
+  std::int64_t n, k;
+  int seed;
+  std::vector<float> reference(std::span<const float> input) const {
+    std::vector<float> rounded(input.begin(), input.end());
+    for (auto &value : rounded) value = bfloat(value);
+    const auto quant = quantized(rounded, k, false);
+    std::vector<float> result(input.size() / k * n);
+    const fp8::Case shape{nullptr, n, k, false, "official linear"};
+    for (std::size_t token = 0; token < input.size() / k; ++token)
+      for (std::int64_t row = 0; row < n; ++row) {
+        double sum = 0;
+        for (int term = 0; term < 2; ++term) {
+          const auto col = (row * 17 + seed + term * (k / 2 + 13)) % k;
+          sum += quant[token * k + col] * fp8::kValues[(row + seed + term) % 4] *
+                 fp8::scale(shape, row / 128, col / 128, seed);
+        }
+        result[token * n + row] = bfloat(float(sum));
+      }
+    return result;
+  }
+};
+inline ModelLinear model_linear(sem::Fragment &f, sem::ValueId input,
+                                std::int64_t n, std::int64_t k, int seed) {
+  const auto description = c::float8_weight_description(k, n, c::Float8ScaleMode::kFloat32Block128).value();
+  std::vector<std::byte> storage(description.required_bytes().value());
+  const fp8::Case shape{f.profile, n, k, false, "official linear"};
+  for (std::int64_t row = 0; row < n; ++row)
+    for (int term = 0; term < 2; ++term) {
+      const auto col = (row * 17 + seed + term * (k / 2 + 13)) % k;
+      storage[row * k + col] = std::byte{fp8::kCodes[(row + seed + term) % 4]};
+    }
+  for (std::int64_t row = 0; row < (n + 127) / 128; ++row)
+    for (std::int64_t block = 0; block < k / 128; ++block) {
+      const float value = fp8::scale(shape, row, block, seed);
+      std::memcpy(storage.data() + n * k + (row * (k / 128) + block) * 4, &value, 4);
+    }
+  input = f.one(c::Operation(c::Cast{.output_type = c::DataType::kBFloat16}), {input});
+  const auto weight = f.constant(description, std::move(storage));
+  auto output = f.one(operation(false), {input, weight});
+  return {visible(f, output, true), n, k, seed};
+}
+
+inline sem::ValueId glm_gated(sem::Fragment &f, sem::ValueId packed, bool flash) {
+  if (flash) {
+    auto plain = visible(f, packed, true);
+    const auto desc = f.description(plain);
+    const auto axis = static_cast<std::int32_t>(desc.rank() - 1);
+    const auto width = desc.dimensions().back() / 2;
+    const auto half = [&](std::int64_t first) {
+      auto view = f.one(c::Operation(c::View::slice(axis, first, width).value()), {plain});
+      return f.one(c::Operation(c::Copy{}), {view});
+    };
+    auto gate = f.one(c::model_ops::clamp(-std::numeric_limits<float>::infinity(), 10.0F), {half(0)});
+    auto up = f.one(c::model_ops::clamp(-10.0F, 10.0F), {half(width)});
+    auto joined = f.one(c::Operation(c::Concat{.axis = axis}), {gate, up});
+    packed = f.one(c::Operation(c::Cast{c::DataType::kBFloat16}), {joined});
+  }
+  return f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kPackedHalves}), {packed});
+}
+
 inline sem::Fragment glm_shared_ffn(std::int64_t m, bool flash = false) {
   const auto &up_shape = fp8::kCases[flash ? 6 : 4];
   const auto &down_shape = fp8::kCases[flash ? 7 : 5];
@@ -146,8 +210,7 @@ inline sem::Fragment glm_shared_ffn(std::int64_t m, bool flash = false) {
   sem::Fragment f{.profile = up_shape.profile, .region = 0x0b0605};
   auto input = f.input(sem::dense({m, packed.k}, c::DataType::kBFloat16));
   auto gate_up = f.one(operation(false), {input, weight(f, packed)});
-  auto activated = f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kPackedHalves}),
-                         {gate_up});
+  auto activated = glm_gated(f, gate_up, flash);
   auto output = f.one(operation(false), {activated, weight(f, down_shape)});
   f.outputs = {visible(f, gate_up, true), visible(f, activated, true), visible(f, output, true)};
   for (int seed : {0, 1}) {
@@ -156,8 +219,9 @@ inline sem::Fragment glm_shared_ffn(std::int64_t m, bool flash = false) {
     std::vector<float> activation(m * up_shape.n);
     for (std::int64_t row = 0; row < m; ++row)
       for (std::int64_t col = 0; col < up_shape.n; ++col) {
-        const double gate = projected[row * packed.n + col];
-        const double up = projected[row * packed.n + up_shape.n + col];
+        double gate = projected[row * packed.n + col];
+        double up = projected[row * packed.n + up_shape.n + col];
+        if (flash) { gate = std::min(gate, 10.0); up = std::clamp(up, -10.0, 10.0); }
         activation[row * up_shape.n + col] = bfloat(float(gate / (1 + std::exp(-gate)) * up));
       }
     auto result = reference(down_shape, activation, true, false);

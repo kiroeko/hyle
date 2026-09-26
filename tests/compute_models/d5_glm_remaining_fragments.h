@@ -2,6 +2,8 @@
 
 #include "d5_kimi_remaining_fragments.h"
 #include "d5_glm_mtp_head_test.h"
+#include "d5_dynamic_fp8_fragments.h"
+#include "d5_grouped_fp8_fragments.h"
 
 // Model consumers, not product kernels. Native ggml storage and the exact
 // source formulas are fixed by d5_glm_remaining_facts.json and the D5 card.
@@ -21,6 +23,23 @@ using core::binary;
 using core::unary;
 using core::filled;
 using linear::Storage;
+
+struct MixedProjection final {
+  ValueId output;
+  std::function<std::vector<float>(std::span<const float>)> reference;
+};
+inline MixedProjection projection(Fragment &f, ValueId input, std::int64_t n,
+                                   std::int64_t k, int seed, bool fp8,
+                                   Storage plain = Storage::kQ8_0) {
+  if (fp8) {
+    auto value = d5_dynamic_fp8_fragments::model_linear(f, input, n, k, seed);
+    const auto output = value.output;
+    return {output, [value = std::move(value)](auto x) { return value.reference(x); }};
+  }
+  auto value = linear::projection(f, input, n, k, plain, seed);
+  const auto output = value.output;
+  return {output, [value = std::move(value)](auto x) { return value.reference(x); }};
+}
 
 struct Case final {
   const c::ModelArtifactProfileDescription *profile;
@@ -104,19 +123,18 @@ inline ValueId norm(Fragment &f, ValueId x, std::vector<float> &scales,
 }
 
 inline Fragment dense_ffn(const Case &model) {
-  if (model.official)
-    throw std::runtime_error("official GLM FFN requires native FP8, not a Q8 stand-in");
-  Fragment f{.profile = model.profile, .region = 0x02030801, .quantized = true};
+  Fragment f{.profile = model.profile, .region = 0x02030801, .quantized = !model.official};
   auto x = f.input(dense({1, model.hidden}));
   auto scales = sem::oracle::scale(model.hidden);
-  auto normalized = norm(f, x, scales);
-  auto g = linear::projection(f, normalized, 12288, model.hidden, Storage::kQ8_0, 173);
-  auto u = linear::projection(f, normalized, 12288, model.hidden, Storage::kQ8_0, 179);
+  auto normalized = norm(f, x, scales, model.official);
+  auto g = projection(f, normalized, 12288, model.hidden, 173, model.official);
+  auto u = projection(f, normalized, 12288, model.hidden, 179, model.official);
   const auto &moe_model = moe::cases::kCases[model.flash ? 11 : 8];
   auto gated = moe::gated(f, moe_model, g.output, u.output);
-  auto down = linear::projection(f, gated, model.hidden, 12288, Storage::kQ8_0, 181);
+  auto down = projection(f, gated, model.hidden, 12288, 181, model.official);
   auto residual = binary(f, c::BinaryKind::kAdd, x, down.output);
   f.outputs = {normalized, g.output, u.output, gated, down.output, residual};
+  if (model.official) f.bfloat_chain_outputs = {1, 2, 3, 4, 5};
   for (int seed : {3, 17, 29}) {
     auto input = d5_gguf_test::activation(model.hidden, seed);
     auto nx = sem::oracle::rms_norm_rows(input, scales, model.hidden, kNormEpsilon);
@@ -220,21 +238,33 @@ struct HeadProjection final {
   sem::Weight weight;
   std::int64_t n, k;
   ValueId output;
+  bool bfloat = false;
   std::vector<float> reference(std::span<const float> x) const {
     std::vector<std::int32_t> ids(kHeads);
     std::iota(ids.begin(), ids.end(), 0);
-    return moe::project(x, weight, ids, n, k);
+    if (!bfloat) return moe::project(x, weight, ids, n, k);
+    std::vector<float> rounded(x.begin(), x.end());
+    for (auto &value : rounded) value = linear::bf16(value);
+    auto result = moe::project(rounded, weight, ids, n, k);
+    for (auto &value : result) value = linear::bf16(value);
+    return result;
   }
 };
 inline HeadProjection head_projection(Fragment &f, ValueId x,
-                                       std::int64_t n, std::int64_t k, int seed) {
-  auto w = moe::weight(kHeads, n, k, moe::Storage::kQ8_0, seed);
+                                       std::int64_t n, std::int64_t k, int seed, bool bfloat = false) {
+  auto w = moe::weight(kHeads, n, k, bfloat ? moe::Storage::kBFloat16 : moe::Storage::kQ8_0, seed);
   std::vector<std::int32_t> ids(kHeads);
   std::iota(ids.begin(), ids.end(), 0);
   auto heads = f.constant(dense({1, kHeads}, c::DataType::kInt32), bytes(ids));
   auto weight = f.constant(w.description, std::move(w.storage));
+  const auto round = [&](ValueId value) {
+    value = f.one(c::Operation(c::Cast{c::DataType::kBFloat16}), {value});
+    return f.one(c::Operation(c::Cast{c::DataType::kFloat32}), {value});
+  };
+  if (bfloat) x = round(x);
   auto output = f.one(c::model_ops::grouped_matmul(), {weight, x, heads});
-  return {std::move(w), n, k, output};
+  if (bfloat) output = round(output);
+  return {std::move(w), n, k, output, bfloat};
 }
 
 inline void rotate_pairs(std::vector<float> &x, std::span<const float> cosine,
@@ -246,6 +276,27 @@ inline void rotate_pairs(std::vector<float> &x, std::span<const float> cosine,
       x[i] = float(a * cosine[p] - b * sine[p]);
       x[i + 1] = float(a * sine[p] + b * cosine[p]);
     }
+}
+
+inline Fragment official_flash_clamped_activation() {
+  namespace dynamic = d5_dynamic_fp8_fragments;
+  Fragment f{.profile = &core::profiles::glm53_flash_official, .region = 0x02030802};
+  auto input = f.input(dense({2, 128}, c::DataType::kBFloat16));
+  f.outputs = {dynamic::visible(f, dynamic::glm_gated(f, input, true), true)};
+  constexpr std::array values{-32.0F, -12.0F, -10.0F, -0.0F, 9.5F, 10.0F, 10.5F, 32.0F};
+  for (int seed : {0, 1}) {
+    std::vector<float> x(256), expected(128);
+    for (int row = 0; row < 2; ++row) for (int col = 0; col < 64; ++col) {
+      const float gate = values[(col + seed + row) % values.size()];
+      const float up = values[(col * 3 + seed + row + 2) % values.size()];
+      x[row * 128 + col] = gate; x[row * 128 + 64 + col] = up;
+      const double a = std::min(double(gate), 10.0), b = std::clamp(double(up), -10.0, 10.0);
+      expected[row * 64 + col] = dynamic::bfloat(float(a / (1 + std::exp(-a)) * b));
+    }
+    f.replays.push_back({{dynamic::input_bytes(x, true)}, {std::move(expected)}});
+  }
+  dynamic::strict_output_check(f, true, 1);
+  return f;
 }
 
 inline std::vector<float> layer_norm(std::span<const float> input,
@@ -269,8 +320,6 @@ inline std::vector<float> layer_norm(std::span<const float> input,
 inline Fragment indexer(const Case &model, std::int64_t tail = 0,
                          bool quantized_scores = false,
                          bool reverse_history = false) {
-  if (model.official && !model.flash)
-    throw std::runtime_error("official GLM DSA indexer needs its native FP8 roles");
   if (tail < 0 || tail > 3 || (!model.flash && tail))
     throw std::runtime_error("invalid GLM pool tail fixture");
   constexpr std::int64_t heads = 32, depth = 128, padding = 2, pools = 513;
@@ -284,8 +333,8 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
   ValueId past_gate{}, positions{};
   if (model.flash) past_gate = f.input(dense({history_count, depth}));
   else positions = f.input(dense({1}, c::DataType::kInt32));
-  auto wq = linear::projection(f, q_resid, heads * depth, model.query_rank, storage, 239);
-  auto wk = linear::projection(f, x, depth, model.hidden, storage, 241);
+  auto wq = projection(f, q_resid, heads * depth, model.query_rank, 239, model.official && !model.flash, storage);
+  auto wk = projection(f, x, depth, model.hidden, 241, model.official && !model.flash, storage);
   const auto score_storage = model.official ? Storage::kBFloat16
       : quantized_scores ? Storage::kQ8_0 : Storage::kF32;
   auto ws = linear::projection(f, x, heads, model.hidden, score_storage, 251);
@@ -373,6 +422,7 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
   auto key_check = f.one(c::Operation(c::Copy{}), {key});
   auto score_check = f.one(c::Operation(c::Copy{}), {scores});
   f.outputs = {next_cache, query_check, key_check, weights, keys, score_check, ids};
+  if (model.official && !model.flash) f.bfloat_chain_outputs = {0, 1, 2, 4, 5};
   f.state_ports = {{2, 0}};
   if (model.flash) { f.outputs.push_back(next_gates); f.state_ports.push_back({3, 7}); }
   f.unordered_ids = Fragment::UnorderedIds{6, model.flash ? 2051U : 2048U,
@@ -497,11 +547,11 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
 using MlaReference = std::function<moe::ReferenceOutputs(
     std::span<const float>, std::span<const float>, std::int32_t)>;
 inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
-  if (model.official)
-    throw std::runtime_error("official GLM MLA requires its mixed FP8 roles");
+  if (model.official && !model.flash)
+    throw std::runtime_error("official DSA kv_b requires qualified FP8 preparation for absorbed MLA");
   const std::int64_t rotary = model.flash ? 0 : 64;
   const auto no_pe = 256 - rotary, cached_width = kLatent + rotary;
-  Fragment f{.profile = model.profile, .region = 0x07030801, .quantized = true};
+  Fragment f{.profile = model.profile, .region = 0x07030801, .quantized = !model.official};
   auto x = f.input(dense({1, model.hidden}));
   auto history = f.input(dense({3, cached_width}));
   ValueId positions{}, frequencies{};
@@ -513,17 +563,17 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
     frequencies = f.constant(dense({32}), bytes(frequency_values));
   }
   auto input_scale = sem::oracle::scale(model.hidden);
-  auto nx = norm(f, x, input_scale);
-  auto qa = linear::projection(f, nx, model.query_rank, model.hidden, Storage::kQ8_0, 197);
+  auto nx = norm(f, x, input_scale, model.official);
+  auto qa = projection(f, nx, model.query_rank, model.hidden, 197, model.official);
   auto qscale = sem::oracle::scale(model.query_rank);
-  auto qr = norm(f, qa.output, qscale);
-  auto qb = linear::projection(f, qr, kHeads * 256, model.query_rank, Storage::kQ8_0, 199);
-  auto kva = linear::projection(f, nx, cached_width, model.hidden, Storage::kQ8_0, 211);
+  auto qr = norm(f, qa.output, qscale, model.official);
+  auto qb = projection(f, qr, kHeads * 256, model.query_rank, 199, model.official);
+  auto kva = projection(f, nx, cached_width, model.hidden, 211, model.official);
   auto latent = reshape(f, core::rows(f, reshape(f, kva.output, {cached_width, 1}), 0, kLatent), {1, kLatent});
   auto kvscale = sem::oracle::scale(kLatent);
-  latent = norm(f, latent, kvscale);
+  latent = norm(f, latent, kvscale, model.official);
   auto query_nope = kimi::slice_heads(f, qb.output, kHeads, 256, 0, no_pe);
-  auto kb = head_projection(f, query_nope, kLatent, no_pe, 223);
+  auto kb = head_projection(f, query_nope, kLatent, no_pe, 223, model.official);
   auto query = kb.output, current = latent;
   if (rotary) {
     auto qp = kimi::slice_heads(f, qb.output, kHeads, 256, no_pe, rotary);
@@ -544,10 +594,11 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
       .accumulation_type = c::DataType::kFloat32}),
       {reshape(f, query, {1, 1, kHeads, cached_width}),
        reshape(f, cache, {1, 4, 1, cached_width}), reshape(f, cv, {1, 4, 1, kLatent})});
-  auto vb = head_projection(f, reshape(f, attention, {1, kHeads, kLatent}), kValue, kLatent, 227);
-  auto out = linear::projection(f, reshape(f, vb.output, {1, kHeads * kValue}),
-                               model.hidden, kHeads * kValue, Storage::kQ8_0, 229);
+  auto vb = head_projection(f, reshape(f, attention, {1, kHeads, kLatent}), kValue, kLatent, 227, model.official);
+  auto out = projection(f, reshape(f, vb.output, {1, kHeads * kValue}),
+                         model.hidden, kHeads * kValue, 229, model.official);
   f.outputs = {next_cache, qb.output, query, attention, vb.output, out.output};
+  if (model.official) f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5};
   f.state_ports = {{1, 0}};
   auto evaluate = [model, rotary, no_pe, cached_width, input_scale, qscale,
       kvscale, frequency_values, qa = std::move(qa), qb = std::move(qb),
@@ -619,8 +670,8 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
 // cache are actual recurrent ports. Vocabulary/head and sparse-index carry
 // qualification remain separate, explicit consumers of these boundaries.
 inline Fragment mtp_decoder(const Case &model) {
-  if (model.official)
-    throw std::runtime_error("official NextN has real FP8 roles, not a BF16 stand-in");
+  if (model.official && !model.flash)
+    throw std::runtime_error("official DSA NextN awaits qualified absorbed FP8 MLA");
   const auto found = std::ranges::find_if(moe::cases::kCases,
       [&](const auto &candidate) { return candidate.profile == model.profile; });
   if (found == moe::cases::kCases.end())
@@ -633,9 +684,12 @@ inline Fragment mtp_decoder(const Case &model) {
   // Normalized decoder activations have unit scale. A 0.5 synthetic router
   // coefficient avoids the saturation produced by the standalone fixture's
   // gain64, whose deliberately small input has a different scale.
-  auto moe_recipe = moe::moe_chain(*found, false, false, &feed_forward_reference, 0.5F);
+  auto moe_recipe = model.official
+      ? d5_grouped_fp8_fragments::glm_moe(model.flash, &feed_forward_reference, 0.5F)
+      : moe::moe_chain(*found, false, false, &feed_forward_reference, 0.5F);
+  const auto moe_output = model.official ? 7u : 5u;
   const auto cached_width = kLatent + (model.flash ? 0 : 64);
-  Fragment f{.profile = model.profile, .region = 0x0d030802, .quantized = true};
+  Fragment f{.profile = model.profile, .region = 0x0d030802, .quantized = !model.official};
   auto hidden = f.input(dense({1, model.hidden}));
   auto embedding = f.input(dense({1, model.hidden}));
   auto history = f.input(dense({3, cached_width}));
@@ -647,13 +701,13 @@ inline Fragment mtp_decoder(const Case &model) {
       : attach(f, std::move(attention_recipe), {eh, history, position});
   auto residual = binary(f, c::BinaryKind::kAdd, eh, attention[5]);
   auto ffn_scale = sem::oracle::scale(model.hidden);
-  auto ffn_input = norm(f, residual, ffn_scale);
+  auto ffn_input = norm(f, residual, ffn_scale, model.official);
   auto feed_forward = attach(f, std::move(moe_recipe), {ffn_input});
   auto combined = binary(f, c::BinaryKind::kAdd, residual,
-      reshape(f, feed_forward[5], {1, model.hidden}));
+      reshape(f, feed_forward[moe_output], {1, model.hidden}));
   auto head_scale = sem::oracle::scale(model.hidden);
   std::reverse(head_scale.begin(), head_scale.end());
-  auto next_hidden = norm(f, combined, head_scale);
+  auto next_hidden = norm(f, combined, head_scale, model.official);
   // Quantized upstream projections may swap the order of two selected experts
   // without changing their membership. Canonicalize only diagnostic ports so
   // weights are compared by expert ID; the actual MoE retains its native order.
@@ -663,7 +717,8 @@ inline Fragment mtp_decoder(const Case &model) {
   auto ordered_weights = f.one(c::Operation(c::Gather{}),
       {reshape(f, feed_forward[1], {found->top_k, 1}), ordered[1]});
   f.outputs = {next_hidden, attention[0], eh, attention[5], ffn_input,
-               feed_forward[5], ordered[0], ordered_weights};
+               feed_forward[moe_output], ordered[0], ordered_weights};
+  if (model.official) f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5, 7};
   f.exact_outputs = {6};
   f.state_ports = {{0, 0}, {2, 1}};
   auto hidden_values = d5_gguf_test::activation(model.hidden, 5);
@@ -688,11 +743,11 @@ inline Fragment mtp_decoder(const Case &model) {
       ids[i] = mv[0][order[i]];
       weights[i] = mv[1][order[i]];
     }
-    for (std::size_t d = 0; d < rv.size(); ++d) rv[d] += mv[5][d];
+    for (std::size_t d = 0; d < rv.size(); ++d) rv[d] += mv[moe_output][d];
     hidden_values = sem::oracle::rms_norm_rows(rv, head_scale, model.hidden, kNormEpsilon);
     past = av[0];
     replay.outputs = {hidden_values, past, std::move(input_values[3]), std::move(av[5]),
-        std::move(normalized), std::move(mv[5]), std::move(ids), std::move(weights)};
+        std::move(normalized), std::move(mv[moe_output]), std::move(ids), std::move(weights)};
     f.replays.push_back(std::move(replay));
   }
   return f;
@@ -725,8 +780,6 @@ inline std::vector<float> attention_reference(
 // Connect actual DSA-selected token IDs to the compressed MLA cache. Projection
 // outputs are explicit fragment ports; no host readback selects the rows.
 inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
-  if (model.official)
-    throw std::runtime_error("official full MLA projection qualification remains separate");
   auto f = indexer(model, tail);
   f.region = 0x07080310 + std::uint64_t(tail);
   const auto width = kLatent + (model.flash ? 0 : 64);

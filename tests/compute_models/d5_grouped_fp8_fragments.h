@@ -75,7 +75,8 @@ inline sem::Fragment projection(const fp8::Case &shape, std::int64_t m, bool bf1
   return f;
 }
 
-inline sem::Fragment glm_moe(bool flash) {
+inline sem::Fragment glm_moe(bool flash,
+    d5_moe_execution_fragments::MoeReference *oracle = nullptr, float router_gain = 64.0F) {
   namespace moe = d5_moe_execution_fragments;
   namespace core = d5_moe_semantic_fragments;
   const auto &model = d5_moe_execution_cases::kCases[flash ? 10 : 7];
@@ -84,13 +85,13 @@ inline sem::Fragment glm_moe(bool flash) {
   const fp8::Case packed{up.profile, up.n * 2, up.k, false, "packed gate/up"};
   sem::Fragment f{.profile = model.profile, .region = 0x0b0607};
   auto input = f.input(sem::dense({1, model.hidden}));
-  auto route = moe::routing(f, model, input);
+  auto route = moe::routing(f, model, input, false, router_gain);
   auto cast = f.one(c::Operation(c::Cast{.output_type = c::DataType::kBFloat16}), {input});
   auto slots = core::reshape(f, cast, {1, 1, model.hidden});
   auto projected = f.one(c::model_ops::grouped_float8_linear(),
       {weight(f, 9, packed.n, packed.k), slots, route.ids});
   const auto gated = [&](sem::ValueId value) {
-    return f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kPackedHalves}), {value});
+    return dynamic::glm_gated(f, value, flash);
   };
   auto activation = gated(projected);
   auto routed = f.one(c::model_ops::grouped_float8_linear(),
@@ -108,17 +109,19 @@ inline sem::Fragment glm_moe(bool flash) {
       routed_f32, combined, shared_f32, output};
   f.exact_outputs = {0};
   f.bfloat_chain_outputs = {2, 3, 4, 5, 6, 7};
-  const auto activate = [&](std::span<const float> values, std::int64_t rows) {
-    std::vector<float> result(rows * up.n);
-    for (std::int64_t row = 0; row < rows; ++row) for (std::int64_t col = 0; col < up.n; ++col) {
-      const double gate = values[row * packed.n + col], u = values[row * packed.n + up.n + col];
-      result[row * up.n + col] = dynamic::bfloat(float(gate / (1 + std::exp(-gate)) * u));
+  const auto activate = [width = up.n, packed_width = packed.n, flash](std::span<const float> values, std::int64_t rows) {
+    std::vector<float> result(rows * width);
+    for (std::int64_t row = 0; row < rows; ++row) for (std::int64_t col = 0; col < width; ++col) {
+      double gate = values[row * packed_width + col], u = values[row * packed_width + width + col];
+      if (flash) { gate = std::min(gate, 10.0); u = std::clamp(u, -10.0, 10.0); }
+      result[row * width + col] = dynamic::bfloat(float(gate / (1 + std::exp(-gate)) * u));
     }
     return result;
   };
-  for (int seed : {0, 1}) {
-    auto x = moe::activation(model, seed);
-    const auto selected = moe::route_reference(model, x);
+  auto evaluate = [model, packed, down, activate, router_gain](std::span<const float> input) -> moe::ReferenceOutputs {
+    std::vector<float> x(input.begin(), input.end());
+    for (auto &value : x) value = dynamic::bfloat(value);
+    const auto selected = moe::route_reference(model, x, router_gain);
     auto g = reference(x, selected.ids, packed.n, packed.k, true, true);
     auto a = activate(g, 8);
     auto r = reference(a, selected.ids, down.n, down.k, false, true);
@@ -133,8 +136,13 @@ inline sem::Fragment glm_moe(bool flash) {
     auto sh = dynamic::reference(down, sa, true, false);
     std::vector<float> out(model.hidden);
     for (std::int64_t col = 0; col < model.hidden; ++col) out[col] = sum[col] + sh[col];
-    f.replays.push_back({{sem::bytes(x)}, {selected.tags, selected.weights, std::move(g),
-        std::move(a), std::move(r), std::move(sum), std::move(sh), std::move(out)}});
+    return {selected.tags, selected.weights, std::move(g), std::move(a), std::move(r),
+        std::move(sum), std::move(sh), std::move(out)};
+  };
+  if (oracle) { *oracle = std::move(evaluate); return f; }
+  for (int seed : {0, 1}) {
+    auto x = moe::activation(model, seed);
+    f.replays.push_back({{sem::bytes(x)}, evaluate(x)});
   }
   return f;
 }
