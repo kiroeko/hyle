@@ -1,0 +1,79 @@
+{
+  "candidate_before": "4f18811a45d6cb378388e975986f3b6d111c1565",
+  "candidate_after": "b111e3b7f2b3e714d888442c136a9d9eed94648c",
+  "scope": "CPU focused correctness; not a whole-profile, delivery, or performance receipt",
+  "actual_gtest_cases_passed": 7,
+  "empty_filtered_cpu_executor_is_not_coverage": true,
+  "phase_reproduction": [
+    {
+      "position": 2380,
+      "frequency_f32": 0.4728708267211914,
+      "multiply_f32": 1125.4326171875,
+      "reciprocal_then_divide_f32": 1125.4324951171875,
+      "difference": -0.0001220703125
+    },
+    {
+      "position": 65536,
+      "frequency_f32": 0.4728708267211914,
+      "multiply_f32": 30990.0625,
+      "reciprocal_then_divide_f32": 30990.060546875,
+      "difference": -0.001953125
+    }
+  ],
+  "files": [
+    {
+      "file": "before-receipt.json.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r2\\cpu\\receipt.json",
+      "uncompressed_sha256": "b3d72cf39c56166f2057039abcf981649eb6e7bd739558a4f31eff9c693450d3",
+      "bytes": 1118
+    },
+    {
+      "file": "before-tests.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r2\\cpu\\tests.log",
+      "uncompressed_sha256": "fc7e2cbb10b21e575e6295984353983d4ad00215f5382251c0fc79b7d811459d",
+      "bytes": 1508735
+    },
+    {
+      "file": "before-tests.xml.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r2\\cpu\\tests.xml",
+      "uncompressed_sha256": "b786452f7e89a4da7b0fc01037123999f39d2b550f0d434b01782bbb570fe981",
+      "bytes": 623838
+    },
+    {
+      "file": "after-receipt.json.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\receipt.json",
+      "uncompressed_sha256": "3e9009f34eb79763ad64d51ea457107aaaa7c4076311e7603144abdad5dc0cbf",
+      "bytes": 1194
+    },
+    {
+      "file": "after-build.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\build.log",
+      "uncompressed_sha256": "41ca4be5b484d9c4ffb37800f26711ea8f3e78c535c8e57a07d2e83448885a75",
+      "bytes": 9100
+    },
+    {
+      "file": "after-tests.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\tests.log",
+      "uncompressed_sha256": "e9424e5f3aa63e718c131f6af990a2ec74b2fe9b09cf96b3a3b668895e13b61d",
+      "bytes": 807
+    },
+    {
+      "file": "after-tests.xml.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\tests.xml",
+      "uncompressed_sha256": "117f94a1f296825fa9467d96fa50ebd36ae08124c9461c50e5e72974f6ad21a9",
+      "bytes": 4912
+    },
+    {
+      "file": "after-native-tests.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\native-tests.log",
+      "uncompressed_sha256": "f2eddf9546af2fc93ec8a9f65c006913ff7d9f42d33ad78b6a71741270840adb",
+      "bytes": 6856
+    },
+    {
+      "file": "after-cache-identity.txt.gz",
+      "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\cache-identity.txt",
+      "uncompressed_sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72",
+      "bytes": 2205
+    }
+  ]
+}

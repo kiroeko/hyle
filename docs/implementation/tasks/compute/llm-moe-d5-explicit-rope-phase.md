@@ -38,3 +38,11 @@ dispatch 成本增加，不能沿用旧 RoPE 的性能结论。P0 检查节点�
 当前批次；只允许一轮具体失败纠正。新能力或成本等级变化须重新定界；不无限追加数值姿势。
 三交付与 P1 保持 D5-A5/A6 待验，单片段通过不代签完整画像。运行既有 selector、closure、docs；
 registry 迁移使用本轮 baseline 作为 previous-ref。
+
+## 首次修正结果
+
+候选 `b111e3b7` 的 CPU 定向7项全部通过：既有成熟线性/RoPE/Hadamard与F16/BF16边界、
+新增长位置/负频率/零频率/partial tail，以及Direct/Graph完整DeepSeek attention和压缩状态。
+相同失败用例未修改oracle、误差门或位置；前后原始证据见
+[显式相位证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/explicit-rope-phase/README.md)。
+CPU完整owner批次运行中，GPU路线、三交付和P1尚未验收；不增加完整画像格，不写CLOSED。
