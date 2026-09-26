@@ -88,3 +88,11 @@ baseline `23b32233`。候选 `87f2cb03` 的 CUDA Direct 144项中142项通过；
 不能上传新增的压缩cache发布掩码；产品既有Select和MLX Bool入口不缺失。
 本次仅补两个测试上传adapter的Bool字节→MLX Bool转换，不改数学、产品源码或误差门；
 然后只运行这四个失败项。原完整批次证据保留，其余通过项不因测试adapter变化重跑。
+
+### Vulkan 同一残余边界的消费者核对
+
+首批执行期间的源码核对发现：Direct测试只允许F32布局Copy，仍会错误拒绝新I32位置切片
+和Bool Select。`vulkan_tensor.cc`为两者分别固定Copy/Select的既有字节dispatch；D4-10已明确
+保留这些边界，ggml region不声明Select。仅将该测试断言补齐到同类型I32 Copy与Bool条件/F32
+值的Select，其它算术继续要求成熟region。此时首批尚未返回，不将源码判断记作运行通过；
+其原始候选和整批日志保留，待终态后再与实际失败合并作一次定向验证。

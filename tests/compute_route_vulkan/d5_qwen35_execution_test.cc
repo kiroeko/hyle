@@ -76,16 +76,26 @@ Call prepare(const v::Context &context, const c::WorkloadContext &workload,
   });
   if (!mature && operation.get_if<c::Copy>()) {
     // D4 retains the byte-addressed layout adapter at mature region boundaries.
-    // Only a same-type permuted F32 copy qualifies here, never arithmetic.
+    // A permuted F32 copy or an I32 position slice is a storage boundary.
     EXPECT_EQ(state.inputs.size(), 1U);
     EXPECT_EQ(state.outputs.size(), 1U);
     const auto &input = state.values[state.inputs[0]].description;
     const auto &output = state.values[state.outputs[0]].description;
-    EXPECT_EQ(input.data_type(), c::DataType::kFloat32);
+    EXPECT_TRUE(input.data_type() == c::DataType::kFloat32 ||
+                input.data_type() == c::DataType::kInt32);
     EXPECT_EQ(output.data_type(), input.data_type());
     EXPECT_TRUE(std::ranges::equal(input.dimensions(), output.dimensions()));
-    EXPECT_NE(input, output);
+    if (input.data_type() == c::DataType::kFloat32) EXPECT_NE(input, output);
     EXPECT_EQ(output, c::TensorDesc::dense(input.data_type(), input.dimensions()).value());
+    EXPECT_EQ(dispatches.size(), 1U);
+    EXPECT_TRUE(dispatches.front().pipeline != nullptr);
+    EXPECT_TRUE(dispatches.front().tensor_byte_origins);
+  } else if (!mature && operation.get_if<c::Select>()) {
+    // D4 also retains Bool Select for cache publication; no math fallback.
+    EXPECT_EQ(arguments.size(), 3U);
+    EXPECT_EQ(arguments[0].description().data_type(), c::DataType::kBool);
+    EXPECT_EQ(arguments[1].description().data_type(), c::DataType::kFloat32);
+    EXPECT_EQ(arguments[2].description().data_type(), c::DataType::kFloat32);
     EXPECT_EQ(dispatches.size(), 1U);
     EXPECT_TRUE(dispatches.front().pipeline != nullptr);
     EXPECT_TRUE(dispatches.front().tensor_byte_origins);
