@@ -389,6 +389,19 @@ noncausal，超出既有成熟causal入口；改为右对齐causal后所有已�
 原始失败与最终通过日志见上方新检查点。两组新consumer共16组通过仍不代签完整R13、画像、
 三交付或P1；后续严格限定到本节既定carry/reset、完整head组合与具名官方FP8缺口。
 
+**MTP余项接线（baseline `2d1e22a4`，同一A2/A3、产品FIX0）：** 复用现有分片head消费者，
+输入改为普通decoder实际输出，全部154880 logits对独立decoder轨迹推进的参考逐片核对。
+为避免同时驻留完整词表权重，正确性consumer在两个已准备片段边界读回/上传hidden；该成本
+显式保留，不宣称GPU零拷贝或据此签P1。已有词表prepare/upload/run适配器只增加可选输入/参考。
+共享测试observer收集真实输出，不将其替换进独立decoder oracle。
+
+索引状态依据同一SGLang pin的 `forward_mla.py::should_run_indexer`：NextN无carry才计算，
+否则复用；`mtp_iteration`结束清空。测试先实际运行indexer取得两组独立验过的种子，再用原生
+I32端口与实际反馈重复驱动compressed-cache Gather/Attention，保留Flash尾token/-1边界；
+新一轮显式丢弃旧种子并绑定另一组。测试共享状态反馈按I32编码整数，不把数值float字节误当索引。
+这验证已有计算/绑定机制，迭代策略仍在测试consumer，不向库增加推理引擎状态机。
+本批一次接齐八入口，冻结候选后串行验证上述组合、已有GLM与共享状态消费者回归；门不放宽。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

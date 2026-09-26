@@ -28,7 +28,9 @@ inline c::TensorDesc dense(c::DataType type,
 
 template <class Prepare, class Run>
 void check_head(const v::Context &context, const cases::Case &profile,
-                Prepare prepare, Run run) {
+                Prepare prepare, Run run,
+                std::span<const std::vector<float>> observed_inputs = {},
+                std::span<const std::vector<float>> reference_inputs = {}) {
   const auto type = fixture::data_type(profile.output);
   const auto activation_desc = dense(type, {1, profile.hidden});
   const auto workload = d5_qwen35_fixture::workload(
@@ -63,7 +65,8 @@ void check_head(const v::Context &context, const cases::Case &profile,
     });
     return result;
   };
-  check::check_head(profile, make_head, upload_weight, execute);
+  check::check_head(profile, make_head, upload_weight, execute,
+                    observed_inputs, reference_inputs);
 }
 
 template <class Prepare, class Run>

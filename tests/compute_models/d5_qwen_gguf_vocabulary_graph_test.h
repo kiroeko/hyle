@@ -64,7 +64,9 @@ struct Call final {
 template <class Compile>
 void check_head(const c::Context &context, mem::MemoryResourceRef resource,
                 std::span<const c::ProviderId> providers,
-                const cases::Case &profile, Compile compile) {
+                const cases::Case &profile, Compile compile,
+                std::span<const std::vector<float>> observed_inputs = {},
+                std::span<const std::vector<float>> reference_inputs = {}) {
   const auto type = fixture::data_type(profile.output);
   const auto activation_desc = dense(type, {1, profile.hidden});
   const auto workload = d5_qwen35_fixture::workload(
@@ -141,7 +143,8 @@ void check_head(const c::Context &context, mem::MemoryResourceRef resource,
         profile.output,
         read(output, dense(type, {1, shard.rows}).required_bytes().value()));
   };
-  check::check_head(profile, make_head, upload_weight, execute);
+  check::check_head(profile, make_head, upload_weight, execute,
+                    observed_inputs, reference_inputs);
 }
 
 template <class Compile>

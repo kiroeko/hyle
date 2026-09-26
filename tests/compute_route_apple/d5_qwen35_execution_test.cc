@@ -1563,13 +1563,13 @@ TEST(AppleMoeFragments, D5GlmGgufDenseFfn) {
   }
 }
 
-TEST(AppleMoeFragments, D5GlmGgufNextNDecoderWithCarry) {
+TEST(AppleMoeFragments, D5GlmGgufNextNDecoderWithCarryAndFullHead) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (const auto &model : d5_glm_remaining_fragments::kCases) {
     if (model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
-    run_q24_semantic_fragment(d5_glm_remaining_fragments::mtp_decoder(model));
+    d5_glm_remaining_fragments::check_mtp_head(model, run_q24_semantic_fragment);
   }
 }
 
@@ -1583,6 +1583,16 @@ TEST(AppleMoeFragments, D5GlmGgufDsaSelectionConsumesMlaCache) {
       SCOPED_TRACE(tail);
       run_q24_semantic_fragment(d5_glm_remaining_fragments::sparse_attention(model, tail));
     }
+  }
+}
+
+TEST(AppleMoeFragments, D5GlmGgufMtpIndexCarryReset) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+    if (model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.profile->variant);
+    d5_glm_remaining_fragments::check_index_carry(model, run_q24_semantic_fragment);
   }
 }
 
@@ -2139,3 +2149,29 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::ValuesIn(d5_moe_profile_cases::kVocabularyPointers));
 
 } // namespace
+
+void d5_glm_mtp_test::check_head(
+    const d5_qwen_gguf_vocabulary_cases::Case &profile,
+    std::span<const std::vector<float>> observed,
+    std::span<const std::vector<float>> reference) {
+  namespace gguf = d5_qwen_gguf_vocabulary_apple_test;
+  auto context = a::Context::create().value();
+  const auto prepare_native = [&](const c::WorkloadContext &workload,
+                                  c::Operation operation,
+                                  const c::TensorDesc &left,
+                                  const c::TensorDesc &right) {
+    const std::array specs{a::input_spec(left).value(),
+                           a::input_spec(right).value()};
+    return Call{context.prepare(operation, specs, workload).value()};
+  };
+  const auto upload_dense = [&](const c::TensorDesc &description,
+                                std::span<const std::byte> bytes) {
+    return upload(context, description, bytes);
+  };
+  gguf::check_head(profile, prepare_native, upload_dense,
+                   [](std::span<const std::byte> bytes) {
+                     return packed_array(bytes);
+                   },
+                   [](Call &call, const mx::array &left,
+                      const mx::array &right) { return run(call, left, right); }, observed, reference);
+}

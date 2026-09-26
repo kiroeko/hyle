@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include "../compute_models/d5_glm_mtp_head_test.h"
 
 #include "../compute_models/d5_moe_profile_cases.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_direct_test.h"
@@ -45,3 +46,13 @@ INSTANTIATE_TEST_SUITE_P(
     D5ExactMoeVocabulary, CudaQwenGgufVocabulary,
     ::testing::ValuesIn(d5_moe_profile_cases::kVocabularyPointers));
 } // namespace
+
+void d5_glm_mtp_test::check_head(
+    const d5_qwen_gguf_vocabulary_cases::Case &profile,
+    std::span<const std::vector<float>> observed,
+    std::span<const std::vector<float>> reference) {
+  auto context = cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  direct::check_head(context, memory.ref(), kMatureProviders, profile, observed, reference);
+}

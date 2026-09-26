@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include "../compute_models/d5_glm_mtp_head_test.h"
 
 #include "../compute_models/d5_moe_profile_cases.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_direct_test.h"
@@ -39,3 +40,12 @@ INSTANTIATE_TEST_SUITE_P(
     D5ExactMoeVocabulary, CpuQwenGgufVocabulary,
     ::testing::ValuesIn(d5_moe_profile_cases::kVocabularyPointers));
 } // namespace
+
+void d5_glm_mtp_test::check_head(
+    const d5_qwen_gguf_vocabulary_cases::Case &profile,
+    std::span<const std::vector<float>> observed,
+    std::span<const std::vector<float>> reference) {
+  auto context = hyle::compute::cpu::create_context().value();
+  direct::check_head(context, hyle::mem::system_resource(),
+                     kMatureProviders, profile, observed, reference);
+}

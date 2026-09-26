@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d5_kimi_remaining_fragments.h"
+#include "d5_glm_mtp_head_test.h"
 
 // Model consumers, not product kernels. Native ggml storage and the exact
 // source formulas are fixed by d5_glm_remaining_facts.json and the D5 card.
@@ -266,7 +267,8 @@ inline std::vector<float> layer_norm(std::span<const float> input,
 // Only positions/validity are host model policy. Projections, learned pooling,
 // scoring, TopK and expansion all execute through mature route operations.
 inline Fragment indexer(const Case &model, std::int64_t tail = 0,
-                         bool quantized_scores = false) {
+                         bool quantized_scores = false,
+                         bool reverse_history = false) {
   if (model.official && !model.flash)
     throw std::runtime_error("official GLM DSA indexer needs its native FP8 roles");
   if (tail < 0 || tail > 3 || (!model.flash && tail))
@@ -378,7 +380,8 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
   std::vector<float> past(history_count * depth), gate_history(past.size());
   for (std::int64_t t = padding; t < history_count; ++t)
     for (std::int64_t d = 0; d < depth; ++d) {
-      past[t * depth + d] = (0.125F + float(t - padding) / 8.0F) *
+      const auto age = reverse_history ? history_count - 1 - t : t - padding;
+      past[t * depth + d] = (0.125F + float(age) / 8.0F) *
                             (0.5F + float(d % 11) / 32.0F);
       gate_history[t * depth + d] = float((t * 7 + d * 11) % 29 - 14) / 8.0F;
     }
@@ -694,6 +697,31 @@ inline Fragment mtp_decoder(const Case &model) {
   }
   return f;
 }
+inline std::vector<float> attention_reference(
+    std::span<const float> q, std::span<const float> cache,
+    std::span<const float> selected_ids, std::int64_t selected, std::int64_t width) {
+  const auto tokens = static_cast<std::int64_t>(cache.size()) / width;
+  std::vector<float> expected(kHeads * kLatent);
+  for (std::int64_t h = 0; h < kHeads; ++h) {
+    std::vector<double> scores(selected);
+    for (std::int64_t t = 0; t < selected; ++t) {
+      const auto row = std::int64_t(selected_ids[t]);
+      if (row < 0 || row >= tokens) throw std::runtime_error("invalid DSA reference row");
+      for (std::int64_t d = 0; d < width; ++d)
+        scores[t] += double(q[h * width + d]) * cache[row * width + d] / 16.0;
+    }
+    const double largest = *std::max_element(scores.begin(), scores.end());
+    double total = 0;
+    for (auto &score : scores) total += score = std::exp(score - largest);
+    for (std::int64_t d = 0; d < kLatent; ++d) {
+      double value = 0;
+      for (std::int64_t t = 0; t < selected; ++t)
+        value += scores[t] / total * cache[std::int64_t(selected_ids[t]) * width + d];
+      expected[h * kLatent + d] = float(value);
+    }
+  }
+  return expected;
+}
 // Connect actual DSA-selected token IDs to the compressed MLA cache. Projection
 // outputs are explicit fragment ports; no host readback selects the rows.
 inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
@@ -743,25 +771,7 @@ inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
     auto cache = past;
     cache.insert(cache.end(), kv.begin(), kv.end());
     const auto &selected_ids = replay.outputs[6];
-    std::vector<float> expected(kHeads * kLatent);
-    for (std::int64_t h = 0; h < kHeads; ++h) {
-      std::vector<double> scores(selected);
-      for (std::int64_t t = 0; t < selected; ++t) {
-        const auto row = std::int64_t(selected_ids[t]);
-        if (row < 0 || row >= tokens) throw std::runtime_error("invalid DSA reference row");
-        for (std::int64_t d = 0; d < width; ++d)
-          scores[t] += double(q[h * width + d]) * cache[row * width + d] / 16.0;
-      }
-      const double largest = *std::max_element(scores.begin(), scores.end());
-      double total = 0;
-      for (auto &score : scores) total += score = std::exp(score - largest);
-      for (std::int64_t d = 0; d < kLatent; ++d) {
-        double value = 0;
-        for (std::int64_t t = 0; t < selected; ++t)
-          value += scores[t] / total * cache[std::int64_t(selected_ids[t]) * width + d];
-        expected[h * kLatent + d] = float(value);
-      }
-    }
+    auto expected = attention_reference(q, cache, selected_ids, selected, width);
     past.clear();
     for (auto row : retained)
       past.insert(past.end(), cache.begin() + row * width, cache.begin() + (row + 1) * width);
@@ -769,5 +779,90 @@ inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
     replay.outputs.push_back(std::move(expected));
   }
   return f;
+}
+// Cross the declared staging boundary using real decoder outputs. The head's
+// oracle instead receives the independently evolved decoder trajectory.
+template <class Run> void check_mtp_head(const Case &model, Run run) {
+  auto fragment = mtp_decoder(model);
+  std::vector<std::vector<float>> observed, reference;
+  for (const auto &replay : fragment.replays) reference.push_back(replay.outputs[0]);
+  fragment.observe = [&](std::size_t port, std::span<const float> values) {
+    if (port == 0) observed.emplace_back(values.begin(), values.end());
+  };
+  run(std::move(fragment));
+  ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  ASSERT_EQ(observed.size(), reference.size());
+  const auto found = std::ranges::find_if(core::profiles::kVocabulary,
+      [&](const auto &candidate) { return candidate.profile == model.profile; });
+  ASSERT_NE(found, core::profiles::kVocabulary.end());
+  ASSERT_EQ(found->vocabulary_rows, 154880);
+  d5_glm_mtp_test::check_head(*found, observed, reference);
+}
+
+// The model consumer controls when a carried selection is invalidated. Each
+// native invocation sees either a fresh I32 seed or its own preceding output;
+// no indexer is executed during these reuse steps.
+template <class Run> void check_index_carry(const Case &model, Run run) {
+  for (int tail : {0, 3}) {
+    if (!model.flash && tail) continue;
+    SCOPED_TRACE(tail);
+    std::array<std::vector<float>, 2> observed, reference;
+    for (std::size_t iteration = 0; iteration < 2; ++iteration) {
+      // A different context has a reversed initial history; both selections
+      // come from the real indexer and are checked against its independent oracle.
+      auto seed = indexer(model, tail, false, iteration != 0);
+      seed.replays.resize(1);
+      reference[iteration] = seed.replays[0].outputs[6];
+      seed.observe = [&](std::size_t port, std::span<const float> values) {
+        if (port == 6) observed[iteration].assign(values.begin(), values.end());
+      };
+      run(std::move(seed));
+      ASSERT_FALSE(::testing::Test::HasFatalFailure());
+      ASSERT_EQ(observed[iteration].size(), reference[iteration].size());
+    }
+    ASSERT_FALSE(std::is_permutation(reference[0].begin(), reference[0].end(),
+                                    reference[1].begin(), reference[1].end()));
+    const std::int64_t count = model.flash ? 2051 : 2048;
+    const std::int64_t selected = 2048 + tail, tokens = 2054 + tail;
+    const auto width = kLatent + (model.flash ? 0 : 64);
+    Fragment f{.profile = model.profile, .region = 0x0d030820 + std::uint64_t(tail)};
+    auto ids = f.input(dense({count}, c::DataType::kInt32));
+    auto query = f.input(dense({1, 1, kHeads, width}));
+    auto cache = f.input(dense({tokens, width}));
+    std::vector<std::int32_t> all(count);
+    std::iota(all.begin(), all.end(), 0);
+    auto all_ids = f.constant(dense({count}, c::DataType::kInt32), bytes(all));
+    auto carried = f.one(c::Operation(c::Gather{}), {ids, all_ids});
+    auto valid = carried;
+    if (count != selected)
+      valid = reshape(f, core::rows(f, reshape(f, valid, {count, 1}), 0, selected), {selected});
+    auto chosen = f.one(c::Operation(c::Gather{}), {cache, valid});
+    auto values = kimi::slice_heads(f, chosen, selected, width, 0, kLatent);
+    auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
+        .scale = 1.0F / 16.0F, .causal = true,
+        .accumulation_type = c::DataType::kFloat32}),
+        {query, reshape(f, chosen, {1, selected, 1, width}),
+         reshape(f, values, {1, selected, 1, kLatent})});
+    f.outputs = {carried, attention};
+    f.state_ports = {{0, 0}};
+    f.exact_outputs = {0};
+    for (int step = 0; step < 4; ++step) {
+      const auto iteration = static_cast<std::size_t>(step / 2);
+      std::vector<std::int32_t> input(count, -1);
+      if (step % 2 == 0)
+        std::transform(observed[iteration].begin(), observed[iteration].end(),
+                       input.begin(), [](float value) { return static_cast<std::int32_t>(value); });
+      auto q = d5_gguf_test::activation(kHeads * width, 101 + step * 14);
+      auto kv = d5_gguf_test::activation(tokens * width, 113 + step * 14);
+      for (auto &value : q) value /= 4;
+      for (auto &value : kv) value *= 4;
+      sem::Replay replay{{bytes(input), bytes(q), bytes(kv)},
+          {observed[iteration], attention_reference(q, kv, reference[iteration], selected, width)}};
+      replay.reset_state = step == 2;
+      f.replays.push_back(std::move(replay));
+    }
+    run(std::move(f));
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
 }
 } // namespace d5_glm_remaining_fragments

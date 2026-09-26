@@ -22,22 +22,32 @@ namespace vocab = d5_qwen_vocabulary_fixture;
 // every Direct/Graph route and every exact embedding/output-head storage role.
 template <class Prepare, class Upload, class Execute>
 void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
-                Execute execute) {
+                Execute execute,
+                std::span<const std::vector<float>> observed_inputs = {},
+                std::span<const std::vector<float>> reference_inputs = {}) {
   fixture::SparseRows rows(profile.output, profile.hidden);
   auto full = prepare(vocab::kShardRows);
   const auto last_shard = vocab::shard_for(profile.vocabulary_rows - 1,
                                            profile.vocabulary_rows).value();
   auto tail = prepare(last_shard.rows);
-  auto activations = std::array{fixture::activation(profile.hidden, 3),
-                                fixture::activation(profile.hidden, 17)};
-  std::array<std::vector<float>, 2> logical{
-      std::vector<float>(profile.vocabulary_rows),
-      std::vector<float>(profile.vocabulary_rows)};
+  auto activations = observed_inputs.empty()
+      ? std::vector{fixture::activation(profile.hidden, 3),
+                    fixture::activation(profile.hidden, 17)}
+      : std::vector(observed_inputs.begin(), observed_inputs.end());
+  auto references = reference_inputs.empty() ? activations
+      : std::vector(reference_inputs.begin(), reference_inputs.end());
+  ASSERT_EQ(references.size(), activations.size());
+  std::vector<std::vector<float>> logical(activations.size(),
+      std::vector<float>(profile.vocabulary_rows));
   for (std::size_t replay = 0; replay < activations.size(); ++replay) {
+    ASSERT_EQ(activations[replay].size(), static_cast<std::size_t>(profile.hidden));
+    ASSERT_EQ(references[replay].size(), static_cast<std::size_t>(profile.hidden));
     if (!fixture::is_quantized(profile.output)) {
       const auto encoded = fixture::encode_dense(profile.output,
                                                   activations[replay]);
       activations[replay] = fixture::decode_values(profile.output, encoded);
+      references[replay] = fixture::decode_values(profile.output,
+          fixture::encode_dense(profile.output, references[replay]));
     }
   }
   std::int64_t visited = 0;
@@ -54,7 +64,7 @@ void check_head(const cases::Case &profile, Prepare prepare, Upload upload,
   ASSERT_EQ(visited, profile.vocabulary_rows);
   for (std::size_t replay = 0; replay < activations.size(); ++replay) {
     for (const auto shard : vocab::shards(profile.vocabulary_rows)) {
-      auto expected = rows.logits(activations[replay], shard);
+      auto expected = rows.logits(references[replay], shard);
       if (!fixture::is_quantized(profile.output)) {
         const auto encoded = fixture::encode_dense(profile.output, expected);
         expected = fixture::decode_values(profile.output, encoded);

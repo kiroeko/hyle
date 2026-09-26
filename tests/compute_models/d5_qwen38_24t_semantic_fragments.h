@@ -4,6 +4,8 @@
 #include <array>
 #include <bit>
 #include <cstring>
+#include <functional>
+#include <limits>
 #include <optional>
 #include <cmath>
 #include <cstddef>
@@ -33,6 +35,7 @@ struct Replay final {
   std::vector<std::vector<std::byte>> inputs;
   std::vector<std::vector<float>> outputs;
   std::vector<std::vector<float>> native_outputs{};
+  bool reset_state = false;
 };
 
 struct Fragment final {
@@ -55,6 +58,7 @@ struct Fragment final {
     bool allow_padding = false;
   };
   std::optional<UnorderedIds> unordered_ids{};
+  std::function<void(std::size_t, std::span<const float>)> observe{};
 
   const UnorderedIds *id_validation(std::size_t port) const {
     return unordered_ids && unordered_ids->port == port ? &*unordered_ids : nullptr;
@@ -126,15 +130,32 @@ struct StateFeedback final {
       std::vector<std::vector<std::byte>>(fragment.state_ports.size());
 
   std::span<const std::byte> input(const Replay &replay, std::size_t port) const {
+    if (replay.reset_state) return replay.inputs[port];
     for (std::size_t i = 0; i < fragment.state_ports.size(); ++i)
       if (port == fragment.state_ports[i].first && !states[i].empty())
         return states[i];
     return replay.inputs[port];
   }
   void observe(std::size_t port, std::span<const float> actual) {
+    if (fragment.observe) fragment.observe(port, actual);
     for (std::size_t i = 0; i < fragment.state_ports.size(); ++i)
-      if (port == fragment.state_ports[i].second)
-        states[i] = bytes(actual);
+      if (port == fragment.state_ports[i].second) {
+        const auto input = fragment.inputs[fragment.state_ports[i].first];
+        if (fragment.description(input).data_type() == c::DataType::kInt32) {
+          std::vector<std::int32_t> ids;
+          ids.reserve(actual.size());
+          for (double value : actual) {
+            if (!std::isfinite(value) || value != std::trunc(value) ||
+                value < std::numeric_limits<std::int32_t>::min() ||
+                value > std::numeric_limits<std::int32_t>::max())
+              throw std::runtime_error("invalid observed I32 state");
+            ids.push_back(static_cast<std::int32_t>(value));
+          }
+          states[i] = bytes(ids);
+        } else {
+          states[i] = bytes(actual);
+        }
+      }
   }
 };
 
