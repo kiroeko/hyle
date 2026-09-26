@@ -1,0 +1,12 @@
+{
+  "source_revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+  "upstream_sha256": "4f1afca3ec9687272213e4dcae2570fbb0ff98e418a0d73e542850d245969feb",
+  "adapted_sha256": "29c00321c11b456becf17167c85d04ab6c774a9b225c88cb7b0d2271aadf900d",
+  "adaptation": "Index bounds before four expert-indexed loops; report device status code 1, skip invalid slots. Valid arithmetic/order unchanged.",
+  "symbols": [
+    "_Z35count_and_sort_expert_tokens_kernelIiEvPKT_PiS3_ybiPj",
+    "_Z27moe_align_block_size_kernelIiEvPKT_PiS3_S3_iiyS3_bbiiPj",
+    "_Z46moe_align_block_size_small_batch_expert_kernelIiLi256EEvPKT_PiS3_S3_iiybbiPj"
+  ],
+  "cubin_sha256": "0a94fd8832b7b6c87e19802f1227744223a8355087647ac4c64e0db07252f3a1"
+}

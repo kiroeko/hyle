@@ -351,7 +351,7 @@
       },
       "vendored": {
         "path": "third_party/sglang_activation",
-        "tree_sha256": "40ccc3671a45b1c71d789a3186215018a6474b7f9e6f514d0b92bd07caea439d"
+        "tree_sha256": "2231218dba0865b7c3f0289b9533ac165398125207a8a7552f246d21a92f8b93"
       },
       "license": {
         "expression": "Apache-2.0 AND MIT",
@@ -364,7 +364,7 @@
           {
             "root": "hyle",
             "path": "third_party/sglang_activation/NOTICE",
-            "sha256": "c1432062aa9c5499b569a49ef218db45c7d936e0ae3af49bde6de7104b82f5bd"
+            "sha256": "bcc0684db17d08c2317601193786f4e9b10527dc74289fee0ca70735b80cd4d5"
           },
           {
             "root": "hyle",

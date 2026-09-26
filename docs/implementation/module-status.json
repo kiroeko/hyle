@@ -475,7 +475,7 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-dynamic-fp8-binding.md",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-grouped-fp8-binding.md",
       "summary": "D5-F38 AUDITED：896200a9已通过原版CUDA动态FP8量化/GEMM、两种GLM完整共享FFN和对齐/OOM/并发/Completion验收；原Triton舍入失败保留且被替代的普通量化程序已移出产品。完整官方专家与D5三交付/P1待验。"
     },
     {

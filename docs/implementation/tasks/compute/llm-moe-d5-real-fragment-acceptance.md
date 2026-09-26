@@ -36,6 +36,9 @@ F38已在`896200a9`完成有限纠正：原版CUDA量化替换存在SM89中间�
 保留；没有新增HYLE数学，两个被替代的Triton量化程序已退出产品。
 统一实现59,312行/235文件。完整官方专家、其它路线、三交付/P1仍待验，不增加完整画像格。
 
+CUDA后续按[F39原版grouped FP8接线](llm-moe-d5-grouped-fp8-binding.md)固定GLM官方专家批次，
+复用F38量化，保留成熟排序/矩阵程序和动态ID失败边界；不增加HYLE算子数学。
+
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。
 Apple修正和静态故障注入已通过；Vulkan分类修正已验，数值失败仍保留。

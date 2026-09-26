@@ -158,6 +158,23 @@ scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定
 该接口不加载模型。完整官方模型画像及三交付/P1状态见
 [当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
 
+### 动态 FP8 专家批次
+
+`model_ops::grouped_float8_linear()` 的三个输入依次为：
+
+- `float8_grouped_weight_description(E,N,K)`：全部专家的 E4M3FN `[E,N,K]` codes，
+  后接 F32 `[E,ceil(N/128),K/128]` scales；两部分连续存放，不逐专家交错。
+- dense BF16/F32 激活 `[T,A,K]`：`A=1` 时各专家共享一次量化的 token；`A=S` 时保留
+  每个专家分支的独立激活，例如 down 投影。
+- dense I32 专家 IDs `[T,S]`；输出为同激活 dtype 的 `[T,S,N]`，重复 ID 合法。
+
+当前 CUDA 资格为 SM89/Driver API 13040、`S=8`、`1<=E<=1022` 和完整 K128 分组，
+使用普通 F32 scale、默认 floor `1e-10`。其它域在准备阶段明确拒绝。激活需16字节对齐，
+权重/ID需4字节对齐；工作区大小与16字节对齐由 `workspace_requirement()` 给出。
+每个 invocation 独占量化、专家排序和 padding 空间。准备绑定成熟程序，重放没有专家逐项
+host 调度、ID读回或权重解码。负数及越界 ID 安全返回失败 Completion；失败输出不可消费。
+源码和默认选择依据见 [F39](../implementation/tasks/compute/llm-moe-d5-grouped-fp8-binding.md)。
+
 ### 执行前检查具体请求
 
 CPU/CUDA 用描述符和 memory resource 调用普通 `prepare()`，即可检查所选设备上实际的

@@ -46,6 +46,29 @@ TEST(ModelFloat8Linear, InfersDtypeTailAndRejectsMalformedQuantization) {
   EXPECT_FALSE(infer_single_output(model_ops::float8_block_linear(), std::array{half, w}));
 }
 
+TEST(ModelFloat8Linear, GroupedSharedAndSlotInputsRequireExactLayout) {
+  const auto w = float8_grouped_weight_description(9, 129, 256).value();
+  const auto ids = TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 2>{3, 8}).value();
+  for (auto type : {DataType::kFloat32, DataType::kBFloat16}) {
+    for (auto slots : {1, 8}) {
+      const auto a = TensorDesc::dense(type, std::array<std::int64_t, 3>{3, slots, 256}).value();
+      const auto result = infer_single_output(model_ops::grouped_float8_linear(), std::array{w, a, ids});
+      ASSERT_TRUE(result);
+      EXPECT_EQ(*result, TensorDesc::dense(type, std::array<std::int64_t, 3>{3, 8, 129}).value());
+      const auto malformed = TensorDesc::opaque(w.data_type(), w.dimensions(), w.storage_format(),
+                                                 w.required_bytes().value() + 4).value();
+      EXPECT_FALSE(infer_single_output(model_ops::grouped_float8_linear(), std::array{malformed, a, ids}));
+      for (float floor : {0.0F, -1.0F, std::numeric_limits<float>::denorm_min(),
+                           std::numeric_limits<float>::infinity(), std::numeric_limits<float>::quiet_NaN()})
+        EXPECT_FALSE(infer_single_output(model_ops::grouped_float8_linear(floor), std::array{w, a, ids}));
+    }
+  }
+  for (auto shape : {std::array<std::int64_t, 3>{3, 2, 256}, {3, 8, 128}, {4, 8, 256}}) {
+    auto a = TensorDesc::dense(DataType::kFloat32, shape).value();
+    EXPECT_FALSE(infer_single_output(model_ops::grouped_float8_linear(), std::array{w, a, ids}));
+  }
+}
+
 TEST(ModelClamp, InferenceRejectsMalformedDescriptionsAndBounds) {
   const auto shape = std::array<std::int64_t, 2>{3, 7};
   const auto input = TensorDesc::dense(DataType::kFloat32, shape).value();

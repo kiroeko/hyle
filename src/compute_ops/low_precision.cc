@@ -84,6 +84,23 @@ Result<TensorDesc> float8_description(std::int64_t rows, std::int64_t k,
 
 } // namespace
 
+Result<TensorDesc> float8_grouped_weight_description(std::int64_t experts,
+                                                    std::int64_t n,
+                                                    std::int64_t k) noexcept {
+  if (experts <= 0)
+    return std::unexpected(Status::InvalidArgument("FP8 expert count must be positive"));
+  HYLE_ASSIGN_OR_RETURN(const auto matrix,
+                       float8_description(n, k, Float8ScaleMode::kFloat32Block128, true));
+  const auto count = math::try_integer_cast<std::size_t>(experts);
+  const auto bytes = count ? math::try_multiply(*count, *matrix.required_bytes())
+                           : std::nullopt;
+  if (!bytes)
+    return std::unexpected(Status::OutOfRange("grouped FP8 storage size overflows"));
+  const auto format = StorageFormat::opaque(kFloat8GroupedWeightFloat32Block128, 4);
+  return TensorDesc::opaque(DataType::kFloat32, std::array{experts, n, k},
+                            *format, *bytes);
+}
+
 std::optional<GgufQuantizedType>
 gguf_quantized_type(StorageFormatId id) noexcept {
   constexpr std::array types{

@@ -1,0 +1,36 @@
+{
+  "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+  "functions": [
+    {
+      "path": "fused_moe_triton_kernels.py",
+      "function": "write_zeros_to_output",
+      "lines": [
+        72,
+        89
+      ],
+      "source_sha256": "281809bc5fc927bc60e861a38d794407b97d7accd6554c180792c2cb11c76dc1",
+      "body_sha256": "d62f2ebdf95d1df05f247594d38585abd4cb598ac2910a931fc75957590f2d6c"
+    },
+    {
+      "path": "fused_moe_triton_kernels.py",
+      "function": "fused_moe_kernel",
+      "lines": [
+        324,
+        718
+      ],
+      "source_sha256": "281809bc5fc927bc60e861a38d794407b97d7accd6554c180792c2cb11c76dc1",
+      "body_sha256": "ee3ad8565ae41c88cfaf8f5ef0bf116a393746fe8c643875ffd3cf2623645697"
+    },
+    {
+      "path": "moe_align_small_numel.py",
+      "function": "_moe_align_small_numel_kernel",
+      "lines": [
+        22,
+        111
+      ],
+      "source_sha256": "ddeb1b65e6b86338c51077029fbd1e1a9c61b6fd625ef6fb272435c0b8608008",
+      "body_sha256": "3d1b06219a79c51fdfa8474a52bfe80e4015f8683a62475ff96744230ff40c17"
+    }
+  ],
+  "module_sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d"
+}

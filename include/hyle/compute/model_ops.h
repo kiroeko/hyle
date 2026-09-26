@@ -62,6 +62,53 @@ inline Operation float8_block_linear(
   return Operation::custom(Float8BlockLinear{rounding, absmax_floor});
 }
 
+// Weights [E,N,K], finite BF16/F32 activations [T,A,K], I32 expert IDs [T,S]
+// -> [T,S,N] in activation dtype. A=1 shares each token across selected
+// experts; A=S preserves distinct per-expert activations for the down leg.
+// Quantization follows Float8BlockLinear with ordinary F32 group128 scales.
+// Duplicate IDs are valid. Negative or out-of-range IDs fail Completion;
+// outputs of a failed invocation must not be consumed.
+struct GroupedFloat8Linear final {
+  float absmax_floor = 1.0e-10F;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4650384752500001ULL};
+  static constexpr std::string_view operation_name = "grouped-float8-linear";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{3, 3}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 3 || outputs.size() != 1 ||
+        !std::isfinite(absmax_floor) || absmax_floor <= 0 ||
+        !std::isnormal(absmax_floor / 448.0F))
+      return Status::InvalidArgument("grouped FP8 linear requires a positive normal scale floor");
+    const auto &w = inputs[0];
+    const auto &a = inputs[1];
+    const auto &ids = inputs[2];
+    if (w.rank() != 3 || !a.valid() || !a.is_plain() || !a.is_dense() || a.rank() != 3 ||
+        (a.data_type() != DataType::kFloat32 && a.data_type() != DataType::kBFloat16) ||
+        !ids.valid() || !ids.is_plain() || !ids.is_dense() || ids.rank() != 2 ||
+        ids.data_type() != DataType::kInt32)
+      return Status::InvalidArgument("grouped FP8 linear requires encoded [E,N,K], dense BF16/F32 [T,A,K], I32 IDs [T,S]");
+    const auto t = a.dimensions()[0], slots = ids.dimensions()[1];
+    auto weight = float8_grouped_weight_description(
+        w.dimensions()[0], w.dimensions()[1], w.dimensions()[2]);
+    if (!weight || w != *weight || t <= 0 || slots <= 0 || ids.dimensions()[0] != t ||
+        (a.dimensions()[1] != 1 && a.dimensions()[1] != slots) ||
+        a.dimensions()[2] != w.dimensions()[2])
+      return Status::InvalidArgument("grouped FP8 dimensions or encoded layout do not match");
+    auto output = TensorDesc::dense(a.data_type(), std::array{t, slots, w.dimensions()[1]});
+    if (!output) return std::move(output).error();
+    outputs[0] = *output;
+    return Status::Ok();
+  }
+};
+
+inline Operation grouped_float8_linear(float absmax_floor = 1.0e-10F) noexcept {
+  return Operation::custom(GroupedFloat8Linear{absmax_floor});
+}
+
 // Native model clamp. Finite values and infinities are clamped to [min,max].
 // NaN data and signed-zero bit patterns follow the selected native backend;
 // this operation does not promise Binary minimum/maximum's NaN semantics.

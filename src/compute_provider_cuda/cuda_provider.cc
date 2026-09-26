@@ -9,6 +9,7 @@
 
 #include "concat_provider.h"
 #include "fp8_provider.h"
+#include "grouped_fp8_provider.h"
 #include "native_context.h"
 #include "native_kernel.h"
 #include "norm_provider.h"
@@ -139,6 +140,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (Sglang) {
+    if (request.operation.custom_as<model_ops::GroupedFloat8Linear>())
+      return grouped_fp8::propose(state, request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kMatMul ||
         request.operation.custom_as<model_ops::Float8BlockLinear>())
       return fp8::propose(state, request, inputs, outputs, proposal);
@@ -284,6 +287,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (Sglang) {
+    if (request.route == grouped_fp8::kRoute)
+      return grouped_fp8::prepare(state, request, allocator, output);
     if (request.route == fp8::kRoute || request.route == fp8::kLinearRoute)
       return fp8::prepare(state, request, allocator, output);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||

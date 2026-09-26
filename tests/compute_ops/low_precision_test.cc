@@ -42,6 +42,18 @@ TEST(ComputeOpsLowPrecision, Float8PhysicalSizesAndLogicalOrientation) {
   EXPECT_EQ(output->data_type(), DataType::kFloat32);
 }
 
+TEST(ComputeOpsLowPrecision, GroupedFloat8LayoutAndOverflow) {
+  const auto w = float8_grouped_weight_description(9, 129, 256);
+  ASSERT_TRUE(w);
+  EXPECT_TRUE(std::ranges::equal(w->dimensions(), std::array<std::int64_t, 3>{9, 129, 256}));
+  EXPECT_EQ(w->required_bytes().value(), 9u * 129 * 256 + 9u * 2 * 2 * 4);
+  EXPECT_EQ(w->required_alignment(), 4u);
+  EXPECT_FALSE(float8_grouped_weight_description(0, 129, 256));
+  EXPECT_FALSE(float8_grouped_weight_description(9, 129, 257));
+  EXPECT_FALSE(float8_grouped_weight_description(INT64_MAX, 129, 256));
+  EXPECT_FALSE(float8_grouped_weight_description(2, INT64_MAX, 256));
+}
+
 TEST(ComputeOpsLowPrecision, Mxfp4BlockAxisFollowsLogicalK) {
   const auto weight = mxfp4_weight_description(64, 5);
   ASSERT_TRUE(weight);

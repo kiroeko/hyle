@@ -34,3 +34,12 @@ is in FLASHINFER-LICENSE. The inline attribute is expressed with CUDA
 __forceinline__ for MSVC; vector bodies are unchanged. The two superseded
 ordinary Triton cubins are removed from the current product. Pow2/GEMM
 artifacts retain their qualified identities. See fp8/cuda-quant-compilation.json.
+
+D5-F39 adds the original grouped FP8 GEMM bodies and the original CUDA
+small/generic expert alignment programs. The alignment adapter checks all
+expert IDs before expert-indexed memory access and reports the existing
+device error code; valid sorting/scan/GEMM arithmetic is unchanged. Four
+offline GEMM variants and one checked alignment cubin are embedded. The
+original default tile and host small/generic selection are retained; no
+per-expert host loop, runtime JIT or search is added. See fp8/grouped/ for
+source identities, launch ABI records and maintainer-only regeneration.

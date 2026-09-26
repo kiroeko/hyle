@@ -17,6 +17,7 @@
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_dynamic_fp8_fragments.h"
+#include "../compute_models/d5_grouped_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -1031,6 +1032,19 @@ TEST(CudaMoeFragments, D5ThirteenProfilesExpertActivation) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_moe_execution_fragments::activation_core(model));
+  }
+}
+
+TEST(CudaMoeFragments, D5GroupedFp8Batch) {
+  d5_grouped_fp8_fragments::projection_batch([](auto fragment) {
+    run_q24_semantic_fragment(std::move(fragment));
+  });
+}
+
+TEST(CudaMoeFragments, D5GlmOfficialFp8FullMoe) {
+  for (bool flash : {false, true}) {
+    SCOPED_TRACE(flash);
+    run_q24_semantic_fragment(d5_grouped_fp8_fragments::glm_moe(flash));
   }
 }
 

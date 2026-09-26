@@ -91,7 +91,7 @@ Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
   return shape;
 }
 
-Status qualify(CUcontext primary) noexcept {
+Status qualify_device(CUcontext primary) noexcept {
   cuda::detail::ScopedPrimaryContext scope(primary);
   if (!scope) return scope.status();
   CUdevice device;
@@ -210,6 +210,10 @@ const detail::ProviderPreparedVTable kVTable{
     .create_invocation = &create_invocation, .destroy_invocation = &destroy_invocation,
     .shared_submit = &submit};
 } // namespace
+
+Status qualify(void *state) noexcept {
+  return qualify_device(static_cast<CUcontext>(state));
+}
 
 Status propose(void *state, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
