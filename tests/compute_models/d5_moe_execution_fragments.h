@@ -106,7 +106,15 @@ inline std::vector<std::int32_t> hash_table(std::int64_t experts, int replay) {
 inline std::vector<std::byte> hash_tokens(std::span<const std::int64_t> tokens,
                                           bool native) {
   if (native) return bytes(tokens);
-  return bytes(std::vector<std::int32_t>(tokens.begin(), tokens.end()));
+  std::vector<std::int32_t> portable;
+  portable.reserve(tokens.size());
+  for (auto token : tokens) {
+    if (token < std::numeric_limits<std::int32_t>::min() ||
+        token > std::numeric_limits<std::int32_t>::max())
+      throw std::runtime_error("portable hash fixture token exceeds I32");
+    portable.push_back(static_cast<std::int32_t>(token));
+  }
+  return bytes(portable);
 }
 
 inline Routing routing(Fragment &f, const Case &model, ValueId input,

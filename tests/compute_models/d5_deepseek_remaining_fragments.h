@@ -618,7 +618,7 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio) {
         std::stable_sort(selected.begin(), selected.end(), [&](auto a, auto b) { return scores[a] > scores[b]; });
         selected.resize(top);
         replay.outputs[scores_output] = scores;
-        replay.outputs[ids_output] = std::vector<float>(selected.begin(), selected.end());
+        for (auto id : selected) replay.outputs[ids_output].push_back(static_cast<float>(id));
       } else {
         selected.resize(capacity);
         std::iota(selected.begin(), selected.end(), 0);
