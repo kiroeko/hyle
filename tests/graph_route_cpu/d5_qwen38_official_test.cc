@@ -563,6 +563,7 @@ void run_q24_semantic_fragment(
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   sem::StateFeedback feedback{fixture};
   for (const auto &expected : fixture.replays) {
+    SCOPED_TRACE(::testing::Message() << "replay " << (&expected - fixture.replays.data()));
     for (std::size_t i = 0; i < inputs.size(); ++i)
       ASSERT_TRUE(inputs[i].view().write(feedback.input(expected, i)).ok());
     auto done = invocation.submit(queue);
@@ -571,6 +572,10 @@ void run_q24_semantic_fragment(
     ASSERT_TRUE(status.ok()) << status.message();
     for (std::size_t output = 0; output < outputs.size(); ++output) {
       const auto actual = sem::decode_output(fixture, output, half_test::read<float>(outputs[output]));
+      SCOPED_TRACE(::testing::Message() << "output " << output << " region " << fixture.region);
+      if (std::ranges::all_of(expected.outputs[output], [](float value) { return std::isfinite(value); }))
+        ASSERT_TRUE(std::ranges::all_of(actual, [](float value) { return std::isfinite(value); }))
+            << "non-finite output for a finite-reference model fragment";
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),

@@ -1405,6 +1405,13 @@ void run_q24_semantic_fragment(
       if (step.operation.kind() == c::OperationKind::kView) {
         ASSERT_EQ(step.inputs.size(), 1U);
         ASSERT_EQ(step.outputs.size(), 1U);
+        if (step.operation.get_if<c::View>()->kind() == c::ViewKind::kSlice) {
+          auto sliced = a::lower(step.operation,
+              std::array{*tensors[step.inputs[0].ordinal()]}, stream());
+          ASSERT_TRUE(sliced) << sliced.error().message();
+          tensors[step.outputs[0].ordinal()] = ready((*sliced)[0]);
+          continue;
+        }
         ASSERT_TRUE(step.operation.get_if<c::View>()->kind() == c::ViewKind::kReshape ||
                   step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute);
         if (step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute) {

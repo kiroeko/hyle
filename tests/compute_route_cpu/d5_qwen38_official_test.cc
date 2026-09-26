@@ -754,9 +754,19 @@ void run_q24_semantic_fragment(
     if (step.operation.kind() == c::OperationKind::kView) {
       ASSERT_EQ(step.inputs.size(), 1U);
       ASSERT_EQ(step.outputs.size(), 1U);
-      ASSERT_TRUE(step.operation.get_if<c::View>()->kind() == c::ViewKind::kReshape ||
-                step.operation.get_if<c::View>()->kind() == c::ViewKind::kPermute);
+      const auto &view = *step.operation.get_if<c::View>();
+      ASSERT_TRUE(view.kind() == c::ViewKind::kReshape ||
+                  view.kind() == c::ViewKind::kPermute || view.kind() == c::ViewKind::kSlice);
       views[step.outputs[0].ordinal()] = views[step.inputs[0].ordinal()];
+      if (view.kind() == c::ViewKind::kSlice) {
+        const auto &input = fixture.description(step.inputs[0]);
+        const auto axis = view.axis() < 0 ? view.axis() + std::int32_t(input.rank()) : view.axis();
+        const auto offset = std::size_t(view.start()) * std::size_t(input.byte_strides()[axis]);
+        const auto length = fixture.description(step.outputs[0]).required_bytes().value();
+        auto sliced = views[step.inputs[0].ordinal()].subview(offset, length);
+        ASSERT_TRUE(sliced) << sliced.error().message();
+        views[step.outputs[0].ordinal()] = *sliced;
+      }
       continue;
     }
     std::vector<c::TensorDesc> inputs, outputs;
@@ -773,6 +783,7 @@ void run_q24_semantic_fragment(
 
   sem::StateFeedback feedback{fixture};
   for (const auto &expected : fixture.replays) {
+    SCOPED_TRACE(::testing::Message() << "replay " << (&expected - fixture.replays.data()));
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
       ASSERT_TRUE(
           views[fixture.inputs[i].ordinal()].write(feedback.input(expected, i)).ok());
@@ -795,6 +806,10 @@ void run_q24_semantic_fragment(
     for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
       SCOPED_TRACE("fragment output=" + std::to_string(output));
       const auto actual = sem::decode_output(fixture, output, half_test::read<float>(buffers[fixture.outputs[output].ordinal()]));
+      SCOPED_TRACE(::testing::Message() << "output " << output << " region " << fixture.region);
+      if (std::ranges::all_of(expected.outputs[output], [](float value) { return std::isfinite(value); }))
+        ASSERT_TRUE(std::ranges::all_of(actual, [](float value) { return std::isfinite(value); }))
+            << "non-finite output for a finite-reference model fragment";
       std::size_t worst = 0;
       for (std::size_t i = 1; i < actual.size(); ++i)
         if (std::abs(actual[i] - expected.outputs[output][i]) >
