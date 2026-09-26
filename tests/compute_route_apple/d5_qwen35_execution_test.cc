@@ -1421,6 +1421,7 @@ void run_q24_semantic_fragment(
         tensors[step.outputs[index].ordinal()] = outputs[index];
     }
     for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
+      SCOPED_TRACE("fragment output=" + std::to_string(output));
       const auto actual =
           float_values(*tensors[fixture.outputs[output].ordinal()]);
       feedback.observe(output, actual);
@@ -1528,7 +1529,8 @@ TEST(AppleMoeFragments, D5KimiAbsorbedMlaWithCache) {
   for (int i = 0; i < 3; ++i) {
     auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
-    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile));
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(
+        profile, /*round_grouped_input_to_bfloat=*/false));
   }
 }
 

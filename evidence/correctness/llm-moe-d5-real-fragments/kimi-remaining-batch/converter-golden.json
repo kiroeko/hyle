@@ -1,0 +1,65 @@
+{
+  "pin": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+  "source": "conversion/kimi_k3.py",
+  "torch": "2.8.0+cu129",
+  "method_sha256": {
+    "_try_fuse_res": "e9c7fdd1665697afd5a8baac59b9246ce4647b72ed5c5270950ebd31ec44e40a",
+    "modify_tensors": "6f99fefbe00e750cd6b11ca8742231e1239cf1cb1d2045141f09979f971001b9"
+  },
+  "checks": [
+    {
+      "kind": "kv_b_split_transpose",
+      "name": "model.layers.3.self_attn.k_b_proj.weight",
+      "shape": [
+        96,
+        512,
+        128
+      ],
+      "storage": "BF16",
+      "sha256": "12263fe773a5babebabc5ac4e120bb5e63d3f4fa4700a68a70f7907b32d8e567",
+      "verdict": "EXACT_PASS"
+    },
+    {
+      "kind": "kv_b_split_transpose",
+      "name": "model.layers.3.self_attn.v_b_proj.weight",
+      "shape": [
+        96,
+        128,
+        512
+      ],
+      "storage": "BF16",
+      "sha256": "525dba9b2dfe71c7e3f81fd70cd0bf3b09e4707dd981b736069adc3aae113f1b",
+      "verdict": "EXACT_PASS"
+    },
+    {
+      "kind": "residual_parameter_fusion",
+      "role": "self_attention_res",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "sha256": "94c282e258cbc0a60aaf65b0da8d0b07416232ce1b175cf18a3e521ff29d26f1",
+      "verdict": "EXACT_PASS"
+    },
+    {
+      "kind": "residual_parameter_fusion",
+      "role": "mlp_res",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "sha256": "8c7d7a9088acdd20e12235dbb85f6f940a96c65a99054eda20f2e68e8fb6a115",
+      "verdict": "EXACT_PASS"
+    },
+    {
+      "kind": "residual_parameter_fusion",
+      "role": "output_attn_res",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "sha256": "ad18effa4e2b2a5da04716f01c65d4681d6fc01a816df256292158a580e0da2f",
+      "verdict": "EXACT_PASS"
+    }
+  ]
+}

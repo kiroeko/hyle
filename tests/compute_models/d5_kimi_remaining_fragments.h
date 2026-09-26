@@ -121,9 +121,10 @@ struct HeadProjection final {
   bool bfloat;
   std::int64_t n, k;
   ValueId output;
-  std::vector<float> reference(std::span<const float> input) const {
+  std::vector<float> reference(std::span<const float> input,
+                                 bool round_input_to_bfloat) const {
     std::vector<float> x(input.begin(), input.end());
-    if (bfloat) for (auto &v : x) v = linear::bf16(v);
+    if (bfloat && round_input_to_bfloat) for (auto &v : x) v = linear::bf16(v);
     std::vector<std::int32_t> ids(kHeads);
     std::iota(ids.begin(), ids.end(), 0);
     return moe::project(x, weight, ids, n, k);
@@ -162,7 +163,11 @@ inline HeadProjection head_projection(Fragment &f, ValueId input, bool key,
   return {std::move(weight), bfloat, n, k, output};
 }
 
-inline Fragment mla(const c::ModelArtifactProfileDescription *profile) {
+// ggml Metal mul_mv_id_bf16_f32 retains F32 activations; CPU vec-dot
+// converts them to BF16. Match that source-defined boundary in the oracle,
+// while leaving the identical public operation graph and accuracy gate intact.
+inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
+                      bool round_grouped_input_to_bfloat = true) {
   Fragment f{.profile = profile, .region = 0x070701,
              .quantized = storage(profile) == Storage::kQ8_0};
   auto x = f.input(dense({1, kHidden}));
@@ -215,7 +220,7 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile) {
     full_cache.insert(full_cache.end(), l.begin(), l.end());
     cache_values.assign(full_cache.begin() + 576, full_cache.end());
     auto no_pe = slice(bq, kHeads, 192, 0, 128);
-    auto absorbed = kb.reference(no_pe);
+    auto absorbed = kb.reference(no_pe, round_grouped_input_to_bfloat);
     std::vector<float> attended(kHeads * 512);
     const float scale = 1.0F / std::sqrt(192.0F);
     for (std::int64_t h = 0; h < kHeads; ++h) {
@@ -236,7 +241,7 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile) {
         attended[h * 512 + d] = float(sum);
       }
     }
-    auto projected = vb.reference(attended), gate_values = gate.reference(nx);
+    auto projected = vb.reference(attended, round_grouped_input_to_bfloat), gate_values = gate.reference(nx);
     auto gv = projected;
     for (std::size_t i = 0; i < gv.size(); ++i) gv[i] *= float(core::sigmoid(gate_values[i]));
     auto result = out.reference(gv);
