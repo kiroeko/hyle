@@ -14,6 +14,49 @@ namespace hyle::compute::model_ops {
 
 enum class Float8ScaleRounding : std::uint32_t { kNone, kPowerOfTwo };
 
+enum class BlockQuantizationFormat : std::uint32_t {
+  kFloat8E4M3Block64,
+  kFloat4E2M1Block32
+};
+
+// Quantize and dequantize finite BF16 activations, preserving a model's QAT
+// boundary without exposing packed cache storage. Per contiguous last-axis
+// group, scale = 2^ceil(log2(max(absmax, floor)/max_code)), in F32.
+// E4M3FN uses groups of64, max_code448, floor1e-4; E2M1 uses groups of32,
+// max_code6, floor6*2^-126. Codes use saturated nearest-even rounding; decode
+// is F32 followed by BF16 storage. Finite inputs may overflow after rounding.
+// Input/output are distinct dense BF16 matrices of identical shape. This is
+// not the round-even scale policy used by some other MX quantizers.
+struct BlockQuantizationRoundtrip final {
+  BlockQuantizationFormat format = BlockQuantizationFormat::kFloat8E4M3Block64;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x514e545254500001ULL};
+  static constexpr std::string_view operation_name = "block-quantization-roundtrip";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{1, 1}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 1 || outputs.size() != 1 ||
+        (format != BlockQuantizationFormat::kFloat8E4M3Block64 &&
+         format != BlockQuantizationFormat::kFloat4E2M1Block32))
+      return Status::InvalidArgument("Quantization roundtrip requires one input and a known format");
+    const auto &input = inputs[0];
+    const int group = format == BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 32;
+    if (!input.valid() || !input.is_plain() || !input.is_dense() || input.rank() != 2 ||
+        input.data_type() != DataType::kBFloat16 || input.dimensions()[0] <= 0 ||
+        input.dimensions()[1] <= 0 || input.dimensions()[1] % group != 0)
+      return Status::InvalidArgument("Quantization roundtrip requires a positive dense BF16 matrix of whole groups");
+    outputs[0] = input;
+    return Status::Ok();
+  }
+};
+
+inline Operation block_quantization_roundtrip(BlockQuantizationFormat format) noexcept {
+  return Operation::custom(BlockQuantizationRoundtrip{format});
+}
+
 // Decode an existing block128 weight for one-time native weight preparation.
 // Input is the logical [K,N] encoded weight; output is physical row-major
 // [N,K] in BF16/F32. This explicit layout is ready for model-owned splitting

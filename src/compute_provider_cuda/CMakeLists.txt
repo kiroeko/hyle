@@ -1,5 +1,5 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_audit_in_tree_dependencies(sglang_activation deepseek_fp8)
+  hyle_audit_in_tree_dependencies(sglang_activation deepseek_fp8 deepseek_quantization)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
   endif()
@@ -20,7 +20,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda"
     "${PROJECT_SOURCE_DIR}/third_party/sglang_activation"
-    "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8")
+    "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8"
+    "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization")
   target_link_libraries(hyle_compute_provider_cuda PRIVATE CUDA::cudart CUDA::cuda_driver)
   if(WIN32 AND (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
     # Same CUDA 13.3 driver-loader CRT directive as compute_backend_cuda.
@@ -72,6 +73,15 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-fp8-LICENSE"
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8/TRITON-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-fp8-TRITON-LICENSE")
+  hyle_register_package_dependency(
+    NAME deepseek_quantization
+    OWNER compute_provider_cuda
+    FEATURES compute_cuda
+    LOCKED_DEPENDENCIES deepseek_quantization
+    RUNTIME_FILE_SPECS
+      "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-LICENSE"
+      "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/TILELANG-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-TILELANG-LICENSE"
+      "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/CUTLASS-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-CUTLASS-LICENSE")
 else()
   hyle_add_module(compute_provider_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_cuda PROPERTY

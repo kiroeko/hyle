@@ -74,6 +74,7 @@
     "third_party/marlin/": ["compute_provider_marlin"],
     "third_party/sglang_activation/": ["compute_provider_cuda"],
     "third_party/deepseek_fp8/": ["compute_provider_cuda"],
+    "third_party/deepseek_quantization/": ["compute_provider_cuda"],
     "third_party/mimalloc/": ["mem"],
     "third_party/xxhash/": ["container"],
     "third_party/wyhash/": ["container"],
@@ -85,6 +86,10 @@
     "third_party/nanobench/": []
   },
   "tool_suites": [
+    {
+      "paths": ["cmake/HyleDependencyVersions.cmake", "tests/tooling/huggingface_dependency_test.py"],
+      "tests": ["tests/tooling/huggingface_dependency_test.py"]
+    },
     {
       "paths": ["tests/compute_models/*"],
       "tests": ["tests/compute_models/inputs_test.py"]

@@ -175,6 +175,21 @@ scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定
 该接口不加载模型。完整官方模型画像及三交付/P1状态见
 [当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
 
+### 激活的组量化与还原
+
+`model_ops::block_quantization_roundtrip(format)` 将 dense BF16 `[M,K]` 输入量化后还原为
+相同形状的 BF16，供需要保留量化感知训练边界的消费者组合。两个显式格式为：
+
+- `BlockQuantizationFormat::kFloat8E4M3Block64`：每64值取 absmax，floor为 `1e-4`，除448。
+- `BlockQuantizationFormat::kFloat4E2M1Block32`：每32值取 absmax，floor为 `6*2^-126`，除6。
+
+两者 scale 都向上取二次幂，代码值饱和最近偶数舍入；不等同于其它 MX 格式的 round-even scale。
+输入必须有限，K须整组；量化还原后的极值仍可能溢出。输入输出不重叠，均需16字节对齐。
+当前 CUDA 原版 DeepSeek 程序资格为 SM89/Driver API13040。默认路线自动绑定，Graph使用同一
+运算描述；不需要安装 Python/TileLang 或指定 Provider。每次执行一次原生发射，caller workspace
+为 `4*M*(K/group)` 字节、4字节对齐；独立 invocation 使用独立空间，存储保持到 Completion。
+模型如何切分 RoPE 尾部、更新 cache 或衔接 Hadamard 属于消费者；本操作不隐式管理这些状态。
+
 ### 动态 FP8 专家批次
 
 `model_ops::grouped_float8_linear()` 的三个输入依次为：

@@ -548,12 +548,6 @@ foreach(_hyle_index RANGE 0 ${_hyle_dependency_last})
   _hyle_dependency_json_get(_hyle_version dependencies ${_hyle_index} version)
   _hyle_dependency_json_get(_hyle_revision
                             dependencies ${_hyle_index} revision)
-  _hyle_dependency_json_get(_hyle_git_tree
-                            dependencies ${_hyle_index} git_tree)
-  _hyle_dependency_json_get(_hyle_archive_url
-                            dependencies ${_hyle_index} archive url)
-  _hyle_dependency_json_get(_hyle_archive_sha256
-                            dependencies ${_hyle_index} archive sha256)
   _hyle_dependency_json_get(_hyle_license_expression
                             dependencies ${_hyle_index} license expression)
 
@@ -568,30 +562,69 @@ foreach(_hyle_index RANGE 0 ${_hyle_dependency_last})
     message(FATAL_ERROR
       "Invalid class '${_hyle_class}' for dependency '${_hyle_name}'")
   endif()
-  if(NOT _hyle_repository MATCHES
-     "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.git$")
+  set(_hyle_hf_source FALSE)
+  if(_hyle_repository MATCHES
+     "^https://huggingface\\.co/[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$")
+    if(NOT _hyle_class STREQUAL "in_tree")
+      message(FATAL_ERROR "Hugging Face source '${_hyle_name}' must be in_tree")
+    endif()
+    set(_hyle_hf_source TRUE)
+  elseif(NOT _hyle_repository MATCHES
+         "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\.git$")
     message(FATAL_ERROR
-      "Dependency '${_hyle_name}' repository is not a canonical HTTPS "
-      "GitHub URL: ${_hyle_repository}")
+      "Dependency '${_hyle_name}' repository is not a canonical supported HTTPS "
+      "source URL: ${_hyle_repository}")
   endif()
   if(_hyle_version STREQUAL "" OR _hyle_license_expression STREQUAL "")
     message(FATAL_ERROR
       "Dependency '${_hyle_name}' needs non-empty version and license metadata")
   endif()
   _hyle_dependency_require_hex("${_hyle_name} revision" "${_hyle_revision}" 40)
-  _hyle_dependency_require_hex("${_hyle_name} Git tree" "${_hyle_git_tree}" 40)
-  _hyle_dependency_require_hex(
-    "${_hyle_name} archive SHA-256" "${_hyle_archive_sha256}" 64)
-  string(REGEX REPLACE "^https://github\\.com/"
-         "https://codeload.github.com/" _hyle_expected_archive_url
-         "${_hyle_repository}")
-  string(REGEX REPLACE "\\.git$" "/tar.gz/${_hyle_revision}"
-         _hyle_expected_archive_url "${_hyle_expected_archive_url}")
-  if(NOT _hyle_archive_url STREQUAL "${_hyle_expected_archive_url}")
-    message(FATAL_ERROR
-      "Dependency '${_hyle_name}' archive URL does not exactly match its "
-      "repository and revision.\n  expected: ${_hyle_expected_archive_url}\n"
-      "  actual:   ${_hyle_archive_url}")
+  # In-tree official model programs may be published on Hugging Face without a
+  # GitHub archive. Bind the original file as well as the complete vendor tree;
+  # this form never enters FetchContent or the archive cache downloader.
+  set(_hyle_source_url "")
+  set(_hyle_source_file "")
+  set(_hyle_source_sha256 "")
+  if(_hyle_hf_source)
+    _hyle_dependency_json_get(_hyle_source_path
+                              dependencies ${_hyle_index} source_file path)
+    _hyle_dependency_json_get(_hyle_source_file
+                              dependencies ${_hyle_index} source_file vendored_file)
+    _hyle_dependency_json_get(_hyle_source_sha256
+                              dependencies ${_hyle_index} source_file sha256)
+    foreach(_path IN ITEMS "${_hyle_source_path}" "${_hyle_source_file}")
+      if(NOT _path MATCHES "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$" OR
+         _path MATCHES "(^|/)\\.\\.?(/|$)")
+        message(FATAL_ERROR "Unsafe Hugging Face source file path '${_path}'")
+      endif()
+    endforeach()
+    _hyle_dependency_require_hex("${_hyle_name} source SHA-256" "${_hyle_source_sha256}" 64)
+    set(_hyle_source_url "${_hyle_repository}/resolve/${_hyle_revision}/${_hyle_source_path}")
+    set(_hyle_git_tree "")
+    set(_hyle_archive_url "")
+    set(_hyle_archive_sha256 "")
+  else()
+    _hyle_dependency_json_get(_hyle_git_tree
+                              dependencies ${_hyle_index} git_tree)
+    _hyle_dependency_json_get(_hyle_archive_url
+                              dependencies ${_hyle_index} archive url)
+    _hyle_dependency_json_get(_hyle_archive_sha256
+                              dependencies ${_hyle_index} archive sha256)
+    _hyle_dependency_require_hex("${_hyle_name} Git tree" "${_hyle_git_tree}" 40)
+    _hyle_dependency_require_hex(
+      "${_hyle_name} archive SHA-256" "${_hyle_archive_sha256}" 64)
+    string(REGEX REPLACE "^https://github\\.com/"
+           "https://codeload.github.com/" _hyle_expected_archive_url
+           "${_hyle_repository}")
+    string(REGEX REPLACE "\\.git$" "/tar.gz/${_hyle_revision}"
+           _hyle_expected_archive_url "${_hyle_expected_archive_url}")
+    if(NOT _hyle_archive_url STREQUAL "${_hyle_expected_archive_url}")
+      message(FATAL_ERROR
+        "Dependency '${_hyle_name}' archive URL does not exactly match its "
+        "repository and revision.\n  expected: ${_hyle_expected_archive_url}\n"
+        "  actual:   ${_hyle_archive_url}")
+    endif()
   endif()
 
   string(TOUPPER "${_hyle_name}" _hyle_upper_name)
@@ -603,6 +636,9 @@ foreach(_hyle_index RANGE 0 ${_hyle_dependency_last})
   set(${_hyle_prefix}_GIT_TREE "${_hyle_git_tree}")
   set(${_hyle_prefix}_ARCHIVE_URL "${_hyle_archive_url}")
   set(${_hyle_prefix}_ARCHIVE_SHA256 "${_hyle_archive_sha256}")
+  set(${_hyle_prefix}_SOURCE_URL "${_hyle_source_url}")
+  set(${_hyle_prefix}_SOURCE_FILE "${_hyle_source_file}")
+  set(${_hyle_prefix}_SOURCE_SHA256 "${_hyle_source_sha256}")
   set(${_hyle_prefix}_LICENSE_EXPRESSION "${_hyle_license_expression}")
 
   if(_hyle_class STREQUAL "fetchcontent" OR
@@ -804,6 +840,14 @@ function(hyle_audit_in_tree_dependencies)
       continue()
     endif()
     _hyle_dependency_tree_sha256("${_vendored_root}" _actual_tree_sha256)
+    if(NOT "${${_prefix}_SOURCE_FILE}" STREQUAL "")
+      _hyle_dependency_normalized_sha256(
+        "${_vendored_root}/${${_prefix}_SOURCE_FILE}" _actual_source_sha256)
+      if(NOT _actual_source_sha256 STREQUAL "${${_prefix}_SOURCE_SHA256}")
+        string(APPEND _audit_errors
+          "\nVendored dependency '${_name}' original source hash mismatch\n")
+      endif()
+    endif()
     if(NOT _actual_tree_sha256 STREQUAL
        "${${_prefix}_VENDORED_TREE_SHA256}")
       string(APPEND _audit_errors

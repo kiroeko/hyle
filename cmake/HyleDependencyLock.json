@@ -370,6 +370,42 @@
       }
     },
     {
+      "name": "deepseek_quantization",
+      "class": "in_tree",
+      "repository": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro",
+      "version": "deepseek-v4-b5968e91-tilelang0.1.14",
+      "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+      "source_file": {
+        "path": "inference/kernel.py",
+        "vendored_file": "upstream_kernel.py",
+        "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2"
+      },
+      "vendored": {
+        "path": "third_party/deepseek_quantization",
+        "tree_sha256": "0f3c25baa96882f33bd0290b7d5481821644fd1567bb6577bda2a4a3d7f5746e"
+      },
+      "license": {
+        "expression": "MIT AND BSD-3-Clause",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/deepseek_quantization/LICENSE",
+            "sha256": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/deepseek_quantization/TILELANG-LICENSE",
+            "sha256": "f70e5cdc24c3797af741930440086f9a0ad36930b05a3dfc25b420936dc2cfa1"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/deepseek_quantization/CUTLASS-LICENSE",
+            "sha256": "7c43639eb22306fac7465778f1ac7a58a76fa93764fc784249023b6d394f0430"
+          }
+        ]
+      }
+    },
+    {
       "name": "sglang_activation",
       "class": "in_tree",
       "repository": "https://github.com/sgl-project/sglang.git",

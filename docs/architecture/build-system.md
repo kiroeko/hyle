@@ -66,6 +66,11 @@ ABI。多个模块可以共享锁定 provider headers，但这不自动形成 HY
 内容 hash、许可证、owner 和投影信息。模块 CMake 只请求具名依赖，不自行写 URL/version。configure
 按所选闭包取得依赖，未选 feature 不探测、不下载。
 
+仅以原文 vendored 的官方程序也可以来自 Hugging Face：`in_tree` 条目固定 canonical 模型仓库、
+40位 revision、`source_file` 的上游相对路径/规范化 SHA256/vendor 内相对文件，并继续绑定
+完整 vendor tree 和许可证。该来源不进入 GitHub archive/FetchContent 下载路径；选中该依赖时
+核对原文 hash，关闭对应路线时不要求该 vendor 目录。不为模型代码下载模型权重或假造 archive。
+
 源码是跨 build 的资源：`HYLE_DEP_SOURCE_CACHE` 保存锁定 source；每个 build tree 的 `_deps`/
 `HYLE_DEP_BUILD_DIR` 只保存 binary/subbuild 状态。首次在线配置可以填充 cache，后续 fresh build 复用；
 离线机器搬运完整受管 cache，或通过根级 `hyle-offline-deps.cmake` 显式注入已审查源码。产品 source

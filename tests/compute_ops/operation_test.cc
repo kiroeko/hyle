@@ -18,6 +18,26 @@ namespace {
 
 using namespace hyle::compute;
 
+TEST(ModelQuantizationRoundtrip, ExplicitFormatsShapeAndRejections) {
+  using Format = model_ops::BlockQuantizationFormat;
+  for (auto format : {Format::kFloat8E4M3Block64, Format::kFloat4E2M1Block32}) {
+    const auto op = model_ops::block_quantization_roundtrip(format);
+    const auto valid = TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 2>{3, 128}).value();
+    auto output = infer_single_output(op, std::array{valid});
+    ASSERT_TRUE(output);
+    EXPECT_EQ(*output, valid);
+    EXPECT_EQ(operation_name(op), "block-quantization-roundtrip");
+    EXPECT_FALSE(infer_single_output(op, std::span<const TensorDesc>{}));
+    EXPECT_FALSE(infer_single_output(op, std::array{valid, valid}));
+    for (const auto desc : {TensorDesc{},
+        TensorDesc::dense(DataType::kFloat32, valid.dimensions()).value(),
+        TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 2>{3, 65}).value(),
+        TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 1>{128}).value()})
+      EXPECT_FALSE(infer_single_output(op, std::array{desc}));
+    EXPECT_FALSE(infer_single_output(model_ops::block_quantization_roundtrip(static_cast<Format>(99)), std::array{valid}));
+  }
+}
+
 TEST(ModelFloat8Decode, PhysicalLayoutAndInvalidStorageAreExplicit) {
   const auto w = float8_weight_description(256, 129, Float8ScaleMode::kFloat32Block128).value();
   for (auto type : {DataType::kFloat32, DataType::kBFloat16}) {

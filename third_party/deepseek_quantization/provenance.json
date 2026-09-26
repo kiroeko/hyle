@@ -1,0 +1,46 @@
+{
+  "repository": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro",
+  "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+  "upstream_path": "inference/kernel.py",
+  "upstream_sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+  "toolchain": {
+    "tilelang": "0.1.14",
+    "tvm_ffi": "0.1.12",
+    "nvcc": "13.3",
+    "target": "sm_89",
+    "host": "MSVC 19.50"
+  },
+  "adaptations": "Original helpers/kernel bodies unchanged. Compile with N=group, dynamic M=total groups, inplace=True, scale_dtype=float32; scales are scratch, BF16 result unchanged. No product Python runtime.",
+  "programs": [
+    {
+      "kernel": "act_quant_kernel",
+      "group": 64,
+      "symbol": "kDeepSeekQuantization8",
+      "bytes": 13472,
+      "sha256": "4f8d258a26545629468c12b2a80ce771b0cc3bcacb886da77f7443b832aa7aa1",
+      "threads": 128,
+      "dynamic_shared_bytes": 4096,
+      "abi": [
+        "float* scales",
+        "bf16* input",
+        "bf16* output",
+        "int32 groups"
+      ]
+    },
+    {
+      "kernel": "fp4_quant_kernel",
+      "group": 32,
+      "symbol": "kDeepSeekQuantization4",
+      "bytes": 20640,
+      "sha256": "191baf3fdd63c3d7e250bcddcd15d702c1f2c3681a9636582e7901696b5a97ac",
+      "threads": 128,
+      "dynamic_shared_bytes": 2048,
+      "abi": [
+        "float* scales",
+        "bf16* input",
+        "bf16* output",
+        "int32 groups"
+      ]
+    }
+  ]
+}
