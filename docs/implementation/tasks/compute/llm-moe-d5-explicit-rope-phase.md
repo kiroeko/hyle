@@ -47,3 +47,27 @@ registry 迁移使用本轮 baseline 作为 previous-ref。
 [显式相位证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/explicit-rope-phase/README.md)。
 同一候选随后通过CPU完整owner的9个CTest目标，包括404个GTest及executor/源码/原生分配故障
 检查，无SKIP。GPU路线、三交付和P1尚未验收；不增加完整画像格，不写CLOSED。
+
+## CUDA 首批的有限纠正（AUDITED）
+
+baseline `23b32233`。候选 `87f2cb03` 的 CUDA Direct 144项中142项通过；两项新 DeepSeek
+消费者失败。Graph 整批继续完成，保留本轮原始日志，不以中途观察重启。
+
+1. `ggml-cuda/unary.cu` 的 sinf/cosf 仍由上游统一 `-use_fast_math` 编译；
+   [NVIDIA 浮点合同](https://docs.nvidia.com/cuda/cuda-programming-guide/05-appendices/mathematical-functions.html)
+   明确说明它们被替换为 intrinsic，超出[-π,π]的精度下降。长位置第一旋转对的频率正好为1，
+   已不存在倒数舍入，仍发生约0.0037差异，故不能通过继续改频率或oracle掩盖。
+   NVCC 13.3 明确拒绝 `--use_fast_math=false`，不能在source options追加假关闭参数。
+2. Copy(I32位置切片)与Bool Select落入D4已保留的精确结构性残余；当前测试对全部op一概要求
+   成熟Provider ID，错误拒绝这些既有边界机制。遵守
+   [D4残余裁决](llm-moe-d4-retirement-ledger.json)，不扩充或优化原生数学。
+
+有限修正 F35.4：只将锁定ggml的原版 `unary.cu` 放入私有object target，复用其include、definitions、
+工具链和链接依赖，去掉该编译单元的fast-math。其它ggml CUDA源码、pin及编译选项不改，
+不复制或修改数学kernel。该object嵌入原ggml-cuda库，三交付仍沿原组件导出。
+这会影响同文件原有Unary的精度/成本，必须保留受影响owner回归及D5-A6成本验收，不能提前称零成本。
+
+有限修正 F35.5：Direct将I32 Copy、Bool条件的F32 Select标为既有结构性残余；Graph只允许
+单节点Copy/Select残余step，其余算术继续要求成熟Provider。增加replay/output诊断和非有限值
+失败断言，保持全部原误差门。沿本卡已声明的一轮具体失败纠正执行；未改变的CPU证据复用。
+先以新失败用例和同编译单元的直接消费者定向验证，不重新运行未受影响的大型MoE批次。
