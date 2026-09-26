@@ -78,4 +78,5 @@ selector WORKTREE plan为READY，影响面与skipped理由保存在本地
 终态失败后从同一 Executable 新建 Invocation；源码 `Invocation::submit` 也拒绝 failed phase。
 这不是 hash 数学或执行器缺陷，不重开 CLOSED route。沿 F32.4 的一轮具体纠正，仅修消费者：
 断言失败槽不可再提交，然后重新创建、绑定和 capture 该槽；另一个槽及 Queue/Executable 保持，
-直接 Compute 仍检验其本来的可恢复合同。保留失败证据，与 F35 定向 CUDA 批次合验。
+Direct 的 `OperationInvocation` 同样在终态失败后退役；测试分别断言旧槽拒绝，并从原
+PreparedOperation 新建槽恢复。保留失败证据，与 F35 定向 CUDA 批次合验。

@@ -145,11 +145,17 @@ TEST(CudaDefaultGraph, HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsInd
         bind_and_capture(0);
       }
       auto direct_done = direct.submit(queues[0], direct_inputs, direct_outputs);
-      ASSERT_TRUE(direct_done);
+      ASSERT_TRUE(direct_done) << direct_done.error().message();
       status = direct_done->wait();
       EXPECT_EQ(status.IsOutOfRange(), invalid) << status.message();
       EXPECT_EQ(status.ok(), !invalid) << status.message();
       if (!invalid) check(0);
+      if (invalid) {
+        auto retired = direct.submit(queues[0], direct_inputs, direct_outputs);
+        ASSERT_FALSE(retired);
+        EXPECT_TRUE(retired.error().IsFailedPrecondition());
+        direct = prepared.create_invocation().value();
+      }
     }
     ASSERT_TRUE(owner.close().ok());
   }
