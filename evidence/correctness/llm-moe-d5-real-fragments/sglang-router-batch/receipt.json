@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "candidate": "e25c5188b3c61798fe96fc90cb12384086dd2d90",
+  "tree": "227722d2e8de4948494032e6f5a0baf6e96bd594",
+  "audit_baseline": "bc4c3a48c5b24ad5d851d68ab721293f4b782b72",
+  "scope": "F25 complete SGLang DeepSeek router plus shared thirteen-profile routing/eight-GGUF-MoE regression",
+  "verdict": "PASS_WITHIN_BATCH_SCOPE",
+  "complete_profile_ledger_changes": 0,
+  "whole_profile_run_pass": 72,
+  "whole_profile_total": 176,
+  "routes": {
+    "cpu": {
+      "compute": 2,
+      "graph": 2
+    },
+    "cuda": {
+      "compute": 5,
+      "graph": 3
+    },
+    "vulkan": {
+      "compute": 2,
+      "graph": 2
+    },
+    "apple": {
+      "compute": 2,
+      "graph": 2
+    }
+  },
+  "all_route_tests": "PASS, zero skip",
+  "extra": {
+    "public_schema": "55/55 PASS",
+    "sglang_regression": "6/6 PASS",
+    "headers": "2/2 PASS"
+  },
+  "hardware": {
+    "windows": "RTX 4070 SM89 / CUDA Toolkit 13.3.73; Windows CPU and Vulkan",
+    "apple": "MacBook Air Mac16,12 Apple M4"
+  },
+  "native_boundary": {
+    "experts": [
+      256,
+      384
+    ],
+    "tokens": [
+      1,
+      513
+    ],
+    "modes": 6,
+    "changed_input_replays_each": 2,
+    "entries": [
+      "Direct",
+      "Graph"
+    ]
+  },
+  "boundary_modes": [
+    "mixed large logits",
+    "equal-score ties",
+    "underflow to zero",
+    "invalid NaN data memory safety",
+    "negative tail",
+    "near ties"
+  ],
+  "resource_tests": [
+    "host resource rejection",
+    "arity rejection",
+    "input/output overlap",
+    "output/output overlap",
+    "wrong bound resource",
+    "two independent queues/lanes",
+    "each preparation metadata allocation failure rollback and retry"
+  ],
+  "semantics": "Original stable sqrt-softplus, bias only for selection, unbiased positive-sum normalization, scale; valid tied expert membership may vary. No generic Softplus/TopK gate change.",
+  "windows_driver_repair": {
+    "cause": "CMake cached English showIncludes prefix, temporary driver emitted localized Chinese; Ninja stored zero header dependencies",
+    "fix": "VSLANG=1033 in temporary F25 drivers; invalidate only C/C++ object files with zero recorded dependencies",
+    "invalidated_objects": {
+      "cuda": 57,
+      "cpu": 83,
+      "vulkan": 12
+    },
+    "verified_vulkan_consumer_dependencies": 93,
+    "note": "No product/global build tool change; passed binaries retained; missing cached objects rebuild on the next required build."
+  },
+  "limitations": [
+    "synthetic nonzero weights tied to exact tensor headers; no whole-model inference",
+    "resident experts reduced to top-k+1; full router width retained",
+    "official expert packing, hash routing and attention/MTP remainder pending",
+    "selector READY is not a verdict for all selected gates",
+    "D5 source/static/shared delivery and applicable P1 not run"
+  ],
+  "implementation_loc": {
+    "lines": 58561,
+    "files": 232,
+    "tests_and_vendor_excluded": true
+  },
+  "files_sha256": {
+    "cpu-build.cmd": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+    "cpu-build.log.gz": "50590d06bca80d19a8588fcf04b4be19d57b7b13f5a7e4361ccce2dfc0d28416",
+    "cpu-compute.log.gz": "1961650e9528550a3475c0c835cbc1ced5a2efd9263f6b1708535a10c717520b",
+    "cpu-graph.log.gz": "7b56ca042373f2e31ffedff218a8f96546eee749d15515084d0f3473fe6e7a8f",
+    "cuda-build.cmd": "a50902eeab54a2f250fb14046adc6bf35bfeb21bc05449d23f9f45523a262244",
+    "cuda-build.log.gz": "6cb98b473f9cdbf489e163683f18742b85db2154bf389e1e6ece528d8c92d643",
+    "cuda-compute.log.gz": "6c2b6892c48f76d34eb958cb914cc46dbeed7881bf34d14d426c2342a3493de2",
+    "cuda-graph.log.gz": "7e5608eedf8b54d20d01f1a1fafa28b838914607900f558ee6a158c6a78561be",
+    "vulkan-build.cmd": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf",
+    "vulkan-build.log.gz": "70c322743da8e1c8776f903ec53aabe382b68ff5ce447dd42462fec4c35bac1e",
+    "vulkan-compute.log.gz": "d83f781939c2b429bbd513a653428f628db1ac9e20310cc0e26b1ecc5dc6bf06",
+    "vulkan-graph.log.gz": "907693c8a1c454749cfc79af5c8be6a89f4d71d39881001525070e623c2065bd",
+    "apple-build-and-test.log.gz": "c205d8626778961ecd4313fee80522003d0eded3370ced7fe497f5ca73b411d7",
+    "extra-build.cmd": "9b7930bd22f1a7d3ba209198bda0717bf5379be838937f282da34f0ef878468c",
+    "extra-build.log.gz": "6f24075e2c143efb0e2dd1ef3f925b3b8214b4649c1ed3e3f88559cab8b6c008",
+    "extra-hyle_compute_ops_test.exe.log.gz": "d1ce411d44f19ff9e948b6e0b1afd3f2db8a76e58b93f24aee318e463dd47253",
+    "extra-hyle_compute_provider_cuda_test.exe.log.gz": "b1638fa7c12b7eaa47c258e0914811e65fadcc1fb59a445e5a788ddda7bfdbe3",
+    "initial-lock-order-FAIL.log.gz": "49aa656a43af8ef2f9a76afe4f2d78829d2469ca343687be5423932e2284d4f0",
+    "plan.json": "f0237f731a724b391ad80e1f63ea50328fce29a04b4f1fbab72e71a60147d6f7",
+    "loc.json": "e74d324cb713a340cf0a09fdab4a409209d2995b5025324617d69cde7e865733",
+    "d5-f25-windows.py": "897de2f0df3e7f8300310748df635f3aa25333492d4d4029f26f23f959917a63",
+    "d5-f25-apple.py": "b773355603ff2bbfc2f832f75028112c6d27cf43c64d9aaf79a0f6c47f545f64",
+    "d5-f25-extra.py": "4c7a8ef896552e13b94fd72c243ed555293b145a20f6fda4ba851f39427d7aed",
+    "d5-f25-repair-deps.py": "2999fc97e5006bafbe079ae71dad3e758df2979e67ba04ec46cb222543afc011",
+    "d5-moe-semantic-windows.py": "798b6ff7124fc8620bac34267b09eca9c4dc5281b4fc56cbe9c632279e2b9483",
+    "d5-moe-semantic-apple.py": "91b259f38907188eb4d999e5bd0e61590504974c3a29ea00aaf682df046d780e",
+    "dependency-repair-cpu.txt": "19c7c0b4b65198ed11ffa4dc1659915819321c61a1b2666d0b0df4d5bcc588bd",
+    "dependency-repair-cuda.txt": "6abe314f784dcce5dfe62f815e405d19e59b1ad38ccd0ede7685c1fcc213fbd4",
+    "dependency-repair-vulkan.txt": "8637445c1ba69f6ddbccec566f99fd6a1286b2b14a140b827b662906ff42a05b"
+  },
+  "uncompressed_log_sha256": {
+    "cpu-build.log": "d1fc0d99d407339a84db88f0303a1307f9ea044ba9ee871b30856ad29150a52d",
+    "cpu-compute.log": "b320a0df0e7e9de9e886d408d719086ee6f6034717387fa7cea27b55cc04e457",
+    "cpu-graph.log": "f4f7f963fa75ce461a70c49dc1741244adcbdd5841203b58dd87b133e67803c8",
+    "cuda-build.log": "b28dc7c3e862b0ca38c38e6716ec20c8818f124993b1422b46af66fbfe985b6b",
+    "cuda-compute.log": "6d976230a55921af94f623f325e9185031b834ece3d79390b9c160e9a0ad78b0",
+    "cuda-graph.log": "955535928cbae188357cd4d535e094f5e45c9472e7acf314bbb207aaccc423ef",
+    "vulkan-build.log": "d5becd68ebb70a4982e2e079a5c6f2242b7a06e4309a8c5e1f4e91a442e248dd",
+    "vulkan-compute.log": "d414b6ba0efcecf9842053a33b56c72c8f5b0b2cea8057c061bb7589b39d47de",
+    "vulkan-graph.log": "f8dd29d6c24e6989ae086ef826dbd848cc6b3d73c1641c4cfde68e22d184737d",
+    "apple-build-and-test.log": "fcebf846fae7ccc680a01ee9abe6681652aeda14af4df74768be9fd5b83071fd",
+    "extra-build.log": "f31b0427dee27a10f55f4112693f5e74657e3897f81da7dea1596ff451a5f1d7",
+    "extra-hyle_compute_ops_test.exe.log": "dd76dbec35a312bf21b31fc090ad8d79570ecc7c6720310d68a2445a2cf16c3e",
+    "extra-hyle_compute_provider_cuda_test.exe.log": "5d47470b846c37aa4c00c771f93ce93b1d4b413b6e71df87f1f991d3213a4694",
+    "initial-lock-order-FAIL.log": "09b89338b615aa78a6ed2e9f74bd0da1481d95bf5183de98f9f2e81b9379fde7"
+  }
+}

@@ -1,0 +1,2 @@
+@echo off
+call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 && cmake --build "C:\public\project-hyle\hyle\.scratch\b-cuda-d5" --target hyle_compute_ops_tests hyle_compute_provider_cuda_tests -j 2 && ctest --test-dir "C:\public\project-hyle\hyle\.scratch\b-cuda-d5" -R "^hyle_compute_(ops|provider_cuda)_header_self_contained_test$" --output-on-failure

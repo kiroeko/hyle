@@ -1,0 +1,12 @@
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\region.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_elementwise.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\recurrent_test.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\recurrent_test.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\gguf_test.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\gguf_test.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_profile_test.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj

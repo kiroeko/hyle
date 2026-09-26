@@ -67,6 +67,14 @@ latent down → experts → norm → up。只将 resident expert capacity 缩为
 不抽 helper 新写数学，不为该缺口重做全平台历史审计。官方 expert 等其余项目继续按上段保留。
 整格 ledger 不变；统一 Compute+Graph 实现统计为58,309行／228文件。
 
+**F25 融合路由批次已验证（`e25c5188`）：** CUDA 的 DeepSeek 得分路由已改由原版 SGLang
+完整程序承载，小/大 token 分支、并列/负尾部、资源拒绝与 OOM 通过。十三画像得分路由与八个
+GGUF 完整 MoE 链在四路线八入口全部通过；本批20个测试组、公共 schema55项、SGLang回归6项
+及独立头2项均通过。见[收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-router-batch/README.md)。
+这消除了上一批 CUDA 的成熟 Provider 断言失败，但不代签官方专家格式、DeepSeek hash 层或其它
+attention/MTP。整格仍为72/176；最新实现为58,561行／232文件。进度报告区分这些已验片段和
+完整画像，不把文档、构建步骤或固定百分比当作新增验收。
+
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22

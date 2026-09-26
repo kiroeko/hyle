@@ -60,4 +60,9 @@ launch policy 不变。保留来源与 patch 说明，不把修过的文件称�
 
 ## 当前 verdict
 
-AUDITED；产品代码尚未修改。本卡不解除旧 CUDA FAIL，也不增加完整画像 ledger。
+有限接线已完成，产品候选 `e25c5188b3c61798fe96fc90cb12384086dd2d90`。
+CUDA Direct 5/5、Graph 3/3；CPU/Vulkan/Apple 两入口各2/2全部通过，合计20个测试组，无跳过。
+公共 schema 55/55、SGLang 回归6/6、独立头2/2通过。完整原生程序的冷绑定、边界、资源失败
+与四路线消费者结果见[批量收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-router-batch/README.md)。
+旧 CUDA FAIL 保留为历史，新候选消除了该成熟 Provider 接线缺口。完整画像 ledger 仍为72/176，
+三交付/P1和其它D5范围尚未完成，owner 保持 AUDITED；不继续扩张本卡数学或启动自研比较。
