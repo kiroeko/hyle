@@ -1072,6 +1072,22 @@ plain F32 rank-2 activation、native output-major 转置 RHS、F32 output 的域
 - 验证：本批 CUDA Direct/Graph 的完整 attention 中间值和两位置 softmax oracle、重放；
   现有 F16/BF16 和 owner suite 在同一稳定批末复核，不单开逐算子 P1。
 
+### 本批 Vulkan 数值与 Direct 生命周期的测试校正
+
+固定 upstream `ggml-vulkan.cpp` 的 matrix path 在 coopmat2 下将 F32 两侧乘法输入转换 F16；
+`ggml_prec_set_acc(F32)` 保证累加类型，不禁止输入舍入。这与本批两位置注意力首次采用的
+8e-5 F32 点值门不一致。首个失败点：完整 F32 oracle `-0.1279833375`，独立 F16 乘法输入
+舍入 oracle `-0.1280732523`，实际 `-0.1280732453`。没有修改 Provider、上游或图算法。
+Vulkan attention 的 score/gated output 同时对完整 F32 参考检查 `2e-4 + 0.002*abs(ref)`，
+并对独立舍入参考检查 `8e-5 + 0.00004*abs(ref)`；norm/RoPE 仍用原严格门，GDN state 用
+`1e-7 + 0.00004*abs(ref)`。该数值预算只签本批真实归一化 attention 域，不声称任意 F32
+指数范围都由 F32 乘法执行；CPU/CUDA/Apple 不使用这项 Vulkan 舍入参考。
+
+Apple/Vulkan 的 Direct recipe 沿既有普通入口复用准备好的 Program，每次调用独立持有
+invocation/result；下游绑定会保留上游结果，因此不能把尚有消费者引用的 invocation 当作可
+覆盖槽位重放。Graph 则复用同一 invocation。此次校正不扩公共生命周期 API；D5-A6 必须分别
+计入 Direct 的调用/资源成本与 Graph 重放成本，不能声称两者都已证明零 workspace 分配。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

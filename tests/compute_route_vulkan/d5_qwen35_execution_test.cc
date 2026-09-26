@@ -1263,12 +1263,14 @@ void run_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
   auto context = vulkan_test::context().value();
-  const auto workload = q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+  const auto workload =
+      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
   std::vector<v::Tensor> tensors(fixture.descriptions.size());
   const auto &bytes = fixture.constant_bytes;
   for (std::size_t index = 0; index < fixture.constants.size(); ++index) {
     const auto id = fixture.constants[index];
-    tensors[id.ordinal()] = upload(context, fixture.description(id), std::span<const std::byte>(bytes[index]));
+    tensors[id.ordinal()] = upload(context, fixture.description(id),
+                                   std::span<const std::byte>(bytes[index]));
   }
   fixture.constant_bytes = {};
 
@@ -1288,15 +1290,16 @@ void run_q24_semantic_fragment(
                             std::span<const v::Argument>(arguments)));
   }
 
-  std::vector<v::Invocation> invocations;
-  for (auto &call : calls)
-    invocations.push_back(call.program.create_invocation().value());
-
   for (const auto &expected : fixture.replays) {
+    // The previous outputs have been checked; release their leases before
+    // replay.
+    for (const auto &step : fixture.nodes)
+      for (auto id : step.outputs)
+        tensors[id.ordinal()] = v::Tensor{};
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
       auto id = fixture.inputs[i];
       tensors[id.ordinal()] = upload(context, fixture.description(id),
-                                      std::span(expected.inputs[i]));
+                                     std::span(expected.inputs[i]));
     }
     std::size_t call_index = 0;
     for (const auto &step : fixture.nodes) {
@@ -1313,20 +1316,20 @@ void run_q24_semantic_fragment(
       for (const auto id : step.inputs)
         if (id.kind() != qfull::ValueKind::kConstant)
           inputs.push_back(tensors[id.ordinal()]);
-      auto &invocation = invocations[call_index++];
-      ASSERT_TRUE(invocation.bind(inputs).ok());
-      auto work = invocation.submit();
-      ASSERT_TRUE(work) << work.error().message();
-      auto result = work->wait();
-      ASSERT_TRUE(result) << result.error().message();
-      const auto outputs = result->get()->tensors();
+      const auto outputs =
+          run(calls[call_index++], std::span<const v::Tensor>(inputs));
       ASSERT_EQ(outputs.size(), step.outputs.size());
       for (std::size_t index = 0; index < outputs.size(); ++index)
         tensors[step.outputs[index].ordinal()] = outputs[index];
     }
     for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
-      const auto actual = float_values(context, tensors[fixture.outputs[output].ordinal()]);
-      sem::expect_output(fixture, actual, expected.outputs[output]);
+      const auto actual =
+          float_values(context, tensors[fixture.outputs[output].ordinal()]);
+      SCOPED_TRACE(output);
+      sem::expect_output(fixture, actual, expected.outputs[output],
+                         expected.native_outputs.empty()
+                             ? std::span<const float>{}
+                             : expected.native_outputs[output]);
     }
   }
 }
@@ -1336,9 +1339,18 @@ TEST(VulkanQwen38_24T, D5GgufAttentionGdnAndMtpUseRealRoleTypes) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (auto profile : sem::kProfiles) {
     SCOPED_TRACE(profile->variant);
-    { SCOPED_TRACE("attention"); run_q24_semantic_fragment(sem::attention(profile)); }
-    { SCOPED_TRACE("gdn"); run_q24_semantic_fragment(sem::gdn(profile)); }
-    { SCOPED_TRACE("mtp"); run_q24_semantic_fragment(sem::mtp(profile)); }
+    {
+      SCOPED_TRACE("attention");
+      run_q24_semantic_fragment(sem::attention(profile));
+    }
+    {
+      SCOPED_TRACE("gdn");
+      run_q24_semantic_fragment(sem::gdn(profile));
+    }
+    {
+      SCOPED_TRACE("mtp");
+      run_q24_semantic_fragment(sem::mtp(profile));
+    }
   }
 }
 

@@ -511,17 +511,20 @@ void run_q24_semantic_fragment(
   auto context = g::cpu::create_context().value();
   std::vector<hyle::mem::Buffer> constants(fixture.constants.size());
   for (std::size_t index = 0; index < constants.size(); ++index)
-    constants[index] = half_test::buffer<std::byte>(fixture.constant_bytes[index]);
+    constants[index] =
+        half_test::buffer<std::byte>(fixture.constant_bytes[index]);
   fixture.constant_bytes = {};
   std::vector<g::ConstantBinding> bindings;
   for (std::size_t i = 0; i < constants.size(); ++i)
-    bindings.push_back({full.constants[i],
-                        c::ConstTensorView::create(fixture.description(fixture.constants[i]),
-                                                    constants[i].view()).value()});
-  const auto workload = q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+    bindings.push_back(
+        {full.constants[i],
+         c::ConstTensorView::create(fixture.description(fixture.constants[i]),
+                                    constants[i].view())
+             .value()});
+  const auto workload =
+      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
   auto compiled_result = g::compile(
-      full.graph, context,
-      {.constants = bindings, .workload = workload});
+      full.graph, context, {.constants = bindings, .workload = workload});
   ASSERT_TRUE(compiled_result) << compiled_result.error().message();
   auto compiled = std::move(*compiled_result);
   expect_mature(compiled);
@@ -532,13 +535,21 @@ void run_q24_semantic_fragment(
   for (auto id : fixture.outputs)
     outputs.push_back(output_buffer(fixture.description(id)));
   for (std::size_t i = 0; i < inputs.size(); ++i)
-    ASSERT_TRUE(invocation.bind(full.inputs[i],
-        c::ConstTensorView::create(fixture.description(fixture.inputs[i]),
-                                    inputs[i].view()).value()).ok());
+    ASSERT_TRUE(
+        invocation
+            .bind(full.inputs[i],
+                  c::ConstTensorView::create(
+                      fixture.description(fixture.inputs[i]), inputs[i].view())
+                      .value())
+            .ok());
   for (std::size_t i = 0; i < outputs.size(); ++i)
-    ASSERT_TRUE(invocation.bind(full.outputs[i],
-        c::TensorView::create(fixture.description(fixture.outputs[i]),
-                               outputs[i].view()).value()).ok());
+    ASSERT_TRUE(
+        invocation
+            .bind(full.outputs[i],
+                  c::TensorView::create(fixture.description(fixture.outputs[i]),
+                                        outputs[i].view())
+                      .value())
+            .ok());
   auto queue = context.create_queue().value();
   const std::array queues{
       g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
@@ -562,9 +573,18 @@ TEST(CpuGraphQwen38_24T, D5GgufAttentionGdnAndMtpUseRealRoleTypes) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (auto profile : sem::kProfiles) {
     SCOPED_TRACE(profile->variant);
-    { SCOPED_TRACE("attention"); run_q24_semantic_fragment(sem::attention(profile)); }
-    { SCOPED_TRACE("gdn"); run_q24_semantic_fragment(sem::gdn(profile)); }
-    { SCOPED_TRACE("mtp"); run_q24_semantic_fragment(sem::mtp(profile)); }
+    {
+      SCOPED_TRACE("attention");
+      run_q24_semantic_fragment(sem::attention(profile));
+    }
+    {
+      SCOPED_TRACE("gdn");
+      run_q24_semantic_fragment(sem::gdn(profile));
+    }
+    {
+      SCOPED_TRACE("mtp");
+      run_q24_semantic_fragment(sem::mtp(profile));
+    }
   }
 }
 

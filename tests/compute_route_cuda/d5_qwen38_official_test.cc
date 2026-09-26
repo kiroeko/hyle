@@ -679,7 +679,8 @@ void run_q24_semantic_fragment(
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
   const auto resource = memory.ref();
   auto queue = context.create_queue().value();
-  const auto workload = q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+  const auto workload =
+      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
   std::vector<hyle::mem::Buffer> buffers(fixture.descriptions.size());
   std::vector<hyle::mem::BufferView> views(fixture.descriptions.size());
   const auto allocate = [&](qfull::ValueId id) {
@@ -725,7 +726,8 @@ void run_q24_semantic_fragment(
 
   for (const auto &expected : fixture.replays) {
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
-      ASSERT_TRUE(views[fixture.inputs[i].ordinal()].write(expected.inputs[i]).ok());
+      ASSERT_TRUE(
+          views[fixture.inputs[i].ordinal()].write(expected.inputs[i]).ok());
     std::size_t call_index = 0;
     for (const auto &step : fixture.nodes) {
       if (step.operation.kind() == c::OperationKind::kView)
@@ -733,17 +735,18 @@ void run_q24_semantic_fragment(
       std::vector<c::ConstTensorView> inputs;
       std::vector<c::TensorView> outputs;
       for (const auto id : step.inputs)
-        inputs.push_back(c::ConstTensorView::create(
-                             fixture.description(id), views[id.ordinal()])
+        inputs.push_back(c::ConstTensorView::create(fixture.description(id),
+                                                    views[id.ordinal()])
                              .value());
       for (const auto id : step.outputs)
-        outputs.push_back(c::TensorView::create(
-                              fixture.description(id), views[id.ordinal()])
-                              .value());
+        outputs.push_back(
+            c::TensorView::create(fixture.description(id), views[id.ordinal()])
+                .value());
       run(calls[call_index++], queue, inputs, outputs);
     }
     for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
-      const auto actual = half_test::read<float>(buffers[fixture.outputs[output].ordinal()]);
+      const auto actual =
+          half_test::read<float>(buffers[fixture.outputs[output].ordinal()]);
       sem::expect_output(fixture, actual, expected.outputs[output]);
     }
   }
@@ -754,9 +757,18 @@ TEST(CudaQwen38_24T, D5GgufAttentionGdnAndMtpUseRealRoleTypes) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (auto profile : sem::kProfiles) {
     SCOPED_TRACE(profile->variant);
-    { SCOPED_TRACE("attention"); run_q24_semantic_fragment(sem::attention(profile)); }
-    { SCOPED_TRACE("gdn"); run_q24_semantic_fragment(sem::gdn(profile)); }
-    { SCOPED_TRACE("mtp"); run_q24_semantic_fragment(sem::mtp(profile)); }
+    {
+      SCOPED_TRACE("attention");
+      run_q24_semantic_fragment(sem::attention(profile));
+    }
+    {
+      SCOPED_TRACE("gdn");
+      run_q24_semantic_fragment(sem::gdn(profile));
+    }
+    {
+      SCOPED_TRACE("mtp");
+      run_q24_semantic_fragment(sem::mtp(profile));
+    }
   }
 }
 

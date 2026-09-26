@@ -1438,26 +1438,31 @@ void run_q24_semantic_fragment(
   auto context = a::Context::create().value();
   std::vector<mx::array> constants;
   for (std::size_t index = 0; index < fixture.constant_bytes.size(); ++index)
-    constants.push_back(fixture.description(fixture.constants[index]).is_plain()
-        ? upload(context, fixture.description(fixture.constants[index]),
-                 std::span<const std::byte>(fixture.constant_bytes[index])).native
-        : packed_array(fixture.constant_bytes[index]));
+    constants.push_back(
+        fixture.description(fixture.constants[index]).is_plain()
+            ? upload(context, fixture.description(fixture.constants[index]),
+                     std::span<const std::byte>(fixture.constant_bytes[index]))
+                  .native
+            : packed_array(fixture.constant_bytes[index]));
   fixture.constant_bytes = {};
-  const auto workload = q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+  const auto workload =
+      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
   ga::CompileReport report;
   auto compiled = ga::compile(context, full.graph, constants,
                               {.report = &report, .workload = workload});
   ASSERT_TRUE(compiled) << compiled.error().message();
   ASSERT_TRUE(report.status.ok());
   if (fixture.quantized)
-    EXPECT_NE(report.implementation_policy.find("ggml Metal"), std::string::npos);
+    EXPECT_NE(report.implementation_policy.find("ggml Metal"),
+              std::string::npos);
   EXPECT_EQ(compiled->workload(), workload);
   auto invocation = compiled->create_invocation().value();
   for (const auto &expected : fixture.replays) {
     std::vector<mx::array> inputs;
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
       inputs.push_back(upload(context, fixture.description(fixture.inputs[i]),
-                                std::span(expected.inputs[i])).native);
+                              std::span(expected.inputs[i]))
+                           .native);
     ASSERT_TRUE(invocation.bind(inputs).ok());
     auto work = invocation.submit();
     ASSERT_TRUE(work) << work.error().message();
@@ -1477,9 +1482,18 @@ TEST(AppleGraphQwen38_24T, D5GgufAttentionGdnAndMtpUseRealRoleTypes) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (auto profile : sem::kProfiles) {
     SCOPED_TRACE(profile->variant);
-    { SCOPED_TRACE("attention"); run_q24_semantic_fragment(sem::attention(profile)); }
-    { SCOPED_TRACE("gdn"); run_q24_semantic_fragment(sem::gdn(profile)); }
-    { SCOPED_TRACE("mtp"); run_q24_semantic_fragment(sem::mtp(profile)); }
+    {
+      SCOPED_TRACE("attention");
+      run_q24_semantic_fragment(sem::attention(profile));
+    }
+    {
+      SCOPED_TRACE("gdn");
+      run_q24_semantic_fragment(sem::gdn(profile));
+    }
+    {
+      SCOPED_TRACE("mtp");
+      run_q24_semantic_fragment(sem::mtp(profile));
+    }
   }
 }
 

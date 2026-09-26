@@ -29,6 +29,7 @@ using ValueKind = recipe::ValueKind;
 struct Replay final {
   std::vector<std::vector<std::byte>> inputs;
   std::vector<std::vector<float>> outputs;
+  std::vector<std::vector<float>> native_outputs{};
 };
 
 struct Fragment final {
@@ -62,8 +63,8 @@ struct Fragment final {
     return id;
   }
   std::vector<ValueId> append(c::Operation operation,
-                               std::initializer_list<ValueId> ports,
-                               std::size_t count = 1) {
+                              std::initializer_list<ValueId> ports,
+                              std::size_t count = 1) {
     std::vector<c::TensorDesc> in, out(count);
     for (auto id : ports)
       in.push_back(description(id));
@@ -90,13 +91,13 @@ template <class T> std::vector<std::byte> bytes(const std::vector<T> &values) {
   return bytes<T>(std::span<const T>(values));
 }
 inline c::TensorDesc dense(std::initializer_list<std::int64_t> shape,
-                            c::DataType type = c::DataType::kFloat32) {
+                           c::DataType type = c::DataType::kFloat32) {
   return c::TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
 }
 inline std::vector<float> as_float(std::span<const double> values) {
   std::vector<float> result(values.size());
   std::transform(values.begin(), values.end(), result.begin(),
-                   [](double value) { return static_cast<float>(value); });
+                 [](double value) { return static_cast<float>(value); });
   return result;
 }
 
@@ -143,15 +144,20 @@ struct Projection final {
   bool primary_f32 = false;
 };
 inline constexpr std::array kProjections{
-    Projection{"blk.0.attn_qkv.weight", 8192, 20480, c::GgufQuantizedType::kQ5K},
-    Projection{"blk.0.attn_gate.weight", 8192, 16384, c::GgufQuantizedType::kQ5K},
-    Projection{"blk.0.ssm_alpha.weight", 8192, 128, c::GgufQuantizedType::kQ8_0, true},
-    Projection{"blk.0.ssm_beta.weight", 8192, 128, c::GgufQuantizedType::kQ8_0, true},
+    Projection{"blk.0.attn_qkv.weight", 8192, 20480,
+               c::GgufQuantizedType::kQ5K},
+    Projection{"blk.0.attn_gate.weight", 8192, 16384,
+               c::GgufQuantizedType::kQ5K},
+    Projection{"blk.0.ssm_alpha.weight", 8192, 128, c::GgufQuantizedType::kQ8_0,
+               true},
+    Projection{"blk.0.ssm_beta.weight", 8192, 128, c::GgufQuantizedType::kQ8_0,
+               true},
     Projection{"blk.0.ssm_out.weight", 16384, 8192, c::GgufQuantizedType::kQ6K},
     Projection{"blk.3.attn_q.weight", 8192, 32768, c::GgufQuantizedType::kQ5K},
     Projection{"blk.3.attn_k.weight", 8192, 1024, c::GgufQuantizedType::kQ5K},
     Projection{"blk.3.attn_v.weight", 8192, 1024, c::GgufQuantizedType::kQ5K},
-    Projection{"blk.3.attn_output.weight", 16384, 8192, c::GgufQuantizedType::kQ5K}};
+    Projection{"blk.3.attn_output.weight", 16384, 8192,
+               c::GgufQuantizedType::kQ5K}};
 
 struct Weight final {
   c::TensorDesc description;
@@ -161,12 +167,14 @@ struct Weight final {
 // Pack bounded groups of rows. Keep the full physical matrix on the route,
 // but never materialize an extra gigabyte-sized decoded host copy.
 inline Weight weight(std::int64_t columns, std::int64_t reduction,
-                       c::GgufQuantizedType type, bool f32, int seed) {
+                     c::GgufQuantizedType type, bool f32, int seed) {
   auto desc = f32 ? dense({columns, reduction}).transposed().value()
-                  : c::gguf_weight_description(
-                        type, c::DataType::kFloat32, reduction, columns).value();
-  Weight result{desc, std::vector<std::byte>(desc.required_bytes().value()),
-                std::vector<std::vector<std::pair<std::size_t, float>>>(columns)};
+                  : c::gguf_weight_description(type, c::DataType::kFloat32,
+                                               reduction, columns)
+                        .value();
+  Weight result{
+      desc, std::vector<std::byte>(desc.required_bytes().value()),
+      std::vector<std::vector<std::pair<std::size_t, float>>>(columns)};
   constexpr std::int64_t chunk = 32;
   for (std::int64_t first = 0; first < columns; first += chunk) {
     const auto rows = std::min(chunk, columns - first);
@@ -183,13 +191,13 @@ inline Weight weight(std::int64_t columns, std::int64_t reduction,
       packed = bytes(physical);
       decoded = std::move(physical);
     } else {
-      auto native = d5_gguf_test::pack(type, physical, rows, reduction,
-                                       rows * row_bytes);
+      auto native =
+          d5_gguf_test::pack(type, physical, rows, reduction, rows * row_bytes);
       packed = std::move(native.bytes);
       decoded = std::move(native.decoded);
     }
     std::copy(packed.begin(), packed.end(),
-                result.storage.begin() + first * row_bytes);
+              result.storage.begin() + first * row_bytes);
     for (std::int64_t row = 0; row < rows; ++row)
       for (std::int64_t column = 0; column < reduction; ++column) {
         auto value = decoded[row * reduction + column];
@@ -200,7 +208,7 @@ inline Weight weight(std::int64_t columns, std::int64_t reduction,
   return result;
 }
 inline std::vector<float> project(std::span<const float> input,
-                                   const Weight &weight) {
+                                  const Weight &weight) {
   std::vector<float> result(weight.decoded.size());
   for (std::size_t row = 0; row < result.size(); ++row) {
     double sum = 0;
@@ -214,12 +222,12 @@ inline bool primary(const c::ModelArtifactProfileDescription *profile) {
   return profile == &d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile;
 }
 inline Fragment projection(const c::ModelArtifactProfileDescription *profile,
-                              const Projection &role) {
+                           const Projection &role) {
   const bool f32 = primary(profile) && role.primary_f32;
   Fragment f{.profile = profile, .region = 0x040521, .quantized = !f32};
   auto w = weight(role.columns, role.reduction,
-                    primary(profile) ? role.primary : c::GgufQuantizedType::kQ8_0,
-                    f32, 173);
+                  primary(profile) ? role.primary : c::GgufQuantizedType::kQ8_0,
+                  f32, 173);
   auto input = f.input(dense({1, role.reduction}));
   auto stored = f.constant(w.description, std::move(w.storage));
   f.outputs = {f.one(c::Operation(c::MatMul{}), {input, stored})};
@@ -234,7 +242,7 @@ inline Fragment mtp(const c::ModelArtifactProfileDescription *profile) {
   Fragment f{.profile = profile, .region = 0x0d0e21, .quantized = true};
   // Both deployment artifacts use Q8_0 for blk.92.nextn.eh_proj.weight.
   auto w = weight(q::kHidden, 2 * q::kHidden, c::GgufQuantizedType::kQ8_0,
-                    false, 179);
+                  false, 179);
   auto a = f.input(dense({1, q::kHidden}));
   auto b = f.input(dense({1, q::kHidden}));
   const auto a_scale = oracle::scale(q::kHidden);
@@ -256,25 +264,65 @@ inline Fragment mtp(const c::ModelArtifactProfileDescription *profile) {
     auto tail = oracle::rms_norm(second, b_scale);
     joined_values.insert(joined_values.end(), tail.begin(), tail.end());
     auto product = project(joined_values, w);
-    f.replays.push_back({{bytes(first), bytes(second)},
-                          {joined_values, product, oracle::rms_norm(product, a_scale)}});
+    f.replays.push_back(
+        {{bytes(first), bytes(second)},
+         {joined_values, product, oracle::rms_norm(product, a_scale)}});
   }
   return f;
 }
 
 inline std::vector<float> rope(std::span<const float> input,
-                                std::size_t heads) {
+                               std::size_t heads) {
   auto output = std::vector<float>(input.begin(), input.end());
   for (std::size_t token = 0; token < 2; ++token)
     for (std::size_t head = 0; head < heads; ++head)
       for (std::size_t pair = 0; pair < 32; ++pair) {
         const auto offset = (token * heads + head) * 256 + pair * 2;
         const float angle = static_cast<float>(11 + token) / float(pair + 1);
-        output[offset] = input[offset] * std::cos(angle) - input[offset + 1] * std::sin(angle);
-        output[offset + 1] = input[offset] * std::sin(angle) + input[offset + 1] * std::cos(angle);
+        output[offset] = input[offset] * std::cos(angle) -
+                         input[offset + 1] * std::sin(angle);
+        output[offset + 1] = input[offset] * std::sin(angle) +
+                             input[offset + 1] * std::cos(angle);
       }
   return output;
 }
+inline std::array<std::vector<float>, 2>
+attention_reference(std::span<const float> query, std::span<const float> key,
+                    std::span<const float> value, std::span<const float> gates,
+                    bool half_products) {
+  const auto rounded = [&](double value) {
+    return half_products ? half_test::decode(
+                               half_test::encode<hyle::simd::float16_t>(value))
+                         : value;
+  };
+  std::vector<float> scores(query.size()), output(query.size());
+  for (std::size_t token = 0; token < 2; ++token)
+    for (std::size_t head = 0; head < q::kQueryHeads; ++head) {
+      const auto kv_head = head / (q::kQueryHeads / q::kKvHeads);
+      const auto offset = (token * q::kQueryHeads + head) * 256;
+      std::array<double, 2> logits{};
+      for (std::size_t t = 0; t <= token; ++t)
+        for (std::size_t d = 0; d < 256; ++d)
+          logits[t] += rounded(query[offset + d]) *
+                       rounded(key[(t * q::kKvHeads + kv_head) * 256 + d]) /
+                       16.0;
+      const double maximum = token ? std::max(logits[0], logits[1]) : logits[0];
+      double sum = 0;
+      for (std::size_t t = 0; t <= token; ++t)
+        sum += logits[t] = std::exp(logits[t] - maximum);
+      for (std::size_t d = 0; d < 256; ++d) {
+        double v = 0;
+        for (std::size_t t = 0; t <= token; ++t)
+          v += rounded(logits[t] / sum) *
+               rounded(value[(t * q::kKvHeads + kv_head) * 256 + d]);
+        scores[offset + d] = float(v);
+        output[offset + d] =
+            float(v / (1.0 + std::exp(-double(gates[offset + d]))));
+      }
+    }
+  return {std::move(scores), std::move(output)};
+}
+
 inline Fragment attention(const c::ModelArtifactProfileDescription *profile) {
   Fragment f{.profile = profile, .region = 0x040421};
   auto query = f.input(dense({1, 2, q::kQueryHeads, 256}));
@@ -291,17 +339,22 @@ inline Fragment attention(const c::ModelArtifactProfileDescription *profile) {
   auto freq = f.constant(dense({32}), bytes(frequencies));
   auto nq = f.one(c::Operation(c::RmsNorm{}), {query, norm_weight});
   auto nk = f.one(c::Operation(c::RmsNorm{}), {key, norm_weight});
-  const c::Operation rotate(c::RoPE{.rotary_dimensions = 64, .sequence_axis = 1,
+  const c::Operation rotate(c::RoPE{.rotary_dimensions = 64,
+                                    .sequence_axis = 1,
                                     .layout = c::RopeLayout::kInterleaved});
   auto rq = f.one(rotate, {nq, pos, freq});
   auto rk = f.one(rotate, {nk, pos, freq});
-  auto attended = f.one(c::Operation(c::ScaledDotProductAttention{
-      .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
-      .scale = 0.0625F, .causal = true,
-      .accumulation_type = c::DataType::kFloat32}), {rq, rk, value});
-  auto probability = f.one(c::Operation(c::Unary{c::UnaryKind::kSigmoid}), {gate});
+  auto attended =
+      f.one(c::Operation(c::ScaledDotProductAttention{
+                .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+                .scale = 0.0625F,
+                .causal = true,
+                .accumulation_type = c::DataType::kFloat32}),
+            {rq, rk, value});
+  auto probability =
+      f.one(c::Operation(c::Unary{c::UnaryKind::kSigmoid}), {gate});
   auto gated = f.one(c::Operation(c::Binary{c::BinaryKind::kMultiply}),
-                      {attended, probability});
+                     {attended, probability});
   // Publish intermediate Q/K so one-token/trivial attention cannot hide a
   // broken norm or RoPE. Two causal positions exercise nontrivial softmax.
   f.outputs = {nq, nk, rq, rk, attended, gated};
@@ -314,38 +367,23 @@ inline Fragment attention(const c::ModelArtifactProfileDescription *profile) {
     auto normalized_k = oracle::rms_norm_rows(keys, scale, 256);
     auto rotated_q = rope(normalized_q, q::kQueryHeads);
     auto rotated_k = rope(normalized_k, q::kKvHeads);
-    std::vector<float> scores(queries.size()), output(queries.size());
-    for (std::size_t token = 0; token < 2; ++token)
-      for (std::size_t head = 0; head < q::kQueryHeads; ++head) {
-        const auto kv_head = head / (q::kQueryHeads / q::kKvHeads);
-        const auto offset = (token * q::kQueryHeads + head) * 256;
-        std::array<double, 2> logits{};
-        for (std::size_t t = 0; t <= token; ++t)
-          for (std::size_t d = 0; d < 256; ++d)
-            logits[t] += double(rotated_q[offset + d]) *
-                         rotated_k[(t * q::kKvHeads + kv_head) * 256 + d] / 16.0;
-        const double maximum = token ? std::max(logits[0], logits[1]) : logits[0];
-        double sum = 0;
-        for (std::size_t t = 0; t <= token; ++t)
-          sum += logits[t] = std::exp(logits[t] - maximum);
-        for (std::size_t d = 0; d < 256; ++d) {
-          double v = 0;
-          for (std::size_t t = 0; t <= token; ++t)
-            v += logits[t] / sum * values[(t * q::kKvHeads + kv_head) * 256 + d];
-          scores[offset + d] = float(v);
-          output[offset + d] = float(v / (1.0 + std::exp(-double(gates[offset + d]))));
-        }
-      }
-    f.replays.push_back({{bytes(queries), bytes(keys), bytes(values), bytes(gates)},
-                          {normalized_q, normalized_k, rotated_q, rotated_k, scores, output}});
+    auto reference =
+        attention_reference(rotated_q, rotated_k, values, gates, false);
+    auto native =
+        attention_reference(rotated_q, rotated_k, values, gates, true);
+    f.replays.push_back(
+        {{bytes(queries), bytes(keys), bytes(values), bytes(gates)},
+         {normalized_q, normalized_k, rotated_q, rotated_k, reference[0],
+          reference[1]},
+         {{}, {}, {}, {}, native[0], native[1]}});
   }
   return f;
 }
 
 inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   namespace gd = d5_qwen38_gdn_fixture;
-  Fragment f{.profile = profile, .region = 0x050521,
-              .absolute_tolerance = 1.0e-7F};
+  Fragment f{
+      .profile = profile, .region = 0x050521, .absolute_tolerance = 1.0e-7F};
   gd::ConvFixture conv(q::kGdnKeyHeads, q::kGdnValueHeads);
   auto samples = f.input(conv.samples_desc);
   auto weight = f.constant(conv.weights_desc, bytes(conv.weights));
@@ -354,8 +392,9 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   std::array<ValueId, 6> ports;
   for (std::size_t i = 0; i < ports.size(); ++i)
     ports[i] = f.input(fixture.inputs[i]);
-  auto outputs = f.append(c::Operation(c::GatedDeltaNet{}),
-                           {ports[0], ports[1], ports[2], ports[3], ports[4], ports[5]}, 2);
+  auto outputs =
+      f.append(c::Operation(c::GatedDeltaNet{}),
+               {ports[0], ports[1], ports[2], ports[3], ports[4], ports[5]}, 2);
   f.outputs = {convolution, outputs[0], outputs[1]};
   std::vector<float> state;
   for (int seed : {3, 17}) {
@@ -377,12 +416,22 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   return f;
 }
 
-inline void expect_output(const Fragment &fragment, std::span<const float> actual,
-                            std::span<const float> expected) {
-  if (fragment.quantized)
-    d5_qwen38_24t_moe_profiles::expect_output(fragment.profile, actual, expected);
+inline void expect_output(const Fragment &fragment,
+                          std::span<const float> actual,
+                          std::span<const float> expected,
+                          std::span<const float> native_attention = {}) {
+  if (!native_attention.empty()) {
+    // This pin's Vulkan coopmat2 path rounds both multiplicands to F16.
+    // Retain the full F32 accuracy gate as well as an independent rounded
+    // reference; normalization, RoPE and GDN do not use this allowance.
+    oracle::expect_close(actual, expected, 2.0e-4F, 2.0e-3F);
+    oracle::expect_close(actual, native_attention, 8.0e-5F, 4.0e-5F);
+  } else if (fragment.quantized)
+    d5_qwen38_24t_moe_profiles::expect_output(fragment.profile, actual,
+                                              expected);
   else
-    oracle::expect_close(actual, expected, fragment.absolute_tolerance, 4.0e-5F);
+    oracle::expect_close(actual, expected, fragment.absolute_tolerance,
+                         4.0e-5F);
 }
 inline constexpr std::array kProfiles{
     &d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
