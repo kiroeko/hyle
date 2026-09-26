@@ -238,6 +238,38 @@ inline Fragment projection(const c::ModelArtifactProfileDescription *profile,
   return f;
 }
 
+// The official checkpoint stores every projection in BF16, independently
+// of the GGUF role's format. Keep both model input and output storage BF16;
+// the final cast only makes the test's observed result uniformly F32.
+inline Fragment official_projection(const Projection &role) {
+  Fragment f{.profile = &q::kOfficialProfile,
+             .region = 0x040522,
+             .absolute_tolerance = 2.0e-5F};
+  auto input = f.input(dense({1, role.reduction}, c::DataType::kBFloat16));
+  const auto desc =
+      dense({role.columns, role.reduction}, c::DataType::kBFloat16)
+          .transposed()
+          .value();
+  constexpr int seed = 181;
+  auto source =
+      q::sparse_output_major_weight(role.columns, role.reduction, seed);
+  auto stored = f.constant(desc, bytes(source));
+  auto product = f.one(c::Operation(c::MatMul{}), {input, stored});
+  f.outputs = {f.one(c::Operation(c::Cast{c::DataType::kFloat32}), {product})};
+  for (int replay : {3, 19}) {
+    auto activation = q::values(role.reduction, replay);
+    auto projected = q::sparse_projection(activation, role.columns, seed);
+    // Sparse single-coefficient products retain an exact independent BF16
+    // storage oracle without a second full F32 copy of the weight matrix.
+    std::vector<float> expected;
+    expected.reserve(projected.size());
+    for (double value : projected)
+      expected.push_back(static_cast<float>(q::decode(q::encode(value))));
+    f.replays.push_back({{bytes(activation)}, {std::move(expected)}});
+  }
+  return f;
+}
+
 inline Fragment mtp(const c::ModelArtifactProfileDescription *profile) {
   Fragment f{.profile = profile, .region = 0x0d0e21, .quantized = true};
   // Both deployment artifacts use Q8_0 for blk.92.nextn.eh_proj.weight.
@@ -382,35 +414,156 @@ inline Fragment attention(const c::ModelArtifactProfileDescription *profile) {
 
 inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   namespace gd = d5_qwen38_gdn_fixture;
+  const bool official = profile == &q::kOfficialProfile;
   Fragment f{
-      .profile = profile, .region = 0x050521, .absolute_tolerance = 1.0e-7F};
-  gd::ConvFixture conv(q::kGdnKeyHeads, q::kGdnValueHeads);
+      .profile = profile, .region = 0x050523, .absolute_tolerance = 2.0e-6F};
+  constexpr std::int64_t keys = q::kGdnKeyHeads;
+  constexpr std::int64_t heads = q::kGdnValueHeads;
+  constexpr std::int64_t depth = q::kGdnHeadDepth;
+  constexpr std::int64_t key_width = keys * depth;
+  constexpr std::int64_t channels = (2 * keys + heads) * depth;
+  gd::ConvFixture conv(keys, heads);
   auto samples = f.input(conv.samples_desc);
   auto weight = f.constant(conv.weights_desc, bytes(conv.weights));
   auto convolution = f.one(c::model_ops::causal_conv1d(), {samples, weight});
-  gd::Fixture fixture(0, q::kGdnKeyHeads, q::kGdnValueHeads);
-  std::array<ValueId, 6> ports;
-  for (std::size_t i = 0; i < ports.size(); ++i)
-    ports[i] = f.input(fixture.inputs[i]);
-  auto outputs =
-      f.append(c::Operation(c::GatedDeltaNet{}),
-               {ports[0], ports[1], ports[2], ports[3], ports[4], ports[5]}, 2);
-  f.outputs = {convolution, outputs[0], outputs[1]};
+  auto activated =
+      f.one(c::Operation(c::Unary{c::UnaryKind::kSilu}), {convolution});
+  const auto reshape = [&](ValueId input,
+                           std::initializer_list<std::int64_t> shape) {
+    return f.one(
+        c::Operation(
+            c::View::reshape(
+                c::TensorShape::create({shape.begin(), shape.size()}).value())
+                .value()),
+        {input});
+  };
+  auto channel_rows = reshape(activated, {channels, 1});
+  const auto take = [&](std::int64_t first, std::int64_t count) {
+    std::vector<std::int32_t> indices(count);
+    for (std::int64_t i = 0; i < count; ++i)
+      indices[i] = static_cast<std::int32_t>(first + i);
+    auto ids = f.constant(dense({count}, c::DataType::kInt32), bytes(indices));
+    return f.one(c::Operation(c::Gather{}), {channel_rows, ids});
+  };
+  auto query = reshape(take(0, key_width), {keys, depth});
+  auto key = reshape(take(key_width, key_width), {keys, depth});
+  auto value =
+      reshape(take(2 * key_width, heads * depth), {1, 1, heads, depth});
+  // Official V heads are grouped by K head; the pinned GGUF converter has
+  // already reordered V, conv, gates and output weights into cyclic order.
+  // Expand only the official Q/K boundary. GGUF keeps the native 16/128
+  // grouped-head program without a head-replication gather.
+  std::vector<float> l2_scale(depth, 1.0F / std::sqrt(float(depth)));
+  auto l2 = f.constant(dense({depth}), bytes(l2_scale));
+  const c::Operation normalize(c::RmsNorm{.epsilon = 1.0e-6F / float(depth)});
+  query = f.one(normalize, {query, l2});
+  key = f.one(normalize, {key, l2});
+  if (official) {
+    std::vector<std::int32_t> expansion(heads);
+    for (std::int64_t h = 0; h < heads; ++h)
+      expansion[h] = static_cast<std::int32_t>(h / (heads / keys));
+    auto expansion_ids =
+        f.constant(dense({heads}, c::DataType::kInt32), bytes(expansion));
+    query = f.one(c::Operation(c::Gather{}), {query, expansion_ids});
+    key = f.one(c::Operation(c::Gather{}), {key, expansion_ids});
+  }
+  const auto native_key_heads = official ? heads : keys;
+  query = reshape(query, {1, 1, native_key_heads, depth});
+  key = reshape(key, {1, 1, native_key_heads, depth});
+
+  const auto gate_desc = dense({1, 1, heads, 1});
+  auto raw_a = f.input(gate_desc);
+  auto raw_b = f.input(gate_desc);
+  auto initial_state = f.input(dense({1, heads, depth, depth}));
+  auto z = f.input(dense({1, 1, heads, depth}));
+  std::vector<float> alog(heads), negative_a(heads), dt(heads);
+  for (std::int64_t h = 0; h < heads; ++h) {
+    alog[h] = -1.0F - float(h % 7) / 32.0F;
+    negative_a[h] = -std::exp(alog[h]);
+    dt[h] = float(h % 9 - 4) / 64.0F;
+  }
+  // Runtime F32 ports are the declared recurrent domain. Official small
+  // constants originate as BF16 and are exactly representable here; GGUF
+  // ssm_a stores the converter's -exp(A_log), independently of its Q label.
+  auto bias = f.constant(gate_desc, bytes(dt));
+  auto alpha = f.constant(gate_desc, bytes(official ? alog : negative_a));
+  if (official) {
+    alpha = f.one(c::Operation(c::Unary{c::UnaryKind::kExp}), {alpha});
+    alpha = f.one(c::Operation(c::Unary{c::UnaryKind::kNeg}), {alpha});
+  }
+  auto gate =
+      f.one(c::Operation(c::Binary{c::BinaryKind::kAdd}), {raw_a, bias});
+  gate = f.one(c::Operation(c::Unary{c::UnaryKind::kSoftplus}), {gate});
+  gate =
+      f.one(c::Operation(c::Binary{c::BinaryKind::kMultiply}), {gate, alpha});
+  auto beta = f.one(c::Operation(c::Unary{c::UnaryKind::kSigmoid}), {raw_b});
+  auto recurrent = f.append(c::Operation(c::GatedDeltaNet{}),
+                            {query, key, value, gate, beta, initial_state}, 2);
+  auto norm_values = oracle::scale(depth);
+  auto norm = f.constant(dense({depth}), bytes(norm_values));
+  auto normalized =
+      f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {recurrent[0], norm});
+  auto activated_z = f.one(c::Operation(c::Unary{c::UnaryKind::kSilu}), {z});
+  auto result = f.one(c::Operation(c::Binary{c::BinaryKind::kMultiply}),
+                      {normalized, activated_z});
+  f.outputs = {convolution, gate, beta, recurrent[0], recurrent[1], result};
   std::vector<float> state;
   for (int seed : {3, 17}) {
-    gd::Fixture replay(seed, q::kGdnKeyHeads, q::kGdnValueHeads);
+    gd::Fixture reference(seed, native_key_heads, heads);
     if (!state.empty())
-      replay.data[5] = state;
+      reference.data[5] = state;
     auto samples_values = conv.samples(seed);
-    Replay expected{{bytes(samples_values)}, {}};
-    for (auto &input : replay.data)
-      expected.inputs.push_back(bytes(input));
-    const auto conv_output = conv.oracle(samples_values);
-    expected.outputs.push_back(as_float(conv_output));
-    const auto recurrent = replay.oracle();
-    for (const auto &output : recurrent)
-      expected.outputs.push_back(as_float(output));
-    state = expected.outputs.back();
+    auto conv_values = as_float(conv.oracle(samples_values));
+    auto silu = conv_values;
+    for (auto &v : silu)
+      v = static_cast<float>(double(v) / (1.0 + std::exp(-double(v))));
+    std::array<std::vector<float>, 2> normalized_qk;
+    for (std::size_t p = 0; p < normalized_qk.size(); ++p) {
+      normalized_qk[p].resize(key_width);
+      for (std::int64_t h = 0; h < keys; ++h) {
+        double sum = 1.0e-6;
+        for (std::int64_t d = 0; d < depth; ++d) {
+          const double v = silu[p * key_width + h * depth + d];
+          sum += v * v;
+        }
+        for (std::int64_t d = 0; d < depth; ++d)
+          normalized_qk[p][h * depth + d] = static_cast<float>(
+              silu[p * key_width + h * depth + d] / std::sqrt(sum));
+      }
+      for (std::int64_t h = 0; h < native_key_heads; ++h)
+        for (std::int64_t d = 0; d < depth; ++d)
+          reference.data[p][h * depth + d] =
+              normalized_qk[p][(official ? h / (heads / keys) : h) * depth + d];
+    }
+    std::copy(silu.begin() + 2 * key_width, silu.end(),
+              reference.data[2].begin());
+    std::vector<float> a(heads), b(heads);
+    for (std::int64_t h = 0; h < heads; ++h) {
+      a[h] = float((h + seed) % 17 - 8) / 32.0F;
+      b[h] = float((3 * h + seed) % 19 - 9) / 16.0F;
+      reference.data[3][h] =
+          static_cast<float>(-std::exp(double(alog[h])) *
+                             std::log1p(std::exp(double(a[h]) + dt[h])));
+      reference.data[4][h] =
+          static_cast<float>(1.0 / (1.0 + std::exp(-double(b[h]))));
+    }
+    auto z_values = d5_gguf_test::values(heads, depth, seed + 7);
+    Replay expected{{bytes(samples_values), bytes(a), bytes(b),
+                     bytes(reference.data[5]), bytes(z_values)},
+                    {}};
+    const auto outputs = reference.oracle();
+    auto core = as_float(outputs[0]);
+    state = as_float(outputs[1]);
+    auto gated = oracle::rms_norm_rows(core, norm_values, depth, 1.0e-6F);
+    for (std::size_t i = 0; i < gated.size(); ++i)
+      gated[i] *= static_cast<float>(double(z_values[i]) /
+                                     (1.0 + std::exp(-double(z_values[i]))));
+    expected.outputs = {std::move(conv_values),
+                        reference.data[3],
+                        reference.data[4],
+                        std::move(core),
+                        state,
+                        std::move(gated)};
     f.replays.push_back(std::move(expected));
   }
   return f;

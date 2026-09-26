@@ -1509,6 +1509,16 @@ TEST(AppleGraphQwen38_24T, D5GgufAttentionAndGdnProjectionRoleBatch) {
   }
 }
 
+TEST(AppleGraphQwen38_24T, D5OfficialAttentionAndGdnProjectionRoleBatch) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  for (const auto &role : sem::kProjections) {
+    SCOPED_TRACE(role.tensor);
+    run_q24_semantic_fragment(sem::official_projection(role));
+  }
+  run_q24_semantic_fragment(
+      sem::gdn(&d5_qwen38_24t_fixture::kOfficialProfile));
+}
+
 void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
   namespace moe = d5_qwen38_24t_moe_profiles;
   d5_gguf_test::QuantizerCleanup cleanup;
