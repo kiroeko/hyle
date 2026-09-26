@@ -387,8 +387,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-official-mixed-fragments.md",
-      "summary": "D5-F43 AUDITED：a4b70bc2的原版group128普通入口/资源及AOT重建通过；完整ggml MoE数值候选FAIL并停止重测。官方FP8×FP4另有6个精确native案例，待定界普通专家接线；ledger144/176，A5/A6/D6未决。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
+      "summary": "D5-F44 AUDITED：原版FP8×FP4专家四形状、纯索引适配与真实格式的有限FIX已冻结；批量接入普通两入口及资源检查。F43失败保留，ledger144/176，完整片段/A5/A6/D6未决。"
     },
     {
       "module": "compute_backend_cpu",
@@ -475,8 +475,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-official-mixed-fragments.md",
-      "summary": "D5-F43 AUDITED：a4b70bc2的原版group128普通入口/资源及AOT重建通过；完整ggml MoE数值候选FAIL并停止重测。官方FP8×FP4另有6个精确native案例，待定界普通专家接线；ledger144/176，A5/A6/D6未决。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
+      "summary": "D5-F44 AUDITED：原版FP8×FP4专家四形状、纯索引适配与真实格式的有限FIX已冻结；批量接入普通两入口及资源检查。F43失败保留，ledger144/176，完整片段/A5/A6/D6未决。"
     },
     {
       "module": "compute_route_cuda",

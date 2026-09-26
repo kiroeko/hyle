@@ -1,6 +1,6 @@
 # D5-F44：官方 FP8×FP4 专家接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`815550677`；沿用当前 `compute_ops` / `compute_provider_cuda`，实施前重新绑定AUDITED。
 - trigger：F43完整MoE组合的最终数值误差超过原门；现有ggml MXFP4点积增加Q8_1激活转换，
@@ -38,4 +38,8 @@
 只因具体失败定向修正；不改变既有数值门、不替换输入、不开发数学核。若该原版候选也未通过，
 按实际失败定界，不循环扩大候选。完整attention/compressor/MTP仍属F43，A5/A6/D6未决。
 
-当前SCOPED，无本卡产品修改。原生六案例不能签动态专家普通入口或完整画像。
+`afd024e8`固定SCOPED，当前两个AUDITED owner重新绑定本卡，上述FIX已冻结。
+原GEMM以指针为参数且M为运行时参数；索引wrapper只偏移参数并调用同一运算主体，
+无需读取ID至host、修改原缩放/累加、扩展图执行器或引入模型级CPU计算。
+默认资格以明确运算/编码、四个N/K和SM89/Driver13040冷绑定；执行时不选赢家。
+原生六案例只证明具名程序可用，动态入口、资源、数值和成本仍按本卡批量验证。
