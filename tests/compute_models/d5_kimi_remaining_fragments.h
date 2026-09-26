@@ -289,7 +289,7 @@ inline Fragment attention_residual(const c::ModelArtifactProfileDescription *pro
   for (int step = 0; step < 8; ++step) {
     const int before = boundary ? step : 8, after = boundary ? step + 1 : 8;
     std::vector<float> bm(9, -std::numeric_limits<float>::infinity()), am = bm;
-    std::fill_n(bm.begin(), before, 0); std::fill_n(am.begin(), after, 0);
+    std::fill_n(bm.begin(), before, 0.0F); std::fill_n(am.begin(), after, 0.0F);
     bm[8] = am[8] = 0;
     auto cur = d5_gguf_test::activation(kHidden, 3 + step * 14);
     auto av = d5_gguf_test::activation(kHidden, 7 + step * 17);
