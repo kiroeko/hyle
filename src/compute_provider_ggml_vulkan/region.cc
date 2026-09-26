@@ -444,10 +444,16 @@ bool region_supports(const Operation &operation,
         return false;
     const auto query = inputs[0].dimensions();
     const auto key = inputs[1].dimensions();
+    const auto value = inputs[2].dimensions();
+    const std::array mla_shape{query[0], query[1], query[2], std::int64_t{512}};
+    const auto mla_output = TensorDesc::dense(DataType::kFloat32, mla_shape);
+    const bool absorbed_mla = type == DataType::kFloat32 && query[2] == 96 &&
+        key[2] == 1 && query[3] == 576 && value[3] == 512 && value[0] == key[0] &&
+        value[1] == key[1] && value[2] == key[2] && mla_output && outputs[0] == *mla_output;
     return query[0] == key[0] && query[1] > 0 && key[1] >= query[1] &&
            query[2] > 0 && key[2] > 0 && query[2] % key[2] == 0 &&
-           query[3] == key[3] && inputs[1] == inputs[2] &&
-           outputs[0] == inputs[0];
+           query[3] == key[3] &&
+           ((inputs[1] == inputs[2] && outputs[0] == inputs[0]) || absorbed_mla);
   }
   const bool recurrent =
       operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();

@@ -16,6 +16,7 @@
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
+#include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -983,6 +984,42 @@ TEST(CudaMoeFragments, D5KdaProjectionRoleBatch) {
     SCOPED_TRACE(role.profile->variant);
     SCOPED_TRACE(role.roles);
     run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
+  }
+}
+
+TEST(CudaMoeFragments, D5KimiDenseFfn) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (int i = 0; i < 3; ++i) {
+    auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::dense_ffn(profile));
+  }
+}
+
+TEST(CudaMoeFragments, D5KimiAbsorbedMlaWithCache) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (int i = 0; i < 3; ++i) {
+    auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile));
+  }
+}
+
+TEST(CudaMoeFragments, D5KimiAttentionResidualBanking) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (int i = 0; i < 3; ++i) {
+    auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::attention_residual(profile, true));
+  }
+}
+
+TEST(CudaMoeFragments, D5KimiAttentionResidualOrdinary) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (int i = 0; i < 3; ++i) {
+    auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::attention_residual(profile, false));
   }
 }
 
