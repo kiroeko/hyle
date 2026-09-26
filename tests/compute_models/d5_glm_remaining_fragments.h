@@ -75,6 +75,12 @@ inline std::vector<ValueId> attach(Fragment &f, Fragment child,
   if (inputs.size() != child.inputs.size())
     throw std::runtime_error("model fragment input count mismatch");
   std::vector<ValueId> mapped(child.descriptions.size());
+  if (child.preparation) {
+    if (f.preparation) throw std::runtime_error("duplicate model weight preparation");
+    f.preparation = std::move(child.preparation);
+    for (auto slot : child.prepared_constants)
+      f.prepared_constants.push_back(f.constants.size() + slot);
+  }
   std::size_t i = 0;
   for (auto input : inputs) mapped[child.inputs[i++].ordinal()] = input;
   for (i = 0; i < child.constants.size(); ++i) {
@@ -250,13 +256,11 @@ struct HeadProjection final {
     return result;
   }
 };
-inline HeadProjection head_projection(Fragment &f, ValueId x,
-                                       std::int64_t n, std::int64_t k, int seed, bool bfloat = false) {
-  auto w = moe::weight(kHeads, n, k, bfloat ? moe::Storage::kBFloat16 : moe::Storage::kQ8_0, seed);
+inline HeadProjection apply_head_projection(Fragment &f, ValueId x, sem::Weight w,
+    ValueId weight, std::int64_t n, std::int64_t k, bool bfloat) {
   std::vector<std::int32_t> ids(kHeads);
   std::iota(ids.begin(), ids.end(), 0);
   auto heads = f.constant(dense({1, kHeads}, c::DataType::kInt32), bytes(ids));
-  auto weight = f.constant(w.description, std::move(w.storage));
   const auto round = [&](ValueId value) {
     value = f.one(c::Operation(c::Cast{c::DataType::kBFloat16}), {value});
     return f.one(c::Operation(c::Cast{c::DataType::kFloat32}), {value});
@@ -265,6 +269,65 @@ inline HeadProjection head_projection(Fragment &f, ValueId x,
   auto output = f.one(c::model_ops::grouped_matmul(), {weight, x, heads});
   if (bfloat) output = round(output);
   return {std::move(w), n, k, output, bfloat};
+}
+inline HeadProjection head_projection(Fragment &f, ValueId x,
+                                       std::int64_t n, std::int64_t k, int seed, bool bfloat = false) {
+  auto w = moe::weight(kHeads, n, k, bfloat ? moe::Storage::kBFloat16 : moe::Storage::kQ8_0, seed);
+  const auto weight = f.constant(w.description, std::move(w.storage));
+  return apply_head_projection(f, x, std::move(w), weight, n, k, bfloat);
+}
+
+struct PreparedKv final { sem::Weight key, value; ValueId keys, values; };
+inline PreparedKv prepare_kv(Fragment &consumer) {
+  constexpr std::int64_t nope = 192, width = nope + kValue, n = kHeads * width;
+  auto cold = std::make_shared<Fragment>(Fragment{
+      .profile = consumer.profile, .region = 0x0e030801});
+  const auto encoded = c::float8_weight_description(kLatent, n,
+      c::Float8ScaleMode::kFloat32Block128).value();
+  std::vector<std::byte> storage(encoded.required_bytes().value());
+  sem::Weight key{dense({kHeads, kLatent, nope}, c::DataType::kBFloat16), {},
+      std::vector<std::vector<std::pair<std::size_t, float>>>(kHeads * kLatent)};
+  sem::Weight value{dense({kHeads, kValue, kLatent}, c::DataType::kBFloat16), {},
+      std::vector<std::vector<std::pair<std::size_t, float>>>(kHeads * kValue)};
+  std::vector<float> key_expected(kHeads * kLatent * nope), value_expected(kHeads * kValue * kLatent);
+  // A single real block128 kv_b payload supplies both absorbed projections.
+  // The independent sparse oracle is never uploaded as a cached weight.
+  for (std::int64_t block = 0; block < n / 128; ++block)
+    for (std::int64_t group = 0; group < kLatent / 128; ++group) {
+      const float scale = float(17 + (block * 3 + group + 223) % 11) / 1024.0F;
+      std::memcpy(storage.data() + n * kLatent + (block * 4 + group) * 4, &scale, 4);
+    }
+  for (std::int64_t row = 0; row < n; ++row)
+    for (int term = 0; term < 2; ++term) {
+      const auto col = (row * 17 + 223 + term * 269) % kLatent;
+      const auto code = std::size_t((row + term * 3) % 8);
+      storage[row * kLatent + col] = std::byte{d5_official_fp8_fragments::kCodes[code]};
+      const float scale = float(17 + ((row / 128) * 3 + col / 128 + 223) % 11) / 1024.0F;
+      const float coefficient = linear::bf16(d5_official_fp8_fragments::kValues[code] * scale);
+      const auto head = row / width, within = row % width;
+      if (within < nope) {
+        key.decoded[head * kLatent + col].emplace_back(std::size_t(within), coefficient);
+        key_expected[(head * kLatent + col) * nope + within] = coefficient;
+      } else {
+        value.decoded[head * kValue + within - nope].emplace_back(std::size_t(col), coefficient);
+        value_expected[(head * kValue + within - nope) * kLatent + col] = coefficient;
+      }
+    }
+  auto w = cold->constant(encoded, std::move(storage));
+  auto decoded = cold->one(c::model_ops::float8_weight_decode(), {w});
+  auto heads = reshape(*cold, decoded, {kHeads, width, kLatent});
+  auto key_slice = cold->one(c::Operation(c::View::slice(1, 0, nope).value()), {heads});
+  auto value_slice = cold->one(c::Operation(c::View::slice(1, nope, kValue).value()), {heads});
+  cold->outputs = {
+      cold->one(c::Operation(c::Copy{}), {permute(*cold, key_slice, {0, 2, 1})}),
+      cold->one(c::Operation(c::Copy{}), {value_slice})};
+  cold->replays.push_back({{}, {std::move(key_expected), std::move(value_expected)}});
+  const auto first_slot = consumer.constants.size();
+  auto keys = consumer.constant(key.description, {});
+  auto values = consumer.constant(value.description, {});
+  consumer.preparation = std::move(cold);
+  consumer.prepared_constants = {first_slot, first_slot + 1};
+  return {std::move(key), std::move(value), keys, values};
 }
 
 inline void rotate_pairs(std::vector<float> &x, std::span<const float> cosine,
@@ -547,8 +610,6 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
 using MlaReference = std::function<moe::ReferenceOutputs(
     std::span<const float>, std::span<const float>, std::int32_t)>;
 inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
-  if (model.official && !model.flash)
-    throw std::runtime_error("official DSA kv_b requires qualified FP8 preparation for absorbed MLA");
   const std::int64_t rotary = model.flash ? 0 : 64;
   const auto no_pe = 256 - rotary, cached_width = kLatent + rotary;
   Fragment f{.profile = model.profile, .region = 0x07030801, .quantized = !model.official};
@@ -573,7 +634,11 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
   auto kvscale = sem::oracle::scale(kLatent);
   latent = norm(f, latent, kvscale, model.official);
   auto query_nope = kimi::slice_heads(f, qb.output, kHeads, 256, 0, no_pe);
-  auto kb = head_projection(f, query_nope, kLatent, no_pe, 223, model.official);
+  std::optional<PreparedKv> prepared;
+  if (model.official && !model.flash) prepared = prepare_kv(f);
+  auto kb = prepared
+      ? apply_head_projection(f, query_nope, std::move(prepared->key), prepared->keys, kLatent, no_pe, true)
+      : head_projection(f, query_nope, kLatent, no_pe, 223, model.official);
   auto query = kb.output, current = latent;
   if (rotary) {
     auto qp = kimi::slice_heads(f, qb.output, kHeads, 256, no_pe, rotary);
@@ -594,7 +659,10 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
       .accumulation_type = c::DataType::kFloat32}),
       {reshape(f, query, {1, 1, kHeads, cached_width}),
        reshape(f, cache, {1, 4, 1, cached_width}), reshape(f, cv, {1, 4, 1, kLatent})});
-  auto vb = head_projection(f, reshape(f, attention, {1, kHeads, kLatent}), kValue, kLatent, 227, model.official);
+  auto attended = reshape(f, attention, {1, kHeads, kLatent});
+  auto vb = prepared
+      ? apply_head_projection(f, attended, std::move(prepared->value), prepared->values, kValue, kLatent, true)
+      : head_projection(f, attended, kValue, kLatent, 227, model.official);
   auto out = projection(f, reshape(f, vb.output, {1, kHeads * kValue}),
                          model.hidden, kHeads * kValue, 229, model.official);
   f.outputs = {next_cache, qb.output, query, attention, vb.output, out.output};
@@ -670,8 +738,6 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
 // cache are actual recurrent ports. Vocabulary/head and sparse-index carry
 // qualification remain separate, explicit consumers of these boundaries.
 inline Fragment mtp_decoder(const Case &model) {
-  if (model.official && !model.flash)
-    throw std::runtime_error("official DSA NextN awaits qualified absorbed FP8 MLA");
   const auto found = std::ranges::find_if(moe::cases::kCases,
       [&](const auto &candidate) { return candidate.profile == model.profile; });
   if (found == moe::cases::kCases.end())

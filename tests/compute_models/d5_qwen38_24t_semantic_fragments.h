@@ -6,6 +6,7 @@
 #include <cstring>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <cmath>
 #include <cstddef>
@@ -59,6 +60,10 @@ struct Fragment final {
   };
   std::optional<UnorderedIds> unordered_ids{};
   std::function<void(std::size_t, std::span<const float>)> observe{};
+  // Optional one-time, native weight preparation. Outputs replace these
+  // constant slots; no host-generated payload is uploaded into those slots.
+  std::shared_ptr<const Fragment> preparation{};
+  std::vector<std::size_t> prepared_constants{};
 
   const UnorderedIds *id_validation(std::size_t port) const {
     return unordered_ids && unordered_ids->port == port ? &*unordered_ids : nullptr;

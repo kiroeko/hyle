@@ -749,6 +749,41 @@ TEST(CudaGraphQwen38_24T,
   }
 }
 
+void prepare_model_constants(const d5_qwen38_24t_semantic_fragments::Fragment &cold,
+    c::Context &context, mem::MemoryResourceRef resource,
+    std::vector<mem::Buffer> &result) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  ASSERT_TRUE(cold.inputs.empty());
+  ASSERT_FALSE(cold.preparation);
+  auto graph = sem::make_graph(cold);
+  std::vector<mem::Buffer> sources;
+  std::vector<g::ConstantBinding> bindings;
+  for (std::size_t i = 0; i < cold.constants.size(); ++i) {
+    sources.push_back(values_buffer<std::byte>(resource, cold.constant_bytes[i]));
+    bindings.push_back({graph.constants[i], c::ConstTensorView::create(
+        cold.description(cold.constants[i]), sources.back().view()).value()});
+  }
+  const auto workload = q::workload(*cold.profile, c::WorkloadPhase::kDecode, cold.region);
+  auto compiled_result = g::cuda::compile(graph.graph, context, resource,
+      {.constants = bindings, .workload = workload});
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  for (std::size_t i = 0; i < cold.outputs.size(); ++i) {
+    result.push_back(output_buffer(resource, cold.description(cold.outputs[i])));
+    ASSERT_TRUE(invocation.bind(graph.outputs[i], c::TensorView::create(
+        cold.description(cold.outputs[i]), result.back().view()).value()).ok());
+  }
+  auto queue = context.create_queue().value();
+  auto done = invocation.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  d5_fp8_weight_preparation::check_constants(cold, result);
+  // The cold Graph and all source/intermediate storage are destroyed before
+  // compiling the hot Graph. Only its independently owned outputs remain.
+}
+
 void run_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
@@ -758,9 +793,21 @@ void run_q24_semantic_fragment(
       cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
   const auto resource = memory.ref();
   std::vector<hyle::mem::Buffer> constants(fixture.constants.size());
-  for (std::size_t index = 0; index < constants.size(); ++index)
-    constants[index] =
-        values_buffer<std::byte>(resource, fixture.constant_bytes[index]);
+  std::vector<mem::Buffer> prepared_constants;
+  if (fixture.preparation) {
+    prepare_model_constants(*fixture.preparation, context, resource, prepared_constants);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+    ASSERT_EQ(prepared_constants.size(), fixture.prepared_constants.size());
+    for (const auto &step : fixture.nodes)
+      EXPECT_FALSE(step.operation.custom_as<c::model_ops::Float8WeightDecode>());
+  }
+  for (std::size_t index = 0; index < constants.size(); ++index) {
+    const auto found = std::ranges::find(fixture.prepared_constants, index);
+    if (found != fixture.prepared_constants.end()) {
+      ASSERT_TRUE(fixture.constant_bytes[index].empty());
+      constants[index] = std::move(prepared_constants[found - fixture.prepared_constants.begin()]);
+    } else constants[index] = values_buffer<std::byte>(resource, fixture.constant_bytes[index]);
+  }
   fixture.constant_bytes = {};
   std::vector<g::ConstantBinding> bindings;
   for (std::size_t i = 0; i < constants.size(); ++i)
@@ -1094,6 +1141,14 @@ TEST(CudaGraphMoeFragments, D5Fp8WeightPreparation) {
 
 TEST(CudaGraphMoeFragments, D5GlmFp8AccumulationBoundaries) {
   run_q24_semantic_fragment(d5_dynamic_fp8_fragments::model_accumulation_boundaries());
+}
+
+TEST(CudaGraphMoeFragments, D5GlmDsaPreparedKvAndNextN) {
+  namespace glm = d5_glm_remaining_fragments;
+  const auto &model = glm::kCases[0];
+  ASSERT_TRUE(model.official && !model.flash);
+  run_q24_semantic_fragment(glm::mla(model));
+  glm::check_mtp_head(model, run_q24_semantic_fragment);
 }
 
 TEST(CudaGraphMoeFragments, D5GlmGgufDenseFfn) {

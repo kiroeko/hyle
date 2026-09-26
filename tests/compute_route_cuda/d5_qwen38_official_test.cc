@@ -692,6 +692,59 @@ TEST(CudaQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
   }
 }
 
+void prepare_model_constants(const d5_qwen38_24t_semantic_fragments::Fragment &cold,
+    c::Context &context, mem::MemoryResourceRef resource,
+    std::vector<mem::Buffer> &result) {
+  ASSERT_TRUE(cold.inputs.empty());
+  ASSERT_FALSE(cold.preparation);
+  const auto workload = q::workload(*cold.profile, c::WorkloadPhase::kDecode, cold.region);
+  auto queue = context.create_queue().value();
+  std::vector<mem::Buffer> buffers(cold.descriptions.size());
+  std::vector<mem::BufferView> views(cold.descriptions.size());
+  const auto allocate = [&](qfull::ValueId id) {
+    buffers[id.ordinal()] = output_buffer(resource, cold.description(id));
+    views[id.ordinal()] = buffers[id.ordinal()].view();
+  };
+  for (std::size_t i = 0; i < cold.constants.size(); ++i) {
+    auto id = cold.constants[i];
+    allocate(id);
+    ASSERT_TRUE(views[id.ordinal()].write(cold.constant_bytes[i]).ok());
+  }
+  for (const auto &step : cold.nodes) {
+    if (const auto *view = step.operation.get_if<c::View>()) {
+      const auto input = step.inputs[0], output = step.outputs[0];
+      views[output.ordinal()] = views[input.ordinal()];
+      if (view->kind() == c::ViewKind::kSlice) {
+        const auto &desc = cold.description(input);
+        const auto offset = std::size_t(view->start() * desc.byte_strides()[view->axis()]);
+        views[output.ordinal()] = views[input.ordinal()].subview(offset,
+            cold.description(output).required_bytes().value()).value();
+      }
+      continue;
+    }
+    std::vector<c::TensorDesc> in_desc, out_desc;
+    std::vector<c::ConstTensorView> inputs;
+    std::vector<c::TensorView> outputs;
+    for (auto id : step.inputs) {
+      in_desc.push_back(cold.description(id));
+      inputs.push_back(c::ConstTensorView::create(cold.description(id), views[id.ordinal()]).value());
+    }
+    for (auto id : step.outputs) {
+      allocate(id);
+      out_desc.push_back(cold.description(id));
+      outputs.push_back(c::TensorView::create(cold.description(id), views[id.ordinal()]).value());
+    }
+    auto call = make_call(context, resource, step.operation, in_desc, out_desc, workload);
+    expect_mature(call, workload);
+    run(call, queue, inputs, outputs);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
+  for (auto id : cold.outputs) result.push_back(std::move(buffers[id.ordinal()]));
+  d5_fp8_weight_preparation::check_constants(cold, result);
+  // Encoded weights, decoded full matrix and cold programs die here; only
+  // the two real device caches survive into the repeated model program.
+}
+
 void run_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
@@ -714,9 +767,24 @@ void run_q24_semantic_fragment(
   };
   for (auto id : fixture.inputs)
     allocate(id);
+  std::vector<mem::Buffer> prepared_constants;
+  if (fixture.preparation) {
+    prepare_model_constants(*fixture.preparation, context, resource, prepared_constants);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+    ASSERT_EQ(prepared_constants.size(), fixture.prepared_constants.size());
+    for (const auto &step : fixture.nodes)
+      EXPECT_FALSE(step.operation.custom_as<c::model_ops::Float8WeightDecode>());
+  }
   const auto &constant_bytes = fixture.constant_bytes;
   for (std::size_t index = 0; index < fixture.constants.size(); ++index) {
     const auto id = fixture.constants[index];
+    const auto found = std::ranges::find(fixture.prepared_constants, index);
+    if (found != fixture.prepared_constants.end()) {
+      ASSERT_TRUE(constant_bytes[index].empty());
+      buffers[id.ordinal()] = std::move(prepared_constants[found - fixture.prepared_constants.begin()]);
+      views[id.ordinal()] = buffers[id.ordinal()].view();
+      continue;
+    }
     allocate(id);
     ASSERT_TRUE(views[id.ordinal()].write(constant_bytes[index]).ok());
   }
@@ -1197,6 +1265,14 @@ TEST(CudaMoeFragments, D5Fp8WeightPreparation) {
 
 TEST(CudaMoeFragments, D5GlmFp8AccumulationBoundaries) {
   run_q24_semantic_fragment(d5_dynamic_fp8_fragments::model_accumulation_boundaries());
+}
+
+TEST(CudaMoeFragments, D5GlmDsaPreparedKvAndNextN) {
+  namespace glm = d5_glm_remaining_fragments;
+  const auto &model = glm::kCases[0];
+  ASSERT_TRUE(model.official && !model.flash);
+  run_q24_semantic_fragment(glm::mla(model));
+  glm::check_mtp_head(model, run_q24_semantic_fragment);
 }
 
 TEST(CudaMoeFragments, D5GlmGgufDenseFfn) {

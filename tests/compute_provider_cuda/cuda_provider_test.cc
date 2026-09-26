@@ -903,8 +903,11 @@ TEST(DeepSeekFp8Decode, RejectionsRollbackConcurrentReplayAndCompletionOwnership
       Tensor host_input(wd, mem::system_resource());
       reject(std::array{host_input.view.as_const()}, std::array{output[0].view});
       auto unaligned = mem::Buffer::create(resource.ref(), wd.required_bytes().value() + 1, 256).value();
-      reject(std::array{compute::ConstTensorView::create(wd, unaligned.view().subview(1).value()).value()},
-             std::array{output[0].view});
+      // Encoded format alignment is rejected when forming the public view,
+      // before a malformed binding can reach Invocation::submit.
+      auto misaligned = compute::ConstTensorView::create(wd, unaligned.view().subview(1).value());
+      ASSERT_FALSE(misaligned);
+      EXPECT_TRUE(misaligned.error().IsInvalidArgument());
       reject(std::array{compute::ConstTensorView::create(wd, output[0].storage.view()).value()},
              std::array{output[0].view});
       std::vector<std::byte> bytes(wd.required_bytes().value(), std::byte{0x38});
