@@ -87,14 +87,17 @@ bool native_matmul_rhs(const TensorDesc &description) noexcept {
   auto physical = description.transposed();
   return physical && physical->is_dense();
 }
-bool representable(const TensorDesc &description) noexcept {
+bool representable(const TensorDesc &description,
+                   bool integer_concat = false) noexcept {
   const auto count = description.element_count();
   const auto bytes = description.required_bytes();
   // Native kernels use int element counts and unsigned 32-bit byte strides.
   // Leave room for rounded launch sizes and FP32 conversion intermediates.
   if (!description.valid() || !count || !bytes || *count == 0 ||
       *count > (INT32_MAX - 1024) / sizeof(float) || *bytes > INT32_MAX ||
-      !floating(description.data_type()))
+      !(floating(description.data_type()) ||
+        (integer_concat && description.is_dense() &&
+         description.data_type() == DataType::kInt32)))
     return false;
   if (native_quantized(description))
     return description.rank() > 0 && description.rank() <= GGML_MAX_DIMS &&
@@ -264,13 +267,15 @@ ggml_tensor *restore_axis(ggml_context *context, ggml_tensor *value,
 bool tensor_operation_supports(Operation operation,
                                std::span<const TensorDesc> inputs,
                                std::span<const TensorDesc> outputs) noexcept {
+  const bool integer_concat = operation.get_if<Concat>() && outputs.size() == 1 &&
+                              outputs[0].data_type() == DataType::kInt32;
   if (inputs.empty() || outputs.empty() ||
-      !std::ranges::all_of(outputs, [](const auto &description) {
-        return description.is_dense() && representable(description);
+      !std::ranges::all_of(outputs, [&](const auto &description) {
+        return description.is_dense() && representable(description, integer_concat);
       }))
     return false;
   for (std::size_t i = 0; i < inputs.size(); ++i)
-    if (!representable(inputs[i]) &&
+    if (!representable(inputs[i], integer_concat) &&
         !((operation.get_if<RoPE>() && i == 1 ||
            operation.get_if<Gather>() && i == 1 ||
            operation.custom_as<model_ops::GroupedMatMul>() && i == 2) &&

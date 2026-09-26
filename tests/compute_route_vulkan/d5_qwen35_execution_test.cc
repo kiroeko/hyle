@@ -115,6 +115,12 @@ d5_gguf_test::Packed packed(c::GgufQuantizedType type, std::int64_t columns,
 
 std::vector<float> float_values(const v::Context &context,
                                 const v::Tensor &tensor) {
+  if (tensor.description().data_type() == c::DataType::kInt32) {
+    std::vector<float> result;
+    for (auto raw : bits(context, tensor))
+      result.push_back(float(std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(raw))));
+    return result;
+  }
   const auto source = values(context, tensor);
   std::vector<float> result(source.size());
   std::ranges::transform(source, result.begin(), [](double value) {

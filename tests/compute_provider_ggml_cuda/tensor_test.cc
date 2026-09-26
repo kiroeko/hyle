@@ -494,6 +494,49 @@ TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
       prepare(ctx, Softmax{.kind = SoftmaxKind::kLogSoftmax}, description));
 }
 
+TEST(GgmlCudaTensor, IntegerConcatPreservesIndexBitsAcrossReplays) {
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto left = dense(DataType::kInt32, {2, 4});
+  const auto right = dense(DataType::kInt32, {2, 3});
+  const auto joined = dense(DataType::kInt32, {2, 7});
+  std::vector<std::int32_t> a{0, -1, 16777217, INT32_MAX, INT32_MIN, -16777217, 5, 7};
+  std::vector<std::int32_t> b{-1, 2053, 2054, INT32_MIN, 16777219, INT32_MAX};
+  auto aa = upload<std::int32_t>(memory.ref(), a);
+  auto bb = upload<std::int32_t>(memory.ref(), b);
+  auto output = output_buffer(memory.ref(), joined);
+  const std::array inputs{ConstTensorView::create(left, aa.view()).value(),
+                          ConstTensorView::create(right, bb.view()).value()};
+  auto view = TensorView::create(joined, output.view()).value();
+  auto program = prepare(ctx, Operation(Concat{.axis = 1}), inputs, std::span(&view, 1));
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->provider().id, ggml_cuda::kProviderId);
+  auto invocation = program->create_invocation().value();
+  auto queue = ctx.create_queue().value();
+  for (int replay = 0; replay < 2; ++replay) {
+    ASSERT_TRUE(aa.view().write(std::as_bytes(std::span(a))).ok());
+    ASSERT_TRUE(bb.view().write(std::as_bytes(std::span(b))).ok());
+    auto done = invocation.submit(queue, inputs, std::span(&view, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    std::vector<std::int32_t> expected;
+    for (int row = 0; row < 2; ++row) {
+      expected.insert(expected.end(), a.begin() + row * 4, a.begin() + (row + 1) * 4);
+      expected.insert(expected.end(), b.begin() + row * 3, b.begin() + (row + 1) * 3);
+    }
+    EXPECT_EQ(half_test::read<std::int32_t>(output), expected);
+    std::reverse(a.begin(), a.end());
+    std::reverse(b.begin(), b.end());
+  }
+  const auto strided = TensorDesc::strided_bytes(DataType::kInt32,
+      std::array<std::int64_t, 2>{2, 4}, std::array<std::int64_t, 2>{32, 8}).value();
+  const std::array invalid_inputs{strided, right};
+  const std::array wrong_outputs{dense(DataType::kInt32, {2, 8})};
+  EXPECT_FALSE(prepare(ctx, Operation(Concat{.axis = 1}), invalid_inputs, std::array{joined}));
+  EXPECT_FALSE(prepare(ctx, Operation(Concat{.axis = 1}), std::array{left, right}, wrong_outputs));
+  EXPECT_FALSE(prepare(ctx, Unary{UnaryKind::kExp}, left));
+}
+
 TEST(GgmlCudaTensor, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
   using F16 = hyle::simd::float16_t;
   auto ctx = context();
