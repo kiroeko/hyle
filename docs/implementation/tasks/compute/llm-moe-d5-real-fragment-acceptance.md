@@ -1057,6 +1057,21 @@ plain F32 rank-2 activation、native output-major 转置 RHS、F32 output 的域
   失败 ID 不送入未修复的 GPU Provider 触发设备断言；源码已给出同类缺口。
 - 停止：完成上述有限边界和已声明批次验收；不扩大为全库安全审查或新算子实现。
 
+### D5-F23：CUDA 原生 F32 注意力准入
+
+- baseline：`bdbede631`，owner `compute_provider_ggml_cuda` 已 AUDITED。
+- 真实 consumer：两个 2.4T GGUF 画像的 F32 norm/RoPE、64/4×256 GQA、两位置 causal
+  attention 和 sigmoid output gate。CPU 同一独立 oracle 已通过；CUDA Direct 报 SDPA
+  无合格 Provider，Graph 报无完整路线。其它本批投影与完整 mixed MoE 均已通过。
+- 原因：ggml CUDA adapter 的 `supports()` 只允许 F16/BF16，但其现有 BF16 attention
+  lowering 已用原生 F32 QK MatMul/scale/causal mask/softmax/PV MatMul 执行，且保留 F32
+  accumulation/source precision；输入 F32 无需新数学或降精度，当前仍被入口提前排除。
+- 有限 FIX：准入加入同一 dense BSHD F32 dtype，其余 GQA、mask、shape、I32 workspace
+  bounds 和 native capability 检查保持；复用同一既有图，不改 Provider 排序、FlashInfer、
+  自研 CUDA 或公共 API，不把 F32 偷换成 F16。必要转换/临时 score 成本进入本轮统一验收。
+- 验证：本批 CUDA Direct/Graph 的完整 attention 中间值和两位置 softmax oracle、重放；
+  现有 F16/BF16 和 owner suite 在同一稳定批末复核，不单开逐算子 P1。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4
