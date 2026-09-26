@@ -1304,6 +1304,7 @@ bool region_operation(Operation operation) noexcept {
          operation.get_if<Scatter>() || operation.get_if<MatMul>() ||
          operation.get_if<RoPE>() || operation.get_if<Hadamard>() ||
          operation.get_if<ScaledDotProductAttention>() ||
+         operation.custom_as<model_ops::SinkAttention>() ||
          operation.get_if<GatedDeltaNet>() ||
          operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
          operation.custom_as<model_ops::Clamp>().has_value() ||

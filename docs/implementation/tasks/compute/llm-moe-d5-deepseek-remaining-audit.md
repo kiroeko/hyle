@@ -21,6 +21,12 @@
 压缩倍率4的21层采用双窗口投影，倍率128的20层采用单窗口投影；另两层没有压缩器。
 这些角色不能由此前仅有 score TopK 的 MoE 或无 sink 的普通 attention 代签。
 
+固定首分片的GGUF metadata现已补入同一事实文件，两个量化画像均为tail64、raw RoPE
+base10000、compressed base160000、YaRN factor16/original65536/beta32/1、窗口128，
+不是从文件名推测。此次只请求header，总响应10,513,216字节。固定成熟cache planner对
+压缩结果使用`source_start = pos + 1 - ratio`作为RoPE位置，APE则逐token取`pos % ratio`；
+共享consumer保留这两个不同的索引。metadata读取不是正确性验收，不增加运行通过格。
+
 GGUF 缺少 NextN 是该固定制品的适用性边界，不是库缺少 MTP 的证据。后续纠正对应两个画像的
 R13 适用性时必须引用完整 header；官方两画像的 MTP 要求仍然保留。当前 ledger 尚未因此修改。
 

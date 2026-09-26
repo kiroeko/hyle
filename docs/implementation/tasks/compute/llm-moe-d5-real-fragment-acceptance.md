@@ -439,6 +439,33 @@ SGLang 原版 hash kernel 已定位，当前 score TopK 和无 sink 的 SDPA 不
 `compute_ops`、CPU/CUDA/Vulkan ggml Providers、Apple Direct/Graph，固定真实mask/sink端口、
 原生程序和有限验证范围；沿同一DeepSeek批次推进，不新增数学或已验格。
 
+### F34：DeepSeek共享消费者的有限接合（AUDITED）
+
+baseline `d69b8452`；沿本卡A2/A3，不新增产品数学或Provider。前置F32/F33候选未运行，
+与本批一起冻结验证。输入事实为登记官方config/全部权重角色及固定llama.cpp的DeepSeek程序。
+GGUF的rope/压缩超参数另核对固定首分片metadata，不从量化档位或模型名字推断。
+
+- F34.1：ratio4双半部重叠压缩、ratio128单窗口压缩，D512 attention与D128 indexer，
+  按角色接入Q8_0/BF16投影、F32 APE/norm。官方FP8投影保持独立未验，不能由F32输入边界代签。
+- F34.2：既有成熟View/Copy/Concat/Softmax/Reduce/RMS/RoPE/Hadamard表达模型程序；
+  64维尾部RoPE使用真实base/YaRN频率，attention输出逆旋转后接真实grouped输出投影。
+- F34.3：真实KV/score和compressed-cache反馈、完整块更新/半块保持、reset/reuse；
+  原版CSA top-k索引驱动实际压缩KV选择，与raw窗口和sink attention接合，不能以预选常量代替。
+- F34.4：两份GGUF完整链与四画像已适用的F32语义片段共用四路线Direct/Graph；
+  参考在host独立推进，第二次及以后输入状态使用实际输出，placeholder检测错误回灌。
+  复用既定F32、BF16和quantized-chain误差门，不因本批失败调大。
+
+预算为一次共享接线/统一验证及一轮具体失败修正；只查实际缺口，不重扫全部模型。
+单独片段通过不增加完整画像格；FP8、官方MTP、三交付/P1和D6未完成要求继续保留。
+
+F34首批接线已将同一压缩器consumer加入八个Direct/Graph入口：ratio4的前窗口第一半部与
+当前窗口第二半部、ratio128的128行逐通道softmax、D128索引压缩器的Hadamard；GGUF保留
+真实Q8_0/BF16投影，官方仅检查投影后的F32语义。六次重放覆盖实际KV/score/cache反馈、
+两个reset周期及半块cache保持；非reset输入填入错误占位值，防止参考答案代替真实状态。
+压缩RoPE位置按固定`llama-kv-cache-dsv4.cpp`使用块起点，APE使用token位置模ratio。
+两份固定GGUF的metadata已存入事实文件。当前尚未编译/运行，完整attention/grouped输出
+投影仍在接线；按同一批次延迟验证，完整ledger保持128/176，不启动三交付/P1。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

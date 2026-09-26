@@ -1351,6 +1351,19 @@ TEST(VulkanGraphMoeFragments, D5MatureClampBoundaries) {
   run_q24_semantic_fragment(d5_moe_execution_fragments::clamp_boundaries());
 }
 
+TEST(VulkanGraphMoeFragments, D5DeepSeekStatefulCompression) {
+  for (std::size_t index : {3u, 4u, 5u, 6u}) {
+    const auto &model = d5_moe_execution_cases::kCases[index];
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    for (std::int64_t ratio : {4, 128}) {
+      SCOPED_TRACE(ratio);
+      run_q24_semantic_fragment(d5_deepseek_remaining_fragments::compressor(model, ratio));
+    }
+    run_q24_semantic_fragment(d5_deepseek_remaining_fragments::compressor(model, 4, true));
+  }
+}
+
 TEST(VulkanGraphMoeFragments, D5DeepSeekNativeSinkAttention) {
   for (std::size_t index : {3u, 4u, 5u, 6u})
     for (int mode = 0; mode < 3; ++mode) {
