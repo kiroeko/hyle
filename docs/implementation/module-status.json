@@ -532,9 +532,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-metal-buffer-failure.md",
-      "summary": "D5 MG4 static fault injection reproduces a null dereference in ggml_metal_buffer_init; scope is this native workspace constructor and partial rollback only."
+      "summary": "D5 MB1-MB3 audited: repair Metal cold workspace allocation failure and adjacent native buffer ownership rollback; static fault and shared recurrent validation required."
     },
     {
       "module": "compute_provider_ggml_cuda",
