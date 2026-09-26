@@ -152,7 +152,11 @@ TEST(VulkanGguf, PackedIq4XsGroupedExpertsUseNativeMulMatId) {
   auto program = v::prepare(context, c::model_ops::grouped_matmul(),
                             weight_desc, activation_desc, ids_desc);
   ASSERT_TRUE(program) << program.error().message();
-  ASSERT_TRUE(v::detail::Access::program(*program)->dispatches.back().region);
+  const auto &prepared = *v::detail::Access::program(*program);
+  ASSERT_TRUE(prepared.status_value.has_value());
+  ASSERT_TRUE(std::ranges::any_of(prepared.dispatches, [](const auto &dispatch) {
+    return static_cast<bool>(dispatch.region);
+  }));
   auto invocation = program->create_invocation().value();
   for (int replay = 1; replay <= 2; ++replay) {
     const auto values = activations(tokens * slots, k, replay);
@@ -193,7 +197,11 @@ TEST(VulkanGguf, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   auto program = v::prepare(context, c::model_ops::grouped_matmul(),
                             weight_desc, activation_desc, ids_desc);
   ASSERT_TRUE(program) << program.error().message();
-  ASSERT_TRUE(v::detail::Access::program(*program)->dispatches.back().region);
+  const auto &prepared = *v::detail::Access::program(*program);
+  ASSERT_TRUE(prepared.status_value.has_value());
+  ASSERT_TRUE(std::ranges::any_of(prepared.dispatches, [](const auto &dispatch) {
+    return static_cast<bool>(dispatch.region);
+  }));
   auto invocation = program->create_invocation().value();
   for (int replay = 1; replay <= 2; ++replay) {
     const std::vector<double> activation_values(tokens * slots * k,
