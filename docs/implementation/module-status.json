@@ -475,8 +475,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5-F41 AUDITED：DeepSeek原版FP8冷解码与默认CUDA接线在bcea6bce通过普通入口/资源/真实GLM KV缓存和NextN；ledger144/176。三交付/P1等聚合门仍待D5-A5/A6，不提前CLOSED。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-quantization-roundtrip.md",
+      "summary": "D5-F42 AUDITED：官方DeepSeek FP8/group64与FP4/group32激活量化还原已完成原版native资格，按有限FIX接入普通入口；F41已验能力保留，ledger144/176，完整画像/三交付/P1仍待D5。"
     },
     {
       "module": "compute_route_cuda",

@@ -1,9 +1,9 @@
 # D5-F42：DeepSeek 官方激活量化还原边界
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`25a7fec577f2137629470d8f48d6b22376d47a6f`；公开语义 owner 为当前 D5 的
-  `compute_ops`，原生接线 owner 为 `compute_provider_cuda`。审计完成后绑定本卡，产品修改前固定 FIX。
+  `compute_ops`，原生接线 owner 为 `compute_provider_cuda`。`1d1c9109` 已固定 SCOPED，现绑定并冻结 FIX。
 - trigger：固定 DeepSeek V4 Pro/Flash 官方程序在 raw/compressed KV 的前448维执行
   E4M3FN/group64 量化再还原；indexer query/compressed key 在 Hadamard 后执行
   E2M1/group32 量化再还原。只保留 BF16 或套用通用 MXFP4 默认缩放会省略真实数值边界。
@@ -17,7 +17,7 @@
 - 边界：本卡补必要原子机制；模型状态/位置/尾部64维切分仍属 consumer。不增加模型加载器、
   Python 运行依赖、自研数学或自动性能搜索。不以该原子通过代签 DeepSeek 完整画像。
 
-## 有限 FIX（待审计后冻结）
+## 有限 FIX（已冻结）
 
 1. 显式 `BlockQuantizationRoundtrip` 两种语义：E4M3FN/group64/floor1e-4 和
    E2M1/group32/floor6×2^-126。均为 F32 组 absmax、缩放向上取二次幂、饱和最近偶数编码、
@@ -53,3 +53,9 @@ source/static/shared 均编译同一内嵌程序，无运行时 Python/TileLang�
 BF16 编码、两次变化输入、midpoint ties、signed zero/tiny、跨32组尾块、输出及 scale guard。
 组 scale 与输出逐位匹配独立参考；两份原版均可用，没有需要自写量化核的事实。
 这不是 HYLE 普通入口 PASS，完整 ledger 仍144/176。
+
+BORROW 已成立；官方同 revision 的 MIT LICENSE 已取证，SHA256
+`f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040`。离线生成所需 TileLang
+和 CUTLASS 模板许可随生成程序保留；两份生成程序接入已有 DeepSeek Provider，不新增公共 Provider
+种类或默认路线注册。Provider owner 从 F41 重新绑定本卡；F41 的已验能力与未完聚合门继续有效。
+源码边界、原生能力、数值舍入和成本已明确，可以按上述有限 FIX 实施；无须继续比较其它数学。
