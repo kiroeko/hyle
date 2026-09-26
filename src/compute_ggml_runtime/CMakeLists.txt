@@ -164,7 +164,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     "$<TARGET_PROPERTY:ggml-cuda,INCLUDE_DIRECTORIES>")
   get_target_property(_cuda_dependencies ggml-cuda LINK_LIBRARIES)
   target_link_libraries(ggml-cuda-precise-unary PRIVATE ${_cuda_dependencies})
-  foreach(_property CUDA_STANDARD CUDA_ARCHITECTURES CUDA_RUNTIME_LIBRARY
+  foreach(_property CXX_STANDARD CXX_STANDARD_REQUIRED CUDA_STANDARD
+                    CUDA_ARCHITECTURES CUDA_RUNTIME_LIBRARY
                     CUDA_SEPARABLE_COMPILATION)
     get_target_property(_value ggml-cuda ${_property})
     if(NOT _value MATCHES "-NOTFOUND$")
