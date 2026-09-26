@@ -236,6 +236,14 @@ F32 的 Cast→Cast 逐值相等控制，防止数值分类掩盖转换错误。
 本节仅调整共享测试消费者与验收分类，无公共数学、路由策略或产品 API 变化；新稳定候选必须
 实际完成四路线八入口检查，剩余整画像/交付/P1 不由此代签。
 
+**Apple 原生精度边界纠正：** 首次 Apple Direct 的 dense/残差/精确 Cast 全部通过，MLA 未通过。
+运行日志明确选中 `kernel_mul_mv_id_bf16_f32_4`；锁定原版 Metal `kernels/mul_mv.metal:3367`
+以 bfloat 权重和 float4 激活相乘，不像 CPU BF16 vec-dot 隐式舍入激活。共享 oracle 错将后者
+套到 Apple，尤其在 V-B 输入近零相消处引入假差。仅把 Apple 的独立 per-head K-B/V-B 参考改为
+保留 F32 激活；产品 recipe、输入、Provider、误差门均不变。其它路线保持已验参考；原 Apple
+失败保留，修正后的 Direct/Graph 必须实际运行。官方完整形状 KV-B 拆分/转置及三种残差参数融合
+已执行锁定原 converter 的五项逐值相等检查；全层 header 复核确认本批20/18/18个签名无遗漏异型。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

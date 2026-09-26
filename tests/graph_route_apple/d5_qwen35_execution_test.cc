@@ -1582,7 +1582,8 @@ TEST(AppleGraphMoeFragments, D5KimiAbsorbedMlaWithCache) {
   for (int i = 0; i < 3; ++i) {
     auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
-    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile));
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(
+        profile, /*round_grouped_input_to_bfloat=*/false));
   }
 }
 
