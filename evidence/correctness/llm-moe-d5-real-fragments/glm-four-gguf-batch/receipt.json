@@ -1,0 +1,410 @@
+{
+  "schema_version": 1,
+  "candidate": "7af6eae4d20b0bafd835db4e1b5af563a66ecac7",
+  "tree": "d6b34bb07ad353cd8b553efa4b1d62b09e69ee79",
+  "verdict": "RUN_PASS",
+  "scope": "Four fixed GLM GGUF profiles, all required regions through four ordinary Direct/Graph entries; correctness and lifecycle only.",
+  "new_complete_profile_cells": 32,
+  "results": [
+    {
+      "route": "cpu",
+      "candidate": "b52ff8d174d165052a7d459467c5eba36159d43b",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        42,
+        134,
+        149
+      ],
+      "gtest_total": 325
+    },
+    {
+      "route": "cuda",
+      "candidate": "7af6eae4d20b0bafd835db4e1b5af563a66ecac7",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        137,
+        152,
+        30,
+        8
+      ],
+      "gtest_total": 327
+    },
+    {
+      "route": "apple",
+      "candidate": "7af6eae4d20b0bafd835db4e1b5af563a66ecac7",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        164,
+        137,
+        7
+      ],
+      "gtest_total": 308
+    },
+    {
+      "route": "vulkan",
+      "candidate": "7af6eae4d20b0bafd835db4e1b5af563a66ecac7",
+      "entries": [
+        "direct",
+        "graph"
+      ],
+      "verdict": "PASS",
+      "gtest_suite_counts": [
+        249,
+        159,
+        24,
+        7
+      ],
+      "gtest_total": 439
+    }
+  ],
+  "files": {
+    "cpu-owner-build.cmd.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/build.cmd",
+      "raw_sha256": "8237e62b612f4bc7ec0f96966c0e4d3ddc6cf63eb29bf1334eafedbfaa028009",
+      "gz_sha256": "7df3a745c34e6b76b56eddcb47f0a378c7e3acf357c644e54195370898a8dad6"
+    },
+    "cpu-owner-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/build.log",
+      "raw_sha256": "7716162f3cd3b99cf3b8a8dd6decf324e08c7e941aae7e730baba5e4fc8c075b",
+      "gz_sha256": "21b70e1b602b68e75392df91edc3bc5165f4c40d90106476b22ca2c651ecb900"
+    },
+    "cpu-owner-cache-identity.txt.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/cache-identity.txt",
+      "raw_sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72",
+      "gz_sha256": "47ee49b8413c4fcd81234fb529c955956a9e927ff545384b3b0b2cc1ba4802d4"
+    },
+    "cpu-owner-native-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/native-tests.log",
+      "raw_sha256": "de661e2977ad547c0321b4fec078eca2e36b68b942637ad6c2da73d392ccb118",
+      "gz_sha256": "0dabc15414138c0d55540929bfab4755a9ef0d9c8af813160f28aa50a7236e27"
+    },
+    "cpu-owner-receipt.json.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/receipt.json",
+      "raw_sha256": "8ee45d391f51c7fdc2416824fc5301dab20c2b272f4daf5c9241f18cf0ff60b5",
+      "gz_sha256": "e64d3011902480d4871077b5ba56435489eb9d8fb91bb11804ef444c0a570b7b"
+    },
+    "cpu-owner-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/tests.log",
+      "raw_sha256": "2b97b1b2dd6abb5ca109f91ca9b29350df82ebba7e62cc885d5222ad3b441ef3",
+      "gz_sha256": "9108900954810dd695e8808c32b2d808a12fcb428ffc0f92e120133eaf05e54e"
+    },
+    "cpu-owner-tests.xml.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cpu/tests.xml",
+      "raw_sha256": "24f07edebdeff0e1714b25f28330935355d44c0f7706edc235847ef3e260ca9f",
+      "gz_sha256": "6b3e268f0180275d4c008f2d5fab0c76e417ea54b936da657299b5a4c76e766b"
+    },
+    "cuda-owner-build.cmd.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/build.cmd",
+      "raw_sha256": "9c939a56261d18a233f2a7656cad9fc7c6a066344001659e4e9a290bdc315c67",
+      "gz_sha256": "d71415951e076a2b0100c08b2d91a151f609a1a27a4427ebddccc61e385656e8"
+    },
+    "cuda-owner-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/build.log",
+      "raw_sha256": "54348f3805e33709fb7f7dc2b77e1b5cc8ff1eb49c95c79d42b62b3f908ac395",
+      "gz_sha256": "10eb32d02b947df3c7f59f3fbcbe25a335dc5dd4ef7e189d998c8f12dee8ff3a"
+    },
+    "cuda-owner-cache-identity.txt.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/cache-identity.txt",
+      "raw_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+      "gz_sha256": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee"
+    },
+    "cuda-owner-native-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/native-tests.log",
+      "raw_sha256": "5e01381e0557592b8ea75ee444fe07bc75bf8e680493a5e3d58559f544f19c8f",
+      "gz_sha256": "09c1ae73d5467f2c272dc0559599b5917fc9ba795390ce557158316d8c68868c"
+    },
+    "cuda-owner-receipt.json.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/receipt.json",
+      "raw_sha256": "57f78601dde210727db605779c1649e59ee8905198948c816733e3e4be2170c5",
+      "gz_sha256": "bd6a4d286bbc666cc76af386e0ff8d787de7ea11f52c7766d58275326d227ee0"
+    },
+    "cuda-owner-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/tests.log",
+      "raw_sha256": "08c8fa5de68ab4e5fb3565dbeb6785b9bc535ed7453f6650449de23f215ba884",
+      "gz_sha256": "bd3e1d62aa0aa3818be1872eb81d7ac00ad2b386c1ed57dac75e103b863d477a"
+    },
+    "cuda-owner-tests.xml.gz": {
+      "source": ".scratch/validation/d5-glm-owner/cuda/tests.xml",
+      "raw_sha256": "8f70e2b26e82bd3368069a15b8d8db75440c2c1126069af02d6167beda8f0c38",
+      "gz_sha256": "6ce07650e96a583304bb43389412178619c6e85df5339ea68484fdc58368d9d5"
+    },
+    "apple-owner-cache-identity.txt.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/cache-identity.txt",
+      "raw_sha256": "73691224fe64f0d6e9443abfbc6279e6659472b84f042bb57245893b9eb31bce",
+      "gz_sha256": "ad1c345131d6fd88249230449c0ee5a16336ecbba0d71374d7fad78a64a39761"
+    },
+    "apple-owner-driver.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/driver.log",
+      "raw_sha256": "b4e11bc14c0966d050cca2047641bc3e12e47389f8d8496cd92fe38a948a9342",
+      "gz_sha256": "05ce20262a6a7f721be094ba4b317e4dee4dafaef4e7bca94f1a89317f6b5087"
+    },
+    "apple-owner-owner-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/owner-build.log",
+      "raw_sha256": "273da7f1f3739774b169dc3f7c824f53054432c68523f89f11f40211737b7516",
+      "gz_sha256": "553ff4980e111b87111c006420d7c4bf1366a2b66e4207494bb432d8fb579569"
+    },
+    "apple-owner-owner-native.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/owner-native.log",
+      "raw_sha256": "e0ea5ef6777ca4e6718f2f93e1b6ae004a725c6900d62876530ea08ee239da3a",
+      "gz_sha256": "c2b8c3f635f21299659d8c64dc541521225416ecdaa1614570020cc44b760b37"
+    },
+    "apple-owner-owner-receipt.json.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/owner-receipt.json",
+      "raw_sha256": "a5bf0ed29846f0e1d71bd8077728b7cd63c3c83f83ea6d58d7df41976958f755",
+      "gz_sha256": "23fcb0e0514e6bfe47bfdc0685051b4c487edc6bbdb0c929144434a3e77e6b6e"
+    },
+    "apple-owner-owner-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/owner-tests.log",
+      "raw_sha256": "6fdd2a0aa02b94d7b716c500f67c70bb24ded8d5ab18b127c5efb635d29f46c6",
+      "gz_sha256": "f7ba5888fa2a4eb903e3de871db803a7f44c66ea5d1e92b83367e644626f6d55"
+    },
+    "apple-owner-owner.xml.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/owner.xml",
+      "raw_sha256": "3f39562d0b6112bf65e30e017ce96cc55b549575c8a81875b8065ef440f19db6",
+      "gz_sha256": "7b79066fdcd04f42eed656138f476e7a4d09ec63e324f4c10c8f15408da24513"
+    },
+    "apple-owner-sync.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/apple/sync.log",
+      "raw_sha256": "4b0aa6711181b46e368c31c9b94729765e30714e4ffec78e2662faa3902f9398",
+      "gz_sha256": "5a4f5a7147084c3690d26eaaa2673bbb2f1cb4265d810eae0e2203c1b9ea2b1d"
+    },
+    "vulkan-owner-build.cmd.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/build.cmd",
+      "raw_sha256": "0b3a47b438d12d545f6f40eb04b7d59d982499d8f65859eaa818356ae4800d91",
+      "gz_sha256": "f63d0b1e45adafb39b9cce8e5a047c97b7545a6f1496f9d477b9951c85b409b7"
+    },
+    "vulkan-owner-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/build.log",
+      "raw_sha256": "25706fab042657d928fe38583fa7970aab3537de679ddf46968ecf94b31fa029",
+      "gz_sha256": "aa5aa534464f0e81f743ac4afc75e2a43765b24f6d393c72fcab5add5a032fb8"
+    },
+    "vulkan-owner-cache-identity.txt.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/cache-identity.txt",
+      "raw_sha256": "5b9e996c25b4253e74d270805b70741b7cbcc0397ca14ab7f6cba65edec87313",
+      "gz_sha256": "ce1bb409c71e43a9c0eaba4b27270832185eb388bd3a79ddc546f0e73c7a70ca"
+    },
+    "vulkan-owner-native-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/native-tests.log",
+      "raw_sha256": "7560b8eb4884caaa377e4379ea8e5981f4010f7eae0f1475f6315d3d1b09206e",
+      "gz_sha256": "806e9c888d88c03f942377284524c20955e3348d7a1be22485c02de6a863acb9"
+    },
+    "vulkan-owner-receipt.json.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/receipt.json",
+      "raw_sha256": "dfd2238be002d87abd0c4293f88eeae408ab0e13a2d0144e5455b21f2150f6a9",
+      "gz_sha256": "646144f25348adf80d8a7583bc27f1a2e25cf5a34973857535cc605aebd198a9"
+    },
+    "vulkan-owner-tests.log.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/tests.log",
+      "raw_sha256": "7952a4836690d29927776a444267121042ce07a9b979c9468b4d15c46a363ea7",
+      "gz_sha256": "434bf1d660ccd0b252bdbab2eddcaf77f1ea44686e24f69758f86b8d5fa54e0b"
+    },
+    "vulkan-owner-tests.xml.gz": {
+      "source": ".scratch/validation/d5-glm-owner/vulkan/tests.xml",
+      "raw_sha256": "51a8f0e53868181a012b13c3b8fddfa961d1e6b65699b8f8da73f53c33650746",
+      "gz_sha256": "1a4b7feb1c7f8436e7eb2f2497828c3e85b18048dedaca1cf1af3352917f93b3"
+    },
+    "cpu-variants-build.cmd.gz": {
+      "source": ".scratch/validation/d5-glm-expert-variants/cpu/build.cmd",
+      "raw_sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+      "gz_sha256": "0f503f2831c2a6ac4d36db48d131711951c8805c0925edf3be22a56de9f89246"
+    },
+    "cpu-variants-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-expert-variants/cpu/build.log",
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "cpu-variants-candidate.json.gz": {
+      "source": ".scratch/validation/d5-glm-expert-variants/cpu/candidate.json",
+      "raw_sha256": "0d8d190ccce69f29c994d791c77ef10482c3707fca4449b1396fb41b294b5d77",
+      "gz_sha256": "f5aeb1d21479aa54c01104f47befc76f86c6060d95a661b5b6301e52fb31ca3d"
+    },
+    "cpu-variants-compute.log.gz": {
+      "source": ".scratch/validation/d5-glm-expert-variants/cpu/compute.log",
+      "raw_sha256": "93e0785851ee877425e2ca034f8e43a49f26ad064ca72007acc4a2497295ebaa",
+      "gz_sha256": "718d8316f6c5637fb38346151fd6893615bedf8c9d8f93e937fe8459c043a170"
+    },
+    "cpu-variants-graph.log.gz": {
+      "source": ".scratch/validation/d5-glm-expert-variants/cpu/graph.log",
+      "raw_sha256": "f2d68862de7953d74191507d6e7fb990db835fb02abdb865d7904066573ecc85",
+      "gz_sha256": "0bc35564db0bb0fe0f89be17978522120c70dfb63cc5a9b7c1f61de37f567cb9"
+    },
+    "cpu-first-failed-build.cmd.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-complete/cpu/build.cmd",
+      "raw_sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+      "gz_sha256": "0f503f2831c2a6ac4d36db48d131711951c8805c0925edf3be22a56de9f89246"
+    },
+    "cpu-first-failed-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-complete/cpu/build.log",
+      "raw_sha256": "4797209a8dbae890d52653396cd5fbaf170ab353a4aed7b9c227e7e4d1033467",
+      "gz_sha256": "33a93300a1208cef72006d0321d085682174a5fcd0150bfb3912dff951b86043"
+    },
+    "cpu-first-failed-candidate.json.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-complete/cpu/candidate.json",
+      "raw_sha256": "c4ebc7f14f89a9deefad8ec1507fcf36e43f85359059635d143e07b097107440",
+      "gz_sha256": "8286a8d42ed5e0470f9d57ba06b78039a28d36f78801367f217cf8c4c9a40e26"
+    },
+    "cpu-first-failed-compute.log.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-complete/cpu/compute.log",
+      "raw_sha256": "5d2e5b9f387562f995bb4912b403e8841e8e3d20fa418becd17af2f57a55c7d6",
+      "gz_sha256": "ce2c53911b406095e08b10a5e8f58c17681694585d168b614b6175865ef45d9a"
+    },
+    "cpu-first-failed-graph.log.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-complete/cpu/graph.log",
+      "raw_sha256": "9ee64a121164e1c3372dd64feeea1dda74627c25de91409e728d3099b3fcdf14",
+      "gz_sha256": "c174946243be35735bf4154fbcfbc6ddbc2bac1bc23d06e6e6b48a1b18073a08"
+    },
+    "cpu-corrected-build.cmd.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-qualified/cpu/build.cmd",
+      "raw_sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec",
+      "gz_sha256": "0f503f2831c2a6ac4d36db48d131711951c8805c0925edf3be22a56de9f89246"
+    },
+    "cpu-corrected-build.log.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-qualified/cpu/build.log",
+      "raw_sha256": "f401cd98afabe1e8ae99c86ee6187e76aaf42ef24e04f54e965f7fa1ad2aa7e3",
+      "gz_sha256": "6c0e596f88ef79d535b329069226cb7ecad348e3aa11b40c17349de1c8233473"
+    },
+    "cpu-corrected-candidate.json.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-qualified/cpu/candidate.json",
+      "raw_sha256": "1fbb8ca4dbe9758c7fc2e523c5a706d04565b795e0e9257f1d39f123f5b90c40",
+      "gz_sha256": "85c7eb99dc31956580684956346a55da8e19bbfcc52a724769a529e5d27baeaf"
+    },
+    "cpu-corrected-compute.log.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-qualified/cpu/compute.log",
+      "raw_sha256": "3d027325f4467001bcc181df172c9441244a543a33e3db59f00892a7734ff54a",
+      "gz_sha256": "a92082f175fe801caff7fbdf5aeea12e39b97d799ba09af8529630ae1d4a2519"
+    },
+    "cpu-corrected-graph.log.gz": {
+      "source": ".scratch/validation/d5-glm-mtp-qualified/cpu/graph.log",
+      "raw_sha256": "34c116465ad730506e3dda53487be51e6ea743a1dc15608b48a8039e8635efd4",
+      "gz_sha256": "921ab6aa7f1a4c964145b5b5a63216c12c8046540d399cf2d2984a5a2fa29961"
+    },
+    "selected-plan.json.gz": {
+      "source": ".scratch/validation/d5-glm-owner/plan.json",
+      "raw_sha256": "4ff4bbbee5d49fe69d39cf03b47ba773272bc028360b4deb647a8ef7900f3dc7",
+      "gz_sha256": "c837197000ea0b82d6231732a9e79387a75aa1444962777c1bc006fca4f0e636"
+    },
+    "final-docs-plan.json.gz": {
+      "source": ".scratch/validation/d5-glm-owner/final-docs-plan.json",
+      "raw_sha256": "2ff470c1c2648fa6bb9a581771109b6eb2c48d96362c4e266629d5a4cf8cb06d",
+      "gz_sha256": "01c578289bf68cf15b100f803c2d57ea5725dbe21af372f2de45975cbf71d513"
+    }
+  },
+  "product_change": "None in this batch. Test recipes, observed-state/head bridges and exact role facts only. F30/F31 product fixes are retained from the previous GLM checkpoint.",
+  "source_weights": "Format-valid nonzero synthetic payloads tied to pinned all-layer GGUF headers; not full checkpoint contents or whole-model inference.",
+  "replay": "Four actual decoder hidden/cache feedback steps; all154880 logits from each decoder output; two actual indexer seeds and four carry/reset steps; rare expert triples use three changing inputs.",
+  "numeric_gates": "Head relative to its actual activation retains original max0.008/RMSE0.002. End-to-end logits use the existing normalized quantized-chain gate against an independently advanced decoder reference. No fitted threshold or observed-output whole-chain oracle.",
+  "index_state": "Native I32 seeds feed checked Gather and64-head Attention. Reuse steps supply invalid placeholder input overridden only by real previous output; next iteration discards old state and binds a different independently checked seed. Flash0/3 tails include padded and full-tail boundaries; existing1/2 tails retained in sparse consumer.",
+  "costs": "Head boundary stages actual hidden through host readback/upload for bounded-memory full-vocabulary sharding. Carry model policy and state capture also use explicit host control; diagnostic copies/sorting remain. No zero-copy or performance claim.",
+  "remaining": [
+    "Two official GLM FP8 profiles",
+    "Four DeepSeek profiles",
+    "D5-A5 final source/static/shared deliveries",
+    "D5-A6 P1",
+    "D6"
+  ],
+  "validation_mode": "Manual selected factors in existing route-isolated Release/WERROR trees, serial heavy checks and-j2. Not a fabricated automatic selector-run PASS.",
+  "environment_reuse": "../kimi-remaining-batch/receipt.json and retained current cache identities; same Windows CPU/RTX4070 and MacBook Air Mac16,12.",
+  "cpu_increment": {
+    "candidate": "7af6eae4d20b0bafd835db4e1b5af563a66ecac7",
+    "gtest_counts": [
+      1,
+      1
+    ],
+    "reuse": "Relative to b52ff8d1 only a new test enum value/mapping, four rare-weight recipes and test calls were added. Existing products, consumer programs, inputs and accuracy gates are unchanged. The original complete CPU suites are retained, not rerun."
+  },
+  "source_facts": [
+    "tests/compute_models/d5_glm_remaining_facts.json",
+    "tests/compute_models/d5_glm_mtp_facts.json",
+    "tests/compute_models/d5_glm_expert_variants.json"
+  ],
+  "source_identities": {
+    "tests/compute_models/d5_glm_remaining_facts.json": "4cc3ef5b1902a0d0cd2c1b8d87937f3561d5cb0762073290c6cf313d113c3a03",
+    "tests/compute_models/d5_glm_mtp_facts.json": "4eacb8a153e9c44b519cd80ae6501a531c17699ddf1be6436248cf7e726d3891",
+    "tests/compute_models/d5_glm_expert_variants.json": "f694b534dbe24ee33764f530acf7f1a680b5153f62b3e994166502b951c9b519",
+    "tests/compute_models/d5_glm_remaining_fragments.h": "eaad5c3b7852efe29a2fdeef610bafbf3c4b59d99b7b6dfc70da5e0062bd0076",
+    "tests/compute_models/d5_qwen_gguf_vocabulary_test.h": "dfcbe995bbc9a07a73505820a5a1e5ca6e29b93aa547e412a18923a752c3ee97",
+    "tests/compute_models/d5_qwen38_24t_semantic_fragments.h": "02fc3d7e1a31a5abe7a6a3da21880f646e0704c2829395ffaf4e3f4094c7fbeb"
+  },
+  "region_receipts": {
+    "R01": [
+      "evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R02": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R03": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-projection-role-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R06": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R07": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-nextn-decoder-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R08": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R09": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-nextn-decoder-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R10": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-router-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R11": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-router-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R12": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R13": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R14": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ],
+    "R15": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+    ]
+  },
+  "profiles": [
+    "glm53:primary_gguf:UD-Q4_K_XL",
+    "glm53:fidelity_gguf:Q8_0",
+    "glm53_flash:primary_gguf:UD-Q4_K_XL",
+    "glm53_flash:fidelity_gguf:Q8_0"
+  ],
+  "ledger_counts_after": {
+    "RUN_PASS": 128,
+    "VALIDATION_NOT_RUN": 48
+  },
+  "final_checks": {
+    "closure_previous_ref": "7af6eae4",
+    "closure": "PASS:57 components/schema4",
+    "docs": "PASS:621 Markdown/2739 relative links",
+    "model_inputs": "PASS:13 tests",
+    "diff_check": "PASS",
+    "final_selector": "docs,closure,model-inputs;130 skipped/reused;no rebuild or P1"
+  }
+}

@@ -678,10 +678,12 @@
         "topk": 8,
         "expert_ffn": 2048,
         "attention_heads": 64,
-        "attention_head_dim": 192,
         "index_heads": 32,
         "index_head_dim": 128,
-        "index_topk": 2048
+        "index_topk": 2048,
+        "attention_nonrotary_depth": 192,
+        "mla_qk_depth": 256,
+        "mla_value_depth": 256
       }
     },
     {
@@ -717,10 +719,19 @@
         "topk": 8,
         "expert_ffn": 2048,
         "attention_heads": 64,
-        "attention_head_dim": 192,
         "index_heads": 32,
         "index_head_dim": 128,
-        "index_topk": 2048
+        "index_topk": 2048,
+        "dense_ffn": 12288,
+        "query_rank": 2048,
+        "kv_rank": 512,
+        "mla_qk_depth": 256,
+        "mla_value_depth": 256,
+        "rope_depth": 64,
+        "compressed_qk_depth": 576,
+        "compressed_value_depth": 512,
+        "vocabulary_rows": 154880,
+        "attention_nonrotary_depth": 192
       }
     },
     {
@@ -753,10 +764,19 @@
         "topk": 8,
         "expert_ffn": 2048,
         "attention_heads": 64,
-        "attention_head_dim": 192,
         "index_heads": 32,
         "index_head_dim": 128,
-        "index_topk": 2048
+        "index_topk": 2048,
+        "dense_ffn": 12288,
+        "query_rank": 2048,
+        "kv_rank": 512,
+        "mla_qk_depth": 256,
+        "mla_value_depth": 256,
+        "rope_depth": 64,
+        "compressed_qk_depth": 576,
+        "compressed_value_depth": 512,
+        "vocabulary_rows": 154880,
+        "attention_nonrotary_depth": 192
       }
     },
     {
@@ -796,7 +816,10 @@
         "index_heads": 32,
         "index_head_dim": 128,
         "index_topk": 2048,
-        "hc": 4
+        "hc": 4,
+        "attention_nonrotary_depth": 256,
+        "mla_qk_depth": 256,
+        "mla_value_depth": 256
       }
     },
     {
@@ -838,7 +861,18 @@
         "index_heads": 32,
         "index_head_dim": 128,
         "index_topk": 2048,
-        "hc": 4
+        "hc": 4,
+        "dense_ffn": 12288,
+        "query_rank": 1536,
+        "kv_rank": 512,
+        "attention_heads": 64,
+        "mla_qk_depth": 256,
+        "mla_value_depth": 256,
+        "rope_depth": 0,
+        "compressed_qk_depth": 512,
+        "compressed_value_depth": 512,
+        "vocabulary_rows": 154880,
+        "attention_nonrotary_depth": 256
       }
     },
     {
@@ -877,7 +911,18 @@
         "index_heads": 32,
         "index_head_dim": 128,
         "index_topk": 2048,
-        "hc": 4
+        "hc": 4,
+        "dense_ffn": 12288,
+        "query_rank": 1536,
+        "kv_rank": 512,
+        "attention_heads": 64,
+        "mla_qk_depth": 256,
+        "mla_value_depth": 256,
+        "rope_depth": 0,
+        "compressed_qk_depth": 512,
+        "compressed_value_depth": 512,
+        "vocabulary_rows": 154880,
+        "attention_nonrotary_depth": 256
       }
     }
   ],
@@ -7655,144 +7700,1040 @@
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:cpu:graph",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:cuda:direct",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:cuda:graph",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:apple:direct",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:apple:graph",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:vulkan:direct",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:primary_gguf:UD-Q4_K_XL:vulkan:graph",
       "profile": "glm53:primary_gguf:UD-Q4_K_XL",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:cpu:direct",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:cpu:graph",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:cuda:direct",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:cuda:graph",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:apple:direct",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:apple:graph",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:vulkan:direct",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53:fidelity_gguf:Q8_0:vulkan:graph",
       "profile": "glm53:fidelity_gguf:Q8_0",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:cpu:direct",
@@ -7943,9 +8884,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -7961,9 +8968,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -7979,9 +9052,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -7997,9 +9136,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8015,9 +9220,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8033,9 +9304,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8051,9 +9388,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8069,9 +9472,75 @@
       "profile": "glm53_flash:primary_gguf:UD-Q4_K_XL",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8087,9 +9556,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8105,9 +9640,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8123,9 +9724,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8141,9 +9808,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8159,9 +9892,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8177,9 +9976,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8195,9 +10060,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8213,9 +10144,75 @@
       "profile": "glm53_flash:fidelity_gguf:Q8_0",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -8233,10 +10230,10 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 96,
+    "RUN_PASS": 128,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 80
+    "VALIDATION_NOT_RUN": 48
   },
   "qualification_correction": {
     "reason": "The 48 former Qwen3.5-2B and Qwen3.8-27B complete cells used seven R01 vocabulary rows; the fixed real-profile capacity policy does not permit reducing the 248320-row vocabulary. Their non-R01 successful regions remain linked as partial receipts.",

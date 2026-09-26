@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：96/176完整格已验；GLM八组片段四路线八入口64/64通过，含NextN decoder实际状态回送与DSA索引驱动cache/Attention，另16组MoE回归通过；MTP索引carry/head组合、官方FP8、DeepSeek、三交付/P1仍待完成。本批无产品数学修改。"
+      "summary": "D5 AUDITED：128/176完整格已验；四个GLM GGUF完成四路线Direct/Graph、完整NextN/head、索引carry/reset及逐层混合专家格式，全部owner套件通过且零跳过。GLM官方FP8两画像、DeepSeek四画像、三交付/P1和D6仍待完成；DeepSeek真实剩余接缝已审计。"
     },
     {
       "module": "compute_backend_cpu",

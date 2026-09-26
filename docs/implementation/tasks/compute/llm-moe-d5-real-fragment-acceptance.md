@@ -3,15 +3,22 @@
 <!-- MODULE REVIEW: AUDITED -->
 
 **2026-09-26 当前进展：** 用户选择的完整 recurrent 数值边界已完成 MG1–MG5；
-九个 Qwen 与三个 Kimi 画像已通过四路线 Direct/Graph 普通入口、变化输入和实际状态反馈。
-当前 ledger 为 **96/176 RUN_PASS、80/176 VALIDATION_NOT_RUN**。Qwen 见
+九个 Qwen、三个 Kimi 与四个 GLM GGUF 画像已通过四路线 Direct/Graph 普通入口、变化输入和实际状态反馈。
+当前 ledger 为 **128/176 RUN_PASS、48/176 VALIDATION_NOT_RUN**。Qwen 见
 [九画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)，
-Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/README.md)。
+Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/README.md)，
+GLM 见[四 GGUF 画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md)。
 Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
-旧失败及撤回资格保留；下文0/48/72等数字是历史快照，不能覆盖当前 ledger。
-其余10画像、D5 三交付/P1及 D6 尚未完成，不把完整片段正确性当作整个 goal 完成率。
+旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
+其余6画像（GLM官方FP8两个、DeepSeek四个）、D5 三交付/P1及 D6 尚未完成，不把完整片段正确性当作整个 goal 完成率。
 
-**GLM 新增批次已验：** 六组共享 consumer 在四路线 Direct/Graph 各6/6通过，共48组，
+**GLM GGUF 完整批次已验：** `7af6eae4` 完成全词表head接合、MTP索引carry/reset和逐层混合专家格式。
+CPU完整325项复用`b52ff8d1`，最终候选的新增格式两入口各1项通过；CUDA327、Apple308、Vulkan439项
+均通过，全部零失败/零跳过，另有所选executor/source/MASM合同通过。四画像全部region已齐备，新增32格。
+两种原有数值门分别检查head局部和独立decoder整链；原失败、候选身份和显式host staging成本均保留。
+本批未增加产品数学，统一实现仍为58,617行/232文件。三交付/P1不由正确性收据代签。
+
+**GLM 六组片段历史检查点：** 六组共享 consumer 在四路线 Direct/Graph 各6/6通过，共48组，
 包括真实宽度 FFN、压缩 MLA、DSA/Flash pool-tail、加权 mHC 和 NextN 输入边界。
 F30 的64-head准入和F31的 CUDA 原生 I32 Concat 已验证；Vulkan布局与原生精度失败已归因。
 见[批量检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/README.md)。
@@ -415,6 +422,14 @@ Q5_K/Q5_K/Q6_K；Flash的12/44层为前者，第11层为后者。原代表链的
 组合。共享MoE测试仅增加已有Q6_K格式枚举映射和四个现有链参数，不新增产品算子或算法。
 两份fidelity全层均为Q8，NextN仍是各自原先已验格式。CPU正在运行的`b52ff8d1`不可变binary
 完整结果按身份保留，新增四组合另做一次定向验收；其余路线直接随同一最终候选完整批验。
+
+### DeepSeek 下一共用批次的输入审计
+
+等待 GLM 最后路线验证期间，按本轮 A2/A3 核对了固定 DeepSeek 四画像的全部权重角色和登记的
+成熟程序，见[剩余真实片段审计](llm-moe-d5-deepseek-remaining-audit.md)。确认 Flash 两个 GGUF
+没有 NextN 权重、前三层采用真实 I32 token→expert 表；官方版本的 MTP 则有自身 FP8 投影和 mHC。
+SGLang 原版 hash kernel 已定位，当前 score TopK 和无 sink 的 SDPA 不能代签该需求。
+这是后续有限接缝定界的输入，不改变当前 ledger，也没有增加产品数学或新的执行通过声明。
 
 ## Closure card
 
