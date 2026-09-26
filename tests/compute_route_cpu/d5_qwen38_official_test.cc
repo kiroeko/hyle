@@ -13,6 +13,7 @@
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
+#include "../compute_models/d5_deepseek_remaining_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
@@ -812,6 +813,17 @@ void run_q24_semantic_fragment(
 
 TEST(CpuMoeFragments, D5MatureClampBoundaries) {
   run_q24_semantic_fragment(d5_moe_execution_fragments::clamp_boundaries());
+}
+
+TEST(CpuMoeFragments, D5DeepSeekNativeSinkAttention) {
+  for (std::size_t index : {3u, 4u, 5u, 6u})
+    for (int mode = 0; mode < 3; ++mode) {
+      const auto &model = d5_moe_execution_cases::kCases[index];
+      SCOPED_TRACE(model.profile->model_repository);
+      SCOPED_TRACE(model.profile->variant);
+      SCOPED_TRACE(mode);
+      run_q24_semantic_fragment(d5_deepseek_remaining_fragments::sink_attention(model, mode));
+    }
 }
 
 TEST(CpuMoeFragments, D5DeepSeekTokenTableRouting) {

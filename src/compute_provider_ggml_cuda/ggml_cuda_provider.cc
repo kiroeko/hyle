@@ -138,6 +138,23 @@ struct Invocation final {
   }
 
   ggml_tensor *attention(const internal::Node &node) {
+    if (const auto sink = node.operation.custom_as<model_ops::SinkAttention>()) {
+      auto *context = arena.get();
+      auto *query = ggml_permute(context, tensors[node.inputs[0]], 0, 2, 1, 3);
+      auto *key = ggml_permute(context, tensors[node.inputs[1]], 0, 2, 1, 3);
+      auto *value = ggml_permute(context, tensors[node.inputs[2]], 0, 2, 1, 3);
+      auto *scores = ggml_mul_mat(context, key, query);
+      (void)ggml_prec_set_acc(scores, GGML_PREC_F32);
+      (void)ggml_prec_set_src(scores, GGML_PREC_F32, 1);
+      auto *probabilities = ggml_soft_max_ext(context, scores,
+          tensors[node.inputs[3]], sink->scale, 0.0F);
+      ggml_soft_max_add_sinks(probabilities, tensors[node.inputs[4]]);
+      value = ggml_cont(context, ggml_transpose(context, value));
+      auto *result = ggml_mul_mat(context, value, probabilities);
+      (void)ggml_prec_set_acc(result, GGML_PREC_F32);
+      (void)ggml_prec_set_src(result, GGML_PREC_F32, 1);
+      return ggml_cont(context, ggml_permute(context, result, 0, 2, 1, 3));
+    }
     const auto &operation = *node.operation.get_if<ScaledDotProductAttention>();
     auto *context = arena.get();
     auto *query = tensors[node.inputs[0]];
@@ -256,7 +273,8 @@ struct Invocation final {
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
       std::vector<ggml_tensor *> results;
-      if (node.operation.get_if<ScaledDotProductAttention>()) {
+      if (node.operation.get_if<ScaledDotProductAttention>() ||
+          node.operation.custom_as<model_ops::SinkAttention>()) {
         if (auto *result = attention(node))
           results.push_back(result);
       } else {

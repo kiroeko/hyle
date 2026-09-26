@@ -330,6 +330,14 @@ bool region_supports(const Operation &operation,
            infer_output_descriptions(operation, inputs, inferred).ok() &&
            inferred[0] == outputs[0];
   }
+  if (operation.custom_as<model_ops::SinkAttention>()) {
+    std::array<TensorDesc, 1> inferred;
+    return outputs.size() == 1 &&
+           infer_output_descriptions(operation, inputs, inferred).ok() &&
+           inferred[0] == outputs[0] &&
+           *inputs[3].element_count() <=
+               std::size_t{INT32_MAX} / sizeof(float) / inputs[0].dimensions()[2];
+  }
   if (operation.custom_as<model_ops::CausalConv1d>())
     return inputs.size() == 2 && outputs.size() == 1 &&
            inputs[0].data_type() == DataType::kFloat32 &&
@@ -799,6 +807,20 @@ Result<Region> Region::create(NativeDevice device,
               Status::Unimplemented("ggml Vulkan Hadamard F32 accumulation"));
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
+      } else if (const auto attention = node.operation.custom_as<model_ops::SinkAttention>()) {
+        auto *query = ggml_permute(context, arguments[0], 0, 2, 1, 3);
+        auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
+        auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
+        auto *scores = ggml_mul_mat(context, key, query);
+        if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention score accumulation"));
+        auto *probabilities = ggml_soft_max_ext(context, scores, arguments[3], attention->scale, 0.0F);
+        ggml_soft_max_add_sinks(probabilities, arguments[4]);
+        value = ggml_cont(context, ggml_transpose(context, value));
+        output = ggml_mul_mat(context, value, probabilities);
+        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention value accumulation"));
+        output = ggml_cont(context, ggml_permute(context, output, 0, 2, 1, 3));
       } else if (const auto *attention =
                      node.operation.get_if<ScaledDotProductAttention>()) {
         auto *query = ggml_permute(

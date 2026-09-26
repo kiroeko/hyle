@@ -318,7 +318,8 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
                                             mx::Stream stream) noexcept {
   try {
     const auto causal_conv = operation.custom_as<model_ops::CausalConv1d>();
-    if (!causal_conv && !admitted(operation.kind()))
+    const auto sink_attention = operation.custom_as<model_ops::SinkAttention>();
+    if (!causal_conv && !sink_attention && !admitted(operation.kind()))
       return std::unexpected(Status::Unimplemented(
           "Apple typed operation has no admitted MLX lowering"));
     if (!operation_traits(operation).inputs.accepts(inputs.size()))
@@ -339,6 +340,14 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
+    if (sink_attention) {
+      auto query = mx::transpose(inputs[0], {0, 2, 1, 3}, stream);
+      auto key = mx::transpose(inputs[1], {0, 2, 1, 3}, stream);
+      auto value = mx::transpose(inputs[2], {0, 2, 1, 3}, stream);
+      auto result = mx::fast::scaled_dot_product_attention(query, key, value,
+          sink_attention->scale, "array", inputs[3], inputs[4], false, stream);
+      return std::vector{mx::transpose(result, {0, 2, 1, 3}, stream)};
+    }
     if (causal_conv) {
       if (!floating(inputs[0].dtype()) ||
           inputs[1].dtype() != inputs[0].dtype())

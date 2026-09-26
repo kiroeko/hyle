@@ -617,6 +617,19 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
+  } else if (const auto attention = node.operation.custom_as<model_ops::SinkAttention>()) {
+    auto *query = ggml_permute(context, invocation.values[node.inputs[0]], 0, 2, 1, 3);
+    auto *key = ggml_permute(context, invocation.values[node.inputs[1]], 0, 2, 1, 3);
+    auto *value = ggml_permute(context, invocation.values[node.inputs[2]], 0, 2, 1, 3);
+    auto *scores = ggml_mul_mat(context, key, query);
+    if (!ggml_prec_set_acc(scores, GGML_PREC_F32)) return {};
+    auto *probabilities = ggml_soft_max_ext(context, scores,
+        invocation.values[node.inputs[3]], attention->scale, 0.0F);
+    ggml_soft_max_add_sinks(probabilities, invocation.values[node.inputs[4]]);
+    value = ggml_cont(context, ggml_transpose(context, value));
+    result = ggml_mul_mat(context, value, probabilities);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32)) return {};
+    result = ggml_permute(context, result, 0, 2, 1, 3);
   } else if (const auto *attention =
                  node.operation.get_if<ScaledDotProductAttention>()) {
     auto *query = invocation.values[node.inputs[0]];
@@ -1075,6 +1088,9 @@ bool supports(void *context, Operation operation,
       !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if (operation.custom_as<model_ops::SinkAttention>())
+    return *inputs[3].element_count() <=
+           std::size_t{INT32_MAX} / sizeof(float) / inputs[0].dimensions()[2];
   if (operation.custom_as<model_ops::Clamp>())
     return true; // Public inference has already validated the entire domain.
   if (operation.custom_as<model_ops::CausalConv1d>())

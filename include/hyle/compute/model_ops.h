@@ -134,6 +134,53 @@ inline Operation sqrt_softplus_hash_routing() noexcept {
   return Operation::custom(SqrtSoftplusHashRouting{});
 }
 
+// DeepSeek's complete masked attention with a learned, unmasked sink per head.
+// Q/K/V are BSHD F32. The sink participates only in the softmax denominator.
+// The explicit additive mask already describes causality and cache selection.
+struct SinkAttention final {
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x53494e4b41545401ULL};
+  static constexpr std::string_view operation_name = "sink-attention";
+  float scale = 1.0F;
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{5, 5}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 5 || outputs.size() != 1 ||
+        !std::isfinite(scale) || scale <= 0)
+      return Status::InvalidArgument("SinkAttention requires five inputs, one output and positive finite scale");
+    for (const auto &input : inputs)
+      if (!input.valid() || !input.is_plain() || !input.is_dense() ||
+          input.data_type() != DataType::kFloat32)
+        return Status::InvalidArgument("SinkAttention requires plain dense F32 inputs");
+    if (inputs[0].rank() != 4 || inputs[1].rank() != 4 || inputs[2] != inputs[1] ||
+        inputs[3].rank() != 2 || inputs[4].rank() != 1)
+      return Status::InvalidArgument("SinkAttention requires Q/K/V BSHD, mask [T,S] and sinks [H]");
+    const auto q = inputs[0].dimensions();
+    const auto k = inputs[1].dimensions();
+    const auto mask = inputs[3].dimensions();
+    if (q[0] != 1 || k[0] != 1 || q[1] <= 0 || k[1] <= 0 ||
+        (q[2] != 64 && q[2] != 128) || k[2] != 1 || q[3] != 512 || k[3] != 512 ||
+        mask[0] != q[1] || mask[1] != k[1] || inputs[4].dimensions()[0] != q[2])
+      return Status::InvalidArgument("SinkAttention requires B1, H64/128, KV1, D512 and matching mask/sinks");
+    const std::array score_shape{q[0], q[2], q[1], k[1]};
+    auto scores = TensorDesc::dense(DataType::kFloat32, score_shape);
+    if (!scores) return std::move(scores).error();
+    auto score_bytes = scores->required_bytes();
+    if (!score_bytes) return std::move(score_bytes).error();
+    outputs[0] = inputs[0];
+    return Status::Ok();
+  }
+};
+
+inline Operation sink_attention(float scale) noexcept {
+  return Operation::custom(SinkAttention{scale});
+}
+
 // Depthwise causal-window convolution used by recurrent LLM blocks. The
 // caller supplies the K-1 history prefix explicitly, so replay is stateless:
 //   samples [B, T + K - 1, C], weights [C, K] -> output [B, T, C].

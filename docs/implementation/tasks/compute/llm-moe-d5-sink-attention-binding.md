@@ -53,4 +53,10 @@ P0：没有新增热搜索、host数学、KV往返或外部线程。ggml的QK分
 
 ## 当前结论
 
-AUDITED；产品和consumer尚未接线，native验收未运行。完整画像仍为128/176。
+2026-09-27：F33.1–F33.3产品接线已写入候选；四路线普通Direct/Graph的共享consumer
+已写入变化Q/K/V/mask/sink、多token非整齐长度、全masked及大sink的独立稳定oracle测试。
+ggml在schema之外还检查分数张量的I32原生容量；F32结果不窄化，CUDA显式生成连续BSHD输出。
+Apple使用锁定MLX已有sink参数，Graph将该成熟描述送入既有冷编译路径。
+
+所有新增C++仍**未编译/未运行**。CSA/HCA压缩历史、实际选择和输出投影的完整consumer待接合，
+本卡继续AUDITED，完整画像仍为128/176。F32/F33与这些剩余接线合批验证，不单独启动P1。

@@ -294,6 +294,9 @@ bool tensor_operation_supports(Operation operation,
       !std::ranges::equal(inferred, outputs))
     return false;
   const auto &output = outputs[0];
+  if (operation.custom_as<model_ops::SinkAttention>())
+    return *inputs[3].element_count() <=
+           (INT32_MAX - 1024) / sizeof(float) / inputs[0].dimensions()[2];
   if (operation.custom_as<model_ops::Clamp>())
     return true; // Public inference has already validated the entire domain.
   if (operation.custom_as<model_ops::CausalConv1d>())

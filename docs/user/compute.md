@@ -374,6 +374,15 @@ Completion 报告 `OutOfRange`，失败输出不可消费。非有限 logits 不
 CUDA 绑定原 SGLang 程序和现有异步错误通道；其它路线的单 token 消费者用成熟
 Gather/Softplus/Sqrt/Reduce/Divide 组合。禁止输入输出别名，保活至完成；不新增数学 kernel。
 
+`model_ops::sink_attention(scale)` 是 DeepSeek 带 learned sink 的完整注意力描述，当前为
+[D5-F33 待批量验证候选](../implementation/tasks/compute/llm-moe-d5-sink-attention-binding.md)。
+五个F32 plain dense输入依次为 Q `[1,T,H,512]`、K/V `[1,S,1,512]`、additive mask `[T,S]`、
+sink `[H]`；H=64或128，T/S非空，scale为正且有限，输出与Q同描述。mask自行表达因果、窗口和
+压缩块选择，接口不再额外施加causal；sink只增加softmax分母，不贡献value。有限输入和sink下，
+mask可含负无穷，全部key被屏蔽时输出零。CPU/CUDA/Vulkan执行ggml原生图，Apple执行MLX
+完整attention调用；mask/sink是可变化输入，输出禁止别名。ggml准备期还会检查分数张量的原生
+索引容量。该候选不代表FP8投影、压缩状态或完整画像已经验收。
+
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context

@@ -139,6 +139,58 @@ template <class... Dimensions> TensorShape shape(Dimensions... dimensions) {
   return TensorShape::create(values).value();
 }
 
+TEST(SinkAttention, ExplicitMaskAndSinkShapesAndScoreCapacityAreChecked) {
+  const auto op = model_ops::sink_attention(0.0441941738F);
+  for (auto heads : {64, 128}) {
+    const auto query = tensor(DataType::kFloat32, 1, 3, heads, 512);
+    const auto kv = tensor(DataType::kFloat32, 1, 17, 1, 512);
+    const auto mask = tensor(DataType::kFloat32, 3, 17);
+    const auto sink = tensor(DataType::kFloat32, heads);
+    const std::array valid{query, kv, kv, mask, sink};
+    EXPECT_EQ(infer_single_output(op, valid).value(), query);
+    EXPECT_EQ(operation_traits(op).alias, AliasPolicy::kNone);
+    EXPECT_EQ(operation_name(op), "sink-attention");
+    for (std::size_t port = 0; port < valid.size(); ++port) {
+      auto bad = valid;
+      bad[port] = TensorDesc{};
+      EXPECT_FALSE(infer_single_output(op, bad));
+      bad[port] = TensorDesc::dense(DataType::kBFloat16, valid[port].dimensions()).value();
+      EXPECT_FALSE(infer_single_output(op, bad));
+    }
+    for (const auto &bad_query : {tensor(DataType::kFloat32, 2, 3, heads, 512),
+                                  tensor(DataType::kFloat32, 1, 0, heads, 512),
+                                  tensor(DataType::kFloat32, 1, 3, 32, 512),
+                                  tensor(DataType::kFloat32, 1, 3, heads, 256)}) {
+      auto bad = valid;
+      bad[0] = bad_query;
+      EXPECT_FALSE(infer_single_output(op, bad));
+    }
+    for (const auto &bad_mask : {tensor(DataType::kFloat32, 1, 17),
+                                 tensor(DataType::kFloat32, 3, 16),
+                                 mask.transposed().value()}) {
+      auto bad = valid;
+      bad[3] = bad_mask;
+      EXPECT_FALSE(infer_single_output(op, bad));
+    }
+    auto bad = valid;
+    bad[4] = tensor(DataType::kFloat32, heads + 1);
+    EXPECT_FALSE(infer_single_output(op, bad));
+    bad = valid;
+    bad[2] = tensor(DataType::kFloat32, 1, 18, 1, 512);
+    EXPECT_FALSE(infer_single_output(op, bad));
+    for (float scale : {0.0F, -1.0F, std::numeric_limits<float>::infinity(),
+                         std::numeric_limits<float>::quiet_NaN()})
+      EXPECT_FALSE(infer_single_output(model_ops::sink_attention(scale), valid));
+    EXPECT_FALSE(infer_single_output(op, std::span(valid).first(4)));
+  }
+  // Every input fits addressable bytes, while the H*T*S score tensor does not.
+  const auto large = std::int64_t{1} << 28;
+  const auto query = tensor(DataType::kFloat32, 1, large, 128, 512);
+  const auto kv = tensor(DataType::kFloat32, 1, large, 1, 512);
+  EXPECT_FALSE(infer_single_output(op, std::array{query, kv, kv,
+      tensor(DataType::kFloat32, large, large), tensor(DataType::kFloat32, 128)}));
+}
+
 template <std::size_t InputCount>
 TensorDesc infer_one(const Operation &operation,
                      const std::array<TensorDesc, InputCount> &inputs) {

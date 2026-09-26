@@ -93,7 +93,8 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       arguments.push_back(*values[index]);
     const bool mature_custom =
         node.operation.custom_as<compute::model_ops::CausalConv1d>()
-            .has_value();
+            .has_value() ||
+        node.operation.custom_as<compute::model_ops::SinkAttention>().has_value();
     auto outputs =
         node.operation.kind() == compute::OperationKind::kCustom &&
                 !mature_custom
@@ -303,6 +304,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         continue;
       if (operation.kind() == compute::OperationKind::kCustom &&
           !operation.custom_as<compute::model_ops::CausalConv1d>() &&
+          !operation.custom_as<compute::model_ops::SinkAttention>() &&
           !fixed_ggml_model_operation(operation) &&
           !plan->custom)
         return std::unexpected(Status::Unimplemented(
