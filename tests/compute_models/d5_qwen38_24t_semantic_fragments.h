@@ -45,7 +45,7 @@ struct Fragment final {
   std::vector<std::vector<std::byte>> constant_bytes;
   std::vector<recipe::DirectNode> nodes;
   std::vector<Replay> replays;
-  std::optional<std::pair<std::size_t, std::size_t>> state_ports{};
+  std::vector<std::pair<std::size_t, std::size_t>> state_ports{};
   std::vector<std::size_t> exact_outputs{};
   struct UnorderedIds final {
     std::size_t port, row_width;
@@ -114,17 +114,19 @@ template <class T> std::vector<std::byte> bytes(const std::vector<T> &values) {
 // would hide accumulated error in a recurrent consumer.
 struct StateFeedback final {
   const Fragment &fragment;
-  std::vector<std::byte> state{};
+  std::vector<std::vector<std::byte>> states =
+      std::vector<std::vector<std::byte>>(fragment.state_ports.size());
 
   std::span<const std::byte> input(const Replay &replay, std::size_t port) const {
-    if (fragment.state_ports && port == fragment.state_ports->first &&
-        !state.empty())
-      return state;
+    for (std::size_t i = 0; i < fragment.state_ports.size(); ++i)
+      if (port == fragment.state_ports[i].first && !states[i].empty())
+        return states[i];
     return replay.inputs[port];
   }
   void observe(std::size_t port, std::span<const float> actual) {
-    if (fragment.state_ports && port == fragment.state_ports->second)
-      state = bytes(actual);
+    for (std::size_t i = 0; i < fragment.state_ports.size(); ++i)
+      if (port == fragment.state_ports[i].second)
+        states[i] = bytes(actual);
   }
 };
 

@@ -159,6 +159,24 @@ CPU/CUDA/Apple 的各16个普通入口冷拒绝均有实际日志；不将入口
 动态 activation quantization、grouped FP8 及完整画像仍未代签；ledger 72/176不变。
 实现为58,588行/232文件，新增仅冷准入检查，没有修改原版数学或 bytecode。
 
+### KDA 完整链共用批次（A2/A3，AUDITED）
+
+baseline `ede9d55e`；owner 为本卡 `compute_ops` 的共享测试消费者，产品 FIX 为零。
+固定六个 Kimi/GLM Flash 画像，将已经验证的51个投影角色和 KDA 核心组合为普通完整 region：
+q/k/v 投影、K4 causal conv、L2 norm、低秩 decay gate、beta、GDN、输出 norm/gate 与 o 投影。
+Kimi 为全秩输出门，GLM Flash 为 g_a/g_b；真实 hidden/head/depth 与逐角色 BF16/Q8_0/F32
+均按 `d5_kda_projection_facts.json`，不按模型全局量化标签推断。BF16 投影使用现有成熟
+`BFloatLinearF32` 的 BF16 输入/权重、F32 累加输出合同；Q8 保留原生 storage 与上游点积。
+这验证原始权重存储在 HYLE 普通入口的完整消费，不宣称与某一 PyTorch 部署逐位一致。
+
+有限动作：①一个共享完整链 recipe 与独立数值 oracle；②保留 Kimi 官方 A_log[128] 的前96项、
+GGUF folded negative-A，GLM 官方 BF16 conv/norm 的实际 Cast 与 F32 state；③八次变化输入，
+卷积历史和 recurrent state 均从实际路线输出回送，oracle 独立推进；④共享多状态夹具迁移，
+已有六画像 KDA 核心与九个 Qwen 单状态消费者同批回归。沿用既有 F32 与量化链数值门，不能
+遇到失败后扩大容差。参数和权重为格式合法的合成非零值，不下载巨型 checkpoint。
+接齐四路线八入口后固定一个候选并串行验证；只对具体失败定向纠正，不增加算子、Provider、
+新构建树或独立 P1/三交付。通过后也只签完整 KDA region，其它 attention/MTP 等仍须完成。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

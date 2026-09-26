@@ -15,6 +15,7 @@
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
+#include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -882,6 +883,15 @@ TEST(CpuMoeFragments, D5KdaProjectionRoleBatch) {
     SCOPED_TRACE(role.profile->variant);
     SCOPED_TRACE(role.roles);
     run_q24_semantic_fragment(d5_moe_semantic_fragments::kda_projection(role));
+  }
+}
+
+TEST(CpuMoeFragments, D5SixProfilesFullKdaChainAndTwoStates) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (auto profile : d5_moe_semantic_fragments::kKdaProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(d5_kda_full_fragments::complete(profile));
   }
 }
 
