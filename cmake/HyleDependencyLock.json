@@ -351,7 +351,7 @@
       },
       "vendored": {
         "path": "third_party/sglang_activation",
-        "tree_sha256": "6ea9432543891ef38643b928399dbb8e8aa7d8f27a7e2adc5b87194da21f41c6"
+        "tree_sha256": "35a1c966e1f8e1e571a34526bd5d30ae6df7084e4ed145cf03215666c1ac62c9"
       },
       "license": {
         "expression": "Apache-2.0 AND MIT",
