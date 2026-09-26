@@ -1,6 +1,6 @@
 # Hugging Face 固定源码的 in-tree 依赖声明
 
-## SCOPED / 有限构建工具修复
+## AUDITED / 有限构建工具修复
 
 - baseline：`abdd2a6c`；owner：build dependency helper；直接消费者为
   [D5-F42](../compute/llm-moe-d5-deepseek-quantization-roundtrip.md)。不新增 runtime component。
@@ -17,3 +17,7 @@
   原始源码改动拒绝；未选中时缺失 vendor 仍可投影；现有 GitHub锁投影不回归。docs/closure必跑。
   实际安装许可随 F42，完整三交付仍由 D5-A5 签署。
 - 停止：上述源码来源门通过即停止本工具修复；不借机重写依赖缓存、selector或治理系统。
+
+审计确认：in-tree 路径已有独立选中审计，下载器只服务 FetchContent；源码文件原文已取得，
+无需假造 Git tree/archive。上述唯一 FIX 已冻结。HF source_file 保留原文，生成程序及其它工具
+身份继续放入 vendor provenance，完整目录摘要负责绑定它们。
