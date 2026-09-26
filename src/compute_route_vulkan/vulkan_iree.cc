@@ -31,6 +31,40 @@ std::uint64_t precision_elements(const Device &device) noexcept {
                      std::uint64_t{INT32_MAX} / 8});
 }
 
+bool fp8_dispatch_fits(const VkPhysicalDeviceLimits &limits,
+                       const iv::ProgramSpec &spec) noexcept {
+  if (spec.rows <= 0 || spec.columns <= 0 || spec.depth <= 0 ||
+      limits.maxComputeWorkGroupCount[1] < 1 ||
+      limits.maxComputeWorkGroupCount[2] < 1)
+    return false;
+  const auto m = static_cast<std::uint64_t>(spec.rows);
+  const auto n = static_cast<std::uint64_t>(spec.columns);
+  const auto k = static_cast<std::uint64_t>(spec.depth);
+  // Retain the original program's signed 32-bit indexing domain, including
+  // both F32 matrices and 64-byte padding in their shared allocation.
+  constexpr auto max_elements = std::uint64_t{INT32_MAX - 128} / 8;
+  const auto fits = [](std::uint64_t a, std::uint64_t b) {
+    return a <= max_elements / b;
+  };
+  if (!fits(m, k) || !fits(n, k) || !fits(m, n))
+    return false;
+  const auto align64 = [](std::uint64_t bytes) {
+    return (bytes + 63) & ~std::uint64_t{63};
+  };
+  const auto workspace = align64(4 * m * k) + align64(4 * n * k);
+  if (workspace > limits.maxStorageBufferRange ||
+      4 * m * n > limits.maxStorageBufferRange)
+    return false;
+  // Locked fp8.vmfb: conversion A, conversion W, then MatMul. Each uses a
+  // 64-lane X grid, capped at 65535 with the original compiler's strided loop.
+  // The two scale modes have this same dispatch shape; no shader is changed.
+  const auto grid_fits = [&](std::uint64_t rows, std::uint64_t columns) {
+    return (std::min)(rows * ((columns + 63) / 64), std::uint64_t{65535}) <=
+           limits.maxComputeWorkGroupCount[0];
+  };
+  return grid_fits(m, k) && grid_fits(n, k) && grid_fits(m, n);
+}
+
 std::optional<Float8ScaleMode> float8_mode(const TensorDesc &description,
                                            bool weight) noexcept {
   if (description.rank() != 2 || description.is_plain())
@@ -201,10 +235,8 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
       return Status::Unimplemented(
           "Vulkan IREE program requires enabled numeric device features");
     const auto &limits = device.properties.limits;
-    // Locked modules have LocalSize 64x1x1 (Scan also uses 1x1x1).
-    // Bound every logical domain by a one-workgroup-per-element upper bound,
-    // including wide Scan and FP8 F32 workspaces, before any native allocation.
-    // Larger dispatch domains require a separately proven launch bound.
+    // Scan retains its conservative domain; precision and FP8 use their
+    // separately proven locked-program bounds before any native allocation.
     const auto maximum =
         precision ? precision_elements(device) : admitted_elements(device);
     const auto fits = [maximum](std::int64_t a, std::int64_t b) {
@@ -214,9 +246,8 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     };
     if (limits.maxComputeWorkGroupInvocations < 64 ||
         limits.maxComputeWorkGroupSize[0] < 64 ||
-        !fits(spec.rows, spec.columns) ||
-        (!scan && !precision &&
-         (!fits(spec.rows, spec.depth) || !fits(spec.columns, spec.depth))))
+        ((scan || precision) ? !fits(spec.rows, spec.columns)
+                             : !fp8_dispatch_fits(limits, spec)))
       return Status::Unimplemented("Vulkan IREE program exceeds admitted "
                                    "native grid or workspace limits");
     {

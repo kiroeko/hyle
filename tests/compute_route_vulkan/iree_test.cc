@@ -178,4 +178,40 @@ TEST(VulkanIree, Float8RejectsMismatchedScalesAndUnavailableLaunchDomain) {
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsUnimplemented());
 }
+
+TEST(VulkanIree, Float8BoundsUseNativeGridAndCombinedWorkspace) {
+  auto context = vulkan_test::context().value();
+  const auto mode = c::Float8ScaleMode::kFloat32Block128;
+  const auto a = c::float8_activation_description(1, 128, mode).value();
+  const auto w = c::float8_weight_description(128, 128, mode).value();
+  auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
+  const auto saved = limits;
+  // W conversion dispatches 128*ceil(128/64)=256 workgroups, not 16384.
+  limits.maxComputeWorkGroupCount[0] = 255;
+  auto grid_rejected = v::prepare(context, c::MatMul{}, a, w);
+  limits = saved;
+  ASSERT_FALSE(grid_rejected);
+  EXPECT_TRUE(grid_rejected.error().IsUnimplemented());
+  limits.maxComputeWorkGroupCount[0] = 256;
+  auto grid_boundary = v::prepare(context, c::MatMul{}, a, w);
+  limits = saved;
+  ASSERT_TRUE(grid_boundary) << grid_boundary.error().message();
+
+  // Each F32 matrix fits this range separately; their shared allocation does not.
+  limits.maxStorageBufferRange = 4 * 128 * 128;
+  auto workspace_rejected = v::prepare(context, c::MatMul{}, a, w);
+  limits = saved;
+  ASSERT_FALSE(workspace_rejected);
+  EXPECT_TRUE(workspace_rejected.error().IsUnimplemented());
+  limits.maxStorageBufferRange = 4 * (128 * 128 + 128);
+  auto workspace_boundary = v::prepare(context, c::MatMul{}, a, w);
+  limits = saved;
+  ASSERT_TRUE(workspace_boundary) << workspace_boundary.error().message();
+
+  const auto large_a = c::float8_activation_description(1, 65536, mode).value();
+  const auto large_w = c::float8_weight_description(65536, 65536, mode).value();
+  auto oversized = v::prepare(context, c::MatMul{}, large_a, large_w);
+  ASSERT_FALSE(oversized);
+  EXPECT_TRUE(oversized.error().IsUnimplemented() || oversized.error().IsOutOfRange());
+}
 } // namespace
