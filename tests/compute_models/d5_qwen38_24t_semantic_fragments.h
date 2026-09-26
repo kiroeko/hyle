@@ -426,8 +426,13 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   auto samples = f.input(conv.samples_desc);
   auto weight = f.constant(conv.weights_desc, bytes(conv.weights));
   auto convolution = f.one(c::model_ops::causal_conv1d(), {samples, weight});
+  // Use the already-qualified mature SwiGLU carrier: silu(x) * 1. The
+  // immutable ones tensor is explicit and belongs in the fragment's cost;
+  // this does not qualify the separate Unary(kSilu) provider domain.
+  auto ones = f.constant(f.description(convolution),
+                         bytes(std::vector<float>(channels, 1.0F)));
   auto activated =
-      f.one(c::Operation(c::Unary{c::UnaryKind::kSilu}), {convolution});
+      f.one(c::Operation(c::GatedActivation{}), {convolution, ones});
   const auto reshape = [&](ValueId input,
                            std::initializer_list<std::int64_t> shape) {
     return f.one(
@@ -503,9 +508,7 @@ inline Fragment gdn(const c::ModelArtifactProfileDescription *profile) {
   auto norm = f.constant(dense({depth}), bytes(norm_values));
   auto normalized =
       f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {recurrent[0], norm});
-  auto activated_z = f.one(c::Operation(c::Unary{c::UnaryKind::kSilu}), {z});
-  auto result = f.one(c::Operation(c::Binary{c::BinaryKind::kMultiply}),
-                      {normalized, activated_z});
+  auto result = f.one(c::Operation(c::GatedActivation{}), {z, normalized});
   f.outputs = {convolution, gate, beta, recurrent[0], recurrent[1], result};
   std::vector<float> state;
   for (int seed : {3, 17}) {
