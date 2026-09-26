@@ -1,8 +1,23 @@
 {
   "candidate_before": "4f18811a45d6cb378388e975986f3b6d111c1565",
   "candidate_after": "b111e3b7f2b3e714d888442c136a9d9eed94648c",
-  "scope": "CPU focused correctness; not a whole-profile, delivery, or performance receipt",
+  "scope": "CPU focused and complete owner correctness; not a delivery or performance receipt",
   "actual_gtest_cases_passed": 7,
+  "cpu_owner": {
+    "ctest_targets_passed": 9,
+    "gtest_cases_passed": 404,
+    "ggml_provider": 43,
+    "compute_ops": 57,
+    "direct": 141,
+    "graph": 156,
+    "runtime": 7,
+    "other_checks": [
+      "cpu executor",
+      "runtime source contract",
+      "cpu allocation faults",
+      "context allocation faults"
+    ]
+  },
   "empty_filtered_cpu_executor_is_not_coverage": true,
   "phase_reproduction": [
     {
@@ -72,6 +87,48 @@
     {
       "file": "after-cache-identity.txt.gz",
       "source": ".scratch\\validation\\d5-deepseek-focused-r3\\cpu\\cache-identity.txt",
+      "uncompressed_sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72",
+      "bytes": 2205
+    },
+    {
+      "file": "cpu-owner-receipt.json.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\receipt.json",
+      "uncompressed_sha256": "f9293e35931e07b8ce568e1a8895e606be01c3156b11dd971d05cc8b9affbff8",
+      "bytes": 1140
+    },
+    {
+      "file": "cpu-owner-build.cmd.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\build.cmd",
+      "uncompressed_sha256": "2c9f31c0ce8e043415782eee726a4a12022246eb90cd270aa8d819ad3a97947a",
+      "bytes": 355
+    },
+    {
+      "file": "cpu-owner-build.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\build.log",
+      "uncompressed_sha256": "ac9e6484146ba5ec753b27c0ecdfe5ed4a91fc1671dd42c04bf2ce77a56001d6",
+      "bytes": 1061
+    },
+    {
+      "file": "cpu-owner-tests.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\tests.log",
+      "uncompressed_sha256": "e44653f80dfe5fac41e69737da77c6978bdb084179fde4ce71d15f71aa9145f5",
+      "bytes": 1518
+    },
+    {
+      "file": "cpu-owner-tests.xml.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\tests.xml",
+      "uncompressed_sha256": "8c9ee546d7c0b9d74ae2ce58637f317c24783a068e4a4871d650e171cef5bf3a",
+      "bytes": 9412
+    },
+    {
+      "file": "cpu-owner-native-tests.log.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\native-tests.log",
+      "uncompressed_sha256": "2acfa63433f51ea4528b12552f54a246ec085b27e0c6a00b21459442ff4c6acc",
+      "bytes": 92686
+    },
+    {
+      "file": "cpu-owner-cache-identity.txt.gz",
+      "source": ".scratch\\validation\\d5-deepseek-owner-r3\\cpu\\cache-identity.txt",
       "uncompressed_sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72",
       "bytes": 2205
     }

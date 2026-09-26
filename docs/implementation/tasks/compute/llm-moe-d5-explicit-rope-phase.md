@@ -45,4 +45,5 @@ registry 迁移使用本轮 baseline 作为 previous-ref。
 新增长位置/负频率/零频率/partial tail，以及Direct/Graph完整DeepSeek attention和压缩状态。
 相同失败用例未修改oracle、误差门或位置；前后原始证据见
 [显式相位证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/explicit-rope-phase/README.md)。
-CPU完整owner批次运行中，GPU路线、三交付和P1尚未验收；不增加完整画像格，不写CLOSED。
+同一候选随后通过CPU完整owner的9个CTest目标，包括404个GTest及executor/源码/原生分配故障
+检查，无SKIP。GPU路线、三交付和P1尚未验收；不增加完整画像格，不写CLOSED。
