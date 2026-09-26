@@ -387,8 +387,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-sglang-router-binding.md",
-      "summary": "D5-F25 AUDITED：DeepSeek CUDA sqrt-softplus 路由需接入完整 SGLang 原版融合程序；固定 schema、同 pin vendor/launch/边界及共同片段消费者。F24 和 D5 三交付/P1 待办保留。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
+      "summary": "D5 AUDITED：F25 完整 SGLang 路由与四路线回归通过；A2/A3 官方 FP4 六签名、Kimi 混合 MoE 及八 GGUF 回归24/24组通过。完整画像72/176，继续剩余真实片段、三交付与P1；不新增产品数学。"
     },
     {
       "module": "compute_backend_cpu",
@@ -476,7 +476,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-sglang-router-binding.md",
-      "summary": "D5-F25 AUDITED：DeepSeek CUDA sqrt-softplus 路由需接入完整 SGLang 原版融合程序；固定 schema、同 pin vendor/launch/边界及共同片段消费者。F24 和 D5 三交付/P1 待办保留。"
+      "summary": "D5-F25 AUDITED：完整 SGLang 路由、schema/资源/失败及四路线 MoE 回归已通过 e25c5188；后续官方 FP4 批次无产品修改。完整 D5 三交付/P1 待办保留。"
     },
     {
       "module": "compute_route_cuda",

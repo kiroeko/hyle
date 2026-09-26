@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "candidate": "4c86216457e0eb0aa58bc75c3f42086cb1d0fed8",
+  "tree": "efd329cf9a4817f824f7cc125c370b35c6b10bc8",
+  "baseline": "2715701f",
+  "verdict": "PASS_WITHIN_BATCH_SCOPE",
+  "results": {
+    "cpu": {
+      "compute": 3,
+      "graph": 3
+    },
+    "cuda": {
+      "compute": 3,
+      "graph": 3
+    },
+    "vulkan": {
+      "compute": 3,
+      "graph": 3
+    },
+    "apple": {
+      "compute": 3,
+      "graph": 3
+    }
+  },
+  "test_groups_passed": 24,
+  "failed": 0,
+  "skipped": 0,
+  "official_fp4_projection_signatures_per_entry": 6,
+  "projection_replays": 2,
+  "kimi_moe_replays": 3,
+  "gguf_moe_regression_profiles_per_entry": 8,
+  "whole_profile_ledger_changes": 0,
+  "whole_profile_run_pass": 72,
+  "whole_profile_total": 176,
+  "formats": "original E2M1 payload + UE8M0 scales; lossless ggml block layout",
+  "source": "llama.cpp@4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+  "shared_facts": "tests/compute_models/d5_moe_execution_facts.json",
+  "self_implemented_product_math_added": 0,
+  "implementation_loc": 58561,
+  "implementation_files": 232,
+  "validation_plan": "Planned, targeted shared consumer batch executed; remaining full factor, delivery and P1 gates stay pending D5 candidate stabilization.",
+  "input_tool_tests": "13/13 PASS",
+  "files": {
+    "cpu-build.log.gz": {
+      "raw_sha256": "535066398d82028c6f45413187745f6054ef4526d29a84ac9f9aa1d330001c08",
+      "gz_sha256": "a76cae5a606b04819f8f08b93bdda773523b60fe91a736810e35f11707c91b9b"
+    },
+    "cpu-compute.log.gz": {
+      "raw_sha256": "5d797191f9cfe98f2e795892947e9729e580724730242a7c65f1dde3f3c25492",
+      "gz_sha256": "5d648cf553737e8a3c8852912aa876b2f6cd5ce9124ca7cd8d8b40075c05219f"
+    },
+    "cpu-graph.log.gz": {
+      "raw_sha256": "43e6151054c26602bed32d8ba1393e94748cf9fa2059fa930f2e863233ef7a60",
+      "gz_sha256": "745f6860590fe66670d1b2badb056e1d64f4f34e05c2a89972a155106ff2b6f2"
+    },
+    "cuda-build.log.gz": {
+      "raw_sha256": "56d2f082c7a0d7249cf9e562255734194a708b328e3be9b841f1fc3f112e50f0",
+      "gz_sha256": "5638e036e2b4e1b7c53aed482bd730f41f974e6b38e8b61ce4a8ceab2b5f7245"
+    },
+    "cuda-compute.log.gz": {
+      "raw_sha256": "16cc2c6b6475efd87e96d7bce256f7cb441f1cfc69fcbc97c5a875a84e656a30",
+      "gz_sha256": "2184f6fc6fa7628c3f430e0468b424bbec293314da793dc8f790647009377489"
+    },
+    "cuda-graph.log.gz": {
+      "raw_sha256": "2fb7ebd80294fdd46e632c44767ea5c37a6fc617ddaed73f438af5826280db0e",
+      "gz_sha256": "e7bad4e3ca6c2f1c074ee57f798cae13aea9381a8231d94c3c2322157df10625"
+    },
+    "vulkan-build.log.gz": {
+      "raw_sha256": "18223035411bc7cf7eae3bc7eaa4b23a786a5e84e8b9bb3354a9d31ed97448ff",
+      "gz_sha256": "c35f4c3fbf6c4fbc0f99c3f272cf017078c672031529478e085e1f5a4646824c"
+    },
+    "vulkan-compute.log.gz": {
+      "raw_sha256": "9c4a47b0fb263c437c8415c8e38f88aab16d06c5c81f81d3d4bb53c0444e6ed1",
+      "gz_sha256": "e7122b2a795a629a10201e91b1328be9b699e2251c1ec4c49fbd8945d3c43e5c"
+    },
+    "vulkan-graph.log.gz": {
+      "raw_sha256": "5180a93611abc4d16e220dc56b1ec9f0897dad5ca0bbba969c3ceb41b781f431",
+      "gz_sha256": "21ee7bb1948d2f49c17878e6252bc6c7fcc1753c1e5e5d3a5227213a603a1b83"
+    },
+    "apple-build-and-test.log.gz": {
+      "raw_sha256": "e807ee31e794124ff2e13f1283190b386c9c013183f5a1fdce5175c4f7b9134e",
+      "gz_sha256": "7421536959f94ace048b07f23401d5ce4771d965010986b1bdc796b4c70494c0"
+    },
+    "candidate-plan.json.gz": {
+      "raw_sha256": "e525cbc708303ab80f2801982af44e9c4acfe5cdc4e31017412328e4d4f9ecc1",
+      "gz_sha256": "4a10ff1657a3678867806cc6c970055f1f0f629210e61518bc1d82abc6f81b2c"
+    }
+  }
+}

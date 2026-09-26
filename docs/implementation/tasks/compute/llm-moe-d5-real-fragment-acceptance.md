@@ -108,6 +108,13 @@ router/latent/shared/SiTU 链，routed 权重改为上述真实 FP4，shared/lat
 DeepSeek shared FP8 的 UE8M0 128×128 scale、GLM FP8 的 F32 128×128 scale 另行审计，
 不能以 BF16、UE8M0 group32 或本批 FP4 代签。完整画像 ledger 不因单独专家格式通过而增加。
 
+**本批结果：** 候选 `4c862164` 的六个官方 FP4 投影签名、Kimi 混合格式完整 MoE 计算链与
+八个 GGUF MoE 回归，在四路线 Direct/Graph 共24/24测试组通过，零跳过；见
+[批量收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/official-fp4-expert-batch/README.md)。
+源格式与固定原版 converter 的逐字节 golden 相符，不新增产品数学；实现仍为58,561行/232文件。
+本批没有暴露产品缺陷，无需重开已关闭路线。完整画像仍72/176；官方参数读取/转换、剩余片段、
+三交付/P1 的未验边界详见收据，不以片段通过代签。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
