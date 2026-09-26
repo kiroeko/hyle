@@ -56,3 +56,7 @@ P0：解码O(NK)只在消费者准备阶段发生，持久BF16缓存2NK bytes，
 新vendor的现有ownership表登记`third_party/deepseek_fp8/ -> compute_provider_cuda`；
 仅补依赖归属数据，不改变selector算法。局部入口批次不签共享package seam所选的全库交付门，
 这些未运行项继续由D5-A5/A6统一执行。
+
+F41首次重新configure发现既有SGLang lock摘要与HEAD已提交的完整source tree不一致；
+逐文件确认工作树与Git对象的规范化hash完全相同、没有额外文件后，只修正lock摘要。
+这属于本卡依赖快照接缝；没有变更旧数学或扩展公共审计。原失败日志保留。
