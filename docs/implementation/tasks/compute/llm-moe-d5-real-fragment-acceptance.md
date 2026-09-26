@@ -409,6 +409,13 @@ I32端口与实际反馈重复驱动compressed-cache Gather/Attention，保留Fl
 新增阈值，不改原两种门。这样同时检查head接缝和整链误差，不把实际hidden替换进整链oracle。
 旧失败保留，纠正候选仍须完成八入口；若head局部门失败，不能用整链门覆盖它。
 
+**全层格式余项（同一A3、产品FIX0）：** 原始header的逐层三角色分组另保存为
+`d5_glm_expert_variants.json`。GLM主力量化的75/76/77层为Q4_K/Q4_K/Q6_K，第8层为
+Q5_K/Q5_K/Q6_K；Flash的12/44层为前者，第11层为后者。原代表链的Q4/Q4/Q5不代签这些
+组合。共享MoE测试仅增加已有Q6_K格式枚举映射和四个现有链参数，不新增产品算子或算法。
+两份fidelity全层均为Q8，NextN仍是各自原先已验格式。CPU正在运行的`b52ff8d1`不可变binary
+完整结果按身份保留，新增四组合另做一次定向验收；其余路线直接随同一最终候选完整批验。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

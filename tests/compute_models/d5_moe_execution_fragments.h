@@ -291,6 +291,7 @@ inline c::GgufQuantizedType quantized_type(Storage storage) {
   switch (storage) {
   case Storage::kQ4K: return c::GgufQuantizedType::kQ4K;
   case Storage::kQ5K: return c::GgufQuantizedType::kQ5K;
+  case Storage::kQ6K: return c::GgufQuantizedType::kQ6K;
   case Storage::kQ8_0: return c::GgufQuantizedType::kQ8_0;
   case Storage::kMxfp4: return c::GgufQuantizedType::kMxfp4;
   case Storage::kBFloat16: break;

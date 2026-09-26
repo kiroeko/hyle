@@ -780,6 +780,17 @@ inline Fragment sparse_attention(const Case &model, std::int64_t tail = 0) {
   }
   return f;
 }
+inline std::array<moe::cases::Case, 4> mixed_expert_variants() {
+  // All-layer header triples are recorded in d5_glm_expert_variants.json.
+  // Common Q4/Q4/Q5 and all-Q8 chains already run in the shared MoE batch.
+  auto ordinary = moe::cases::kCases[8], flash = moe::cases::kCases[11];
+  ordinary.down = flash.down = moe::cases::Storage::kQ6K;
+  auto ordinary_high = ordinary, flash_high = flash;
+  ordinary_high.gate = ordinary_high.up = moe::cases::Storage::kQ5K;
+  flash_high.gate = flash_high.up = moe::cases::Storage::kQ5K;
+  return {ordinary, ordinary_high, flash, flash_high};
+}
+
 // Cross the declared staging boundary using real decoder outputs. The head's
 // oracle instead receives the independently evolved decoder trajectory.
 template <class Run> void check_mtp_head(const Case &model, Run run) {

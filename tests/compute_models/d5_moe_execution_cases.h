@@ -7,7 +7,7 @@
 // Exact tensor observations: d5_moe_execution_facts.json.
 namespace d5_moe_execution_cases {
 namespace c = hyle::compute;
-enum class Storage { kQ4K, kQ5K, kQ8_0, kMxfp4, kBFloat16 };
+enum class Storage { kQ4K, kQ5K, kQ8_0, kMxfp4, kBFloat16, kQ6K };
 struct Case final {
   const c::ModelArtifactProfileDescription *profile;
   std::int64_t hidden, experts, top_k, latent, intermediate, shared_intermediate;

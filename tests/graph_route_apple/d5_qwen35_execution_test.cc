@@ -1632,6 +1632,16 @@ TEST(AppleGraphMoeFragments, D5GlmGgufDsaSelectionConsumesMlaCache) {
   }
 }
 
+TEST(AppleGraphMoeFragments, D5GlmLayerSpecificExpertFormats) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (const auto &model : d5_glm_remaining_fragments::mixed_expert_variants()) {
+    SCOPED_TRACE(model.profile->model_name);
+    SCOPED_TRACE(model.gate == d5_moe_execution_cases::Storage::kQ4K
+                     ? "Q4_K/Q4_K/Q6_K" : "Q5_K/Q5_K/Q6_K");
+    run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model));
+  }
+}
+
 TEST(AppleGraphMoeFragments, D5GlmGgufMtpIndexCarryReset) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (const auto &model : d5_glm_remaining_fragments::kCases) {
