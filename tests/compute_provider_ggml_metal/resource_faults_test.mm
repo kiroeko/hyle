@@ -74,7 +74,10 @@ void check_cold_allocations(c::Operation operation,
     if (!injected) { ASSERT_TRUE(result); completed = true; break; }
     ++failed_c;
     ASSERT_FALSE(result);
-    EXPECT_TRUE(result.error().IsResourceExhausted());
+    // The first two failures are in the native backend constructor, whose
+    // null return has no error category. Later failures are our workspace.
+    EXPECT_TRUE(index <= 2 ? result.error().IsUnavailable()
+                          : result.error().IsResourceExhausted());
     EXPECT_EQ(hyle_metal_fault_live(), baseline);
   }
   EXPECT_TRUE(completed);
@@ -89,7 +92,11 @@ void check_cold_allocations(c::Operation operation,
     if (!new_failed) { ASSERT_TRUE(result); completed = true; break; }
     ++failed_cpp;
     ASSERT_FALSE(result);
-    EXPECT_TRUE(result.error().IsResourceExhausted());
+    // ggml catches a backend-context collection failure and returns null;
+    // C++ allocation failures escaping its buffer wrapper retain their type.
+    EXPECT_TRUE(result.error().IsResourceExhausted() ||
+                (result.error().IsUnavailable() &&
+                 result.error().message() == "ggml Metal backend unavailable"));
     EXPECT_EQ(hyle_metal_fault_live(), baseline);
   }
   EXPECT_TRUE(completed);
