@@ -435,6 +435,10 @@ SGLang 原版 hash kernel 已定位，当前 score TopK 和无 sink 的 SDPA 不
 与其余 DeepSeek 接线合批验证，不为单独 carrier 重跑四路线完整套件。`compute_provider_cuda`
 同步追加此有限范围；原 F25 的已验能力和未完成三交付/P1仍有效。
 
+当前上述D5 owner另追加[F33原生sink attention](llm-moe-d5-sink-attention-binding.md)：
+`compute_ops`、CPU/CUDA/Vulkan ggml Providers、Apple Direct/Graph，固定真实mask/sink端口、
+原生程序和有限验证范围；沿同一DeepSeek批次推进，不新增数学或已验格。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
