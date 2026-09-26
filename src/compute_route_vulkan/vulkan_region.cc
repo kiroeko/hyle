@@ -182,7 +182,8 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
         rows * columns > limits.maxComputeWorkGroupCount[0])
       return false;
   }
-  if (step.operation.get_if<GatedDeltaNet>()) {
+  if (step.operation.get_if<GatedDeltaNet>() ||
+      step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
     const auto dimensions = inputs[2].dimensions();
     const auto &limits = program.runtime->device->properties.limits;
     const auto packed_elements =
@@ -197,7 +198,7 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
         limits.maxDescriptorSetStorageBuffers < 7 ||
         packed_elements > limits.maxStorageBufferRange / sizeof(float))
       return false;
-    for (const auto &input : inputs)
+    for (const auto &input : std::span(inputs).first(input_count))
       if (*input.element_count() > limits.maxStorageBufferRange / sizeof(float))
         return false;
   }

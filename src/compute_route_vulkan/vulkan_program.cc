@@ -193,7 +193,9 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
           traits.outputs == 0 || traits.outputs != step.outputs.size() ||
           !traits.inputs.accepts(step.inputs.size()) ||
           (step.operation.kind() == OperationKind::kCustom &&
-           step.outputs.size() != 1))
+           step.outputs.size() != 1 &&
+           !(step.outputs.size() == 2 &&
+             step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>())))
         return std::unexpected(Status::Unimplemented(
             "Vulkan requires pure SSA operations with supported arity"));
       std::vector<TensorDesc> descriptions;
