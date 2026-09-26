@@ -532,8 +532,8 @@ TEST(GgmlCudaTensor, IntegerConcatPreservesIndexBitsAcrossReplays) {
       std::array<std::int64_t, 2>{2, 4}, std::array<std::int64_t, 2>{32, 8}).value();
   const std::array invalid_inputs{strided, right};
   const std::array wrong_outputs{dense(DataType::kInt32, {2, 8})};
-  EXPECT_FALSE(prepare(ctx, Operation(Concat{.axis = 1}), invalid_inputs, std::array{joined}));
-  EXPECT_FALSE(prepare(ctx, Operation(Concat{.axis = 1}), std::array{left, right}, wrong_outputs));
+  EXPECT_FALSE(prepare(ctx, Operation(Concat{.axis = 1}), invalid_inputs, std::array{joined}, memory.ref()));
+  EXPECT_FALSE(prepare(ctx, Operation(Concat{.axis = 1}), std::array{left, right}, wrong_outputs, memory.ref()));
   EXPECT_FALSE(prepare(ctx, Unary{UnaryKind::kExp}, left));
 }
 
