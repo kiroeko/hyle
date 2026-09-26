@@ -3,6 +3,9 @@
 候选 `5a298870a9c412f7f7edb918d0b9aa1834dbcf00`，Windows canonical、RTX 4070 / SM89。
 本批仅消费者与测试接线，没有新增 HYLE 数学。**完整画像仍 140/176；本页不签新的画像通过。**
 
+后续已定位为参考省略声明的F32累加舍入，有限纠正`f5d9abd5`通过原门；见
+[最终收据](../glm-official-flash-cuda/README.md)。本页保留初始失败和当时的局部诊断，不覆盖最新状态。
+
 ## 普通入口批次
 
 [收据](receipt.json)：构建通过（9.17 秒）；Direct、Graph 各 6 个 GoogleTest，各通过 5 个，

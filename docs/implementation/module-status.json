@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：140/176完整格已验；F38在896200a9通过CUDA动态FP8投影及GLM-5.3/Flash完整共享FFN，原数值门与资源检查通过。DeepSeek GGUF Vulkan四格、四个官方FP8画像32格、三交付/P1及D6仍待完成。"
+      "summary": "D5 AUDITED：142/176完整格已验；F40在f5d9abd5补齐GLM-5.3-Flash官方FP8的CUDA Direct/Graph，修正测试遗漏的F32累加舍入，原误差门不变。另34格、三交付/P1及D6待完成；GLM DSA FP8 kv_b冷准备继续有限接线。"
     },
     {
       "module": "compute_backend_cpu",

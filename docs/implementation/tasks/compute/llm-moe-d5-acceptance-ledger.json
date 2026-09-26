@@ -817,7 +817,15 @@
         "hc": 4,
         "attention_nonrotary_depth": 256,
         "mla_qk_depth": 256,
-        "mla_value_depth": 256
+        "mla_value_depth": 256,
+        "dense_ffn": 12288,
+        "query_rank": 1536,
+        "kv_rank": 512,
+        "attention_heads": 64,
+        "rope_depth": 0,
+        "compressed_qk_depth": 512,
+        "compressed_value_depth": 512,
+        "vocabulary_rows": 154880
       }
     },
     {
@@ -9446,9 +9454,75 @@
       "profile": "glm53_flash:official:official-fp8",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -9464,9 +9538,75 @@
       "profile": "glm53_flash:official:official-fp8",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -10900,10 +11040,10 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 140,
+    "RUN_PASS": 142,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 36
+    "VALIDATION_NOT_RUN": 34
   },
   "qualification_correction": {
     "reason": "The 48 former Qwen3.5-2B and Qwen3.8-27B complete cells used seven R01 vocabulary rows; the fixed real-profile capacity policy does not permit reducing the 248320-row vocabulary. Their non-R01 successful regions remain linked as partial receipts.",

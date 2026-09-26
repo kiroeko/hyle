@@ -2,17 +2,19 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
-**2026-09-26 当前进展：** 用户选择的完整 recurrent 数值边界已完成 MG1–MG5；
+**2026-09-27 当前进展：** 用户选择的完整 recurrent 数值边界已完成 MG1–MG5；
 九个 Qwen、三个 Kimi 与四个 GLM GGUF 画像已通过四路线 Direct/Graph 普通入口、变化输入和实际状态反馈。
 DeepSeek Flash 两个GGUF另已通过CPU/CUDA/Apple普通两入口，见
 [三路线收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/README.md)。
-当前 ledger 为 **140/176 RUN_PASS、36/176 VALIDATION_NOT_RUN**。Qwen 见
+GLM-5.3-Flash官方FP8另已通过CUDA普通两入口全部必需region，见
+[F40完整片段收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/README.md)。
+当前 ledger 为 **142/176 RUN_PASS、34/176 VALIDATION_NOT_RUN**。Qwen 见
 [九画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)，
 Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/README.md)，
 GLM 见[四 GGUF 画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md)。
 Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
 旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
-DeepSeek两个GGUF的Vulkan四格、四个官方FP8画像的32格、D5三交付/P1及D6尚未完成，
+DeepSeek两个GGUF的Vulkan四格、四个官方FP8画像剩余30格、D5三交付/P1及D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
@@ -45,6 +47,9 @@ F39已在`9a7d5e5c`完成CUDA普通两入口：224次专家投影、两个完整
 
 后续按[F40官方混合片段](llm-moe-d5-glm-official-mixed-fragments.md)批量连接两种GLM的
 dense FFN、indexer、可直接消费的混合MLA与NextN；保持各权重角色真实FP8/BF16边界。
+F40在`f5d9abd5`通过两入口的完整混合片段与舍入边界。初始失败源于测试参考省略声明的F32
+累加舍入；修正参考后原精度门不变。合并未变的KDA、mHC、词表及F38/F39资源证据，新增
+GLM Flash官方CUDA两格。GLM DSA FP8 kv_b的冷准备和其余30个官方格仍待完成。
 
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。

@@ -39,6 +39,8 @@ KDA的o另为BF16。Flash MLA kv_b为BF16，DSA kv_b为FP8，禁止因为形状�
 
 ## 当前检查点：接线完成，组合数值未通过
 
+本节为初始失败记录；最新结果见末尾“有限批次通过”。
+
 `5a298870` 已统一构建并执行 CUDA Direct/Graph；两入口各6组中各5组通过。失败限于新接的
 Flash MLA／NextN组合数值，原门和失败均保留。独立局部重算已排查KB/VB投影和注意力本段，
 目前支持低精度逐层舍入传播方向，尚不能代替完整片段验收。
@@ -54,3 +56,11 @@ Flash MLA／NextN组合数值，原门和失败均保留。独立局部重算已
 因此FIX4限定纠正共享ModelLinear的参考：块内独立double点积，再显式F32缩放/融合累加/BF16存储；
 保留double数学参考用于定位和回归反例，追加四次舍入边界普通Direct/Graph检查。输入、权重、状态
 反馈及原误差门均不变，不改Provider或数学程序。完整MLA/NextN仍须在不可变候选重新签署。
+
+## 有限批次通过
+
+`f5d9abd5`的CUDA Direct/Graph各2组全部通过、零跳过，包含完整官方混合片段、四轮独立状态
+反馈、全词表head和新增舍入边界。初始失败保留，最终未修改任何误差门。
+[完整收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/README.md)
+逐region合并未变的KDA、mHC、词表与资源证据，签GLM Flash官方CUDA两格；ledger142/176。
+DSA FP8 kv_b冷准备仍按本卡原边界另定有限产品接线，其余路线、三交付/P1和D6保持待验。

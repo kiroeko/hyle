@@ -1,0 +1,140 @@
+{
+  "candidate": "f5d9abd5f58a0d5e7ccebbc27937cf0f8ead4a47",
+  "route": "cuda",
+  "factors": [
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f40-declared-accumulation\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 9.08
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f40-declared-accumulation\\cuda\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 14.08
+    }
+  ],
+  "test_filter": "*MoeFragments.D5GlmOfficialMixedRemaining:*MoeFragments.D5GlmFp8AccumulationBoundaries",
+  "schema_version": 1,
+  "tree": "1fd816618e74823727cd52b5b9cf69d130a9eca6",
+  "verdict": "RUN_PASS",
+  "profile": "glm53_flash:official:official-fp8",
+  "entries": [
+    "direct",
+    "graph"
+  ],
+  "scope": "Complete required-region correctness for this fixed CUDA profile; not other routes, deliveries, P1 or whole-model inference.",
+  "new_complete_cells": 2,
+  "region_receipts": {
+    "R01": [
+      "evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R02": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-mixed-checkpoint/receipt.json"
+    ],
+    "R03": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-projection-role-batch/receipt.json"
+    ],
+    "R06": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+    ],
+    "R07": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R08": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/receipt.json"
+    ],
+    "R09": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R10": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-mixed-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R11": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-mixed-checkpoint/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R12": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/receipt.json"
+    ],
+    "R13": [
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R14": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ],
+    "R15": [
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-dynamic-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/receipt.json"
+    ]
+  },
+  "source_payload": "Format-valid nonzero synthetic tensors preserving true widths, per-role FP8/BF16/F32, block128 scales and full154880 vocabulary.",
+  "numeric_correction": "Independent block dot in double, explicit declared F32 scaling/FMA accumulation and BF16 storage. Old unrounded F64 oracle remains recorded. Inputs, weights, state feedback and abs2e-5+rel0.025 whole-chain gate unchanged.",
+  "reused_scope": "Earlier immutable receipts only for unchanged exact profiles, source programs, inputs, provider bindings and RTX4070 environment. New ModelLinear helper is not used by those old BF16/KDA/mHC/vocabulary recipes. New CUDA entries are separate cold matches and leave their prepared kernels unchanged.",
+  "initial_batch_scope": "The initial aggregate failed only the new mixed-remaining test. Passing shared/full MoE and clipping subchecks are reused explicitly; the initial receipt itself is not marked all-pass.",
+  "costs": "Actual hidden stages through host readback/upload into sharded full-vocabulary head; cache and index carry use explicit host control. No zero-copy or performance claim.",
+  "remaining": [
+    "34 incomplete profile/route/entry cells",
+    "D5-A5 source/static/shared",
+    "D5-A6 P1",
+    "D6"
+  ],
+  "files": {
+    "build.log.gz": "7070e7b69228b13b4628c369a13d3391fb944cd2139255fd05a4578d3bee6613",
+    "cache-identity.txt.gz": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee",
+    "d5-f40-chain-predict.py": "5e395e7c4838e2e9fd7d15e143b9375e2f150d8b42b0cda2a0d32d6b30a85fea",
+    "d5-f40-first-analyze.py": "e9d11fe91c2e52e1afd0976b96e24c488e8c91830272828aab35ccdc8ba2ef57",
+    "d5-f40-first-split.py": "8ba7afc60e31c314238fadbb11ce4bb347f17883192e7db8ba6e0c790e1f869e",
+    "d5-f40-fixed-run.py": "01b7fc09832fc728f492a15d703f2aab1272873be1e489d763e56153f7d415dd",
+    "first-analysis.json": "8ed3e7133ced1347a1e243a8751ff75166faf107345d135e21b5118a25f039c9",
+    "first-chain-prediction.json": "cf258fbc3b9c6775bed4564653d0e7aac315d1042a4205e05eb28eef29e4787f",
+    "first-manifest.json": "70600efbc07c840bf72b0f655d745d0fc3a331727610c3f6651e6f8bbd335ead",
+    "first-nodes.txt": "6f29e7ad6e9d0c2b68c20d11aa550423a79381da965333542e92062d4e23094e",
+    "first-projections.zip": "31fa7e1876758c69c83e4aae9539e54588c2012341a83880c5f7d150012bcb72",
+    "first-receipt.json.gz": "699115694762e2f23b27b473fa54460cf5576c295f8109bcbb3c388a5c653548",
+    "first-tests.log.gz": "d54bc140955889d93f4310cdffa5d7f07208566b64f5ce02974272bd2a19d154",
+    "loc.json": "ec5e413425744c4f4a13bd39990af39bc5ff50af41c688ec7432f8d71cb01a9b",
+    "native-tests.log.gz": "d48ab7f0b047fd61ebe5c0519ccea32b5c3ce6b034b56da5f302c064ada815e5",
+    "receipt.json.gz": "ed7b321f8f0f8d5570e8e857c2c87bc68201ca4835e1db77bf7bf0adb2ea13b7",
+    "tests.xml.gz": "93910e9219d12361d8ffed69ab4c9827318f9b90fb9efa187a6aedba9f927206"
+  },
+  "ledger_counts_after": {
+    "RUN_PASS": 142,
+    "VALIDATION_NOT_RUN": 34
+  }
+}
