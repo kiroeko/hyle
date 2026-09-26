@@ -10,8 +10,9 @@ using Format = c::model_ops::BlockQuantizationFormat;
 
 // Definition-based reference: a sorted format table and nearest-even distances,
 // independent of the original TileLang casts and bit-manipulated scale formula.
-inline std::vector<float> reference(const std::vector<float> &x, bool fp4) {
-  const std::size_t group = fp4 ? 32 : 64;
+inline std::vector<float> reference(const std::vector<float> &x, bool fp4,
+                                     std::size_t fp8_group = 64) {
+  const std::size_t group = fp4 ? 32 : fp8_group;
   const float maximum = fp4 ? 6.0F : 448.0F;
   const float floor = fp4 ? 6.0F * std::ldexp(1.0F, -126) : 1.0e-4F;
   std::vector<float> table;
@@ -39,12 +40,14 @@ inline std::vector<float> reference(const std::vector<float> &x, bool fp4) {
   return result;
 }
 
-inline sem::Fragment fragment(bool fp4, std::int64_t rows, std::int64_t width) {
+inline sem::Fragment fragment(bool fp4, std::int64_t rows, std::int64_t width,
+                               std::size_t fp8_group = 64) {
   sem::Fragment f{.profile = d5_moe_execution_fragments::cases::kCases[3].profile,
                   .region = 0x070908};
   const auto input = f.input(sem::dense({rows, width}, c::DataType::kBFloat16));
   const auto output = f.one(c::model_ops::block_quantization_roundtrip(
-      fp4 ? Format::kFloat4E2M1Block32 : Format::kFloat8E4M3Block64), {input});
+      fp4 ? Format::kFloat4E2M1Block32 : (fp8_group == 128 ? Format::kFloat8E4M3Block128
+                                                        : Format::kFloat8E4M3Block64)), {input});
   f.outputs = {d5_dynamic_fp8_fragments::visible(f, output, true)};
   f.exact_outputs = {0};
   for (int replay = 0; replay < 2; ++replay) {
@@ -55,7 +58,7 @@ inline sem::Fragment fragment(bool fp4, std::int64_t rows, std::int64_t width) {
       encoded.push_back(sem::q::encode(value));
       x.push_back(float(sem::q::decode(encoded.back())));
     }
-    f.replays.push_back({{sem::bytes(encoded)}, {reference(x, fp4)}});
+    f.replays.push_back({{sem::bytes(encoded)}, {reference(x, fp4, fp8_group)}});
   }
   return f;
 }

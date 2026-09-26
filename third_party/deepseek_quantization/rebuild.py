@@ -44,26 +44,27 @@ lines = ['#pragma once', '// Original DeepSeek V4; TileLang0.1.14 + CUDA13.3 SM8
 receipt = []
 for job in provenance['programs']:
     name, group = job['kernel'], job['group']
+    artifact = job.get('artifact', name)
     kwargs = {'block_size': group, 'scale_dtype': 'float32', 'inplace': True}
-    if group == 64:
+    if name == 'act_quant_kernel':
         kwargs['round_scale'] = True
     prim = getattr(module, name).get_tir(group, **kwargs)
     target = tilelang.tvm.target.Target({'kind': 'cuda', 'arch': 'sm_89'})
     with target, tilelang.tvm.transform.PassContext(config=module.pass_configs):
         result = tilelang.lower(prim, target=target, enable_host_codegen=False, enable_device_compile=False)
-    cu = args.output/(name+'.cu')
+    cu = args.output/(artifact+'.cu')
     cu.write_text(result.kernel_source, encoding='utf-8', newline='\n')
-    blob_path = args.output/(name+'.cubin')
+    blob_path = args.output/(artifact+'.cubin')
     command = [args.nvcc, '--cubin', '-arch=sm_89', '-std=c++17', '-DENABLE_BF16',
                '-I'+str(compiler/'src'), '-I'+str(compiler/'3rdparty/cutlass/include'),
                str(cu), '-o', str(blob_path)]
     if os.name == 'nt':
         command.insert(4, '-Xcompiler=/Zc:preprocessor,/utf-8')
-    with (args.output/(name+'-compile.log')).open('wb') as log:
+    with (args.output/(artifact+'-compile.log')).open('wb') as log:
         subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
     blob = blob_path.read_bytes()
     digest = hashlib.sha256(blob).hexdigest()
-    receipt.append({'kernel': name, 'sha256': digest, 'matches_pinned': digest == job['sha256']})
+    receipt.append({'kernel': name, 'group': group, 'sha256': digest, 'matches_pinned': digest == job['sha256']})
     lines.append('alignas(16) inline constexpr unsigned char '+job['symbol']+'[] = {')
     for offset in range(0, len(blob), 24):
         lines.append('  '+','.join(f'0x{x:02x}' for x in blob[offset:offset+24])+',')

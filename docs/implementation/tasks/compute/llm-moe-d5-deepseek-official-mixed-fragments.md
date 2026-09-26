@@ -44,3 +44,15 @@ FP8权重解码只在冷期，prepared常量实际进入热期；完整片段的
 原版kernel支持block_size128，模型明确在FP4 linear前调用；F42的独立组flatten与workspace ABI
 可复用，源函数不改。GGUF FP4权重lossless repack及投影已验，但其激活近似必须由整链原门裁决。
 上述FIX已冻结，可批量实施；group128及完整链路尚未运行，未新增完整画像资格。
+
+### 第一组实现：两模型完整MoE与激活边界
+
+原版group128已在SM89离线生成，SHA256
+`e1f7c7314e43676fbfca104feedfd5b541d95c7039615f1316a46a700484b970`；独立native的12案例
+覆盖全部有限BF16编码、midpoint、tiny/zero、尾组和guards，输出与scales精确通过。
+原版有限极值的量化还原可溢出，保留F42已声明边界。该结果仍不签普通入口。
+
+Pro/Flash的score/hash四种完整MoE消费者与group128共享语义/资源测试已批量接线，统一执行
+一次CUDA增量build/test；shared FP8使用源UE8M0无损扩宽scale，FP4参考不借用ggml中间量。
+attention/compressor/MTP消费者继续按FIX3/4接合后统一下一组验证；不逐原子重建。
+当前完整画像仍144/176，尚未验收MoE、三交付或P1。

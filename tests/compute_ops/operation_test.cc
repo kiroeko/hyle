@@ -20,7 +20,8 @@ using namespace hyle::compute;
 
 TEST(ModelQuantizationRoundtrip, ExplicitFormatsShapeAndRejections) {
   using Format = model_ops::BlockQuantizationFormat;
-  for (auto format : {Format::kFloat8E4M3Block64, Format::kFloat4E2M1Block32}) {
+  for (auto format : {Format::kFloat8E4M3Block64, Format::kFloat4E2M1Block32,
+                       Format::kFloat8E4M3Block128}) {
     const auto op = model_ops::block_quantization_roundtrip(format);
     const auto valid = TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 2>{3, 128}).value();
     auto output = infer_single_output(op, std::array{valid});

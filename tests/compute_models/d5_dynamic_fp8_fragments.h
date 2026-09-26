@@ -145,17 +145,21 @@ struct ModelLinear final {
   sem::ValueId output;
   std::int64_t n, k;
   int seed;
+  bool power2 = false;
   std::vector<float> reference(std::span<const float> input,
                                bool declared_f32_accumulation = true) const {
     std::vector<float> rounded(input.begin(), input.end());
     for (auto &value : rounded) value = bfloat(value);
-    const auto quant = quantized(rounded, k, false);
-    std::vector<float> scales(input.size() / 128, 1.0e-10F);
+    const auto quant = quantized(rounded, k, power2);
+    std::vector<float> scales(input.size() / 128, power2 ? 1.0e-4F : 1.0e-10F);
     for (std::size_t i = 0; i < rounded.size(); ++i)
       scales[i / 128] = std::max(scales[i / 128], std::abs(rounded[i]));
-    for (auto &scale : scales) scale /= 448.0F;
+    for (auto &scale : scales) {
+      scale /= 448.0F;
+      if (power2) scale = float(std::exp2(std::ceil(std::log2(double(scale)))));
+    }
     std::vector<float> result(input.size() / k * n);
-    const fp8::Case shape{nullptr, n, k, false, "official linear"};
+    const fp8::Case shape{nullptr, n, k, power2, "official linear"};
     for (std::size_t token = 0; token < input.size() / k; ++token)
       for (std::int64_t row = 0; row < n; ++row) {
         double sum = 0;
@@ -191,10 +195,11 @@ struct ModelLinear final {
   }
 };
 inline ModelLinear model_linear(sem::Fragment &f, sem::ValueId input,
-                                std::int64_t n, std::int64_t k, int seed) {
+                                std::int64_t n, std::int64_t k, int seed,
+                                bool power2 = false) {
   const auto description = c::float8_weight_description(k, n, c::Float8ScaleMode::kFloat32Block128).value();
   std::vector<std::byte> storage(description.required_bytes().value());
-  const fp8::Case shape{f.profile, n, k, false, "official linear"};
+  const fp8::Case shape{f.profile, n, k, power2, "official linear"};
   for (std::int64_t row = 0; row < n; ++row)
     for (int term = 0; term < 2; ++term) {
       const auto col = (row * 17 + seed + term * (k / 2 + 13)) % k;
@@ -207,8 +212,8 @@ inline ModelLinear model_linear(sem::Fragment &f, sem::ValueId input,
     }
   input = f.one(c::Operation(c::Cast{.output_type = c::DataType::kBFloat16}), {input});
   const auto weight = f.constant(description, std::move(storage));
-  auto output = f.one(operation(false), {input, weight});
-  return {visible(f, output, true), n, k, seed};
+  auto output = f.one(operation(power2), {input, weight});
+  return {visible(f, output, true), n, k, seed, power2};
 }
 
 inline sem::Fragment model_accumulation_boundaries() {

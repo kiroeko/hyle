@@ -790,14 +790,14 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 
 TEST(DeepSeekRoundtrip, WorkspaceRejectionsRollbackConcurrencyAndLifetime) {
   using Format = compute::model_ops::BlockQuantizationFormat;
-  for (auto format : {Format::kFloat8E4M3Block64, Format::kFloat4E2M1Block32}) {
+  for (auto format : {Format::kFloat8E4M3Block64, Format::kFloat4E2M1Block32, Format::kFloat8E4M3Block128}) {
     MetadataAllocator allocator;
     {
       const std::array providers{compute::ProviderBinding{compute::cuda_native::deepseek_provider(), 100}};
       auto owner = compute::Context::create(cuda::device(0).value(),
           {.metadata_allocator = allocator.ref(), .providers = providers}).value();
       auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
-      const std::int64_t group = format == Format::kFloat8E4M3Block64 ? 64 : 32;
+      const std::int64_t group = format == Format::kFloat4E2M1Block32 ? 32 : (format == Format::kFloat8E4M3Block64 ? 64 : 128);
       const auto desc = matrix(compute::DataType::kBFloat16, 33, group);
       const auto op = compute::model_ops::block_quantization_roundtrip(format);
       Tensor input(desc, resource.ref());

@@ -41,6 +41,22 @@
         "bf16* output",
         "int32 groups"
       ]
+    },
+    {
+      "kernel": "act_quant_kernel",
+      "artifact": "act_quant_kernel_block128",
+      "group": 128,
+      "symbol": "kDeepSeekQuantization8Block128",
+      "bytes": 21664,
+      "sha256": "e1f7c7314e43676fbfca104feedfd5b541d95c7039615f1316a46a700484b970",
+      "threads": 128,
+      "dynamic_shared_bytes": 8192,
+      "abi": [
+        "float* scales",
+        "bf16* input",
+        "bf16* output",
+        "int32 groups"
+      ]
     }
   ]
 }

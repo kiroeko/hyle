@@ -16,13 +16,14 @@ enum class Float8ScaleRounding : std::uint32_t { kNone, kPowerOfTwo };
 
 enum class BlockQuantizationFormat : std::uint32_t {
   kFloat8E4M3Block64,
-  kFloat4E2M1Block32
+  kFloat4E2M1Block32,
+  kFloat8E4M3Block128
 };
 
 // Quantize and dequantize finite BF16 activations, preserving a model's QAT
 // boundary without exposing packed cache storage. Per contiguous last-axis
 // group, scale = 2^ceil(log2(max(absmax, floor)/max_code)), in F32.
-// E4M3FN uses groups of64, max_code448, floor1e-4; E2M1 uses groups of32,
+// E4M3FN uses groups of64 or128, max_code448, floor1e-4; E2M1 uses groups of32,
 // max_code6, floor6*2^-126. Codes use saturated nearest-even rounding; decode
 // is F32 followed by BF16 storage. Finite inputs may overflow after rounding.
 // Input/output are distinct dense BF16 matrices of identical shape. This is
@@ -40,10 +41,12 @@ struct BlockQuantizationRoundtrip final {
                                    std::span<TensorDesc> outputs) const noexcept {
     if (inputs.size() != 1 || outputs.size() != 1 ||
         (format != BlockQuantizationFormat::kFloat8E4M3Block64 &&
-         format != BlockQuantizationFormat::kFloat4E2M1Block32))
+         format != BlockQuantizationFormat::kFloat4E2M1Block32 &&
+         format != BlockQuantizationFormat::kFloat8E4M3Block128))
       return Status::InvalidArgument("Quantization roundtrip requires one input and a known format");
     const auto &input = inputs[0];
-    const int group = format == BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 32;
+    const int group = format == BlockQuantizationFormat::kFloat4E2M1Block32 ? 32
+        : (format == BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 128);
     if (!input.valid() || !input.is_plain() || !input.is_dense() || input.rank() != 2 ||
         input.data_type() != DataType::kBFloat16 || input.dimensions()[0] <= 0 ||
         input.dimensions()[1] <= 0 || input.dimensions()[1] % group != 0)

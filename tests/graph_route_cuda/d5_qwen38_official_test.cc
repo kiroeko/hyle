@@ -16,6 +16,7 @@
 #include "../compute_models/d5_dynamic_fp8_fragments.h"
 #include "../compute_models/d5_fp8_weight_preparation.h"
 #include "../compute_models/d5_quantization_roundtrip.h"
+#include "../compute_models/d5_deepseek_official_fragments.h"
 #include "../compute_models/d5_grouped_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
@@ -1129,6 +1130,25 @@ TEST(CudaGraphMoeFragments, D5GlmOfficialMixedRemaining) {
       glm::check_mtp_head(model, run_q24_semantic_fragment);
     }
   }
+}
+
+TEST(CudaGraphMoeFragments, D5DeepSeekOfficialMoe) {
+  for (int index : {3, 4})
+    for (bool hash : {false, true}) {
+      SCOPED_TRACE(index);
+      SCOPED_TRACE(hash);
+      run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(
+          d5_moe_execution_fragments::cases::kCases[index], hash));
+    }
+}
+
+TEST(CudaGraphMoeFragments, D5DeepSeekExpertActivationRoundtrip) {
+  for (std::int64_t width : {7168, 4096})
+    for (std::int64_t rows : {1, 3, 33}) {
+      SCOPED_TRACE(width);
+      SCOPED_TRACE(rows);
+      run_q24_semantic_fragment(d5_quantization_roundtrip::fragment(false, rows, width, 128));
+    }
 }
 
 TEST(CudaGraphMoeFragments, D5DeepSeekQuantizationRoundtrip) {

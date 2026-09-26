@@ -54,7 +54,8 @@ Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
     HYLE_RETURN_IF_ERROR(roundtrip->infer_output_descriptions(request.inputs, inferred));
     if (request.outputs.size() != 1 || request.outputs[0] != inferred[0])
       return std::unexpected(Status::InvalidArgument("DeepSeek roundtrip output differs from inference"));
-    const int group = roundtrip->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 32;
+    const int group = roundtrip->format == model_ops::BlockQuantizationFormat::kFloat4E2M1Block32 ? 32
+        : (roundtrip->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 128);
     const auto dims = inferred[0].dimensions();
     if (dims[0] > INT32_MAX / (dims[1] / group))
       return std::unexpected(Status::Unimplemented("DeepSeek roundtrip native group capacity exceeded"));
@@ -90,7 +91,7 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
   *proposal = {.route = 1, .runtime = kRuntime, .workspace_resource = binding,
                .cost = {.workspace = WorkspaceRequirement{shape.workspace(), shape.roundtrip ? 4u : 1u}, .persistent_bytes = std::nullopt,
                         .copy_bytes = 0, .repack_bytes = 0, .synchronization_count = 0, .dispatch_count = 1},
-               .implementation = ProviderImplementationId{shape.roundtrip ? (shape.k == 64 ? 2u : 3u) : 1u}};
+               .implementation = ProviderImplementationId{shape.roundtrip ? (shape.k == 64 ? 2u : (shape.k == 32 ? 3u : 4u)) : 1u}};
   return Status::Ok();
 }
 void destroy(void *state, mem::AllocatorRef allocator) noexcept {
@@ -168,9 +169,10 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (!memory) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("DeepSeek program allocation failed"));
   auto *prepared = ::new (memory) Prepared{primary, nullptr, nullptr, *shape};
-  const auto *image = shape->roundtrip ? (shape->k == 64 ? kDeepSeekQuantization8 : kDeepSeekQuantization4)
+  const auto *image = shape->roundtrip ? (shape->k == 64 ? kDeepSeekQuantization8
+        : (shape->k == 128 ? kDeepSeekQuantization8Block128 : kDeepSeekQuantization4))
                                      : (shape->bfloat ? kDeepSeekDecodeBf16 : kDeepSeekDecodeF32);
-  const auto *symbol = shape->roundtrip ? (shape->k == 64 ? "act_quant_kernel__kernel" : "fp4_quant_kernel__kernel")
+  const auto *symbol = shape->roundtrip ? (shape->k != 32 ? "act_quant_kernel__kernel" : "fp4_quant_kernel__kernel")
                                       : "weight_dequant_kernel";
   auto result = cuModuleLoadData(&prepared->module, image);
   if (result == CUDA_SUCCESS) result = cuModuleGetFunction(&prepared->function, prepared->module, symbol);
