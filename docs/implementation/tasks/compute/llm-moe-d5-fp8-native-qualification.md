@@ -69,3 +69,19 @@ Triton3.8.0的cp312 Linux wheel为247,972,921字节，SHA256
 
 本批不签动态激活量化、官方完整MoE或32格官方画像；它们仍沿已登记模型合同继续组合。
 DeepSeek的UE8M0动态scale不能由F32 scale探针代签。源码/static/shared仍须实际消费验收。
+
+### F37 普通入口检查点
+
+候选 `3e098f5d` 已完成上述接线并通过 Windows CUDA 统一批次：
+compute_ops 6项，CUDA Provider 4项（含既有资源回归），Direct/Graph 各1个批量用例。
+两入口各9签名×M1/M3×两次变化输入，共72次真实执行；没有SKIP。
+新生命周期测试覆盖两队列独立invocation、最后仅Completion保活、准备元数据逐次OOM回滚、
+重放无新增元数据分配；格式/字节数/I32越界均冷拒绝。
+原生module的Driver内部持久内存大小未知，成本保持unknown，不能伪报仅有sizeof(Prepared)。
+公开格式尾块测试含N1/127/128/129/576，既有完整块布局保持。
+
+第一次configure因Windows路径排序与CMake大小写敏感排序不同导致本轮vendor hash不符，
+只更正lock记录，原失败保存；后续构建37.66秒、测试1.23秒通过，未修改算术或误差门。
+[普通入口收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-native-entry/README.md)
+保留不可变候选、全部日志、selector及未执行范围。共享输入事实13项检查通过。
+本检查点仍不代签32格官方完整画像或A5/A6；goal与owner继续当前执行阶段。

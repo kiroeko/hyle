@@ -1,0 +1,93 @@
+{
+  "candidate": "3e098f5d3b20eb944681a6859f21e3a7553a66c0",
+  "route": "cuda",
+  "factors": [
+    "compute_ops",
+    "compute_provider_cuda",
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f37-native-entry\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 37.66
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_ops|compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f37-native-entry\\cuda\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 1.23
+    }
+  ],
+  "test_filter": "ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5OfficialFp8DenseNativeBatch:CudaKernels.PendingCompletionRetainsProgramAndSlotAfterClose:CudaKernels.ColdMetadataFailuresRollbackAndReplayUsesReservedState",
+  "scope": "Native CUDA ordinary-entry projection checkpoint; not complete profile/delivery/performance",
+  "published_files": [
+    {
+      "file": "build.log.gz",
+      "source_bytes": 5056,
+      "sha256": "dc1172270ed05968c6541d5ea43eae7e66f6f6ccdc20b603dec1ee505d985cce"
+    },
+    {
+      "file": "tests.log.gz",
+      "source_bytes": 804,
+      "sha256": "588b675df3d1c0ee47ebccee0c668427bf2f003be8695bcd4a3a8a03b78b8b0d"
+    },
+    {
+      "file": "native-tests.log.gz",
+      "source_bytes": 8182,
+      "sha256": "879b8b6a72b8eb88455263db3f11d183b807e2905a2f6a85f4bb535413828c6a"
+    },
+    {
+      "file": "tests.xml.gz",
+      "source_bytes": 5474,
+      "sha256": "bac4fba37cbf7df51eb8f7a7f7a3dc9b7bc9a364177566035ee51b0c540d7c08"
+    },
+    {
+      "file": "cache-identity.txt.gz",
+      "source_bytes": 1487,
+      "sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65"
+    },
+    {
+      "file": "initial-vendor-lock-failure.log.gz",
+      "source_bytes": 9547,
+      "sha256": "ff2df641282bde1c8324ccccc02eaa32e6f0eaa5ea8dc7ff29ccc56a73b4c9fc"
+    },
+    {
+      "file": "initial-vendor-lock-receipt.json.gz",
+      "source_bytes": 703,
+      "sha256": "df0a84a68cb65c8c132a4102883f87e269737ec63cdbe08505102e19a23e9399"
+    },
+    {
+      "file": "d5-f37-plan.json.gz",
+      "source_bytes": 227761,
+      "sha256": "a2336aee056d49b6a240cd41d568516429264a3889d4ac2a7ce2c6ff4a8b7b9f"
+    },
+    {
+      "file": "d5-f37-windows.py.gz",
+      "source_bytes": 871,
+      "sha256": "07873bc3b04b71622e52b0369ede957fc7a2091a8cb0e23246bd9d3975f81c7e"
+    }
+  ]
+}

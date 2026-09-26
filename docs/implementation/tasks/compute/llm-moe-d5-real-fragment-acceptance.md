@@ -16,9 +16,15 @@ DeepSeek两个GGUF的Vulkan四格、四个官方FP8画像的32格、D5三交付/
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
-Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。该候选尚未取得HYLE C++资格。
-该具名候选现按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)检查AOT与Windows
-Driver执行，不新增产品数学或提前增加完整画像格。
+Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。
+该具名候选按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)完成AOT与Windows
+Driver检查，再接入以下HYLE普通入口；没有新增产品数学或提前增加完整画像格。
+
+F37后续原生接线已在`3e098f5d`通过CUDA普通Direct/Graph：九个FP8 dense签名（含GLM
+N576尾块）×M1/M3×两轮输入，两入口共72次真实执行；元数据回滚和Completion保活通过。
+见[检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-fp8-native-entry/README.md)。
+动态激活量化、完整官方MoE与其余路线尚未由该批签署；完整ledger仍为140/176。
+统一Compute+Graph实现为59,173行/235文件，不含测试与第三方生成程序。
 
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。

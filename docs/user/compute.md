@@ -125,6 +125,21 @@ CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名
 
 ## 普通 CUDA 入口
 
+### 已编码 FP8 block128 投影
+
+`float8_activation_description(M, K, Float8ScaleMode::kFloat32Block128)` 与
+`float8_weight_description(K, N, Float8ScaleMode::kFloat32Block128)` 可以直接送入普通
+`MatMul` 的 Direct/Graph 路径，输出为 F32 `[M,N]`。激活字节是 E4M3FN `[M,K]` 后接
+F32 `[M,K/128]` scale；权重是 E4M3FN `[N,K]` 后接 F32 `[ceil(N/128),K/128]` scale。
+K 须整除128，N允许最后一个不足128行的block；这些描述符不执行模型加载或动态量化。
+
+CUDA 默认接入固定 SGLang 原版 AOT 程序，当前资格为 SM89、`driver_cuda_version == 13040`。
+程序在准备时加载并绑定，重放为一次原生发射，没有额外 payload 工作区或权重展开。
+源码/静态/动态构建都将程序嵌入 Provider，不依赖用户运行 Python/Triton。
+其它硬件域、UE8M0 group32 编码及动态激活量化不能据此视为已支持。
+普通入口与资源验收见 [F37](../implementation/tasks/compute/llm-moe-d5-fp8-native-qualification.md)；
+完整官方画像、三交付和性能验收仍分别登记。
+
 ### 执行前检查具体请求
 
 CPU/CUDA 用描述符和 memory resource 调用普通 `prepare()`，即可检查所选设备上实际的
