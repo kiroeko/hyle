@@ -72,3 +72,7 @@ BORROW 已成立；官方同 revision 的 MIT LICENSE 已取证，SHA256
 普通DeepSeek完整consumer尚未接齐；ledger保持144/176，owner继续AUDITED，三交付/P1和D6未签。
 统一实现59,899行/238文件。下一步复用本卡两种量化还原、F38幂次FP8投影、F41冷解码和既有
 原版FP4专家，补完整attention/compressor/MoE/MTP；不再寻找或自写这些原子数学的替代品。
+
+验收后补全`providers/cuda.h`工厂注释，说明新增roundtrip工作区与对齐；只增加注释行，
+没有改声明或实现。selector保守选出的编译/交付项按已证明文档变化复用`fd1a9ac4`证据，
+仅运行docs/closure，不重建、不重跑P1。

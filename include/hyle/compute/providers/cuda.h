@@ -90,6 +90,11 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 // launch, no workspace, no aliases; input alignment4, output alignment2/4,
 // signed-I32 native offsets and CUDA Y-grid bounds. Qualified AOT domain is
 // SM89 / Driver API13040. Caller owns the resulting cache and its reuse.
+// Also binds the original DeepSeek V4 BF16 quantization roundtrips:
+// E4M3FN/group64 and E2M1/group32, with upward power-of-two scales. These
+// require distinct 16-byte-aligned input/output and caller workspace of four
+// bytes per group (4-byte aligned), kept alive until Completion. One launch;
+// no private invocation allocation or Python/TileLang runtime dependency.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider deepseek_provider() noexcept;
 
 // Original CCCL3.3.4 device collectives, qualified with CUDA13.3
