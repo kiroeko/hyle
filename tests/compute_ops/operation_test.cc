@@ -51,6 +51,32 @@ TEST(ModelClamp, InferenceRejectsMalformedDescriptionsAndBounds) {
   EXPECT_FALSE(infer_single_output(operation, std::array{input, input}));
 }
 
+TEST(SqrtSoftplusRouting, CompleteRegionMetadataAndRejections) {
+  const auto logits = TensorDesc::dense(DataType::kFloat32,
+                                        std::array<std::int64_t, 2>{513, 384}).value();
+  const auto bias = TensorDesc::dense(DataType::kFloat32,
+                                      std::array<std::int64_t, 1>{384}).value();
+  const auto op = model_ops::sqrt_softplus_routing(2.5F);
+  std::array<TensorDesc, 2> outputs;
+  ASSERT_TRUE(infer_output_descriptions(op, std::array{logits, bias}, outputs).ok());
+  EXPECT_EQ(outputs[0].data_type(), DataType::kFloat32);
+  EXPECT_EQ(outputs[1].data_type(), DataType::kInt32);
+  EXPECT_EQ(outputs[0].dimensions()[0], 513);
+  EXPECT_EQ(outputs[0].dimensions()[1], 6);
+  for (float bad : {0.0F, -1.0F, std::numeric_limits<float>::infinity(),
+                    std::numeric_limits<float>::quiet_NaN()})
+    EXPECT_FALSE(infer_output_descriptions(model_ops::sqrt_softplus_routing(bad),
+                                            std::array{logits, bias}, outputs).ok());
+  EXPECT_FALSE(infer_output_descriptions(op, std::array{logits}, outputs).ok());
+  EXPECT_FALSE(infer_output_descriptions(op, std::array{logits, bias},
+                                          std::span(outputs).first(1)).ok());
+  auto bad_bias = TensorDesc::dense(DataType::kBFloat16, bias.dimensions()).value();
+  EXPECT_FALSE(infer_output_descriptions(op, std::array{logits, bad_bias}, outputs).ok());
+  auto unsupported = TensorDesc::dense(DataType::kFloat32,
+                                       std::array<std::int64_t, 2>{1, 512}).value();
+  EXPECT_FALSE(infer_output_descriptions(op, std::array{unsupported, bias}, outputs).ok());
+}
+
 template <class... Dimensions>
 TensorDesc tensor(DataType type, Dimensions... dimensions) {
   const std::array<std::int64_t, sizeof...(Dimensions)> shape{

@@ -1335,7 +1335,7 @@ void run_q24_semantic_fragment(
                          expected.native_outputs.empty()
                              ? std::span<const float>{}
                              : expected.native_outputs[output],
-                         fixture.exact_output(output));
+                         fixture.exact_output(output), fixture.id_validation(output));
     }
   }
 }

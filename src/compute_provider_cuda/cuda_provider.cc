@@ -1,4 +1,5 @@
 #include "hyle/compute/providers/cuda.h"
+#include "hyle/compute/model_ops.h"
 
 #include <algorithm>
 #include <climits>
@@ -12,6 +13,7 @@
 #include "norm_provider.h"
 #include "provider_internal.h"
 #include "reduction_provider.h"
+#include "router_provider.h"
 #include "scatter_provider.h"
 #include "tensor_provider.h"
 
@@ -136,6 +138,8 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
     return Status::InvalidArgument("CUDA kernel proposal output is null");
   *proposal = {};
   if constexpr (Sglang) {
+    if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>())
+      return routing::propose(request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kRmsNorm)
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
@@ -275,6 +279,8 @@ ProviderPrepareOutcome prepare(void *state,
         Status::InvalidArgument("CUDA kernel prepared output is null"));
   *output = {};
   if constexpr (Sglang) {
+    if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>())
+      return routing::prepare(state, request, allocator, output);
     if (request.route == normalization::kRoute && request.shape.exact())
       return normalization::sglang_prepare(state, request, allocator, output);
   }
@@ -371,7 +377,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-norm-unary" : "v10-scan"},
+                 .version = Sglang ? "06992c92-model-router" : "v10-scan"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

@@ -1,4 +1,11 @@
-# Pinned precise SGLang activation
+# Pinned SGLang activation, normalization and model routing
+
+The complete `moe_gate.cuh` small/large-token programs now serve DeepSeek's
+sqrt-softplus routing. Score arithmetic, biased selection, unbiased weights,
+SUM reduction and launch policy are retained. The original score load that
+preceded an expert-ID range check is moved inside that check to prevent an
+out-of-range read for invalid/extreme model data. TVM/Python host wrappers are
+replaced by the existing HYLE CUDA resource/stream/completion binding.
 
 Origin: SGLang `06992c92ad4494fe9f9636e75be3e35040512447`, Apache-2.0.
 `provenance.json` records the exact upstream Git blobs and adaptations.

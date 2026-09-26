@@ -799,9 +799,21 @@ void run_q24_semantic_fragment(
       const auto actual = half_test::read<float>(outputs[output]);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
-                         fixture.exact_output(output));
+                         fixture.exact_output(output), fixture.id_validation(output));
     }
   }
+}
+
+TEST(CudaGraphMoeFragments, D5OriginalRouterNativeBoundaries) {
+  for (auto experts : {256, 384})
+    for (auto tokens : {1, 513})
+      for (int mode = 0; mode < 6; ++mode) {
+        SCOPED_TRACE(experts);
+        SCOPED_TRACE(tokens);
+        SCOPED_TRACE(mode);
+        run_q24_semantic_fragment(d5_moe_execution_fragments::native_router_boundary(
+            experts, tokens, mode));
+      }
 }
 
 TEST(CudaGraphMoeFragments, D5MatureClampBoundaries) {
@@ -812,7 +824,7 @@ TEST(CudaGraphMoeFragments, D5ThirteenProfilesModelRouters) {
   for (const auto &model : d5_moe_execution_cases::kCases) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
-    run_q24_semantic_fragment(d5_moe_execution_fragments::router(model));
+    run_q24_semantic_fragment(d5_moe_execution_fragments::router(model, true));
   }
 }
 
@@ -831,7 +843,7 @@ TEST(CudaGraphMoeFragments, D5EightGgufProfilesFullMoe) {
       continue;
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
-    run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model));
+    run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model, true));
   }
 }
 

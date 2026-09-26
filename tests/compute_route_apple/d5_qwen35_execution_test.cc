@@ -1422,7 +1422,7 @@ void run_q24_semantic_fragment(
           float_values(*tensors[fixture.outputs[output].ordinal()]);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
-                         fixture.exact_output(output));
+                         fixture.exact_output(output), fixture.id_validation(output));
     }
   }
 }

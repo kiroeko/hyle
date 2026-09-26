@@ -14,7 +14,9 @@
     "python/sglang/kernels/jit/include/sgl_kernel/utils.cuh": "d358c786170561de62ed94bf01e7837ca6748dc37fdad089f99464b600d8d8f6",
     "python/sglang/kernels/jit/include/sgl_kernel/vec.cuh": "ffe4cddb50e84c0adf654bfd28aacdc872dadab3e56e7264a944d7e42c92c44f",
     "python/sglang/kernels/jit/include/sgl_kernel/math.cuh": "8af32239990f89cab586ce2a84c50026fdab195120ae7f128647d37de897b9d2",
-    "python/sglang/kernels/ops/layernorm/norm.py": "ad31f150da1a2c6619d7f3da5597f25ac338e5ffaf12ce9a46c241743bf853a6"
+    "python/sglang/kernels/ops/layernorm/norm.py": "ad31f150da1a2c6619d7f3da5597f25ac338e5ffaf12ce9a46c241743bf853a6",
+    "python/sglang/kernels/jit/csrc/moe/moe_fused_gate.cuh": "d7a9ebe683a0faaf838e6747ecb4df028ba0678fe20296b0db5be0c8ac0ccc82",
+    "python/sglang/kernels/ops/moe/moe_fused_gate.py": "e982ae69457fd3b9c6290e0c756a6c6271600a25b25b6d9875179701d37fd174"
   },
   "hash_semantics": "SHA-256 of the original upstream Git blob",
   "adaptations": [
@@ -23,7 +25,10 @@
     "Packed gate arithmetic is unchanged. Unary uses HYLE ordinary stable-tail/-Inf contract: erfc GELU, stable sigmoid SiLU/GELU-tanh; math adaptation is explicit.",
     "RMSNorm arithmetic, indexing, vector grouping and reduction order retained. HYLE private shim supplies CUDA scalar/packed types, RNE casts, pointer offsets, float warp shuffle sum and disabled PDL.",
     "RMSNorm host binding preserves upstream shape selection and pre-Blackwell launch policy; occupancy/SM count are bound once during preparation; no runtime search.",
-    "Remove restrict from Unary input/output fields so exact in-place alias is legal; no change to packed gate alias contract."
+    "Remove restrict from Unary input/output fields so exact in-place alias is legal; no change to packed gate alias contract.",
+    "Complete MoE gate small/large token kernels retained, including stable sqrt-softplus, biased selection and unbiased normalization. Omit TVM/Python host wrapper; isolate namespace and CUDA warp mask.",
+    "Move the small-token expert score load inside the existing expert-ID range check; invalid model data cannot read index -1. Normal input arithmetic, selection and reduction remain unchanged.",
+    "Bind only E256/384, top6, F32 logits/bias, no fused shared experts, positive-sum normalization and output scaling. Retain native small/large token threshold and launch policy; model tie selection is not generic stable TopK."
   ],
   "configuration": {
     "fast_math": false,

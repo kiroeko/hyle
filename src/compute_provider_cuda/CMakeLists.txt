@@ -7,6 +7,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_module(compute_provider_cuda SOURCES
     collectives_provider.cc collectives.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
+    router_provider.cc sglang_router_kernel.cu
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu

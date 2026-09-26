@@ -59,10 +59,12 @@ namespace math {
 HYLE_SGL_DEVICE float rsqrt(float value) { return rsqrtf(value); }
 } // namespace math
 namespace warp {
-// The pinned SGLang float SUM specialization: five full-warp xor shuffles.
+// Pinned SGLang float SUM specialization, with the original subgroup width.
+template <unsigned Width = kWarpThreads>
 HYLE_SGL_DEVICE float reduce_sum(float value) {
+  static_assert(Width > 0 && Width <= kWarpThreads && (Width & (Width - 1)) == 0);
 #pragma unroll
-  for (unsigned mask = kWarpThreads / 2; mask >= 1; mask >>= 1)
+  for (unsigned mask = Width / 2; mask >= 1; mask >>= 1)
     value += __shfl_xor_sync(0xffffffffU, value, mask, 32);
   return value;
 }

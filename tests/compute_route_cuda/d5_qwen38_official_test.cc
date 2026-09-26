@@ -752,9 +752,157 @@ void run_q24_semantic_fragment(
           half_test::read<float>(buffers[fixture.outputs[output].ordinal()]);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
-                         fixture.exact_output(output));
+                         fixture.exact_output(output), fixture.id_validation(output));
     }
   }
+}
+
+TEST(CudaMoeFragments, D5OriginalRouterNativeBoundaries) {
+  for (auto experts : {256, 384})
+    for (auto tokens : {1, 513})
+      for (int mode = 0; mode < 6; ++mode) {
+        SCOPED_TRACE(experts);
+        SCOPED_TRACE(tokens);
+        SCOPED_TRACE(mode);
+        run_q24_semantic_fragment(d5_moe_execution_fragments::native_router_boundary(
+            experts, tokens, mode));
+      }
+}
+
+TEST(CudaMoeFragments, D5OriginalRouterRejectsBindingsAndReusesIndependentLanes) {
+  auto context = cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  const auto logits_desc = dense(c::DataType::kFloat32, {1, 256});
+  const auto bias_desc = dense(c::DataType::kFloat32, {256});
+  const auto weights_desc = dense(c::DataType::kFloat32, {1, 6});
+  const auto ids_desc = dense(c::DataType::kInt32, {1, 6});
+  const std::array descriptions{logits_desc, bias_desc};
+  const std::array results{weights_desc, ids_desc};
+  const auto operation = c::model_ops::sqrt_softplus_routing(1.5F);
+  auto host = c::prepare(context, operation, descriptions, results, mem::system_resource());
+  EXPECT_FALSE(host);
+  auto call = make_call(context, resource, operation, descriptions, results, {});
+  EXPECT_EQ(call.prepared.provider().id, c::cuda_native::kSglangProviderId);
+  EXPECT_EQ(call.prepared.workspace_requirement().size, 0U);
+  std::vector<float> zeros(256, 0.0F);
+  auto logits = values_buffer<float>(resource, zeros);
+  auto bias = values_buffer<float>(resource, zeros);
+  auto weights = output_buffer(resource, weights_desc);
+  auto ids = output_buffer(resource, ids_desc);
+  const std::array inputs{
+      c::ConstTensorView::create(logits_desc, logits.view()).value(),
+      c::ConstTensorView::create(bias_desc, bias.view()).value()};
+  const std::array outputs{
+      c::TensorView::create(weights_desc, weights.view()).value(),
+      c::TensorView::create(ids_desc, ids.view()).value()};
+  auto queue = context.create_queue().value();
+  const auto reject = [&](std::span<const c::ConstTensorView> in,
+                          std::span<const c::TensorView> out) {
+    auto completion = call.invocation.submit(queue, in, out);
+    EXPECT_FALSE(completion);
+    EXPECT_FALSE(call.invocation.in_flight());
+  };
+  reject(std::span(inputs).first(1), outputs);
+  auto aliased = outputs;
+  aliased[0] = c::TensorView::create(
+      weights_desc, logits.view().subview(0, weights.size()).value()).value();
+  reject(inputs, aliased);
+  aliased = outputs;
+  aliased[1] = c::TensorView::create(ids_desc, weights.view()).value();
+  reject(inputs, aliased);
+  auto host_bias = values_buffer<float>(mem::system_resource(), zeros);
+  auto wrong_resource = inputs;
+  wrong_resource[1] = c::ConstTensorView::create(bias_desc, host_bias.view()).value();
+  reject(wrong_resource, outputs);
+
+  // Rejection leaves the original lane reusable. A second lane shares only
+  // immutable program state and read-only inputs, with independent outputs.
+  auto second_lane = call.prepared.create_invocation().value();
+  auto second_queue = context.create_queue().value();
+  auto second_weights = output_buffer(resource, weights_desc);
+  auto second_ids = output_buffer(resource, ids_desc);
+  const std::array second_outputs{
+      c::TensorView::create(weights_desc, second_weights.view()).value(),
+      c::TensorView::create(ids_desc, second_ids.view()).value()};
+  for (int replay = 0; replay < 3; ++replay) {
+    auto first = call.invocation.submit(queue, inputs, outputs);
+    auto second = second_lane.submit(second_queue, inputs, second_outputs);
+    ASSERT_TRUE(first) << first.error().message();
+    ASSERT_TRUE(second) << second.error().message();
+    ASSERT_TRUE(first->wait().ok());
+    ASSERT_TRUE(second->wait().ok());
+    for (const auto *buffer : {&weights, &second_weights})
+      for (const auto value : half_test::read<float>(*buffer))
+        EXPECT_NEAR(value, 0.25F, 1.0e-6F);
+    for (const auto *buffer : {&ids, &second_ids}) {
+      auto selected = half_test::read<std::int32_t>(*buffer);
+      std::ranges::sort(selected);
+      EXPECT_GE(selected.front(), 0);
+      EXPECT_LT(selected.back(), 256);
+      EXPECT_EQ(std::adjacent_find(selected.begin(), selected.end()), selected.end());
+    }
+  }
+}
+
+struct RouterFaultAllocator {
+  std::size_t attempts = 0, fail = SIZE_MAX, live = 0;
+  mem::AllocatorRef ref() {
+    return {[](void *self, std::size_t bytes, std::size_t alignment) noexcept -> void * {
+              auto &s = *static_cast<RouterFaultAllocator *>(self);
+              if (s.attempts++ == s.fail) return nullptr;
+              auto *p = mem::system_allocator().allocate(bytes, alignment);
+              if (p) ++s.live;
+              return p;
+            },
+            [](void *self, void *p, std::size_t bytes, std::size_t alignment) noexcept {
+              auto &s = *static_cast<RouterFaultAllocator *>(self);
+              if (p) --s.live;
+              mem::system_allocator().deallocate(p, bytes, alignment);
+            },
+            [](void *self, void *p, std::size_t old_bytes, std::size_t bytes,
+               std::size_t alignment) noexcept -> void * {
+              auto &s = *static_cast<RouterFaultAllocator *>(self);
+              if (bytes && s.attempts++ == s.fail) return nullptr;
+              auto *next = mem::system_allocator().reallocate(p, old_bytes, bytes, alignment);
+              if (bytes == 0 || next) {
+                if (p) --s.live;
+                if (next) ++s.live;
+              }
+              return next;
+            }, this};
+  }
+};
+
+TEST(CudaMoeFragments, D5OriginalRouterPreparationOomReleasesPartialState) {
+  RouterFaultAllocator allocator;
+  {
+    auto context = cuda::create_context({.metadata_allocator = allocator.ref()}).value();
+    auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+    const std::array inputs{dense(c::DataType::kFloat32, {513, 384}),
+                            dense(c::DataType::kFloat32, {384})};
+    const std::array outputs{dense(c::DataType::kFloat32, {513, 6}),
+                             dense(c::DataType::kInt32, {513, 6})};
+    const auto prepare = [&] {
+      return c::prepare(context, c::model_ops::sqrt_softplus_routing(2.5F),
+                         inputs, outputs, memory.ref());
+    };
+    const auto live = allocator.live, start = allocator.attempts;
+    { auto prepared = prepare(); ASSERT_TRUE(prepared) << prepared.error().message(); }
+    const auto count = allocator.attempts - start;
+    ASSERT_GT(count, 0U);
+    ASSERT_EQ(allocator.live, live);
+    for (std::size_t allocation = 0; allocation < count; ++allocation) {
+      SCOPED_TRACE(allocation);
+      allocator.fail = allocator.attempts + allocation;
+      { auto failed = prepare(); EXPECT_FALSE(failed); }
+      allocator.fail = SIZE_MAX;
+      EXPECT_EQ(allocator.live, live);
+    }
+    { auto retry = prepare(); ASSERT_TRUE(retry) << retry.error().message(); }
+    EXPECT_EQ(allocator.live, live);
+  }
+  EXPECT_EQ(allocator.live, 0U);
 }
 
 TEST(CudaMoeFragments, D5MatureClampBoundaries) {
@@ -765,7 +913,7 @@ TEST(CudaMoeFragments, D5ThirteenProfilesModelRouters) {
   for (const auto &model : d5_moe_execution_cases::kCases) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
-    run_q24_semantic_fragment(d5_moe_execution_fragments::router(model));
+    run_q24_semantic_fragment(d5_moe_execution_fragments::router(model, true));
   }
 }
 
@@ -784,7 +932,7 @@ TEST(CudaMoeFragments, D5EightGgufProfilesFullMoe) {
       continue;
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
-    run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model));
+    run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model, true));
   }
 }
 

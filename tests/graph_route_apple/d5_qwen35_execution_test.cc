@@ -1478,7 +1478,7 @@ void run_q24_semantic_fragment(
       const auto actual = float_values(outputs[output]);
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
-                         fixture.exact_output(output));
+                         fixture.exact_output(output), fixture.id_validation(output));
     }
   }
 }

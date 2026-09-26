@@ -45,6 +45,50 @@ inline Operation clamp(float minimum, float maximum) noexcept {
   return Operation::custom(Clamp{minimum, maximum});
 }
 
+// Complete DeepSeek score -> biased TopK -> unbiased normalized weights.
+// Ties may select any valid top-k member; this is not stable generic TopK.
+// The CUDA SGLang carrier consumes finite F32 model logits and bias. Other
+// routes may express this model fragment with their mature typed operations.
+struct SqrtSoftplusRouting final {
+  float scaling = 1.0F;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x445334524f555408ULL};
+  static constexpr std::string_view operation_name = "sqrt-softplus-routing";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{2, 2}, 2, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32,
+            true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (!std::isfinite(scaling) || scaling <= 0 || inputs.size() != 2 ||
+        outputs.size() != 2)
+      return Status::InvalidArgument("SqrtSoftplusRouting requires positive finite scale and two inputs/outputs");
+    for (const auto &input : inputs)
+      if (!input.valid() || !input.is_plain() || !input.is_dense() ||
+          input.data_type() != DataType::kFloat32)
+        return Status::InvalidArgument("SqrtSoftplusRouting requires plain dense F32");
+    if (inputs[0].rank() != 2 || inputs[1].rank() != 1)
+      return Status::InvalidArgument("SqrtSoftplusRouting requires logits [T,E] and bias [E]");
+    const auto shape = inputs[0].dimensions();
+    if (shape[0] <= 0 || (shape[1] != 256 && shape[1] != 384) ||
+        inputs[1].dimensions()[0] != shape[1])
+      return Status::InvalidArgument("SqrtSoftplusRouting requires nonempty tokens and E256/384");
+    const std::array output_shape{shape[0], std::int64_t{6}};
+    auto weights = TensorDesc::dense(DataType::kFloat32, output_shape);
+    auto ids = TensorDesc::dense(DataType::kInt32, output_shape);
+    if (!weights) return std::move(weights).error();
+    if (!ids) return std::move(ids).error();
+    outputs[0] = *weights;
+    outputs[1] = *ids;
+    return Status::Ok();
+  }
+};
+
+inline Operation sqrt_softplus_routing(float scaling = 1.0F) noexcept {
+  return Operation::custom(SqrtSoftplusRouting{scaling});
+}
+
 // Depthwise causal-window convolution used by recurrent LLM blocks. The
 // caller supplies the K-1 history prefix explicitly, so replay is stateless:
 //   samples [B, T + K - 1, C], weights [C, K] -> output [B, T, C].

@@ -801,7 +801,7 @@ void run_q24_semantic_fragment(
                    " expected=" + std::to_string(expected.outputs[output][worst]));
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
-                         fixture.exact_output(output));
+                         fixture.exact_output(output), fixture.id_validation(output));
     }
   }
 }

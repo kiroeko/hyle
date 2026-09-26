@@ -76,6 +76,11 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
 // vectors and exact input0 aliases, with stable tails and -Inf -> +0.
 // These added domains require 16-byte bindings, count <= INT32_MAX, no caller
 // workspace or slot state. Other norms/layouts remain separate candidates.
+// Complete model_ops::SqrtSoftplusRouting uses the pinned original MoE gate
+// program: F32 [T,256/384] logits and [E] bias, top6 F32 weights/I32 IDs.
+// It preserves unbiased positive-sum normalization and output scaling, with
+// native tie selection rather than generic stable TopK. No workspace/aliases;
+// four-byte bindings, count <= INT32_MAX, cold launch binding and capture.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 
 // Original CCCL3.3.4 device collectives, qualified with CUDA13.3

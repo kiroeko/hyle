@@ -47,6 +47,15 @@ struct Fragment final {
   std::vector<Replay> replays;
   std::optional<std::pair<std::size_t, std::size_t>> state_ports{};
   std::vector<std::size_t> exact_outputs{};
+  struct UnorderedIds final {
+    std::size_t port, row_width;
+    std::int64_t extent;
+  };
+  std::optional<UnorderedIds> unordered_ids{};
+
+  const UnorderedIds *id_validation(std::size_t port) const {
+    return unordered_ids && unordered_ids->port == port ? &*unordered_ids : nullptr;
+  }
 
   bool exact_output(std::size_t port) const {
     return std::find(exact_outputs.begin(), exact_outputs.end(), port) !=
@@ -613,8 +622,25 @@ inline void expect_output(const Fragment &fragment,
                           std::span<const float> actual,
                           std::span<const float> expected,
                           std::span<const float> native_attention = {},
-                          bool exact = false) {
-  if (exact) {
+                          bool exact = false,
+                          const Fragment::UnorderedIds *ids = nullptr) {
+  if (ids) {
+    ASSERT_EQ(actual.size(), expected.size());
+    ASSERT_EQ(actual.size() % ids->row_width, 0U);
+    for (std::size_t row = 0; row < actual.size(); row += ids->row_width) {
+      std::vector<float> selected(actual.begin() + row,
+                                   actual.begin() + row + ids->row_width);
+      for (const auto value : selected)
+        ASSERT_TRUE(std::isfinite(value));
+      std::sort(selected.begin(), selected.end());
+      for (std::size_t i = 0; i < selected.size(); ++i) {
+        EXPECT_EQ(selected[i], std::floor(selected[i]));
+        EXPECT_GE(selected[i], 0);
+        EXPECT_LT(selected[i], ids->extent);
+        if (i) EXPECT_NE(selected[i], selected[i - 1]);
+      }
+    }
+  } else if (exact) {
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
       EXPECT_EQ(actual[i], expected[i]) << i;

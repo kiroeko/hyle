@@ -352,6 +352,18 @@ NaN bounds 或下限大于上限会在准备时拒绝。有限值和 ±Inf 按�
 调用方无须创建阈值张量；Direct/Graph 复用相同描述和各路线既有资源/完成路径。当前接线资格见
 [D5-F24](../implementation/tasks/compute/llm-moe-d5-mature-clamp-binding.md)。
 
+`model_ops::sqrt_softplus_routing(scaling)` 描述 DeepSeek 的完整融合路由片段：
+输入为 F32 plain dense logits `[T,E]` 与 correction bias `[E]`，T>0、E=256或384；
+输出依次为 F32 weights `[T,6]`、I32 expert IDs `[T,6]`。scaling 必须有限且为正。
+使用 `sqrt(softplus(logit)) + bias` 选择专家，用不含 bias 的原始分数归一化再缩放；
+分数总和为零时权重为零。并列专家的成员及顺序不保证稳定，不继承普通 `TopK` 的稳定排序合同。
+logits/bias 应为有限模型值；BF16 权重偏置由调用方在准备阶段显式转为 F32。
+该融合描述由 CUDA 的 SGLang Provider 承载，普通 CUDA Context 在 prepare 时绑定，Direct/Graph
+共享原生 stream/Completion 路径；输入输出不得别名，调用方保活至完成。执行不申请设备 scratch。
+CPU/Apple/Vulkan 的同一模型片段继续使用各自成熟算子组合，不承诺执行这个 CUDA 融合描述。
+接入和验证边界见 [D5-F25](../implementation/tasks/compute/llm-moe-d5-sglang-router-binding.md)，
+此描述不代表完整模型、三交付或性能验收已经完成。
+
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context

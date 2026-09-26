@@ -60,8 +60,9 @@ inline ValueId gathered_ids(Fragment &f, const Case &model, ValueId ids) {
   return f.one(c::Operation(c::Gather{}), {stored, ids});
 }
 
-struct Routing final { ValueId scores, ids, weights; };
-inline Routing routing(Fragment &f, const Case &model, ValueId input) {
+struct Routing final { ValueId ids, weights; };
+inline Routing routing(Fragment &f, const Case &model, ValueId input,
+                        bool native_routing = false) {
   const auto resident = model.top_k + 1;
   auto desc = dense({model.experts, model.hidden}, model.router_bf16
                     ? c::DataType::kBFloat16 : c::DataType::kFloat32);
@@ -85,12 +86,21 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input) {
     auto weight = f.constant(desc.transposed().value(), std::move(storage));
     logits = f.one(c::Operation(c::MatMul{}), {input, weight});
   }
-  auto scores = model.sqrt_softplus
-      ? unary(f, c::UnaryKind::kSqrt, unary(f, c::UnaryKind::kSoftplus, logits))
-      : unary(f, c::UnaryKind::kSigmoid, logits);
   std::vector<float> bias(model.experts, -4.0F);
   for (std::int64_t e = 0; e < resident; ++e)
     bias[e] = float(e % 3 - 1) / 16.0F;
+  if (model.sqrt_softplus)
+    for (auto &value : bias)
+      value = float(sem::q::decode(sem::q::encode(value)));
+  if (model.sqrt_softplus && native_routing) {
+    auto correction = f.constant(dense({model.experts}), bytes(bias));
+    auto outputs = f.append(c::model_ops::sqrt_softplus_routing(model.scaling),
+                            {logits, correction}, 2);
+    return {outputs[1], outputs[0]};
+  }
+  auto scores = model.sqrt_softplus
+      ? unary(f, c::UnaryKind::kSqrt, unary(f, c::UnaryKind::kSoftplus, logits))
+      : unary(f, c::UnaryKind::kSigmoid, logits);
   auto correction = f.constant(dense({1, model.experts}), bytes(bias));
   auto selection = binary(f, c::BinaryKind::kAdd, scores, correction);
   auto top = f.append(c::Operation(c::TopK{.count = std::size_t(model.top_k)}),
@@ -99,13 +109,14 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input) {
   auto selected = reshape(f, f.one(c::Operation(c::Gather{}),
                                     {score_rows, top[1]}), {1, model.top_k});
   auto total = sum(f, selected, -1);
-  // Pinned ggml model program guards its normalizer at the F16 minimum.
-  // All three replays exercise finite positive sums above that floor.
-  total = bound(f, total, 6.103515625e-5F, false);
+  // DeepSeek's positive-sum normalization retains tiny nonzero scores.
+  // sqrt(nonzero F32 softplus) exceeds the F32 normal floor; zero stays zero.
+  total = bound(f, total, model.sqrt_softplus
+                    ? std::numeric_limits<float>::min() : 6.103515625e-5F, false);
   auto normalized = binary(f, c::BinaryKind::kDivide, selected, total);
   normalized = binary(f, c::BinaryKind::kMultiply, normalized,
                        filled(f, dense({1, model.top_k}), model.scaling));
-  return {scores, top[1], normalized};
+  return {top[1], normalized};
 }
 
 inline std::vector<float> activation(const Case &model, int replay) {
@@ -154,17 +165,66 @@ inline RouteReference route_reference(const Case &model,
   }
   return r;
 }
-inline Fragment router(const Case &model) {
+inline Fragment router(const Case &model, bool native_routing = false) {
   Fragment f{.profile = model.profile, .region = 0x0a0601};
   auto input = f.input(dense({1, model.hidden}));
-  auto route = routing(f, model, input);
-  f.outputs = {route.scores, gathered_ids(f, model, route.ids), route.weights};
-  f.exact_outputs = {1};
+  auto route = routing(f, model, input, native_routing);
+  f.outputs = {gathered_ids(f, model, route.ids), route.weights};
+  f.exact_outputs = {0};
   for (int replay = 0; replay < 3; ++replay) {
     auto x = activation(model, replay);
     auto reference = route_reference(model, x);
-    f.replays.push_back({{bytes(x)}, {std::move(reference.scores),
-                         std::move(reference.tags), std::move(reference.weights)}});
+    f.replays.push_back({{bytes(x)}, {std::move(reference.tags),
+                                    std::move(reference.weights)}});
+  }
+  return f;
+}
+
+// The original CUDA program has two launch branches at T=512. Ties have
+// intentionally unspecified membership, while non-ties retain exact IDs.
+inline Fragment native_router_boundary(std::int64_t experts,
+                                        std::int64_t tokens, int mode) {
+  const auto &model = experts == 384 ? cases::kCases[3] : cases::kCases[4];
+  Fragment f{.profile = model.profile, .region = 0x0a0604};
+  auto logits = f.input(dense({tokens, experts}));
+  std::vector<float> bias(experts, 0.0F);
+  auto correction = f.constant(dense({experts}), bytes(bias));
+  auto outputs = f.append(c::model_ops::sqrt_softplus_routing(model.scaling),
+                          {logits, correction}, 2);
+  f.outputs = {outputs[0], gathered_ids(f, model, outputs[1])};
+  f.exact_outputs = {1};
+  if (mode == 1 || mode == 2) f.unordered_ids = Fragment::UnorderedIds{1, 6, experts};
+  for (int replay = 0; replay < 2; ++replay) {
+    std::vector<float> x(tokens * experts), weights(tokens * 6), tags(tokens * 6);
+    for (std::int64_t row = 0; row < tokens; ++row) {
+      std::vector<std::int32_t> selected(experts);
+      std::iota(selected.begin(), selected.end(), 0);
+      std::vector<double> scores(experts);
+      for (std::int64_t e = 0; e < experts; ++e) {
+        const auto index = replay == 0 ? e : experts - 1 - e;
+        const auto value = mode == 1 ? 0.0F : mode == 2 ? -1000.0F
+                         : mode == 3 ? std::numeric_limits<float>::quiet_NaN()
+                         : mode == 4 ? -80.0F + float(index) / 512.0F
+                         : mode == 5 ? 1.0F + float(index) / 65536.0F
+                         : float((index * 7 + row * 11) % 81 - 40) + float(index) / 512.0F;
+        x[row * experts + e] = value;
+        const double wide = value;
+        const float sp = mode == 3 ? 0.0F
+            : float(std::max(wide, 0.0) + std::log1p(std::exp(-std::abs(wide))));
+        scores[e] = std::sqrt(double(sp));
+      }
+      std::stable_sort(selected.begin(), selected.end(), [&](auto a, auto b) {
+        return scores[a] > scores[b];
+      });
+      double denominator = 0;
+      for (std::size_t slot = 0; slot < 6; ++slot) denominator += scores[selected[slot]];
+      for (std::size_t slot = 0; slot < 6; ++slot) {
+        weights[row * 6 + slot] = denominator > 0
+            ? float(scores[selected[slot]] / denominator * model.scaling) : 0.0F;
+        tags[row * 6 + slot] = mode == 3 ? 0.0F : float(selected[slot]);
+      }
+    }
+    f.replays.push_back({{bytes(x)}, {std::move(weights), std::move(tags)}});
   }
   return f;
 }
@@ -269,12 +329,12 @@ inline std::vector<float> project(std::span<const float> input,
   return out;
 }
 
-inline Fragment gguf_moe(const Case &model) {
+inline Fragment gguf_moe(const Case &model, bool native_routing = false) {
   if (!model.gguf)
     throw std::runtime_error("official expert packing is a separate qualification");
   Fragment f{.profile = model.profile, .region = 0x0a0b0601, .quantized = true};
   auto input = f.input(dense({1, model.hidden}));
-  auto route = routing(f, model, input);
+  auto route = routing(f, model, input, native_routing);
   const auto resident = model.top_k + 1;
   const std::vector<std::int32_t> zero{0};
   auto zero_id = f.constant(dense({1, 1}, c::DataType::kInt32), bytes(zero));
