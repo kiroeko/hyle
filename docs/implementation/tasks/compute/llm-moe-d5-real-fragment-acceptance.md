@@ -151,6 +151,14 @@ F28.2 八个真实 FP8 签名在普通 Vulkan Direct/Graph 各 M1/M3、两次变
 预算仍限一次具体原因修正；稳定后的 D5 三交付/P1 待办保留。若锁定程序执行仍存在能力缺口，
 保留实际错误，不修改原数学或继续扩大上限。
 
+**F27/F28 批次结果：** 初始 Vulkan 拒绝确为上述 HYLE 冷准入问题，有限修复 `652d8083` 后，
+八个 FP8 真实签名×M1/M3 在 Direct/Graph 均运行通过；最终 `4f60924b` 的逐值相等比较也通过。
+grid/workspace/索引、混合 Graph、IREE Provider 与 quota 失败等15个回归项通过。
+CPU/CUDA/Apple 的各16个普通入口冷拒绝均有实际日志；不将入口拒绝外推为所有上游方案缺失。
+见[批量收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/official-fp8-dense-batch/README.md)。
+动态 activation quantization、grouped FP8 及完整画像仍未代签；ledger 72/176不变。
+实现为58,588行/232文件，新增仅冷准入检查，没有修改原版数学或 bytecode。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

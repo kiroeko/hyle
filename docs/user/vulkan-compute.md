@@ -163,10 +163,13 @@ activation 物理 `[M,K]`、weight 物理 `[N,K]`，payload 后紧接公共头�
 由原版 IREE 执行标准转换与乘法。必要 GPU copy 和片段级 F32 workspace 都有成本，不是原生 FP8 GEMM。
 
 IREE 路径要求实际启用 synchronization2、timeline semaphore、scalar block layout；FP8 还要求
-shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。当前锁定程序保守要求每个矩阵的
-元素数不超过 `min(maxComputeWorkGroupCount[0..2], maxStorageBufferRange/8)`，并满足64线程
-workgroup 限制。准备期拒绝超出域的 FP8；不会下载 payload 到 CPU 计算或在执行时改选实现。
-普通 Direct/Graph、变化输入、两个槽和混合片段已在 Windows/Air 通过正确性与三交付验证。
+shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。FP8 准备期按锁定程序的实际
+64线程 dispatch 检查设备网格，转换与 MatMul 的 X grid 各为
+`min(rows*ceil(columns/64),65535)`，Y/Z=1。合并 F32 临时存储为
+`align64(4*M*K)+align64(4*N*K)`，输出为4*M*N，均须落在 storage buffer range 与32位索引域。
+超出域在准备期拒绝；执行不下载 payload 到 CPU 计算或重新选路。
+既有小形状的普通 Direct/Graph、两个槽和混合片段已有 Windows/Air 正确性与三交付证据；
+D5 新增真实模型宽度在 Windows Direct/Graph 通过，完整 D5 三交付及性能验收仍待完成。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
