@@ -23,6 +23,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
+#include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -1444,6 +1445,27 @@ TEST(AppleMoeFragments, D5ThirteenProfilesExpertActivation) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_moe_execution_fragments::activation_core(model));
+  }
+}
+
+TEST(AppleMoeFragments, D5OfficialFp8DenseColdRejection) {
+  namespace fp8 = d5_official_fp8_fragments;
+  auto context = a::Context::create().value();
+  for (const auto &shape : fp8::kCases) {
+    SCOPED_TRACE(shape.profile->model_name);
+    SCOPED_TRACE(shape.role);
+    for (auto m : {1, 3}) {
+      SCOPED_TRACE(m);
+      const auto workload = q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x0b0603);
+      const auto desc = fp8::descriptions(shape, m);
+      const std::array inputs{
+          a::InputSpec({int(desc[0].required_bytes().value())}, mx::uint8, desc[0]),
+          a::InputSpec({int(desc[1].required_bytes().value())}, mx::uint8, desc[1])};
+      auto result = context.prepare(c::MatMul{}, std::span<const a::InputSpec>(inputs), workload);
+      ASSERT_FALSE(result);
+      fp8::record_rejection(shape, m, result.error());
+      EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+    }
   }
 }
 

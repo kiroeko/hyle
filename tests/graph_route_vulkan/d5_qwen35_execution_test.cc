@@ -21,6 +21,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
+#include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -1352,6 +1353,18 @@ TEST(VulkanGraphMoeFragments, D5ThirteenProfilesExpertActivation) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_moe_execution_fragments::activation_core(model));
+  }
+}
+
+TEST(VulkanGraphMoeFragments, D5OfficialFp8DenseBoundaries) {
+  namespace fp8 = d5_official_fp8_fragments;
+  for (const auto &shape : fp8::kCases) {
+    SCOPED_TRACE(shape.profile->model_name);
+    SCOPED_TRACE(shape.role);
+    for (auto m : {1, 3}) {
+      SCOPED_TRACE(m);
+      run_q24_semantic_fragment(fp8::projection(shape, m));
+    }
   }
 }
 

@@ -115,6 +115,23 @@ DeepSeek shared FP8 的 UE8M0 128×128 scale、GLM FP8 的 F32 128×128 scale �
 本批没有暴露产品缺陷，无需重开已关闭路线。完整画像仍72/176；官方参数读取/转换、剩余片段、
 三交付/P1 的未验边界详见收据，不以片段通过代签。
 
+### 官方 FP8 dense 边界批次（A2/A3，AUDITED）
+
+baseline `1c4e8444`，owner `compute_ops` 共享消费者；产品 FIX 为零。固定 GLM-5.3/Flash
+及 DeepSeek Pro/Flash 的八个 gate/up、down 真实内宽。payload 为 E4M3FN；GLM scale 是
+128×128 F32，DeepSeek 是128×128 UE8M0。后者可在消费层仅把 scale 无损扩为 F32 接入现有
+block128 描述，不使用 group32 代签，也不展开权重。激活输入是已准备的 E4M3FN/group128；
+此批明确不代签尚未接入的动态激活量化或 grouped expert 选择。
+
+有限动作：①共享八签名/源格式 oracle 和两次变化输入；②Vulkan 复用原版 IREE dense 程序运行
+普通 Direct/Graph，保留其 F32 临时 workspace 成本；③CPU/CUDA/Apple 普通准备/编译记录该
+具名编码的实际拒绝码，关联既有原版库证据，不能把入口拒绝升级成所有上游方案皆不可能。
+固定 oneDNN 3.13.2 在本机 CPU 的 FP8 域、CUDA 13.3 在 SM89 的 block128 scale 域已有
+[具名拒绝](../../../../evidence/correctness/compute-llm-moe-m2-b6/qualification.json)，不重测相同
+底层探针；Marlin 的 W8A16、SGLang 的 rowwise scale、MLX 的 group32 不能冒充完整动态
+block128 合同。只做一次共享批次及一次具体失败纠正；未运行保留未验，不触发独立三交付/P1。
+本批只签 dense 片段及拒绝边界，完整画像仍由全部 region 或精确终局缺口统一裁决。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

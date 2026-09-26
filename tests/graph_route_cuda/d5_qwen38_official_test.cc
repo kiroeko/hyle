@@ -11,6 +11,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
+#include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
@@ -833,6 +834,27 @@ TEST(CudaGraphMoeFragments, D5ThirteenProfilesExpertActivation) {
     SCOPED_TRACE(model.profile->model_repository);
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_moe_execution_fragments::activation_core(model));
+  }
+}
+
+TEST(CudaGraphMoeFragments, D5OfficialFp8DenseColdRejection) {
+  namespace fp8 = d5_official_fp8_fragments;
+  auto context = cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  for (const auto &shape : fp8::kCases) {
+    SCOPED_TRACE(shape.profile->model_name);
+    SCOPED_TRACE(shape.role);
+    for (auto m : {1, 3}) {
+      SCOPED_TRACE(m);
+      const auto workload = q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x0b0603);
+      auto fragment = fp8::boundary(shape, m);
+      auto full = fp8::sem::make_graph(fragment);
+      auto result = g::cuda::compile(full.graph, context, resource, {.workload = workload});
+      ASSERT_FALSE(result);
+      fp8::record_rejection(shape, m, result.error());
+      EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+    }
   }
 }
 
