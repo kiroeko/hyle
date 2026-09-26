@@ -39,7 +39,9 @@ SiTU 保留 expert width=3584、beta=4、linear_beta=25。这是 F32 运行核�
 按同一 profile、输入/输出形状和原生 dtype 归并为30个 MatMul 签名；每个原权重名均保留于
 `d5_kda_projection_facts.json`，不按 artifact 的 Q 标签推断全部 dtype。普通八入口统一遍历同一张表；
 BF16 保留 BF16 输入/权重/输出舍入，Q8_0 保留 native block，F32 保留物理转置布局。
-CPU 两入口的全部30签名已通过两次变化输入，其它路线待批末验证；本批仍不是完整画像 verdict。
+候选 `40699b3d7` 的四路线八入口全部30签名均通过两次变化输入，见
+[投影批量收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kda-projection-role-batch/README.md)；
+本批仍不是完整画像 verdict。
 参数事实另保留 Kimi 官方 A_log[128] 与成熟加载器取前96项、GGUF folded ssm_a[96] 的关系，以及
 GLM Flash 官方 BF16 conv/norm 与 GGUF F32 的区别；这些参数转换不由投影结果代签。
 

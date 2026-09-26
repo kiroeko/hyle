@@ -1,0 +1,11 @@
+COMMAND: python tests/compute_models/inputs_test.py
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.150s
+
+OK
+COMMAND: python scripts/check-module-closure.py
+module closure contract passed: 57 components, schema 4
+COMMAND: python scripts/check-docs.py
+documentation contract passed: 609 Markdown files, 2690 relative links checked
+COMMAND: git diff --check

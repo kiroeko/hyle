@@ -1,0 +1,12 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5KdaProjectionRoleBatch
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanGraphMoeFragments
+[ RUN      ] VulkanGraphMoeFragments.D5KdaProjectionRoleBatch
+[       OK ] VulkanGraphMoeFragments.D5KdaProjectionRoleBatch (4621 ms)
+[----------] 1 test from VulkanGraphMoeFragments (4621 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (4621 ms total)
+[  PASSED  ] 1 test.

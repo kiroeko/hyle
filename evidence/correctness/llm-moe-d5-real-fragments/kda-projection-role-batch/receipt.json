@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "candidate": "40699b3d7035f18dd2967bce2d4e76925bcc8ddb",
+  "scope": "R03 KDA projection roles only. No whole profile verdict or parameter-conversion qualification.",
+  "profile_count": 6,
+  "source_weight_roles": 51,
+  "unique_profile_dtype_shape_signatures": 30,
+  "replay_count_per_signature": 2,
+  "entries": [
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "cpu-compute.log"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "cpu-graph.log"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "cuda-compute.log"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "cuda-graph.log"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "vulkan-compute.log"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "vulkan-graph.log"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "apple-build-and-test.log"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "tests": 1,
+      "projection_signatures": 30,
+      "verdict": "PASS",
+      "log": "apple-build-and-test.log"
+    }
+  ],
+  "whole_profile_cells_added": 0,
+  "delivery": "VALIDATION_NOT_RUN",
+  "performance": "VALIDATION_NOT_RUN",
+  "loc_evidence": "../moe-shared-core-batch/loc.json",
+  "loc_reuse": "Only tests, documentation and evidence changed since f0bec3afe; Compute+Graph implementation tree unchanged.",
+  "files": {
+    "apple-build-and-test.log": {
+      "bytes": 26837,
+      "sha256": "de4ffda527924438a93e15ba756a28a3a7d0634c3b290016e07aa0c9bce87802"
+    },
+    "apple.py": {
+      "bytes": 1612,
+      "sha256": "cc157a8be6ddafa0a32121581317daa53f250891ba950e91a3f607b079036622"
+    },
+    "cpu-build.cmd": {
+      "bytes": 267,
+      "sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec"
+    },
+    "cpu-build.log": {
+      "bytes": 62314,
+      "sha256": "d157e98b22e834c95085cb815f961f92e0e5b3db4bab1552d450698dd1eae05b"
+    },
+    "cpu-compute.log": {
+      "bytes": 657,
+      "sha256": "706726b14f06de0a8c4f72df78a012668b67c5d214cdcb68c4ea0ceeb4237c6f"
+    },
+    "cpu-graph.log": {
+      "bytes": 677,
+      "sha256": "f207dbcd48465d666a9b510fdbd8e7e334842a29428a6e59e450827aadb375b0"
+    },
+    "cuda-build.cmd": {
+      "bytes": 258,
+      "sha256": "a50902eeab54a2f250fb14046adc6bf35bfeb21bc05449d23f9f45523a262244"
+    },
+    "cuda-build.log": {
+      "bytes": 64708,
+      "sha256": "dbf56f62303bfffb6c8788d29ff3d95c4b42de33de1e998f5af06459685292c8"
+    },
+    "cuda-compute.log": {
+      "bytes": 2581,
+      "sha256": "8643c33aebc9b82b134bf569b6972055c863186c11b6fa461b5f59f717665c5e"
+    },
+    "cuda-graph.log": {
+      "bytes": 2601,
+      "sha256": "110868c1727b56434d0937c3f605e45a0b6f2f935a4370d75404b588ae390eb2"
+    },
+    "generate-d5-kda-projection-roles.py": {
+      "bytes": 4831,
+      "sha256": "7065a23826604eaa856a19d10b8e6abfb07c639659b4fdf0a32cc97ab573af8a"
+    },
+    "maintenance.log": {
+      "bytes": 422,
+      "sha256": "81ae9f10e1e7a4ed7fbd6e43e69cda1f84d17084b19d32d52ae56ec0698b9442"
+    },
+    "plan.json": {
+      "bytes": 214945,
+      "sha256": "343e9abb5b29422c28bf8e7d6002f9d288c34031746dad9e6d42a2a479b02a56"
+    },
+    "vulkan-build.cmd": {
+      "bytes": 276,
+      "sha256": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf"
+    },
+    "vulkan-build.log": {
+      "bytes": 67359,
+      "sha256": "93d2149c7ec4b973d05539e549ac6e83175e3291ca5279941c192b8cc11aba5f"
+    },
+    "vulkan-compute.log": {
+      "bytes": 657,
+      "sha256": "19a728c1c1d66ed11372706a2d7722d983e5b7b8a4a3c54c23e02958f942aaf5"
+    },
+    "vulkan-graph.log": {
+      "bytes": 677,
+      "sha256": "d86c231b8e258bbc2357eae50a10afd05cc3a9d6709fdb59361c1e9262b52487"
+    },
+    "windows.py": {
+      "bytes": 2101,
+      "sha256": "dbca7dfa9491498320406a422619dbefdb2429920f337bbb30f3e3b4c6793d3a"
+    }
+  }
+}
