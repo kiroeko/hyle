@@ -65,9 +65,13 @@ F39.2–4已批量接入`GroupedFloat8Linear`、独立grouped编码描述、调�
 错误通道。原生索引边界为top8、E<=1022、I32总偏移/网格，资格仍SM89/Driver13040。
 BF16/F32、A1/A8、真实GLM宽度、prefill和两个GLM完整router→expert→shared组合均已
 通过初次普通Direct/Graph批次；分配失败、并发、Completion保活和非法ID也已通过。
-最终不可变候选、独立头与新增冷拒绝检查待下一条收据，不提前记为PASS。
+最终不可变候选`9a7d5e5c`已完成23个GTest/四factor、两个独立头及新增冷拒绝检查，
+全数通过、零SKIP；224次普通专家投影、两个完整GLM MoE共8次执行。见
+[局部收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/README.md)。
 
 资源测试初次误用固定绝对`1e-4`断言，在1152/3200等输出处误拒约1个F32舍入单位；
 改回本卡事先固定的`2e-6+2e-6*abs(reference)`后定向通过。产品程序和原数值门均未修改。
 五个离线程序由登记的Triton3.8/CUDA13.3重新生成，完整header字节一致。
 完整画像ledger保持140/176；三交付、跨路线和P1仍待D5后续批次。
+统一实现59,645行/237文件，不含测试和第三方生成程序。F39有限接线在本硬件域完成；
+owner继续归属未收口的D5，不把本批通过写成四条路线或全部官方画像通过。

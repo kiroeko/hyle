@@ -1,0 +1,17 @@
+{
+  "returncode": 0,
+  "seconds": 3.22,
+  "argv": [
+    "ctest",
+    "--test-dir",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+    "-C",
+    "Release",
+    "-R",
+    "^hyle_compute_(ops|provider_cuda)_header_self_contained_test$",
+    "--output-on-failure",
+    "--no-tests=error",
+    "-j",
+    "1"
+  ]
+}

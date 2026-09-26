@@ -476,7 +476,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-grouped-fp8-binding.md",
-      "summary": "D5-F38 AUDITED：896200a9已通过原版CUDA动态FP8量化/GEMM、两种GLM完整共享FFN和对齐/OOM/并发/Completion验收；原Triton舍入失败保留且被替代的普通量化程序已移出产品。完整官方专家与D5三交付/P1待验。"
+      "summary": "D5-F39 grouped FP8 CUDA局部通过：原SGLang量化/排序/GEMM接入普通Direct与Graph，224次专家投影和两个GLM完整MoE八次执行通过，资源/非法ID/独立头及AOT重建通过。完整画像仍140/176，其它路线、三交付/P1与D6未签。"
     },
     {
       "module": "compute_route_cuda",

@@ -38,6 +38,10 @@ F38已在`896200a9`完成有限纠正：原版CUDA量化替换存在SM89中间�
 
 CUDA后续按[F39原版grouped FP8接线](llm-moe-d5-grouped-fp8-binding.md)固定GLM官方专家批次，
 复用F38量化，保留成熟排序/矩阵程序和动态ID失败边界；不增加HYLE算子数学。
+F39已在`9a7d5e5c`完成CUDA普通两入口：224次专家投影、两个完整GLM官方MoE共8次执行，
+分配失败/并发/Completion保活/非法ID/冷拒绝和独立头全部通过，见
+[收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/sglang-grouped-fp8-entry/README.md)。
+统一实现59,645行/237文件。该批不代签其它官方片段、其它路线、三交付和P1，ledger仍140/176。
 
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。

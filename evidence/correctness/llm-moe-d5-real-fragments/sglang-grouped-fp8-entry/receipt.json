@@ -1,0 +1,82 @@
+{
+  "candidate": "9a7d5e5c790d08c8d67bf079b214569fe9cbcc9c",
+  "route": "cuda",
+  "factors": [
+    "compute_ops",
+    "compute_provider_cuda",
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f39-native-entry\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 11.67
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_ops|compute_provider_cuda|compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f39-native-entry\\cuda\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 11.01
+    }
+  ],
+  "test_filter": "ModelFloat8Linear.*:ComputeOpsLowPrecision.*:SglangFp8.*:*MoeFragments.D5GroupedFp8Batch:*MoeFragments.D5GlmOfficialFp8FullMoe:*MoeFragments.D5DynamicFp8DenseBatch:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn",
+  "working_tree": false,
+  "verdict": "PASS_CUDA_LOCAL_GROUPED_ENTRY_NOT_COMPLETE_PROFILE",
+  "counts": {
+    "gtests": 23,
+    "ctest_factors": 4,
+    "headers": 2,
+    "grouped_projection_executions": 224,
+    "full_glm_moe_executions": 8
+  },
+  "native_scope": {
+    "sm": 89,
+    "cuda_driver_api": 13040,
+    "default_tile": [
+      64,
+      128,
+      128
+    ],
+    "top_k": 8,
+    "expert_limit": 1022,
+    "input_types": [
+      "BF16",
+      "F32"
+    ],
+    "hardware": "NVIDIA GeForce RTX 4070"
+  },
+  "ledger": {
+    "run_pass": 140,
+    "validation_not_run": 36,
+    "added_complete_cells": 0
+  },
+  "remaining": [
+    "Other official profile regions and non-CUDA routes",
+    "DeepSeek GGUF Vulkan four cells",
+    "D5-A5 source/static/shared delivery acceptance",
+    "D5-A6 applicable immutable P1",
+    "D6 final closure"
+  ]
+}

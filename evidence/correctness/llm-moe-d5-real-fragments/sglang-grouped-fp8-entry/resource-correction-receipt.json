@@ -1,0 +1,43 @@
+{
+  "candidate": "d8e4b4c1c75e3671d375e85cac3318444b874844",
+  "route": "cuda",
+  "factors": [
+    "compute_provider_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f39-resource-entry\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 4.49
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_provider_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f39-resource-entry\\cuda\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.17
+    }
+  ],
+  "test_filter": "SglangFp8.GroupedWorkspaceOomConcurrencyCompletionAndInvalidIds",
+  "working_tree": true
+}

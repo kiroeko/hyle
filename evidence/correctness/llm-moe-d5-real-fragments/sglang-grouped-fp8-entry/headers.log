@@ -1,0 +1,14 @@
+Test project C:/public/project-hyle/hyle/.scratch/b-cuda-d5
+    Start 47: hyle_compute_ops_header_self_contained_test
+1/2 Test #47: hyle_compute_ops_header_self_contained_test .............   Passed    1.86 sec
+    Start 54: hyle_compute_provider_cuda_header_self_contained_test
+2/2 Test #54: hyle_compute_provider_cuda_header_self_contained_test ...   Passed    0.26 sec
+
+100% tests passed out of 2
+
+Label Time Summary:
+compute_ops              =   1.86 sec*proc (1 test)
+compute_provider_cuda    =   0.26 sec*proc (1 test)
+headers                  =   2.12 sec*proc (2 tests)
+
+Total Test time (real) =   2.13 sec

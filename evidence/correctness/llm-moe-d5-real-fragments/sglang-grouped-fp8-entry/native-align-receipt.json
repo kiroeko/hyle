@@ -1,0 +1,222 @@
+{
+  "scope": "Original CUDA small/generic align with bounds-only adapter, Windows SM89",
+  "cases": [
+    {
+      "experts": 9,
+      "slots": 8,
+      "invalid_ids": false,
+      "path": "small",
+      "device_status": 0,
+      "padded_slots": 448,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 8,
+      "invalid_ids": true,
+      "path": "small",
+      "device_status": 1,
+      "padded_slots": 256,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 24,
+      "invalid_ids": false,
+      "path": "small",
+      "device_status": 0,
+      "padded_slots": 576,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 24,
+      "invalid_ids": true,
+      "path": "small",
+      "device_status": 1,
+      "padded_slots": 576,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 136,
+      "invalid_ids": false,
+      "path": "small",
+      "device_status": 0,
+      "padded_slots": 576,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 136,
+      "invalid_ids": true,
+      "path": "small",
+      "device_status": 1,
+      "padded_slots": 576,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 1032,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 1152,
+      "exact_members": true
+    },
+    {
+      "experts": 9,
+      "slots": 1032,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 1152,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 8,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 320,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 8,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 256,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 24,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 320,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 24,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 320,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 136,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 320,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 136,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 320,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 1032,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 1280,
+      "exact_members": true
+    },
+    {
+      "experts": 65,
+      "slots": 1032,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 1280,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 8,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 448,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 8,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 256,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 24,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 1472,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 24,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 1280,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 136,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 8640,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 136,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 8448,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 1032,
+      "invalid_ids": false,
+      "path": "generic",
+      "device_status": 0,
+      "padded_slots": 16384,
+      "exact_members": true
+    },
+    {
+      "experts": 256,
+      "slots": 1032,
+      "invalid_ids": true,
+      "path": "generic",
+      "device_status": 1,
+      "padded_slots": 16384,
+      "exact_members": true
+    }
+  ],
+  "verdict": "PASS_BOUNDED_ID_ALIGNMENT"
+}
