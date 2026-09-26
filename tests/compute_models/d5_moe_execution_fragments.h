@@ -396,7 +396,7 @@ inline Fragment moe_chain(const Case &model, bool native_routing,
   if (latent_up) {
     norm_values = sem::oracle::scale(model.latent);
     auto scale = f.constant(dense({model.latent}), bytes(norm_values));
-    combined = f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {combined, scale});
+    combined = f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-5F}), {combined, scale});
     combined = grouped(*latent_up, combined, zero_id);
   }
   auto sg = weight(1, model.shared_intermediate, model.hidden, model.shared_gate, 113);
@@ -433,7 +433,7 @@ inline Fragment moe_chain(const Case &model, bool native_routing,
     }
     if (latent_up) {
       auto normalized = sem::oracle::rms_norm_rows(combined_value, norm_values,
-                                                    model.latent, 1.0e-6F);
+                                                    model.latent, 1.0e-5F);
       combined_value = project(normalized, *latent_up, zero, model.hidden, model.latent);
     }
     auto sgate = project(x, sg, zero, model.shared_intermediate, model.hidden);

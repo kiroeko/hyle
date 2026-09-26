@@ -124,7 +124,7 @@ inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
   auto value = reshape(f, core::rows(f, channel_rows, 2 * width, width),
                         {1, 1, heads, depth});
   auto l2_scale = filled(f, dense({depth}), 1.0F / std::sqrt(float(depth)));
-  const c::Operation l2(c::RmsNorm{.epsilon = 1.0e-6F / float(depth)});
+  const c::Operation l2(c::RmsNorm{.epsilon = core::kda_l2_epsilon(profile) / float(depth)});
   query = reshape(f, f.one(l2, {query, l2_scale}), {1, 1, heads, depth});
   key = reshape(f, f.one(l2, {key, l2_scale}), {1, 1, heads, depth});
 
@@ -164,7 +164,7 @@ inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
   for (std::size_t i = 0; i < norm_values.size(); ++i)
     norm_values[i] += float(i % 5) * 0.0037F;
   auto norm_weight = parameter(f, dense({depth}), norm_values, official && !kimi);
-  auto normed = f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}),
+  auto normed = f.one(c::Operation(c::RmsNorm{.epsilon = core::kKdaNormEpsilon}),
                       {recurrent[0], norm_weight});
   auto gated = binary(f, c::BinaryKind::kMultiply, normed,
                        unary(f, c::UnaryKind::kSigmoid,
@@ -201,7 +201,7 @@ inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
         std::vector<float>(width), std::vector<float>(width)};
     for (std::int64_t p = 0; p < 2; ++p)
       for (std::int64_t h = 0; h < heads; ++h) {
-        double sum = 1.0e-6;
+        double sum = core::kda_l2_epsilon(profile);
         for (std::int64_t d = 0; d < depth; ++d) {
           const double z = act[p * width + h * depth + d];
           sum += z * z;
@@ -236,7 +236,8 @@ inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
         output[h * depth + v_index] = float(score / std::sqrt(double(depth)));
       }
     }
-    auto expected = sem::oracle::rms_norm_rows(output, norm_values, depth, 1.0e-6F);
+    auto expected = sem::oracle::rms_norm_rows(output, norm_values, depth,
+                                              core::kKdaNormEpsilon);
     for (std::size_t i = 0; i < expected.size(); ++i)
       expected[i] *= float(core::sigmoid(output_gate[i]));
     auto final = out.reference(expected);

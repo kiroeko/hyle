@@ -177,6 +177,12 @@ GGUF folded negative-A，GLM 官方 BF16 conv/norm 的实际 Cast 与 F32 state�
 接齐四路线八入口后固定一个候选并串行验证；只对具体失败定向纠正，不增加算子、Provider、
 新构建树或独立 P1/三交付。通过后也只签完整 KDA region，其它 attention/MTP 等仍须完成。
 
+参数复核更正：保存的官方 config 明确两模型 `rms_norm_eps=1e-5`；固定 Kimi mature source
+同时把它用于 Q/K L2 与输出 norm，GLM KDA source 的 L2 独立固定1e-6。初始 `9bb6be90`
+八入口通过但沿用旧夹具1e-6，不能签上述真实配置。有限测试纠正同时覆盖新完整链、旧 KDA
+核心与 Kimi latent MoE 的 norm/oracle，追加原官方 Kimi 和 GGUF MoE 批次；容差不变。
+旧核心与 MoE 收据保留为原参数的事实，撤回其对本项真实 norm 参数的资格；无需改产品实现。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

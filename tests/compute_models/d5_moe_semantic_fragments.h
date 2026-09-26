@@ -72,6 +72,14 @@ inline constexpr std::array kKdaProfiles{
     &profiles::kimi_k3_fidelity_gguf, &profiles::glm53_flash_official,
     &profiles::glm53_flash_primary_gguf, &profiles::glm53_flash_fidelity_gguf};
 
+// Both pinned official text configs declare rms_norm_eps=1e-5. The mature
+// GLM KDA source separately fixes its Q/K L2 epsilon at 1e-6; Kimi uses the
+// configured epsilon for both L2 and output RMSNorm.
+inline constexpr float kKdaNormEpsilon = 1.0e-5F;
+inline float kda_l2_epsilon(const c::ModelArtifactProfileDescription *profile) {
+  return profile->model_name == "Kimi-K3" ? kKdaNormEpsilon : 1.0e-6F;
+}
+
 // llama.cpp@4c9233c, kimi-k3.cpp build_kda_layer; Transformers@c1b80cf,
 // glm5_next: bounded per-key decay, not Qwen's scalar Softplus gate. Preserve
 // H=96/64, D=128, K=4. Only token count is reduced. Inputs include the causal
@@ -101,7 +109,7 @@ inline Fragment kda(const c::ModelArtifactProfileDescription *profile,
   auto value = reshape(f, rows(f, channel_rows, 2 * width, width),
                         {1, 1, heads, depth});
   auto l2_scale = filled(f, dense({depth}), 1.0F / std::sqrt(float(depth)));
-  const c::Operation l2(c::RmsNorm{.epsilon = 1.0e-6F / float(depth)});
+  const c::Operation l2(c::RmsNorm{.epsilon = kda_l2_epsilon(profile) / float(depth)});
   query = reshape(f, f.one(l2, {query, l2_scale}), {1, 1, heads, depth});
   key = reshape(f, f.one(l2, {key, l2_scale}), {1, 1, heads, depth});
 
@@ -126,7 +134,7 @@ inline Fragment kda(const c::ModelArtifactProfileDescription *profile,
                             {query, key, value, decay, beta, initial}, 2);
   auto norm_values = sem::oracle::scale(depth);
   auto norm = f.constant(dense({depth}), bytes(norm_values));
-  auto normalized = f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}),
+  auto normalized = f.one(c::Operation(c::RmsNorm{.epsilon = kKdaNormEpsilon}),
                           {recurrent[0], norm});
   auto result = binary(f, c::BinaryKind::kMultiply, normalized,
                        unary(f, c::UnaryKind::kSigmoid, out_gate));
@@ -157,7 +165,7 @@ inline Fragment kda(const c::ModelArtifactProfileDescription *profile,
         std::vector<float>(width), std::vector<float>(width)};
     for (std::int64_t p = 0; p < 2; ++p)
       for (std::int64_t h = 0; h < heads; ++h) {
-        double sum = 1.0e-6;
+        double sum = kda_l2_epsilon(profile);
         for (std::int64_t d = 0; d < depth; ++d) {
           double v = activated[p * width + h * depth + d];
           sum += v * v;
@@ -195,7 +203,7 @@ inline Fragment kda(const c::ModelArtifactProfileDescription *profile,
         output[h * depth + v] = float(score / std::sqrt(double(depth)));
       }
     }
-    auto gated = sem::oracle::rms_norm_rows(output, norm_values, depth, 1.0e-6F);
+    auto gated = sem::oracle::rms_norm_rows(output, norm_values, depth, kKdaNormEpsilon);
     for (std::size_t i = 0; i < gated.size(); ++i)
       gated[i] *= float(sigmoid(z[i]));
     replay.outputs = {std::move(conv_values), std::move(output), state,
