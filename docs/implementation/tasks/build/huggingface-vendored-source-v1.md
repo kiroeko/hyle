@@ -1,6 +1,6 @@
 # Hugging Face 固定源码的 in-tree 依赖声明
 
-## AUDITED / 有限构建工具修复
+## CLOSED / 有限构建工具修复
 
 - baseline：`abdd2a6c`；owner：build dependency helper；直接消费者为
   [D5-F42](../compute/llm-moe-d5-deepseek-quantization-roundtrip.md)。不新增 runtime component。
@@ -21,3 +21,13 @@
 审计确认：in-tree 路径已有独立选中审计，下载器只服务 FetchContent；源码文件原文已取得，
 无需假造 Git tree/archive。上述唯一 FIX 已冻结。HF source_file 保留原文，生成程序及其它工具
 身份继续放入 vendor provenance，完整目录摘要负责绑定它们。
+
+## 终局
+
+候选 `fd1a9ac4` 已完成唯一FIX，4项工具测试含10种拒绝变体全部通过；原文被修改后即使更新
+vendor tree摘要仍被拒绝，未选中时不读取缺失源码。现有GitHub锁投影、全部当前vendor审计及
+F42实际CUDA配置通过。工具测试按现有selector表登记，未改变selector算法。
+证据与命令在[F42收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-quantization-roundtrip/README.md)。
+这是冷构建来源合同的关闭；F42产品三交付继续由D5-A5验收，不以工具PASS代签。
+无运行时/API/性能变化，不跑P1；scope、来源/依赖边界、正确性、冷配置交付、文档、拒绝路径、P0均已验。
+仅真实的其它合法源码来源无法表达、身份拒绝回归或安装投影缺陷触发重开，不做日常扩建。

@@ -476,7 +476,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-deepseek-quantization-roundtrip.md",
-      "summary": "D5-F42 AUDITED：官方DeepSeek FP8/group64与FP4/group32激活量化还原已完成原版native资格，按有限FIX接入普通入口；F41已验能力保留，ledger144/176，完整画像/三交付/P1仍待D5。"
+      "summary": "D5-F42 AUDITED：fd1a9ac4通过DeepSeek原版FP8/group64与FP4/group32激活量化还原的普通Direct/Graph、资源生命周期和AOT重建；完整官方片段仍待接合，ledger144/176，三交付/P1仍归D5。"
     },
     {
       "module": "compute_route_cuda",

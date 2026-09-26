@@ -62,3 +62,13 @@ BORROW 已成立；官方同 revision 的 MIT LICENSE 已取证，SHA256
 
 实际接入遇到依赖锁仅允许 GitHub 来源的限制，按独立
 [HF in-tree 来源工具卡](../build/huggingface-vendored-source-v1.md)定向修复，不填写无关 archive。
+
+## 当前结果：普通入口与资源资格通过，完整画像待接合
+
+不可变候选 `fd1a9ac4` 的9项GTest、4项公开头、原版24个native案例和两份AOT重建通过；
+数值门未改。独立workspace、元数据OOM回滚、并发重放和Completion保活均通过。首轮失败为
+资源夹具漏传caller workspace，按真实API修正夹具后整批通过，产品没有修补，失败日志保留。
+具体范围见[F42收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-quantization-roundtrip/README.md)。
+普通DeepSeek完整consumer尚未接齐；ledger保持144/176，owner继续AUDITED，三交付/P1和D6未签。
+统一实现59,899行/238文件。下一步复用本卡两种量化还原、F38幂次FP8投影、F41冷解码和既有
+原版FP4专家，补完整attention/compressor/MoE/MTP；不再寻找或自写这些原子数学的替代品。

@@ -1,0 +1,67 @@
+{
+  "candidate": "fd1a9ac4e6bb25bf2a2347e54b5069e06624e1a9",
+  "scope": "CUDA block quantization roundtrip atoms, ordinary Direct/Graph and resource lifecycle; not complete DeepSeek model coverage",
+  "verdict": "PASS_LOCAL_CAPABILITY",
+  "gtests": 9,
+  "gtest_skips": 0,
+  "header_tests": 4,
+  "native_cases": 24,
+  "new_complete_profile_cells": 0,
+  "ledger": {
+    "RUN_PASS": 144,
+    "VALIDATION_NOT_RUN": 32
+  },
+  "resource_cost": {
+    "dispatches": 1,
+    "workspace_bytes": "4 * (M*K/group)",
+    "input_output_alignment": 16,
+    "workspace_alignment": 4,
+    "dynamic_shared_bytes": "32*group*2",
+    "extra_invocation_private_bytes": 0
+  },
+  "tool_results": [
+    {
+      "command": "python tests/compute_models/inputs_test.py",
+      "tests": 13,
+      "verdict": "PASS"
+    },
+    {
+      "command": "python tests/tooling/huggingface_dependency_test.py",
+      "tests": 4,
+      "rejection_subcases": 10,
+      "verdict": "PASS"
+    },
+    {
+      "command": "python tests/tooling/validation_selector_test.py",
+      "tests": 59,
+      "verdict": "PASS"
+    }
+  ],
+  "initial_failure": "Resource fixture omitted required caller workspace. Ordinary Direct/Graph already passed; fixture supplied independent buffers, product and numerical gates unchanged.",
+  "pending": [
+    "complete DeepSeek official consumers",
+    "other routes",
+    "D5-A5 source/static/shared and remaining selected gates",
+    "D5-A6 performance",
+    "D6"
+  ],
+  "uncompressed_sha256": {
+    "build.log.gz": "9948a4a4da697100ad8e89b3ed127da7b3c27d1eb24f5ce460f88bdf965ba05e",
+    "tests.log.gz": "8addf74c539004d9d05328ae7c11a4b50c28f9c528547b9ff59301b4f5f5d689",
+    "native-tests.log.gz": "d86265f2b45e4b87ad78825d1fc1e1af803db4a2d6a0e44493bfe3f84e5abbac",
+    "tests.xml.gz": "edf845be1296c473b0631fb6ae91197bad3162eb95cdc515ca4581b3cb0ca781",
+    "entry-receipt.json.gz": "34837be509a56e96e201daf4df89aedabfb10e4392e4df83836cbecb2109a47f",
+    "cache-identity.txt.gz": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+    "initial-workspace-tests.log.gz": "caf2f0358ff8fbb6cb0e6c0e75973360774b528ff44560c531b3e7040115215f",
+    "initial-workspace-receipt.json.gz": "2d3063052142c09199a07ff6e0de15b96be48bf489aec8f1c07334ae9efc4a3e",
+    "headers.log.gz": "906e35c1910973284530e78ea18e3945090d73788e71596423d9a81d3194a0ea",
+    "headers-receipt.json.gz": "a87ad5e99a9efbb887e1f701a170be2f522271f2f4e1f94c52c8b9608b4b713e",
+    "native-receipt.json.gz": "64cddd24d806a1e4ac8f5c9bfb07b294c1044871316e353b7b54200653149af4",
+    "rebuild-receipt.json.gz": "e3b6efe7aea8c927b1d7a76027fd0d368118384ae0a3c4657409cedd022bf66a",
+    "rebuild.log.gz": "7e7b75200aae191c14ba43ef89681920c8b357c4cd6ad91c71f62c7ba13603c3",
+    "compile.json.gz": "81dcad0fbdce3b9386582df1872ab54bee57c86981e4021e3c3aa4d5de2f5f24",
+    "act_quant_kernel.cu.gz": "8d2d12cfe52d67af1c120dc6735f350369ed126c2756d63ca82c0019717471c0",
+    "fp4_quant_kernel.cu.gz": "40b3ff43333021ab6bdd0c2aac7f30547a574eec55f27966faf7882c5f059658",
+    "selector-plan.json.gz": "a19e2defb70337c66ff4da8189edb9ff487fbfbddc34c69544f7878e439b9f12"
+  }
+}
