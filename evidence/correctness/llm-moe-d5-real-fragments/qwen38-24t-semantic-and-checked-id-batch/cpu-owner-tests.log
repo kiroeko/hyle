@@ -1,0 +1,18 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 69: hyle_compute_provider_ggml_test
+1/4 Test #69: hyle_compute_provider_ggml_test ..........   Passed    0.06 sec
+    Start 79: hyle_compute_route_cpu_test
+2/4 Test #79: hyle_compute_route_cpu_test ..............   Passed  116.25 sec
+    Start 81: hyle_graph_route_cpu_test
+3/4 Test #81: hyle_graph_route_cpu_test ................   Passed  116.91 sec
+    Start 82: hyle_graph_route_cpu_cpu_executor_test
+4/4 Test #82: hyle_graph_route_cpu_cpu_executor_test ...   Passed    0.08 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+compute_provider_ggml    =   0.06 sec*proc (1 test)
+compute_route_cpu        = 116.25 sec*proc (1 test)
+graph_route_cpu          = 116.99 sec*proc (2 tests)
+
+Total Test time (real) = 233.66 sec

@@ -1,0 +1,54 @@
+{
+  "candidate": "9e7c579282030db876dac98ca20b6e20e189ce70",
+  "steps": [
+    {
+      "name": "owner-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle",
+        "-B",
+        "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+        "-DHYLE_WERROR=ON"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 4.16
+    },
+    {
+      "name": "owner-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+        "--target",
+        "hyle_compute_provider_ggml_metal_tests",
+        "hyle_compute_route_apple_tests",
+        "hyle_graph_route_apple_tests",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 32.377
+    },
+    {
+      "name": "owner-tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_provider_ggml_metal|compute_route_apple|graph_route_apple)$",
+        "-LE",
+        "headers",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/d5-q24-semantic-batch/owner.xml"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 138.928
+    }
+  ]
+}

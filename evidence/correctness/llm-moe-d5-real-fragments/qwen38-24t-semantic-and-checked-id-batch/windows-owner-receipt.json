@@ -1,0 +1,156 @@
+{
+  "candidate": "9e7c579282030db876dac98ca20b6e20e189ce70",
+  "execution": "selected gates manually batched in existing route-isolated trees",
+  "steps": [
+    {
+      "name": "cpu-owner-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        ".scratch/build-compute-v2-dev"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 11.281
+    },
+    {
+      "name": "cpu-owner-build",
+      "argv": [
+        "cmake",
+        "--build",
+        ".scratch/build-compute-v2-dev",
+        "--config",
+        "Release",
+        "--target",
+        "hyle_compute_provider_ggml_tests",
+        "hyle_compute_route_cpu_tests",
+        "hyle_graph_route_cpu_tests",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 39.734
+    },
+    {
+      "name": "cpu-owner-tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        ".scratch/build-compute-v2-dev",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_provider_ggml|compute_route_cpu|graph_route_cpu)$",
+        "-LE",
+        "headers",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-q24-semantic-batch\\cpu-owner.xml"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 233.688
+    },
+    {
+      "name": "cuda-owner-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        ".scratch/b-cuda-d5"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 14.109
+    },
+    {
+      "name": "cuda-owner-build",
+      "argv": [
+        "cmake",
+        "--build",
+        ".scratch/b-cuda-d5",
+        "--config",
+        "Release",
+        "--target",
+        "hyle_compute_provider_ggml_cuda_tests",
+        "hyle_graph_provider_ggml_cuda_tests",
+        "hyle_compute_route_cuda_tests",
+        "hyle_graph_route_cuda_tests",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 11.828
+    },
+    {
+      "name": "cuda-owner-tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        ".scratch/b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_provider_ggml_cuda|graph_provider_ggml_cuda|compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-q24-semantic-batch\\cuda-owner.xml"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 350.266
+    },
+    {
+      "name": "vulkan-owner-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        ".scratch/build/m2-vulkan-indexed"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 156.281
+    },
+    {
+      "name": "vulkan-owner-build",
+      "argv": [
+        "cmake",
+        "--build",
+        ".scratch/build/m2-vulkan-indexed",
+        "--config",
+        "Release",
+        "--target",
+        "hyle_compute_route_vulkan_tests",
+        "hyle_graph_route_vulkan_tests",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.313
+    },
+    {
+      "name": "vulkan-owner-tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        ".scratch/build/m2-vulkan-indexed",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_route_vulkan|graph_route_vulkan)$",
+        "-LE",
+        "headers",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-q24-semantic-batch\\vulkan-owner.xml"
+      ],
+      "returncode": 8,
+      "elapsed_seconds": 430.172
+    }
+  ]
+}

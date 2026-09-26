@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="4"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="233"
+	timestamp="2026-09-26T11:35:58"
+	>
+	<testcase name="hyle_compute_provider_ggml_test" classname="hyle_compute_provider_ggml_test" time="0.0595541" status="run">
+		<properties>
+			<property name="cmake_labels" value="compute_provider_ggml"/>
+		</properties>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 41 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 41 tests from GgmlCpuProvider
+[ RUN      ] GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes
+[       OK ] GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes (2 ms)
+[ RUN      ] GgmlCpuProvider.MatureSwiGluCoversStorageTypesAndInputLayouts
+[       OK ] GgmlCpuProvider.MatureSwiGluCoversStorageTypesAndInputLayouts (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout
+[       OK ] GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently
+[       OK ] GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently (0 ms)
+[ RUN      ] GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet
+[       OK ] GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatu...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="hyle_compute_route_cpu_test" classname="hyle_compute_route_cpu_test" time="116.255" status="run">
+		<properties>
+			<property name="cmake_labels" value="compute_route_cpu"/>
+		</properties>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 80 tests from 11 test suites.
+[----------] Global test environment set-up.
+[----------] 13 tests from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly
+[       OK ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly (0 ms)
+[ RUN      ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays
+[       OK ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays (1 ms)
+[ RUN      ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureScatterAddBindsThrough...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="hyle_graph_route_cpu_test" classname="hyle_graph_route_cpu_test" time="116.908" status="run">
+		<properties>
+			<property name="cmake_labels" value="graph_route_cpu"/>
+		</properties>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 95 tests from 12 test suites.
+[----------] Global test environment set-up.
+[----------] 12 tests from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly
+[       OK ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly (0 ms)
+[ RUN      ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays
+[       OK ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays (1 ms)
+[ RUN      ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureScatterAddBindsThrough...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="hyle_graph_route_cpu_cpu_executor_test" classname="hyle_graph_route_cpu_cpu_executor_test" time="0.0839521" status="run">
+		<properties>
+			<property name="cmake_labels" value="graph_route_cpu"/>
+		</properties>
+		<system-out>CPU executor PASS: workers=1 route=explicit Native regions=0 workspace=61260 replay_metadata_allocations=0 executor_episodes=0 worker_tasks=0 nested=0
+CPU executor PASS: workers=1 route=default regions=1 workspace=43908 replay_metadata_allocations=0 executor_episodes=18 worker_tasks=18 nested=3
+  actual worker tasks=[26,0], episodes=19 nested=3, workers_started/stopped=1/1
+CPU executor PASS: workers=2 route=explicit Native regions=0 workspace=61260 replay_metadata_allocations=0 executor_episodes=15 worker_tasks=30 nested=0
+CPU executor PASS: workers=2 route=default regions=1 workspace=43972 replay_metadata_allocations=0 executor_episodes=18 worker_tasks=30 nested=3
+  actual worker tasks=[42,26], episodes=34 nested=3, workers_started/stopped=2/2
+</system-out>
+	</testcase>
+</testsuite>

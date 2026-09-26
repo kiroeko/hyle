@@ -1,0 +1,7 @@
+[0/2] Re-checking globbed directories...
+[1/5] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/5] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/Release/vulkan-shaders-gen.exe
+[3/5] Completed 'vulkan-shaders-gen'
+[4/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build\m2-vulkan-indexed\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"

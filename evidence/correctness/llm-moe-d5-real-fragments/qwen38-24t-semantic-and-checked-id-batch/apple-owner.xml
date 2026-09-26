@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="3"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="138"
+	timestamp="2026-09-26T11:57:24"
+	>
+	<testcase name="hyle_compute_route_apple_test" classname="hyle_compute_route_apple_test" time="82.2566" status="run">
+		<properties>
+			<property name="cmake_labels" value="compute_route_apple"/>
+		</properties>
+		<system-out>Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 109 tests from 18 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleRegion
+[ RUN      ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace
+[       OK ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace (169 ms)
+[ RUN      ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape
+[       OK ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape (4 ms)
+[ RUN      ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose
+[       OK ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose (98 ms)
+[----------] 3 tests from AppleRegion (272 ms total)
+
+[----------] 6 tests from AppleTyped
+[ RUN      ] AppleTyped.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] AppleTyped.D5RealQwenProjectionUsesExactProfileAndReplays (145 ms)
+[ RUN      ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation
+[   ...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="hyle_graph_route_apple_test" classname="hyle_graph_route_apple_test" time="55.8797" status="run">
+		<properties>
+			<property name="cmake_labels" value="graph_route_apple"/>
+		</properties>
+		<system-out>Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 82 tests from 11 test suites.
+[----------] Global test environment set-up.
+[----------] 19 tests from AppleGraph
+[ RUN      ] AppleGraph.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] AppleGraph.D5RealQwenProjectionUsesExactProfileAndReplays (45 ms)
+[ RUN      ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph
+[       OK ] AppleGraph.WholeQ4FfnChangedInputsLeasesAndDestroyedGraph (59 ms)
+[ RUN      ] AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion
+[       OK ] AppleGraph.BatchedLinearAndHadamardStayInOneCompiledRegion (3 ms)
+[ RUN      ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce
+[       OK ] AppleGraph.MatMulAndCustomMetalRemainInOneRuntimeAndTraceOnce (34 ms)
+[ RUN      ] AppleGraph.GgufPackedMatMulAndGroupedExpertsUseNativeRegions
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A1...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="hyle_compute_provider_ggml_metal_test" classname="hyle_compute_provider_ggml_metal_test" time="0.7631" status="run">
+		<properties>
+			<property name="cmake_labels" value="compute_provider_ggml_metal"/>
+		</properties>
+		<system-out>Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from GgmlMetalProgram
+[ RUN      ] GgmlMetalProgram.OriginalRecurrentRealModelShapeAndUnlabelledDomain
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 0.017 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.007 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.018 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.017 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.006 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.005 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.017 sec
+ggml_metal_library_compile_all: compiled 'b...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>

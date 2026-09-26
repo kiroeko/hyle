@@ -1,0 +1,1444 @@
+Start testing: Sep 26 11:40 中国标准时间
+----------------------------------------------------------
+57/66 Testing: hyle_compute_route_cuda_test
+57/66 Test: hyle_compute_route_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_compute_route_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_route_cuda
+"hyle_compute_route_cuda_test" start time: Sep 26 11:40 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 79 tests from 11 test suites.
+[----------] Global test environment set-up.
+[----------] 28 tests from CudaDefaultCompute
+[ RUN      ] CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+[       OK ] CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots (213 ms)
+[ RUN      ] CudaDefaultCompute.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] CudaDefaultCompute.D5RealQwenProjectionUsesExactProfileAndReplays (92 ms)
+[ RUN      ] CudaDefaultCompute.RejectsInvalidDeviceAndUnsupportedOperations
+[       OK ] CudaDefaultCompute.RejectsInvalidDeviceAndUnsupportedOperations (0 ms)
+[ RUN      ] CudaDefaultCompute.DescriptorPreparationChecksDeviceResourcesBeforePayload
+[       OK ] CudaDefaultCompute.DescriptorPreparationChecksDeviceResourcesBeforePayload (0 ms)
+[ RUN      ] CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability
+[       OK ] CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability (2 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays (3 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (3 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (1 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays
+[       OK ] CudaDefaultCompute.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays (11 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (4579 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay (88550 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (5677 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (8840 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (592 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] CudaDefaultCompute.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (4138 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (18 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialFfnUsesMaturePreparedCalls (118 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls (16 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (9 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls (17 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay (3883 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay (797 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls (3 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35FidelityGgufAttentionSemanticsUseMaturePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35FidelityGgufAttentionSemanticsUseMaturePreparedCalls (4 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls (8 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35FidelityGgufGdnStateUsesMaturePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35FidelityGgufGdnStateUsesMaturePreparedCalls (9 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialAllRegionShapesReachMatureProvidersInOneBatch
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialAllRegionShapesReachMatureProvidersInOneBatch (0 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialFfnAdmissionDoesNotUseFrozenFallback
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialFfnAdmissionDoesNotUseFrozenFallback (0 ms)
+[----------] 28 tests from CudaDefaultCompute (117593 ms total)
+
+[----------] 5 tests from CudaDefault
+[ RUN      ] CudaDefault.OriginalCcclThroughOrdinaryDirectEntry
+[       OK ] CudaDefault.OriginalCcclThroughOrdinaryDirectEntry (7 ms)
+[ RUN      ] CudaDefault.OriginalGgmlThroughOrdinaryDirectEntry
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefault.OriginalGgmlThroughOrdinaryDirectEntry (1 ms)
+[ RUN      ] CudaDefault.NativeQ8UsesOrdinaryDirectRouteAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefault.NativeQ8UsesOrdinaryDirectRouteAndReplays (1 ms)
+[ RUN      ] CudaDefault.OriginalTensorBatchThroughOrdinaryDirectEntry
+[       OK ] CudaDefault.OriginalTensorBatchThroughOrdinaryDirectEntry (25 ms)
+[ RUN      ] CudaDefault.OriginalSoftmaxThroughOrdinaryDirectEntry
+[       OK ] CudaDefault.OriginalSoftmaxThroughOrdinaryDirectEntry (1 ms)
+[----------] 5 tests from CudaDefault (36 ms total)
+
+[----------] 8 tests from CudaQwen38_24T
+[ RUN      ] CudaQwen38_24T.D5ExactWidthCausalConvDirectReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5ExactWidthCausalConvDirectReplay (1 ms)
+[ RUN      ] CudaQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (979 ms)
+[ RUN      ] CudaQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (5770 ms)
+[ RUN      ] CudaQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores (18 ms)
+[ RUN      ] CudaQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (2509 ms)
+[ RUN      ] CudaQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (13159 ms)
+[ RUN      ] CudaQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay (1439 ms)
+[ RUN      ] CudaQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (18630 ms)
+[----------] 8 tests from CudaQwen38_24T (42519 ms total)
+
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CudaQwen38GdnProfiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0 (56 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/1 (26 ms)
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CudaQwen38GdnProfiles (82 ms total)
+
+[----------] 1 test from D5FidelityGguf/CudaQwen38GdnProfiles
+[ RUN      ] D5FidelityGguf/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0 (44 ms)
+[----------] 1 test from D5FidelityGguf/CudaQwen38GdnProfiles (44 ms total)
+
+[----------] 1 test from D5Official24T/CudaQwen38GdnProfiles
+[ RUN      ] D5Official24T/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0 (71 ms)
+[----------] 1 test from D5Official24T/CudaQwen38GdnProfiles (71 ms total)
+
+[----------] 12 tests from D5ExactQwenGguf/CudaQwenGgufVocabulary
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (224 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (955 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (622 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (1780 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (749 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (1312 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (39 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (304 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (85 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (176 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (134 ms)
+[ RUN      ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (261 ms)
+[----------] 12 tests from D5ExactQwenGguf/CudaQwenGgufVocabulary (6646 ms total)
+
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CudaQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (64 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1 (43 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (351 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (352 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (5 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (5 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (63 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (65 ms)
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CudaQwen38Profiles (952 ms total)
+
+[----------] 4 tests from D5FidelityGguf/CudaQwen38Profiles
+[ RUN      ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (54 ms)
+[ RUN      ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (320 ms)
+[ RUN      ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (5 ms)
+[ RUN      ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (68 ms)
+[----------] 4 tests from D5FidelityGguf/CudaQwen38Profiles (449 ms total)
+
+[----------] 4 tests from D5Official24T/CudaQwen38Profiles
+[ RUN      ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (106 ms)
+[ RUN      ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (57 ms)
+[ RUN      ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (9 ms)
+[ RUN      ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (167 ms)
+[----------] 4 tests from D5Official24T/CudaQwen38Profiles (340 ms total)
+
+[----------] 6 tests from D5Official2B27BAnd24T/CudaQwenOfficialVocabulary
+[ RUN      ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0
+[       OK ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0 (578 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1
+[       OK ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1 (1134 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2
+[       OK ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2 (1873 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0
+[       OK ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0 (124 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1
+[       OK ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1 (298 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2
+[       OK ] D5Official2B27BAnd24T/CudaQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2 (606 ms)
+[----------] 6 tests from D5Official2B27BAnd24T/CudaQwenOfficialVocabulary (4616 ms total)
+
+[----------] Global test environment tear-down
+[==========] 79 tests from 11 test suites ran. (173354 ms total)
+[  PASSED  ] 79 tests.
+<end of output>
+Test time = 173.68 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_cuda_test" end time: Sep 26 11:43 中国标准时间
+"hyle_compute_route_cuda_test" time elapsed: 00:02:53
+----------------------------------------------------------
+
+59/66 Testing: hyle_graph_route_cuda_test
+59/66 Test: hyle_graph_route_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_graph_route_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/graph_route_cuda
+"hyle_graph_route_cuda_test" start time: Sep 26 11:43 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 96 tests from 10 test suites.
+[----------] Global test environment set-up.
+[----------] 50 tests from CudaDefaultGraph
+[ RUN      ] CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.MaturePrefillDecodeThroughNormalEntries (269 ms)
+[ RUN      ] CudaDefaultGraph.OriginalCcclTopKAndScanKeepIndependentWorkspaceAndOldResults
+[       OK ] CudaDefaultGraph.OriginalCcclTopKAndScanKeepIndependentWorkspaceAndOldResults (6 ms)
+[ RUN      ] CudaDefaultGraph.OriginalCcclOverflowPreservesOutputAndFreshInvocationRecovers
+[       OK ] CudaDefaultGraph.OriginalCcclOverflowPreservesOutputAndFreshInvocationRecovers (1 ms)
+[ RUN      ] CudaDefaultGraph.OriginalCcclTopKFeedsGatherWithIndependentSlotsAndRetainedResults
+[       OK ] CudaDefaultGraph.OriginalCcclTopKFeedsGatherWithIndependentSlotsAndRetainedResults (5 ms)
+[ RUN      ] CudaDefaultGraph.OriginalCcclGatherFailurePreservesOutputAndRetiresSlot
+[       OK ] CudaDefaultGraph.OriginalCcclGatherFailurePreservesOutputAndRetiresSlot (1 ms)
+[ RUN      ] CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.ConcatReassemblesViewsAndAppendsWindowWithCapturedSlots (19 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay (1847 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay (389 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay (11 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay (3 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay (10 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay (8 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesOneNativeStepAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesOneNativeStepAndReplays (3 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (3 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (1 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays
+[       OK ] CudaDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays (4 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (6199 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay (88967 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (5722 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (8816 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (585 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] CudaDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (4052 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph (124 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialFfnUsesMatureRegionsAndRealWeights
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35OfficialFfnUsesMatureRegionsAndRealWeights (116 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay (3 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay (8 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay (26 ms)
+[ RUN      ] CudaDefaultGraph.CheckedEmbeddingNormResidualUsesDefaultDirectAndPreparedSlots
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.CheckedEmbeddingNormResidualUsesDefaultDirectAndPreparedSlots (747 ms)
+[ RUN      ] CudaDefaultGraph.CheckedGatherErrorsRecoverWithManagedProvider
+[       OK ] CudaDefaultGraph.CheckedGatherErrorsRecoverWithManagedProvider (1 ms)
+[ RUN      ] CudaDefaultGraph.OriginalTensorRegionThroughOrdinaryEntry
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.OriginalTensorRegionThroughOrdinaryEntry (1 ms)
+[ RUN      ] CudaDefaultGraph.OriginalSoftmaxRegionThroughOrdinaryEntry
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.OriginalSoftmaxRegionThroughOrdinaryEntry (1 ms)
+[ RUN      ] CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.OriginalGgmlRegionComposesWithCublas (7 ms)
+[ RUN      ] CudaDefaultGraph.NativeQ8UsesOrdinaryGraphRouteAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.NativeQ8UsesOrdinaryGraphRouteAndReplays (1 ms)
+[ RUN      ] CudaDefaultGraph.MatureHalfLinearAndHadamardUseOneGgmlRegion
+[       OK ] CudaDefaultGraph.MatureHalfLinearAndHadamardUseOneGgmlRegion (2 ms)
+[ RUN      ] CudaDefaultGraph.UnrelatedCublasNodeDoesNotSplitGgmlRegion
+[       OK ] CudaDefaultGraph.UnrelatedCublasNodeDoesNotSplitGgmlRegion (1 ms)
+[ RUN      ] CudaDefaultGraph.BfloatGatesUseNormalDirectAndPreparedGraphEntries
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.BfloatGatesUseNormalDirectAndPreparedGraphEntries (9 ms)
+[ RUN      ] CudaDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] CudaDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays (9 ms)
+[ RUN      ] CudaDefaultGraph.DenseFfnCapturesTwoSlotsAndChangingInputs
+[       OK ] CudaDefaultGraph.DenseFfnCapturesTwoSlotsAndChangingInputs (30 ms)
+[ RUN      ] CudaDefaultGraph.ExplicitCommandsUseTheSameNumericalChain
+[       OK ] CudaDefaultGraph.ExplicitCommandsUseTheSameNumericalChain (3 ms)
+[ RUN      ] CudaDefaultGraph.DefaultRulesPrepareSeparateAndPackedTailCapability
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.DefaultRulesPrepareSeparateAndPackedTailCapability (2 ms)
+[ RUN      ] CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations
+[       OK ] CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations (0 ms)
+[ RUN      ] CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.MixedFloatNormAndSwishGateCaptureReusableIndependentState (112 ms)
+[ RUN      ] CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.FloatL2AndMaskedHalfProbabilitiesReplayIndependentInputs (9 ms)
+[ RUN      ] CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUsePreparedIndependentSlots
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.CountOffsetsGatherAndFloatGatePrefixesUsePreparedIndependentSlots (258 ms)
+[ RUN      ] CudaDefaultGraph.IntegerScanOverflowPreservesOutputAndRecovers
+[       OK ] CudaDefaultGraph.IntegerScanOverflowPreservesOutputAndRecovers (1 ms)
+[ RUN      ] CudaDefaultGraph.OrderedScatterStateRoundTripsThroughPreparedGatherNormResidual
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.OrderedScatterStateRoundTripsThroughPreparedGatherNormResidual (943 ms)
+[ RUN      ] CudaDefaultGraph.CheckedScatterOwnsSortGraphThroughFailureCloseAndAbandon
+[       OK ] CudaDefaultGraph.CheckedScatterOwnsSortGraphThroughFailureCloseAndAbandon (19 ms)
+[ RUN      ] CudaDefaultGraph.PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates
+[       OK ] CudaDefaultGraph.PreparedNormUnaryCaptureAndDefaultDirectKeepTwoIndependentStates (176 ms)
+[ RUN      ] CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.TensorChainCapturesViewsConversionsMasksAndIndependentResults (48 ms)
+[ RUN      ] CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.SoftmaxTopKAndRenormalizationCaptureBothOutputs (94 ms)
+[----------] 50 tests from CudaDefaultGraph (119695 ms total)
+
+[----------] 8 tests from CudaGraphQwen38_24T
+[ RUN      ] CudaGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay (1 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (5632 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (1008 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores (10 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (2575 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (12402 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (1499 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (18156 ms)
+[----------] 8 tests from CudaGraphQwen38_24T (41287 ms total)
+
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CudaGraphQwen38GdnProfiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0 (34 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/1 (26 ms)
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CudaGraphQwen38GdnProfiles (60 ms total)
+
+[----------] 1 test from D5FidelityGguf/CudaGraphQwen38GdnProfiles
+[ RUN      ] D5FidelityGguf/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0 (25 ms)
+[----------] 1 test from D5FidelityGguf/CudaGraphQwen38GdnProfiles (25 ms total)
+
+[----------] 1 test from D5Official24T/CudaGraphQwen38GdnProfiles
+[ RUN      ] D5Official24T/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0 (63 ms)
+[----------] 1 test from D5Official24T/CudaGraphQwen38GdnProfiles (63 ms total)
+
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (49 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1 (32 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (344 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (327 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (12 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (7 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (72 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (65 ms)
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CudaGraphQwen38Profiles (911 ms total)
+
+[----------] 4 tests from D5FidelityGguf/CudaGraphQwen38Profiles
+[ RUN      ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (39 ms)
+[ RUN      ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (369 ms)
+[ RUN      ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (13 ms)
+[ RUN      ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5FidelityGguf/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (71 ms)
+[----------] 4 tests from D5FidelityGguf/CudaGraphQwen38Profiles (493 ms total)
+
+[----------] 4 tests from D5Official24T/CudaGraphQwen38Profiles
+[ RUN      ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (114 ms)
+[ RUN      ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (81 ms)
+[ RUN      ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (16 ms)
+[ RUN      ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5Official24T/CudaGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (196 ms)
+[----------] 4 tests from D5Official24T/CudaGraphQwen38Profiles (409 ms total)
+
+[----------] 6 tests from D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary
+[ RUN      ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0
+[       OK ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0 (565 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1
+[       OK ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1 (1154 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2
+[       OK ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2 (1987 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0
+[       OK ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0 (175 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1
+[       OK ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1 (333 ms)
+[ RUN      ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2
+[       OK ] D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2 (610 ms)
+[----------] 6 tests from D5Official2B27BAnd24T/CudaGraphQwenOfficialVocabulary (4827 ms total)
+
+[----------] 12 tests from D5ExactQwenGguf/CudaGraphQwenGgufVocabulary
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (265 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (897 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (647 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (1876 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (677 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (1358 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (62 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (339 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (86 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (167 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (155 ms)
+[ RUN      ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] D5ExactQwenGguf/CudaGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (254 ms)
+[----------] 12 tests from D5ExactQwenGguf/CudaGraphQwenGgufVocabulary (6789 ms total)
+
+[----------] Global test environment tear-down
+[==========] 96 tests from 10 test suites ran. (174564 ms total)
+[  PASSED  ] 96 tests.
+<end of output>
+Test time = 174.79 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_cuda_test" end time: Sep 26 11:46 中国标准时间
+"hyle_graph_route_cuda_test" time elapsed: 00:02:54
+----------------------------------------------------------
+
+63/66 Testing: hyle_compute_provider_ggml_cuda_test
+63/66 Test: hyle_compute_provider_ggml_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_compute_provider_ggml_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_provider_ggml_cuda
+"hyle_compute_provider_ggml_cuda_test" start time: Sep 26 11:46 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 28 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from GgmlCuda
+[ RUN      ] GgmlCuda.ColdAllocationsRollBackWithoutRetainingNativeResources
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+[       OK ] GgmlCuda.ColdAllocationsRollBackWithoutRetainingNativeResources (62 ms)
+[ RUN      ] GgmlCuda.IndependentInvocationsReplayAndRetainBorrowedPayload
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCuda.IndependentInvocationsReplayAndRetainBorrowedPayload (1 ms)
+[----------] 2 tests from GgmlCuda (64 ms total)
+
+[----------] 4 tests from GgmlCudaAttention
+[ RUN      ] GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaAttention.OriginalPrefillDecodeAndIndependentReplays (352 ms)
+[ RUN      ] GgmlCudaAttention.ZeroAndNegativeScalePreserveCausalMask
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaAttention.ZeroAndNegativeScalePreserveCausalMask (229 ms)
+[ RUN      ] GgmlCudaAttention.Bfloat16ValuesOutsideFloat16RangeRemainFinite
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaAttention.Bfloat16ValuesOutsideFloat16RangeRemainFinite (83 ms)
+[ RUN      ] GgmlCudaAttention.Qwen38GroupedQueryHeadRatioRuns
+[       OK ] GgmlCudaAttention.Qwen38GroupedQueryHeadRatioRuns (2 ms)
+[----------] 4 tests from GgmlCudaAttention (668 ms total)
+
+[----------] 22 tests from GgmlCudaTensor
+[ RUN      ] GgmlCudaTensor.FloatingNormAffineAndUnaryConversions
+[       OK ] GgmlCudaTensor.FloatingNormAffineAndUnaryConversions (6 ms)
+[ RUN      ] GgmlCudaTensor.MatureSwiGluCoversStorageTypesAndInputLayouts
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.MatureSwiGluCoversStorageTypesAndInputLayouts (0 ms)
+[ RUN      ] GgmlCudaTensor.MatureRopeCoversQualifiedTypesAndLayouts
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.MatureRopeCoversQualifiedTypesAndLayouts (2 ms)
+[ RUN      ] GgmlCudaTensor.MatureCausalConvUsesNaturalSequenceLayout
+[       OK ] GgmlCudaTensor.MatureCausalConvUsesNaturalSequenceLayout (0 ms)
+[ RUN      ] GgmlCudaTensor.MatureKdaPublishesScoresAndStateIndependently
+[       OK ] GgmlCudaTensor.MatureKdaPublishesScoresAndStateIndependently (0 ms)
+[ RUN      ] GgmlCudaTensor.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet
+[       OK ] GgmlCudaTensor.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet (13 ms)
+[ RUN      ] GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry
+[       OK ] GgmlCudaTensor.MatureMoeAndHyperConnectionBatchUsesOrdinaryEntry (9 ms)
+[ RUN      ] GgmlCudaTensor.MatureLightningIndexerUsesOrdinaryEntryAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.MatureLightningIndexerUsesOrdinaryEntryAndReplays (1 ms)
+[ RUN      ] GgmlCudaTensor.LayerNormRetainsSmallVarianceAtLargeOffset
+[       OK ] GgmlCudaTensor.LayerNormRetainsSmallVarianceAtLargeOffset (0 ms)
+[ RUN      ] GgmlCudaTensor.BroadcastUsesLogicalAxesAndBothOperandOrders
+[       OK ] GgmlCudaTensor.BroadcastUsesLogicalAxesAndBothOperandOrders (58 ms)
+[ RUN      ] GgmlCudaTensor.SelectedReductionsUseDenseAndStridedLogicalCoordinates
+[       OK ] GgmlCudaTensor.SelectedReductionsUseDenseAndStridedLogicalCoordinates (113 ms)
+[ RUN      ] GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits
+[       OK ] GgmlCudaTensor.StridedCopyAndVariadicConcatPreserveBits (3 ms)
+[ RUN      ] GgmlCudaTensor.UnsupportedNumericDomainsDeclineBeforeNativeExecution
+[       OK ] GgmlCudaTensor.UnsupportedNumericDomainsDeclineBeforeNativeExecution (0 ms)
+[ RUN      ] GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry
+[       OK ] GgmlCudaTensor.MatureLinearRopeAndHadamardUseOrdinaryEntry (7 ms)
+[ RUN      ] GgmlCudaTensor.NativeQ4KMatMulImportsGgufBytesAndReplays
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.NativeQ4KMatMulImportsGgufBytesAndReplays (10 ms)
+[ RUN      ] GgmlCudaTensor.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaTensor.NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds (3 ms)
+[ RUN      ] GgmlCudaTensor.NativeQ8GroupedExpertsUseExactExpertIds
+[       OK ] GgmlCudaTensor.NativeQ8GroupedExpertsUseExactExpertIds (1 ms)
+[ RUN      ] GgmlCudaTensor.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+[       OK ] GgmlCudaTensor.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (43 ms)
+[ RUN      ] GgmlCudaTensor.BfloatRouterMatMulRetainsNativeF32Score
+[       OK ] GgmlCudaTensor.BfloatRouterMatMulRetainsNativeF32Score (1 ms)
+[ RUN      ] GgmlCudaTensor.MalformedNativeGgufFormatIsRejectedAtPrepare
+[       OK ] GgmlCudaTensor.MalformedNativeGgufFormatIsRejectedAtPrepare (0 ms)
+[ RUN      ] GgmlCudaTensor.SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias
+[       OK ] GgmlCudaTensor.SoftmaxUsesLogicalAxesMasksSpecialValuesAndExactAlias (145 ms)
+[ RUN      ] GgmlCudaTensor.SoftmaxRejectsPartialOverlapAndMaskAlias
+[       OK ] GgmlCudaTensor.SoftmaxRejectsPartialOverlapAndMaskAlias (0 ms)
+[----------] 22 tests from GgmlCudaTensor (429 ms total)
+
+[----------] Global test environment tear-down
+[==========] 28 tests from 3 test suites ran. (1162 ms total)
+[  PASSED  ] 28 tests.
+<end of output>
+Test time =   1.31 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_ggml_cuda_test" end time: Sep 26 11:46 中国标准时间
+"hyle_compute_provider_ggml_cuda_test" time elapsed: 00:00:01
+----------------------------------------------------------
+
+65/66 Testing: hyle_graph_provider_ggml_cuda_test
+65/66 Test: hyle_graph_provider_ggml_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_graph_provider_ggml_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/graph_provider_ggml_cuda
+"hyle_graph_provider_ggml_cuda_test" start time: Sep 26 11:46 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 8 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 8 tests from GgmlCudaGraph
+[ RUN      ] GgmlCudaGraph.NativeQ8GraphImportsGgufBytesAndReplays
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.NativeQ8GraphImportsGgufBytesAndReplays (76 ms)
+[ RUN      ] GgmlCudaGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry
+[       OK ] GgmlCudaGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry (53 ms)
+[ RUN      ] GgmlCudaGraph.MatureLightningIndexerUsesOrdinaryGraphEntry
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.MatureLightningIndexerUsesOrdinaryGraphEntry (2 ms)
+[ RUN      ] GgmlCudaGraph.SoftmaxRegionPublishesLogicalAxesAndRetainsOldResults
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.SoftmaxRegionPublishesLogicalAxesAndRetainsOldResults (9 ms)
+[ RUN      ] GgmlCudaGraph.WholeOriginalRegionUsesIndependentInvocations
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.WholeOriginalRegionUsesIndependentInvocations (1 ms)
+[ RUN      ] GgmlCudaGraph.TensorRegionPreservesRoundingPublishedIntermediatesAndOldResults
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] GgmlCudaGraph.TensorRegionPreservesRoundingPublishedIntermediatesAndOldResults (7 ms)
+[ RUN      ] GgmlCudaGraph.VariadicPortsReserveMetadataEvenWhenValuesRepeat
+[       OK ] GgmlCudaGraph.VariadicPortsReserveMetadataEvenWhenValuesRepeat (2 ms)
+[ RUN      ] GgmlCudaGraph.TypedSliceCopyBindsBeforeAlignedNativeMath
+[       OK ] GgmlCudaGraph.TypedSliceCopyBindsBeforeAlignedNativeMath (0 ms)
+[----------] 8 tests from GgmlCudaGraph (154 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test suite ran. (154 ms total)
+[  PASSED  ] 8 tests.
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_provider_ggml_cuda_test" end time: Sep 26 11:46 中国标准时间
+"hyle_graph_provider_ggml_cuda_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 26 11:46 中国标准时间
+
+compute_provider_ggml_cuda =   1.31 sec*proc
+
+compute_route_cuda = 173.68 sec*proc
+
+graph_provider_ggml_cuda =   0.28 sec*proc
+
+graph_route_cuda = 174.79 sec*proc
+

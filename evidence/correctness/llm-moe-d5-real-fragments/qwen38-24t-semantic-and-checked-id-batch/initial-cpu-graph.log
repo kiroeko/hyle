@@ -1,0 +1,20 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5GgufAttention*:*D5GgufGroupedExpert*:*D5GgufFullRouter*:*D5FullRouter*
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuGraphQwen38_24T
+[ RUN      ] CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (3140 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (1483 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (8858 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (1913 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9945 ms)
+[----------] 5 tests from CpuGraphQwen38_24T (25341 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (25341 ms total)
+[  PASSED  ] 5 tests.

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="1" disabled="0" errors="0" time="36.894" timestamp="2026-09-26T11:19:25.468" name="AllTests">
+  <testsuite name="VulkanGraphQwen38_24T" tests="5" failures="1" disabled="0" skipped="0" errors="0" time="36.894" timestamp="2026-09-26T11:19:25.468">
+    <testcase name="D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc" line="1132" status="run" result="completed" time="3.44" timestamp="2026-09-26T11:19:25.468" classname="VulkanGraphQwen38_24T" />
+    <testcase name="D5GgufAttentionGdnAndMtpUseRealRoleTypes" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc" line="1326" status="run" result="completed" time="3.288" timestamp="2026-09-26T11:19:28.909" classname="VulkanGraphQwen38_24T">
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12807324528694153,&#x0A;expected[index] evaluates to -0.12798333168029785, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.&#x0A;21193&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12807324528694153,
+expected[index] evaluates to -0.12798333168029785, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.
+21193
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13942669332027435,&#x0A;expected[index] evaluates to -0.13933670520782471, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.&#x0A;21200&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13942669332027435,
+expected[index] evaluates to -0.13933670520782471, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.
+21200
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13625185191631317,&#x0A;expected[index] evaluates to -0.13616009056568146, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.&#x0A;21201&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13625185191631317,
+expected[index] evaluates to -0.13616009056568146, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.
+21201
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13917823135852814,&#x0A;expected[index] evaluates to -0.13909196853637695, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.&#x0A;22936&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13917823135852814,
+expected[index] evaluates to -0.13909196853637695, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.
+22936
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13057920336723328,&#x0A;expected[index] evaluates to 0.13066539168357849, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.&#x0A;27526&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13057920336723328,
+expected[index] evaluates to 0.13066539168357849, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.
+27526
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.132586270570755,&#x0A;expected[index] evaluates to -0.13249558210372925, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.&#x0A;30078&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.132586270570755,
+expected[index] evaluates to -0.13249558210372925, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.
+30078
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6203217506408691e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13385555148124695,&#x0A;expected[index] evaluates to 0.13376934826374054, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5350773588288575e-05.&#x0A;20234&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6203217506408691e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13385555148124695,
+expected[index] evaluates to 0.13376934826374054, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5350773588288575e-05.
+20234
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.7320804595947266e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.1389586478471756,&#x0A;expected[index] evaluates to 0.13887132704257965, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5554849647451192e-05.&#x0A;20247&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.7320804595947266e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.1389586478471756,
+expected[index] evaluates to 0.13887132704257965, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5554849647451192e-05.
+20247
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.8408589363098145e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13385172188282013,&#x0A;expected[index] evaluates to 0.13394013047218323, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5357605712488294e-05.&#x0A;20918&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.8408589363098145e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13385172188282013,
+expected[index] evaluates to 0.13394013047218323, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5357605712488294e-05.
+20918
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9272856712341309e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.12753632664680481,&#x0A;expected[index] evaluates to 0.12744705379009247, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5097883129492402e-05.&#x0A;25091&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9272856712341309e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.12753632664680481,
+expected[index] evaluates to 0.12744705379009247, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5097883129492402e-05.
+25091
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.8393688201904297e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12544819712638855,&#x0A;expected[index] evaluates to -0.12535980343818665, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5014391515869647e-05.&#x0A;25330&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.8393688201904297e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12544819712638855,
+expected[index] evaluates to -0.12535980343818665, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5014391515869647e-05.
+25330
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.8140368461608887e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12694388628005981,&#x0A;expected[index] evaluates to -0.12703202664852142, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5081279394216835e-05.&#x0A;28611&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.8140368461608887e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12694388628005981,
+expected[index] evaluates to -0.12703202664852142, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5081279394216835e-05.
+28611
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.703768253326416e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13197386264801025,&#x0A;expected[index] evaluates to 0.13188682496547699, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5275474702939391e-05.&#x0A;32133&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.703768253326416e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13197386264801025,
+expected[index] evaluates to 0.13188682496547699, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5275474702939391e-05.
+32133
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12807324528694153,&#x0A;expected[index] evaluates to -0.12798333168029785, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.&#x0A;21193&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12807324528694153,
+expected[index] evaluates to -0.12798333168029785, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.
+21193
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13942669332027435,&#x0A;expected[index] evaluates to -0.13933670520782471, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.&#x0A;21200&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13942669332027435,
+expected[index] evaluates to -0.13933670520782471, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.
+21200
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13625185191631317,&#x0A;expected[index] evaluates to -0.13616009056568146, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.&#x0A;21201&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13625185191631317,
+expected[index] evaluates to -0.13616009056568146, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.
+21201
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13917823135852814,&#x0A;expected[index] evaluates to -0.13909196853637695, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.&#x0A;22936&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13917823135852814,
+expected[index] evaluates to -0.13909196853637695, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.
+22936
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13057920336723328,&#x0A;expected[index] evaluates to 0.13066539168357849, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.&#x0A;27526&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13057920336723328,
+expected[index] evaluates to 0.13066539168357849, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.
+27526
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.132586270570755,&#x0A;expected[index] evaluates to -0.13249558210372925, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.&#x0A;30078&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.132586270570755,
+expected[index] evaluates to -0.13249558210372925, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.
+30078
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6203217506408691e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13385555148124695,&#x0A;expected[index] evaluates to 0.13376934826374054, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5350773588288575e-05.&#x0A;20234&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6203217506408691e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13385555148124695,
+expected[index] evaluates to 0.13376934826374054, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5350773588288575e-05.
+20234
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.7320804595947266e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.1389586478471756,&#x0A;expected[index] evaluates to 0.13887132704257965, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5554849647451192e-05.&#x0A;20247&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.7320804595947266e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.1389586478471756,
+expected[index] evaluates to 0.13887132704257965, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5554849647451192e-05.
+20247
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.8408589363098145e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13385172188282013,&#x0A;expected[index] evaluates to 0.13394013047218323, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5357605712488294e-05.&#x0A;20918&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.8408589363098145e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13385172188282013,
+expected[index] evaluates to 0.13394013047218323, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5357605712488294e-05.
+20918
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9272856712341309e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.12753632664680481,&#x0A;expected[index] evaluates to 0.12744705379009247, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5097883129492402e-05.&#x0A;25091&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9272856712341309e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.12753632664680481,
+expected[index] evaluates to 0.12744705379009247, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5097883129492402e-05.
+25091
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.8393688201904297e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12544819712638855,&#x0A;expected[index] evaluates to -0.12535980343818665, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5014391515869647e-05.&#x0A;25330&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.8393688201904297e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12544819712638855,
+expected[index] evaluates to -0.12535980343818665, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5014391515869647e-05.
+25330
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.8140368461608887e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12694388628005981,&#x0A;expected[index] evaluates to -0.12703202664852142, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5081279394216835e-05.&#x0A;28611&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.8140368461608887e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12694388628005981,
+expected[index] evaluates to -0.12703202664852142, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5081279394216835e-05.
+28611
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.703768253326416e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13197386264801025,&#x0A;expected[index] evaluates to 0.13188682496547699, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5275474702939391e-05.&#x0A;32133&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.703768253326416e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13197386264801025,
+expected[index] evaluates to 0.13188682496547699, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5275474702939391e-05.
+32133
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1331): attention
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc(1330): Q8_0
+]]></failure>
+    </testcase>
+    <testcase name="D5GgufAttentionAndGdnProjectionRoleBatch" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc" line="1337" status="run" result="completed" time="13.534" timestamp="2026-09-26T11:19:32.198" classname="VulkanGraphQwen38_24T" />
+    <testcase name="D5FullRouterSharedExpertAndNearTieReplay" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc" line="1394" status="run" result="completed" time="1.576" timestamp="2026-09-26T11:19:45.733" classname="VulkanGraphQwen38_24T" />
+    <testcase name="D5GgufFullRouterSharedExpertAndNearTieReplay" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc" line="1398" status="run" result="completed" time="15.053" timestamp="2026-09-26T11:19:47.309" classname="VulkanGraphQwen38_24T" />
+  </testsuite>
+</testsuites>

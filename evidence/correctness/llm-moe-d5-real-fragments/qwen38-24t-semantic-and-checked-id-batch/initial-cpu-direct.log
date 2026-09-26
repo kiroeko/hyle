@@ -1,0 +1,26 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5GgufAttention*:*D5GgufGroupedExpert*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuQwen38_24T
+[ RUN      ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+Stack trace:
+
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(526): UD-IQ4_XS
+
+[  FAILED  ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (2044 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] CpuQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (1453 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (8674 ms)
+[----------] 3 tests from CpuQwen38_24T (12172 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (12172 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+
+ 1 FAILED TEST

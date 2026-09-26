@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "candidate": "9e7c579282030db876dac98ca20b6e20e189ce70",
+  "baseline": "0e4bb7edc1a3f75aa8eac899f27c02ffcd032239",
+  "scope": "Qwen3.8-2.4T GGUF attention/GDN/MTP roles and four-route checked grouped expert IDs",
+  "execution": "Selected gates manually batched in reused route-isolated build trees. This is not a validation-select run receipt.",
+  "windows_device": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "driver": "617.14",
+    "vram_mib": 12282
+  },
+  "whole_profile_ledger": {
+    "RUN_PASS": 48,
+    "VALIDATION_NOT_RUN": 128
+  },
+  "delivery": "VALIDATION_NOT_RUN",
+  "performance": "VALIDATION_NOT_RUN",
+  "owners": {
+    "cpu": {
+      "status": "PASS",
+      "ctest_targets": [
+        {
+          "name": "hyle_compute_provider_ggml_test",
+          "seconds": 0.0595541,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_compute_route_cpu_test",
+          "seconds": 116.255,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_graph_route_cpu_test",
+          "seconds": 116.908,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_graph_route_cpu_cpu_executor_test",
+          "seconds": 0.0839521,
+          "original_ctest_status": "run"
+        }
+      ],
+      "gtest_pass_counts": [
+        41,
+        80,
+        95
+      ]
+    },
+    "cuda": {
+      "status": "PASS",
+      "ctest_targets": [
+        {
+          "name": "hyle_compute_route_cuda_test",
+          "seconds": 173.679,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_graph_route_cuda_test",
+          "seconds": 174.794,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_compute_provider_ggml_cuda_test",
+          "seconds": 1.30987,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_graph_provider_ggml_cuda_test",
+          "seconds": 0.281772,
+          "original_ctest_status": "run"
+        }
+      ],
+      "gtest_pass_counts": [
+        79,
+        96,
+        28,
+        8
+      ]
+    },
+    "vulkan": {
+      "status": "PASS_BY_REUSE_AND_TARGETED_CORRECTION",
+      "ctest_targets": [
+        {
+          "name": "hyle_compute_route_vulkan_test",
+          "seconds": 214.262,
+          "original_ctest_status": "fail"
+        },
+        {
+          "name": "hyle_graph_route_vulkan_test",
+          "seconds": 215.737,
+          "original_ctest_status": "run"
+        }
+      ],
+      "gtest_pass_counts": [
+        191,
+        104
+      ],
+      "correction": {
+        "candidate": "32772681b",
+        "tests": 2,
+        "failures": 0,
+        "reason": "Only two tests assumed the last dispatch was the managed region. They now require checked status plus a retained managed region. Product tree unchanged; other owner cases reused from the complete initial run. No claim that the initial whole CTest invocation passed."
+      }
+    },
+    "apple": {
+      "status": "PASS",
+      "ctest_targets": [
+        {
+          "name": "hyle_compute_route_apple_test",
+          "seconds": 82.2566,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_graph_route_apple_test",
+          "seconds": 55.8797,
+          "original_ctest_status": "run"
+        },
+        {
+          "name": "hyle_compute_provider_ggml_metal_test",
+          "seconds": 0.7631,
+          "original_ctest_status": "run"
+        }
+      ],
+      "gtest_pass_counts": [
+        109,
+        82,
+        7
+      ]
+    }
+  },
+  "files": {
+    "apple-cache-identity.txt": {
+      "bytes": 1171,
+      "sha256": "73691224fe64f0d6e9443abfbc6279e6659472b84f042bb57245893b9eb31bce"
+    },
+    "apple-owner-build.log": {
+      "bytes": 10041,
+      "sha256": "2bd8a2122ace35bcd1dec0d8ced2a1043da9c0bd92d4b247a3e87021f1362309"
+    },
+    "apple-owner-configure.log": {
+      "bytes": 1959,
+      "sha256": "333f6b30998ef55d60396a7b4e22071faa90f1a162f058c5e68b0b7068b6ddd8"
+    },
+    "apple-owner-native.log": {
+      "bytes": 319560,
+      "sha256": "7a1e8b8134ef8b0352f0b8e6f12295a9ebeb1afc3c5f4ce4ab59939b3651d24c"
+    },
+    "apple-owner-receipt.json": {
+      "bytes": 1277,
+      "sha256": "684c3ceec777c03095c030387c64162732ad21047aba97e9de2683dd0e554c06"
+    },
+    "apple-owner-tests.log": {
+      "bytes": 701,
+      "sha256": "4ecee26a33f56c2ade60dfd543193f309d4771e598f85ca49d3b4b740e0cd7b6"
+    },
+    "apple-owner.xml": {
+      "bytes": 4321,
+      "sha256": "6703fa51580b654baa3144be388d9e72c5f8e6fee34127fceb15d73f77ec9b22"
+    },
+    "apple-selected-plan.json": {
+      "bytes": 380199,
+      "sha256": "66c44a34dc84c08bb3f57bb15cd35116d527647dc25fc06ac44d949f8634c77e"
+    },
+    "cpu-cache-identity.txt": {
+      "bytes": 2205,
+      "sha256": "7a7d4b65145744be23ae25d7136e742d6d4918512936b95871ad469283043d72"
+    },
+    "cpu-owner-build.log": {
+      "bytes": 778537,
+      "sha256": "64fdc0239b974060f881038908a319727d90e4dc73977fd112d3b2cf66b92f63"
+    },
+    "cpu-owner-configure.log": {
+      "bytes": 4315,
+      "sha256": "74ceda1c5a3726a67c6e3d6e27e075dd2f09312262ef07b11341f01ad62eafbf"
+    },
+    "cpu-owner-native.log": {
+      "bytes": 48135,
+      "sha256": "f207fb74e3136193de0a586e85dd4bd5331ddc320546bfa73e87b6d4d268424d"
+    },
+    "cpu-owner-tests.log": {
+      "bytes": 807,
+      "sha256": "4e0190aeec7833759d04ceea11ee239284c20fddf90a9352662695e177f92f85"
+    },
+    "cpu-owner.xml": {
+      "bytes": 5405,
+      "sha256": "3380bb6098f810e1df97d3a3369c5daeedd6517d56b6b783067ebfbce6f02aac"
+    },
+    "cuda-cache-identity.txt": {
+      "bytes": 1487,
+      "sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65"
+    },
+    "cuda-owner-build.log": {
+      "bytes": 212131,
+      "sha256": "9fac71a0d58128b0f2a797c4f9c94233e8eed2dfd1dd79d239d2b9bf5c6f92da"
+    },
+    "cuda-owner-configure.log": {
+      "bytes": 2096,
+      "sha256": "c54a26be6d304ac0a05142efbbc3921419dac2c7697226a2978fe599541670ca"
+    },
+    "cuda-owner-native.log": {
+      "bytes": 99681,
+      "sha256": "925d9523c10892ada1c917d6e1fd674049a43c9f8502e5c8b657b516a7bb6b95"
+    },
+    "cuda-owner-tests.log": {
+      "bytes": 862,
+      "sha256": "ebf38592b274a92c769c1bcb3a9f9dcf701157602da8bf345ee092547ee5b142"
+    },
+    "cuda-owner.xml": {
+      "bytes": 5800,
+      "sha256": "2d471125b258af55f19d0a6bbcf41412816e7360bfc1bf2645dd60bcbecb5930"
+    },
+    "initial-cpu-direct.log": {
+      "bytes": 1351,
+      "sha256": "8754cbf45c7306a0fb690dd6ad97dd7de574e7bdf45eb1a9c0aa8faf2fd666ae"
+    },
+    "initial-cpu-direct.xml": {
+      "bytes": 1519,
+      "sha256": "d86e0979fb8161c702885ad52b573bb96c70e19cdf7cc306d0d1d132e690ff7d"
+    },
+    "initial-cpu-graph.log": {
+      "bytes": 1401,
+      "sha256": "68e4df750aa22533cd2b22a6771f5a1df2b4d7c744418f5e5926626136223815"
+    },
+    "initial-cpu-graph.xml": {
+      "bytes": 1725,
+      "sha256": "181852f6dc09d003dc520a386962f7a53c2980ee67550bb27df355a8c6424d31"
+    },
+    "initial-cuda-direct.log": {
+      "bytes": 6033,
+      "sha256": "89cd8159deed67966e0381b1177b47a28dd99ba0a6e8e94db4dc0bc975c3a29d"
+    },
+    "initial-cuda-direct.xml": {
+      "bytes": 2168,
+      "sha256": "b890def5a94581e0fed0f8f12f819159d03c522bdf0985872221dd0fbd9096f3"
+    },
+    "initial-cuda-graph.log": {
+      "bytes": 7111,
+      "sha256": "d710dc310e7321256c3bbb51b219da31bd2411dda0e8117c97aa3b1a729dc937"
+    },
+    "initial-cuda-graph.xml": {
+      "bytes": 3574,
+      "sha256": "133d5f2d149e44270b96acfb05dacbe9e815d13e81c8d6e1e1f7bd4d814434de"
+    },
+    "initial-vulkan-direct.log": {
+      "bytes": 19873,
+      "sha256": "0c34eca0994b6534f06bedd2969823762a3e3b4f4bb29c44b98efc45e455ece4"
+    },
+    "initial-vulkan-direct.xml": {
+      "bytes": 40939,
+      "sha256": "b1ffe067ef8623b3240c0494e9f5b3210ec9e071eaebc913097d2ef86af0b8ff"
+    },
+    "initial-vulkan-graph.log": {
+      "bytes": 19427,
+      "sha256": "2bdead0b14ba0d1bacc01b4b834db7a11c3d8ed5a1fa983590e9fb7a2354f214"
+    },
+    "initial-vulkan-graph.xml": {
+      "bytes": 39447,
+      "sha256": "0fe69e0ec4d890d3378390f3ab2ba2c482fced839e1a34898891a320c813b086"
+    },
+    "loc.json": {
+      "bytes": 4106,
+      "sha256": "8c52111fe7ed5b06121c60b763312fc7a5f00e5c651c6f5bf1ba327e45ecd674"
+    },
+    "selected-plan.json": {
+      "bytes": 808638,
+      "sha256": "7c70d80a2c311afb1ef8587cc703a1b76734821d156cc0267678bdae632cd7c3"
+    },
+    "vulkan-assertion-build.log": {
+      "bytes": 832,
+      "sha256": "b23b208f86a1379d417c650ff3f1bc0335fea37db98c062dbc25b4ffa3c43447"
+    },
+    "vulkan-assertion-plan.json": {
+      "bytes": 796578,
+      "sha256": "021c35d57d1866abebcc88ab60c769331c2466e045dbd2bedb4c7aca782f301e"
+    },
+    "vulkan-assertion.log": {
+      "bytes": 903,
+      "sha256": "e9b3f7c2654dd98015d9d0938f0188ce615d43a40a5625bf4f5d80c59fd0e8a1"
+    },
+    "vulkan-assertion.xml": {
+      "bytes": 863,
+      "sha256": "d9fab1647015e59b287ecd3786d02335062b5955466bbc72a9cdf06fd7550cf1"
+    },
+    "vulkan-cache-identity.txt": {
+      "bytes": 1561,
+      "sha256": "5b9e996c25b4253e74d270805b70741b7cbcc0397ca14ab7f6cba65edec87313"
+    },
+    "vulkan-owner-build.log": {
+      "bytes": 645,
+      "sha256": "34a32b036c0f391c95f14d642615f5d461777f0a4f29e592c15e3754230d5d87"
+    },
+    "vulkan-owner-configure.log": {
+      "bytes": 2087,
+      "sha256": "5b6c7744eeceae73a4c66b16e9f6d9524a87c9eac6f4910114bcfd0eebcf8251"
+    },
+    "vulkan-owner-native.log": {
+      "bytes": 62319,
+      "sha256": "50414fe1603a357d9d09bd3137a4a7ff9750979214c8f8b9a763c0f9b99a2269"
+    },
+    "vulkan-owner-tests.log": {
+      "bytes": 38558,
+      "sha256": "23dab115bd1773bcc0f6a2b915edcb28f16168d262a8e8009a8a8aa9cebb5960"
+    },
+    "vulkan-owner.xml": {
+      "bytes": 40305,
+      "sha256": "fe4b661854df2d8dda3ebcab2f20c0f56ba74875ec8fbba3b53f10c4fb4acc45"
+    },
+    "windows-owner-receipt.json": {
+      "bytes": 3915,
+      "sha256": "2ae6ac0ca88102e1c1a3448edf4316291fff1b6f9ec77ca810a09eba66aff0f6"
+    }
+  }
+}

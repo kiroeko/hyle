@@ -159,6 +159,17 @@ BF16 词表边界的该项缺口已有运行证据；其它量化权重格式、
 组合、全量 selector、三交付与适用 P1 仍待稳定批末验收，ledger 保持
 0/176 `RUN_PASS`。
 
+**语义角色与 grouped ID 批次（`9e7c57928`，测试断言修正 `32772681b`）**：
+两个 2.4T GGUF 画像的九类真实投影、F32 attention、MTP、GDN primitive/conv，
+以及官方和量化完整 MoE 已通过四路线八入口。完整 CPU/CUDA/Apple owner/consumer
+均通过；Vulkan Graph 104/104，Direct 初跑 191/193，两条旧末尾 region 断言改为
+检查受保护发布后定向 2/2 通过，复用其余通过项，不改写初跑 FAIL。Apple 最终明确
+开启 WERROR 后重新构建并通过 109/109、82/82 和 Provider 7/7；先前 targeted
+缓存 WERROR=OFF 的结果不代签此门。见[合并收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-semantic-and-checked-id-batch/README.md)。
+本批实现 58,117 行 / 228 文件；ledger 仍为 48/176。继续共用夹具补官方 BF16
+投影角色和连通的 conv、gate/decay、norm、GDN state 边界；官方与 GGUF 已转换的
+头排列必须分别表达。三交付和 P1 仍未签。本次没有增加自研数学或重新选路。
+
 ## 批量验收形状
 
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |

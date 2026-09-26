@@ -1,0 +1,117 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5GgufAttention*:*D5GgufGroupedExpert*:*D5GgufFullRouter*:*D5FullRouter*
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CudaGraphQwen38_24T
+[ RUN      ] CudaGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (3044 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(757): error: Value of: compiled_result
+  Actual: false
+Expected: true
+no complete graph route satisfies the available candidates
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(795): attention
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(794): UD-IQ4_XS
+
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(757): error: Value of: compiled_result
+  Actual: false
+Expected: true
+no complete graph route satisfies the available candidates
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(795): attention
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(794): Q8_0
+
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[  FAILED  ] CudaGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (2581 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (14149 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (1571 ms)
+[ RUN      ] CudaGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (18142 ms)
+[----------] 5 tests from CudaGraphQwen38_24T (39490 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (39490 ms total)
+[  PASSED  ] 4 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CudaGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+
+ 1 FAILED TEST

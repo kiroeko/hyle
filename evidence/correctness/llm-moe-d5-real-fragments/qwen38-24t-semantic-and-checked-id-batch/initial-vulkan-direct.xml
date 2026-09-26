@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="2" disabled="0" errors="0" time="43.06" timestamp="2026-09-26T11:18:42.217" name="AllTests">
+  <testsuite name="VulkanQwen38_24T" tests="5" failures="2" disabled="0" skipped="0" errors="0" time="43.06" timestamp="2026-09-26T11:18:42.217">
+    <testcase name="D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc" line="1106" status="run" result="completed" time="3.338" timestamp="2026-09-26T11:18:42.217" classname="VulkanQwen38_24T" />
+    <testcase name="D5GgufAttentionGdnAndMtpUseRealRoleTypes" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc" line="1334" status="run" result="completed" time="3.48" timestamp="2026-09-26T11:18:45.556" classname="VulkanQwen38_24T">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12807324528694153,&#x0A;expected[index] evaluates to -0.12798333168029785, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.&#x0A;21193&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12807324528694153,
+expected[index] evaluates to -0.12798333168029785, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.
+21193
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13942669332027435,&#x0A;expected[index] evaluates to -0.13933670520782471, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.&#x0A;21200&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13942669332027435,
+expected[index] evaluates to -0.13933670520782471, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.
+21200
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13625185191631317,&#x0A;expected[index] evaluates to -0.13616009056568146, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.&#x0A;21201&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13625185191631317,
+expected[index] evaluates to -0.13616009056568146, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.
+21201
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13917823135852814,&#x0A;expected[index] evaluates to -0.13909196853637695, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.&#x0A;22936&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13917823135852814,
+expected[index] evaluates to -0.13909196853637695, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.
+22936
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13057920336723328,&#x0A;expected[index] evaluates to 0.13066539168357849, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.&#x0A;27526&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13057920336723328,
+expected[index] evaluates to 0.13066539168357849, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.
+27526
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.132586270570755,&#x0A;expected[index] evaluates to -0.13249558210372925, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.&#x0A;30078&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.132586270570755,
+expected[index] evaluates to -0.13249558210372925, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.
+30078
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1340): gdn&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1340): gdn
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1341): mtp&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1341): mtp
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.12807324528694153,&#x0A;expected[index] evaluates to -0.12798333168029785, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.&#x0A;21193&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9913606643676758e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.12807324528694153,
+expected[index] evaluates to -0.12798333168029785, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5119332652539015e-05.
+21193
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13942669332027435,&#x0A;expected[index] evaluates to -0.13933670520782471, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.&#x0A;21200&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.9988112449645996e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13942669332027435,
+expected[index] evaluates to -0.13933670520782471, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5573468822985888e-05.
+21200
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13625185191631317,&#x0A;expected[index] evaluates to -0.13616009056568146, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.&#x0A;21201&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.1761350631713867e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13625185191631317,
+expected[index] evaluates to -0.13616009056568146, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5446401499211788e-05.
+21201
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.13917823135852814,&#x0A;expected[index] evaluates to -0.13909196853637695, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.&#x0A;22936&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6262822151184082e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.13917823135852814,
+expected[index] evaluates to -0.13909196853637695, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5563675384037197e-05.
+22936
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.13057920336723328,&#x0A;expected[index] evaluates to 0.13066539168357849, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.&#x0A;27526&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 8.6188316345214844e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.13057920336723328,
+expected[index] evaluates to 0.13066539168357849, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5226616647560149e-05.
+27526
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.132586270570755,&#x0A;expected[index] evaluates to -0.13249558210372925, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.&#x0A;30078&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.0688467025756836e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.132586270570755,
+expected[index] evaluates to -0.13249558210372925, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5299820057116449e-05.
+30078
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1339): attention
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1340): gdn&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1340): gdn
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1341): mtp&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1341): mtp
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1338): Q8_0
+]]></failure>
+    </testcase>
+    <testcase name="D5GgufAttentionAndGdnProjectionRoleBatch" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc" line="1345" status="run" result="completed" time="16.27" timestamp="2026-09-26T11:18:49.036" classname="VulkanQwen38_24T">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_qkv.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_qkv.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_gate.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_gate.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_alpha.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_alpha.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_beta.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_beta.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_out.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_out.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_q.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_q.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_k.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_k.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_v.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_v.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_output.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_output.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): UD-IQ4_XS
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_qkv.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_qkv.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_gate.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.attn_gate.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_alpha.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_alpha.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_beta.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_beta.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_out.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.0.ssm_out.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_q.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_q.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_k.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_k.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_v.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_v.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319&#x0A;Value of: work&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan result tensor is still retained&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_output.weight&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc:1319
+Value of: work
+  Actual: false
+Expected: true
+Vulkan result tensor is still retained
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1351): blk.3.attn_output.weight
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc(1349): Q8_0
+]]></failure>
+    </testcase>
+    <testcase name="D5FullRouterSharedExpertAndNearTieDirectReplay" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc" line="1429" status="run" result="completed" time="1.866" timestamp="2026-09-26T11:19:05.307" classname="VulkanQwen38_24T" />
+    <testcase name="D5GgufFullRouterSharedExpertAndNearTieReplay" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc" line="1433" status="run" result="completed" time="18.104" timestamp="2026-09-26T11:19:07.174" classname="VulkanQwen38_24T" />
+  </testsuite>
+</testsuites>

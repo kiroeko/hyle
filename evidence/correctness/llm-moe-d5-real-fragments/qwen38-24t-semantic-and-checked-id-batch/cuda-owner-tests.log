@@ -1,0 +1,19 @@
+Test project C:/public/project-hyle/hyle/.scratch/b-cuda-d5
+    Start 57: hyle_compute_route_cuda_test
+1/4 Test #57: hyle_compute_route_cuda_test ...........   Passed  173.68 sec
+    Start 59: hyle_graph_route_cuda_test
+2/4 Test #59: hyle_graph_route_cuda_test .............   Passed  174.79 sec
+    Start 63: hyle_compute_provider_ggml_cuda_test
+3/4 Test #63: hyle_compute_provider_ggml_cuda_test ...   Passed    1.31 sec
+    Start 65: hyle_graph_provider_ggml_cuda_test
+4/4 Test #65: hyle_graph_provider_ggml_cuda_test .....   Passed    0.28 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+compute_provider_ggml_cuda    =   1.31 sec*proc (1 test)
+compute_route_cuda            = 173.68 sec*proc (1 test)
+graph_provider_ggml_cuda      =   0.28 sec*proc (1 test)
+graph_route_cuda              = 174.79 sec*proc (1 test)
+
+Total Test time (real) = 350.23 sec

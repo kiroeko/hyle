@@ -1,0 +1,784 @@
+Start testing: Sep 26 11:48 中国标准时间
+----------------------------------------------------------
+48/56 Testing: hyle_compute_route_vulkan_test
+48/56 Test: hyle_compute_route_vulkan_test
+Command: "C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/bin/hyle_compute_route_vulkan_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/compute_route_vulkan
+"hyle_compute_route_vulkan_test" start time: Sep 26 11:48 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 193 tests from 30 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanNative
+[ RUN      ] VulkanNative.NativeOwnersTransfersAndQuota
+[       OK ] VulkanNative.NativeOwnersTransfersAndQuota (201 ms)
+[ RUN      ] VulkanNative.RecorderCombinesMatureFfnAndCustomSpirvWithReadyHandoff
+[       OK ] VulkanNative.RecorderCombinesMatureFfnAndCustomSpirvWithReadyHandoff (71 ms)
+[----------] 2 tests from VulkanNative (273 ms total)
+
+[----------] 4 tests from VulkanTyped
+[ RUN      ] VulkanTyped.MatMulDenseConstantChangingAndTransposedRhs
+[       OK ] VulkanTyped.MatMulDenseConstantChangingAndTransposedRhs (141 ms)
+[ RUN      ] VulkanTyped.SiluSeparateAndPackedHalvesWithOddRows
+[       OK ] VulkanTyped.SiluSeparateAndPackedHalvesWithOddRows (56 ms)
+[ RUN      ] VulkanTyped.RebindingChangesBothActivationAndDenseRhsOnRecordedCommands
+[       OK ] VulkanTyped.RebindingChangesBothActivationAndDenseRhsOnRecordedCommands (59 ms)
+[ RUN      ] VulkanTyped.InvalidDomainsAndForeignDeviceAreRejected
+[       OK ] VulkanTyped.InvalidDomainsAndForeignDeviceAreRejected (103 ms)
+[----------] 4 tests from VulkanTyped (361 ms total)
+
+[----------] 10 tests from VulkanLifetime
+[ RUN      ] VulkanLifetime.IreeCheckedScanCopyFailuresDrainAcceptedPrefix
+[       OK ] VulkanLifetime.IreeCheckedScanCopyFailuresDrainAcceptedPrefix (288 ms)
+[ RUN      ] VulkanLifetime.IreeCancellationReusesSlotAndCloseDrainsAbandonment
+IREE P0 actual VkDeviceMemory after preparation: 134218768 bytes
+[       OK ] VulkanLifetime.IreeCancellationReusesSlotAndCloseDrainsAbandonment (94 ms)
+[ RUN      ] VulkanLifetime.IreeNoncoherentFlagFailurePreservesCallerOutput
+[       OK ] VulkanLifetime.IreeNoncoherentFlagFailurePreservesCallerOutput (190 ms)
+[ RUN      ] VulkanLifetime.NoncoherentTransferBranchUsesRealFlushAndInvalidate
+[       OK ] VulkanLifetime.NoncoherentTransferBranchUsesRealFlushAndInvalidate (51 ms)
+[ RUN      ] VulkanLifetime.PartialAllocationFailureReleasesNativeQuotaAndDescriptors
+[       OK ] VulkanLifetime.PartialAllocationFailureReleasesNativeQuotaAndDescriptors (52 ms)
+[ RUN      ] VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait
+[       OK ] VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait (56 ms)
+[ RUN      ] VulkanLifetime.ExportedTensorAndNativeTokenPreventSlotOverwrite
+[       OK ] VulkanLifetime.ExportedTensorAndNativeTokenPreventSlotOverwrite (52 ms)
+[ RUN      ] VulkanLifetime.IndependentThreadsReplayWhileContextCollects
+[       OK ] VulkanLifetime.IndependentThreadsReplayWhileContextCollects (59 ms)
+[ RUN      ] VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain
+[       OK ] VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain (225 ms)
+[ RUN      ] VulkanLifetime.ManagedWaitAllowsIndependentProducerAndCancelledSlotReuse
+[       OK ] VulkanLifetime.ManagedWaitAllowsIndependentProducerAndCancelledSlotReuse (57 ms)
+[----------] 10 tests from VulkanLifetime (1127 ms total)
+
+[----------] 3 tests from VulkanLifecycle
+[ RUN      ] VulkanLifecycle.CheckedGatherFlushInvalidateCancelAndAbandon
+[       OK ] VulkanLifecycle.CheckedGatherFlushInvalidateCancelAndAbandon (63 ms)
+[ RUN      ] VulkanLifecycle.CheckedGatherPartialAcceptanceDrainsAndPreservesNativeFailure
+[       OK ] VulkanLifecycle.CheckedGatherPartialAcceptanceDrainsAndPreservesNativeFailure (55 ms)
+[ RUN      ] VulkanLifecycle.CheckedGatherMappedFailuresKeepAdmissionAndRetirementDistinct
+[       OK ] VulkanLifecycle.CheckedGatherMappedFailuresKeepAdmissionAndRetirementDistinct (63 ms)
+[----------] 3 tests from VulkanLifecycle (182 ms total)
+
+[----------] 3 tests from VulkanTensor
+[ RUN      ] VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers
+[       OK ] VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers (163 ms)
+[ RUN      ] VulkanTensor.UnaryBinaryAndCastUseIndependentFloatingOracles
+[       OK ] VulkanTensor.UnaryBinaryAndCastUseIndependentFloatingOracles (183 ms)
+[ RUN      ] VulkanTensor.ScalarEmptyTailRankEightBroadcastAndColdRefusal
+[       OK ] VulkanTensor.ScalarEmptyTailRankEightBroadcastAndColdRefusal (203 ms)
+[----------] 3 tests from VulkanTensor (551 ms total)
+
+[----------] 3 tests from VulkanView
+[ RUN      ] VulkanView.MetadataAliasesSixStorageTypesWithoutDeviceAllocation
+[       OK ] VulkanView.MetadataAliasesSixStorageTypesWithoutDeviceAllocation (68 ms)
+[ RUN      ] VulkanView.PreparedAliasAndFixedRecorderRequireRealSharedRanges
+[       OK ] VulkanView.PreparedAliasAndFixedRecorderRequireRealSharedRanges (55 ms)
+[ RUN      ] VulkanView.OriginChangesReuseResourcesAndFailedRecordingCannotSubmit
+[       OK ] VulkanView.OriginChangesReuseResourcesAndFailedRecordingCannotSubmit (58 ms)
+[----------] 3 tests from VulkanView (183 ms total)
+
+[----------] 6 tests from VulkanGateNorm
+[ RUN      ] VulkanGateNorm.LayerNormUsesMatureRegionsThroughHighRankStorageAdapters
+[       OK ] VulkanGateNorm.LayerNormUsesMatureRegionsThroughHighRankStorageAdapters (91 ms)
+[ RUN      ] VulkanGateNorm.MatureLayerNormUsesNativeFallbackOutsideColdDeviceLimits
+[       OK ] VulkanGateNorm.MatureLayerNormUsesNativeFallbackOutsideColdDeviceLimits (55 ms)
+[ RUN      ] VulkanGateNorm.ThreeGatesSupportBothLayoutsAndOddByteOrigins
+[       OK ] VulkanGateNorm.ThreeGatesSupportBothLayoutsAndOddByteOrigins (373 ms)
+[ RUN      ] VulkanGateNorm.NormUsesFloatAccumulationAndIndependentParameterStorage
+[       OK ] VulkanGateNorm.NormUsesFloatAccumulationAndIndependentParameterStorage (812 ms)
+[ RUN      ] VulkanGateNorm.SpecialValuesStableVarianceRankEightAndPreciseAffine
+[       OK ] VulkanGateNorm.SpecialValuesStableVarianceRankEightAndPreciseAffine (201 ms)
+[ RUN      ] VulkanGateNorm.OddHalfRowsPreserveNeighborsInFixedRecorder
+[       OK ] VulkanGateNorm.OddHalfRowsPreserveNeighborsInFixedRecorder (273 ms)
+[----------] 6 tests from VulkanGateNorm (1807 ms total)
+
+[----------] 3 tests from VulkanConcat
+[ RUN      ] VulkanConcat.VariadicExactStorageAcrossEveryAxisAndStridedStorage
+[       OK ] VulkanConcat.VariadicExactStorageAcrossEveryAxisAndStridedStorage (762 ms)
+[ RUN      ] VulkanConcat.EmptyGroupsHugeEmptyBroadcastAndRepeatedInputs
+[       OK ] VulkanConcat.EmptyGroupsHugeEmptyBroadcastAndRepeatedInputs (65 ms)
+[ RUN      ] VulkanConcat.SharedWordBoundariesPreserveBorrowedNeighborsAndRejectAlias
+[       OK ] VulkanConcat.SharedWordBoundariesPreserveBorrowedNeighborsAndRejectAlias (84 ms)
+[----------] 3 tests from VulkanConcat (913 ms total)
+
+[----------] 9 tests from VulkanReduction
+[ RUN      ] VulkanReduction.MatureRowsCoverBothDispatchBoundariesAndHalfRounding
+[       OK ] VulkanReduction.MatureRowsCoverBothDispatchBoundariesAndHalfRounding (858 ms)
+[ RUN      ] VulkanReduction.MatureLongProbabilityRetainsLastBlockPeak
+[       OK ] VulkanReduction.MatureLongProbabilityRetainsLastBlockPeak (258 ms)
+[ RUN      ] VulkanReduction.MatureMasksPreserveScaleOrderAndF32IntermediateRounding
+[       OK ] VulkanReduction.MatureMasksPreserveScaleOrderAndF32IntermediateRounding (77 ms)
+[ RUN      ] VulkanReduction.MatureReductionRespectsColdGridLimits
+[       OK ] VulkanReduction.MatureReductionRespectsColdGridLimits (71 ms)
+[ RUN      ] VulkanReduction.AllTypesAxesLayoutsIdentitiesAndSignedZero
+[       OK ] VulkanReduction.AllTypesAxesLayoutsIdentitiesAndSignedZero (444 ms)
+[ RUN      ] VulkanReduction.SoftmaxMasksAxesCacheBoundaryAndOddViewOrigins
+[       OK ] VulkanReduction.SoftmaxMasksAxesCacheBoundaryAndOddViewOrigins (4447 ms)
+[ RUN      ] VulkanReduction.NonfiniteRowsTinyLogTailBroadcastAndRejection
+[       OK ] VulkanReduction.NonfiniteRowsTinyLogTailBroadcastAndRejection (116 ms)
+[ RUN      ] VulkanReduction.FixedRecorderPreservesGuardBytesAndRejectsAlias
+[       OK ] VulkanReduction.FixedRecorderPreservesGuardBytesAndRejectsAlias (135 ms)
+[ RUN      ] VulkanReduction.StatisticsBuffersAreReusedAndIndependentResultsSurviveClose
+[       OK ] VulkanReduction.StatisticsBuffersAreReusedAndIndependentResultsSurviveClose (62 ms)
+[----------] 9 tests from VulkanReduction (6472 ms total)
+
+[----------] 2 tests from VulkanProviderBridge
+[ RUN      ] VulkanProviderBridge.RouteProducerAndGgmlRegionShareOneDevice
+[       OK ] VulkanProviderBridge.RouteProducerAndGgmlRegionShareOneDevice (68 ms)
+[ RUN      ] VulkanProviderBridge.ExpertCallbackFailureReleasesSharedQueueLock
+[       OK ] VulkanProviderBridge.ExpertCallbackFailureReleasesSharedQueueLock (77 ms)
+[----------] 2 tests from VulkanProviderBridge (146 ms total)
+
+[----------] 30 tests from VulkanManaged
+[ RUN      ] VulkanManaged.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays
+[       OK ] VulkanManaged.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays (78 ms)
+[ RUN      ] VulkanManaged.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] VulkanManaged.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (118 ms)
+[ RUN      ] VulkanManaged.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] VulkanManaged.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (93 ms)
+[ RUN      ] VulkanManaged.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays
+[       OK ] VulkanManaged.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays (100 ms)
+[ RUN      ] VulkanManaged.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] VulkanManaged.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (7291 ms)
+[ RUN      ] VulkanManaged.D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] VulkanManaged.D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (79395 ms)
+[ RUN      ] VulkanManaged.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+[       OK ] VulkanManaged.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (3960 ms)
+[ RUN      ] VulkanManaged.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] VulkanManaged.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (10142 ms)
+[ RUN      ] VulkanManaged.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+[       OK ] VulkanManaged.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (652 ms)
+[ RUN      ] VulkanManaged.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] VulkanManaged.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (4390 ms)
+[ RUN      ] VulkanManaged.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay
+[       OK ] VulkanManaged.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay (3631 ms)
+[ RUN      ] VulkanManaged.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay
+[       OK ] VulkanManaged.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay (751 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (126 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialFfnUsesMaturePreparedCalls (283 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls (241 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (195 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls (195 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialAllRegionShapesReachMatureProvidersInOneBatch
+[       OK ] VulkanManaged.D5Qwen35OfficialAllRegionShapesReachMatureProvidersInOneBatch (112 ms)
+[ RUN      ] VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays (85 ms)
+[ RUN      ] VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary
+[       OK ] VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary (82 ms)
+[ RUN      ] VulkanManaged.DirectNormRebindsIndependentSlotsAndRetainsOldResults
+[       OK ] VulkanManaged.DirectNormRebindsIndependentSlotsAndRetainsOldResults (166 ms)
+[ RUN      ] VulkanManaged.ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters
+[       OK ] VulkanManaged.ByteUnalignedDenseViewsAndFixedRecorderUseFrozenAdapters (77 ms)
+[ RUN      ] VulkanManaged.PointwiseFamilyUsesRealProviderWithoutNormAnchor
+[       OK ] VulkanManaged.PointwiseFamilyUsesRealProviderWithoutNormAnchor (399 ms)
+[ RUN      ] VulkanManaged.SubtractDividePreserveBothBroadcastOrdersAndScalar
+[       OK ] VulkanManaged.SubtractDividePreserveBothBroadcastOrdersAndScalar (131 ms)
+[ RUN      ] VulkanManaged.StableTransformsPreserveSmallValuesAndHighRankHalfStorage
+[       OK ] VulkanManaged.StableTransformsPreserveSmallValuesAndHighRankHalfStorage (110 ms)
+[ RUN      ] VulkanManaged.CrossBroadcastAndDegenerateRankEightUseMatureArithmetic
+[       OK ] VulkanManaged.CrossBroadcastAndDegenerateRankEightUseMatureArithmetic (285 ms)
+[ RUN      ] VulkanManaged.ElementwiseDeviceLimitsRetainQualifiedFallbacks
+[       OK ] VulkanManaged.ElementwiseDeviceLimitsRetainQualifiedFallbacks (64 ms)
+[ RUN      ] VulkanManaged.PackedAndSeparateSwiGluRetainHighRankRowHalves
+[       OK ] VulkanManaged.PackedAndSeparateSwiGluRetainHighRankRowHalves (78 ms)
+[ RUN      ] VulkanManaged.B2MatureLinearPositionAndTransformReplay
+[       OK ] VulkanManaged.B2MatureLinearPositionAndTransformReplay (134 ms)
+[ RUN      ] VulkanManaged.B2MatureCausalGqaRetainsReplayResults
+[       OK ] VulkanManaged.B2MatureCausalGqaRetainsReplayResults (91 ms)
+[----------] 30 tests from VulkanManaged (113469 ms total)
+
+[----------] 8 tests from VulkanQwen38_24T
+[ RUN      ] VulkanQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] VulkanQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (6221 ms)
+[ RUN      ] VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+[       OK ] VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (1127 ms)
+[ RUN      ] VulkanQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores
+[       OK ] VulkanQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores (79 ms)
+[ RUN      ] VulkanQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] VulkanQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (3588 ms)
+[ RUN      ] VulkanQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] VulkanQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (15186 ms)
+[ RUN      ] VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay
+[       OK ] VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay (1881 ms)
+[ RUN      ] VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (18518 ms)
+[ RUN      ] VulkanQwen38_24T.D5ExactWidthCausalConvDirectReplay
+[       OK ] VulkanQwen38_24T.D5ExactWidthCausalConvDirectReplay (107 ms)
+[----------] 8 tests from VulkanQwen38_24T (46711 ms total)
+
+[----------] 13 tests from VulkanTopK
+[ RUN      ] VulkanTopK.IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries
+[       OK ] VulkanTopK.IntegerPaddingKeepsFinalWinnerAtLargePowerBoundaries (261 ms)
+[ RUN      ] VulkanTopK.PaddedScratchAndDispatchLimitsAreCheckedBeforeRecording
+[       OK ] VulkanTopK.PaddedScratchAndDispatchLimitsAreCheckedBeforeRecording (79 ms)
+[ RUN      ] VulkanTopK.FrozenExpertWidthsTailsAndStableRawOutputs
+[       OK ] VulkanTopK.FrozenExpertWidthsTailsAndStableRawOutputs (543 ms)
+[ RUN      ] VulkanTopK.AxisLayoutAdaptersPreserveInputHolesAndZeroStride
+[       OK ] VulkanTopK.AxisLayoutAdaptersPreserveInputHolesAndZeroStride (118 ms)
+[ RUN      ] VulkanTopK.OriginalLargeSortKeepsTheSameStableAndNanPolicy
+[       OK ] VulkanTopK.OriginalLargeSortKeepsTheSameStableAndNanPolicy (208 ms)
+[ RUN      ] VulkanTopK.RebindingByteOriginsRefreshesFrozenProviderViews
+[       OK ] VulkanTopK.RebindingByteOriginsRefreshesFrozenProviderViews (119 ms)
+[ RUN      ] VulkanTopK.CapturedDenseRankEightRetainsItsByteOrigin
+[       OK ] VulkanTopK.CapturedDenseRankEightRetainsItsByteOrigin (99 ms)
+[ RUN      ] VulkanTopK.EqualRowsNanPayloadsAndSignedZerosSurviveTailPadding
+[       OK ] VulkanTopK.EqualRowsNanPayloadsAndSignedZerosSurviveTailPadding (76 ms)
+[ RUN      ] VulkanTopK.RankEightAndRelaxedOrderUseTheSameOrdinaryEntry
+[       OK ] VulkanTopK.RankEightAndRelaxedOrderUseTheSameOrdinaryEntry (78 ms)
+[ RUN      ] VulkanTopK.RecorderValidatesTwoOutputBindingsAndReplaysChangedInput
+[       OK ] VulkanTopK.RecorderValidatesTwoOutputBindingsAndReplaysChangedInput (88 ms)
+[ RUN      ] VulkanTopK.EmptyDomainAndInvalidPreparationHaveNoPayloadFallback
+[       OK ] VulkanTopK.EmptyDomainAndInvalidPreparationHaveNoPayloadFallback (72 ms)
+[ RUN      ] VulkanTopK.QuotaFailureRollsBackAndFreshInvocationStillWorks
+[       OK ] VulkanTopK.QuotaFailureRollsBackAndFreshInvocationStillWorks (81 ms)
+[ RUN      ] VulkanTopK.ColdMultiOutputSsaRejectsMissingDuplicateAndSelfProducedIds
+[       OK ] VulkanTopK.ColdMultiOutputSsaRejectsMissingDuplicateAndSelfProducedIds (96 ms)
+[----------] 13 tests from VulkanTopK (1926 ms total)
+
+[----------] 8 tests from VulkanGather
+[ RUN      ] VulkanGather.RejectsNativeGetRowsLimitsDuringPreparation
+[       OK ] VulkanGather.RejectsNativeGetRowsLimitsDuringPreparation (88 ms)
+[ RUN      ] VulkanGather.AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows
+[       OK ] VulkanGather.AllScalarStorageAxesAndRawPayloadsUseOriginalGetRows (357 ms)
+[ RUN      ] VulkanGather.WideRowsCoverEveryNativeWorkgroup
+[       OK ] VulkanGather.WideRowsCoverEveryNativeWorkgroup (273 ms)
+[ RUN      ] VulkanGather.OddStridesBroadcastIndicesScalarAndRankEight
+[       OK ] VulkanGather.OddStridesBroadcastIndicesScalarAndRankEight (153 ms)
+[ RUN      ] VulkanGather.BadIndicesPreserveRecordedOutputAndRetireOnlyFailedSlot
+[       OK ] VulkanGather.BadIndicesPreserveRecordedOutputAndRetireOnlyFailedSlot (152 ms)
+[ RUN      ] VulkanGather.ByteOriginsWorkForCapturedAndDynamicTablesAndIndices
+[       OK ] VulkanGather.ByteOriginsWorkForCapturedAndDynamicTablesAndIndices (159 ms)
+[ RUN      ] VulkanGather.EmptyIndicesAndEmptyResultStillRespectCheckedDomain
+[       OK ] VulkanGather.EmptyIndicesAndEmptyResultStillRespectCheckedDomain (106 ms)
+[ RUN      ] VulkanGather.RecorderRetainsErrorsFromEveryAppendedCheckedProgram
+[       OK ] VulkanGather.RecorderRetainsErrorsFromEveryAppendedCheckedProgram (96 ms)
+[----------] 8 tests from VulkanGather (1388 ms total)
+
+[----------] 5 tests from VulkanScan
+[ RUN      ] VulkanScan.NativeWidthsAndRaggedRowsMatchIndependentPrefix
+[       OK ] VulkanScan.NativeWidthsAndRaggedRowsMatchIndependentPrefix (1736 ms)
+[ RUN      ] VulkanScan.ArbitraryAxesStridesRankEightAndEmpty
+[       OK ] VulkanScan.ArbitraryAxesStridesRankEightAndEmpty (352 ms)
+[ RUN      ] VulkanScan.RowDispatchHandlesTheSecondNativeGridBoundary
+[       OK ] VulkanScan.RowDispatchHandlesTheSecondNativeGridBoundary (452 ms)
+[ RUN      ] VulkanScan.RebindsOriginsPreservesSnapshotsAndHandlesNonfinitePrefixes
+[       OK ] VulkanScan.RebindsOriginsPreservesSnapshotsAndHandlesNonfinitePrefixes (107 ms)
+[ RUN      ] VulkanScan.RejectsFloatNativeLimitsBeforeSubmission
+[       OK ] VulkanScan.RejectsFloatNativeLimitsBeforeSubmission (67 ms)
+[----------] 5 tests from VulkanScan (2716 ms total)
+
+[----------] 8 tests from VulkanIntegerScan
+[ RUN      ] VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix
+[       OK ] VulkanIntegerScan.HierarchicalWidthsMatchIndependentWidePrefix (189 ms)
+[ RUN      ] VulkanIntegerScan.LocalBlockOverflowDoesNotRejectLegalGlobalPrefixes
+[       OK ] VulkanIntegerScan.LocalBlockOverflowDoesNotRejectLegalGlobalPrefixes (117 ms)
+[ RUN      ] VulkanIntegerScan.AxesStridesRankEightAndEmptyPreserveInputs
+[       OK ] VulkanIntegerScan.AxesStridesRankEightAndEmptyPreserveInputs (165 ms)
+[ RUN      ] VulkanIntegerScan.EveryPrefixAndExclusiveFinalTotalAreChecked
+[       OK ] VulkanIntegerScan.EveryPrefixAndExclusiveFinalTotalAreChecked (140 ms)
+[ RUN      ] VulkanIntegerScan.LateRowFailurePreservesEntireRecordedOutput
+[       OK ] VulkanIntegerScan.LateRowFailurePreservesEntireRecordedOutput (152 ms)
+[ RUN      ] VulkanIntegerScan.OriginsIndependentSlotsAndRetainedResults
+[       OK ] VulkanIntegerScan.OriginsIndependentSlotsAndRetainedResults (152 ms)
+[ RUN      ] VulkanIntegerScan.FrozenNonLastAxisLimitsRejectBeforeSubmission
+[       OK ] VulkanIntegerScan.FrozenNonLastAxisLimitsRejectBeforeSubmission (58 ms)
+[ RUN      ] VulkanIntegerScan.FrozenNonLastAxisQuotaAndRetainedResult
+[       OK ] VulkanIntegerScan.FrozenNonLastAxisQuotaAndRetainedResult (88 ms)
+[----------] 8 tests from VulkanIntegerScan (1066 ms total)
+
+[----------] 9 tests from VulkanScatter
+[ RUN      ] VulkanScatter.AssignPreservesAllStorageBitsAndLastLogicalUpdate
+[       OK ] VulkanScatter.AssignPreservesAllStorageBitsAndLastLogicalUpdate (375 ms)
+[ RUN      ] VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate
+[       OK ] VulkanScatter.AddIncludesBaseAndEveryDuplicateUpdate (167 ms)
+[ RUN      ] VulkanScatter.OrdinaryCheckedAddBindsManagedGgmlRegion
+[       OK ] VulkanScatter.OrdinaryCheckedAddBindsManagedGgmlRegion (77 ms)
+[ RUN      ] VulkanScatter.AxesRankEightMultidimensionalIndicesAndByteStrides
+[       OK ] VulkanScatter.AxesRankEightMultidimensionalIndicesAndByteStrides (113 ms)
+[ RUN      ] VulkanScatter.EmptyAndLongUnsortedIndexListsUseOriginalStableSort
+[       OK ] VulkanScatter.EmptyAndLongUnsortedIndexListsUseOriginalStableSort (178 ms)
+[ RUN      ] VulkanScatter.CheckedFailurePreservesAllOutputAndAllowsFreshSlot
+[       OK ] VulkanScatter.CheckedFailurePreservesAllOutputAndAllowsFreshSlot (151 ms)
+[ RUN      ] VulkanScatter.ByteOriginsIndependentReplaysAndRetainedResults
+[       OK ] VulkanScatter.ByteOriginsIndependentReplaysAndRetainedResults (159 ms)
+[ RUN      ] VulkanScatter.ColdMetadataAndNativeLimitsRejectWithoutSubmission
+[       OK ] VulkanScatter.ColdMetadataAndNativeLimitsRejectWithoutSubmission (74 ms)
+[ RUN      ] VulkanScatter.QuotaFailureRollsBackAndCloseKeepsCompletedOutputs
+[       OK ] VulkanScatter.QuotaFailureRollsBackAndCloseKeepsCompletedOutputs (83 ms)
+[----------] 9 tests from VulkanScatter (1383 ms total)
+
+[----------] 6 tests from VulkanRecurrent
+[ RUN      ] VulkanRecurrent.OriginalDirectStateAndIndependentRetainedOutputs
+[       OK ] VulkanRecurrent.OriginalDirectStateAndIndependentRetainedOutputs (216 ms)
+[ RUN      ] VulkanRecurrent.RejectsUnsupportedDomainAndPreservesSuccessfulBinding
+[       OK ] VulkanRecurrent.RejectsUnsupportedDomainAndPreservesSuccessfulBinding (71 ms)
+[ RUN      ] VulkanRecurrent.PerChannelKdaGateUsesMatureManagedRegion
+[       OK ] VulkanRecurrent.PerChannelKdaGateUsesMatureManagedRegion (59 ms)
+[ RUN      ] VulkanRecurrent.MatureCausalConvUsesManagedRegion
+[       OK ] VulkanRecurrent.MatureCausalConvUsesManagedRegion (61 ms)
+[ RUN      ] VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions
+[       OK ] VulkanRecurrent.MatureMoeAndHyperConnectionBatchUsesManagedRegions (90 ms)
+[ RUN      ] VulkanRecurrent.MatureLightningIndexerUsesManagedRegion
+[       OK ] VulkanRecurrent.MatureLightningIndexerUsesManagedRegion (67 ms)
+[----------] 6 tests from VulkanRecurrent (566 ms total)
+
+[----------] 2 tests from VulkanMxfp4
+[ RUN      ] VulkanMxfp4.OriginalDirectRepeatedSlotsKeepCompressedInputsAndResults
+[       OK ] VulkanMxfp4.OriginalDirectRepeatedSlotsKeepCompressedInputsAndResults (97 ms)
+[ RUN      ] VulkanMxfp4.RejectsUnrelatedEncodingAndPlainMathOnCompressedStorage
+[       OK ] VulkanMxfp4.RejectsUnrelatedEncodingAndPlainMathOnCompressedStorage (53 ms)
+[----------] 2 tests from VulkanMxfp4 (151 ms total)
+
+[----------] 5 tests from VulkanGguf
+[ RUN      ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays
+[       OK ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays (631 ms)
+[ RUN      ] VulkanGguf.TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication
+[       OK ] VulkanGguf.TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication (95 ms)
+[ RUN      ] VulkanGguf.PackedIq4XsGroupedExpertsUseNativeMulMatId
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(155): error: Value of: v::detail::Access::program(*program)->dispatches.back().region
+  Actual: false
+Expected: true
+
+[  FAILED  ] VulkanGguf.PackedIq4XsGroupedExpertsUseNativeMulMatId (97 ms)
+[ RUN      ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(196): error: Value of: v::detail::Access::program(*program)->dispatches.back().region
+  Actual: false
+Expected: true
+
+[  FAILED  ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (66 ms)
+[ RUN      ] VulkanGguf.RejectsMalformedFormatAndPackedStorageOnWrongPorts
+[       OK ] VulkanGguf.RejectsMalformedFormatAndPackedStorageOnWrongPorts (56 ms)
+[----------] 5 tests from VulkanGguf (948 ms total)
+
+[----------] 4 tests from VulkanIree
+[ RUN      ] VulkanIree.OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire
+[       OK ] VulkanIree.OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire (149 ms)
+[ RUN      ] VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs
+[       OK ] VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs (120 ms)
+[ RUN      ] VulkanIree.CheckedScanAutomaticallyAdvancesAndStopsBeforePublishingFailure
+[       OK ] VulkanIree.CheckedScanAutomaticallyAdvancesAndStopsBeforePublishingFailure (143 ms)
+[ RUN      ] VulkanIree.Float8RejectsMismatchedScalesAndUnavailableLaunchDomain
+[       OK ] VulkanIree.Float8RejectsMismatchedScalesAndUnavailableLaunchDomain (70 ms)
+[----------] 4 tests from VulkanIree (483 ms total)
+
+[----------] 12 tests from VulkanMatureTensor
+[ RUN      ] VulkanMatureTensor.CrossBroadcastUsesOriginalRegionAtRankTwoSixAndEight
+[       OK ] VulkanMatureTensor.CrossBroadcastUsesOriginalRegionAtRankTwoSixAndEight (245 ms)
+[ RUN      ] VulkanMatureTensor.ArbitraryAxesKeepDimensionsAndExactRowTiles
+[       OK ] VulkanMatureTensor.ArbitraryAxesKeepDimensionsAndExactRowTiles (180 ms)
+[ RUN      ] VulkanMatureTensor.CopyPreservesBitsAndConcatRestoresHighRankAxes
+[       OK ] VulkanMatureTensor.CopyPreservesBitsAndConcatRestoresHighRankAxes (75 ms)
+[ RUN      ] VulkanMatureTensor.HighRankNormAndUnaryStayInMatureRegion
+[       OK ] VulkanMatureTensor.HighRankNormAndUnaryStayInMatureRegion (59 ms)
+[ RUN      ] VulkanMatureTensor.IntegerCopyPreservesBitsInIndependentStorage
+[       OK ] VulkanMatureTensor.IntegerCopyPreservesBitsInIndependentStorage (57 ms)
+[ RUN      ] VulkanMatureTensor.SoftmaxAxesAndBroadcastMasksUseOriginalRegions
+[       OK ] VulkanMatureTensor.SoftmaxAxesAndBroadcastMasksUseOriginalRegions (1093 ms)
+[ RUN      ] VulkanMatureTensor.SoftmaxMaskKeepsScaleRoundingAndExceptionalRows
+[       OK ] VulkanMatureTensor.SoftmaxMaskKeepsScaleRoundingAndExceptionalRows (73 ms)
+[ RUN      ] VulkanMatureTensor.StorageConcatPreservesBitsAcrossEmptyPortsAndAllAxes
+[       OK ] VulkanMatureTensor.StorageConcatPreservesBitsAcrossEmptyPortsAndAllAxes (257 ms)
+[ RUN      ] VulkanMatureTensor.EverySixteenBitPatternCopiesAndConvertsWithOddTail
+[       OK ] VulkanMatureTensor.EverySixteenBitPatternCopiesAndConvertsWithOddTail (132 ms)
+[ RUN      ] VulkanMatureTensor.NarrowingPreservesNanClassAndNearestEvenBoundaries
+[       OK ] VulkanMatureTensor.NarrowingPreservesNanClassAndNearestEvenBoundaries (154 ms)
+[ RUN      ] VulkanMatureTensor.LowPrecisionFamiliesUseOriginalProvidersAndFloatGamma
+[       OK ] VulkanMatureTensor.LowPrecisionFamiliesUseOriginalProvidersAndFloatGamma (237 ms)
+[ RUN      ] VulkanMatureTensor.BFloatConversionAllocationFailureReleasesQuota
+[       OK ] VulkanMatureTensor.BFloatConversionAllocationFailureReleasesQuota (54 ms)
+[----------] 12 tests from VulkanMatureTensor (2623 ms total)
+
+[----------] 8 tests from D5OfficialAndPrimaryGguf/VulkanQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (185 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1 (190 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (732 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (738 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (236 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (360 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (258 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (259 ms)
+[----------] 8 tests from D5OfficialAndPrimaryGguf/VulkanQwen38Profiles (2961 ms total)
+
+[----------] 4 tests from D5FidelityGguf/VulkanQwen38Profiles
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (272 ms)
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (677 ms)
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (141 ms)
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (231 ms)
+[----------] 4 tests from D5FidelityGguf/VulkanQwen38Profiles (1324 ms total)
+
+[----------] 4 tests from D5Official24T/VulkanQwen38Profiles
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (286 ms)
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (306 ms)
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (134 ms)
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (429 ms)
+[----------] 4 tests from D5Official24T/VulkanQwen38Profiles (1156 ms total)
+
+[----------] 6 tests from D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary
+[ RUN      ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0
+[       OK ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0 (1617 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1
+[       OK ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1 (3437 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2
+[       OK ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2 (5045 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0
+[       OK ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0 (313 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1
+[       OK ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1 (439 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2
+[       OK ] D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2 (713 ms)
+[----------] 6 tests from D5Official2B27BAnd24T/VulkanQwenOfficialVocabulary (11567 ms total)
+
+[----------] 12 tests from D5ExactQwenGguf/VulkanQwenGgufVocabulary
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (474 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (2048 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (834 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (3921 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (783 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (1532 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (134 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (418 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (174 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (259 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (253 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactQwenGguf/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (473 ms)
+[----------] 12 tests from D5ExactQwenGguf/VulkanQwenGgufVocabulary (11308 ms total)
+
+[----------] 2 tests from D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0 (116 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/1 (132 ms)
+[----------] 2 tests from D5OfficialAndPrimaryGguf/VulkanQwen38GdnProfiles (248 ms total)
+
+[----------] 1 test from D5FidelityGguf/VulkanQwen38GdnProfiles
+[ RUN      ] D5FidelityGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0
+[       OK ] D5FidelityGguf/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0 (98 ms)
+[----------] 1 test from D5FidelityGguf/VulkanQwen38GdnProfiles (98 ms total)
+
+[----------] 1 test from D5Official24T/VulkanQwen38GdnProfiles
+[ RUN      ] D5Official24T/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0
+[       OK ] D5Official24T/VulkanQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryRouteAndReplays/0 (98 ms)
+[----------] 1 test from D5Official24T/VulkanQwen38GdnProfiles (98 ms total)
+
+[----------] Global test environment tear-down
+[==========] 193 tests from 30 test suites ran. (214221 ms total)
+[  PASSED  ] 191 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] VulkanGguf.PackedIq4XsGroupedExpertsUseNativeMulMatId
+[  FAILED  ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+
+ 2 FAILED TESTS
+<end of output>
+Test time = 214.26 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_compute_route_vulkan_test" end time: Sep 26 11:52 中国标准时间
+"hyle_compute_route_vulkan_test" time elapsed: 00:03:34
+----------------------------------------------------------
+
+50/56 Testing: hyle_graph_route_vulkan_test
+50/56 Test: hyle_graph_route_vulkan_test
+Command: "C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/bin/hyle_graph_route_vulkan_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build/m2-vulkan-indexed/tests/graph_route_vulkan
+"hyle_graph_route_vulkan_test" start time: Sep 26 11:52 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 104 tests from 12 test suites.
+[----------] Global test environment set-up.
+[----------] 38 tests from VulkanGraph
+[ RUN      ] VulkanGraph.FiveViewsReassembleWithoutIntermediateCopiesAndKeepOldResults
+[       OK ] VulkanGraph.FiveViewsReassembleWithoutIntermediateCopiesAndKeepOldResults (192 ms)
+[ RUN      ] VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots
+[       OK ] VulkanGraph.GateNormResidualUsesSharedMixedParametersAndIndependentSlots (380 ms)
+[ RUN      ] VulkanGraph.GatherSharesCapturedTableAndPreservesIndependentResults
+[       OK ] VulkanGraph.GatherSharesCapturedTableAndPreservesIndependentResults (64 ms)
+[ RUN      ] VulkanGraph.FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph
+[       OK ] VulkanGraph.FullFfnReplayTwoSlotsRetainedResultsAndDestroyedGraph (67 ms)
+[ RUN      ] VulkanGraph.MatureMatMulAndCustomSpirvPrepareOnceThenReplay
+[       OK ] VulkanGraph.MatureMatMulAndCustomSpirvPrepareOnceThenReplay (58 ms)
+[ RUN      ] VulkanGraph.RejectsMissingMismatchedConstantsAndInputOnlyOutput
+[       OK ] VulkanGraph.RejectsMissingMismatchedConstantsAndInputOnlyOutput (49 ms)
+[ RUN      ] VulkanGraph.ReportOutlivesBorrowedConstantsCustomPayloadAndDevice
+[       OK ] VulkanGraph.ReportOutlivesBorrowedConstantsCustomPayloadAndDevice (47 ms)
+[ RUN      ] VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy
+[       OK ] VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy (112 ms)
+[ RUN      ] VulkanGraph.CheckedScanChainsTwoOriginalProgramsWithIndependentResults
+[       OK ] VulkanGraph.CheckedScanChainsTwoOriginalProgramsWithIndependentResults (90 ms)
+[ RUN      ] VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays (67 ms)
+[ RUN      ] VulkanGraph.ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks
+[       OK ] VulkanGraph.ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks (55 ms)
+[ RUN      ] VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries
+[       OK ] VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries (471 ms)
+[ RUN      ] VulkanGraph.ManagedSiluKeepsTheCommonInfinityAndNanSemantics
+[       OK ] VulkanGraph.ManagedSiluKeepsTheCommonInfinityAndNanSemantics (58 ms)
+[ RUN      ] VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds
+[       OK ] VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds (88 ms)
+[ RUN      ] VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks
+[       OK ] VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks (61 ms)
+[ RUN      ] VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion
+[       OK ] VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion (54 ms)
+[ RUN      ] VulkanGraph.MatureMaskedSoftmaxPublishesAxisRestoredResultsAcrossSlots
+[       OK ] VulkanGraph.MatureMaskedSoftmaxPublishesAxisRestoredResultsAcrossSlots (227 ms)
+[ RUN      ] VulkanGraph.MatureStorageConcatKeepsEmptyBindingsAndPublishedResults
+[       OK ] VulkanGraph.MatureStorageConcatKeepsEmptyBindingsAndPublishedResults (125 ms)
+[ RUN      ] VulkanGraph.MatureHighRankL2RetainsPublishedReductionAndIndependentSlots
+[       OK ] VulkanGraph.MatureHighRankL2RetainsPublishedReductionAndIndependentSlots (61 ms)
+[ RUN      ] VulkanGraph.BFloatPublishedRoundingBoundariesRetainIndependentMixedProviderResults
+[       OK ] VulkanGraph.BFloatPublishedRoundingBoundariesRetainIndependentMixedProviderResults (107 ms)
+[ RUN      ] VulkanGraph.OriginalMxfp4RegionChainsResidentWeightsAndPublishesForks
+[       OK ] VulkanGraph.OriginalMxfp4RegionChainsResidentWeightsAndPublishesForks (54 ms)
+[ RUN      ] VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry
+[       OK ] VulkanGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry (92 ms)
+[ RUN      ] VulkanGraph.MatureLightningIndexerUsesOrdinaryGraphEntry
+[       OK ] VulkanGraph.MatureLightningIndexerUsesOrdinaryGraphEntry (54 ms)
+[ RUN      ] VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks
+[       OK ] VulkanGraph.OriginalRecurrentRegionsKeepStateEdgesAndPublishedForks (60 ms)
+[ RUN      ] VulkanGraph.HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots
+[       OK ] VulkanGraph.HalfL2AndMaskedProbabilityReplayAcrossIndependentSlots (144 ms)
+[ RUN      ] VulkanGraph.OddInnerMatureProbabilityAndNativeLogarithmPreserveOldResults
+[       OK ] VulkanGraph.OddInnerMatureProbabilityAndNativeLogarithmPreserveOldResults (59 ms)
+[ RUN      ] VulkanGraph.ScanUsesNativeRegionAndPreservesIndependentReplays
+[       OK ] VulkanGraph.ScanUsesNativeRegionAndPreservesIndependentReplays (259 ms)
+[ RUN      ] VulkanGraph.IntegerScanOffsetsFeedNativeGatherAndNormWithCheckedFailure
+[       OK ] VulkanGraph.IntegerScanOffsetsFeedNativeGatherAndNormWithCheckedFailure (266 ms)
+[ RUN      ] VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults
+[       OK ] VulkanGraph.ScanScatterGatherNormKeepsOrderedUpdatesAndIndependentResults (282 ms)
+[ RUN      ] VulkanGraph.TypedResidualMaskReplayMatchesDirectRecordingAndIndependentMath
+[       OK ] VulkanGraph.TypedResidualMaskReplayMatchesDirectRecordingAndIndependentMath (997 ms)
+[ RUN      ] VulkanGraph.TopKLargePaddingKeepsFinalWinnerInsideManagedRegion
+[       OK ] VulkanGraph.TopKLargePaddingKeepsFinalWinnerInsideManagedRegion (102 ms)
+[ RUN      ] VulkanGraph.TopKBothPortsHaveIndependentLivenessAndOldResultOwners
+[       OK ] VulkanGraph.TopKBothPortsHaveIndependentLivenessAndOldResultOwners (76 ms)
+[ RUN      ] VulkanGraph.TopKCapturedSliceAddsRootAndAliasByteOrigins
+[       OK ] VulkanGraph.TopKCapturedSliceAddsRootAndAliasByteOrigins (79 ms)
+[ RUN      ] VulkanGraph.TopKComposesWithMaturePointwiseAndPublishesRawIndices
+[       OK ] VulkanGraph.TopKComposesWithMaturePointwiseAndPublishesRawIndices (62 ms)
+[ RUN      ] VulkanGraph.PublishedViewsKeepTheirComputedRootsLiveAcrossLaterDispatches
+[       OK ] VulkanGraph.PublishedViewsKeepTheirComputedRootsLiveAcrossLaterDispatches (238 ms)
+[ RUN      ] VulkanGraph.InputAliasChainsRebindOddOriginsAndKeepOldInputStorage
+[       OK ] VulkanGraph.InputAliasChainsRebindOddOriginsAndKeepOldInputStorage (70 ms)
+[ RUN      ] VulkanGraph.ConstantViewsShareMatureRegionBindingAndRetainItsRoot
+[       OK ] VulkanGraph.ConstantViewsShareMatureRegionBindingAndRetainItsRoot (59 ms)
+[ RUN      ] VulkanGraph.ConstantViewsNeedNoDeviceStorageAndRetainOriginalOwners
+[       OK ] VulkanGraph.ConstantViewsNeedNoDeviceStorageAndRetainOriginalOwners (56 ms)
+[----------] 38 tests from VulkanGraph (5463 ms total)
+
+[----------] 17 tests from VulkanGraphD5
+[ RUN      ] VulkanGraphD5.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays
+[       OK ] VulkanGraphD5.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays (91 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] VulkanGraphD5.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (66 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] VulkanGraphD5.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (64 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays
+[       OK ] VulkanGraphD5.D5Qwen35FidelityGgufF16EmbeddingUsesOneMatureStepAndReplays (73 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] VulkanGraphD5.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (7514 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] VulkanGraphD5.D5Qwen38PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (97838 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+[       OK ] VulkanGraphD5.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (6343 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] VulkanGraphD5.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (10115 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+[       OK ] VulkanGraphD5.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (654 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] VulkanGraphD5.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (4421 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay
+[       OK ] VulkanGraphD5.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay (4003 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay
+[       OK ] VulkanGraphD5.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay (854 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] VulkanGraphD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (153 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] VulkanGraphD5.D5Qwen35OfficialFfnUsesMaturePreparedCalls (290 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls
+[       OK ] VulkanGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls (194 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] VulkanGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (249 ms)
+[ RUN      ] VulkanGraphD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls
+[       OK ] VulkanGraphD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls (171 ms)
+[----------] 17 tests from VulkanGraphD5 (133101 ms total)
+
+[----------] 8 tests from VulkanGraphQwen38_24T
+[ RUN      ] VulkanGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] VulkanGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (5778 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+[       OK ] VulkanGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (1175 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores
+[       OK ] VulkanGraphQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores (145 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] VulkanGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (3785 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] VulkanGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (15674 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+[       OK ] VulkanGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (2182 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (18326 ms)
+[ RUN      ] VulkanGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay
+[       OK ] VulkanGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay (76 ms)
+[----------] 8 tests from VulkanGraphQwen38_24T (47144 ms total)
+
+[----------] 3 tests from VulkanGraphGguf
+[ RUN      ] VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays
+[       OK ] VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays (82 ms)
+[ RUN      ] VulkanGraphGguf.PackedIq4XsGroupedExpertsUseCapturedMulMatId
+[       OK ] VulkanGraphGguf.PackedIq4XsGroupedExpertsUseCapturedMulMatId (87 ms)
+[ RUN      ] VulkanGraphGguf.DenseBfloatGroupedExpertsUseCapturedMulMatIdAndReplay
+[       OK ] VulkanGraphGguf.DenseBfloatGroupedExpertsUseCapturedMulMatIdAndReplay (100 ms)
+[----------] 3 tests from VulkanGraphGguf (271 ms total)
+
+[----------] 8 tests from D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (196 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1 (199 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (675 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (907 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (237 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (157 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (242 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (239 ms)
+[----------] 8 tests from D5OfficialAndPrimaryGguf/VulkanGraphQwen38Profiles (2855 ms total)
+
+[----------] 4 tests from D5FidelityGguf/VulkanGraphQwen38Profiles
+[ RUN      ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (196 ms)
+[ RUN      ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (700 ms)
+[ RUN      ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (148 ms)
+[ RUN      ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5FidelityGguf/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (247 ms)
+[----------] 4 tests from D5FidelityGguf/VulkanGraphQwen38Profiles (1293 ms total)
+
+[----------] 4 tests from D5Official24T/VulkanGraphQwen38Profiles
+[ RUN      ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (277 ms)
+[ RUN      ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (322 ms)
+[ RUN      ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (160 ms)
+[ RUN      ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5Official24T/VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (414 ms)
+[----------] 4 tests from D5Official24T/VulkanGraphQwen38Profiles (1175 ms total)
+
+[----------] 6 tests from D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary
+[ RUN      ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0
+[       OK ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0 (2086 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1
+[       OK ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1 (3342 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2
+[       OK ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2 (5155 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0
+[       OK ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0 (193 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1
+[       OK ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1 (539 ms)
+[ RUN      ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2
+[       OK ] D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2 (919 ms)
+[----------] 6 tests from D5Official2B27BAnd24T/VulkanGraphQwenOfficialVocabulary (12237 ms total)
+
+[----------] 12 tests from D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (377 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (2213 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (792 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (3838 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (861 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (1788 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (317 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (441 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (310 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (243 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (223 ms)
+[ RUN      ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (355 ms)
+[----------] 12 tests from D5ExactQwenGguf/VulkanGraphQwenGgufVocabulary (11765 ms total)
+
+[----------] 2 tests from D5OfficialAndPrimaryGguf/VulkanGraphQwen38GdnProfiles
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/0 (99 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/1 (95 ms)
+[----------] 2 tests from D5OfficialAndPrimaryGguf/VulkanGraphQwen38GdnProfiles (195 ms total)
+
+[----------] 1 test from D5FidelityGguf/VulkanGraphQwen38GdnProfiles
+[ RUN      ] D5FidelityGguf/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/0
+[       OK ] D5FidelityGguf/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/0 (77 ms)
+[----------] 1 test from D5FidelityGguf/VulkanGraphQwen38GdnProfiles (77 ms total)
+
+[----------] 1 test from D5Official24T/VulkanGraphQwen38GdnProfiles
+[ RUN      ] D5Official24T/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/0
+[       OK ] D5Official24T/VulkanGraphQwen38GdnProfiles.D5Qwen38GroupedHeadGdnUsesOrdinaryGraphAndReplays/0 (100 ms)
+[----------] 1 test from D5Official24T/VulkanGraphQwen38GdnProfiles (100 ms total)
+
+[----------] Global test environment tear-down
+[==========] 104 tests from 12 test suites ran. (215681 ms total)
+[  PASSED  ] 104 tests.
+<end of output>
+Test time = 215.74 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_vulkan_test" end time: Sep 26 11:55 中国标准时间
+"hyle_graph_route_vulkan_test" time elapsed: 00:03:35
+----------------------------------------------------------
+
+End testing: Sep 26 11:55 中国标准时间
+
+compute_route_vulkan = 214.26 sec*proc
+
+graph_route_vulkan = 215.74 sec*proc
+
