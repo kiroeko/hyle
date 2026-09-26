@@ -1,0 +1,43 @@
+{
+  "candidate": "5a298870a9c412f7f7edb918d0b9aa1834dbcf00",
+  "route": "cuda",
+  "factors": [
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f40-glm-mixed\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 9.17
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f40-glm-mixed\\cuda\\tests.xml"
+      ],
+      "returncode": 8,
+      "seconds": 41.36
+    }
+  ],
+  "test_filter": "*MoeFragments.D5GlmOfficialMixedRemaining:*MoeFragments.D5GlmOfficialFp8FullMoe:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn:*MoeFragments.D5GlmGgufDenseFfn:*MoeFragments.D5GlmGgufAbsorbedMlaWithCache:*MoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+}

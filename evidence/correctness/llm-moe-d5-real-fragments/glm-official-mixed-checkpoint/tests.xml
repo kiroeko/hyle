@@ -1,0 +1,2291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="2"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="41"
+	timestamp="2026-09-27T05:31:29"
+	>
+	<testcase name="hyle_compute_route_cuda_test" classname="hyle_compute_route_cuda_test" time="20.624" status="fail">
+		<failure message="Failed"/>
+		<properties>
+			<property name="cmake_labels" value="compute_route_cuda"/>
+		</properties>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5GlmOfficialMixedRemaining:*MoeFragments.D5GlmOfficialFp8FullMoe:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn:*MoeFragments.D5GlmGgufDenseFfn:*MoeFragments.D5GlmGgufAbsorbedMlaWithCache:*MoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+[==========] Running 6 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 6 tests from CudaMoeFragments
+[ RUN      ] CudaMoeFragments.D5GlmOfficialFp8FullMoe
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5GlmOfficialFp8FullMoe (446 ms)
+[ RUN      ] CudaMoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5GlmOfficialDynamicFp8SharedFfn (146 ms)
+[ RUN      ] CudaMoeFragments.D5GlmOfficialMixedRemaining
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000152587890625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.004241943359375,
+expected[index] evaluates to 0.00439453125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012986328511033207.
+962
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 0
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0001678466796875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00101470947265625,
+expected[index] evaluates to 0.00118255615234375, and
+absolute + relative * std::abs(expected[index]) evaluates to 4.9563903303351253e-05.
+2317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 0
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000164031982421875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.000888824462890625,
+expected[index] evaluates to 0.0010528564453125, and
+absolute + relative * std::abs(expected[index]) evaluates to 4.632140917237848e-05.
+3341
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 0
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000457763671875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.006988525390625,
+expected[index] evaluates to -0.00653076171875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00018326903227716684.
+1212
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 1
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 9.918212890625e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00162506103515625,
+expected[index] evaluates to 0.0017242431640625, and
+absolute + relative * std::abs(expected[index]) evaluates to 6.3106082961894572e-05.
+578
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 2
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00016069412231445312, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.0001220703125,
+expected[index] evaluates to 3.8623809814453125e-05, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.0965595467714593e-05.
+2317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 2
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 8.96453857421875e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.000431060791015625,
+expected[index] evaluates to -0.0003414154052734375, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.8535385354189202e-05.
+3194
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 2
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032294541597366333, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0052026063203811646,
+expected[index] evaluates to 0.0048796609044075012, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00014199152064975351.
+1265
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031543057411909103, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011404573917388916,
+expected[index] evaluates to 0.011089143343269825, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00029722860199399292.
+2801
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031844200566411018, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0060108453035354614,
+expected[index] evaluates to 0.0056924032978713512, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00016231008339673281.
+4337
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031862780451774597, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0049473047256469727,
+expected[index] evaluates to 0.0046286769211292267, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00013571692397817969.
+7409
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031962338835000992, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0048154592514038086,
+expected[index] evaluates to 0.0044958358630537987, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00013239590043667704.
+8945
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032228697091341019, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0037895441055297852,
+expected[index] evaluates to 0.003467257134616375, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.0001066814293153584.
+10481
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031692814081907272, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0099192112684249878,
+expected[index] evaluates to 0.0096022831276059151, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00026005707331933081.
+12017
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003197183832526207, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.006796911358833313,
+expected[index] evaluates to 0.0064771929755806923, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00018192981951870024.
+13553
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003132987767457962, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0098333954811096191,
+expected[index] evaluates to 0.0095200967043638229, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00025800243020057678.
+15089
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031831813976168633, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0055515766143798828,
+expected[index] evaluates to 0.0052332584746181965, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015083147445693612.
+16625
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031599868088960648, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011067822575569153,
+expected[index] evaluates to 0.010751823894679546, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00028879562160000205.
+18161
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032096356153488159, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0029232650995254517,
+expected[index] evaluates to 0.0026023015379905701, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5057537944521755e-05.
+19697
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031977612525224686, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0067065060138702393,
+expected[index] evaluates to 0.0063867298886179924, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00017966824816539884.
+21233
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032291002571582794, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0045318454504013062,
+expected[index] evaluates to 0.0042089354246854782, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012522339238785207.
+22769
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031451135873794556, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011227995157241821,
+expected[index] evaluates to 0.010913483798503876, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00029283709591254592.
+24305
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031983712688088417, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0061469823122024536,
+expected[index] evaluates to 0.0058271451853215694, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00016567861894145608.
+25841
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031414907425642014, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011956214904785156,
+expected[index] evaluates to 0.011642065830528736, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00031105166999623179.
+27377
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032097729854285717, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.003997310996055603,
+expected[index] evaluates to 0.0036763336975127459, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011190834629815072.
+28913
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031756609678268433, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0086029767990112305,
+expected[index] evaluates to 0.0082854107022285461, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.0002271352568641305.
+30449
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032047741115093231, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0027872025966644287,
+expected[index] evaluates to 0.0024667251855134964, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.166812767740339e-05.
+31985
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000244140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00787353515625,
+expected[index] evaluates to 0.00762939453125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00021073487005196512.
+1326
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0002593994140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00390625,
+expected[index] evaluates to 0.0036468505859375, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011117126268800348.
+4398
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003662109375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00872802734375,
+expected[index] evaluates to 0.00836181640625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00022904539946466684.
+5934
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000152587890625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005218505859375,
+expected[index] evaluates to 0.00506591796875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00014664794434793293.
+7470
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00018310546875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.006561279296875,
+expected[index] evaluates to 0.006378173828125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00017945433501154184.
+9006
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000213623046875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00439453125,
+expected[index] evaluates to 0.004180908203125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012452270311769098.
+10542
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000244140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00726318359375,
+expected[index] evaluates to 0.00701904296875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00019547608098946512.
+15150
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 4
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0002689361572265625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.000728607177734375,
+expected[index] evaluates to 0.0004596710205078125, and
+absolute + relative * std::abs(expected[index]) evaluates to 3.1491774279857054e-05.
+176
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000244140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00396728515625,
+expected[index] evaluates to 0.00421142578125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012528564548119903.
+1447
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0001068115234375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.002349853515625,
+expected[index] evaluates to -0.0022430419921875, and
+absolute + relative * std::abs(expected[index]) evaluates to 7.6076044933870435e-05.
+1744
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000156402587890625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.000606536865234375,
+expected[index] evaluates to -0.00045013427734375, and
+absolute + relative * std::abs(expected[index]) evaluates to 3.1253355700755492e-05.
+1805
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00016021728515625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.001983642578125,
+expected[index] evaluates to -0.00182342529296875, and
+absolute + relative * std::abs(expected[index]) evaluates to 6.5585627453401685e-05.
+2317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00014495849609375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.00201416015625,
+expected[index] evaluates to -0.00186920166015625, and
+absolute + relative * std::abs(expected[index]) evaluates to 6.6730040998663753e-05.
+3280
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0001220703125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.0038604736328125,
+expected[index] evaluates to -0.0037384033203125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011346008250257.
+3853
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00067138671875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.01116943359375,
+expected[index] evaluates to 0.0118408203125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00031602050876244903.
+3973
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00115966796875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0147705078125,
+expected[index] evaluates to 0.01361083984375, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00036027102032676339.
+3988
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 5
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 117639169
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003662109375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005950927734375,
+expected[index] evaluates to 0.005584716796875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015961792087182403.
+2450
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 2
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 218302466
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 2.09808349609375e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0,
+expected[index] evaluates to 2.09808349609375e-05, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.0524519641185179e-05.
+2935
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(781): output 3
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(760): replay 2
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(759): 218302466
+C:\public\project-hyle\hyle\tests\compute_route_cuda\d5_qwen38_official_test.cc(1172): GLM-5.3-Flash
+
+[  FAILED  ] CudaMoeFragments.D5GlmOfficialMixedRemaining (6618 ms)
+[ RUN      ] CudaMoeFragments.D5GlmGgufDenseFfn
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5GlmGgufDenseFfn (2586 ms)
+[ RUN      ] CudaMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead (8426 ms)
+[ RUN      ] CudaMoeFragments.D5GlmGgufAbsorbedMlaWithCache
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaMoeFragments.D5GlmGgufAbsorbedMlaWithCache (2241 ms)
+[----------] 6 tests from CudaMoeFragments (20466 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 1 test suite ran. (20466 ms total)
+[  PASSED  ] 5 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CudaMoeFragments.D5GlmOfficialMixedRemaining
+
+ 1 FAILED TEST
+</system-out>
+	</testcase>
+	<testcase name="hyle_graph_route_cuda_test" classname="hyle_graph_route_cuda_test" time="20.6559" status="fail">
+		<failure message="Failed"/>
+		<properties>
+			<property name="cmake_labels" value="graph_route_cuda"/>
+		</properties>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.D5GlmOfficialMixedRemaining:*MoeFragments.D5GlmOfficialFp8FullMoe:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn:*MoeFragments.D5GlmGgufDenseFfn:*MoeFragments.D5GlmGgufAbsorbedMlaWithCache:*MoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+[==========] Running 6 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 6 tests from CudaGraphMoeFragments
+[ RUN      ] CudaGraphMoeFragments.D5GlmOfficialFp8FullMoe
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5GlmOfficialFp8FullMoe (438 ms)
+[ RUN      ] CudaGraphMoeFragments.D5GlmOfficialDynamicFp8SharedFfn
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5GlmOfficialDynamicFp8SharedFfn (137 ms)
+[ RUN      ] CudaGraphMoeFragments.D5GlmOfficialMixedRemaining
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000152587890625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.004241943359375,
+expected[index] evaluates to 0.00439453125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012986328511033207.
+962
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 0
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0001678466796875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00101470947265625,
+expected[index] evaluates to 0.00118255615234375, and
+absolute + relative * std::abs(expected[index]) evaluates to 4.9563903303351253e-05.
+2317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 0
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000164031982421875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.000888824462890625,
+expected[index] evaluates to 0.0010528564453125, and
+absolute + relative * std::abs(expected[index]) evaluates to 4.632140917237848e-05.
+3341
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 0
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000457763671875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.006988525390625,
+expected[index] evaluates to -0.00653076171875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00018326903227716684.
+1212
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 1
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 9.918212890625e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00162506103515625,
+expected[index] evaluates to 0.0017242431640625, and
+absolute + relative * std::abs(expected[index]) evaluates to 6.3106082961894572e-05.
+578
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 2
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00016069412231445312, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.0001220703125,
+expected[index] evaluates to 3.8623809814453125e-05, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.0965595467714593e-05.
+2317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 2
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 8.96453857421875e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.000431060791015625,
+expected[index] evaluates to -0.0003414154052734375, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.8535385354189202e-05.
+3194
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 2
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032294541597366333, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0052026063203811646,
+expected[index] evaluates to 0.0048796609044075012, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00014199152064975351.
+1265
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031543057411909103, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011404573917388916,
+expected[index] evaluates to 0.011089143343269825, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00029722860199399292.
+2801
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031844200566411018, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0060108453035354614,
+expected[index] evaluates to 0.0056924032978713512, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00016231008339673281.
+4337
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031862780451774597, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0049473047256469727,
+expected[index] evaluates to 0.0046286769211292267, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00013571692397817969.
+7409
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031962338835000992, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0048154592514038086,
+expected[index] evaluates to 0.0044958358630537987, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00013239590043667704.
+8945
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032228697091341019, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0037895441055297852,
+expected[index] evaluates to 0.003467257134616375, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.0001066814293153584.
+10481
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031692814081907272, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0099192112684249878,
+expected[index] evaluates to 0.0096022831276059151, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00026005707331933081.
+12017
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003197183832526207, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.006796911358833313,
+expected[index] evaluates to 0.0064771929755806923, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00018192981951870024.
+13553
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003132987767457962, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0098333954811096191,
+expected[index] evaluates to 0.0095200967043638229, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00025800243020057678.
+15089
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031831813976168633, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0055515766143798828,
+expected[index] evaluates to 0.0052332584746181965, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015083147445693612.
+16625
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031599868088960648, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011067822575569153,
+expected[index] evaluates to 0.010751823894679546, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00028879562160000205.
+18161
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032096356153488159, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0029232650995254517,
+expected[index] evaluates to 0.0026023015379905701, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.5057537944521755e-05.
+19697
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031977612525224686, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0067065060138702393,
+expected[index] evaluates to 0.0063867298886179924, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00017966824816539884.
+21233
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032291002571582794, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0045318454504013062,
+expected[index] evaluates to 0.0042089354246854782, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012522339238785207.
+22769
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031451135873794556, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011227995157241821,
+expected[index] evaluates to 0.010913483798503876, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00029283709591254592.
+24305
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031983712688088417, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0061469823122024536,
+expected[index] evaluates to 0.0058271451853215694, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00016567861894145608.
+25841
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031414907425642014, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.011956214904785156,
+expected[index] evaluates to 0.011642065830528736, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00031105166999623179.
+27377
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032097729854285717, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.003997310996055603,
+expected[index] evaluates to 0.0036763336975127459, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011190834629815072.
+28913
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00031756609678268433, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0086029767990112305,
+expected[index] evaluates to 0.0082854107022285461, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.0002271352568641305.
+30449
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00032047741115093231, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0027872025966644287,
+expected[index] evaluates to 0.0024667251855134964, and
+absolute + relative * std::abs(expected[index]) evaluates to 8.166812767740339e-05.
+31985
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000244140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00787353515625,
+expected[index] evaluates to 0.00762939453125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00021073487005196512.
+1326
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0002593994140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00390625,
+expected[index] evaluates to 0.0036468505859375, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011117126268800348.
+4398
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003662109375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00872802734375,
+expected[index] evaluates to 0.00836181640625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00022904539946466684.
+5934
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000152587890625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005218505859375,
+expected[index] evaluates to 0.00506591796875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00014664794434793293.
+7470
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00018310546875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.006561279296875,
+expected[index] evaluates to 0.006378173828125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00017945433501154184.
+9006
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000213623046875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00439453125,
+expected[index] evaluates to 0.004180908203125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012452270311769098.
+10542
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000244140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00726318359375,
+expected[index] evaluates to 0.00701904296875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00019547608098946512.
+15150
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 4
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0002689361572265625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.000728607177734375,
+expected[index] evaluates to 0.0004596710205078125, and
+absolute + relative * std::abs(expected[index]) evaluates to 3.1491774279857054e-05.
+176
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000244140625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00396728515625,
+expected[index] evaluates to 0.00421142578125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00012528564548119903.
+1447
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0001068115234375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.002349853515625,
+expected[index] evaluates to -0.0022430419921875, and
+absolute + relative * std::abs(expected[index]) evaluates to 7.6076044933870435e-05.
+1744
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000156402587890625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.000606536865234375,
+expected[index] evaluates to -0.00045013427734375, and
+absolute + relative * std::abs(expected[index]) evaluates to 3.1253355700755492e-05.
+1805
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00016021728515625, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.001983642578125,
+expected[index] evaluates to -0.00182342529296875, and
+absolute + relative * std::abs(expected[index]) evaluates to 6.5585627453401685e-05.
+2317
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00014495849609375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.00201416015625,
+expected[index] evaluates to -0.00186920166015625, and
+absolute + relative * std::abs(expected[index]) evaluates to 6.6730040998663753e-05.
+3280
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0001220703125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.0038604736328125,
+expected[index] evaluates to -0.0037384033203125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00011346008250257.
+3853
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00067138671875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.01116943359375,
+expected[index] evaluates to 0.0118408203125, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00031602050876244903.
+3973
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.00115966796875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0147705078125,
+expected[index] evaluates to 0.01361083984375, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00036027102032676339.
+3988
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 5
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 117639169
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.0003662109375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005950927734375,
+expected[index] evaluates to 0.005584716796875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015961792087182403.
+2450
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 2
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 218302466
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+C:\public\project-hyle\hyle\tests\graph_route_cuda\../compute_models/d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 2.09808349609375e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0,
+expected[index] evaluates to 2.09808349609375e-05, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.0524519641185179e-05.
+2935
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(814): output 3
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(806): replay 2
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(805): 218302466
+C:\public\project-hyle\hyle\tests\graph_route_cuda\d5_qwen38_official_test.cc(1069): GLM-5.3-Flash
+
+[  FAILED  ] CudaGraphMoeFragments.D5GlmOfficialMixedRemaining (6592 ms)
+[ RUN      ] CudaGraphMoeFragments.D5GlmGgufDenseFfn
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5GlmGgufDenseFfn (2612 ms)
+[ RUN      ] CudaGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead (8464 ms)
+[ RUN      ] CudaGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache (2247 ms)
+[----------] 6 tests from CudaGraphMoeFragments (20493 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 1 test suite ran. (20493 ms total)
+[  PASSED  ] 5 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CudaGraphMoeFragments.D5GlmOfficialMixedRemaining
+
+ 1 FAILED TEST
+</system-out>
+	</testcase>
+</testsuite>

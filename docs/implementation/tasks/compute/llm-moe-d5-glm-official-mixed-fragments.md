@@ -36,3 +36,11 @@ KDA的o另为BF16。Flash MLA kv_b为BF16，DSA kv_b为FP8，禁止因为形状�
 若现有Provider不能表达真实布局/权重转换，保留精确缺口、另定有限产品接线，不在consumer
 内用host数学补洞。DSA kv_b的FP8吸收/转换先按原模型证明缓存边界，不能每次重放解码全部权重。
 所有未验region、其它路线、三交付/P1保持未验；本批通过不自动增加完整画像格。
+
+## 当前检查点：接线完成，组合数值未通过
+
+`5a298870` 已统一构建并执行 CUDA Direct/Graph；两入口各6组中各5组通过。失败限于新接的
+Flash MLA／NextN组合数值，原门和失败均保留。独立局部重算已排查KB/VB投影和注意力本段，
+目前支持低精度逐层舍入传播方向，尚不能代替完整片段验收。
+[收据与有界定位](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-mixed-checkpoint/README.md)。
+当前继续FIX4中最早数值分歧定位，不扩建性能仪器、不重跑已通过的整批；ledger仍140/176。

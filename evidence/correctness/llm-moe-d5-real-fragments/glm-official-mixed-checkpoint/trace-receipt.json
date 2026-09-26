@@ -1,0 +1,41 @@
+{
+  "candidate": "5a298870a9c412f7f7edb918d0b9aa1834dbcf00",
+  "route": "cuda",
+  "factors": [
+    "compute_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f40-trace\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 7.81
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f40-trace\\cuda\\tests.xml"
+      ],
+      "returncode": 8,
+      "seconds": 0.48
+    }
+  ]
+}

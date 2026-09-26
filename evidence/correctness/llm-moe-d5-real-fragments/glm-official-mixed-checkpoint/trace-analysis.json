@@ -1,0 +1,286 @@
+[
+  {
+    "replay": 0,
+    "whole_chain": [
+      {
+        "nonidentical": 512,
+        "max_abs": 0.0025866329669952393,
+        "gate_fail": 0,
+        "rms_relative": 0.00012205874647348904
+      },
+      {
+        "nonidentical": 17,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 4.124973613360371e-05
+      },
+      {
+        "nonidentical": 33,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 4.957294223771376e-05
+      },
+      {
+        "nonidentical": 32762,
+        "max_abs": 0.0006803795695304871,
+        "gate_fail": 0,
+        "rms_relative": 0.00012236259980757328
+      },
+      {
+        "nonidentical": 72,
+        "max_abs": 0.0009765625,
+        "gate_fail": 0,
+        "rms_relative": 0.00017485916492409332
+      },
+      {
+        "nonidentical": 11,
+        "max_abs": 0.0001678466796875,
+        "gate_fail": 3,
+        "rms_relative": 0.00076682810700782
+      }
+    ],
+    "local_attention": {
+      "nonidentical": 16914,
+      "max_abs": 1.7881393432617188e-07,
+      "gate_fail": 0,
+      "rms_relative": 6.773096705154013e-08
+    },
+    "local_kb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_vb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_out": {
+      "nonidentical": 8,
+      "max_abs": 3.0517578125e-05,
+      "gate_fail": 0,
+      "rms_relative": 9.040089615780904e-05
+    },
+    "oracle_reproduction": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    }
+  },
+  {
+    "replay": 1,
+    "whole_chain": [
+      {
+        "nonidentical": 1024,
+        "max_abs": 0.0030150413513183594,
+        "gate_fail": 0,
+        "rms_relative": 0.00013576854942237322
+      },
+      {
+        "nonidentical": 9,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 2.2590463813838887e-05
+      },
+      {
+        "nonidentical": 15,
+        "max_abs": 6.103515625e-05,
+        "gate_fail": 0,
+        "rms_relative": 1.4189870586817528e-05
+      },
+      {
+        "nonidentical": 32449,
+        "max_abs": 0.0007982850074768066,
+        "gate_fail": 0,
+        "rms_relative": 0.00011262775141920525
+      },
+      {
+        "nonidentical": 81,
+        "max_abs": 0.001953125,
+        "gate_fail": 0,
+        "rms_relative": 0.0002137760583912451
+      },
+      {
+        "nonidentical": 6,
+        "max_abs": 0.000457763671875,
+        "gate_fail": 1,
+        "rms_relative": 0.0006764077669211568
+      }
+    ],
+    "local_attention": {
+      "nonidentical": 18698,
+      "max_abs": 2.384185791015625e-07,
+      "gate_fail": 0,
+      "rms_relative": 7.063928947067056e-08
+    },
+    "local_kb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_vb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_out": {
+      "nonidentical": 5,
+      "max_abs": 6.103515625e-05,
+      "gate_fail": 0,
+      "rms_relative": 0.00010109205735040844
+    },
+    "oracle_reproduction": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    }
+  },
+  {
+    "replay": 2,
+    "whole_chain": [
+      {
+        "nonidentical": 1536,
+        "max_abs": 0.0030150413513183594,
+        "gate_fail": 0,
+        "rms_relative": 0.00011867652520214232
+      },
+      {
+        "nonidentical": 19,
+        "max_abs": 0.00048828125,
+        "gate_fail": 0,
+        "rms_relative": 9.958550290338806e-05
+      },
+      {
+        "nonidentical": 33,
+        "max_abs": 0.00048828125,
+        "gate_fail": 0,
+        "rms_relative": 0.000110662917690467
+      },
+      {
+        "nonidentical": 32310,
+        "max_abs": 0.0007676631212234497,
+        "gate_fail": 0,
+        "rms_relative": 0.00010531328514967354
+      },
+      {
+        "nonidentical": 168,
+        "max_abs": 0.001953125,
+        "gate_fail": 0,
+        "rms_relative": 0.0001920222196278673
+      },
+      {
+        "nonidentical": 13,
+        "max_abs": 0.00016069412231445312,
+        "gate_fail": 3,
+        "rms_relative": 0.0002913705538623627
+      }
+    ],
+    "local_attention": {
+      "nonidentical": 19264,
+      "max_abs": 2.384185791015625e-07,
+      "gate_fail": 0,
+      "rms_relative": 7.09150909475935e-08
+    },
+    "local_kb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_vb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_out": {
+      "nonidentical": 8,
+      "max_abs": 6.103515625e-05,
+      "gate_fail": 0,
+      "rms_relative": 0.00010081770969525576
+    },
+    "oracle_reproduction": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    }
+  },
+  {
+    "replay": 3,
+    "whole_chain": [
+      {
+        "nonidentical": 1536,
+        "max_abs": 0.005953192710876465,
+        "gate_fail": 0,
+        "rms_relative": 0.00018283096299016548
+      },
+      {
+        "nonidentical": 17,
+        "max_abs": 0.000244140625,
+        "gate_fail": 0,
+        "rms_relative": 5.549586259324779e-05
+      },
+      {
+        "nonidentical": 31,
+        "max_abs": 0.000244140625,
+        "gate_fail": 0,
+        "rms_relative": 7.340455564739657e-05
+      },
+      {
+        "nonidentical": 32702,
+        "max_abs": 0.0015510320663452148,
+        "gate_fail": 20,
+        "rms_relative": 0.0002057994073208489
+      },
+      {
+        "nonidentical": 283,
+        "max_abs": 0.0078125,
+        "gate_fail": 7,
+        "rms_relative": 0.00045496287101420954
+      },
+      {
+        "nonidentical": 22,
+        "max_abs": 0.00115966796875,
+        "gate_fail": 9,
+        "rms_relative": 0.0021677462655178056
+      }
+    ],
+    "local_attention": {
+      "nonidentical": 20706,
+      "max_abs": 2.384185791015625e-07,
+      "gate_fail": 0,
+      "rms_relative": 8.087799099126483e-08
+    },
+    "local_kb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_vb": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    },
+    "local_out": {
+      "nonidentical": 6,
+      "max_abs": 1.52587890625e-05,
+      "gate_fail": 0,
+      "rms_relative": 3.8577395419325586e-05
+    },
+    "oracle_reproduction": {
+      "nonidentical": 0,
+      "max_abs": 0.0,
+      "gate_fail": 0,
+      "rms_relative": 0.0
+    }
+  }
+]

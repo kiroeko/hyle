@@ -3,6 +3,10 @@
 候选 `896200a9d88b3cad858a179a0f087a42679bb28a`，Windows RTX 4070 / SM89 / Driver API13040。
 本页签署局部动态投影与两种 GLM 完整共享 FFN；完整画像 ledger 仍为 **140/176**。
 
+F40 适用域补注：本批 Flash 输入未达到 `swiglu_limit=10`，不能外推截断分支。F40 已补接原模型
+截断，并通过跨阈值激活与共享 FFN 回归；新增混合注意力仍未通过，见
+[当前检查点](../glm-official-mixed-checkpoint/README.md)。本页原始测试事实保留。
+
 ## 有限纠正与原门
 
 [原失败及原因](../sglang-fp8-dynamic-checkpoint/README.md)保留。

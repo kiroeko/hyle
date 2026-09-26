@@ -3,6 +3,10 @@
 不可变实现候选 `9a7d5e5c790d08c8d67bf079b214569fe9cbcc9c`，Windows canonical、RTX4070
 SM89、CUDA Driver API13040。**本批通过局部能力；完整画像仍140/176，不签整个goal完成。**
 
+F40 适用域补注：本批 Flash 输入未达到 `swiglu_limit=10`，不能外推截断分支。F40 已补接原模型
+截断，并通过跨阈值激活与完整 MoE 回归；新增混合注意力仍未通过，见
+[当前检查点](../glm-official-mixed-checkpoint/README.md)。本页原始测试事实保留。
+
 ## 已实现和验证
 
 - 原SGLang group128量化、原CUDA small/generic专家排序、原grouped FP8 GEMM接入同一Provider。
