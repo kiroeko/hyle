@@ -301,6 +301,15 @@ embedding、hidden 顺序拼接，转换器不交换 EH 的列，已纠正最初
 固定 GLM Flash 上游还显式拒绝 NextN graph；需继续核对其它已登记模型程序及状态边界，
 不能仅凭该拒绝判定所有成熟路径不可用。官方 FP8 与完整 MTP、A5/A6仍未验收，ledger保持96/176。
 
+**D5-F31（AUDITED，baseline `5c738eaa`）：** CUDA 的六组 GLM 中仅 Flash pool/tail
+因整数索引拼接落到已冻结 `hyle-cuda` 而失败，Direct/Graph其余11/12组通过。已审计原版
+`ggml-cuda.cu` 的 CONCAT 支持同类型1/2/4/8字节元素，`concat.cu`按原始元素复制，现有 lowering
+也不转浮点；HYLE `tensor_program.cc` 的 representable 提前只接纳浮点而挡住 I32。
+当前 `compute_provider_ggml_cuda` owner 已 AUDITED，本 FIX 仅让原 Concat 接纳非空、连续、
+plain I32输入/输出，保留原尺寸、字节、rank、axis和推导结果检查；不扩其它整数算术或 strided
+I32，也不增加 kernel。验收为 provider 原生大整数/-1逐位重放、无效域拒绝、原 Concat回归及本批
+CUDA Direct/Graph 的全部 pool/tail。Vulkan 同批失败先定位到测试读回把 I32当F32，只修 consumer。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
