@@ -251,6 +251,39 @@ BF16 分类及 Metal 原生激活精度的参考纠正、完整原 converter 检
 标签改为 latent3584/expert3072/shared6144/dense33792，不修改已正确接线的产品数学。
 统一实现为58,606行/232文件。剩余10画像、三交付和 P1 继续执行，本批不代签。
 
+### GLM 六画像剩余片段与 D5-F30（AUDITED）
+
+baseline `56506f28`；共享 consumer 归 `compute_ops` A2/A3，原始 header/config 保存在
+`d5_glm_remaining_facts.json`。固定 Transformers `c1b80cf3` 的 GLM DSA/Flash 原源码
+与已登记 llama.cpp `4c9233c` 的 GLM DSA、`de253435` 的 GLM Flash；重新取得的两个
+Transformers 文件与原登记 SHA256 相同，不升级依赖。
+
+本批按真实剩余角色一次接线：①四个 GGUF 的 Q8_0 dense FFN（H6144/4096、N12288）、
+压缩 MLA（heads64、KV512、Q-rank2048/1536、V256）；②六画像 NextN 的独立双 norm、
+Concat、EH projection、carry/输出 norm，官方 EH 为 BF16，GGUF 为 Q8_0；③DSA 的
+32×128 indexer、top2048、GLM interleaved RoPE 与 Flash K4 pool/tail、实际 cache 反馈；
+④Flash mHC 的真实 fn/scale/base 与最终 mean，复用已验 Sinkhorn 程序。不能用后投影
+F32 core、普通 logits 或 KDA 收据代签上述完整角色。只有全部必要 region 通过才增加整格。
+
+GLM 普通版 QK 为192+64=256、V256；旧 ledger 的单一 head_dim192不是完整 QK。
+Flash 为256+0，无 RoPE，KV512。两者 dense FFN 都是12288，不能沿用 expert2048。
+RMS epsilon按各原生模型路径明确记录，indexer LayerNorm 独立1e-6；GGUF 的 q/k/v/o
+采用原版 absorbed MLA，不能为绕过准入改为展开全部 KV 的另一程序。
+
+F30 有限产品反例：已有三个 ggml Provider 的 F29 准入写死96 query heads，拒绝 GLM
+合法的 F32 QK576/V512、64/1 heads；原 native MatMul/Softmax/MatMul 没有该限制。
+在这三个已 AUDITED owner 仅追加64 heads，保留原 shape、dtype、batch、sequence、
+output 和资源检查；Apple 与其它路线产品不改。共享正/负准入和 Kimi 回归同批验证。
+
+官方 FP8 的 partial block（GLM KV-A N576/scale rows5）、动态激活量化、grouped expert
+仍为明确未验边界；保留 F27/F28 实际拒绝，不能以 GGUF 或 BF16 全链代签。原 ggml
+converter 展开 FP8 的事实也不等于 HYLE native FP8 已支持。本批不新增数学、Provider、
+量化器或 loader；若上述原生接缝需要超出有限准入修复，记录精确后续范围。
+
+全部八入口批量接线后固定候选，重型验证串行、已有构建树复用；数值错误先查源公式、
+物理布局和原生精度，不扩大容差。三交付/P1按 A5/A6 在对应完整路线稳定后统一执行。
+96/176已验格直接保留；DeepSeek和本批未完成 region 不因本次审计标为 PASS。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

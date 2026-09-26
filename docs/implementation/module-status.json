@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F29 已验：Kimi F32 absorbed MLA QK576/V512冷准入、错配拒绝、原attention及资源失败回归通过；四路线三Kimi画像完成。原数学不变；D5剩余范围、三交付/P1仍未完成，保留AUDITED。"
+      "summary": "D5-F30 AUDITED：已验F29 Kimi MLA保留；仅追加GLM F32 QK576/V512的64/1 heads冷准入及共享正负测试，原shape/资源检查与原版数学不变。D5剩余范围、三交付/P1待验。"
     },
     {
       "module": "graph_provider_onednn",
@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：九Qwen及三Kimi画像四路线普通Direct/Graph完整片段96/176格通过；Kimi真实MLA/FFN/残差、原转换和完整owner回归收口。其余10画像、三交付和P1继续；不新增产品数学。"
+      "summary": "D5 AUDITED：96/176完整格已验；GLM六画像剩余 dense/MLA/DSA/mHC/MTP共享批次接线，保留真实混合格式与官方FP8边界。其余10画像、三交付/P1继续；不新增数学。"
     },
     {
       "module": "compute_backend_cpu",
@@ -528,7 +528,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F29 已验：Kimi F32 absorbed MLA QK576/V512冷准入、错配拒绝、原attention及资源失败回归通过；四路线三Kimi画像完成。原数学不变；D5剩余范围、三交付/P1仍未完成，保留AUDITED。"
+      "summary": "D5-F30 AUDITED：已验F29 Kimi MLA保留；仅追加GLM F32 QK576/V512的64/1 heads冷准入及共享正负测试，原shape/资源检查与原版数学不变。D5剩余范围、三交付/P1待验。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -541,7 +541,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F29 已验：Kimi F32 absorbed MLA QK576/V512冷准入、错配拒绝、原attention及资源失败回归通过；四路线三Kimi画像完成。原数学不变；D5剩余范围、三交付/P1仍未完成，保留AUDITED。"
+      "summary": "D5-F30 AUDITED：已验F29 Kimi MLA保留；仅追加GLM F32 QK576/V512的64/1 heads冷准入及共享正负测试，原shape/资源检查与原版数学不变。D5剩余范围、三交付/P1待验。"
     },
     {
       "module": "graph_provider_ggml_cuda",
