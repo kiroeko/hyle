@@ -962,6 +962,46 @@ Graph 对齐 FIX 已在 CUDA 真实执行中验证。详见
 [完整 MoE Graph 批次](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen38-24t-full-router-graph/README.md)。
 这是 Graph 子批结果，Direct 整链、完整 selector、三交付和 P1 尚未签署；ledger 保持 48/176。
 
+### D5-F21：Qwen3.8-2.4T GGUF grouped expert 原生权重准入
+
+**SCOPED（baseline `2cb5d34e`）**：固定的 `UD-IQ4_XS` 与 `Q8_0` GGUF header 分别含
+`blk.0.ffn_gate_exps.weight` 的 `[8192,2048,512]` IQ4_XS/Q8_0、独立 shared expert
+及 F32 router；普通用户需以同一 exact artifact 画像提交权重、F32 activation 和 I32 本地
+expert ID，经 CPU/CUDA/Apple/Vulkan 的 Direct `prepare` 或 Graph `compile` 固定成熟
+`ggml_mul_mat_id`，变化输入重复执行。D5 允许缩小常驻 expert 容量，仍保留内宽、原生
+block、top-10 与全局 ID 到本地槽的保序映射；不承诺整份 2.4T 权重常驻。
+当前 `GroupedMatMul::infer_output_descriptions` 只接受 plain F32/BF16 权重，故由
+`gguf_grouped_weight_description` 生成的合法 blocked `[E,N,K]` 在四路线 Provider 前即被拒绝。
+这是新画像揭示的公共准入缺陷，而非新增算子需求。owner 限于 `compute_ops` 与四个现有
+`compute_provider_ggml*`；Graph/route 只消费其已登记的 grouped region，若实际编译暴露
+独立缺陷再按精确 owner 定界。非目标为 HYLE 数学、通用量化器、其它模型的 FP4/FP8、
+热路径重新选择及整模型加载。P0 审计准备期 canonical 格式检查和资源上界；D5-A6 的
+适用 P1 仍随完整 profile 批末执行。
+
+**AUDITED，有限 FIX**：固定 ggml CPU/CUDA/Metal/Vulkan 均有原生量化格式映射和
+`ggml_mul_mat_id` 构图；Vulkan 已有 canonical grouped GGUF 权重域，Metal 已允许
+rank-3 block-axis-2 权重；CPU/CUDA 分支虽枚举了 quantized grouped，却仍要求 plain
+F32/BF16。按同一份固定 header 反证，不改变 operation ID、F32 activation/output、I32
+ID、资源/完成/失败语义。仅允许：
+
+1. `compute_ops` 对权重 port 接纳由 `gguf_grouped_weight_description` 构造的 canonical
+   GGUF `[E,N,K]`、logical F32；拒绝非 canonical stride/block、其它 port 的 packed
+   storage 与不完整 K block。plain F32/BF16 合同保留。
+2. CPU/CUDA 两个 ggml adapter 放通上述精确域；Metal/Vulkan 只在真实片段揭示具体
+   准入或资源缺陷时修其现有 adapter。四路线都使用各自 ggml 原生 program，不建 HYLE
+   grouped kernel 或共享万能执行器。
+3. 以 `UD-IQ4_XS` 的 IQ4_XS/Q5_K/Q6_K 和 `Q8_0` 的 Q8_0 角色先做同批
+   storage/MatMul 入口测试，再用常驻 11 个 expert、512-way/top-10 的量化 routed
+   gate/up/down、shared expert、近并列 ID 和变化输入两次 submit 检查 Direct/Graph
+   及错误不发布；单个 expert 切片绝不代签 grouped chain。
+4. 稳定候选一次运行 selector 所选公共语义、四路线 owner 与直接 Graph 消费者，
+   随 D5-A5/A6 统一签三交付和适用性能。未运行格保持 `VALIDATION_NOT_RUN`。
+
+停止条件：若固定上游在精确设备/版本/格式/形状拒绝原生 `mul_mat_id`，记录原生错误
+及内存边界并按该路线 `BACKEND_REJECTED` 定界；不得用 F32 解包或自研数学伪装 GGUF
+通过。`2cb5d34e` 仅批量写入六个真实权重角色的四路线 Direct/Graph 测试消费者，
+已对照固定 header 6/6；该提交尚无编译或运行 verdict，不改变 48/176 ledger。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

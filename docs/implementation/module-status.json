@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：官方 BF16 router 的 ggml_mul_mat 原生 F32 score 与 HYLE 先存 BF16 再 Cast 的边界不等价；在固定 F18 Softmax 收据基础上，有限 FIX 只接入 rank-2 BF16×BF16→F32 的成熟 ggml CPU MatMul。"
+      "summary": "M3-D5-F21 AUDITED：Qwen3.8-2.4T IQ4_XS/Q8_0 grouped expert 的 GGUF blocked 权重被公共语义及 CPU ggml adapter 拒绝；有限 FIX 只准入 canonical grouped GGUF 权重与原生 ggml_mul_mat_id，完整片段仍待验。"
     },
     {
       "module": "graph_provider_onednn",
@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5 AUDITED：成熟 Provider 的 BF16 router F32 score 已接线；R01 七行词表不满足真实 248320 行验收，旧 48 格退回 partial，当前完整格 0/176。按 profile 批量接线并延后整批验证，自研数学冻结。"
+      "summary": "M3-D5-F21 AUDITED：六个 Qwen 画像已重新签署 48/176 格；2.4T IQ4_XS/Q8_0 grouped GGUF 权重被公共语义拒绝，有限 FIX 为 canonical block 准入与四路线原生 ggml_mul_mat_id 组合，自研数学冻结。"
     },
     {
       "module": "compute_backend_cpu",
@@ -529,7 +529,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：保留 F14 BF16 grouped expert 候选，有限新增固定 ggml Vulkan 原生 rank-2 BF16×BF16→F32 router score 域，不增加转换或 HYLE 数学。"
+      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；固定 Vulkan ggml 已有 canonical grouped GGUF 域，待公共准入后以 2.4T IQ4_XS/Q8_0 完整片段复核，缺陷才定向修改。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -546,7 +546,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：保留 F14 BF16 grouped expert 候选，有限新增固定 ggml CUDA 原生 rank-2 BF16×BF16→F32 router score 域，不增加转换或 HYLE 数学。"
+      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；CUDA ggml 已有量化映射和 mul_mat_id，有限 FIX 为 canonical grouped GGUF 权重准入与 2.4T IQ4_XS/Q8_0 完整片段验证。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -570,7 +570,7 @@
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：保留 F14 BF16 grouped expert 候选，有限新增固定 ggml Metal 原生 rank-2 BF16×BF16→F32 router score 域，不增加转换或 HYLE 数学。"
+      "summary": "M3-D5-F21 AUDITED：保留 BF16 grouped 与 router 候选；Metal ggml 已有量化 grouped 权重域，待公共准入后以 2.4T IQ4_XS/Q8_0 完整片段复核，缺陷才定向修改。"
     },
     {
       "module": "compute_provider_iree_vulkan",
