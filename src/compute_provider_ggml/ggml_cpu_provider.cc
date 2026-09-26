@@ -617,14 +617,14 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     ggml_mul_mat_set_hint(result, GGML_HINT_SRC0_IS_HADAMARD);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32))
       return {};
-  } else if (const auto attention = node.operation.custom_as<model_ops::SinkAttention>()) {
+  } else if (const auto sink = node.operation.custom_as<model_ops::SinkAttention>()) {
     auto *query = ggml_permute(context, invocation.values[node.inputs[0]], 0, 2, 1, 3);
     auto *key = ggml_permute(context, invocation.values[node.inputs[1]], 0, 2, 1, 3);
     auto *value = ggml_permute(context, invocation.values[node.inputs[2]], 0, 2, 1, 3);
     auto *scores = ggml_mul_mat(context, key, query);
     if (!ggml_prec_set_acc(scores, GGML_PREC_F32)) return {};
     auto *probabilities = ggml_soft_max_ext(context, scores,
-        invocation.values[node.inputs[3]], attention->scale, 0.0F);
+        invocation.values[node.inputs[3]], sink->scale, 0.0F);
     ggml_soft_max_add_sinks(probabilities, invocation.values[node.inputs[4]]);
     value = ggml_cont(context, ggml_transpose(context, value));
     result = ggml_mul_mat(context, value, probabilities);

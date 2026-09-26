@@ -807,14 +807,14 @@ Result<Region> Region::create(NativeDevice device,
               Status::Unimplemented("ggml Vulkan Hadamard F32 accumulation"));
         if (recipe.values[node.outputs[0]].data_type() == DataType::kFloat16)
           output = ggml_cast(context, output, GGML_TYPE_F16);
-      } else if (const auto attention = node.operation.custom_as<model_ops::SinkAttention>()) {
+      } else if (const auto sink = node.operation.custom_as<model_ops::SinkAttention>()) {
         auto *query = ggml_permute(context, arguments[0], 0, 2, 1, 3);
         auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
         auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
         auto *scores = ggml_mul_mat(context, key, query);
         if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention score accumulation"));
-        auto *probabilities = ggml_soft_max_ext(context, scores, arguments[3], attention->scale, 0.0F);
+        auto *probabilities = ggml_soft_max_ext(context, scores, arguments[3], sink->scale, 0.0F);
         ggml_soft_max_add_sinks(probabilities, arguments[4]);
         value = ggml_cont(context, ggml_transpose(context, value));
         output = ggml_mul_mat(context, value, probabilities);
