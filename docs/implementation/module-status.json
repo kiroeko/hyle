@@ -516,7 +516,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "summary": "D5-F28 AUDITED：真实 FP8 宽度被旧65535元素门误拒绝；锁定原版 VMFB 已证明实际 dispatch 与合并 F32 workspace，有限修正只涉及冷准入和边界测试，数学及其它域不变。此前事实与 D5 三交付/P1 待办保留。"
     },
     {
       "module": "graph_route_vulkan",

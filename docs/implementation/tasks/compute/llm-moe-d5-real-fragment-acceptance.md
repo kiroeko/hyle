@@ -132,6 +132,25 @@ block128 描述，不使用 group32 代签，也不展开权重。激活输入�
 block128 合同。只做一次共享批次及一次具体失败纠正；未运行保留未验，不触发独立三交付/P1。
 本批只签 dense 片段及拒绝边界，完整画像仍由全部 region 或精确终局缺口统一裁决。
 
+### D5-F28：IREE FP8 原生 dispatch 准入（AUDITED）
+
+baseline `3f8caf58`。F27 的真实八签名均在 Vulkan Graph 被 `native grid or workspace limits`
+拒绝；Direct 夹具的 `.value()` 隐去了同一错误。当前 `compute_route_vulkan` owner 的有限范围
+追加本项，Graph 复用该 route，不重开其它产品 owner。
+对仓库锁定 `fp8.vmfb`（SHA256 `5ee3469dcb7db4e7f560fd19e6592803c1fa6a355d27c429adcfa8a85b4a059b`）
+运行同 pin `iree-dump-module`，确认两个 FP8 export 的三次 dispatch 都是 X 轴
+`min(rows*ceil(columns/64),65535)`、Y/Z=1；三域依次为 M×K、N×K、M×N。
+旧检查却要求所有矩阵的元素数不超过65535，把元素数错当实际 workgroup 数。
+F32 临时 allocation 为 `align64(4*M*K)+align64(4*N*K)`，输出为4*M*N，不能只扩大元素门。
+
+有限 FIX：F28.1 仅替换 FP8 准入为上述锁定实际 dispatch、合并 workspace 的 descriptor range
+及原有32位索引边界检查；不改 bytecode、shader、数学、Scan 或 BF16 conversion 域。
+F28.2 八个真实 FP8 签名在普通 Vulkan Direct/Graph 各 M1/M3、两次变化输入通过；低网格上限、
+合并 workspace 超限、巨大形状必须在 native allocation 前拒绝。原 IREE FP8/资源/OOM/Scan
+消费者同批回归。复用其它路线已取得的冷拒绝，不重建它们。
+预算仍限一次具体原因修正；稳定后的 D5 三交付/P1 待办保留。若锁定程序执行仍存在能力缺口，
+保留实际错误，不修改原数学或继续扩大上限。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露
