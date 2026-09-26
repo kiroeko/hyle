@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "candidate": "c800b76ea877f3fc825806530e60731900a43174",
+  "tree": "7aaad15a29a372666dfaf0e63d1ee66680ec6e77",
+  "initial_candidate": "9bb6be90db788fe43e71f2eeb9dadf5cf56ffc94",
+  "verdict": "R06_RUN_PASS",
+  "profile_count": 6,
+  "routes": 4,
+  "entries_per_route": 2,
+  "replay_count": 8,
+  "actual_feedback": [
+    "convolution_history",
+    "recurrent_state"
+  ],
+  "qualified_region_cells": 48,
+  "complete_profile_cells_added": 0,
+  "product_math_changed": false,
+  "results": [
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-cpu-compute.log.gz"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-cpu-graph.log.gz"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-cuda-compute.log.gz"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-cuda-graph.log.gz"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-vulkan-compute.log.gz"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-vulkan-graph.log.gz"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-apple-build-and-test.log.gz"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "tests": 4,
+      "profiles": 6,
+      "verdict": "PASS",
+      "log": "final-apple-build-and-test.log.gz"
+    }
+  ],
+  "files": {
+    "initial-apple-build-and-test.log.gz": {
+      "raw_sha256": "2dba0ea668406b015227179031793375acb5a0cc596a1c51d0cee42a73b362b7",
+      "gz_sha256": "f45f63bafe6296f6cc4a1c7d6a4634e9b41744c25f53e86dc08a25d073b89e9e"
+    },
+    "initial-cpu-build-initial.log.gz": {
+      "raw_sha256": "5f2cbcd7590ec9cc2563d668dadd719fe55e9c8c90c57e30a8be05ac2da276fa",
+      "gz_sha256": "ac6317d65227d92c8b19a958f1e7097461eb35fe0f753d694ac8da81eea2cb8b"
+    },
+    "initial-cpu-build.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "initial-cpu-compute-single-state.log.gz": {
+      "raw_sha256": "462da375a5035bf4d15c19f3e9b68badae6b23c568a17446826c8f773d79b1ee",
+      "gz_sha256": "7dc4d9b862feabf72c4df1f0b7b033dc327af904fd2b51da5f5fb7452dc0d79a"
+    },
+    "initial-cpu-compute.log.gz": {
+      "raw_sha256": "580eb060f14ed3fae77230ffe39d759d1d67b35d6e3b86d30e2b1abda9616580",
+      "gz_sha256": "b84ba56fb3e43223e1f07050a73cf687899fcea1fa7c3ad89f6ce195d0bb0c5d"
+    },
+    "initial-cpu-graph-single-state.log.gz": {
+      "raw_sha256": "95cc002c320348173ae9b02a4f4aafe016c7c3b251b18f6afc2f24e6569d5205",
+      "gz_sha256": "f25e23671f2c1d3ec6b36ce06a0b2d0202a5d7697ab66cfe8cba9afa22ca1ea2"
+    },
+    "initial-cpu-graph.log.gz": {
+      "raw_sha256": "d841f5b9d7284fafca8d4f6a13d9ac0c87fd6bba422d77b8f555834608b21474",
+      "gz_sha256": "6bfe45357ab937ba37add6207f7280fa39e004bdb36836d724c116d0df36fa0d"
+    },
+    "initial-cuda-build.log.gz": {
+      "raw_sha256": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+      "gz_sha256": "7070e7b69228b13b4628c369a13d3391fb944cd2139255fd05a4578d3bee6613"
+    },
+    "initial-cuda-compute.log.gz": {
+      "raw_sha256": "183a2ad3bfb3e2ab5748d9c90176f41034ad044188cb126cb8eda8c7e165450b",
+      "gz_sha256": "a9a73ebc63d74b1921d1ffdf052453323ad2c217cb0a9f9d51e853fe1407b3a2"
+    },
+    "initial-cuda-graph.log.gz": {
+      "raw_sha256": "e857dc3ad2deed52ed66de6627c1d11f801d232cf3788a2296ca770e5f774631",
+      "gz_sha256": "2eaaf2231caf38124ff069ac7e235fdb8ee797ca0365584d54436ba23604d4a7"
+    },
+    "initial-vulkan-build.log.gz": {
+      "raw_sha256": "18223035411bc7cf7eae3bc7eaa4b23a786a5e84e8b9bb3354a9d31ed97448ff",
+      "gz_sha256": "c35f4c3fbf6c4fbc0f99c3f272cf017078c672031529478e085e1f5a4646824c"
+    },
+    "initial-vulkan-compute.log.gz": {
+      "raw_sha256": "450bf19ff1e297b46876af862c32425f7589cb026615b96d2a4dce6a0b82ee8f",
+      "gz_sha256": "e7b97f2ca8991cf05786e40cc76f89f7b5888678b0a5a8c8a114753284d825ab"
+    },
+    "initial-vulkan-graph.log.gz": {
+      "raw_sha256": "6b7ad2d8ea9ea4809616089c6897a9170d4bd542634cd7a90f6c549c974a5422",
+      "gz_sha256": "ca1562ee3fb611c891ded3d617d78e1f93a259699485c112fe1f4d841dc409a4"
+    },
+    "final-apple-build-and-test.log.gz": {
+      "raw_sha256": "e95ad98b8ac8b48dba53bd0290c498775b5ea5f10df69f69d85e152ecf3356ee",
+      "gz_sha256": "d42ff19ace11cb380a47d3fec249091d2dd461205feaefdfae28aa711d38bdbd"
+    },
+    "final-cpu-build.log.gz": {
+      "raw_sha256": "b5e54a07e0b2a7c6aa9f7fa9043b08013193445518d95e607ece4903d82ed4d4",
+      "gz_sha256": "f62191ed8f26f182b2013674a35cf3b918308c23d1d3a2ad4043107d279f4ffb"
+    },
+    "final-cpu-compute.log.gz": {
+      "raw_sha256": "2ab6da1778b1d8a6d0d05d8946846318ad1d30689b46fe785e06a2b967c3bd65",
+      "gz_sha256": "fe719490bc13dae291323908efec95d387ee02165c46376edc5e4bcede995fb6"
+    },
+    "final-cpu-graph.log.gz": {
+      "raw_sha256": "784e56e573efb40cdac6d4a35f3a85a037852635c05c62c8c85cadb944826408",
+      "gz_sha256": "8fb99ccdc1f0ea952d8d897f3ec432f9cd04d89b5625b86e4e0ced457bdd8d17"
+    },
+    "final-cuda-build.log.gz": {
+      "raw_sha256": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+      "gz_sha256": "7070e7b69228b13b4628c369a13d3391fb944cd2139255fd05a4578d3bee6613"
+    },
+    "final-cuda-compute.log.gz": {
+      "raw_sha256": "540eb67f7aef39eebe620aa9ec2eafca8c38dd8d5b4f98fd0cbc603af91c31a9",
+      "gz_sha256": "b4b5f71719c821dc5df0ecce48a367bf38592b78de7b0dcbdfc17768a697c5d8"
+    },
+    "final-cuda-graph.log.gz": {
+      "raw_sha256": "dfebc1a7bbe721913445db3d15d5c55f79e5933bd721680af140d7cd5f20597d",
+      "gz_sha256": "e551403153aa8dfca8bdab072811473855e42626b3b9474191440ba8ea6f49ae"
+    },
+    "final-vulkan-build.log.gz": {
+      "raw_sha256": "18223035411bc7cf7eae3bc7eaa4b23a786a5e84e8b9bb3354a9d31ed97448ff",
+      "gz_sha256": "c35f4c3fbf6c4fbc0f99c3f272cf017078c672031529478e085e1f5a4646824c"
+    },
+    "final-vulkan-compute.log.gz": {
+      "raw_sha256": "f19a06f7b4bd1aa9322b529bd3c85f8a55c4825307c69b8c385e2af6ebeeec95",
+      "gz_sha256": "e6111e159681a7c838c28e202d101abf4c6bc4ea56674c6f1768fa6d401afd71"
+    },
+    "final-vulkan-graph.log.gz": {
+      "raw_sha256": "c2c6e6620b8f9981eb62e672b94b372b585c68adf8e7c97388805d768dc9c1ee",
+      "gz_sha256": "86e42e26ad25c116e7078b921fee6912734673f57dfd68d6520b22b3cca1fff5"
+    },
+    "initial-plan.json.gz": {
+      "raw_sha256": "aba5ddbf398c32333d49a66d8744b1d68aabdf745685499e8f2c73f45c0b3fd6",
+      "gz_sha256": "31a40daee6d76d148b4fd2390f718b024ef03ad68ec5eec4f3aec6143053bf6e"
+    },
+    "final-plan.json.gz": {
+      "raw_sha256": "79f0e9665e13c3b4cdc834225a8cf6b9ae3737579ea293aff37e03b70c6bc42e",
+      "gz_sha256": "8f34c3c4ea1e82a99f21154bc4748eab6438a77c7be548d0d2e89fa8e212224f"
+    }
+  },
+  "hardware": {
+    "windows": "Core i9-13900K / RTX 4070 SM89; MSVC 19.50 Release WERROR, CUDA 13.3.73, Vulkan SDK 1.4.357.0",
+    "apple": "MacBook Air Mac16,12 Apple M4; AppleClang 21 Release WERROR"
+  },
+  "environment_reuse": "../sglang-router-batch/receipt.json; same native build trees, no toolchain or provider update",
+  "loc_reuse": "9bb6be90 LOC receipt remains exact: c800b76e only changes tests and documentation.",
+  "regression_reuse": "Nine Qwen single-state consumers passed on 9bb6be90 on all eight entries. Later edits only change Kimi/GLM test recipes and oracles; feedback helper and Qwen recipes unchanged.",
+  "initial_limit": "9bb6be90 full chains passed with stale epsilon 1e-6. They are not model-parameter qualifications. Original logs retained. CPU initial Qwen SKIP is superseded by separately retained fixture-bound run.",
+  "unverified": [
+    "other required profile regions",
+    "D5 complete owner/delivery batches",
+    "D5 P1"
+  ],
+  "profiles": [
+    "glm53_flash:fidelity_gguf:Q8_0",
+    "glm53_flash:official:official-fp8",
+    "glm53_flash:primary_gguf:UD-Q4_K_XL",
+    "kimi_k3:fidelity_gguf:UD-Q8_K_XL",
+    "kimi_k3:official:official-mxfp4",
+    "kimi_k3:primary_gguf:UD-Q4_K_XL"
+  ]
+}

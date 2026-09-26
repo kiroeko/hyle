@@ -183,6 +183,12 @@ GGUF folded negative-A，GLM 官方 BF16 conv/norm 的实际 Cast 与 F32 state�
 核心与 Kimi latent MoE 的 norm/oracle，追加原官方 Kimi 和 GGUF MoE 批次；容差不变。
 旧核心与 MoE 收据保留为原参数的事实，撤回其对本项真实 norm 参数的资格；无需改产品实现。
 
+**本批结果：** `c800b76e` 的完整 KDA、修正参数的核心和官方 Kimi/GGUF MoE 在四路线八入口
+共32/32组通过，零跳过。共享多状态 helper 的九画像 Qwen 回归已有八入口合格收据并按未改范围复用。
+见[完整链收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/README.md)。
+ledger 新增48个 R06 `partial_receipts`，完整画像仍72/176；不把 region 通过改写为整画像通过。
+最新实现仍为58,588行/232文件，没有新增产品数学，剩余片段、三交付和 P1 继续按 D5 主卡执行。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

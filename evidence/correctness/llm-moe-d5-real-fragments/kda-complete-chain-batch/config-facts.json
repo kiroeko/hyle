@@ -1,0 +1,52 @@
+{
+  "source_file": ".scratch/official-weight-audit.json",
+  "source_sha256": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff",
+  "models": [
+    {
+      "model": "kimi_k3",
+      "repository": "moonshotai/Kimi-K3",
+      "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+      "rms_norm_eps": 1e-05,
+      "linear_attn_config": {
+        "num_heads": 96,
+        "head_dim": 128,
+        "gate_lower_bound": -5,
+        "short_conv_kernel_size": 4
+      },
+      "native_kda_l2_epsilon": 1e-05
+    },
+    {
+      "model": "glm53_flash",
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "rms_norm_eps": 1e-05,
+      "linear_attn_config": {
+        "num_heads": 64,
+        "head_dim": 128,
+        "gate_lower_bound": -5,
+        "short_conv_kernel_size": 4
+      },
+      "native_kda_l2_epsilon": 1e-06
+    }
+  ],
+  "native_sources": [
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "path": "src/models/kimi-k3.cpp",
+      "symbols": [
+        "build_kda_layer",
+        "build_latent_moe"
+      ]
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "de25343596a2c924ba62d35b126e811be0d38a49",
+      "path": "src/models/glm5-next.cpp",
+      "symbols": [
+        "build_kda_layer"
+      ],
+      "local_sha256": "42bbfdada39854d9b6c94cfc764c35c30eadac288771d34776fe17cd92ecde8c"
+    }
+  ]
+}

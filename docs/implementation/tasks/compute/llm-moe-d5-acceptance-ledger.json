@@ -5614,7 +5614,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:cpu:graph",
@@ -5623,7 +5632,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:cuda:direct",
@@ -5632,7 +5650,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:cuda:graph",
@@ -5641,7 +5668,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:apple:direct",
@@ -5650,7 +5686,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:apple:graph",
@@ -5659,7 +5704,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:vulkan:direct",
@@ -5668,7 +5722,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:official:official-mxfp4:vulkan:graph",
@@ -5677,7 +5740,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:cpu:direct",
@@ -5686,7 +5758,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:cpu:graph",
@@ -5695,7 +5776,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:cuda:direct",
@@ -5704,7 +5794,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:cuda:graph",
@@ -5713,7 +5812,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:apple:direct",
@@ -5722,7 +5830,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:apple:graph",
@@ -5731,7 +5848,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:vulkan:direct",
@@ -5740,7 +5866,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:primary_gguf:UD-Q4_K_XL:vulkan:graph",
@@ -5749,7 +5884,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:cpu:direct",
@@ -5758,7 +5902,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:cpu:graph",
@@ -5767,7 +5920,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:cuda:direct",
@@ -5776,7 +5938,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:cuda:graph",
@@ -5785,7 +5956,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:apple:direct",
@@ -5794,7 +5974,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:apple:graph",
@@ -5803,7 +5992,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:vulkan:direct",
@@ -5812,7 +6010,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "kimi_k3:fidelity_gguf:UD-Q8_K_XL:vulkan:graph",
@@ -5821,7 +6028,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:cpu:direct",
@@ -6334,7 +6550,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:cpu:graph",
@@ -6343,7 +6568,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:cuda:direct",
@@ -6352,7 +6586,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:cuda:graph",
@@ -6361,7 +6604,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:apple:direct",
@@ -6370,7 +6622,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:apple:graph",
@@ -6379,7 +6640,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:vulkan:direct",
@@ -6388,7 +6658,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:official:official-fp8:vulkan:graph",
@@ -6397,7 +6676,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:cpu:direct",
@@ -6406,7 +6694,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:cpu:graph",
@@ -6415,7 +6712,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:cuda:direct",
@@ -6424,7 +6730,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:cuda:graph",
@@ -6433,7 +6748,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:apple:direct",
@@ -6442,7 +6766,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:apple:graph",
@@ -6451,7 +6784,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:vulkan:direct",
@@ -6460,7 +6802,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:primary_gguf:UD-Q4_K_XL:vulkan:graph",
@@ -6469,7 +6820,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:cpu:direct",
@@ -6478,7 +6838,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:cpu:graph",
@@ -6487,7 +6856,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:cuda:direct",
@@ -6496,7 +6874,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:cuda:graph",
@@ -6505,7 +6892,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:apple:direct",
@@ -6514,7 +6910,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:apple:graph",
@@ -6523,7 +6928,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:vulkan:direct",
@@ -6532,7 +6946,16 @@
       "entry": "direct",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     },
     {
       "id": "glm53_flash:fidelity_gguf:Q8_0:vulkan:graph",
@@ -6541,7 +6964,16 @@
       "entry": "graph",
       "status": "VALIDATION_NOT_RUN",
       "receipt": null,
-      "region_verdicts": []
+      "region_verdicts": [],
+      "partial_receipts": [
+        {
+          "regions": [
+            "R06"
+          ],
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+        }
+      ]
     }
   ],
   "counts": {
