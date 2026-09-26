@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "candidate": "f0bec3afe856533f9fa366ef556c649b53f75f3a",
+  "scope": "Partial region receipts only; no complete profile cell added.",
+  "vocabulary_profiles": [
+    "kimi_k3:official:official-mxfp4",
+    "kimi_k3:primary_gguf:UD-Q4_K_XL",
+    "kimi_k3:fidelity_gguf:UD-Q8_K_XL",
+    "deepseek_v4_pro:official:official-fp4-fp8",
+    "deepseek_v4_flash:official:official-fp4-fp8",
+    "deepseek_v4_flash:primary_gguf:UD-Q4_K_XL",
+    "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL",
+    "glm53:official:official-fp8",
+    "glm53:primary_gguf:UD-Q4_K_XL",
+    "glm53:fidelity_gguf:Q8_0",
+    "glm53_flash:official:official-fp8",
+    "glm53_flash:primary_gguf:UD-Q4_K_XL",
+    "glm53_flash:fidelity_gguf:Q8_0"
+  ],
+  "semantic_cores": {
+    "kda_profiles": 6,
+    "kimi_situ_profiles": 3,
+    "hyper_connection_profiles": 7,
+    "kda_steps": 8,
+    "kda_actual_route_state_feedback": true,
+    "precision": "F32 runtime core, post-projection gate/mix inputs; not full artifact weight qualification"
+  },
+  "entries": [
+    {
+      "route": "cpu",
+      "entry": "direct",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "cpu-compute.log"
+    },
+    {
+      "route": "cpu",
+      "entry": "graph",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "cpu-graph.log"
+    },
+    {
+      "route": "cuda",
+      "entry": "direct",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "cuda-compute.log"
+    },
+    {
+      "route": "cuda",
+      "entry": "graph",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "cuda-graph.log"
+    },
+    {
+      "route": "vulkan",
+      "entry": "direct",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "vulkan-compute.log"
+    },
+    {
+      "route": "vulkan",
+      "entry": "graph",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "vulkan-graph.log"
+    },
+    {
+      "route": "apple",
+      "entry": "direct",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "apple-build-and-test.log"
+    },
+    {
+      "route": "apple",
+      "entry": "graph",
+      "tests": 29,
+      "verdict": "PASS",
+      "log": "apple-build-and-test.log"
+    }
+  ],
+  "total_tests": 232,
+  "failed_tests": 0,
+  "skipped_tests": 0,
+  "initial_compile_failure": "Test-only int64 to int32 warnings; explicit checked-domain index cast fixed before candidate. Original build log retained.",
+  "selector": "Plan and skipped reasons retained. Batched selected targeted consumers ran; this is not a full selected-factor verdict.",
+  "delivery": "VALIDATION_NOT_RUN",
+  "performance": "VALIDATION_NOT_RUN",
+  "whole_profile_cells_added": 0,
+  "complete_profile_cells": 72,
+  "files": {
+    "apple-build-and-test.log": {
+      "bytes": 170147,
+      "sha256": "17d39ac723a2215004bb4fed52d15d2c25b6332768936c703f1fa19484fe5795"
+    },
+    "cpu-build.cmd": {
+      "bytes": 267,
+      "sha256": "26ccdf050672af0fe951c626d185904a1d7a31be32787da952110bdce75800ec"
+    },
+    "cpu-build.log": {
+      "bytes": 62128,
+      "sha256": "5650ad7cd3cb3f710206e4527c650bee3fd8a1cbd8c2efe7638be2cea9dec15c"
+    },
+    "cpu-compute.log": {
+      "bytes": 6382,
+      "sha256": "239034da46de6da7e06d7d2241ac2e8824fc6a097dfe286b05de30a8f4bf3d2d"
+    },
+    "cpu-graph.log": {
+      "bytes": 6692,
+      "sha256": "b3a8be8d6d4e5715010d91594f3be96dd45b59bb79c4c460e6c0cff35925d96f"
+    },
+    "cpu-initial-build-failure.log": {
+      "bytes": 66036,
+      "sha256": "b150e212cab33c4a36436157e975aecd14c7cf5e32c418bd4dd106b0e886d07a"
+    },
+    "cuda-build.cmd": {
+      "bytes": 258,
+      "sha256": "a50902eeab54a2f250fb14046adc6bf35bfeb21bc05449d23f9f45523a262244"
+    },
+    "cuda-build.log": {
+      "bytes": 189355,
+      "sha256": "97373a38ab98e5c4a378631c0d278e95539c7e064f2f535656a625ec011641e0"
+    },
+    "cuda-compute.log": {
+      "bytes": 19157,
+      "sha256": "41594b52941a9fe97b994cee530e1eb7a12a44536f6f26ec90c71dfe2d0fb071"
+    },
+    "cuda-graph.log": {
+      "bytes": 13615,
+      "sha256": "f3a04872b9e91b77db20fecd9320d5b1a8f8972dcb6428a42caa4a29530c7f7f"
+    },
+    "d5-moe-semantic-apple.py": {
+      "bytes": 1577,
+      "sha256": "91b259f38907188eb4d999e5bd0e61590504974c3a29ea00aaf682df046d780e"
+    },
+    "d5-moe-semantic-loc.py": {
+      "bytes": 741,
+      "sha256": "ce5939df14f115fb0a2228518df35050b5f0bd8408afca121a4d5f0cd1a323c8"
+    },
+    "d5-moe-semantic-windows.py": {
+      "bytes": 2063,
+      "sha256": "798b6ff7124fc8620bac34267b09eca9c4dc5281b4fc56cbe9c632279e2b9483"
+    },
+    "loc.json": {
+      "bytes": 4133,
+      "sha256": "b035522435243f605394ae52d9f4645e805cf4c870cb0c013848c64ca3250fb0"
+    },
+    "maintenance.log": {
+      "bytes": 422,
+      "sha256": "46f90a1eb8d5dad78b01af0dda331259572ef2e459e82057b213f33b622c0063"
+    },
+    "plan.json": {
+      "bytes": 214390,
+      "sha256": "04c706faf9b609c90fcb7220d33ed54bd43ca2071e64e6e9d433c1d47500e191"
+    },
+    "vulkan-build.cmd": {
+      "bytes": 276,
+      "sha256": "8c44d98fc0e5b33583e610fa49f98b5f115b22cdda3899c4a651d60f6e4747cf"
+    },
+    "vulkan-build.log": {
+      "bytes": 67173,
+      "sha256": "8e927f25a304999d40cdeea4ca5438dd00c5b16cc593c787233fd2741c3f03a5"
+    },
+    "vulkan-compute.log": {
+      "bytes": 6565,
+      "sha256": "356b2524da0490f6b73c925a2a596c5060e7b7e95dc9aab2d538ad18227f3467"
+    },
+    "vulkan-graph.log": {
+      "bytes": 6875,
+      "sha256": "e6287efbcd0639103eaf1ccf6db970c796d2943096138926c77a9cef455b9226"
+    }
+  }
+}

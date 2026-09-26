@@ -1,0 +1,71 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.*:D5ExactMoeVocabulary/*
+[==========] Running 29 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback
+[       OK ] CpuMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback (807 ms)
+[ RUN      ] CpuMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuMoeFragments.D5KimiThreeProfilesSituActivation (1 ms)
+[ RUN      ] CpuMoeFragments.D5SevenProfilesHyperConnectionCore
+[       OK ] CpuMoeFragments.D5SevenProfilesHyperConnectionCore (10 ms)
+[----------] 3 tests from CpuMoeFragments (819 ms total)
+
+[----------] 26 tests from D5ExactMoeVocabulary/CpuQwenGgufVocabulary
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (2529 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (1088 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (2541 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (2026 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (1042 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (480 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6 (1050 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7 (1864 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8 (865 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9 (872 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10 (1251 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11 (581 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12 (574 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (879 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (307 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (869 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (684 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (362 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (167 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6 (371 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7 (441 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8 (180 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9 (181 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10 (290 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11 (119 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12 (122 ms)
+[----------] 26 tests from D5ExactMoeVocabulary/CpuQwenGgufVocabulary (21749 ms total)
+
+[----------] Global test environment tear-down
+[==========] 29 tests from 2 test suites ran. (22569 ms total)
+[  PASSED  ] 29 tests.

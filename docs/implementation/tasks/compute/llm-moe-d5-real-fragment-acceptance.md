@@ -27,7 +27,9 @@ Direct/Graph consumer，接入六画像 KDA、三画像 Kimi SiTU、七画像 mH
 mHC 保留 hc=4、真实 H=7168/4096、非均匀 Sinkhorn(20)、独立分支输出与原 residual；
 SiTU 保留 expert width=3584、beta=4、linear_beta=25。这是 F32 运行核心和投影后边界的
 验收，不代签 R03 投影、官方 BF16 参数转换或完整模型画像。权重内容为合成非零值。
-CPU 两入口各三个批量测试已通过；GPU 尚未运行，整格 ledger 仍为72/176。
+候选 `f0bec3afe` 的四路线八入口各29项通过（含十三画像 R01），共232项、零失败/零 SKIP，见
+[批量收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/README.md)。
+整格 ledger 仍为72/176；三交付与 P1 未运行。统一实现统计仍为58,255行／228文件。
 公式来源为已登记 llama.cpp `4c9233c034fc450dcf34c7c0988aebe6da5cdf1a`
 的 `src/models/kimi-k3.cpp` / `deepseek4.cpp` 与 Transformers
 `c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad` 的 `models/glm5_next/modeling_glm5_next.py`。

@@ -1,0 +1,71 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *MoeFragments.*:D5ExactMoeVocabulary/*
+[==========] Running 29 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from VulkanGraphMoeFragments
+[ RUN      ] VulkanGraphMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback
+[       OK ] VulkanGraphMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback (3873 ms)
+[ RUN      ] VulkanGraphMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] VulkanGraphMoeFragments.D5KimiThreeProfilesSituActivation (286 ms)
+[ RUN      ] VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore
+[       OK ] VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore (996 ms)
+[----------] 3 tests from VulkanGraphMoeFragments (5156 ms total)
+
+[----------] 26 tests from D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (3942 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (1208 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (3831 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (3032 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (2003 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (654 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6 (2072 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7 (3187 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8 (916 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9 (845 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10 (2433 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11 (773 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12 (808 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (1556 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (671 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (1665 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (1572 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (872 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (386 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6 (884 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7 (1073 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8 (757 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9 (449 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10 (683 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11 (274 ms)
+[ RUN      ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12
+[       OK ] D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12 (291 ms)
+[----------] 26 tests from D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary (36851 ms total)
+
+[----------] Global test environment tear-down
+[==========] 29 tests from 2 test suites ran. (42007 ms total)
+[  PASSED  ] 29 tests.
