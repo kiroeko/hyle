@@ -17,6 +17,13 @@ F30 的64-head准入和F31的 CUDA 原生 I32 Concat 已验证；Vulkan布局与
 见[批量检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-remaining-checkpoint/README.md)。
 完整 MTP、官方 FP8剩余域和完整画像门仍未签，ledger维持96/176；实现58,617行/232文件。
 
+**GLM decoder/稀疏cache接合已验：** `3fb5e818` 的四路线 Direct/Graph 各10/10通过，
+合计80组、零跳过，其中每入口新增NextN decoder实际hidden/cache回送和DSA索引直接驱动
+compressed-cache Gather/Attention两组。完整GLM片段组由6增至8（八入口64/64），另有16组
+MoE回归；原CPU失败和有限consumer纠正保留于
+[新检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-nextn-decoder-checkpoint/README.md)。
+MTP索引跨轮carry/reset、全词表head组合及官方FP8剩余域仍未签，不增加完整画像格。
+
 **下一共用批次已开始：** 其余13画像的 R01 复用已有八入口词表消费者，保留 Kimi 163840、
 DeepSeek 129280、GLM 154880 的完整词表和真实 hidden。逐角色 BF16/Q8_0 由已保存的官方/
 GGUF header 取证，写入 `tests/compute_models/d5_moe_profile_facts.json`，不重新下载模型。
@@ -362,7 +369,7 @@ hidden/cache回送，独立oracle推进，检查首轮索引生成与后续carry
 仪器。一轮具体失败纠正后按实际结果裁决；若缺原版能力，记录具名格式/设备/程序拒绝及替代路径
 调查边界，不新增HYLE数学。完整画像只在其全部region和完整owner gate完成后增加。
 
-**接线检查点（尚未运行）：** 四个GGUF共用NextN decoder已连接EH→MLA→residual→norm→
+**接线检查点（下文已验候选保留首次接线范围）：** 四个GGUF共用NextN decoder已连接EH→MLA→residual→norm→
 routed/shared MoE→residual→head norm，四次变化embedding、实际上轮hidden/cache回送；独立
 参考函数复用原有投影/MLA/MoE公式，不以实际输出为oracle。另一个共享consumer把真实DSA
 top2048（Flash为512个pool展开并附0..3尾token）直接送入compressed cache的checked Gather和
@@ -376,6 +383,11 @@ noncausal，超出既有成熟causal入口；改为右对齐causal后所有已�
 逐项比较ID及权重。只对诊断端口增加原生TopK/Gather按expert ID排列，同时独立参考以相同ID
 对应权重；成员仍精确相等、原误差门不变，实际MoE保留原生次序。额外诊断排序/搬运计入测试
 成本，不宣称它是最优执行。Graph的初始search budget失败先按同一不可用SDPA归因，不改搜索器。
+
+**有限纠正结果：** `3fb5e818` 的CPU/CUDA/Apple/Vulkan Direct/Graph本批均10/10通过，
+没有修改产品准入、搜索预算、数学或误差门；首次漏选的八画像GGUF MoE回归也纳入纠正批次。
+原始失败与最终通过日志见上方新检查点。两组新consumer共16组通过仍不代签完整R13、画像、
+三交付或P1；后续严格限定到本节既定carry/reset、完整head组合与具名官方FP8缺口。
 
 ## Closure card
 
