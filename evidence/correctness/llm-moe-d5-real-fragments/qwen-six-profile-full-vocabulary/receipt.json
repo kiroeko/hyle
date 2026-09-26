@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "d5-qwen-six-profile-full-vocabulary",
+  "verdict": "RUN_PASS",
+  "profiles": [
+    "qwen35_2b:official:official-bf16",
+    "qwen35_2b:primary_gguf:UD-Q4_K_XL",
+    "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
+    "qwen38_27b:official:official-bf16",
+    "qwen38_27b:primary_gguf:UD-Q4_K_M",
+    "qwen38_27b:fidelity_gguf:UD-Q8_K_XL"
+  ],
+  "cell_count": 48,
+  "vocabulary_rows": 248320,
+  "source_fixture_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "cell_candidates": {
+    "cpu:direct": "b2ef3eb0db11bce39a7458cf8f254dc511ce89c1",
+    "cpu:graph": "57cd5a67c58b4f3523ec3e86ba7f50aa9d319f5c",
+    "cuda:direct": "3b326cd16ec529f26af4505504cdcace062d3ae7",
+    "cuda:graph": "3b326cd16ec529f26af4505504cdcace062d3ae7",
+    "apple:direct": "b2ef3eb0db11bce39a7458cf8f254dc511ce89c1",
+    "apple:graph": "b2ef3eb0db11bce39a7458cf8f254dc511ce89c1",
+    "vulkan:direct": "3b326cd16ec529f26af4505504cdcace062d3ae7",
+    "vulkan:graph": "3b326cd16ec529f26af4505504cdcace062d3ae7"
+  },
+  "validation": {
+    "windows_full_selector_candidate": "3b326cd16ec529f26af4505504cdcace062d3ae7",
+    "windows_full_selector_verdict": "PASS",
+    "windows_incremental_cpu_direct": "PASS",
+    "windows_incremental_cpu_graph": "PASS",
+    "mac_apple_direct_factor": "PASS",
+    "mac_apple_graph_factor": "PASS",
+    "mac_whole_selector": "BLOCKED_BY_EXTRA_CPU_GRAPH",
+    "mac_vulkan_direct_factor": "PASS",
+    "mac_vulkan_graph_direct_ctest": "PASS"
+  },
+  "pending": [
+    "D5-A5 external source/static/shared delivery",
+    "D5-A6 applicable P1",
+    "Mac CPU Graph cross-platform test shape and numeric oracle"
+  ]
+}

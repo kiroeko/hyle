@@ -860,9 +860,42 @@
       "profile": "qwen35_2b:official:official-bf16",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -883,22 +916,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-direct/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-direct/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:cpu:graph",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -919,22 +979,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-graph/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-official-graph/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:cuda:direct",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -955,22 +1042,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-official-direct/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-official-direct/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:cuda:graph",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -991,22 +1105,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-official-graph/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-official-graph/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:apple:direct",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1027,22 +1168,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-official-direct/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-official-direct/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:apple:graph",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1063,22 +1231,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-official-graph/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-official-graph/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:vulkan:direct",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1099,22 +1294,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-official-direct/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-official-direct/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:official:official-bf16:vulkan:graph",
       "profile": "qwen35_2b:official:official-bf16",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1135,22 +1357,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-official-graph/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-official-graph/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:cpu:direct",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1170,22 +1415,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:cpu:graph",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1205,22 +1473,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:cuda:direct",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1240,22 +1531,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:cuda:graph",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1275,22 +1589,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:apple:direct",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1310,22 +1647,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:apple:graph",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1345,22 +1705,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:vulkan:direct",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1380,22 +1763,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:primary_gguf:UD-Q4_K_XL:vulkan:graph",
       "profile": "qwen35_2b:primary_gguf:UD-Q4_K_XL",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1415,22 +1821,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:cpu:direct",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1444,22 +1873,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:cpu:graph",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1473,22 +1925,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:cuda:direct",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1502,22 +1977,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:cuda:graph",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1531,22 +2029,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:apple:direct",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1560,22 +2081,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:apple:graph",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1589,22 +2133,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:vulkan:direct",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1618,22 +2185,45 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL:vulkan:graph",
       "profile": "qwen35_2b:fidelity_gguf:UD-Q8_K_XL",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1647,22 +2237,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen35-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:cpu:direct",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1683,22 +2300,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:cpu:graph",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1719,22 +2363,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:cuda:direct",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1755,22 +2426,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:cuda:graph",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1791,22 +2489,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:apple:direct",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1827,22 +2552,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:apple:graph",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1863,22 +2615,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:vulkan:direct",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1899,22 +2678,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:official:official-bf16:vulkan:graph",
       "profile": "qwen38_27b:official:official-bf16",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1935,22 +2741,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-official-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-official-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:cpu:direct",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1965,22 +2798,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:cpu:graph",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -1995,22 +2855,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:cuda:direct",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2025,22 +2912,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:cuda:graph",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2055,22 +2969,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:apple:direct",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2085,22 +3026,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:apple:graph",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2115,22 +3083,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:vulkan:direct",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2145,22 +3140,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:primary_gguf:UD-Q4_K_M:vulkan:graph",
       "profile": "qwen38_27b:primary_gguf:UD-Q4_K_M",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2175,22 +3197,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-primary-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-primary-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:cpu:direct",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2205,22 +3254,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:cpu:graph",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2235,22 +3311,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:cuda:direct",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2265,22 +3368,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:cuda:graph",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2295,22 +3425,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:apple:direct",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "apple",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2325,22 +3482,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:apple:graph",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "apple",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2355,22 +3539,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/apple-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:vulkan:direct",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "vulkan",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2385,22 +3596,49 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL:vulkan:graph",
       "profile": "qwen38_27b:fidelity_gguf:UD-Q8_K_XL",
       "route": "vulkan",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R04",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R05",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -2415,13 +3653,7 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-fidelity-gguf-complete/receipt.json"
         }
-      ],
-      "vocabulary_qualification_gap": {
-        "region": "R01",
-        "observed_rows": 7,
-        "required_rows": 248320,
-        "historical_receipt": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-qwen38-fidelity-gguf-complete/receipt.json"
-      }
+      ]
     },
     {
       "id": "qwen38_24t:official:official-bf16:cpu:direct",
@@ -3582,14 +4814,15 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 0,
+    "RUN_PASS": 48,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 176
+    "VALIDATION_NOT_RUN": 128
   },
   "qualification_correction": {
     "reason": "The 48 former Qwen3.5-2B and Qwen3.8-27B complete cells used seven R01 vocabulary rows; the fixed real-profile capacity policy does not permit reducing the 248320-row vocabulary. Their non-R01 successful regions remain linked as partial receipts.",
     "affected_cells": 48,
-    "next_gate": "Run the exact-width R01 embedding/head boundary in each affected route and entry, then repeat the complete profile qualification on one immutable batch candidate."
+    "resolution_receipt": "evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/receipt.json",
+    "resolved_cells": 48
   }
 }

@@ -75,6 +75,19 @@ embedding/head 已在 CPU、CUDA、Apple、Vulkan 各自 Direct/Graph 普通入�
 不触发每个算子/profile 的全量 selector、三交付或 P1；其它 region 未组合验收，
 ledger 维持 0/176 `RUN_PASS`。
 
+**六个 Qwen 画像整格批量复核（`3b326cd1` → `b2ef3eb0` → `57cd5a67`）**：
+Qwen3.5-2B 和 Qwen3.8-27B 的官方及两种 GGUF 画像，在四路线 Direct/Graph
+共 48 格重新通过全部所需 region；R01 保留 V=248,320、真实逐角色格式、全部
+logits、跨片/越界失败。Windows 不可变候选的六个路线 factor selector 全部 PASS；
+后续两项纯测试修正分别在原隔离构建树增量编译并完整复跑 CPU Direct/Graph owner。
+MacBook Air 的 Apple Direct/Graph 各自取得 selector `PASS`，内部 104/104 与
+77/77，无 SKIP。批量收据见
+[六画像完整词表复核](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-six-profile-full-vocabulary/README.md)。
+当前 ledger 为 48/176 `RUN_PASS`、128/176 `VALIDATION_NOT_RUN`；D5-A5 三交付和
+D5-A6 P1 尚未执行。Mac 额外 CPU Graph 检查的 ARM FP16 oracle 与把 BF16
+画像转为 F32 后要求 oneDNN 融合的测试形状仍失败，不能写作 Mac 全套 selector PASS；
+它不代替本卡的 Windows CPU 产品机 verdict，后续须单独修正与复核。
+
 **当前 BF16 full MoE 批次结果（部分收据）**：四路线各自的完整 Graph owner 与 Direct owner
 suite 均已通过 512-way/top-10、动态 grouped expert、shared expert 和 final add 的三次变化输入
 重放及独立 oracle。Graph 的 CUDA 256-byte workspace 对齐缺陷已按 D5-F20 修复；Apple Direct
