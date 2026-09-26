@@ -351,7 +351,7 @@
       },
       "vendored": {
         "path": "third_party/deepseek_fp8",
-        "tree_sha256": "caa97021f67eba3a9cafaf4727e7a7a89fec665c7d3677ca23b9fd0f1ba4aada"
+        "tree_sha256": "52d24ad03cf0d663475ef43f2a75771f58c90fba1a7205450a4c49553c09af3b"
       },
       "license": {
         "expression": "MIT",

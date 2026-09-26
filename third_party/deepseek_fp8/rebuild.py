@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import sys
+sys.dont_write_bytecode = True
 
 import triton
 from triton.backends.compiler import GPUTarget
