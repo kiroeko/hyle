@@ -61,6 +61,9 @@ F42已在`fd1a9ac4`完成默认CUDA两入口、资源生命周期、原版重建
 [9项普通资格与24项native收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-quantization-roundtrip/README.md)。
 完整DeepSeek官方片段仍待接合，ledger保持144/176；统一实现59,899行/238文件。
 
+后续完整官方CUDA消费按[F43混合片段](llm-moe-d5-deepseek-official-mixed-fragments.md)
+定界，批量连接FP4专家激活边界、共享FP8、attention/compressor及MTP；不以原子通过增加画像格。
+
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。
 Apple修正和静态故障注入已通过；Vulkan分类修正已验，数值失败仍保留。
