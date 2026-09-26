@@ -57,8 +57,11 @@ def main() -> None:
         assert set(item["regions"]) <= REGIONS
         assert not (set(item["regions"]) & set(expected.get("excluded_regions", [])))
         assert item["shape_anchor"]
-        assert all(isinstance(value, int) and value > 0
-                   for value in item["shape_anchor"].values())
+        # A non-rotary model has an explicit zero rotary depth; its actual
+        # tensor dimensions remain positive. Do not invent RoPE to pass a ledger check.
+        assert all(isinstance(value, int) and
+                   (value >= 0 if name == "rope_depth" else value > 0)
+                   for name, value in item["shape_anchor"].items())
 
     cells = ledger["cells"]
     assert len(cells) == len(profiles) * len(ROUTES) * len(ENTRIES) == 176

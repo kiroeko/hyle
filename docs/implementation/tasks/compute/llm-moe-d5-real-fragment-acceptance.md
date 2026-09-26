@@ -454,6 +454,10 @@ GGUF的rope/压缩超参数另核对固定首分片metadata，不从量化档位
 - F34.4：两份GGUF完整链与四画像已适用的F32语义片段共用四路线Direct/Graph；
   参考在host独立推进，第二次及以后输入状态使用实际输出，placeholder检测错误回灌。
   复用既定F32、BF16和quantized-chain误差门，不因本批失败调大。
+- F34.5：依据同一固定模型程序和已登记权重角色，接入F32 mHC混合投影、实际四流反馈、
+  learned mHC head与最终norm；两份GGUF将真实head输入交给已有四路线完整129280词表
+  consumer，复用其分页资源和误差门，不新增执行器或模型loader。官方保留BF16 norm边界，
+  不以此代签其余FP8域或MTP。与F32-F34同一批验证，不另开逐片段构建。
 
 预算为一次共享接线/统一验证及一轮具体失败修正；只查实际缺口，不重扫全部模型。
 单独片段通过不增加完整画像格；FP8、官方MTP、三交付/P1和D6未完成要求继续保留。
@@ -465,6 +469,14 @@ F34首批接线已将同一压缩器consumer加入八个Direct/Graph入口：rat
 压缩RoPE位置按固定`llama-kv-cache-dsv4.cpp`使用块起点，APE使用token位置模ratio。
 两份固定GGUF的metadata已存入事实文件。当前尚未编译/运行，完整attention/grouped输出
 投影仍在接线；按同一批次延迟验证，完整ledger保持128/176，不启动三交付/P1。
+
+F34后续已补两份GGUF的raw/CSA/HCA完整attention消费者：真实Q/K投影和norm、逐token raw
+窗口更新、压缩cache保留/更新、64×128索引器的实际top512选择、sink与逆RoPE、8组4096→1024
+输出投影和8192→4096合并。固定容量保留既有压缩行，只写新完成的块；未来行有显著非零
+数据并被visibility遮蔽。weighted mHC保留真实F32投影、learned head和最终norm，实际输出
+经已有route head adapter完成129280词表；官方仅签这些适用语义，不代签FP8/MTP。
+本批首次冻结F32-F34合并候选，按CPU→CUDA→Apple→Vulkan串行运行受影响owner；重用既有
+Release/WERROR build树、低并行和相邻DLL。尚无本批运行PASS，不单独启动P1或三交付。
 
 ## Closure card
 

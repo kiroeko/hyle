@@ -28,7 +28,9 @@ base10000、compressed base160000、YaRN factor16/original65536/beta32/1、窗�
 共享consumer保留这两个不同的索引。metadata读取不是正确性验收，不增加运行通过格。
 
 GGUF 缺少 NextN 是该固定制品的适用性边界，不是库缺少 MTP 的证据。后续纠正对应两个画像的
-R13 适用性时必须引用完整 header；官方两画像的 MTP 要求仍然保留。当前 ledger 尚未因此修改。
+R13 适用性时必须引用完整 header；官方两画像的 MTP 要求仍然保留。当前需求目录和ledger已据此
+去掉两份GGUF的R13要求；完整header的层集合与上述固定metadata共同证明该边界。这不是一次
+运行PASS，176格数量和已验128格均不变。
 
 ## 已核对的成熟程序与接缝
 

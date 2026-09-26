@@ -1376,6 +1376,27 @@ TEST(VulkanMoeFragments, D5MatureClampBoundaries) {
   run_q24_semantic_fragment(d5_moe_execution_fragments::clamp_boundaries());
 }
 
+TEST(VulkanMoeFragments, D5DeepSeekWeightedHyperConnectionAndHead) {
+  for (std::size_t index : {3u, 4u, 5u, 6u}) {
+    const auto &model = d5_moe_execution_cases::kCases[index];
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    d5_deepseek_remaining_fragments::check_hyper_head(model, run_q24_semantic_fragment);
+  }
+}
+
+TEST(VulkanMoeFragments, D5DeepSeekFullAttentionChain) {
+  for (std::size_t index : {5u, 6u}) {
+    const auto &model = d5_moe_execution_cases::kCases[index];
+    SCOPED_TRACE(model.profile->model_repository);
+    SCOPED_TRACE(model.profile->variant);
+    for (std::int64_t ratio : {0, 4, 128}) {
+      SCOPED_TRACE(ratio);
+      run_q24_semantic_fragment(d5_deepseek_remaining_fragments::attention(model, ratio));
+    }
+  }
+}
+
 TEST(VulkanMoeFragments, D5DeepSeekStatefulCompression) {
   for (std::size_t index : {3u, 4u, 5u, 6u}) {
     const auto &model = d5_moe_execution_cases::kCases[index];

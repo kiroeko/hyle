@@ -55,8 +55,8 @@
     {
       "model": "deepseek_v4_flash",
       "official": {"repository": "deepseek-ai/DeepSeek-V4-Flash", "revision": "60d8d70770c6776ff598c94bb586a859a38244f1", "variant": "official-fp4-fp8", "formats": ["packed FP4 expert", "FP8 E4M3", "UE8M0 scale", "BF16", "F32", "I64"]},
-      "primary_gguf": {"repository": "unsloth/DeepSeek-V4-Flash-GGUF", "revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0", "variant": "UD-Q4_K_XL", "formats": ["MXFP4", "Q8_0", "BF16", "F32"]},
-      "fidelity_gguf": {"repository": "unsloth/DeepSeek-V4-Flash-GGUF", "revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0", "variant": "UD-Q8_K_XL", "formats": ["MXFP4", "BF16", "F32"]}
+      "primary_gguf": {"repository": "unsloth/DeepSeek-V4-Flash-GGUF", "revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0", "variant": "UD-Q4_K_XL", "formats": ["MXFP4", "Q8_0", "BF16", "F32"], "excluded_regions": ["R13"]},
+      "fidelity_gguf": {"repository": "unsloth/DeepSeek-V4-Flash-GGUF", "revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0", "variant": "UD-Q8_K_XL", "formats": ["MXFP4", "BF16", "F32"], "excluded_regions": ["R13"]}
     },
     {
       "model": "glm53",
