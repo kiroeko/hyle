@@ -530,6 +530,13 @@ TEST(GgmlCudaTensor, IntegerConcatPreservesIndexBitsAcrossReplays) {
     std::reverse(a.begin(), a.end());
     std::reverse(b.begin(), b.end());
   }
+  auto single_output = output_buffer(memory.ref(), left);
+  auto single_status = execute(ctx, Concat{.axis = 1}, std::span(inputs).first(1),
+      TensorView::create(left, single_output.view()).value());
+  ASSERT_TRUE(single_status.ok()) << single_status.message();
+  auto single_expected = a;
+  std::reverse(single_expected.begin(), single_expected.end());
+  EXPECT_EQ(half_test::read<std::int32_t>(single_output), single_expected);
   const auto strided = TensorDesc::strided_bytes(DataType::kInt32,
       std::array<std::int64_t, 2>{2, 4}, std::array<std::int64_t, 2>{32, 8}).value();
   const std::array invalid_inputs{strided, right};
