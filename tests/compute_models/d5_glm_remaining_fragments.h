@@ -425,13 +425,22 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
     const auto half = [](float value) {
       return half_test::decode(half_test::encode<hyle::simd::float16_t>(value));
     };
+    const bool native_half_products = model.flash && model.official;
+    std::vector<double> half_query, half_keys;
+    if (native_half_products) {
+      half_query.reserve(qv.size());
+      half_keys.reserve(pool_keys.size());
+      for (auto value : qv) half_query.push_back(half(value));
+      for (auto value : pool_keys) half_keys.push_back(half(value));
+    }
     for (std::int64_t t = 0; t < candidates; ++t) {
       double sum = 0, half_sum = 0;
       for (int h = 0; h < heads; ++h) {
         double dot_value = 0, half_dot = 0;
         for (int d = 0; d < depth; ++d) {
           dot_value += double(qv[h * depth + d]) * pool_keys[t * depth + d];
-          half_dot += half(qv[h * depth + d]) * half(pool_keys[t * depth + d]);
+          if (native_half_products)
+            half_dot += half_query[h * depth + d] * half_keys[t * depth + d];
         }
         sum += wv[h] * std::max(0.0, dot_value / std::sqrt(double(depth)));
         half_sum += wv[h] * std::max(0.0, half_dot / std::sqrt(double(depth)));
@@ -456,7 +465,7 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
       past.insert(past.end(), full.begin() + index * depth, full.begin() + (index + 1) * depth);
     replay.outputs = {past, qv, kv, wv, pool_keys, index_scores, selected_ids};
     if (model.flash) { replay.outputs.push_back(next_gate_values); gate_history = std::move(next_gate_values); }
-    if (model.flash && model.official) {
+    if (native_half_products) {
       // The pinned ggml Vulkan coopmat2 MatMul converts both F32 operands to
       // F16, independently of its F32 accumulation setting. Check only that
       // score boundary against the independent rounded oracle AND the existing
