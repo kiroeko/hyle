@@ -189,6 +189,31 @@ GGUF folded negative-A，GLM 官方 BF16 conv/norm 的实际 Cast 与 F32 state�
 ledger 新增48个 R06 `partial_receipts`，完整画像仍72/176；不把 region 通过改写为整画像通过。
 最新实现仍为58,588行/232文件，没有新增产品数学，剩余片段、三交付和 P1 继续按 D5 主卡执行。
 
+### Kimi 剩余三画像与 D5-F29（AUDITED）
+
+baseline `21d81e66`；`compute_ops` A2/A3 的共享消费者批次补齐三画像的 dense FFN、MLA 和
+Attention Residual。固定原始 header/config、llama.cpp `4c9233c` 的 `kimi-k3.cpp` 与
+`conversion/kimi_k3.py`，角色事实保存在 `d5_kimi_remaining_facts.json`。
+H=7168、dense FFN=33792、heads=96、Q rank1536、KV rank512、QK=128+64、V=128；
+MLA 不执行 RoPE，但保留其64维附加分量与原192维缩放。GGUF 使用实际拆分后的 K/V 权重；
+官方 KV-B 仅作原 converter 的 BF16 位转置/拆分。三画像各自存储格式不相互代签。
+Attention Residual 对规范化数据打分、对原始 residual 加权，覆盖首层无 bank、12层边界
+保存原输入并重启 prefix、普通层累加及末层混合。参数 norm epsilon 使用原配置1e-5。
+
+F29 的具体反例：公共 SDPA schema 支持不同 QK/V depth；Kimi absorbed MLA 的 Q/K=576、
+V/output=512 合法，但 ggml CPU/CUDA/Vulkan `supports` 仍要求 K description==V、output==Q。
+固定原版 MatMul/Softmax attention lowering 已按实际 V 维度构图，未写死相同 depth；问题在 HYLE
+冷准入。当前三个 Provider owner 的 AUDITED 范围追加 F29.1：仅放行本批 F32 576/512、96/1 heads
+且 batch/sequence/输出维度一致的 native 域，保留其它 dtype 和已有等深域。不改 runtime、原数学、
+公共 API、默认用户配置或 route owner。F29.2：完整压缩 MLA 链，真实 cache 输出回送与变化输入，
+错配 K/V sequence/head/output 在准备前拒绝；已准入 attention、资源失败/OOM 同批回归。
+
+共享 consumer 的 per-head 权重以现有 GroupedMatMul 绑定固定 head ID，保留一条成熟调用，不循环
+逐 head 建图。BF16/Q8 storage、F32 norm/cache、吸收前后布局与 Attention Residual 融合参数分别
+验证。全部四路线接线后冻结候选，一次串行批验；具体失败限一次定向纠正，不能通过改容差或新增
+HYLE 数学绕过失败。R01/KDA/MoE 已有精确收据按身份复用；整画像必须等剩余 region 和对应完整
+owner 验收齐备才更新，三交付/P1仍按 A5/A6。无上述实测证据不宣称画像完成。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

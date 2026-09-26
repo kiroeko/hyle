@@ -1,0 +1,502 @@
+{
+  "schema_version": 1,
+  "scope": "Kimi MLA, dense FFN and cross-layer residual exact weight roles",
+  "source_sha256": {
+    ".scratch\\official-weight-audit.json": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff",
+    ".scratch\\gguf-weight-audit.json": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+  },
+  "config": {
+    "hidden_size": 7168,
+    "intermediate_size": 33792,
+    "num_attention_heads": 96,
+    "q_lora_rank": 1536,
+    "kv_lora_rank": 512,
+    "qk_nope_head_dim": 128,
+    "qk_rope_head_dim": 64,
+    "v_head_dim": 128,
+    "mla_use_nope": true,
+    "mla_use_output_gate": true,
+    "rms_norm_eps": 1e-05,
+    "attn_res_block_size": 12,
+    "num_hidden_layers": 93
+  },
+  "profiles": [
+    {
+      "id": "official",
+      "repository": "moonshotai/Kimi-K3",
+      "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+      "tensors": [
+        {
+          "name": "language_model.model.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.mlp_res_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.mlp_res_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168,
+            33792
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            33792,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            33792,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.self_attention_res_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.0.self_attention_res_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.g_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.kv_a_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            512
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.kv_a_proj_with_mqa.weight",
+          "dtype": "BF16",
+          "shape": [
+            576,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.kv_b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            24576,
+            512
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168,
+            12288
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.q_a_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            1536
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.q_a_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1536,
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.layers.3.self_attn.q_b_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            18432,
+            1536
+          ]
+        },
+        {
+          "name": "language_model.model.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.output_attn_res_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            7168
+          ]
+        },
+        {
+          "name": "language_model.model.output_attn_res_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            7168
+          ]
+        }
+      ]
+    },
+    {
+      "id": "primary",
+      "repository": "unsloth/Kimi-K3-GGUF",
+      "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+      "tensors": [
+        {
+          "name": "output_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "output_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.attn_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.attn_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_down.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "33792",
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_gate.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "7168",
+            "33792"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_up.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "7168",
+            "33792"
+          ]
+        },
+        {
+          "name": "blk.3.attn_gate.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "7168",
+            "12288"
+          ]
+        },
+        {
+          "name": "blk.3.attn_k_b.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "128",
+            "512",
+            "96"
+          ]
+        },
+        {
+          "name": "blk.3.attn_kv_a_mqa.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "7168",
+            "576"
+          ]
+        },
+        {
+          "name": "blk.3.attn_kv_a_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "512"
+          ]
+        },
+        {
+          "name": "blk.3.attn_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_output.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "12288",
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_q_a.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "7168",
+            "1536"
+          ]
+        },
+        {
+          "name": "blk.3.attn_q_a_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "1536"
+          ]
+        },
+        {
+          "name": "blk.3.attn_q_b.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "1536",
+            "18432"
+          ]
+        },
+        {
+          "name": "blk.3.attn_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_v_b.weight",
+          "dtype": "Q8_0",
+          "shape": [
+            "512",
+            "128",
+            "96"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fidelity",
+      "repository": "unsloth/Kimi-K3-GGUF",
+      "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+      "tensors": [
+        {
+          "name": "blk.0.attn_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_down.weight",
+          "dtype": "BF16",
+          "shape": [
+            "33792",
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            "7168",
+            "33792"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_up.weight",
+          "dtype": "BF16",
+          "shape": [
+            "7168",
+            "33792"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.ffn_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.0.attn_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            "7168",
+            "12288"
+          ]
+        },
+        {
+          "name": "blk.3.attn_kv_a_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "512"
+          ]
+        },
+        {
+          "name": "blk.3.attn_kv_a_mqa.weight",
+          "dtype": "BF16",
+          "shape": [
+            "7168",
+            "576"
+          ]
+        },
+        {
+          "name": "blk.3.attn_k_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            "128",
+            "512",
+            "96"
+          ]
+        },
+        {
+          "name": "blk.3.attn_v_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            "512",
+            "128",
+            "96"
+          ]
+        },
+        {
+          "name": "blk.3.attn_output.weight",
+          "dtype": "BF16",
+          "shape": [
+            "12288",
+            "7168"
+          ]
+        },
+        {
+          "name": "blk.3.attn_q_a_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "1536"
+          ]
+        },
+        {
+          "name": "blk.3.attn_q_a.weight",
+          "dtype": "BF16",
+          "shape": [
+            "7168",
+            "1536"
+          ]
+        },
+        {
+          "name": "blk.3.attn_q_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            "1536",
+            "18432"
+          ]
+        },
+        {
+          "name": "output_norm.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        },
+        {
+          "name": "output_res_score.weight",
+          "dtype": "F32",
+          "shape": [
+            "7168"
+          ]
+        }
+      ]
+    }
+  ]
+}

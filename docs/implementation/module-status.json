@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "summary": "D5-F29 AUDITED: Kimi F32 absorbed MLA QK576/V512 cold admission; preserve original native attention lowering. Shared exact-profile consumer and resource regressions pending; D5 deliveries/P1 remain pending."
     },
     {
       "module": "graph_provider_onednn",
@@ -528,7 +528,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "summary": "D5-F29 AUDITED: Kimi F32 absorbed MLA QK576/V512 cold admission; preserve original native attention lowering. Shared exact-profile consumer and resource regressions pending; D5 deliveries/P1 remain pending."
     },
     {
       "module": "compute_ggml_runtime",
@@ -541,7 +541,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "summary": "D5-F29 AUDITED: Kimi F32 absorbed MLA QK576/V512 cold admission; preserve original native attention lowering. Shared exact-profile consumer and resource regressions pending; D5 deliveries/P1 remain pending."
     },
     {
       "module": "graph_provider_ggml_cuda",
