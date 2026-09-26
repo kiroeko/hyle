@@ -1036,6 +1036,27 @@ plain F32 rank-2 activation、native output-major 转置 RHS、F32 output 的域
 公共 API、native 实现或数学。用上述两个真实 router 及三次变化输入的完整 Direct/Graph
 断言证明普通入口命中 ggml，已有 owner 测试随批执行；P1 仍只在稳定路线批末执行。
 
+### D5-F22：grouped expert 动态 ID 的四路线检查边界
+
+- baseline：`0e4bb7ed`；当前两个 2.4T GGUF 画像接线批，owner 绑定本卡。
+- 新事实：CPU Direct 的真实 IQ4_XS `[11,2048,8192]` grouped fixture 在合法 ID 重放通过后，
+  提交 `-1`/`11` 出现 `0xc0000005`。旧测试只有合法 ID，不能证明该失败边界。
+- 有界源码审计：CPU `Program::index_checks` 和 CUDA 对应表只登记 Gather/Scatter/Gather；
+  Metal `checked_index_port` 只为 Gather 设置；Vulkan 将 GroupedMatMul 直接合入 native region，
+  未使用既有 `lower_index_check`。上游 MUL_MAT_ID 依赖调用方提供合法专家 ID。
+- 固定 FIX：CPU/CUDA/Metal 三个已 AUDITED ggml owner 复用既有索引检查，在提交成熟程序前
+  检查当前 I32 IDs 属于 `[0,E)`；CPU/CUDA recipe 的未检查内部 ID 不准越过该边界。
+  Vulkan route 由 F8 CANDIDATE 退回 AUDITED，只在 `vulkan_program.cc`、`vulkan_region.cc`
+  和私有声明处接入既有 GPU index check、safe IDs 和 checked publication；MUL_MAT_ID 仍由
+  ggml Vulkan 执行，不新增 shader/数学，不做 host 模型调度，不改公共 API 或治理工具。
+- 成本：CPU 读取当前 ID，CUDA 复用已有有界索引 staging/sync，Metal 使用原生共享缓冲；
+  Vulkan 复用已有 GPU 校验与条件发布，禁止为了检查下载整块 activation/weight。
+  三路线已有宿主检查机制不在本 FIX 重写；必要检查成本计入 D5-A6。
+- 验证：同一批八入口验证两种 GGUF 格式的 `-1`、`E`、失败不覆盖已有输出、有效 ID 恢复；
+  完整 MoE 和本批 attention/GDN/MTP/逐角色 projection 随同一稳定候选复核。
+  失败 ID 不送入未修复的 GPU Provider 触发设备断言；源码已给出同类缺口。
+- 停止：完成上述有限边界和已声明批次验收；不扩大为全库安全审查或新算子实现。
+
 ### Qwen3.8 Apple official Direct/Graph 完整格
 
 不可变 tests-only candidate `6086dd721af664a1d759bb4eea3dfd645e02c99f` 在正式 MacBook Air M4

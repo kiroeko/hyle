@@ -10,6 +10,7 @@
 
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
+#include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_24t_moe_profiles.h"
 #include "../compute_models/d5_qwen38_official_fixture.h"
@@ -510,6 +511,23 @@ TEST(CudaGraphQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
       const auto expected = gguf::expected(values, selected, packed.decoded);
       d5_gguf_test::expect_quantized_matmul_close(actual, expected);
     }
+
+    const auto retained = half_test::read<float>(result_buffer);
+    for (std::int32_t bad : {-1, static_cast<std::int32_t>(gguf::kResidentExperts)}) {
+      auto selected = gguf::ids(1);
+      selected.back() = bad;
+      ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(selected))).ok());
+      auto failed = invocation.submit(queue);
+      ASSERT_TRUE(failed) << failed.error().message();
+      EXPECT_TRUE(failed->wait().IsOutOfRange());
+      EXPECT_EQ(half_test::read<float>(result_buffer), retained);
+    }
+    const auto valid = gguf::ids(1);
+    ASSERT_TRUE(ids_buffer.view().write(std::as_bytes(std::span(valid))).ok());
+    auto recovered = invocation.submit(queue);
+    ASSERT_TRUE(recovered) << recovered.error().message();
+    EXPECT_TRUE(recovered->wait().ok());
+    EXPECT_EQ(half_test::read<float>(result_buffer), retained);
   }
 }
 
@@ -704,6 +722,83 @@ TEST(CudaGraphQwen38_24T,
     ASSERT_EQ(actual.size(), q24::kExperts);
     EXPECT_NEAR(actual[9], 1.0, 1.0e-6);
     EXPECT_NEAR(actual[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
+void run_q24_semantic_fragment(
+    d5_qwen38_24t_semantic_fragments::Fragment fixture) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  auto full = sem::make_graph(fixture);
+  auto context = g::cuda::create_context().value();
+  auto memory =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  const auto resource = memory.ref();
+  std::vector<hyle::mem::Buffer> constants(fixture.constants.size());
+  for (std::size_t index = 0; index < constants.size(); ++index)
+    constants[index] = values_buffer<std::byte>(resource, fixture.constant_bytes[index]);
+  fixture.constant_bytes = {};
+  std::vector<g::ConstantBinding> bindings;
+  for (std::size_t i = 0; i < constants.size(); ++i)
+    bindings.push_back({full.constants[i],
+                        c::ConstTensorView::create(fixture.description(fixture.constants[i]),
+                                                    constants[i].view()).value()});
+  const auto workload = q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+  auto compiled_result = g::cuda::compile(
+      full.graph, context, resource,
+      {.constants = bindings, .workload = workload});
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  std::vector<hyle::mem::Buffer> inputs, outputs;
+  for (auto id : fixture.inputs)
+    inputs.push_back(output_buffer(resource, fixture.description(id)));
+  for (auto id : fixture.outputs)
+    outputs.push_back(output_buffer(resource, fixture.description(id)));
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    ASSERT_TRUE(invocation.bind(full.inputs[i],
+        c::ConstTensorView::create(fixture.description(fixture.inputs[i]),
+                                    inputs[i].view()).value()).ok());
+  for (std::size_t i = 0; i < outputs.size(); ++i)
+    ASSERT_TRUE(invocation.bind(full.outputs[i],
+        c::TensorView::create(fixture.description(fixture.outputs[i]),
+                               outputs[i].view()).value()).ok());
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(g::cuda::prepare_replay(invocation, queue).ok());
+  for (const auto &expected : fixture.replays) {
+    for (std::size_t i = 0; i < inputs.size(); ++i)
+      ASSERT_TRUE(inputs[i].view().write(expected.inputs[i]).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    const auto status = done->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    for (std::size_t output = 0; output < outputs.size(); ++output) {
+      const auto actual = half_test::read<float>(outputs[output]);
+      sem::expect_output(fixture, actual, expected.outputs[output]);
+    }
+  }
+}
+
+TEST(CudaGraphQwen38_24T, D5GgufAttentionGdnAndMtpUseRealRoleTypes) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (auto profile : sem::kProfiles) {
+    SCOPED_TRACE(profile->variant);
+    { SCOPED_TRACE("attention"); run_q24_semantic_fragment(sem::attention(profile)); }
+    { SCOPED_TRACE("gdn"); run_q24_semantic_fragment(sem::gdn(profile)); }
+    { SCOPED_TRACE("mtp"); run_q24_semantic_fragment(sem::mtp(profile)); }
+  }
+}
+
+TEST(CudaGraphQwen38_24T, D5GgufAttentionAndGdnProjectionRoleBatch) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (auto profile : sem::kProfiles) {
+    SCOPED_TRACE(profile->variant);
+    for (const auto &role : sem::kProjections) {
+      SCOPED_TRACE(role.tensor);
+      run_q24_semantic_fragment(sem::projection(profile, role));
+    }
   }
 }
 

@@ -21,6 +21,7 @@
 #include "../compute_models/d5_qwen_gguf_vocabulary_apple_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
+#include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_24t_moe_profiles.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
@@ -1213,6 +1214,7 @@ TEST(AppleQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
     Call call{context.prepare(c::model_ops::grouped_matmul(), specs,
                               workload).value()};
     EXPECT_EQ(call.program.workload(), workload);
+    std::optional<mx::array> retained;
     for (int replay = 0; replay < 2; ++replay) {
       const auto input = q24::expert_input(3 + replay * 14);
       const auto selected = grouped::ids(replay);
@@ -1220,10 +1222,35 @@ TEST(AppleQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
       const auto ids = upload(context, ids_desc, std::span(selected));
       const auto output = run(call, weight, activation, ids);
       ASSERT_EQ(output.size(), 1U);
+      retained = output[0];
       const auto actual = float_values(output[0]);
       const auto expected = grouped::expected(input, selected, packed.decoded);
       d5_gguf_test::expect_quantized_matmul_close(actual, expected);
     }
+
+    const auto before_failure = bits(*retained);
+    const auto input = q24::expert_input(17);
+    const auto activation = upload(context, activation_desc, std::span(input));
+    for (std::int32_t bad : {-1, static_cast<std::int32_t>(grouped::kResidentExperts)}) {
+      auto selected = grouped::ids(1);
+      selected.back() = bad;
+      const auto bad_ids = upload(context, ids_desc, std::span(selected));
+      const auto bad_inputs = std::array{weight, activation, bad_ids};
+      auto invocation = call.program.create_invocation().value();
+      ASSERT_TRUE(invocation.bind(bad_inputs).ok());
+      auto failed = invocation.submit();
+      ASSERT_TRUE(failed) << failed.error().message();
+      auto failure = failed->wait();
+      ASSERT_FALSE(failure);
+      EXPECT_TRUE(failure.error().IsOutOfRange());
+      EXPECT_EQ(bits(*retained), before_failure);
+    }
+    const auto valid = grouped::ids(1);
+    const auto valid_ids = upload(context, ids_desc, std::span(valid));
+    const auto recovered = run(call, weight, activation, valid_ids);
+    ASSERT_EQ(recovered.size(), 1U);
+    d5_gguf_test::expect_quantized_matmul_close(
+        float_values(recovered[0]), grouped::expected(input, valid, packed.decoded));
   }
 }
 
@@ -1320,6 +1347,90 @@ TEST(AppleQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
     ASSERT_EQ(scores.size(), q24::kExperts);
     EXPECT_NEAR(scores[9], 1.0, 1.0e-6);
     EXPECT_NEAR(scores[10], 1.0 + fraction, 1.0e-6);
+  }
+}
+
+void run_q24_semantic_fragment(
+    d5_qwen38_24t_semantic_fragments::Fragment fixture) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  auto context = a::Context::create().value();
+  const auto workload = q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+  std::vector<std::optional<mx::array>> tensors(fixture.descriptions.size());
+  const auto &bytes = fixture.constant_bytes;
+  for (std::size_t index = 0; index < fixture.constants.size(); ++index) {
+    const auto id = fixture.constants[index];
+    tensors[id.ordinal()] = fixture.description(id).is_plain()
+        ? upload(context, fixture.description(id), std::span<const std::byte>(bytes[index]))
+        : packed_array(bytes[index]);
+  }
+  fixture.constant_bytes = {};
+
+  std::vector<Call> calls;
+  calls.reserve(fixture.nodes.size());
+  for (const auto &step : fixture.nodes) {
+    if (step.operation.kind() == c::OperationKind::kView)
+      continue;
+    std::vector<a::InputSpec> specs;
+    for (const auto id : step.inputs)
+      specs.push_back(a::input_spec(fixture.description(id)).value());
+    calls.push_back({context.prepare(step.operation, specs, workload).value()});
+  }
+
+  for (const auto &expected : fixture.replays) {
+    for (std::size_t i = 0; i < fixture.inputs.size(); ++i) {
+      auto id = fixture.inputs[i];
+      tensors[id.ordinal()] = upload(context, fixture.description(id),
+                                      std::span(expected.inputs[i]));
+    }
+    std::size_t call_index = 0;
+    for (const auto &step : fixture.nodes) {
+      SCOPED_TRACE(c::operation_name(step.operation.kind()));
+      if (step.operation.kind() == c::OperationKind::kView) {
+        ASSERT_EQ(step.inputs.size(), 1U);
+        ASSERT_EQ(step.outputs.size(), 1U);
+        ASSERT_EQ(step.operation.get_if<c::View>()->kind(),
+                  c::ViewKind::kReshape);
+        tensors[step.outputs[0].ordinal()] = ready(mx::reshape(
+            *tensors[step.inputs[0].ordinal()],
+            native_shape(fixture.description(step.outputs[0]), false), stream()));
+        continue;
+      }
+      std::vector<mx::array> inputs;
+      for (const auto id : step.inputs)
+        inputs.push_back(*tensors[id.ordinal()]);
+      const auto outputs =
+          run(calls[call_index++], std::span<const mx::array>(inputs));
+      ASSERT_EQ(outputs.size(), step.outputs.size());
+      for (std::size_t index = 0; index < outputs.size(); ++index)
+        tensors[step.outputs[index].ordinal()] = outputs[index];
+    }
+    for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
+      const auto actual = float_values(*tensors[fixture.outputs[output].ordinal()]);
+      sem::expect_output(fixture, actual, expected.outputs[output]);
+    }
+  }
+}
+
+TEST(AppleQwen38_24T, D5GgufAttentionGdnAndMtpUseRealRoleTypes) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (auto profile : sem::kProfiles) {
+    SCOPED_TRACE(profile->variant);
+    { SCOPED_TRACE("attention"); run_q24_semantic_fragment(sem::attention(profile)); }
+    { SCOPED_TRACE("gdn"); run_q24_semantic_fragment(sem::gdn(profile)); }
+    { SCOPED_TRACE("mtp"); run_q24_semantic_fragment(sem::mtp(profile)); }
+  }
+}
+
+TEST(AppleQwen38_24T, D5GgufAttentionAndGdnProjectionRoleBatch) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  d5_gguf_test::QuantizerCleanup cleanup;
+  for (auto profile : sem::kProfiles) {
+    SCOPED_TRACE(profile->variant);
+    for (const auto &role : sem::kProjections) {
+      SCOPED_TRACE(role.tensor);
+      run_q24_semantic_fragment(sem::projection(profile, role));
+    }
   }
 }
 
