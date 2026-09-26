@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -8,6 +9,7 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
+#include "../compute_models/d5_qwen_gguf_vocabulary_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
@@ -135,6 +137,15 @@ TEST(CpuDefaultGraph,
       d5_gguf_test::kQwen38FidelityQuantizedProjectionCases);
 }
 
+TEST(CpuDefaultGraph, D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions) {
+  run_quantized_projections(
+      d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+      d5_gguf_test::kQwen38_24TPrimaryProjectionCases);
+  run_quantized_projections(
+      d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile,
+      d5_gguf_test::kQwen38_24TFidelityProjectionCases);
+}
+
 TEST(CpuDefaultGraph,
      D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay) {
   run_quantized_projections(
@@ -213,6 +224,12 @@ TEST(CpuDefaultGraph,
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId)
         << compiled.report.step(0)->provider.name;
+#if defined(__aarch64__) || defined(_M_ARM64)
+    const bool native_half_accumulation =
+        provider == c::ggml_cpu::kProviderId;
+#else
+    const bool native_half_accumulation = false;
+#endif
 
     auto invocation = compiled.executable.create_invocation().value();
     ASSERT_TRUE(invocation
@@ -243,8 +260,25 @@ TEST(CpuDefaultGraph,
       const auto expected = d5_gguf_test::matmul(
           decoded_activation, decoded_weights, test.columns, test.reduction);
       ASSERT_EQ(actual.size(), expected.size());
-      for (std::size_t i = 0; i < actual.size(); ++i)
-        half_test::expect_near(actual[i], expected[i]);
+      if (native_half_accumulation) {
+        double squared_error = 0.0;
+        double squared_reference = 0.0;
+        double max_error = 0.0;
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+          const double rounded = half_test::decode(
+              half_test::encode<F16>(expected[i]));
+          const double error = half_test::decode(actual[i]) - rounded;
+          squared_error += error * error;
+          squared_reference += rounded * rounded;
+          max_error = std::max(max_error, std::abs(error));
+        }
+        EXPECT_LE(max_error, 2.5e-3);
+        ASSERT_GT(squared_reference, 0.0);
+        EXPECT_LE(std::sqrt(squared_error / squared_reference), 1.0e-3);
+      } else {
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          half_test::expect_near(actual[i], expected[i]);
+      }
     }
   }
 }

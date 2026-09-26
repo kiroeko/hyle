@@ -14,6 +14,7 @@
 
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_qwen_gguf_vocabulary_cases.h"
 #include "../compute_models/d5_qwen35_gguf_fragment_support.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_vulkan_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
@@ -357,6 +358,15 @@ TEST(VulkanGraphD5,
   run_quantized_projections(
       d5_qwen38_gdn_fixture::kFidelityGgufProfile,
       d5_gguf_test::kQwen38FidelityQuantizedProjectionCases);
+}
+
+TEST(VulkanGraphD5, D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions) {
+  run_quantized_projections(
+      d5_qwen_gguf_vocabulary_cases::k24TPrimaryProfile,
+      d5_gguf_test::kQwen38_24TPrimaryProjectionCases);
+  run_quantized_projections(
+      d5_qwen_gguf_vocabulary_cases::k24TFidelityProfile,
+      d5_gguf_test::kQwen38_24TFidelityProjectionCases);
 }
 
 TEST(VulkanGraphD5,

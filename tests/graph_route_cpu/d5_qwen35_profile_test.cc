@@ -76,21 +76,6 @@ std::vector<BF16> decode_fixture(std::span<const std::byte> bytes) {
   return result;
 }
 
-std::vector<float> transpose_bf16_weight(std::vector<std::byte> &storage,
-                                         std::size_t rows,
-                                         std::size_t columns) {
-  const auto values = decode_fixture(storage);
-  EXPECT_EQ(values.size(), rows * columns);
-  std::vector<float> result(values.size());
-  for (std::size_t row = 0; row < rows; ++row)
-    for (std::size_t column = 0; column < columns; ++column)
-      result[column * rows + row] =
-          static_cast<float>(half_test::decode(values[row * columns + column]));
-  storage.clear();
-  storage.shrink_to_fit();
-  return result;
-}
-
 void run_quantized_embedding(
     const c::ModelArtifactProfileDescription &profile, std::int64_t hidden,
     std::int64_t rows, c::GgufQuantizedType type, std::uint64_t region,
@@ -429,7 +414,7 @@ TEST(CpuDefaultGraph,
 }
 
 TEST(CpuDefaultGraph,
-     D5Qwen35OfficialFfnUsesOneOnednnRegionAndRealWeights) {
+     D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights) {
   const auto fixture_root = d5_qwen35_fixture::root();
   if (!fixture_root)
     GTEST_SKIP() << "set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture";
@@ -438,28 +423,19 @@ TEST(CpuDefaultGraph,
 
   constexpr auto hidden = d5_qwen35_fixture::kHidden;
   constexpr auto ffn = d5_qwen35_fixture::kFfnHidden;
-  const auto activation_desc = dense(c::DataType::kFloat32, {1, hidden});
-  const auto scale_desc = dense(c::DataType::kFloat32, {hidden});
-  const auto gate_weight_desc = dense(c::DataType::kFloat32, {hidden, ffn});
-  const auto down_weight_desc = dense(c::DataType::kFloat32, {ffn, hidden});
+  const auto activation_desc = dense(c::DataType::kBFloat16, {1, hidden});
+  const auto scale_desc = dense(c::DataType::kBFloat16, {hidden});
+  const auto stored_gate_desc =
+      dense(c::DataType::kBFloat16, {ffn, hidden});
+  const auto gate_weight_desc = stored_gate_desc.transposed().value();
+  const auto stored_down_desc =
+      dense(c::DataType::kBFloat16, {hidden, ffn});
+  const auto down_weight_desc = stored_down_desc.transposed().value();
 
-  auto gate_values = transpose_bf16_weight(fixture.weights[0], ffn, hidden);
-  auto gate_buffer = half_test::buffer<float>(gate_values);
-  gate_values.clear();
-  gate_values.shrink_to_fit();
-  auto up_values = transpose_bf16_weight(fixture.weights[1], ffn, hidden);
-  auto up_buffer = half_test::buffer<float>(up_values);
-  up_values.clear();
-  up_values.shrink_to_fit();
-  auto down_values = transpose_bf16_weight(fixture.weights[2], hidden, ffn);
-  auto down_buffer = half_test::buffer<float>(down_values);
-  down_values.clear();
-  down_values.shrink_to_fit();
-  const auto scale_bf16 = decode_fixture(fixture.norm_scale);
-  std::vector<float> scale_values(scale_bf16.size());
-  for (std::size_t i = 0; i < scale_values.size(); ++i)
-    scale_values[i] = static_cast<float>(half_test::decode(scale_bf16[i]));
-  auto scale_buffer = half_test::buffer<float>(scale_values);
+  auto gate_buffer = bytes_buffer(fixture.weights[0]);
+  auto up_buffer = bytes_buffer(fixture.weights[1]);
+  auto down_buffer = bytes_buffer(fixture.weights[2]);
+  auto scale_buffer = bytes_buffer(fixture.norm_scale);
   auto activation_buffer = output_buffer(activation_desc);
   auto output = output_buffer(activation_desc);
 
@@ -507,15 +483,6 @@ TEST(CpuDefaultGraph,
   auto compiled = std::move(*compiled_result);
   EXPECT_EQ(compiled.executable.workload(), workload);
   expect_mature(compiled);
-  std::size_t onednn_regions = 0;
-  for (std::size_t step = 0; step < compiled.report.step_count(); ++step) {
-    const auto report = compiled.report.step(step).value();
-    if (report.provider.id == g::onednn::kProviderId) {
-      ++onednn_regions;
-      EXPECT_EQ(report.node_count, 4U);
-    }
-  }
-  EXPECT_EQ(onednn_regions, 1U);
 
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation
@@ -534,23 +501,18 @@ TEST(CpuDefaultGraph,
       g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
   for (std::size_t replay = 0; replay < fixture.activations.size(); ++replay) {
-    const auto activation_bf16 = decode_fixture(fixture.activations[replay]);
-    std::vector<float> activation_values(activation_bf16.size());
-    for (std::size_t i = 0; i < activation_values.size(); ++i)
-      activation_values[i] =
-          static_cast<float>(half_test::decode(activation_bf16[i]));
-    ASSERT_TRUE(activation_buffer.view()
-                    .write(std::as_bytes(std::span(activation_values)))
-                    .ok());
+    ASSERT_TRUE(activation_buffer.view().write(fixture.activations[replay]).ok());
     auto done = invocation.submit(queue);
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
-    const auto actual = half_test::read<float>(output);
-    ASSERT_EQ(actual.size(), fixture.expected[replay].size());
-    for (std::size_t i = 0; i < actual.size(); ++i)
-      EXPECT_NEAR(actual[i], fixture.expected[replay][i],
-                  std::abs(fixture.expected[replay][i]) * 4.0e-4 + 2.0e-5)
+    const auto actual = half_test::read<BF16>(output);
+    ASSERT_EQ(actual.size(), fixture.direct_expected[replay].size());
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+      const auto expected = fixture.direct_expected[replay][i];
+      EXPECT_NEAR(half_test::decode(actual[i]), expected,
+                  std::abs(expected) * 0.008 + 1.0e-8)
           << replay << ':' << i;
+    }
   }
 }
 

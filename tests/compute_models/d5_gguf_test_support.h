@@ -157,6 +157,25 @@ inline constexpr std::array kQwen38FidelityQuantizedProjectionCases{
     Qwen35Projection{"blk.0.ssm_out.weight", c::GgufQuantizedType::kQ8_0,
                      6144, 5120, 0x0508, 127}};
 
+// Fixed Qwen3.8-2.4T GGUF headers at unsloth@567d3e6. A routed expert case
+// holds one complete expert slice at the model's 8192/2048 inner widths; it
+// qualifies native storage and MatMul only, not the 512-way grouped region.
+inline constexpr std::array kQwen38_24TPrimaryProjectionCases{
+    Qwen35Projection{"blk.0.ffn_gate_shexp.weight",
+                     c::GgufQuantizedType::kQ5K, 8192, 2048, 0x0204, 131},
+    Qwen35Projection{"blk.0.ffn_down_shexp.weight",
+                     c::GgufQuantizedType::kQ6K, 2048, 8192, 0x0204, 137},
+    Qwen35Projection{"blk.0.ffn_gate_exps.weight",
+                     c::GgufQuantizedType::kIq4Xs, 8192, 2048, 0x0b04, 139}};
+
+inline constexpr std::array kQwen38_24TFidelityProjectionCases{
+    Qwen35Projection{"blk.0.ssm_alpha.weight",
+                     c::GgufQuantizedType::kQ8_0, 8192, 128, 0x0508, 149},
+    Qwen35Projection{"blk.0.ffn_gate_shexp.weight",
+                     c::GgufQuantizedType::kQ8_0, 8192, 2048, 0x0208, 151},
+    Qwen35Projection{"blk.0.ffn_gate_exps.weight",
+                     c::GgufQuantizedType::kQ8_0, 8192, 2048, 0x0b08, 157}};
+
 // Exact Q8_0 representatives from the same fixed repository revision's
 // UD-Q8_K_XL artifact.  The artifact name is not treated as a global tensor
 // type: the F16 embedding and F16 projection roles are described separately
