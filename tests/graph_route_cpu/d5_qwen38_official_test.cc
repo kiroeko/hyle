@@ -1,3 +1,4 @@
+#include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include <gtest/gtest.h>
 
@@ -567,6 +568,33 @@ void run_q24_semantic_fragment(
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output]);
     }
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5SixProfilesBoundedKdaActualStateFeedback) {
+  namespace moe = d5_moe_semantic_fragments;
+  for (auto profile : moe::kKdaProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(moe::kda(profile));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5KimiThreeProfilesSituActivation) {
+  namespace moe = d5_moe_semantic_fragments;
+  for (std::size_t i = 0; i < 3; ++i) {
+    auto profile = moe::kKdaProfiles[i];
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(moe::situ(profile));
+  }
+}
+
+TEST(CpuGraphMoeFragments, D5SevenProfilesHyperConnectionCore) {
+  namespace moe = d5_moe_semantic_fragments;
+  for (const auto &profile : moe::kHyperProfiles) {
+    SCOPED_TRACE(profile.profile->model_repository);
+    SCOPED_TRACE(profile.profile->variant);
+    run_q24_semantic_fragment(moe::hyper_connection(profile));
   }
 }
 

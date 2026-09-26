@@ -20,6 +20,7 @@
 #include "../compute_models/d5_qwen_gguf_vocabulary_vulkan_test.h"
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
+#include "../compute_models/d5_moe_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_semantic_fragments.h"
 #include "../compute_models/d5_qwen38_24t_full_router.h"
 #include "../compute_models/d5_qwen38_24t_moe_profiles.h"
@@ -1329,6 +1330,33 @@ void run_q24_semantic_fragment(
                              ? std::span<const float>{}
                              : expected.native_outputs[output]);
     }
+  }
+}
+
+TEST(VulkanGraphMoeFragments, D5SixProfilesBoundedKdaActualStateFeedback) {
+  namespace moe = d5_moe_semantic_fragments;
+  for (auto profile : moe::kKdaProfiles) {
+    SCOPED_TRACE(profile->model_repository);
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(moe::kda(profile));
+  }
+}
+
+TEST(VulkanGraphMoeFragments, D5KimiThreeProfilesSituActivation) {
+  namespace moe = d5_moe_semantic_fragments;
+  for (std::size_t i = 0; i < 3; ++i) {
+    auto profile = moe::kKdaProfiles[i];
+    SCOPED_TRACE(profile->variant);
+    run_q24_semantic_fragment(moe::situ(profile));
+  }
+}
+
+TEST(VulkanGraphMoeFragments, D5SevenProfilesHyperConnectionCore) {
+  namespace moe = d5_moe_semantic_fragments;
+  for (const auto &profile : moe::kHyperProfiles) {
+    SCOPED_TRACE(profile.profile->model_repository);
+    SCOPED_TRACE(profile.profile->variant);
+    run_q24_semantic_fragment(moe::hyper_connection(profile));
   }
 }
 

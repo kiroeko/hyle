@@ -20,6 +20,19 @@ GGUF header 取证，写入 `tests/compute_models/d5_moe_profile_facts.json`，�
 [检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/moe-vocabulary-cpu-checkpoint/README.md)；
 其它路线未运行，不据此增加完整验收格。
 
+**共用语义核心批次（2026-09-26）：** `d5_moe_semantic_fragments.h` 复用现有八个
+Direct/Graph consumer，接入六画像 KDA、三画像 Kimi SiTU、七画像 mHC。KDA 保留
+96/64 heads、D128、K4、逐 key 通道的 `-5*sigmoid(exp(A_log)*(g+dt))`，八次变化输入
+与路线自身输出状态回送；输出门是 sigmoid，不套用 Qwen 的 Softplus/SiLU 门。
+mHC 保留 hc=4、真实 H=7168/4096、非均匀 Sinkhorn(20)、独立分支输出与原 residual；
+SiTU 保留 expert width=3584、beta=4、linear_beta=25。这是 F32 运行核心和投影后边界的
+验收，不代签 R03 投影、官方 BF16 参数转换或完整模型画像。权重内容为合成非零值。
+CPU 两入口各三个批量测试已通过；GPU 尚未运行，整格 ledger 仍为72/176。
+公式来源为已登记 llama.cpp `4c9233c034fc450dcf34c7c0988aebe6da5cdf1a`
+的 `src/models/kimi-k3.cpp` / `deepseek4.cpp` 与 Transformers
+`c1b80cf3ee183f94d8b21dfa7e312d1eea4942ad` 的 `models/glm5_next/modeling_glm5_next.py`。
+本批仅测试接线，不新增产品数学，也不触发各 profile 的完整 selector、三交付或 P1。
+
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22
