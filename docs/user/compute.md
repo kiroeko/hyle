@@ -335,6 +335,16 @@ Q/K/V 使用同一 F16/BF16/F32 类型，Hv 是 Hk 的正整数倍。它不修�
 gate 激活或状态写回。目前只完成公共描述与推导；原版后端的实际准入由
 [M1-A 接入卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)记录，不能据此认为四路线已可执行。
 
+`model_ops::recurrent_gated_delta_net()` 描述包含动态门控的完整模型片段，输入依次为
+Q、K、V、raw a、raw b、negative_a、dt_bias、state；输出只有 attended 与 next state。
+内部语义为 `g = negative_a * softplus(a + dt_bias)`、`beta = sigmoid(b)`，然后执行 GDN。
+Q/K 已归一化，negative_a 是负 decay coefficient；它不修改输入状态，调用方显式反馈 next state。
+初始描述域为 plain dense F32、B=1、T=1、D=128、V 头数16/48/128，K头数16或与V相同。
+a/b/negative_a/dt_bias 均为 `[1,1,Hv,1]`，其它 shape 沿用上面的 GDN 合同。
+模型专用片段按最终输出和状态资格化，不公开中间 g/beta，也不改变普通 Softplus 的精度要求。
+四路线普通入口及精确数值资格进展见[当前验收卡](../implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md)；
+此接口描述不代替整模型或尚未运行的交付/性能验收。
+
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context

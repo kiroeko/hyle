@@ -10,6 +10,7 @@
 #import <Metal/Metal.h>
 
 #include "../../src/compute_provider_ggml_metal/native_program.h"
+#include "hyle/compute/model_ops.h"
 #include "ggml-backend-impl.h"
 #include "ggml-metal.h"
 #include "ggml-metal-device.h"
@@ -60,33 +61,52 @@ std::array<c::TensorDesc, 6> specs() {
   return {q, q, q, gate, gate, state};
 }
 
-TEST(GgmlMetalFaults, ColdNativeOwnerAllocationsRollBack) {
-  const auto inputs = specs();
-  { auto warm = m::NativeProgram::create(inputs); ASSERT_TRUE(warm); }
+void check_cold_allocations(c::Operation operation,
+                            std::span<const c::TensorDesc> inputs) {
+  { auto warm = m::NativeProgram::create(operation, inputs); ASSERT_TRUE(warm); }
   const auto baseline = hyle_metal_fault_live();
   int failed_c = 0;
-  for (int index = 1; index <= 16; ++index) {
+  bool completed = false;
+  for (int index = 1; index <= 32; ++index) {
     hyle_metal_fault_arm(index);
-    auto result = m::NativeProgram::create(inputs);
+    auto result = m::NativeProgram::create(operation, inputs);
     const bool injected = hyle_metal_fault_disarm();
-    if (!injected) { ASSERT_TRUE(result); break; }
+    if (!injected) { ASSERT_TRUE(result); completed = true; break; }
     ++failed_c;
     EXPECT_FALSE(result);
     EXPECT_EQ(hyle_metal_fault_live(), baseline);
   }
+  EXPECT_TRUE(completed);
   EXPECT_GE(failed_c, 2); // context and event; C++ collection below is separate
   int failed_cpp = 0;
-  for (int index = 1; index <= 24; ++index) {
+  completed = false;
+  for (int index = 1; index <= 48; ++index) {
     new_left = index;
     new_failed = false;
-    auto result = m::NativeProgram::create(inputs);
+    auto result = m::NativeProgram::create(operation, inputs);
     new_left = -1;
-    if (!new_failed) { ASSERT_TRUE(result); break; }
+    if (!new_failed) { ASSERT_TRUE(result); completed = true; break; }
     ++failed_cpp;
     EXPECT_FALSE(result);
     EXPECT_EQ(hyle_metal_fault_live(), baseline);
   }
+  EXPECT_TRUE(completed);
   EXPECT_GE(failed_cpp, 3);
+}
+
+TEST(GgmlMetalFaults, ColdNativeOwnerAllocationsRollBack) {
+  check_cold_allocations(c::Operation(c::GatedDeltaNet{}), specs());
+}
+
+TEST(GgmlMetalFaults, CompleteGateColdWorkspaceAllocationsRollBack) {
+  const auto tensor = [](std::array<std::int64_t, 4> shape) {
+    return c::TensorDesc::dense(c::DataType::kFloat32, shape).value();
+  };
+  const auto q = tensor({1, 1, 16, 128});
+  const auto gate = tensor({1, 1, 16, 1});
+  const auto state = tensor({1, 16, 128, 128});
+  const std::array inputs{q, q, q, gate, gate, gate, gate, state};
+  check_cold_allocations(c::model_ops::recurrent_gated_delta_net(), inputs);
 }
 
 TEST(GgmlMetalFaults, PipelineCacheFailureUnlocksAndReleasesNativeOwner) {

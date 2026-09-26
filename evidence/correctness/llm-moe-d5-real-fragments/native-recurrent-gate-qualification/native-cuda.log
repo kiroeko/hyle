@@ -1,0 +1,40 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+heads=16 layout=official parameters=qwen35-local metric=g observations=1024 failures=0 max_abs=1.1920929e-07 max_gate_ratio=0.0302558796
+heads=16 layout=official parameters=qwen35-local metric=beta observations=1024 failures=0 max_abs=5.96046448e-08 max_gate_ratio=0.00142826212
+heads=16 layout=official parameters=qwen35-local metric=core observations=131072 failures=0 max_abs=6.05359674e-09 max_gate_ratio=0.00269200443
+heads=16 layout=official parameters=qwen35-local metric=state observations=16777216 failures=0 max_abs=9.68575478e-08 max_gate_ratio=0.0249965057
+heads=16 layout=official parameters=qwen35-local metric=output observations=131072 failures=0 max_abs=5.06639481e-07 max_gate_ratio=0.121190605
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+heads=16 layout=gguf parameters=synthetic metric=g observations=1024 failures=10 max_abs=3.81469727e-06 max_gate_ratio=1.00884305
+heads=16 layout=gguf parameters=synthetic metric=beta observations=1024 failures=0 max_abs=5.96046448e-08 max_gate_ratio=0.00142826212
+heads=16 layout=gguf parameters=synthetic metric=core observations=131072 failures=0 max_abs=5.58793545e-09 max_gate_ratio=0.00246487693
+heads=16 layout=gguf parameters=synthetic metric=state observations=16777216 failures=0 max_abs=8.19563866e-08 max_gate_ratio=0.0284998318
+heads=16 layout=gguf parameters=synthetic metric=output observations=131072 failures=0 max_abs=1.1920929e-06 max_gate_ratio=0.309069695
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+heads=48 layout=gguf parameters=synthetic metric=g observations=3072 failures=40 max_abs=3.81469727e-06 max_gate_ratio=1.00884305
+heads=48 layout=gguf parameters=synthetic metric=beta observations=3072 failures=0 max_abs=5.96046448e-08 max_gate_ratio=0.00142826212
+heads=48 layout=gguf parameters=synthetic metric=core observations=393216 failures=0 max_abs=5.58793545e-09 max_gate_ratio=0.00246487693
+heads=48 layout=gguf parameters=synthetic metric=state observations=50331648 failures=0 max_abs=8.38190317e-08 max_gate_ratio=0.0290070517
+heads=48 layout=gguf parameters=synthetic metric=output observations=393216 failures=0 max_abs=1.1920929e-06 max_gate_ratio=0.309069695
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+heads=48 layout=official parameters=synthetic metric=g observations=3072 failures=40 max_abs=3.81469727e-06 max_gate_ratio=1.00884305
+heads=48 layout=official parameters=synthetic metric=beta observations=3072 failures=0 max_abs=5.96046448e-08 max_gate_ratio=0.00142826212
+heads=48 layout=official parameters=synthetic metric=core observations=393216 failures=0 max_abs=5.12227416e-09 max_gate_ratio=0.00242628563
+heads=48 layout=official parameters=synthetic metric=state observations=50331648 failures=0 max_abs=8.38190317e-08 max_gate_ratio=0.0290749859
+heads=48 layout=official parameters=synthetic metric=output observations=393216 failures=0 max_abs=8.94069672e-07 max_gate_ratio=0.242446988
+ggml_backend_cuda_graph_compute: CUDA graph warmup reset
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+heads=128 layout=gguf parameters=synthetic metric=g observations=8192 failures=105 max_abs=3.81469727e-06 max_gate_ratio=1.00884305
+heads=128 layout=gguf parameters=synthetic metric=beta observations=8192 failures=0 max_abs=5.96046448e-08 max_gate_ratio=0.00142826212
+heads=128 layout=gguf parameters=synthetic metric=core observations=1048576 failures=0 max_abs=5.58793545e-09 max_gate_ratio=0.00246487693
+heads=128 layout=gguf parameters=synthetic metric=state observations=134217728 failures=0 max_abs=8.94069672e-08 max_gate_ratio=0.0290070517
+heads=128 layout=gguf parameters=synthetic metric=output observations=1048576 failures=0 max_abs=1.1920929e-06 max_gate_ratio=0.309069695
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+heads=128 layout=official parameters=synthetic metric=g observations=8192 failures=105 max_abs=3.81469727e-06 max_gate_ratio=1.00884305
+heads=128 layout=official parameters=synthetic metric=beta observations=8192 failures=0 max_abs=5.96046448e-08 max_gate_ratio=0.00142826212
+heads=128 layout=official parameters=synthetic metric=core observations=1048576 failures=0 max_abs=6.98491931e-09 max_gate_ratio=0.0033462745
+heads=128 layout=official parameters=synthetic metric=state observations=134217728 failures=0 max_abs=8.38190317e-08 max_gate_ratio=0.0293940585
+heads=128 layout=official parameters=synthetic metric=output observations=1048576 failures=0 max_abs=1.07288361e-06 max_gate_ratio=0.301870203
+verdict=FAIL
