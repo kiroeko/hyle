@@ -158,8 +158,8 @@ struct Invocation final {
       (void)ggml_prec_set_acc(result, GGML_PREC_F32);
       return ggml_cast(context, result, type);
     }
-    // This upstream pin narrows BF16 K/V in its SM89 MMA flash path. Use
-    // its original F32 graph to preserve the BF16 exponent range instead.
+    // This upstream pin narrows BF16 K/V in its SM89 MMA flash path. Its
+    // original F32 graph preserves BF16's range and accepts native F32 ports.
     key = ggml_permute(context, ggml_cast(context, key, GGML_TYPE_F32), 0, 2, 1,
                        3);
     value = ggml_permute(context, ggml_cast(context, value, GGML_TYPE_F32), 0,
@@ -612,7 +612,8 @@ bool supports(void *value, Operation operation,
         !std::isfinite(attention->scale))
       return false;
     const auto type = inputs[0].data_type();
-    if ((type != DataType::kFloat16 && type != DataType::kBFloat16) ||
+    if ((type != DataType::kFloat32 && type != DataType::kFloat16 &&
+         type != DataType::kBFloat16) ||
         (type == DataType::kBFloat16 &&
          !static_cast<Context *>(value)->bfloat16_attention))
       return false;
