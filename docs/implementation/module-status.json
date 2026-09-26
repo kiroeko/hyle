@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F22 AUDITED：真实量化 grouped 非法 ID 暴露未检查边界；固定为复用原有索引检查/失败发布设施，成熟 MUL_MAT_ID 不变；随 2.4T 四路线语义批统一验收。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "graph_provider_onednn",
@@ -386,10 +386,9 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-model-gate-qualification.md",
-      "summary": "MG1-MG5 complete recurrent schema candidate: nine Qwen profiles pass four-route Direct/Graph fragments and actual state feedback; D5 external deliveries and P1 remain pending.",
-      "candidate": "83be4e1bf1112441c6266edc6dd0551565f87648"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-mature-clamp-binding.md",
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "compute_backend_cpu",
@@ -505,31 +504,31 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：新 BF16→F32 router model operation 只加入 Apple Direct 固定 ggml 分类，原生 Metal Provider 按精确域执行；F8 embedding 候选保留为历史证据。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：新 BF16→F32 router model operation 只加入 Apple Graph 固定 ggml region 分类，沿用既有 F8 Graph 候选证据。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F22 AUDITED：真实量化 grouped 非法 ID 暴露未检查边界；固定为复用原有索引检查/失败发布设施，成熟 MUL_MAT_ID 不变；随 2.4T 四路线语义批统一验收。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F19 AUDITED：成熟 ggml Vulkan Direct 已执行 BF16→F32 router；Graph 在 Provider 前的 mature_custom 分类只需加入这一 schema，按近并列 F32 score 与完整 factor 验证。D4 删除裁决仍有效。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F21 AUDITED：2.4T IQ4_XS/Q8_0 grouped、混合权重完整 MoE 和变化输入/ID 在 Vulkan Direct/Graph 本批各 4/4 通过，无新增产品修改；完整画像与交付/P1 仍待批末。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -542,7 +541,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F22 AUDITED：真实量化 grouped 非法 ID 暴露未检查边界；固定为复用原有索引检查/失败发布设施，成熟 MUL_MAT_ID 不变；随 2.4T 四路线语义批统一验收。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -566,7 +565,7 @@
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "M3-D5-F22 AUDITED：真实量化 grouped 非法 ID 暴露未检查边界；固定为复用原有索引检查/失败发布设施，成熟 MUL_MAT_ID 不变；随 2.4T 四路线语义批统一验收。"
+      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
     },
     {
       "module": "compute_provider_iree_vulkan",

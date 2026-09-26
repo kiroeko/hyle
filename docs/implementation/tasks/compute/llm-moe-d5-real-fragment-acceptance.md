@@ -25,7 +25,8 @@ Direct/Graph consumer，接入六画像 KDA、三画像 Kimi SiTU、七画像 mH
 96/64 heads、D128、K4、逐 key 通道的 `-5*sigmoid(exp(A_log)*(g+dt))`，八次变化输入
 与路线自身输出状态回送；输出门是 sigmoid，不套用 Qwen 的 Softplus/SiLU 门。
 mHC 保留 hc=4、真实 H=7168/4096、非均匀 Sinkhorn(20)、独立分支输出与原 residual；
-SiTU 保留 expert width=3584、beta=4、linear_beta=25。这是 F32 运行核心和投影后边界的
+旧 SiTU 测试采用 width=3584、beta=4、linear_beta=25；该宽度资格已在下文更正，不能代签
+Kimi 的实际 expert/shared/dense 分支。这是 F32 运行核心和投影后边界的
 验收，不代签 R03 投影、官方 BF16 参数转换或完整模型画像。权重内容为合成非零值。
 候选 `f0bec3afe` 的四路线八入口各29项通过（含十三画像 R01），共232项、零失败/零 SKIP，见
 [批量收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/README.md)。
@@ -45,6 +46,17 @@ BF16 保留 BF16 输入/权重/输出舍入，Q8_0 保留 native block，F32 保
 参数事实另保留 Kimi 官方 A_log[128] 与成熟加载器取前96项、GGUF folded ssm_a[96] 的关系，以及
 GLM Flash 官方 BF16 conv/norm 与 GGUF F32 的区别；这些参数转换不由投影结果代签。
 
+**十三画像 MoE 批次与形状更正：** tensor header 与固定 llama.cpp 的 latent MoE 公式确认，
+Kimi 的3584是 latent expert 输入/输出维度；expert SiTU 中间宽为3072，shared 为6144，
+dense 为33792。上一批3584宽测试只保留通用公式证据，撤回它对真实 SiTU 宽度的资格；
+本批共享测试显式遍历三个实际宽度，不变更旧日志或将旧结果改写成新形状的 PASS。
+`d5_moe_execution_facts.json` 固定13个真实 router（896/384/256/288专家及16/6/8路选择），
+逐角色 BF16/F32 router、sigmoid/sqrtsoftplus、仅影响成员选择的 correction bias 和1/1.5/2.5权重缩放。
+八个 GGUF MoE 使用实际 MXFP4、Q4_K/Q5_K、Q8_0、BF16 组合，包含 routed/shared 全链与 Kimi
+latent down → experts → norm → up。只将 resident expert capacity 缩为 top-k+1，完整专家打分宽不缩小；
+三个变化输入改变成员和次序，输出 expert ID 单独精确比较，不使用量化数值容差蒙混成员错误。
+本批尚未完成四路线验收，官方 expert 打包、DeepSeek hash 层、其它 attention/MTP 仍待完成。
+
 **D5-F23 明确重新定界：** 用户选择后，四个 ggml Provider、Apple Direct/Graph 与 Vulkan Direct/Graph
 当前 AUDITED 范围仅增加[MG1–MG5](llm-moe-d5-model-gate-qualification.md)的完整 recurrent
 region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplus、不新增数学。原 F1–F22
@@ -53,6 +65,11 @@ region 接线。拒绝独立发布精度未合格的 gate；不改通用 Softplu
 接线源码审计补充：`compute_route_vulkan` 的 `region_operation()` 使用六输入栈数组，无法将
 合法八输入完整 recurrent schema 送达 Provider。该 owner 已为 F22 处于 AUDITED；本次仅将容量
 扩为八，并仅对具名 `RecurrentGatedDeltaNet` 放行超过六输入的请求，其他准入域不变。
+
+**D5-F24 有限重新定界：** 十三画像 MoE 普通入口确认 Binary 限幅落到冻结 HYLE 实现；
+固定为[成熟 Clamp 接线](llm-moe-d5-mature-clamp-binding.md)的 F24.1–F24.4，
+追加四个 ggml Provider 与 Apple/Vulkan Direct/Graph 当前 AUDITED 范围；不新增数学，
+不放宽 MoE 数值门，完整片段数值失败另按中间输出定位。
 
 ## Closure card
 
@@ -229,7 +246,7 @@ BF16 词表边界的该项缺口已有运行证据；其它量化权重格式、
 | Qwen3.5-2B | 3 | H=2048、FFN=6144、GQA 8/2×256、GDN 16×128、conv K4 | official：R01-R05、R13-R15；两份 GGUF：R01-R05、R14-R15 |
 | Qwen3.8-27B | 3 | H=5120、FFN=17408、GQA 24/4×256、GDN K16/V48×128 | R01-R05、R13-R15 |
 | Qwen3.8-2.4T | 3 | H=8192、E=512/top10、expert N=2048、GQA 64/4×256 | R01-R05、R10-R11、R13-R15 |
-| Kimi K3 | 3 | H=7168、E=896/top16、expert N=3584、attention 96×128 | R01-R03、R06-R07、R10-R12、R14-R15 |
+| Kimi K3 | 3 | H=7168、E=896/top16、latent=3584、expert N=3072、shared N=6144、attention 96×128 | R01-R03、R06-R07、R10-R12、R14-R15 |
 | DeepSeek V4 Pro | 1 | H=7168、E=384/top6、expert N=3072、index H64×D128/top1024、hc4 | R01-R03、R07-R15 |
 | DeepSeek V4 Flash | 3 | H=4096、E=256/top6、expert N=2048、index H64×D128/top512、hc4 | R01-R03、R07-R15 |
 | GLM-5.3 | 3 | H=6144、E=256/top8、expert N=2048、index H32×D128/top2048 | R01-R03、R07-R11、R13-R15 |
