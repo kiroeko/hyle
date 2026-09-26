@@ -66,11 +66,31 @@ struct Call final {
 
 Call prepare(const v::Context &context, const c::WorkloadContext &workload,
              c::Operation operation, std::span<const v::Argument> arguments) {
+  SCOPED_TRACE(c::operation_name(operation));
   auto program = v::prepare(context, operation, arguments, workload).value();
-  const auto &dispatches = d::Access::program(program)->dispatches;
-  EXPECT_TRUE(std::ranges::any_of(dispatches, [](const auto &dispatch) {
+  const auto &state = *d::Access::program(program);
+  const auto &dispatches = state.dispatches;
+  const bool mature = std::ranges::any_of(dispatches, [](const auto &dispatch) {
     return dispatch.region != nullptr || dispatch.iree.has_value();
-  }));
+  });
+  if (!mature && operation.get_if<c::Copy>()) {
+    // D4 retains the byte-addressed layout adapter at mature region boundaries.
+    // Only a same-type permuted F32 copy qualifies here, never arithmetic.
+    EXPECT_EQ(state.inputs.size(), 1U);
+    EXPECT_EQ(state.outputs.size(), 1U);
+    const auto &input = state.values[state.inputs[0]].description;
+    const auto &output = state.values[state.outputs[0]].description;
+    EXPECT_EQ(input.data_type(), c::DataType::kFloat32);
+    EXPECT_EQ(output.data_type(), input.data_type());
+    EXPECT_TRUE(std::ranges::equal(input.dimensions(), output.dimensions()));
+    EXPECT_NE(input, output);
+    EXPECT_EQ(output, c::TensorDesc::dense(input.data_type(), input.dimensions()).value());
+    EXPECT_EQ(dispatches.size(), 1U);
+    EXPECT_TRUE(dispatches.front().pipeline != nullptr);
+    EXPECT_TRUE(dispatches.front().tensor_byte_origins);
+  } else {
+    EXPECT_TRUE(mature);
+  }
   EXPECT_EQ(program.workload(), workload);
   return {std::move(program)};
 }

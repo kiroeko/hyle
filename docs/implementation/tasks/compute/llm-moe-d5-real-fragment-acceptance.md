@@ -315,6 +315,19 @@ F31 冷初始化进一步确认：实际构建的 `source-977e0a6dff4b1d66` 接�
 Concat数学缺失。有限 FIX 同时将 I32 首段复制改接原版 `ggml_cpy`，保持整数类型与逐位复制，
 包括单输入 Concat；浮点原路径不变。不改 runtime pin、上游 kernel 或一般 Copy准入。
 
+**GLM Vulkan 失败定向归因（baseline `f373efce`，仅 A2/A3 consumer）：** I32 读回修正后，
+普通 DSA 已通过，剩 Flash pool/tail 两类失败。两次 permute→Copy 属于 D4 明确保留的
+字节布局 adapter，`vulkan_tensor.cc` 为 Copy 固定 operation=0，不执行数学；本批不为它重开
+产品 owner。Direct 检查只对同形状/同类型 F32、非 canonical 输入→canonical 输出的单个
+layout dispatch 承认此边界，所有数学仍要求 ggml/IREE。搬运成本继续计入完整片段。
+
+实际 runtime `source-8dc7950171d4c70b` 的 `ggml-vulkan.cpp:9577` 起明确在 coopmat2 下将
+F32 MatMul 两个乘数转为 F16，F32 accumulation 不撤销该转换。官方 Flash 仅 score 输出失败，
+query/key/pool/cache 及精确索引成员未失败。有限核验为该 score 增加独立 F16 乘数 oracle，
+沿用既有 Vulkan 原生矩阵乘法双门：对完整 F32 oracle 为 abs2e-4/rel2e-3，对原生舍入 oracle
+为 abs8e-5/rel4e-5；不修改归一化、pool/cache、参数或索引验收，不按观测误差拟合阈值。
+若该源码机制不能解释实际结果，保留失败继续定位，不用更宽门代签。其它路线不改验收边界。
+
 ## Closure card
 
 - owner：`compute_ops` 持有验收矩阵和公共测试 consumer。D5 默认不重开已关闭路线；只有实际片段暴露

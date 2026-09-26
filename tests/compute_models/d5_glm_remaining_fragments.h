@@ -421,16 +421,23 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
         next_gate_values.insert(next_gate_values.end(), full_gates.begin() + index * depth,
                                full_gates.begin() + (index + 1) * depth);
     }
-    std::vector<float> index_scores(candidates);
+    std::vector<float> index_scores(candidates), half_product_scores(candidates);
+    const auto half = [](float value) {
+      return half_test::decode(half_test::encode<hyle::simd::float16_t>(value));
+    };
     for (std::int64_t t = 0; t < candidates; ++t) {
-      double sum = 0;
+      double sum = 0, half_sum = 0;
       for (int h = 0; h < heads; ++h) {
-        double dot_value = 0;
-        for (int d = 0; d < depth; ++d)
+        double dot_value = 0, half_dot = 0;
+        for (int d = 0; d < depth; ++d) {
           dot_value += double(qv[h * depth + d]) * pool_keys[t * depth + d];
+          half_dot += half(qv[h * depth + d]) * half(pool_keys[t * depth + d]);
+        }
         sum += wv[h] * std::max(0.0, dot_value / std::sqrt(double(depth)));
+        half_sum += wv[h] * std::max(0.0, half_dot / std::sqrt(double(depth)));
       }
       index_scores[t] = float(sum) + ((!model.flash && t < padding) ? -1.0e9F : 0.0F);
+      half_product_scores[t] = float(half_sum);
     }
     std::vector<std::int32_t> order(candidates);
     std::iota(order.begin(), order.end(), 0);
@@ -449,6 +456,14 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
       past.insert(past.end(), full.begin() + index * depth, full.begin() + (index + 1) * depth);
     replay.outputs = {past, qv, kv, wv, pool_keys, index_scores, selected_ids};
     if (model.flash) { replay.outputs.push_back(next_gate_values); gate_history = std::move(next_gate_values); }
+    if (model.flash && model.official) {
+      // The pinned ggml Vulkan coopmat2 MatMul converts both F32 operands to
+      // F16, independently of its F32 accumulation setting. Check only that
+      // score boundary against the independent rounded oracle AND the existing
+      // full-F32 accuracy gate. Cache, pooling and exact TopK members stay strict.
+      replay.native_outputs.resize(replay.outputs.size());
+      replay.native_outputs[5] = std::move(half_product_scores);
+    }
     f.replays.push_back(std::move(replay));
   }
   return f;
