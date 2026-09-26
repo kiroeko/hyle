@@ -145,19 +145,45 @@ struct ModelLinear final {
   sem::ValueId output;
   std::int64_t n, k;
   int seed;
-  std::vector<float> reference(std::span<const float> input) const {
+  std::vector<float> reference(std::span<const float> input,
+                               bool declared_f32_accumulation = true) const {
     std::vector<float> rounded(input.begin(), input.end());
     for (auto &value : rounded) value = bfloat(value);
     const auto quant = quantized(rounded, k, false);
+    std::vector<float> scales(input.size() / 128, 1.0e-10F);
+    for (std::size_t i = 0; i < rounded.size(); ++i)
+      scales[i / 128] = std::max(scales[i / 128], std::abs(rounded[i]));
+    for (auto &scale : scales) scale /= 448.0F;
     std::vector<float> result(input.size() / k * n);
     const fp8::Case shape{nullptr, n, k, false, "official linear"};
     for (std::size_t token = 0; token < input.size() / k; ++token)
       for (std::int64_t row = 0; row < n; ++row) {
         double sum = 0;
+        std::array<std::pair<std::int64_t, double>, 2> terms;
         for (int term = 0; term < 2; ++term) {
           const auto col = (row * 17 + seed + term * (k / 2 + 13)) % k;
-          sum += quant[token * k + col] * fp8::kValues[(row + seed + term) % 4] *
+          const auto coefficient = fp8::kValues[(row + seed + term) % 4];
+          sum += quant[token * k + col] * coefficient *
                  fp8::scale(shape, row / 128, col / 128, seed);
+          // The decoded code*scale product is exact in double. Recovering
+          // its code keeps the independent dot separate from F32 scaling.
+          terms[term] = {col / 128,
+              quant[token * k + col] / scales[(token * k + col) / 128] * coefficient};
+        }
+        if (declared_f32_accumulation) {
+          // Match the declared F32 accumulator and the mature block128
+          // program's rounding boundaries, not an unrounded F64 matrix.
+          // Codes/weights are decoded independently; no GPU result is used.
+          if (terms[1].first < terms[0].first) std::swap(terms[0], terms[1]);
+          float accumulated = 0;
+          for (std::size_t i = 0; i < terms.size();) {
+            const auto block = terms[i].first;
+            double dot = terms[i++].second;
+            while (i < terms.size() && terms[i].first == block) dot += terms[i++].second;
+            const float scaled = float(dot * scales[token * (k / 128) + block]);
+            accumulated = std::fma(scaled, fp8::scale(shape, row / 128, block, seed), accumulated);
+          }
+          sum = accumulated;
         }
         result[token * n + row] = bfloat(float(sum));
       }
@@ -183,6 +209,25 @@ inline ModelLinear model_linear(sem::Fragment &f, sem::ValueId input,
   const auto weight = f.constant(description, std::move(storage));
   auto output = f.one(operation(false), {input, weight});
   return {visible(f, output, true), n, k, seed};
+}
+
+inline sem::Fragment model_accumulation_boundaries() {
+  sem::Fragment f{.profile = fp8::kCases[6].profile, .region = 0x0b0606};
+  auto input = f.input(sem::dense({1, 4096}));
+  auto projected = model_linear(f, input, 1536, 4096, 197);
+  f.outputs = {projected.output};
+  for (int seed : {3, 17, 31, 45}) {
+    auto x = d5_gguf_test::activation(4096, seed);
+    x = sem::oracle::rms_norm_rows(x, sem::oracle::scale(4096), 4096, 1.0e-5F);
+    auto expected = projected.reference(x);
+    const auto unrounded = projected.reference(x, false);
+    // These real consumer inputs exercise the missing rounding boundary;
+    // an all-double chain is a different numerical program.
+    EXPECT_FALSE(std::equal(expected.begin(), expected.end(), unrounded.begin()));
+    f.replays.push_back({{sem::bytes(x)}, {std::move(expected)}});
+  }
+  strict_output_check(f, true, 1);
+  return f;
 }
 
 inline sem::ValueId glm_gated(sem::Fragment &f, sem::ValueId packed, bool flash) {

@@ -44,3 +44,13 @@ Flash MLA／NextN组合数值，原门和失败均保留。独立局部重算已
 目前支持低精度逐层舍入传播方向，尚不能代替完整片段验收。
 [收据与有界定位](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-mixed-checkpoint/README.md)。
 当前继续FIX4中最早数值分歧定位，不扩建性能仪器、不重跑已通过的整批；ledger仍140/176。
+
+### FIX4 定位后的参考计算纠正
+
+捕获四轮QA/QB/KVA/O的真实输入后，16次投影均与独立的F32分块融合累加结果逐元素一致；
+旧double累加参考在每次投影有1～19个不同输出。首个输入norm的F32差异在BF16存储后全部消失。
+`Float8BlockLinear`明确声明F32累加；固定SGLang程序按128块做F32缩放和融合累加，旧参考省略
+这些中间舍入。使用声明的舍入边界独立推进整段、没有喂入GPU中间答案，四轮最终O输出全相等。
+因此FIX4限定纠正共享ModelLinear的参考：块内独立double点积，再显式F32缩放/融合累加/BF16存储；
+保留double数学参考用于定位和回归反例，追加四次舍入边界普通Direct/Graph检查。输入、权重、状态
+反馈及原误差门均不变，不改Provider或数学程序。完整MLA/NextN仍须在不可变候选重新签署。

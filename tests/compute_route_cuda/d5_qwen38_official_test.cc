@@ -1184,6 +1184,10 @@ TEST(CudaMoeFragments, D5GlmOfficialMixedRemaining) {
   }
 }
 
+TEST(CudaMoeFragments, D5GlmFp8AccumulationBoundaries) {
+  run_q24_semantic_fragment(d5_dynamic_fp8_fragments::model_accumulation_boundaries());
+}
+
 TEST(CudaMoeFragments, D5GlmGgufDenseFfn) {
   d5_gguf_test::QuantizerCleanup cleanup;
   for (const auto &model : d5_glm_remaining_fragments::kCases) {
