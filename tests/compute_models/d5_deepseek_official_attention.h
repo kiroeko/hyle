@@ -313,8 +313,8 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
   Fragment f{.profile = model.profile, .region = 0x080a3404,
              .quantized = true};
   if (ratio) {
-    f = compressor(model, ratio, false, options);
-    if (ratio == 4) join_compressor(f, compressor(model, ratio, true, options));
+    f = d5_deepseek_official_attention::compressor(model, ratio, false, options);
+    if (ratio == 4) join_compressor(f, d5_deepseek_official_attention::compressor(model, ratio, true, options));
     f.region = ratio == 4 ? 0x080a3405 : 0x080a3406;
   } else {
     (void)f.input(dense({1, model.hidden}));
