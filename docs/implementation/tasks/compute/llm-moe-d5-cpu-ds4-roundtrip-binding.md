@@ -47,5 +47,8 @@ N1–N4固定；同一操作家族的group128仍拒绝，C10和Apple失败候选
 
 候选 `1486d10c` 首次 configure 检出 `model_ops.h` 的 owner 是 `compute_ops`；
 native 过去仅间接使用它，新增直接 include 必须如其他 Provider 一样声明直接私有依赖。
-本卡允许的一次 adapter/build 纠正限定为 native 的 `PRIVATE_DEPS compute_ops`；
+本卡的 adapter/build 纠正包含 native 的 `PRIVATE_DEPS compute_ops`；
 这是现有 schema 的显式依赖，不增加运行路线、模块或自研数学。配置失败不计任何测试 PASS。
+后续依赖审计发现生成摘要时 Windows Path 使用不区分大小写排序，与 CMake 的文件名排序
+不一致；按现有 CMake 算法纠正 lock 摘要，三个 vendor 文件和原函数全部不变。
+两次均停在配置期、尚未编译，保留各自日志；合并为本次构建接缝修正，不开启数值重试预算。

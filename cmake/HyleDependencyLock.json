@@ -351,7 +351,7 @@
       },
       "vendored": {
         "path": "third_party/ds4_quantization",
-        "tree_sha256": "233173008598a763ef1081f2f7a614f27a210ea728dce32a41f17ba4301c9ebe"
+        "tree_sha256": "9f9426041e4f2a66978b233048359eee60f7c192ed0f0d0669ac77fc629e6f96"
       },
       "license": {
         "expression": "MIT",
