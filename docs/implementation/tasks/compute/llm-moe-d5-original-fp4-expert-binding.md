@@ -60,3 +60,7 @@
 见[完整收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/README.md)。
 F43的ggml组合失败保留，本批不增加完整画像格。后续只需继续F43 attention/compressor/MTP
 消费者批次；A5/A6/D6仍未完成，owner保持AUDITED，不将本地正确性写成整体CLOSED。
+
+F43后续消费者现已在`9e846d87`完成，两种官方DeepSeek的CUDA Direct/Graph全部必需region
+通过，见[完整画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/README.md)。
+ledger新增4格到148/176；本卡产品与F44资源证据未变。其它路线、A5/A6/D6继续未完成。

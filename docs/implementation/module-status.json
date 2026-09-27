@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5-F44 AUDITED：bc72243d原版专家四形状、两入口完整MoE及资源21项通过；无新增HYLE数学。F43旧失败保留，ledger144/176；官方attention/compressor/MTP及A5/A6/D6未决。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger148/176，CUDA正确性44/44。其它路线28格及A5/A6/D6未完成。"
     },
     {
       "module": "compute_backend_cpu",
@@ -476,13 +476,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5-F44 AUDITED：bc72243d原版专家四形状、两入口完整MoE及资源21项通过；无新增HYLE数学。F43旧失败保留，ledger144/176；官方attention/compressor/MTP及A5/A6/D6未决。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger148/176，CUDA正确性44/44。其它路线28格及A5/A6/D6未完成。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5-F41 AUDITED：DeepSeek原版FP8冷解码与默认CUDA接线在bcea6bce通过普通入口/资源/真实GLM KV缓存和NextN；ledger144/176。三交付/P1等聚合门仍待D5-A5/A6，不提前CLOSED。"
+      "summary": "D5 AUDITED：F41冷准备与F43/F44官方完整消费均已验，CUDA22画像Direct/Graph正确性44/44。完整ledger148/176；三交付/P1等聚合门仍待A5/A6，不提前CLOSED。"
     },
     {
       "module": "graph_route_cuda",

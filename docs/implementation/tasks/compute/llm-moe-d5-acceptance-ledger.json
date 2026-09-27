@@ -7371,18 +7371,140 @@
       "profile": "deepseek_v4_pro:official:official-fp4-fp8",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:cuda:graph",
       "profile": "deepseek_v4_pro:official:official-fp4-fp8",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:apple:direct",
@@ -7443,18 +7565,140 @@
       "profile": "deepseek_v4_flash:official:official-fp4-fp8",
       "route": "cuda",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:official:official-fp4-fp8:cuda:graph",
       "profile": "deepseek_v4_flash:official:official-fp4-fp8",
       "route": "cuda",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json",
+      "region_verdicts": [
+        {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R11",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:official:official-fp4-fp8:apple:direct",
@@ -11159,10 +11403,10 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 144,
+    "RUN_PASS": 148,
     "BACKEND_REJECTED": 0,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 32
+    "VALIDATION_NOT_RUN": 28
   },
   "qualification_correction": {
     "reason": "The 48 former Qwen3.5-2B and Qwen3.8-27B complete cells used seven R01 vocabulary rows; the fixed real-profile capacity policy does not permit reducing the 248320-row vocabulary. Their non-R01 successful regions remain linked as partial receipts.",

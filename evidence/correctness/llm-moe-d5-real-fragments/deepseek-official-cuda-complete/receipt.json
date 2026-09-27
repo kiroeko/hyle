@@ -1,0 +1,163 @@
+{
+  "candidate": "9e846d87a80d4a0f8e8b220b4061fa3580232c86",
+  "route": "cuda",
+  "factors": [
+    "compute_route_cuda",
+    "graph_route_cuda"
+  ],
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f43-official-attention\\cuda\\build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 13.7
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_route_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f43-official-attention\\cuda\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 42.59
+    }
+  ],
+  "test_filter": "*MoeFragments.D5DeepSeekOfficialCompression:*MoeFragments.D5DeepSeekOfficialAttention:*MoeFragments.D5DeepSeekOfficialMtpAndFullHead",
+  "schema_version": 1,
+  "tree": "d7e35981cfb6328f26661a84bf370e74d5f8eeea",
+  "verdict": "RUN_PASS",
+  "profiles": [
+    "deepseek_v4_pro:official:official-fp4-fp8",
+    "deepseek_v4_flash:official:official-fp4-fp8"
+  ],
+  "entries": [
+    "direct",
+    "graph"
+  ],
+  "new_complete_cells": 4,
+  "scope": "All required-region correctness for two exact official DeepSeek profiles on CUDA; not other routes, deliveries, P1 or whole-model inference",
+  "region_receipts": {
+    "R01": [
+      "evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R02": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R03": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R07": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R08": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R09": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R10": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R11": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R12": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R13": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R14": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ],
+    "R15": [
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/receipt.json"
+    ]
+  },
+  "new_cases": {
+    "gtests": 6,
+    "failed": 0,
+    "skipped": 0,
+    "standalone_compression_executions": 72,
+    "complete_attention_executions": 72,
+    "complete_mtp_executions": 24,
+    "mtp_head_vocabulary_rows_per_replay": 129280,
+    "head_shards_per_model_entry": 32,
+    "head_executions": 768
+  },
+  "source_payload": "Fixed official config/tensor headers; nonzero synthetic weights with H7168/4096, heads128/64, Qrank1536/1024, index64x128/top1024/512, group4096->1024, hc4 and exact per-role source/runtime precision",
+  "source_model_sha256": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71",
+  "precision": "Compressor weights losslessly widened BF16->F32; F32 projection/history/APE/softmax; BF16 pool/norm/RoPE; original group64 FP8 KV and group32 FP4 indexer; dynamic group128 FP8 projections; exact BF16 query norm steps; cold decoded BF16 wo_a; original indexed FP4 experts; F32 mHC; BF16 head norm -> F32 full logits",
+  "state": "Six replays with two reset cycles, real raw/projected/compressed/indexer/hidden outputs fed back, conspicuous nonreset placeholders; independent oracles never receive actual state",
+  "indexer": "Exact TopK membership and uniqueness over top1024/512, then selected IDs drive native Gather and sink attention; masked future rows are nonzero",
+  "preparation": "Pinned original FP8 decode once -> actual resident BF16 wo_a, checked against independent decoded source, destroyed cold source/program before hot replay; same cold resource implementation as F41",
+  "cold_wo_a_bytes": {
+    "pro": 134217728,
+    "flash": 67108864
+  },
+  "mtp": "Fixed configs append ratio0 to mtp.0; distinct e_proj/h_proj followed by BF16 sum, full mHC attention/MoE decoder, learned head collapse/norm, all129280 F32 logits",
+  "accuracy": "Existing quantized-chain normalized max0.04 and RMSE(0.002+0.02*reference_rms) and standalone BF16/F32 gates; local head checked against actual input with abs8e-5+rel4e-5, complete logits against independent decoder trajectory",
+  "initial_failures": "Compile: ADL found old/new compressor via shared options type, fixed explicit qualification. Run: assigning compressor reset the predeclared full-chain precision flag; BF16 one-step differences were judged by F32 atomic tolerance. Restored declared classification; raw failures retained. Official RoPE uses original power/reciprocal/YaRN formula, separate from GGUF recurrence.",
+  "fixture_cost_fix": "Avoid converting dense host zeros repeatedly when constructing synthetic BF16->F32 parameters; uploaded bytes and full matrix/vocabulary coverage unchanged. Batch tests259.36s->42.59s is fixture preparation improvement, not product performance evidence.",
+  "costs": "F32 visible diagnostic tensors and model BF16 Cast boundaries, cold resident wo_a and full-vocabulary host readback/upload staging remain explicit; original indexed FP4 M32/M1 utilization retained; no P1 claim",
+  "reused_scope": "R01 embedding/gather and F41/F44 native resources reused for unchanged source, shape domains, SM89/Driver13040; prior BF16-only generic head does not sign original F32 head",
+  "tools": {
+    "input_tools": 13,
+    "closure": "PASS",
+    "docs": "PASS"
+  },
+  "ledger_counts_after": {
+    "RUN_PASS": 148,
+    "VALIDATION_NOT_RUN": 28
+  },
+  "remaining": [
+    "24 official CPU/Apple/Vulkan cells",
+    "4 DeepSeek GGUF Vulkan cells",
+    "D5-A5 remaining selected gates and source/static/shared",
+    "D5-A6 P1",
+    "D6"
+  ],
+  "uncompressed_sha256": {
+    "build.log.gz": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+    "tests.log.gz": "59623b9e08b0c269c54b416c51c0260572069236767a13b86063e5888ccd7132",
+    "native-tests.log.gz": "0c0cbc6f3a75b498d5ea8d1a24d8be147fa0e842be03c26d955d68ca17f9be2e",
+    "tests.xml.gz": "1f1be38742eaced046552c8e667ac3d0aa109d6185b77aa170c62489c8dea802",
+    "receipt.json.gz": "839afc3516e0f9e133b7ffa6ede0933edeae55d3aee890e3bfb707adbd97544b",
+    "cache-identity.txt.gz": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+    "initial-build-build.log.gz": "8bc428554d932f5b7f6bf79be31dcd46c8ca28c22d2baab332c4f595d715e46e",
+    "initial-build-receipt.json.gz": "52c5c0d2b2a308ebc8013a5132cea7d204fbd69c2c25b58ba4cd38339bf02c88",
+    "initial-run-build.log.gz": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+    "initial-run-tests.log.gz": "d58801b1aa27d44b085d783e1f9f055ba2b80d0a637550cab9e5a430610b2ee3",
+    "initial-run-native-tests.log.gz": "018440c34b2c4879e3a479ceab26dd13cd2e41d4192a14d4bb53d81e7eff4975",
+    "initial-run-tests.xml.gz": "300e5d9c9330bc7380d0b95d3b2642a6502ac7cd3425e049ddb62fc2d46b5320",
+    "initial-run-receipt.json.gz": "ebe76543676ed9e622d1b26dae929e13c43842f94b09fb773cf840ee6de7f3d6",
+    "selector-plan.json.gz": "71695b8af3df807cf77b3028b8d84cb8af6c952fdf1a5b4d6f994f0e46466411",
+    "official-model.py.gz": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71"
+  }
+}

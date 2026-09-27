@@ -77,3 +77,18 @@ F44在`bc72243d`完成原版接线：两种官方模型的score/hash完整MoE在
 [F44收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/README.md)。
 FIX2的ggml执行腿由该具名原版替代；完整attention/compressor/MTP按FIX3/4继续批量接合。
 完整ledger仍144/176，A5/A6/D6未完成，不再把局部推进隐藏在固定百分比中。
+
+### 官方CUDA完整画像已验
+
+`9e846d87`将FIX3/4一次接入两入口：官方F32 compressor、BF16/FP8/FP4激活边界、真实TopK
+驱动的完整attention、原版冷解码wo_a、ratio0 MTP的双投影/mHC/attention/MoE，以及完整
+129280行F32 logits。两入口六组均通过，实际状态连续回送并reset。见
+[完整收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/README.md)。
+初次构建ADL歧义已限定命名空间；初次attention继承compressor时丢失整链精度分类，恢复预先
+固定quantized门，独立compressor门不变。官方RoPE改为源程序power/reciprocal/YaRN计算。
+未更改输入以过测，旧失败保留。只转换fixture非零BF16权重项，保持上传字节与完整维度，
+避免对海量零值做重复host转换；最终构建13.70秒、测试42.59秒。
+
+本卡消费者范围已验，结合F44及不变的资源/R01 Gather资格，新增4格到148/176；CUDA22画像
+44格全部完成正确性。其它路线28格、三交付/P1和D6仍未完成，不把本卡结果当全goal完成。
+统一Compute+Graph实现60,150行/240文件，不含测试和第三方程序。
