@@ -26,3 +26,15 @@
 预算：源码审计与一次原生批次，最多一次明确 API/布局纠正；不建新大型 build、
 不重新下载模型、不跑 P1。若公共调用仍不能覆盖具体域，保存精确拒绝/数值边界，
 转向其它已有成熟候选或提出有证据的缺口，不能无界微调。同轮执行 docs/closure。
+
+## 一次原生批次的裁决
+
+本次有界调查已结束，结论为 `NATIVE_DOMAIN_MISMATCH`，详见
+[原始证据和适用边界](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp4-native-boundary/README.md)。
+普通与中点域通过；65280个有限BF16按固定group32分组时，普通及两种compile路径
+各830个roundtrip输出不符，均位于参考极小scale域。独立FP4解码也确认±2^-127被清零。
+源码确认MLX没有DeepSeek规定的floor；清零现象的具体编译/硬件责任尚未独立裁决。
+
+产品FIX仍为零，当前owner和152/176 ledger不变。停止重复该原生批次；下一成熟候选
+须明确解决上述两个边界，另行定界后才可接线。该失败不能外推所有Provider均缺失，
+也不允许放宽公共语义或使用host数学回退。D5-A5/A6/D6继续待验。

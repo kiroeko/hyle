@@ -1,0 +1,14 @@
+{
+  "baseline": "2c0c3f09dcee976a7ff539ed937dccb57784a8a1",
+  "argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "kiro@172.22.10.198",
+    "root=\"$HOME/hyle-scratch/d5-graph-825c41f8\"; clang++ -std=c++20 -O2 -I\"$root/_deps/mlx-338da189e54c0743/source\" \"$HOME/hyle-scratch/d5-f46-fp4-native.cpp\" -L\"$root/bin\" -Wl,-rpath,\"$root/bin\" -lmlx -o \"$HOME/hyle-scratch/d5-f46-fp4-native\" && \"$HOME/hyle-scratch/d5-f46-fp4-native\""
+  ],
+  "returncode": 1,
+  "seconds": 1.562999999994645
+}

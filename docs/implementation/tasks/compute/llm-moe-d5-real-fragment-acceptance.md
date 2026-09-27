@@ -12,13 +12,15 @@ GLM-5.3官方FP8也已通过CUDA普通两入口，冷解码/KV缓存、MLA/NextN
 [F41完整片段收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-dsa-cuda/README.md)。
 DeepSeek Pro/Flash官方混合FP4/FP8也已通过CUDA两入口全部必需region，完整attention/compressor、
 MTP与129280行F32 head见[F43完成收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/README.md)。
-当前 ledger 为 **148/176 RUN_PASS、28/176 VALIDATION_NOT_RUN**；CUDA正确性44/44。Qwen 见
+GLM两个官方FP8画像另已通过Apple两入口，见
+[F45完整片段收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/README.md)。
+当前 ledger 为 **152/176 RUN_PASS、24/176 VALIDATION_NOT_RUN**；CUDA正确性44/44、Apple40/44。Qwen 见
 [九画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)，
 Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/README.md)，
 GLM 见[四 GGUF 画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md)。
 Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
 旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
-DeepSeek两个GGUF的Vulkan四格、四个官方画像在CPU/Apple/Vulkan的24格、D5三交付/P1及D6尚未完成，
+剩余CPU八格、Apple四格、Vulkan十二格，以及D5三交付/P1和D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有

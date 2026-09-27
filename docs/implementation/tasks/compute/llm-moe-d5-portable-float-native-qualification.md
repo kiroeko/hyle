@@ -120,5 +120,8 @@ oracle回归一次；通过后归档旧失败与归因，不再对本机制追�
 两入口10组回归通过，输入工具13项通过。[完整证据与原因](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/README.md)
 保留所有旧失败和一次中间值捕获。固定有限FP8接线的正确性工作完成，停止本机制试改。
 新增GLM两个官方Apple画像四格，ledger152/176，Apple40/44；统一实现60,373行/241文件。
-完整owner仍属于D5 AUDITED：剩余Apple官方FP4、其它路线24格及A5/A6/D6未完成。
+完整owner仍属于D5 AUDITED：剩余共24格（Apple4、CPU8、Vulkan12）及A5/A6/D6未完成。
 本批未运行的三交付/性能不写PASS，也不据此将模块CLOSED。
+
+剩余Apple官方FP4先按[F46原生资格](llm-moe-d5-apple-fp4-native-qualification.md)
+检查现有MLX公共调用；该卡产品FIX为零，资格前不改变已验FP8程序。

@@ -1,0 +1,78 @@
+{
+  "baseline": "2c0c3f09dcee976a7ff539ed937dccb57784a8a1",
+  "qualification_card_commit": "0c2152d23768d215b6b89d55dd0c10dc6cb81e3d",
+  "provider": "MLX",
+  "provider_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+  "device": "MacBook Air Mac16,12 / Apple M4",
+  "build": "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+  "verdict": "NATIVE_DOMAIN_MISMATCH",
+  "full_profile_cells_added": 0,
+  "product_changes": 0,
+  "source_sha256": {
+    "fp_quantized.h": "bdf6d419b623cdfd7493ff58fbf9c70b4a2c2c39511330d6a61646093148225e",
+    "fp_quantized.metal": "ef4ba099710a63a0b5d27d3e5ce69a8528bee8f1757805aa606c8d8e43de18d4",
+    "fp_quantized_nax.metal": "5ee99ea275d40826ee8acc0e70e56531679b04464c8f88e0282a83009d8a0261",
+    "ops.cpp": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2"
+  },
+  "artifact_sha256": {
+    "native.log": "1de946c161089b1dabdf2ade66f9f43e1fa9b79a3f01b6b9e11e3730951780ad",
+    "run.json": "abdce9edc2aff7ffafac52c2b83e707956434f2a218920b2a1118d6699579e84",
+    "probe.cpp": "6c9a296b31806c50e2ce4d9c46d8f21190fed58b3328bc3936844f59fb3f8445"
+  },
+  "decode": {
+    "samples_per_output_dtype": 8128,
+    "output_dtypes": [
+      "float32",
+      "bfloat16"
+    ],
+    "mismatches_per_output_dtype": 4,
+    "mismatch_scale_exponents": [
+      1
+    ],
+    "mismatch_codes": [
+      1,
+      9
+    ],
+    "unit_scale_mismatches": 0
+  },
+  "quantization": {
+    "finite_bf16_sequential_group32": {
+      "samples_per_mode": 65280,
+      "plain": {
+        "code_mismatches": 830,
+        "scale_mismatches": 28,
+        "output_mismatches": 830
+      },
+      "compiled_multi_output": {
+        "code_mismatches": 830,
+        "scale_mismatches": 28,
+        "output_mismatches": 830
+      },
+      "compiled_output_only": {
+        "code_mismatches": null,
+        "scale_mismatches": null,
+        "output_mismatches": 830
+      },
+      "all_output_mismatches_expected_e8m0_exponent_le": 8,
+      "limitation": "All finite BF16 values under this fixed grouping; not all possible group combinations."
+    },
+    "fixed_unit_scale_midpoints_and_bf16_neighbors": {
+      "samples_per_mode": 1344,
+      "plain": {
+        "code_mismatches": 0,
+        "scale_mismatches": 0,
+        "output_mismatches": 0
+      },
+      "compiled_multi_output": {
+        "code_mismatches": 0,
+        "scale_mismatches": 0,
+        "output_mismatches": 0
+      },
+      "compiled_output_only": {
+        "code_mismatches": null,
+        "scale_mismatches": null,
+        "output_mismatches": 0
+      }
+    }
+  }
+}

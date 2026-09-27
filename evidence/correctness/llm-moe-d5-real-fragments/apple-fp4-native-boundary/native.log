@@ -1,0 +1,29 @@
+decode mismatch bf16=0 exponent=1 code=1 got=0 expected=5.87747e-39
+decode mismatch bf16=0 exponent=1 code=9 got=-0 expected=-5.87747e-39
+decode mismatch bf16=0 exponent=1 code=1 got=0 expected=5.87747e-39
+decode mismatch bf16=0 exponent=1 code=9 got=-0 expected=-5.87747e-39
+decode bf16=0 samples=8128 mismatches=4 unit_scale_mismatches=0 exponents16_238_mismatches=0
+decode mismatch bf16=1 exponent=1 code=1 got=0 expected=5.87747e-39
+decode mismatch bf16=1 exponent=1 code=9 got=-0 expected=-5.87747e-39
+decode mismatch bf16=1 exponent=1 code=1 got=0 expected=5.87747e-39
+decode mismatch bf16=1 exponent=1 code=9 got=-0 expected=-5.87747e-39
+decode bf16=1 samples=8128 mismatches=4 unit_scale_mismatches=0 exponents16_238_mismatches=0
+quant mismatch domain=0 mode=0 index=33 input_bits=33 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=0 index=34 input_bits=34 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=0 index=35 input_bits=35 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=0 index=36 input_bits=36 got=0 expected=5.877471754e-39 expected_scale=1
+quant domain=0 mode=0 samples=65280 code_mismatches=830 scale_mismatches=28 output_mismatches=830 tiny_output_mismatches=830
+quant mismatch domain=0 mode=1 index=33 input_bits=33 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=1 index=34 input_bits=34 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=1 index=35 input_bits=35 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=1 index=36 input_bits=36 got=0 expected=5.877471754e-39 expected_scale=1
+quant domain=0 mode=1 samples=65280 code_mismatches=830 scale_mismatches=28 output_mismatches=830 tiny_output_mismatches=830
+quant mismatch domain=0 mode=2 index=33 input_bits=33 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=2 index=34 input_bits=34 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=2 index=35 input_bits=35 got=0 expected=5.877471754e-39 expected_scale=1
+quant mismatch domain=0 mode=2 index=36 input_bits=36 got=0 expected=5.877471754e-39 expected_scale=1
+quant domain=0 mode=2 samples=65280 code_mismatches=0 scale_mismatches=0 output_mismatches=830 tiny_output_mismatches=830
+quant domain=1 mode=0 samples=1344 code_mismatches=0 scale_mismatches=0 output_mismatches=0 tiny_output_mismatches=0
+quant domain=1 mode=1 samples=1344 code_mismatches=0 scale_mismatches=0 output_mismatches=0 tiny_output_mismatches=0
+quant domain=1 mode=2 samples=1344 code_mismatches=0 scale_mismatches=0 output_mismatches=0 tiny_output_mismatches=0
+total_mismatches=4214
