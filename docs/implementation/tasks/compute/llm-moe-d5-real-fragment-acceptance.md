@@ -1992,6 +1992,9 @@ Gated DeltaNet 保留完整 ggml Metal region；Graph compile report 逐项确�
 ledger 现有 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`。已有 R03 三交付证明继续有效，但不提前代签
 D5-A5 的最终稳定 Apple 路线批次；D5-A6 P1 也仍未运行。
 
+CPU/Apple/Vulkan的A6当前按[原生片段性能批次](llm-moe-d5-portable-fragment-performance.md)
+统一接线，复用已验SDK。CUDA保持原官方MoE性能合同；环境空闲前不重复采样。
+
 ## 验收合同
 
 1. `RUN_PASS` 必须来自不可变 candidate 上的普通 Direct 或 Graph 入口，记录 exact profile、region、shape、
