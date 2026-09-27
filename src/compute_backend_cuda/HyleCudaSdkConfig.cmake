@@ -28,7 +28,8 @@ if(WIN32)
       IMPORTED_IMPLIB "${_import}" IMPORTED_LOCATION "${_runtime}")
     # Preserve the SDK target's original includes, dependencies and selected
     # import library. This leaf adds its loader identity to the same link graph.
-    target_link_libraries("CUDA::${library}" INTERFACE "${_target}")
+    set_property(TARGET "CUDA::${library}" APPEND PROPERTY
+      INTERFACE_LINK_LIBRARIES "${_target}")
   endfunction()
   foreach(_library IN ITEMS cudart cublasLt cublas)
     _hyle_cuda_sdk_runtime("${_library}")
