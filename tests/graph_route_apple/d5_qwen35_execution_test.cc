@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <optional>
 #include <span>
@@ -23,6 +24,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
+#include "../compute_models/d5_deepseek_official_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_grouped_fp8_fragments.h"
@@ -1799,6 +1801,39 @@ TEST(AppleGraphMoeFragments, D5Fp8QuantizationRoundtrip) {
       SCOPED_TRACE(rows);
       run_q24_semantic_fragment(d5_quantization_roundtrip::fragment(false, rows, 512, group));
     }
+}
+
+TEST(AppleGraphMoeFragments, D5OfficialDeepSeekFullMoeColdBoundary) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  for (auto index : {3u, 4u}) {
+    d5_moe_execution_fragments::MoeReference unused;
+    const auto fragment = d5_deepseek_official_fragments::moe_chain(
+        d5_moe_execution_cases::kCases[index], false, &unused, false);
+    SCOPED_TRACE(fragment.profile->model_name);
+    auto full = sem::make_graph(fragment);
+    auto context = a::Context::create().value();
+    std::vector<mx::array> constants;
+    for (std::size_t i = 0; i < fragment.constants.size(); ++i) {
+      const auto &description = fragment.description(fragment.constants[i]);
+      constants.push_back(description.is_plain()
+          ? upload(context, description,
+                   std::span<const std::byte>(fragment.constant_bytes[i])).native
+          : packed_array(fragment.constant_bytes[i]));
+    }
+    const auto workload = q::workload(
+        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
+    auto result = ga::compile(context, full.graph, constants, {.workload = workload});
+    ASSERT_FALSE(result) << "Official Apple MoE now compiles; qualify execution "
+                            "before replacing its rejection record.";
+    ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+    const auto name = fragment.profile->model_name;
+    const auto message = result.error().message();
+    std::printf("OFFICIAL_APPLE_REJECT entry=graph model=%.*s region=%llu "
+                "nodes=%zu operation=complete_moe code=%d message=%.*s\n",
+                int(name.size()), name.data(),
+                static_cast<unsigned long long>(fragment.region), fragment.nodes.size(),
+                int(result.error().code()), int(message.size()), message.data());
+  }
 }
 
 TEST(AppleGraphMoeFragments, D5OfficialFp4ExpertBatch) {

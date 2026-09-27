@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <optional>
 #include <span>
@@ -23,6 +24,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
+#include "../compute_models/d5_deepseek_official_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_grouped_fp8_fragments.h"
@@ -1760,6 +1762,45 @@ TEST(AppleMoeFragments, D5Fp8QuantizationRoundtrip) {
       SCOPED_TRACE(rows);
       run_q24_semantic_fragment(d5_quantization_roundtrip::fragment(false, rows, 512, group));
     }
+}
+
+TEST(AppleMoeFragments, D5OfficialDeepSeekFullMoeColdBoundary) {
+  for (auto index : {3u, 4u}) {
+    d5_moe_execution_fragments::MoeReference unused;
+    const auto fragment = d5_deepseek_official_fragments::moe_chain(
+        d5_moe_execution_cases::kCases[index], false, &unused, false);
+    SCOPED_TRACE(fragment.profile->model_name);
+    auto context = a::Context::create().value();
+    const auto workload = q::workload(
+        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
+    std::size_t prepared = 0;
+    bool rejected = false;
+    for (const auto &node : fragment.nodes) {
+      if (node.operation.kind() == c::OperationKind::kView)
+        continue;
+      std::vector<a::InputSpec> specs;
+      for (auto id : node.inputs)
+        specs.push_back(a::input_spec(fragment.description(id)).value());
+      auto result = context.prepare(node.operation, specs, workload);
+      if (!result) {
+        ASSERT_NE(node.operation.custom_as<c::model_ops::GroupedFloat4Linear>(),
+                  nullptr) << result.error().message();
+        ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+        const auto name = fragment.profile->model_name;
+        const auto message = result.error().message();
+        std::printf("OFFICIAL_APPLE_REJECT entry=direct model=%.*s region=%llu "
+                    "nodes=%zu prepared=%zu operation=GroupedFloat4Linear code=%d message=%.*s\n",
+                    int(name.size()), name.data(),
+                    static_cast<unsigned long long>(fragment.region), fragment.nodes.size(),
+                    prepared, int(result.error().code()), int(message.size()), message.data());
+        rejected = true;
+        break;
+      }
+      ++prepared;
+    }
+    EXPECT_TRUE(rejected) << "Official Apple MoE now prepares; qualify execution "
+                             "before replacing its rejection record.";
+  }
 }
 
 TEST(AppleMoeFragments, D5OfficialFp4ExpertBatch) {
