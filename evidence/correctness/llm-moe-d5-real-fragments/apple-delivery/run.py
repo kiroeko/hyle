@@ -99,15 +99,26 @@ def stage(label):
     if label == 'shared':
         producer = Path.home()/'hyle-scratch/d5-graph-825c41f8'
         staging, prefix = root/'shared-staging', root/'shared-relocated'
-        shutil.copyfile(producer/'CMakeCache.txt', out/'producer-original-cache.txt')
-        run('producer-configure', [cmake, '-S', repo, '-B', producer, '-U', 'HYLE_DEV_FACTORS',
-            '-DHYLE_COMPONENTS=compute,graph,simd', '-DHYLE_BUILD_TESTS=OFF', '-DHYLE_BUILD_BENCH=OFF',
-            '-DHYLE_TEST_INSTRUMENTATION=OFF', '-DHYLE_INSTALL=ON', '-DHYLE_STATIC=OFF',
-            '-DHYLE_COMPUTE_CPU=OFF', '-DHYLE_COMPUTE_ONEDNN=OFF', '-DHYLE_COMPUTE_CUDA=OFF',
-            '-DHYLE_COMPUTE_APPLE=ON', '-DHYLE_COMPUTE_VULKAN=OFF', '-DHYLE_WERROR=ON',
-            '-DCMAKE_INSTALL_PREFIX='+str(staging)])
-        run('producer-build', [cmake, '--build', producer, '-j', '2'])
+        reuse_sdk = prefix.exists()
+        if reuse_sdk:
+            previous = root/'receipts/shared'
+            prior_inputs = json.loads((previous/'inputs.json').read_text())
+            prior = json.loads((previous/'receipt.json').read_text())
+            if prior_inputs['product_git_blobs'] != identity['product_git_blobs'] or not any(
+                step['label'] == 'install' and step['returncode'] == 0 for step in prior['steps']):
+                raise SystemExit('Existing SDK has no matching successful producer/install identity.')
+            receipt['reused_sdk'] = {'candidate': prior['candidate'], 'receipt': str(previous/'receipt.json')}
+        else:
+            shutil.copyfile(producer/'CMakeCache.txt', out/'producer-original-cache.txt')
+            run('producer-configure', [cmake, '-S', repo, '-B', producer, '-U', 'HYLE_DEV_FACTORS',
+                '-DHYLE_COMPONENTS=compute,graph,simd', '-DHYLE_BUILD_TESTS=OFF', '-DHYLE_BUILD_BENCH=OFF',
+                '-DHYLE_TEST_INSTRUMENTATION=OFF', '-DHYLE_INSTALL=ON', '-DHYLE_STATIC=OFF',
+                '-DHYLE_COMPUTE_CPU=OFF', '-DHYLE_COMPUTE_ONEDNN=OFF', '-DHYLE_COMPUTE_CUDA=OFF',
+                '-DHYLE_COMPUTE_APPLE=ON', '-DHYLE_COMPUTE_VULKAN=OFF', '-DHYLE_WERROR=ON',
+                '-DCMAKE_INSTALL_PREFIX='+str(staging)])
+            run('producer-build', [cmake, '--build', producer, '-j', '2'])
     else:
+        reuse_sdk = False
         producer = root/'source-build'
         staging, prefix = root/'static-staging', root/'static-relocated'
         if label == 'source':
@@ -119,8 +130,9 @@ def stage(label):
         elif (root/'source-candidate.txt').read_text().strip() != candidate:
             raise SystemExit('Static producer belongs to another candidate.')
     if label != 'source':
-        run('install', [cmake, '--install', producer, '--prefix', staging])
-        rename_inside(staging, prefix, root)
+        if not reuse_sdk:
+            run('install', [cmake, '--install', producer, '--prefix', staging])
+            rename_inside(staging, prefix, root)
         build = root/(label+'-consumer')
         run('consumer-configure', [cmake, '-S', consumer, '-B', build, *common, *deps,
             '-DCMAKE_PREFIX_PATH='+str(prefix)])

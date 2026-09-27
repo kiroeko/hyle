@@ -1783,8 +1783,8 @@ TEST(AppleMoeFragments, D5OfficialDeepSeekFullMoeColdBoundary) {
         specs.push_back(a::input_spec(fragment.description(id)).value());
       auto result = context.prepare(node.operation, specs, workload);
       if (!result) {
-        ASSERT_NE(node.operation.custom_as<c::model_ops::GroupedFloat4Linear>(),
-                  nullptr) << result.error().message();
+        ASSERT_TRUE(node.operation.custom_as<c::model_ops::GroupedFloat4Linear>()
+                        .has_value()) << result.error().message();
         ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
         const auto name = fragment.profile->model_name;
         const auto message = result.error().message();
