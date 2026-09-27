@@ -11,6 +11,7 @@
 #include "../compute_models/d5_quantization_roundtrip.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/cpu.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
