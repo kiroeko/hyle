@@ -42,6 +42,9 @@ add_executable(hyle_perf_control_bench "${_hyle_fixture_root}/bench/integration/
 target_compile_features(hyle_perf_control_bench PRIVATE cxx_std_23)
 target_compile_definitions(hyle_perf_control_bench PRIVATE _CRT_SECURE_NO_WARNINGS)
 target_link_libraries(hyle_perf_control_bench PRIVATE hyle::core d5_nanobench)
+file(TO_CMAKE_PATH "${D5_DIRECT_REFERENCE}" _d5_direct_reference)
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/d5-input-paths.json" CONTENT
+  "{\"sdk\":\"${Hyle_DIR}/../../..\",\"reference\":\"${_d5_direct_reference}\"}\n")
 enable_testing()
 add_test(NAME d5_native_fragment_verify COMMAND ${_target})
 set_tests_properties(d5_native_fragment_verify PROPERTIES TIMEOUT 600

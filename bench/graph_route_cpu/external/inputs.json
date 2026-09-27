@@ -1,0 +1,65 @@
+{
+  "schema": "hyle.d5-native-fragment-inputs/v1",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "source_digest": "sha256 after CRLF-to-LF for source text only; SDK and fixture exact bytes",
+  "source_files": {
+    "bench/common/perf_process.h": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+    "bench/graph_route_apple/d5_fragment_bench.cc": "4bb8b5486ed8d74ac83ca9341a16debb1fd76414f03739b6814c5d50725e895f",
+    "bench/graph_route_cpu/d5_common.h": "6911e9e5b206156bf0a8d61e8e97752c593686ac587631050832dd5810593ce7",
+    "bench/graph_route_cpu/d5_fragment_bench.cc": "27dee1b675e09691f28da4758da53d9f0d4b5f09443b9f0cf337889b45e5301d",
+    "bench/graph_route_cpu/external/CMakeLists.txt": "23e28d9bae635216f252a2dda0380b9f11c026b2ac58c5706fa41a3dc03c3adf",
+    "bench/graph_route_cpu/external/launch.py": "c74d0e35326df44799745dcd21f67cfeeb4ca221b2611cc35cb7bc28c2efa2ab",
+    "bench/graph_route_cpu/external/validate_aa.py": "543d9427d447d4f5d39c086d2692045776328c0a94962490eea5c5e3a1e4d794",
+    "bench/graph_route_vulkan/d5_fragment_bench.cc": "c1a1873a3a9865c7ae94bd99b71fb6612d82a0b65b863e51e082d9e2333c8683",
+    "bench/integration/perf_control_bench.cc": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+    "bench/nanobench_impl.cc": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+    "tests/compute/workload_fixture.h": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e",
+    "tests/compute_models/d5_gguf_test_support.h": "24e14e3a257120475dc023e21ecef422bc223a8e53ec3651e8ffb70c54335086",
+    "tests/compute_models/d5_kda_projection_cases.h": "9fb3854be11b4e99246d5a7f8cf453e8df284dd47bd395a1f81ebc02fe4cc917",
+    "tests/compute_models/d5_moe_execution_cases.h": "110d29834f8b6537b28bc75a75094cd7293a14ca4d31a25d36a25fd275e8b48a",
+    "tests/compute_models/d5_moe_execution_fragments.h": "b00bc12f55f6076c7b0365df34b2bf6dbc6663af8fcf69f0dff4bfc38f95158f",
+    "tests/compute_models/d5_moe_profile_cases.h": "8a9ac8752cbcd2c8436fd53f0081f2cc1fef861eda4ac93e2c41c0782468c840",
+    "tests/compute_models/d5_moe_semantic_fragments.h": "eb92aea3e85e6c86797a9eda6d880ca36fb0204ffab1a61535f5f0a1a78db1b0",
+    "tests/compute_models/d5_official_fp4_storage.h": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846",
+    "tests/compute_models/d5_qwen35_fixture.h": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393",
+    "tests/compute_models/d5_qwen35_gguf_fragment_support.h": "dbabc5d76a796f9932d17af3307c53f9a781fce24f8d1328017fbe6273e7400e",
+    "tests/compute_models/d5_qwen38_24t_fixture.h": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f",
+    "tests/compute_models/d5_qwen38_24t_full_router.h": "74cd12ae0a0022269467c6f10b3c69ae9db1c180b84a84bda3e792e4a20bca51",
+    "tests/compute_models/d5_qwen38_24t_moe_profiles.h": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee",
+    "tests/compute_models/d5_qwen38_24t_semantic_fragments.h": "d062ea65ac551f62a48eff3ce9e56c736df3abca58c1da447fcdbc78bdfff796",
+    "tests/compute_models/d5_qwen38_gdn_fixture.h": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed",
+    "tests/compute_models/d5_qwen38_official_fixture.h": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0",
+    "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655",
+    "tests/compute_provider_native/half_test_support.h": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8",
+    "tests/compute_route_apple/tensor_test_support.h": "bfb4ac9ba283b9b789b07af0b3cf06509bd017c61933d04d222ad1695edda0b4",
+    "third_party/nanobench/nanobench.h": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+  },
+  "qwen_files": {
+    "tensors/model_language_model_layers_0_mlp_gate_proj_weight.bin": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42",
+    "tensors/model_language_model_layers_0_mlp_up_proj_weight.bin": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e",
+    "tensors/model_language_model_layers_0_mlp_down_proj_weight.bin": "fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766",
+    "tensors/model_language_model_layers_0_input_layernorm_weight.bin": "e3bfb63b03722ec637ed4ea2cc552d68a87e661bbba1e889f721858b34162877",
+    "ffn_activation_seed5_1x2048.bf16": "5c578222ff5f26e5dd1afa9d57e67f93593ca053d8a5640b49f6238b13f32b15",
+    "ffn_expected_seed5_1x2048.f32": "ab3b8fbad5ef20ba993a65c1d6468783eea6996c0bc5c1f8de2929a3b93318bb",
+    "ffn_direct_expected_seed5_1x2048.f32": "840be4222754706a9d4533473e9eef7e5e4aabddc77b7f80e418a18064247ffe",
+    "ffn_activation_seed17_1x2048.bf16": "0567183befd305c765316c56d5c7febecebdac79915c9b61b5e14bc24a93335f",
+    "ffn_expected_seed17_1x2048.f32": "3598c9e7d697cccb29ce11900e058bdcb0b9a67ee65495ce6fa2e67dd4325756",
+    "ffn_direct_expected_seed17_1x2048.f32": "9acb37e037087d9b924f40990b79d0bb39ede3f4f0a887777eedcf5ce4acc95a"
+  },
+  "routes": {
+    "cpu": {
+      "sdk_manifest": "evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/cpu/784819ca/sdk-inputs.json",
+      "sdk_manifest_sha256": "aed438689d52d7977088f84aff104ff6f885645458555d1f63b62c95a7c2d919"
+    },
+    "apple": {
+      "sdk_manifest": "evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/apple/7e77c863/sdk-inputs.json",
+      "sdk_manifest_sha256": "5d88fc7bde06ac56eef2e3744dc2d2f67bf808bd08effaf74a69f25bbeb5becf",
+      "native_environment": "# D5_APPLE_ENV device=Apple M4 arch=applegpu_g16g os=Version 27.0 (Build 26A428) mlx=0.32.2 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000"
+    },
+    "vulkan": {
+      "sdk_manifest": "evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/vulkan/f74fa7a6/sdk-inputs.json",
+      "sdk_manifest_sha256": "69db18965cc6f7af5be69d86d7c97c4d261d2150c34a6a64aa30447177a7d952",
+      "native_environment": "# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45"
+    }
+  }
+}

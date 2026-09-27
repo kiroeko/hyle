@@ -205,6 +205,16 @@ template <class Route> int run_main(int argc, char **argv) {
         static_cast<unsigned long long>(mask),
         priority == ABOVE_NORMAL_PRIORITY_CLASS ? "above-normal" : "other",
         hyle::bench::perf::run_nonce(), verify);
+#elif defined(__APPLE__)
+    const auto qos = hyle::bench::perf::configure_thread_qos();
+    std::fprintf(stderr,
+        "# HYLE_D5_FRAGMENT_RUN execution_order=%s allocation_order=%s aa_route=%s "
+        "paired_mode=nanobench-compare apple_qos=%s qos_ok=%s run_nonce=%s verify_only=%d\n",
+        environment("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
+        environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
+        aa.empty() ? "off" : aa.c_str(), qos.name, qos.ok,
+        hyle::bench::perf::run_nonce(), verify);
+    nb::doNotOptimizeAway(affinity);
 #else
     nb::doNotOptimizeAway(affinity);
 #endif
