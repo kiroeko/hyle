@@ -42,3 +42,7 @@
 保留第一次失败，随后source/static消费同一纠正候选；不因此重编CUDA产品或放宽原断言。
 外部构建另保留原Direct/Graph两个binary的边界，并带上各自已有的词表helper实现，
 避免把两个不同执行入口的同名测试辅助符号合进一个binary；运行清单仍为总计8项。
+
+后续两个binary均已链接，但在隔离PATH/producer时遇到实际CUDA SDK DLL缺失。
+按[独立构建接缝修复](../build/cuda-sdk-runtime-staging-v1.md)绑定backend owner；
+不在消费者脚本手工复制DLL代替产品修复，也不重开数学实现。
