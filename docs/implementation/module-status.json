@@ -447,14 +447,9 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "CLOSED",
-      "summary": "M3-D5-F1 CLOSED 67948310：cuBLASLt adapter 已接纳 BF16 rank-2 dense MatMul（CUDA_R_16BF、FP32 accumulation）；Provider、CUDA Direct/Graph、真实 Qwen R03 和 Compute/Graph 三交付通过。",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "candidate": "67948310b6eed656e1d84e8dee31b1346fdfb301",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/llm-moe-d5-real-fragments/cuda-qwen35-r03/README.md"
-      }
+      "state": "SCOPED",
+      "summary": "D5-A5 SCOPED：真实shared SDK漏cuBLASLt私有runtime依赖；仅修CMake导出与三交付，不改数学。",
+      "record": "docs/implementation/tasks/build/cuda-provider-runtime-exports-v1.md"
     },
     {
       "module": "compute_provider_marlin",

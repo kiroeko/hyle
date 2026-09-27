@@ -23,6 +23,10 @@ Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-fail
 剩余CPU八格、Apple四格、Vulkan十二格，以及D5三交付/P1和D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
+D5-A5外部CUDA交付发现两个Provider的私有SDK DLL依赖未导出；
+`compute_provider_ggml_cuda`当前AUDITED范围仅追加
+[E2私有runtime接线](../build/cuda-provider-runtime-exports-v1.md)，不改原产品数学或性能口径。
+
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。
 该具名候选按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)完成AOT与Windows
