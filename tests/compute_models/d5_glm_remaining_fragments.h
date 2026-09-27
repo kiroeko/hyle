@@ -30,9 +30,10 @@ struct MixedProjection final {
 };
 inline MixedProjection projection(Fragment &f, ValueId input, std::int64_t n,
                                    std::int64_t k, int seed, bool fp8,
-                                   Storage plain = Storage::kQ8_0) {
+                                   Storage plain = Storage::kQ8_0, bool fp8_fma = true) {
   if (fp8) {
     auto value = d5_dynamic_fp8_fragments::model_linear(f, input, n, k, seed);
+    value.fused_scale_accumulation = fp8_fma;
     const auto output = value.output;
     return {output, [value = std::move(value)](auto x) { return value.reference(x); }};
   }
@@ -45,6 +46,7 @@ struct Case final {
   const c::ModelArtifactProfileDescription *profile;
   std::int64_t hidden, query_rank;
   bool flash, official;
+  bool fp8_fma = true;
 };
 inline constexpr std::array kCases{
     Case{&core::profiles::glm53_official, 6144, 2048, false, true},
@@ -53,6 +55,14 @@ inline constexpr std::array kCases{
     Case{&core::profiles::glm53_flash_official, 4096, 1536, true, true},
     Case{&core::profiles::glm53_flash_primary_gguf, 4096, 1536, true, false},
     Case{&core::profiles::glm53_flash_fidelity_gguf, 4096, 1536, true, false}};
+// MLX Safe compilation uses separately rounded multiply/add nodes. This is
+// one whole-fixture oracle policy, fixed before execution, never selected by
+// comparing outputs. CUDA's original FMA policy remains the default.
+inline constexpr auto kUnfusedFp8Cases = [] {
+  auto cases = kCases;
+  for (auto &model : cases) model.fp8_fma = false;
+  return cases;
+}();
 inline constexpr std::int64_t kHeads = 64, kLatent = 512, kValue = 256;
 inline constexpr float kNormEpsilon = 1.0e-5F;
 
@@ -133,11 +143,11 @@ inline Fragment dense_ffn(const Case &model) {
   auto x = f.input(dense({1, model.hidden}));
   auto scales = sem::oracle::scale(model.hidden);
   auto normalized = norm(f, x, scales, model.official);
-  auto g = projection(f, normalized, 12288, model.hidden, 173, model.official);
-  auto u = projection(f, normalized, 12288, model.hidden, 179, model.official);
+  auto g = projection(f, normalized, 12288, model.hidden, 173, model.official, Storage::kQ8_0, model.fp8_fma);
+  auto u = projection(f, normalized, 12288, model.hidden, 179, model.official, Storage::kQ8_0, model.fp8_fma);
   const auto &moe_model = moe::cases::kCases[model.flash ? 11 : 8];
   auto gated = moe::gated(f, moe_model, g.output, u.output);
-  auto down = projection(f, gated, model.hidden, 12288, 181, model.official);
+  auto down = projection(f, gated, model.hidden, 12288, 181, model.official, Storage::kQ8_0, model.fp8_fma);
   auto residual = binary(f, c::BinaryKind::kAdd, x, down.output);
   f.outputs = {normalized, g.output, u.output, gated, down.output, residual};
   if (model.official) f.bfloat_chain_outputs = {1, 2, 3, 4, 5};
@@ -396,8 +406,8 @@ inline Fragment indexer(const Case &model, std::int64_t tail = 0,
   ValueId past_gate{}, positions{};
   if (model.flash) past_gate = f.input(dense({history_count, depth}));
   else positions = f.input(dense({1}, c::DataType::kInt32));
-  auto wq = projection(f, q_resid, heads * depth, model.query_rank, 239, model.official && !model.flash, storage);
-  auto wk = projection(f, x, depth, model.hidden, 241, model.official && !model.flash, storage);
+  auto wq = projection(f, q_resid, heads * depth, model.query_rank, 239, model.official && !model.flash, storage, model.fp8_fma);
+  auto wk = projection(f, x, depth, model.hidden, 241, model.official && !model.flash, storage, model.fp8_fma);
   const auto score_storage = model.official ? Storage::kBFloat16
       : quantized_scores ? Storage::kQ8_0 : Storage::kF32;
   auto ws = linear::projection(f, x, heads, model.hidden, score_storage, 251);
@@ -625,11 +635,11 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
   }
   auto input_scale = sem::oracle::scale(model.hidden);
   auto nx = norm(f, x, input_scale, model.official);
-  auto qa = projection(f, nx, model.query_rank, model.hidden, 197, model.official);
+  auto qa = projection(f, nx, model.query_rank, model.hidden, 197, model.official, Storage::kQ8_0, model.fp8_fma);
   auto qscale = sem::oracle::scale(model.query_rank);
   auto qr = norm(f, qa.output, qscale, model.official);
-  auto qb = projection(f, qr, kHeads * 256, model.query_rank, 199, model.official);
-  auto kva = projection(f, nx, cached_width, model.hidden, 211, model.official);
+  auto qb = projection(f, qr, kHeads * 256, model.query_rank, 199, model.official, Storage::kQ8_0, model.fp8_fma);
+  auto kva = projection(f, nx, cached_width, model.hidden, 211, model.official, Storage::kQ8_0, model.fp8_fma);
   auto latent = reshape(f, core::rows(f, reshape(f, kva.output, {cached_width, 1}), 0, kLatent), {1, kLatent});
   auto kvscale = sem::oracle::scale(kLatent);
   latent = norm(f, latent, kvscale, model.official);
@@ -664,7 +674,7 @@ inline Fragment mla(const Case &model, MlaReference *reference = nullptr) {
       ? apply_head_projection(f, attended, std::move(prepared->value), prepared->values, kValue, kLatent, true)
       : head_projection(f, attended, kValue, kLatent, 227, model.official);
   auto out = projection(f, reshape(f, vb.output, {1, kHeads * kValue}),
-                         model.hidden, kHeads * kValue, 229, model.official);
+                         model.hidden, kHeads * kValue, 229, model.official, Storage::kQ8_0, model.fp8_fma);
   f.outputs = {next_cache, qb.output, query, attention, vb.output, out.output};
   if (model.official) f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5};
   f.state_ports = {{1, 0}};

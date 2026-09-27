@@ -1767,7 +1767,7 @@ TEST(AppleGraphMoeFragments, D5GlmFp8AccumulationBoundaries) {
 TEST(AppleGraphMoeFragments, D5GlmOfficialMixedRemaining) {
   namespace glm = d5_glm_remaining_fragments;
   run_q24_semantic_fragment(glm::official_flash_clamped_activation());
-  for (const auto &model : glm::kCases) {
+  for (const auto &model : glm::kUnfusedFp8Cases) {
     if (!model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     run_q24_semantic_fragment(glm::dense_ffn(model));
@@ -1786,7 +1786,7 @@ TEST(AppleGraphMoeFragments, D5GlmOfficialMixedRemaining) {
 
 TEST(AppleGraphMoeFragments, D5GlmDsaPreparedKvAndNextN) {
   namespace glm = d5_glm_remaining_fragments;
-  const auto &model = glm::kCases[0];
+  const auto &model = glm::kUnfusedFp8Cases[0];
   ASSERT_TRUE(model.official && !model.flash);
   run_q24_semantic_fragment(glm::mla(model));
   glm::check_mtp_head(model, run_q24_semantic_fragment);
@@ -1841,7 +1841,7 @@ TEST(AppleGraphMoeFragments, D5KdaProjectionRoleBatch) {
 
 TEST(AppleGraphMoeFragments, D5GlmFlashWeightedHyperConnection) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (!model.flash) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
@@ -1851,7 +1851,7 @@ TEST(AppleGraphMoeFragments, D5GlmFlashWeightedHyperConnection) {
 
 TEST(AppleGraphMoeFragments, D5GlmDsaIndexerWithCache) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (model.flash || model.official) continue;
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_glm_remaining_fragments::indexer(model));
@@ -1863,7 +1863,7 @@ TEST(AppleGraphMoeFragments, D5GlmDsaIndexerWithCache) {
 
 TEST(AppleGraphMoeFragments, D5GlmFlashPooledIndexerWithTail) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (!model.flash) continue;
     SCOPED_TRACE(model.profile->variant);
     for (int tail = 0; tail < 4; ++tail) {
@@ -1875,7 +1875,7 @@ TEST(AppleGraphMoeFragments, D5GlmFlashPooledIndexerWithTail) {
 
 TEST(AppleGraphMoeFragments, D5GlmGgufDenseFfn) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
@@ -1885,7 +1885,7 @@ TEST(AppleGraphMoeFragments, D5GlmGgufDenseFfn) {
 
 TEST(AppleGraphMoeFragments, D5GlmGgufNextNDecoderWithCarryAndFullHead) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
@@ -1895,7 +1895,7 @@ TEST(AppleGraphMoeFragments, D5GlmGgufNextNDecoderWithCarryAndFullHead) {
 
 TEST(AppleGraphMoeFragments, D5GlmGgufDsaSelectionConsumesMlaCache) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
@@ -1918,7 +1918,7 @@ TEST(AppleGraphMoeFragments, D5GlmLayerSpecificExpertFormats) {
 
 TEST(AppleGraphMoeFragments, D5GlmGgufMtpIndexCarryReset) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
@@ -1928,7 +1928,7 @@ TEST(AppleGraphMoeFragments, D5GlmGgufMtpIndexCarryReset) {
 
 TEST(AppleGraphMoeFragments, D5GlmNextNInputBoundary) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);
     run_q24_semantic_fragment(d5_glm_remaining_fragments::mtp_input(model));
@@ -1937,7 +1937,7 @@ TEST(AppleGraphMoeFragments, D5GlmNextNInputBoundary) {
 
 TEST(AppleGraphMoeFragments, D5GlmGgufAbsorbedMlaWithCache) {
   d5_gguf_test::QuantizerCleanup cleanup;
-  for (const auto &model : d5_glm_remaining_fragments::kCases) {
+  for (const auto &model : d5_glm_remaining_fragments::kUnfusedFp8Cases) {
     if (model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     SCOPED_TRACE(model.profile->variant);

@@ -146,6 +146,7 @@ struct ModelLinear final {
   std::int64_t n, k;
   int seed;
   bool power2 = false;
+  bool fused_scale_accumulation = true;
   std::vector<float> reference(std::span<const float> input,
                                bool declared_f32_accumulation = true) const {
     std::vector<float> rounded(input.begin(), input.end());
@@ -185,7 +186,16 @@ struct ModelLinear final {
             double dot = terms[i++].second;
             while (i < terms.size() && terms[i].first == block) dot += terms[i++].second;
             const float scaled = float(dot * scales[token * (k / 128) + block]);
-            accumulated = std::fma(scaled, fp8::scale(shape, row / 128, block, seed), accumulated);
+            const float weight_scale = fp8::scale(shape, row / 128, block, seed);
+            if (fused_scale_accumulation) {
+              accumulated = std::fma(scaled, weight_scale, accumulated);
+            } else {
+              // Fix the unfused native program before building the oracle.
+              // Volatile prevents the host compiler from contracting these
+              // two separately rounded F32 operations back into an FMA.
+              volatile float product = scaled * weight_scale;
+              accumulated = accumulated + product;
+            }
           }
           sum = accumulated;
         }

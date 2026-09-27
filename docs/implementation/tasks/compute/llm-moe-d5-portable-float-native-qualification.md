@@ -96,3 +96,20 @@ GLM非Flash的replay2最终投影相对L2为0.2826%、peak-normalized-max为5.06
 不能笼统称为测试误判。F45.6最后一个具名调查是两款官方MLA的一次中间值捕获：
 只检查实际FP8输入、F32 fused/unfused局部oracle、norm、准备后KV投影和状态传播；
 不改统一门、不改产品。诊断源码/日志归档后移出常态测试，下一步必须由该证据裁决。
+
+
+### F45.6 最终原因及验收候选
+
+`db691c04` 一次捕获确认两款GLM四轮的32次FP8投影，均逐值等于独立unfused
+F32 oracle，且全部落在gamma(3)误差界内。16次准备后/普通head投影也逐值一致；
+norm和attention局部最大误差≤2.3841858e-7。旧oracle固定CUDA式FMA，
+BF16中点改变后继FP8 codes并在实际cache反馈中传播；不是遗漏scale、KV接错或Graph重放。
+
+独立完整链预测只把FMA改成两次F32舍入，从原始输入起独立演化自己的状态，
+不使用设备中间结果作输入；全部48个输出/重放组合通过原逐元素门。
+所以有限FIX为测试oracle显式保留fused/unfused程序：CUDA默认不变，Apple在
+建整个GLM fixture之前固定unfused，所有FP8角色一致采用该方式，不逐元素择优。
+原BF16存储、FP8 codes/scale、准备/实际state反馈、严格ID和最终head门不变；
+不改公共语义、不改产品、不放宽统一tolerance。
+最终批次为两入口Apple FP8+全部GLM相关消费者、资源回归，以及CUDA相关默认
+oracle回归一次；通过后归档旧失败与归因，不再对本机制追加调参。
