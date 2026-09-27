@@ -83,7 +83,7 @@ void run_roundtrip(bool fp4, std::vector<std::uint16_t> values) {
         EXPECT_EQ(std::bit_cast<float>(std::uint32_t(actual[i]) << 16), expected[i]) << i;
       std::ranges::reverse(values);
     }
-    // A finite-only source must fail through Completion, then remain reusable.
+    // An accepted terminal failure retires the invocation, not its program.
     values[0] = 0x7fc0;
     ASSERT_TRUE(input_storage.view().write(std::as_bytes(std::span(values))).ok());
     {
@@ -93,8 +93,19 @@ void run_roundtrip(bool fp4, std::vector<std::uint16_t> values) {
     }
     values[0] = 0;
     ASSERT_TRUE(input_storage.view().write(std::as_bytes(std::span(values))).ok());
+    auto retired = submit();
+    ASSERT_FALSE(retired);
+    EXPECT_TRUE(retired.error().IsFailedPrecondition());
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+    invocation = compiled.executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(x, input).ok());
+    ASSERT_TRUE(invocation.bind(y, output).ok());
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+#else
+    invocation = prepared.create_invocation().value();
+#endif
     auto recovered = submit();
-    ASSERT_TRUE(recovered);
+    ASSERT_TRUE(recovered) << recovered.error().message();
     EXPECT_TRUE(recovered->wait().ok());
   }
   EXPECT_TRUE(stats.balanced());
