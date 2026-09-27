@@ -163,12 +163,32 @@ void measure(sem::Fragment fixture, const char *name, bool verify_only) {
   if (verify_only) return;
   nb::Bench bench;
   bench.title(name).relative(true).minEpochTime(std::chrono::milliseconds(8));
+  // A fixed whole number of replay cycles keeps both arms on the same inputs.
+  // Other route consumers retain their already qualified sampling policy.
+  if constexpr (requires { Route::kBalancedEpochIterations; }) {
+    if (fixture.replays.empty() ||
+        Route::kBalancedEpochIterations % fixture.replays.size() != 0)
+      throw std::runtime_error("epoch must cover complete replay cycles");
+    bench.epochIterations(Route::kBalancedEpochIterations).epochs(24);
+  }
   const auto selected = [&] { require(candidate->run()); };
   const auto reference = [&] { require(peer->run()); };
-  if (!environment("HYLE_BENCH_RIVAL_FIRST").empty())
-    (void)bench.compare("Direct complete fragment", reference, "Graph complete fragment", selected);
-  else
-    (void)bench.compare("Graph complete fragment", selected, "Direct complete fragment", reference);
+  const auto result = !environment("HYLE_BENCH_RIVAL_FIRST").empty()
+      ? bench.compare("Direct complete fragment", reference, "Graph complete fragment", selected)
+      : bench.compare("Graph complete fragment", selected, "Direct complete fragment", reference);
+  if constexpr (requires { Route::kBalancedEpochIterations; }) {
+    for (std::size_t arm = 0; arm < result.size(); ++arm) {
+      const auto &entry = result[arm];
+      for (std::size_t round = 0; round < result.rounds(); ++round)
+        std::fprintf(stderr,
+            "# D5_PAIRED_ROUND profile=\"%s\" arm=\"%s\" round=%zu iterations=%.0f "
+            "seconds_per_call=%.17g paired_relative=%.17g slots=%zu\n",
+            name, entry.name.c_str(), round,
+            entry.result.get(round, nb::Result::Measure::iterations),
+            entry.result.get(round, nb::Result::Measure::elapsed), entry.relative,
+            fixture.replays.size());
+    }
+  }
   candidate->verify();
   peer->verify();
 }

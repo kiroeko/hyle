@@ -13,6 +13,7 @@ struct Slot final {
 
 class Route final {
 public:
+  static constexpr std::uint64_t kBalancedEpochIterations = 6;
   Route(const sem::Fragment &fixture, bool graph)
       : fixture_(fixture), graph_(graph), quota_(mem::system_allocator()),
         context_(take(v::Context::create({.memory_quota = &quota_}))) {

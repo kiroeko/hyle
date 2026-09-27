@@ -1,0 +1,1048 @@
+{
+  "baseline": "416242f8ef2cd9a83d558b3b7879e4c2c1707be4",
+  "note": "Rounded paired table is diagnostic only; cannot recover raw rounds or requalify old runs.",
+  "archives": [
+    {
+      "archive": "graph-vulkan-d5-fragments-interrupted",
+      "runs": [
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/peer-0-0.log.gz",
+          "compressed_sha256": "90c0ace2ea2815a857da28f2bc5b86f7fb22c668593e69e6256a6ae163c4215c",
+          "arm": "peer",
+          "order": 0,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0520164722663168,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9919897010441996
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0362694300518136,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0050251256281406
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 0.965,
+                "ci_text": "91.2% .. 100.8%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Direct complete fragment": {
+                "relative": 0.995,
+                "ci_text": "82.8% .. 109.0%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/peer-0-1.log.gz",
+          "compressed_sha256": "b9f3762d8cb35b98cb0523e5b6bee79d6b0af63dd810d452d4efffe24047e083",
+          "arm": "peer",
+          "order": 0,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0401988475878432,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0446452566514377
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0362694300518136,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9541984732824427
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 0.965,
+                "ci_text": "94.1% .. 98.8%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.09
+              },
+              "Direct complete fragment": {
+                "relative": 1.048,
+                "ci_text": "92.4% .. 111.0%",
+                "total_seconds_rounded": 0.1
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/peer-1-0.log.gz",
+          "compressed_sha256": "7054b7c77636ea69aafbec2661f30c43413d7e13f6b687c8bf146f26bcd686c4",
+          "arm": "peer",
+          "order": 1,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9489647189951558,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0450312632793055
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.003,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.077
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.003,
+                "ci_text": "90.4% .. 108.1%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.12
+              },
+              "Graph complete fragment": {
+                "relative": 1.077,
+                "ci_text": "84.2% .. 124.9%",
+                "total_seconds_rounded": 0.12
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/peer-1-1.log.gz",
+          "compressed_sha256": "6bfce2fb736d496e34d02a9b68d00ae2a2d5677b0e552e0600414a426efb67e3",
+          "arm": "peer",
+          "order": 1,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0046121045990513,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0051954924292534
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9990000000000001,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.014
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 0.9990000000000001,
+                "ci_text": "96.6% .. 101.9%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Graph complete fragment": {
+                "relative": 1.014,
+                "ci_text": "86.9% .. 117.8%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/selected-0-0.log.gz",
+          "compressed_sha256": "5472d59c96eb352c9b78ad4a78d47f525e1e1ce0db5c51486d30f55454033993",
+          "arm": "selected",
+          "order": 0,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0271951782633,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9450630057446415
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9970089730807579,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0256410256410258
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 1.003,
+                "ci_text": "89.3% .. 104.0%",
+                "total_seconds_rounded": 0.12
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.14
+              },
+              "Direct complete fragment": {
+                "relative": 0.975,
+                "ci_text": "92.6% .. 106.3%",
+                "total_seconds_rounded": 0.14
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/selected-0-1.log.gz",
+          "compressed_sha256": "e626a1493825074c446780d218ba30c293ad9572a11e0d566fcfd7bdd9164d48",
+          "arm": "selected",
+          "order": 0,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0233935114844936,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9797797582186802
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0256410256410258,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9699321047526674
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 0.975,
+                "ci_text": "96.5% .. 99.7%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.16
+              },
+              "Direct complete fragment": {
+                "relative": 1.031,
+                "ci_text": "99.2% .. 106.6%",
+                "total_seconds_rounded": 0.15
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/selected-1-0.log.gz",
+          "compressed_sha256": "dad871b5a700866e37fdfc5f638e36cde97473bb72a809c11f4748bea78cab64",
+          "arm": "selected",
+          "order": 1,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0312740265026457,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0880608464618493
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.015,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0270000000000001
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.015,
+                "ci_text": "98.7% .. 106.8%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.0270000000000001,
+                "ci_text": "86.5% .. 125.5%",
+                "total_seconds_rounded": 0.1
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-interrupted/run/d5-aa-raw/selected-1-1.log.gz",
+          "compressed_sha256": "f65d2ad2dd3818bc8359c5ed046fc178d45bd18b162ad06fccd0f1d6e44e5162",
+          "arm": "selected",
+          "order": 1,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9694952497899566,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9719770013268465
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0070000000000001,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.035
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.0070000000000001,
+                "ci_text": "90.2% .. 106.4%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.12
+              },
+              "Graph complete fragment": {
+                "relative": 1.035,
+                "ci_text": "84.1% .. 106.2%",
+                "total_seconds_rounded": 0.12
+              }
+            }
+          }
+        }
+      ],
+      "summaries": {
+        "marginal_ratio": {
+          "diagnostic_gate": "PASS",
+          "errors": []
+        },
+        "paired_ratio_rounded": {
+          "diagnostic_gate": "PASS",
+          "errors": []
+        }
+      }
+    },
+    {
+      "archive": "graph-vulkan-d5-fragments-recovery-preflight",
+      "runs": [
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/peer-0-0.log.gz",
+          "compressed_sha256": "0dce58d56af1aa60bda6155182761ca64706b4626eaeeda53a2892ac2781e115",
+          "arm": "peer",
+          "order": 0,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.043259334325617,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9315601113418459
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0298661174047374,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9496676163342831
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.16
+              },
+              "Direct complete fragment": {
+                "relative": 0.971,
+                "ci_text": "83.5% .. 105.4%",
+                "total_seconds_rounded": 0.16
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.13
+              },
+              "Direct complete fragment": {
+                "relative": 1.053,
+                "ci_text": "81.6% .. 136.9%",
+                "total_seconds_rounded": 0.13
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/peer-0-1.log.gz",
+          "compressed_sha256": "03d8901065843b514c15c865573270ea84aec4ea6d76700609df0a1d5349c0aa",
+          "arm": "peer",
+          "order": 0,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.2245318465547543,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9421986520151
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.1074197120708749,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9451795841209829
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.03
+              },
+              "Direct complete fragment": {
+                "relative": 0.903,
+                "ci_text": "56.7% .. 137.7%",
+                "total_seconds_rounded": 0.04
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Direct complete fragment": {
+                "relative": 1.058,
+                "ci_text": "78.9% .. 133.0%",
+                "total_seconds_rounded": 0.1
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/peer-1-0.log.gz",
+          "compressed_sha256": "3af12ba020cf7f1fffe9e41cdce4adba82611caaea3a73f4c81dc4aa28f6f4dc",
+          "arm": "peer",
+          "order": 1,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9543535700185259,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9542846212700841
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.853,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.002
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.12
+              },
+              "Graph complete fragment": {
+                "relative": 0.853,
+                "ci_text": "70.1% .. 118.1%",
+                "total_seconds_rounded": 0.13
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.15
+              },
+              "Graph complete fragment": {
+                "relative": 1.002,
+                "ci_text": "89.3% .. 102.2%",
+                "total_seconds_rounded": 0.15
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/peer-1-1.log.gz",
+          "compressed_sha256": "b41ea18b2c0ad616e4f9bd481c001d2cd8bfb0e9ffc701a3a506192255cfe6a4",
+          "arm": "peer",
+          "order": 1,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.026379707916987,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.00662412936535
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.075,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.012
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.075,
+                "ci_text": "85.3% .. 124.2%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.14
+              },
+              "Graph complete fragment": {
+                "relative": 1.012,
+                "ci_text": "91.4% .. 114.7%",
+                "total_seconds_rounded": 0.13
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/selected-0-0.log.gz",
+          "compressed_sha256": "e9fa54b83dd5f959e703ea403835d80370acd165e1a15dc2c832009b072ac0cc",
+          "arm": "selected",
+          "order": 0,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.1292348976915805,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0843146034781137
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.1148272017837235,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0330578512396695
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Direct complete fragment": {
+                "relative": 0.897,
+                "ci_text": "79.2% .. 98.0%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.13
+              },
+              "Direct complete fragment": {
+                "relative": 0.968,
+                "ci_text": "77.6% .. 111.5%",
+                "total_seconds_rounded": 0.14
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/selected-0-1.log.gz",
+          "compressed_sha256": "d8af809196e3b42b92cae1419cab7ab9b7f3fcd74f2f709939d8d6c964f90843",
+          "arm": "selected",
+          "order": 0,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9208490488120474,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0660525260381852
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9208103130755065,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0050251256281406
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.14
+              },
+              "Direct complete fragment": {
+                "relative": 1.0859999999999999,
+                "ci_text": "94.8% .. 117.0%",
+                "total_seconds_rounded": 0.14
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 0.995,
+                "ci_text": "76.7% .. 112.0%",
+                "total_seconds_rounded": 0.12
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/selected-1-0.log.gz",
+          "compressed_sha256": "84d506424f3cc40c1e752181121c2fcd51e67808120e740461f17e217e86bd17",
+          "arm": "selected",
+          "order": 1,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0496470249243623,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0054912863165875
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0170000000000001,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.035
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Graph complete fragment": {
+                "relative": 1.0170000000000001,
+                "ci_text": "89.9% .. 115.6%",
+                "total_seconds_rounded": 0.1
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.13
+              },
+              "Graph complete fragment": {
+                "relative": 1.035,
+                "ci_text": "86.6% .. 131.7%",
+                "total_seconds_rounded": 0.12
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/run/d5-aa-raw/selected-1-1.log.gz",
+          "compressed_sha256": "7734190486c88cb803aa787ec9e7bdd1423a4dda6c0528f40a9b4daa1faf64db",
+          "arm": "selected",
+          "order": 1,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.009635137872168,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0153114315445222
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.998,
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0290000000000001
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.14
+              },
+              "Graph complete fragment": {
+                "relative": 0.998,
+                "ci_text": "92.3% .. 115.4%",
+                "total_seconds_rounded": 0.14
+              }
+            },
+            "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.12
+              },
+              "Graph complete fragment": {
+                "relative": 1.0290000000000001,
+                "ci_text": "83.1% .. 124.1%",
+                "total_seconds_rounded": 0.12
+              }
+            }
+          }
+        }
+      ],
+      "summaries": {
+        "marginal_ratio": {
+          "diagnostic_gate": "FAIL",
+          "errors": [
+            "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: gross >10%",
+            "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: factor >5%",
+            "selected/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6: factor >5%",
+            "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: gross >10%",
+            "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: factor >5%",
+            "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6: factor >5%"
+          ]
+        },
+        "paired_ratio_rounded": {
+          "diagnostic_gate": "FAIL",
+          "errors": [
+            "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: gross >10%",
+            "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: factor >5%",
+            "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: gross >10%",
+            "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: factor >5%",
+            "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6: factor >5%"
+          ]
+        }
+      }
+    },
+    {
+      "archive": "graph-cuda-d5-fragments-p1",
+      "runs": [
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/peer-0-0.log.gz",
+          "compressed_sha256": "fd4011661666a4927f6a000e87b9b8d61510490e01d48d23a2eda332e47a02d7",
+          "arm": "peer",
+          "order": 0,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9936766560888999,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.9777205015071425
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0040160642570282,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.9852216748768474
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Direct complete fragment": {
+                "relative": 0.996,
+                "ci_text": "93.9% .. 102.3%",
+                "total_seconds_rounded": 0.1
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 1.015,
+                "ci_text": "94.1% .. 108.3%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/peer-0-1.log.gz",
+          "compressed_sha256": "7406e725b3ef1454d89f9149b56b4e92d75ae0e7308b63e0c2264831e39cbc2e",
+          "arm": "peer",
+          "order": 0,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9847479764618864,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.9914832006132096
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9960159362549801,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.9920634920634921
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 1.004,
+                "ci_text": "95.7% .. 104.6%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.05
+              },
+              "Direct complete fragment": {
+                "relative": 1.008,
+                "ci_text": "98.0% .. 106.9%",
+                "total_seconds_rounded": 0.05
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/peer-1-0.log.gz",
+          "compressed_sha256": "d2a1cc60a55ffc5d80696591c04c5000716e65040d4496845d9c469a5c5a4ea0",
+          "arm": "peer",
+          "order": 1,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0177802496180925,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.009839666154184
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.011,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.001
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Graph complete fragment": {
+                "relative": 1.011,
+                "ci_text": "96.5% .. 107.6%",
+                "total_seconds_rounded": 0.1
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.001,
+                "ci_text": "93.1% .. 110.3%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/peer-1-1.log.gz",
+          "compressed_sha256": "8ca4dcc08faf7e122bdbca3d50e9c81408f23074d669c42f83ffe9befcad052f",
+          "arm": "peer",
+          "order": 1,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0366917060701022,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0017559262510973
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.008,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.998
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Graph complete fragment": {
+                "relative": 1.008,
+                "ci_text": "97.4% .. 112.5%",
+                "total_seconds_rounded": 0.1
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 0.998,
+                "ci_text": "93.1% .. 104.5%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/selected-0-0.log.gz",
+          "compressed_sha256": "76faedb2f50dfe5b020f2600189673dd507d019b22b71c0e5c27cfe75d6de021",
+          "arm": "selected",
+          "order": 0,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0161560134907748,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0015529959880936
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0256410256410258,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0010010010010009
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Direct complete fragment": {
+                "relative": 0.975,
+                "ci_text": "93.0% .. 101.0%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 0.9990000000000001,
+                "ci_text": "97.9% .. 104.7%",
+                "total_seconds_rounded": 0.1
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/selected-0-1.log.gz",
+          "compressed_sha256": "9acb6a6f162ae7e3afc3d90ae0e6dbd65a2ed53c7ad9d78424e738b369fc1678",
+          "arm": "selected",
+          "order": 0,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.004771328265482,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.9866294067067929
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0121457489878543,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.9823182711198428
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Direct complete fragment": {
+                "relative": 0.988,
+                "ci_text": "95.8% .. 103.7%",
+                "total_seconds_rounded": 0.1
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Graph complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Direct complete fragment": {
+                "relative": 1.018,
+                "ci_text": "99.4% .. 104.3%",
+                "total_seconds_rounded": 0.1
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/selected-1-0.log.gz",
+          "compressed_sha256": "e779f35eeef1b757ddbf0f4106dfaa2fca8a832d0855886acc1ecc3a9a53a236",
+          "arm": "selected",
+          "order": 1,
+          "allocation": 0,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.020220601689767,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0203657890086586
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.018,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.996
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.018,
+                "ci_text": "99.2% .. 104.3%",
+                "total_seconds_rounded": 0.11
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 0.996,
+                "ci_text": "94.9% .. 103.8%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        },
+        {
+          "log": "evidence/performance/graph-cuda-d5-fragments-p1/run/d5-cuda-aa-raw/selected-1-1.log.gz",
+          "compressed_sha256": "7c13b7aacc6a53457eed1b70d0dc60381cf58093d49b0d8356d2c84e317118e7",
+          "arm": "selected",
+          "order": 1,
+          "allocation": 1,
+          "marginal_ratio": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.009672355294475,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0068602993585176
+          },
+          "paired_ratio_rounded": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.013,
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.003
+          },
+          "table": {
+            "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.1
+              },
+              "Graph complete fragment": {
+                "relative": 1.013,
+                "ci_text": "93.4% .. 110.3%",
+                "total_seconds_rounded": 0.1
+              }
+            },
+            "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+              "Direct complete fragment": {
+                "relative": 1.0,
+                "ci_text": "",
+                "total_seconds_rounded": 0.11
+              },
+              "Graph complete fragment": {
+                "relative": 1.003,
+                "ci_text": "95.1% .. 109.7%",
+                "total_seconds_rounded": 0.11
+              }
+            }
+          }
+        }
+      ],
+      "summaries": {
+        "marginal_ratio": {
+          "diagnostic_gate": "PASS",
+          "errors": []
+        },
+        "paired_ratio_rounded": {
+          "diagnostic_gate": "PASS",
+          "errors": []
+        }
+      }
+    }
+  ]
+}

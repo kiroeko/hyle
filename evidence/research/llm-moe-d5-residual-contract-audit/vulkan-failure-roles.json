@@ -1,0 +1,302 @@
+{
+  "baseline": "416242f8ef2cd9a83d558b3b7879e4c2c1707be4",
+  "note": "Offline assertion classification; no rerun, tolerance change, replay-index inference or whole-profile promotion.",
+  "entries": [
+    {
+      "entry": "direct",
+      "log": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/raw/precision-current-driver/direct.log.gz",
+      "compressed_sha256": "91d00fb798c6c80697ec6841fa999e9362d9205d4012c8ebb86b6e924cae0d63",
+      "assertions": 1368,
+      "groups": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 11,
+          "role": "context_diagnostic",
+          "category": "diagnostic",
+          "assertions": 4
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 2
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 7,
+          "role": "compressed_history",
+          "category": "feedback_state",
+          "assertions": 5
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 12,
+          "role": "derotated_diagnostic",
+          "category": "diagnostic",
+          "assertions": 3
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "128",
+          "output": 3,
+          "role": "next_raw_history",
+          "category": "feedback_state",
+          "assertions": 10
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Pro",
+          "profile": "official-fp4-fp8",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 53
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Pro",
+          "profile": "official-fp4-fp8",
+          "ratio": "128",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 56
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Pro",
+          "profile": "official-fp4-fp8",
+          "ratio": "indexer",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 335
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "official-fp4-fp8",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 53
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "official-fp4-fp8",
+          "ratio": "128",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 56
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "official-fp4-fp8",
+          "ratio": "indexer",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 335
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 53
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "128",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 55
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "indexer",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 348
+        }
+      ]
+    },
+    {
+      "entry": "graph",
+      "log": "evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/raw/precision-current-driver/graph.log.gz",
+      "compressed_sha256": "b618001386abdb6dee92428aeaa0a7d8e3d8bd70ac11306c94c70d9a34a558ca",
+      "assertions": 1368,
+      "groups": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 11,
+          "role": "context_diagnostic",
+          "category": "diagnostic",
+          "assertions": 4
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 2
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 7,
+          "role": "compressed_history",
+          "category": "feedback_state",
+          "assertions": 5
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 12,
+          "role": "derotated_diagnostic",
+          "category": "diagnostic",
+          "assertions": 3
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "128",
+          "output": 3,
+          "role": "next_raw_history",
+          "category": "feedback_state",
+          "assertions": 10
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Pro",
+          "profile": "official-fp4-fp8",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 53
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Pro",
+          "profile": "official-fp4-fp8",
+          "ratio": "128",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 56
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Pro",
+          "profile": "official-fp4-fp8",
+          "ratio": "indexer",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 335
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "official-fp4-fp8",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 53
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "official-fp4-fp8",
+          "ratio": "128",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 56
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "official-fp4-fp8",
+          "ratio": "indexer",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 335
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "4",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 53
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "128",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 55
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "model": "deepseek-ai/DeepSeek-V4-Flash",
+          "profile": "UD-Q8_K_XL",
+          "ratio": "indexer",
+          "output": 0,
+          "role": "next_compressed_cache",
+          "category": "feedback_state",
+          "assertions": 348
+        }
+      ]
+    }
+  ]
+}
