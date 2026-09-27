@@ -135,7 +135,7 @@
       "consumer_key": "inference-fragment/cuda/qwen35-official-bf16-ffn",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "cd43959d72c14fd9d2b73e32067ca97ced5a3d844bbd43a9c5677835fd62477e"
+        "sha256": "ddaac3c2a891fb3139f9664297218b99717a65123c80670f4730220dd90e7a8f"
       },
       "ownership_topology": {
         "candidate": "Ordinary Graph with its own Context, queue, resident constants and independent input/output invocation slots; native planning and fusion permitted.",
@@ -202,7 +202,7 @@
       "consumer_key": "inference-fragment/cuda/deepseek-flash-official-moe",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "cd43959d72c14fd9d2b73e32067ca97ced5a3d844bbd43a9c5677835fd62477e"
+        "sha256": "ddaac3c2a891fb3139f9664297218b99717a65123c80670f4730220dd90e7a8f"
       },
       "ownership_topology": {
         "candidate": "Ordinary Graph with its own Context, queue, resident constants and independent input/output invocation slots; native planning and fusion permitted.",
