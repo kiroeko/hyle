@@ -1,0 +1,369 @@
+[
+  {
+    "file": "d5_cuda_direct.exe",
+    "imports": [
+      "hyle_compute_route_cuda.dll",
+      "hyle_compute_backend_cuda.dll",
+      "hyle_compute.dll",
+      "hyle_compute_ops.dll",
+      "hyle_mem.dll",
+      "hyle_error.dll",
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-filesystem-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-time-l1-1-0.dll",
+      "api-ms-win-crt-utility-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll",
+      "api-ms-win-crt-locale-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "d5_cuda_graph.exe",
+    "imports": [
+      "hyle_graph_route_cuda.dll",
+      "hyle_graph.dll",
+      "hyle_compute_backend_cuda.dll",
+      "hyle_compute.dll",
+      "hyle_compute_ops.dll",
+      "hyle_mem.dll",
+      "hyle_error.dll",
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-filesystem-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-time-l1-1-0.dll",
+      "api-ms-win-crt-utility-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll",
+      "api-ms-win-crt-locale-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_compute.dll",
+    "imports": [
+      "hyle_mem.dll",
+      "hyle_compute_ops.dll",
+      "hyle_error.dll",
+      "MSVCP140_ATOMIC_WAIT.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_compute_backend_cuda.dll",
+    "imports": [
+      "hyle_platform_thread.dll",
+      "hyle_compute.dll",
+      "hyle_mem.dll",
+      "hyle_error.dll",
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_compute_ggml_runtime.dll",
+    "imports": [
+      "hyle_error.dll",
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_compute_ops.dll",
+    "imports": [
+      "hyle_error.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_compute_provider_cublas.dll",
+    "imports": [
+      "hyle_compute_backend_cuda.dll",
+      "hyle_compute.dll",
+      "cublasLt64_13.dll",
+      "hyle_compute_ops.dll",
+      "hyle_error.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": [
+      "cublasLt64_13.dll"
+    ]
+  },
+  {
+    "file": "hyle_compute_provider_cuda.dll",
+    "imports": [
+      "hyle_compute_backend_cuda.dll",
+      "hyle_compute.dll",
+      "hyle_compute_ops.dll",
+      "hyle_error.dll",
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_compute_provider_ggml_cuda.dll",
+    "imports": [
+      "hyle_compute_backend_cuda.dll",
+      "hyle_compute_ggml_runtime.dll",
+      "hyle_compute.dll",
+      "hyle_compute_ops.dll",
+      "hyle_error.dll",
+      "cublas64_13.dll",
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": [
+      "cublas64_13.dll"
+    ]
+  },
+  {
+    "file": "hyle_compute_route_cuda.dll",
+    "imports": [
+      "hyle_compute_provider_cublas.dll",
+      "hyle_compute_provider_cuda.dll",
+      "hyle_compute_provider_ggml_cuda.dll",
+      "hyle_compute_backend_cuda.dll",
+      "hyle_compute.dll",
+      "hyle_error.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_container.dll",
+    "imports": [
+      "hyle_mem.dll",
+      "hyle_platform.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140_1.dll",
+      "VCRUNTIME140.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_error.dll",
+    "imports": [
+      "KERNEL32.dll",
+      "VCRUNTIME140_1.dll",
+      "VCRUNTIME140.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_graph.dll",
+    "imports": [
+      "hyle_container.dll",
+      "hyle_compute.dll",
+      "hyle_mem.dll",
+      "hyle_compute_ops.dll",
+      "hyle_error.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_graph_provider_ggml_cuda.dll",
+    "imports": [
+      "hyle_compute_provider_ggml_cuda.dll",
+      "hyle_graph.dll",
+      "hyle_compute_ops.dll",
+      "hyle_error.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_graph_route_cuda.dll",
+    "imports": [
+      "hyle_graph_provider_ggml_cuda.dll",
+      "hyle_compute_route_cuda.dll",
+      "hyle_graph.dll",
+      "hyle_compute.dll",
+      "hyle_error.dll",
+      "VCRUNTIME140_1.dll",
+      "VCRUNTIME140.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_mem.dll",
+    "imports": [
+      "hyle_platform.dll",
+      "hyle_error.dll",
+      "KERNEL32.dll",
+      "ADVAPI32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_platform.dll",
+    "imports": [
+      "hyle_error.dll",
+      "bcrypt.dll",
+      "POWRPROF.dll",
+      "KERNEL32.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_platform_thread.dll",
+    "imports": [
+      "hyle_platform.dll",
+      "hyle_error.dll",
+      "api-ms-win-core-synch-l1-2-0.dll",
+      "KERNEL32.dll",
+      "VCRUNTIME140_1.dll",
+      "VCRUNTIME140.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_simd.dll",
+    "imports": [
+      "hyle_platform.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-time-l1-1-0.dll",
+      "KERNEL32.dll"
+    ],
+    "missing_near_exe_or_system": []
+  },
+  {
+    "file": "hyle_time.dll",
+    "imports": [
+      "KERNEL32.dll",
+      "MSVCP140.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll"
+    ],
+    "missing_near_exe_or_system": []
+  }
+]

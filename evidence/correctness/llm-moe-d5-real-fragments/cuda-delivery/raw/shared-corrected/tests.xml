@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="2"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="4"
+	timestamp="2026-09-27T10:23:52"
+	>
+	<testcase name="d5_cuda_direct" classname="d5_cuda_direct" time="3.51374" status="fail">
+		<failure message="Exit code 0xc0000135"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="d5_cuda_graph" classname="d5_cuda_graph" time="0.859592" status="fail">
+		<failure message="Exit code 0xc0000135"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+</testsuite>

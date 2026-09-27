@@ -1,0 +1,86 @@
+{
+  "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "selector": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cuda-sdk-final-plan.json",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_DEV_FACTORS=compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-U",
+        "HYLE_COMPONENTS",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real"
+      ],
+      "returncode": 0,
+      "seconds": 12.812
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "--config",
+        "Release",
+        "--target",
+        "hyle_compute_backend_cuda_tests",
+        "hyle_compute_provider_cublas_tests",
+        "hyle_compute_provider_cuda_tests",
+        "hyle_compute_provider_ggml_cuda_tests",
+        "hyle_compute_route_cuda_tests",
+        "hyle_graph_provider_ggml_cuda_tests",
+        "hyle_graph_route_cuda_tests",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 17.953
+    },
+    {
+      "label": "factors",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-C",
+        "Release",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_backend_cuda|compute_provider_cublas|compute_provider_cuda|compute_provider_ggml_cuda|compute_route_cuda|graph_provider_ggml_cuda|graph_route_cuda)$",
+        "-LE",
+        "headers",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cd\\receipts\\selected-cuda-gates\\factors.xml"
+      ],
+      "returncode": 8,
+      "seconds": 482.844
+    }
+  ],
+  "delivery_receipts": [
+    "shared-provider-runtime",
+    "source-provider-runtime",
+    "static-provider-runtime"
+  ],
+  "note": "Actual selected factor/header commands are batched by target/label union; delivery uses the fixed CUDA card consumers."
+}

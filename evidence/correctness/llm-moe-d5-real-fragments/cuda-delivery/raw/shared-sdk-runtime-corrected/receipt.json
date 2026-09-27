@@ -1,0 +1,35 @@
+{
+  "candidate": "41d7582e5f4e124f56747897337315f52afdfaf0",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "producer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPONENTS=compute,graph,simd",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\d5cd\\shared-staging",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real"
+      ],
+      "returncode": 1,
+      "seconds": 10.187
+    }
+  ],
+  "consumer_files": 47
+}

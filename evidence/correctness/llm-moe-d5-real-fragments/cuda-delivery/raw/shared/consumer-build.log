@@ -1,0 +1,22 @@
+[1/20] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cd\shared-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cd/shared-consumer/hyle-runtime/d5_cuda_delivery-Release.cmake"
+[2/20] Building C object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml.c.obj
+[3/20] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml.cpp.obj
+[4/20] Building C object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+[5/20] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj
+[6/20] Building CXX object fixture-gtest\googletest\CMakeFiles\gtest.dir\src\gtest-all.cc.obj
+[7/20] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-backend-meta.cpp.obj
+[8/20] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-opt.cpp.obj
+[9/20] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+[10/20] Building C object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+[11/20] Linking CXX static library lib\gtest.lib
+[12/20] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\gguf.cpp.obj
+[13/20] Building CXX object fixture-gtest\googletest\CMakeFiles\gtest_main.dir\src\gtest_main.cc.obj
+[14/20] Building CXX object CMakeFiles\d5_cuda_delivery.dir\tests\compute_route_cuda\d5_qwen35_execution_test.cc.obj
+FAILED: [code=2] CMakeFiles/d5_cuda_delivery.dir/tests/compute_route_cuda/d5_qwen35_execution_test.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_CUDA=1 -IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\ggml-456172ec733a-41b7e10fd424\src\..\include -external:IC:\hv\d5cd\shared-relocated\include -external:I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include" -external:I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cccl" -external:IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\d5_cuda_delivery.dir\tests\compute_route_cuda\d5_qwen35_execution_test.cc.obj /FdCMakeFiles\d5_cuda_delivery.dir\ /FS -c C:\hv\d5cd\consumer\tests\compute_route_cuda\d5_qwen35_execution_test.cc
+C:\hv\d5cd\consumer\tests\compute_route_cuda\d5_qwen35_execution_test.cc(23): fatal error C1083: Cannot open include file: 'hyle/compute/providers/flashinfer.h': No such file or directory
+[15/20] Building CXX object CMakeFiles\d5_cuda_delivery.dir\tests\compute_route_cuda\d5_qwen38_official_test.cc.obj
+FAILED: [code=2] CMakeFiles/d5_cuda_delivery.dir/tests/compute_route_cuda/d5_qwen38_official_test.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_CUDA=1 -IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\ggml-456172ec733a-41b7e10fd424\src\..\include -external:IC:\hv\d5cd\shared-relocated\include -external:I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include" -external:I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cccl" -external:IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /utf-8 /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\d5_cuda_delivery.dir\tests\compute_route_cuda\d5_qwen38_official_test.cc.obj /FdCMakeFiles\d5_cuda_delivery.dir\ /FS -c C:\hv\d5cd\consumer\tests\compute_route_cuda\d5_qwen38_official_test.cc
+C:\hv\d5cd\consumer\tests\compute_route_cuda\d5_qwen38_official_test.cc(42): fatal error C1083: Cannot open include file: 'hyle/compute/providers/flashinfer.h': No such file or directory
+ninja: build stopped: subcommand failed.

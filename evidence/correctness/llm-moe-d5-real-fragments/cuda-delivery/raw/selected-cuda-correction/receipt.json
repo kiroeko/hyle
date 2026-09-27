@@ -1,0 +1,94 @@
+{
+  "candidate": "dbf6c0856b5e17e4f9a233e68fff669f524f0a1e",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "changed_files": [
+    "docs/implementation/tasks/compute/llm-moe-d5-cuda-delivery-batch.md",
+    "docs/user/distribution.md",
+    "tests/compute_route_cuda/context_test.cc"
+  ],
+  "steps": [
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "--target",
+        "hyle_compute_route_cuda_tests",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 3.062
+    },
+    {
+      "label": "corrected-test",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-R",
+        "^hyle_compute_route_cuda_test$",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cd\\receipts\\selected-cuda-correction\\correction.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.438
+    },
+    {
+      "label": "headers",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-L",
+        "^(compute_backend_cuda|compute_provider_cublas|compute_provider_ggml_cuda)$",
+        "-R",
+        "_header_self_contained_test$",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cd\\receipts\\selected-cuda-correction\\headers.xml"
+      ],
+      "returncode": 0,
+      "seconds": 1.078
+    },
+    {
+      "label": "inputs-tool",
+      "argv": [
+        "python",
+        "tests/compute_models/inputs_test.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.265
+    },
+    {
+      "label": "closure",
+      "argv": [
+        "python",
+        "scripts/check-module-closure.py",
+        "--previous-ref",
+        "9401a0c3"
+      ],
+      "returncode": 0,
+      "seconds": 1.328
+    },
+    {
+      "label": "docs",
+      "argv": [
+        "python",
+        "scripts/check-docs.py"
+      ],
+      "returncode": 0,
+      "seconds": 2.047
+    }
+  ],
+  "corrected_test": "CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots",
+  "verdict": "PASS"
+}

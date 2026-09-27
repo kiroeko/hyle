@@ -1,0 +1,42 @@
+{
+  "candidate": "2f984c33801fb6cf4824e8e857b26de5ce3e1920",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5cd\\consumer",
+        "-B",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cd\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.468
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "--target",
+        "d5_cuda_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 4294967295,
+      "seconds": 17.328
+    }
+  ],
+  "producer_candidate": "5f5b657cdd9c75173a66f1220f9c5c99e62ef698",
+  "producer_reused_reason": "Only tests/docs/evidence changed; product and vendor inputs identical.",
+  "consumer_files": 41
+}

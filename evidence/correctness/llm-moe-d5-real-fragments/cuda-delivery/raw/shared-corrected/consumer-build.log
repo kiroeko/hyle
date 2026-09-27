@@ -1,0 +1,10 @@
+[1/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cd\shared-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cd/shared-consumer/hyle-runtime/d5_cuda_direct-Release.cmake"
+[2/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cd\shared-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cd/shared-consumer/hyle-runtime/d5_cuda_graph-Release.cmake"
+[3/10] Building CXX object CMakeFiles\d5_cuda_direct.dir\tests\compute_route_cuda\d5_qwen35_execution_test.cc.obj
+[4/10] Building CXX object CMakeFiles\d5_cuda_direct.dir\tests\compute_route_cuda\d5_qwen_gguf_vocabulary_test.cc.obj
+[5/10] Building CXX object CMakeFiles\d5_cuda_direct.dir\tests\compute_route_cuda\d5_qwen38_official_test.cc.obj
+[6/10] Building CXX object CMakeFiles\d5_cuda_graph.dir\tests\graph_route_cuda\d5_qwen35_profile_test.cc.obj
+[7/10] Building CXX object CMakeFiles\d5_cuda_graph.dir\tests\graph_route_cuda\d5_qwen_gguf_vocabulary_test.cc.obj
+[8/10] Linking CXX executable d5_cuda_direct.exe
+[9/10] Building CXX object CMakeFiles\d5_cuda_graph.dir\tests\graph_route_cuda\d5_qwen38_official_test.cc.obj
+[10/10] Linking CXX executable d5_cuda_graph.exe

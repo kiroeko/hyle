@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="3"
+	timestamp="2026-09-27T10:42:54"
+	>
+	<testcase name="d5_cuda_direct" classname="d5_cuda_direct" time="2.34796" status="run">
+		<properties/>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5Qwen35OfficialFfn*:*.D5Qwen35OfficialCausalConvAndGdn*:*.D5DeepSeekOfficialMoe:*.D5DeepSeekQuantizationRoundtrip
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from CudaDefaultCompute
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultCompute.D5Qwen35OfficialFfnUsesMaturePreparedCalls (240 ms)
+[ RUN      ] CudaDefaultCompute.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultComput...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="d5_cuda_graph" classname="d5_cuda_graph" time="1.28333" status="run">
+		<properties/>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5Qwen35OfficialFfn*:*.D5Qwen35OfficialCausalConvAndGdn*:*.D5DeepSeekOfficialMoe:*.D5DeepSeekQuantizationRoundtrip
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from CudaDefaultGraph
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialFfnUsesMatureRegionsAndRealWeights
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] CudaDefaultGraph.D5Qwen35OfficialFfnUsesMatureRegionsAndRealWeights (264 ms)
+[ RUN      ] CudaDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+[       OK ] C...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>

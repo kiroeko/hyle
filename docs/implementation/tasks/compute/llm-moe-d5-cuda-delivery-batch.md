@@ -33,7 +33,9 @@
 
 `9273bc71017a1febb69db240b6ea8970b88dd77c`的源码、static、shared各8/8通过，零跳过。
 两个installed消费者搬迁后隐藏producer运行目录、去掉CUDA PATH仍通过；三个SDK DLL的原始
-文件与EXE旁文件SHA256一致。尚待本次构建接缝修复的selected gates收尾，不增加完整画像正确性格。
+文件与EXE旁文件SHA256一致。selected gates已按下述单项测试纠正收尾，CUDA A5 PASS，
+[完整证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md)包含459项
+模块测试、3组独立头与原失败。不增加完整画像正确性格；A6仍待验收。
 
 ### 首次外部编译的单次consumer纠正
 

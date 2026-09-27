@@ -1,0 +1,430 @@
+{
+  "capture-link-provenance.py": {
+    "bytes": 1505,
+    "sha256": "ea33e80a52db7f0aad487bd08529e922b12f6e322642844affb20212ac7b80c1"
+  },
+  "capture-runtime.py": {
+    "bytes": 2145,
+    "sha256": "535afe296d3aff702ffff1c6c7805446c5f825119aa3e390823d62d3ac27d67f"
+  },
+  "consumer/CMakeLists.txt": {
+    "bytes": 2814,
+    "sha256": "bf0cf4b12846e59780e5ae258f97142c53655ff4f74b9050ab0029b68b99b55b"
+  },
+  "correction-selection-plan.json": {
+    "bytes": 210327,
+    "sha256": "caffcaa2e4204d13440bf8e2c36bf4456fd23dc7b4df5f787c45dc1d7c1d7085"
+  },
+  "loc.json": {
+    "bytes": 4133,
+    "sha256": "fb9ce585b4fde6083616aa2701a41f631f3e7b5006de27c31d0b357ca72ea7b0"
+  },
+  "raw/link-provenance.json": {
+    "bytes": 378,
+    "sha256": "14441c64c6cc20870c5fc0970243629ebb468802143a434c4d11f793ea417abd"
+  },
+  "raw/selected-cuda-correction/build.log": {
+    "bytes": 225,
+    "sha256": "59aadfda02bc039ecccea2ffecbd5bd6779d50e9b8de365c1a24b58a676c5428"
+  },
+  "raw/selected-cuda-correction/closure.log": {
+    "bytes": 57,
+    "sha256": "775e6cad18744bb2a90474153d43af5d344b96960d6107270913576432464917"
+  },
+  "raw/selected-cuda-correction/corrected-test.log": {
+    "bytes": 308,
+    "sha256": "4d43e546cb9d4d9ce4bfcbc72a20d5d1d5263de5101995705e7142d1a612178f"
+  },
+  "raw/selected-cuda-correction/correction.xml": {
+    "bytes": 1331,
+    "sha256": "f78791865c3b5abf94d12aaab78e967d94bf547bf615809feccc726064e1a04c"
+  },
+  "raw/selected-cuda-correction/docs.log": {
+    "bytes": 80,
+    "sha256": "d1abcd6ba34f20f399e12390375dcb307438b62eb471e95bd21ca99f3f229da8"
+  },
+  "raw/selected-cuda-correction/headers.log": {
+    "bytes": 879,
+    "sha256": "c65304d8285f6472c21b42eaa567c3cf6aa793e0c8c711f8d9f042186661647a"
+  },
+  "raw/selected-cuda-correction/headers.xml": {
+    "bytes": 1339,
+    "sha256": "91f25beba411e7cb479edc366b2ee9b03165ed049d4d75b45e746578d61eab95"
+  },
+  "raw/selected-cuda-correction/inputs-tool.log": {
+    "bytes": 117,
+    "sha256": "b6d055e5249b00c1c727288b49a4f20b8729f18d47e0183cbd549009e295335d"
+  },
+  "raw/selected-cuda-correction/native-headers.log": {
+    "bytes": 4184,
+    "sha256": "2750c25584bb25075f841a52a1e13abb689d36489517998244aa6836671e46e7"
+  },
+  "raw/selected-cuda-correction/native-tests.log": {
+    "bytes": 1763,
+    "sha256": "60eec203dd7e544e076a09ae9ead8eedd4d006aeb66ef404097c1e79a4d13c6e"
+  },
+  "raw/selected-cuda-correction/receipt.json": {
+    "bytes": 2384,
+    "sha256": "6c0b314231d8e3625387e937bb4a7c04bbbf71d4fcc9a38347f3ca84853464af"
+  },
+  "raw/selected-cuda-gates/build.log": {
+    "bytes": 2020,
+    "sha256": "8343587b15e0344682b8ae787b95c2d7ba289436efddd7bf93a7f19bc09c5b02"
+  },
+  "raw/selected-cuda-gates/configure.log": {
+    "bytes": 2243,
+    "sha256": "987cb4d888ed4a853cf157d48e625b43ccec226c722cca0a3890739c71369174"
+  },
+  "raw/selected-cuda-gates/factors.log": {
+    "bytes": 333867,
+    "sha256": "04c8514f5abb702792da3df069e8c848db622aba9b5d93de8e396eea30d6ab0c"
+  },
+  "raw/selected-cuda-gates/factors.xml": {
+    "bytes": 322216,
+    "sha256": "afe35499a84a9c45f8d9c67976d47f02b3c2876b6866bc74755c2348e3cbbe74"
+  },
+  "raw/selected-cuda-gates/native-tests.log": {
+    "bytes": 714465,
+    "sha256": "cf2b59d89790dd1bca09ebaed8bab899cc4bf288677ee5939572633267941951"
+  },
+  "raw/selected-cuda-gates/receipt.json": {
+    "bytes": 2749,
+    "sha256": "44c5fae5e890d3d7387abd39fa836b0820c9dd9831ebfaa722f5041a1fdd371b"
+  },
+  "raw/selected-cuda-gates/selection-plan.json": {
+    "bytes": 213345,
+    "sha256": "98d7a5aa737cfdab345617c2a49a6c2a70609d42fc5644c8268de85fe11ace03"
+  },
+  "raw/shared/consumer-build.log": {
+    "bytes": 4151,
+    "sha256": "f72ea48976057394bc71c70decfc032838a3e0e46af8189180a651f46865577b"
+  },
+  "raw/shared/consumer-configure.log": {
+    "bytes": 2349,
+    "sha256": "fab032cfb51c024b6ad0ae3e999e8f5eb0c4b5409480aaf13c90818b0826168e"
+  },
+  "raw/shared/install.log": {
+    "bytes": 40041,
+    "sha256": "e1f53ddb3cbc68dfadd5a931bbc91be4676f02b01f69ad2bc6ac53d9072d63db"
+  },
+  "raw/shared/producer-build.log": {
+    "bytes": 5551,
+    "sha256": "a62459f6970a6e4c84b9f8fce743333439e8ebbf73b7e74343037d732af7eb81"
+  },
+  "raw/shared/producer-configure.log": {
+    "bytes": 2795,
+    "sha256": "ef657491b5622ea6630896ef916f1dc736ad1a79b06aa81b16a9ce5c2dfa94e6"
+  },
+  "raw/shared/receipt.json": {
+    "bytes": 2691,
+    "sha256": "a0309f82d40e61f354ea780c8568603bfe44a30180e7a15a4fe4ca6ca21bb260"
+  },
+  "raw/shared-before-provider-fix/HyleConfig.cmake": {
+    "bytes": 3124,
+    "sha256": "acfda10e87a95b6200d7bdd8a34a12b6020ce0b829b8e67adbde39f6c06d8c1b"
+  },
+  "raw/shared-before-provider-fix/HyleTargets-release.cmake": {
+    "bytes": 13144,
+    "sha256": "4daedb5447f7ada3b57fcb89ad21c09c18b5f235c68493d711ac778b75ee05ec"
+  },
+  "raw/shared-before-provider-fix/HyleTargets.cmake": {
+    "bytes": 16044,
+    "sha256": "63b5ccf11ec1ee1d21967989dcf13c3ca42ef0f5edb9c88e80ddfe19768ba061"
+  },
+  "raw/shared-before-sdk-fix/HyleConfig.cmake": {
+    "bytes": 3112,
+    "sha256": "5ad5eaa3adadda5c68064a0db37b3ead29701c15d2a99e04bb0214c52099721d"
+  },
+  "raw/shared-before-sdk-fix/HyleTargets-release.cmake": {
+    "bytes": 13144,
+    "sha256": "4daedb5447f7ada3b57fcb89ad21c09c18b5f235c68493d711ac778b75ee05ec"
+  },
+  "raw/shared-before-sdk-fix/HyleTargets.cmake": {
+    "bytes": 16044,
+    "sha256": "63b5ccf11ec1ee1d21967989dcf13c3ca42ef0f5edb9c88e80ddfe19768ba061"
+  },
+  "raw/shared-corrected/consumer-build.log": {
+    "bytes": 1160,
+    "sha256": "df09ceee31a42d465c64551edb012b76deeed5691175e7cba17e3d5aa306213f"
+  },
+  "raw/shared-corrected/consumer-configure.log": {
+    "bytes": 376,
+    "sha256": "2bca22f88a333d3bdb1c58dc0cfa060568d9518b62fb6c22bae8b6b505f44198"
+  },
+  "raw/shared-corrected/consumer-test.log": {
+    "bytes": 505,
+    "sha256": "1032c6b263857bbff4c47a59a25527c9c0b2ed548c67e86c5c12799b04a3065f"
+  },
+  "raw/shared-corrected/dll-audit.json": {
+    "bytes": 10602,
+    "sha256": "c0313138c47084d27850e564c07e58f51185abdf843625254b7ed23abb207ae4"
+  },
+  "raw/shared-corrected/receipt.json": {
+    "bytes": 1768,
+    "sha256": "aba9e3ed0a22df02c68157a2c4feae55bd89305be130fe82f44cd899ba291f50"
+  },
+  "raw/shared-corrected/tests.xml": {
+    "bytes": 591,
+    "sha256": "9b9359b84f37e6eda5e78046dc041846b20b5ea87a3b0038b22f773b55b5eaea"
+  },
+  "raw/shared-corrected-header/consumer-build.log": {
+    "bytes": 5569,
+    "sha256": "3d437fa04cf65a38934d10c33fc74a372f050fe2c04fda47133ac3a9b5ec1554"
+  },
+  "raw/shared-corrected-header/consumer-configure.log": {
+    "bytes": 376,
+    "sha256": "2bca22f88a333d3bdb1c58dc0cfa060568d9518b62fb6c22bae8b6b505f44198"
+  },
+  "raw/shared-corrected-header/receipt.json": {
+    "bytes": 1358,
+    "sha256": "6d7577304496aa1011a36dd7d452c310848b20d9dcc5b48c1266f918e7956962"
+  },
+  "raw/shared-provider-runtime/compile-link-commands.log": {
+    "bytes": 19975,
+    "sha256": "431f74f46e0eea5c348195086c53573bef6e99054680f546c14eb42ce0840e70"
+  },
+  "raw/shared-provider-runtime/consumer-build.log": {
+    "bytes": 1160,
+    "sha256": "46c50171cf79390620d421777f65fa42db45ff4482ac2345cc03f6e176df5445"
+  },
+  "raw/shared-provider-runtime/consumer-configure.log": {
+    "bytes": 376,
+    "sha256": "dfbe40436a921e2d0c77c22b2f2607fd6dfbedfc3a88d2345c18277127f5e855"
+  },
+  "raw/shared-provider-runtime/consumer-inputs.json": {
+    "bytes": 6005,
+    "sha256": "e5fe8fadda109f02447a0a956fef76c2be6c813c92a8bc197e102ff3f6544066"
+  },
+  "raw/shared-provider-runtime/consumer-test.log": {
+    "bytes": 298,
+    "sha256": "283ce1de945c0038bbf18209d20927bec579fec2adfeeb7bb4e7696c6734f97e"
+  },
+  "raw/shared-provider-runtime/cuda-dll-origins.json": {
+    "bytes": 970,
+    "sha256": "67f76d7a05a6439fb768c26166054363c1b86cf4a8fe8fb84eab324078437865"
+  },
+  "raw/shared-provider-runtime/d5_cuda_direct-runtime.cmake": {
+    "bytes": 1355,
+    "sha256": "35e1b5b1a8b0d9b8ddccc276cffd051e901696ad6d38c89c9999853d424c7e66"
+  },
+  "raw/shared-provider-runtime/d5_cuda_graph-runtime.cmake": {
+    "bytes": 1577,
+    "sha256": "4b7dde617ce564869769ade25338d3632836ece27edbf64eabbbd361e9995f76"
+  },
+  "raw/shared-provider-runtime/dll-audit.json": {
+    "bytes": 11865,
+    "sha256": "18442c4b0fa3037cf8b16933cf9b70b589cb0f6472bf3cd820120a59206b704c"
+  },
+  "raw/shared-provider-runtime/install.log": {
+    "bytes": 40128,
+    "sha256": "c02b51a1ec95396acb88b1a764be3f4b9a41ea1eaff37384b5538457bf68f6ab"
+  },
+  "raw/shared-provider-runtime/native-tests.log": {
+    "bytes": 20460,
+    "sha256": "7e3119c64f5d78e6807fb521fd446d2874f73a754c6d51b188f910de91e55d0f"
+  },
+  "raw/shared-provider-runtime/producer-build.log": {
+    "bytes": 4349,
+    "sha256": "49fa163f4e81c1b5bcf7713be48b3809aeb78420c5823636ec75bdeba0cdb11f"
+  },
+  "raw/shared-provider-runtime/producer-configure.log": {
+    "bytes": 2685,
+    "sha256": "3611fbacaa780ef15ebd784029fe346d79c08bdb74b476a885c5b7181f0d46e3"
+  },
+  "raw/shared-provider-runtime/receipt.json": {
+    "bytes": 3250,
+    "sha256": "64b5ae0514320ac1bfaf2684879c58ac1dd3b47d71b4aa2abe084c58c829681d"
+  },
+  "raw/shared-provider-runtime/tests.xml": {
+    "bytes": 2762,
+    "sha256": "94aa5ccaae77da43ae0386c3633341661d3169af753a75e15880eb9096cb93f7"
+  },
+  "raw/shared-sdk-runtime/consumer-inputs.json": {
+    "bytes": 6005,
+    "sha256": "ee230f10e8ec1c053950ba0a0d3ae990fbfe5bd4e317658799b8532d7a047672"
+  },
+  "raw/shared-sdk-runtime/producer-configure.log": {
+    "bytes": 2490,
+    "sha256": "9c2150f9a0dd9c73923be0a595bf27b3fd74ef0da0e70769b4c0087a640dd3e5"
+  },
+  "raw/shared-sdk-runtime/receipt.json": {
+    "bytes": 1038,
+    "sha256": "5ee590854d5cf082ab8107953b9a7e2f2d5b79f393bc7549b87557cc01a9bf7c"
+  },
+  "raw/shared-sdk-runtime-corrected/consumer-inputs.json": {
+    "bytes": 6005,
+    "sha256": "8cc4065c3c2b79355e3e54c52ef2ff6a8a8b304f031280256642c75d1a4ea486"
+  },
+  "raw/shared-sdk-runtime-corrected/producer-configure.log": {
+    "bytes": 2272,
+    "sha256": "bb4af4df21d20a1dc0cae5c185f6e5766291c43f65f7b24fbe6102e2cbc1224a"
+  },
+  "raw/shared-sdk-runtime-corrected/receipt.json": {
+    "bytes": 1039,
+    "sha256": "24d46a912a56b25e39aefdaa077bcc86414b6310106eba9ce0560cba59f4e992"
+  },
+  "raw/shared-sdk-runtime-final/consumer-build.log": {
+    "bytes": 1160,
+    "sha256": "46c50171cf79390620d421777f65fa42db45ff4482ac2345cc03f6e176df5445"
+  },
+  "raw/shared-sdk-runtime-final/consumer-configure.log": {
+    "bytes": 376,
+    "sha256": "3f171632b5d08c0fdd8707eac064edb4c5be7e37a4d37635d4fa41fc54b9c749"
+  },
+  "raw/shared-sdk-runtime-final/consumer-inputs.json": {
+    "bytes": 6005,
+    "sha256": "e35cd178f05801c4dde5ea2c4eb35afd34cc3192baeb74f882198f17657d0ed9"
+  },
+  "raw/shared-sdk-runtime-final/consumer-test.log": {
+    "bytes": 505,
+    "sha256": "c2af62c5f3e4aae69c4c468a5885dc057e01b0db2d1d109b7f1193a79564511d"
+  },
+  "raw/shared-sdk-runtime-final/install.log": {
+    "bytes": 40128,
+    "sha256": "c02b51a1ec95396acb88b1a764be3f4b9a41ea1eaff37384b5538457bf68f6ab"
+  },
+  "raw/shared-sdk-runtime-final/producer-build.log": {
+    "bytes": 4694,
+    "sha256": "9c72316c915523a845eea5e3d952cb072d0238ad7df9e70e77f531edce5049a1"
+  },
+  "raw/shared-sdk-runtime-final/producer-configure.log": {
+    "bytes": 2685,
+    "sha256": "3611fbacaa780ef15ebd784029fe346d79c08bdb74b476a885c5b7181f0d46e3"
+  },
+  "raw/shared-sdk-runtime-final/receipt.json": {
+    "bytes": 3120,
+    "sha256": "5ba74834502c72a3d69660ae66e325af6376988485fca991d1f63a0356f63f81"
+  },
+  "raw/shared-sdk-runtime-final/tests.xml": {
+    "bytes": 591,
+    "sha256": "89eb718e02fed3800aebf2e32c2b0257df9d88e81d663b22394f5fb9a3ab1a24"
+  },
+  "raw/source-provider-runtime/archive.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "raw/source-provider-runtime/compile-link-commands.log": {
+    "bytes": 563127,
+    "sha256": "1964a0a76d096918ac83fe4f7284508acc2295d2f1f3bfce8213752649287092"
+  },
+  "raw/source-provider-runtime/consumer-inputs.json": {
+    "bytes": 6005,
+    "sha256": "e5fe8fadda109f02447a0a956fef76c2be6c813c92a8bc197e102ff3f6544066"
+  },
+  "raw/source-provider-runtime/consumer-test.log": {
+    "bytes": 295,
+    "sha256": "fdb4bc6ce4e02732c8324bacee04a0875d1fc34394156c1cf2c828282fee5095"
+  },
+  "raw/source-provider-runtime/cuda-dll-origins.json": {
+    "bytes": 961,
+    "sha256": "9aca9017853e997c592f9ea1001e8b333d5ba0593c2bce0b8f084a229ff24a9e"
+  },
+  "raw/source-provider-runtime/d5_cuda_direct-runtime.cmake": {
+    "bytes": 579,
+    "sha256": "bea4c93f8f7ab4e59680f3f55b47fc4895693b0138b09d7938e5181008b43a95"
+  },
+  "raw/source-provider-runtime/d5_cuda_graph-runtime.cmake": {
+    "bytes": 579,
+    "sha256": "bea4c93f8f7ab4e59680f3f55b47fc4895693b0138b09d7938e5181008b43a95"
+  },
+  "raw/source-provider-runtime/dll-audit.json": {
+    "bytes": 3019,
+    "sha256": "82138a5a9c76a20220b2fcbe71db77f9efb2f3273e163a74a29a57c69b76ccb3"
+  },
+  "raw/source-provider-runtime/extract.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "raw/source-provider-runtime/native-tests.log": {
+    "bytes": 20446,
+    "sha256": "638c508bfacb5b2259e1cd7f5efbe93e71436819fff8fc75c0665ed95af1085b"
+  },
+  "raw/source-provider-runtime/receipt.json": {
+    "bytes": 2330,
+    "sha256": "361936c8498fa889543dc47fc25587a6fa9f7cd12114de7c3ba053beeb820e84"
+  },
+  "raw/source-provider-runtime/source-build.log": {
+    "bytes": 3280955,
+    "sha256": "aaaecafed8488c961ea186fd715ec7dbf3846aa0d5211b53d753c2f65a7dab85"
+  },
+  "raw/source-provider-runtime/source-configure.log": {
+    "bytes": 4759,
+    "sha256": "4facb88610e0bf58f53dab8458658f17506652ef6cedc8040ec5a04bc5c9f042"
+  },
+  "raw/source-provider-runtime/tests.xml": {
+    "bytes": 2762,
+    "sha256": "425a16c7da1fe93d0dd763e8d57095c9d79298f3d3560744f1d9b18a4aeef941"
+  },
+  "raw/static-provider-runtime/compile-link-commands.log": {
+    "bytes": 22220,
+    "sha256": "cb2f5cc7af195a258feefb5cb18691f549238c4d182c0b8b3713146f93350e43"
+  },
+  "raw/static-provider-runtime/consumer-build.log": {
+    "bytes": 2322,
+    "sha256": "990066acf3690e8478cba8d17a6589d1fcb02b72700f3bbee041f4691cd4a83e"
+  },
+  "raw/static-provider-runtime/consumer-configure.log": {
+    "bytes": 2349,
+    "sha256": "f35b6afddd3efdd6352f2750415b8dd5353b7a50fe41d5b29e776404fde6a95d"
+  },
+  "raw/static-provider-runtime/consumer-inputs.json": {
+    "bytes": 6005,
+    "sha256": "e5fe8fadda109f02447a0a956fef76c2be6c813c92a8bc197e102ff3f6544066"
+  },
+  "raw/static-provider-runtime/consumer-test.log": {
+    "bytes": 298,
+    "sha256": "1537a6e3947ab04ae48c516cbcec66dc8f536488e08d69888f0881d2dcaffc2e"
+  },
+  "raw/static-provider-runtime/cuda-dll-origins.json": {
+    "bytes": 970,
+    "sha256": "7df5f98fc35f5069775582db14654a290c9feb0a846dfb4b4ed26fb01ee7ad42"
+  },
+  "raw/static-provider-runtime/d5_cuda_direct-runtime.cmake": {
+    "bytes": 582,
+    "sha256": "f99073bf194fa74bcfa7231a36009b4ab9d44f4387f58b4382c29c0a88087839"
+  },
+  "raw/static-provider-runtime/d5_cuda_graph-runtime.cmake": {
+    "bytes": 582,
+    "sha256": "f99073bf194fa74bcfa7231a36009b4ab9d44f4387f58b4382c29c0a88087839"
+  },
+  "raw/static-provider-runtime/dll-audit.json": {
+    "bytes": 3019,
+    "sha256": "82138a5a9c76a20220b2fcbe71db77f9efb2f3273e163a74a29a57c69b76ccb3"
+  },
+  "raw/static-provider-runtime/install.log": {
+    "bytes": 39136,
+    "sha256": "30425ee5fe484f5d631bfb0f57d9566d641f3c97209e091f731a408049db2327"
+  },
+  "raw/static-provider-runtime/native-tests.log": {
+    "bytes": 20458,
+    "sha256": "d57e75e88163f95772321eb1127b2bf641c7f86ad1bb8c0b690efdc286572f14"
+  },
+  "raw/static-provider-runtime/receipt.json": {
+    "bytes": 2028,
+    "sha256": "81e104d3ef8dba6967b278d8d68aa3c0158428338a65a5a16bb81030e027949d"
+  },
+  "raw/static-provider-runtime/tests.xml": {
+    "bytes": 2762,
+    "sha256": "107a0d07d4f9aa76b832e717ba8c7210ac2c1770dda52b5679ad24113f097d41"
+  },
+  "README.md": {
+    "bytes": 4032,
+    "sha256": "d00bd7b6d7497dc9192f622cf1c186d83dcb1f3c9d3cd3463a859c2909159734"
+  },
+  "run-correction.py": {
+    "bytes": 3221,
+    "sha256": "e3009a8fc12f0125b729f8e5bffab6e13a7969a70fc76d4f5a99e0da85dd4bfd"
+  },
+  "run-selected.py": {
+    "bytes": 4364,
+    "sha256": "546ff1b33dd1ea944d59b7a145d7a68125d91ddd7f1bcdcbd5274f44f205c3f4"
+  },
+  "run.py": {
+    "bytes": 9398,
+    "sha256": "0819936600228f7f83b5d8a00a73b6481331e1b3df0b15af713c5821d66c9ab4"
+  },
+  "summary.json": {
+    "bytes": 809,
+    "sha256": "a4ccafb5ab755e7f31c31248b472edbdba3d1170e0f99f4c5e5c5edd9ff95c18"
+  }
+}

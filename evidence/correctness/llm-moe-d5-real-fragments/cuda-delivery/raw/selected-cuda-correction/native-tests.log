@@ -1,0 +1,35 @@
+Start testing: Sep 27 11:11 中国标准时间
+----------------------------------------------------------
+57/66 Testing: hyle_compute_route_cuda_test
+57/66 Test: hyle_compute_route_cuda_test
+Command: "C:/public/project-hyle/hyle/.scratch/b-cuda-d5/bin/hyle_compute_route_cuda_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_route_cuda
+"hyle_compute_route_cuda_test" start time: Sep 27 11:11 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CudaDefaultCompute
+[ RUN      ] CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+[       OK ] CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots (219 ms)
+[----------] 1 test from CudaDefaultCompute (219 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (219 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.37 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_cuda_test" end time: Sep 27 11:11 中国标准时间
+"hyle_compute_route_cuda_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 27 11:11 中国标准时间
+
+compute_route_cuda =   0.37 sec*proc
+

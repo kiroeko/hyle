@@ -1,6 +1,6 @@
 # CUDA SDK DLL 的公开 staging 接缝
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`9401a0c3`；Windows canonical。owner：`compute_backend_cuda`。
 - reopen trigger：D5-A5外部SDK消费者编译/链接完成，去掉SDK PATH、隐藏producer后，
@@ -42,3 +42,17 @@ CUDA13.3的`bin/x64`；原SDK目标、版本和include传播保留，未选CUDA�
 现有语法只接受包名及数字版本，不能写`HyleCudaSdk|CONFIG`。两次均未进入产品编译或数值测试。
 在同一AUDITED范围固定最后一项配置纠正：改为合法包名`HyleCudaSdk`，由标准config包搜索
 发现已安装文件；不扩registry协议或修改公共脚本。保留两份失败收据，完成后只运行原三交付批次。
+
+## 候选验收
+
+产品candidate：`9273bc71017a1febb69db240b6ea8970b88dd77c`。随后确认共享Provider必须
+显式导出私有SHARED边，按[独立有限修复](cuda-provider-runtime-exports-v1.md)处理，未扩公共协议。
+最终[source/static/shared及受影响门证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md)
+齐备：24个交付测试、459个模块测试（保留旧名单断言FAIL及单项纠正）、3组独立头、输入工具13项、
+docs/closure全部通过。源码/static共用一次producer，三个SDK DLL来源与PE闭包已核对。
+
+七门：scope与architecture均限上述SDK metadata；correctness与delivery见原始收据；
+usability_docs使用既有公开staging入口及更新后的交付指南；red_team复核私有export、搬迁及SDK来源；
+engineering_performance为P0，无C++、算法或热路径变化。SDK/第三方许可和安装前提保持原合同，
+不建立新FFI/API或复制内部运行机制。A6性能及其它路线不由本卡代签。
+统一实现60,373行/241文件。重开条件：具名工具链/SDK版本发生可复现运行依赖缺失或导出不一致。

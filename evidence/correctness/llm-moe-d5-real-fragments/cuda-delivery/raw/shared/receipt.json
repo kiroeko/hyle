@@ -1,0 +1,92 @@
+{
+  "candidate": "5f5b657cdd9c75173a66f1220f9c5c99e62ef698",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "producer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPONENTS=compute,graph,simd",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\d5cd\\shared-staging",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real"
+      ],
+      "returncode": 0,
+      "seconds": 10.11
+    },
+    {
+      "label": "producer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 151.015
+    },
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+        "--prefix",
+        "C:\\hv\\d5cd\\shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.844
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5cd\\consumer",
+        "-B",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cd\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 5.156
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "--target",
+        "d5_cuda_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 2,
+      "seconds": 5.516
+    }
+  ],
+  "consumer_files": 40
+}

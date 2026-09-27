@@ -1,0 +1,9 @@
+Test project C:/hv/d5cd/source-build
+    Start 1: d5_cuda_direct
+1/2 Test #1: d5_cuda_direct ...................   Passed    1.26 sec
+    Start 2: d5_cuda_graph
+2/2 Test #2: d5_cuda_graph ....................   Passed    1.22 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =   2.53 sec

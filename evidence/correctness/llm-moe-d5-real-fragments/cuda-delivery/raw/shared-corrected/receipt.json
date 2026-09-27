@@ -1,0 +1,58 @@
+{
+  "candidate": "9401a0c37257bcec765e60bab3ee97fec2b455b1",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5cd\\consumer",
+        "-B",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cd\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.5
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "--target",
+        "d5_cuda_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 18.343
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5cd\\shared-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cd\\receipts\\shared-corrected\\tests.xml"
+      ],
+      "returncode": 8,
+      "seconds": 4.469
+    }
+  ],
+  "producer_candidate": "5f5b657cdd9c75173a66f1220f9c5c99e62ef698",
+  "producer_reused_reason": "Only tests/docs/evidence changed; product and vendor inputs identical.",
+  "consumer_files": 47
+}

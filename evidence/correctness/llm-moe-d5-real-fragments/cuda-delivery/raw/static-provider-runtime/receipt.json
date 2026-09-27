@@ -1,0 +1,72 @@
+{
+  "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "static",
+  "steps": [
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\d5cd\\source-build",
+        "--prefix",
+        "C:\\hv\\d5cd\\static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 1.141
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5cd\\consumer",
+        "-B",
+        "C:\\hv\\d5cd\\static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cd\\static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 4.703
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5cd\\static-consumer",
+        "--target",
+        "d5_cuda_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 22.125
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5cd\\static-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cd\\receipts\\static-provider-runtime\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 2.594
+    }
+  ],
+  "consumer_files": 47,
+  "verdict": "PASS",
+  "tests": 8,
+  "product_provider_fallback": false,
+  "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+}

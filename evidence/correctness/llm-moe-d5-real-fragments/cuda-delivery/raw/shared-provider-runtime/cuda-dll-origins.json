@@ -1,0 +1,23 @@
+[
+  {
+    "name": "cudart64_13.dll",
+    "source": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64\\cudart64_13.dll",
+    "staged": "C:\\hv\\d5cd\\shared-consumer\\cudart64_13.dll",
+    "bytes": 551024,
+    "sha256": "b00ca6f53699120da815bf3e06e2e4285fae2f201235b883dcbb50eec51e2a2a"
+  },
+  {
+    "name": "cublas64_13.dll",
+    "source": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64\\cublas64_13.dll",
+    "staged": "C:\\hv\\d5cd\\shared-consumer\\cublas64_13.dll",
+    "bytes": 52697712,
+    "sha256": "8c6bac24474af29627ec96500025a5d410a1b7e8ffa00e1fe13b1781fc6b3ddc"
+  },
+  {
+    "name": "cublasLt64_13.dll",
+    "source": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64\\cublasLt64_13.dll",
+    "staged": "C:\\hv\\d5cd\\shared-consumer\\cublasLt64_13.dll",
+    "bytes": 463655536,
+    "sha256": "e323abd89e0f03c1db91a09d7aeb1928de08e1f86192cc713b335fefe3e368a9"
+  }
+]

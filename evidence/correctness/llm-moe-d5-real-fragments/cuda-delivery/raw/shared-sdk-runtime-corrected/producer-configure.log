@@ -1,0 +1,30 @@
+-- HYLE products: requested='compute,graph,simd' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_ggml_runtime,compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: CPU route OFF -- oneDNN dependency probe/download skipped
+-- HYLE: CUDA backend ON -- found CUDA Toolkit 13.3.73 at 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3'; capability enabled
+-- HYLE: Apple route OFF -- MLX and Metal probe/download skipped
+-- HYLE: Vulkan route OFF -- SDK and shader probes/downloads skipped
+-- ggml source: 2263 files, 5 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl (found version "13.3.73")
+-- CUDA Toolkit found
+-- Using CMAKE_CUDA_ARCHITECTURES=89-real CMAKE_CUDA_ARCHITECTURES_NATIVE=89-real
+-- FlashAttention K-V type combinations: f16-f16;q4_0-q4_0;q8_0-q8_0;bf16-bf16
+-- Including CUDA backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl (found suitable version "13.3.73", minimum required is "13.3")
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+CMake Error at cmake/HylePackageRegistry.cmake:209 (message):
+  Package dependency 'compute_cuda_sdk' has invalid find_dependency spec
+  'HyleCudaSdk|CONFIG'
+Call Stack (most recent call first):
+  cmake/HylePackage.cmake:34 (hyle_package_collect_registry)
+  CMakeLists.txt:472 (hyle_install_package)
+
+
+-- Configuring incomplete, errors occurred!

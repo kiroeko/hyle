@@ -1,0 +1,37 @@
+{
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "test_candidate": "dbf6c0856b5e17e4f9a233e68fff669f524f0a1e",
+  "stages": {
+    "source": {
+      "tests": 8,
+      "verdict": "PASS"
+    },
+    "static": {
+      "tests": 8,
+      "verdict": "PASS"
+    },
+    "shared": {
+      "tests": 8,
+      "verdict": "PASS"
+    }
+  },
+  "factor_tests": {
+    "first_run_passed": 458,
+    "first_run_failed": 1,
+    "corrected_passed": 1,
+    "unique_tests": 459,
+    "skipped": 0
+  },
+  "headers": {
+    "passed": 3,
+    "failed": 0
+  },
+  "inputs_tool": {
+    "passed": 13
+  },
+  "p0": "No C++ or mathematical implementation changed; runtime-file metadata only.",
+  "A5_cuda": "PASS",
+  "A6": "NOT_RUN",
+  "complete_profile_cells": 152,
+  "total_cells": 176
+}

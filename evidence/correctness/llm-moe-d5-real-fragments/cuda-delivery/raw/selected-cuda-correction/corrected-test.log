@@ -1,0 +1,10 @@
+Test project C:/public/project-hyle/hyle/.scratch/b-cuda-d5
+    Start 57: hyle_compute_route_cuda_test
+1/1 Test #57: hyle_compute_route_cuda_test .....   Passed    0.37 sec
+
+100% tests passed out of 1
+
+Label Time Summary:
+compute_route_cuda    =   0.37 sec*proc (1 test)
+
+Total Test time (real) =   0.40 sec

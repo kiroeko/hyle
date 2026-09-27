@@ -1,0 +1,60 @@
+Start testing: Sep 27 11:11 中国标准时间
+----------------------------------------------------------
+49/66 Testing: hyle_compute_backend_cuda_header_self_contained_test
+49/66 Test: hyle_compute_backend_cuda_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_backend_cuda" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "backends/cuda.h" "--extra-include-dir" "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include" "--extra-include-dir" "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_backend_cuda
+"hyle_compute_backend_cuda_header_self_contained_test" start time: Sep 27 11:11 中国标准时间
+Output:
+----------------------------------------------------------
+compute_backend_cuda C++ headers self-contained: 1
+<end of output>
+Test time =   0.49 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_backend_cuda_header_self_contained_test" end time: Sep 27 11:11 中国标准时间
+"hyle_compute_backend_cuda_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+52/66 Testing: hyle_compute_provider_cublas_header_self_contained_test
+52/66 Test: hyle_compute_provider_cublas_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_provider_cublas" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute/providers" "--header" "cublas.h"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_provider_cublas
+"hyle_compute_provider_cublas_header_self_contained_test" start time: Sep 27 11:11 中国标准时间
+Output:
+----------------------------------------------------------
+compute_provider_cublas C++ headers self-contained: 1
+<end of output>
+Test time =   0.26 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_cublas_header_self_contained_test" end time: Sep 27 11:11 中国标准时间
+"hyle_compute_provider_cublas_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+62/66 Testing: hyle_compute_provider_ggml_cuda_header_self_contained_test
+62/66 Test: hyle_compute_provider_ggml_cuda_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_provider_ggml_cuda" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute/providers" "--header" "ggml_cuda.h"
+Directory: C:/public/project-hyle/hyle/.scratch/b-cuda-d5/tests/compute_provider_ggml_cuda
+"hyle_compute_provider_ggml_cuda_header_self_contained_test" start time: Sep 27 11:11 中国标准时间
+Output:
+----------------------------------------------------------
+compute_provider_ggml_cuda C++ headers self-contained: 1
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_ggml_cuda_header_self_contained_test" end time: Sep 27 11:11 中国标准时间
+"hyle_compute_provider_ggml_cuda_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 27 11:11 中国标准时间
+
+compute_backend_cuda =   0.49 sec*proc
+
+compute_provider_cublas =   0.26 sec*proc
+
+compute_provider_ggml_cuda =   0.28 sec*proc
+
+headers =   1.03 sec*proc
+

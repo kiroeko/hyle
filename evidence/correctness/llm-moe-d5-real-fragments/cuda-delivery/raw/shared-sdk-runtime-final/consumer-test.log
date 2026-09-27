@@ -1,0 +1,16 @@
+Test project C:/hv/d5cd/shared-consumer
+    Start 1: d5_cuda_direct
+1/2 Test #1: d5_cuda_direct ...................Exit code 0xc0000135***Exception:   2.73 sec
+
+    Start 2: d5_cuda_graph
+2/2 Test #2: d5_cuda_graph ....................Exit code 0xc0000135***Exception:   0.96 sec
+
+
+0% tests passed, 2 tests failed out of 2
+
+Total Test time (real) =   3.74 sec
+
+The following tests FAILED:
+	  1 - d5_cuda_direct (Exit code 0xc0000135)
+	  2 - d5_cuda_graph (Exit code 0xc0000135)
+Errors while running CTest

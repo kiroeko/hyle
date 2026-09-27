@@ -27,6 +27,10 @@ D5-A5外部CUDA交付发现两个Provider的私有SDK DLL依赖未导出；
 `compute_provider_ggml_cuda`当前AUDITED范围仅追加
 [E2私有runtime接线](../build/cuda-provider-runtime-exports-v1.md)，不改原产品数学或性能口径。
 
+CUDA A5已在`9273bc71`完成源码/static/shared各8项真实片段测试，459项模块测试与3组独立头
+已收尾，见[三交付证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md)。
+保留旧Provider名单断言失败和单项纠正；其它路线A5、全部A6/D6仍待完成，152/176 ledger不变。
+
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。
 该具名候选按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)完成AOT与Windows

@@ -1,0 +1,17 @@
+[
+  {
+    "stage": "source",
+    "canonical_product_path_in_commands": false,
+    "relocated_prefix_required": false
+  },
+  {
+    "stage": "static",
+    "canonical_product_path_in_commands": false,
+    "relocated_prefix_required": true
+  },
+  {
+    "stage": "shared",
+    "canonical_product_path_in_commands": false,
+    "relocated_prefix_required": true
+  }
+]
