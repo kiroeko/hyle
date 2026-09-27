@@ -31,6 +31,10 @@ CUDA A5已在`9273bc71`完成源码/static/shared各8项真实片段测试，459
 已收尾，见[三交付证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md)。
 保留旧Provider名单断言失败和单项纠正；其它路线A5、全部A6/D6仍待完成，152/176 ledger不变。
 
+CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)推进：复用上述静态 SDK，
+合并接入 Qwen BF16 FFN 与 DeepSeek 官方 FP4/FP8 MoE 的普通 Direct/Graph 消费者。
+性能采样与 A/A 尚未运行，不提前计作 P1 通过。
+
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。
 该具名候选按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)完成AOT与Windows

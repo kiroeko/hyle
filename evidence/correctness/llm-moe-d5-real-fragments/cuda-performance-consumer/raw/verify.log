@@ -1,0 +1,299 @@
+Start testing: Sep 27 11:42 中国标准时间
+----------------------------------------------------------
+1/1 Testing: d5_cuda_fragment_verify
+1/1 Test: d5_cuda_fragment_verify
+Command: "C:/hv/d5a6/hyle_graph_route_cuda_bench.exe"
+Directory: C:/hv/d5a6
+"d5_cuda_fragment_verify" start time: Sep 27 11:42 中国标准时间
+Output:
+----------------------------------------------------------
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+# graph steps=5 regions=0 workspace=40960
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=cublasLt version=13.6.0
+# provider=cublasLt version=13.6.0
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=cublasLt version=13.6.0
+# setup route=graph slots=2 external_device_bytes=75517952 milliseconds=204.387
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=cublasLt version=13.6.0
+# provider=cublasLt version=13.6.0
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=cublasLt version=13.6.0
+# setup route=direct slots=2 external_device_bytes=75599872 milliseconds=9.403
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+# verify PASS profile=Qwen3.5-2B official BF16 FFN M1 H2048 N6144 replays=2 aa=off
+# graph steps=40 regions=0 workspace=415360
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider= version=
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=deepseek-cuda version=9b4e9788-b5968e91-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=deepseek-cuda version=9b4e9788-b5968e91-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=deepseek-cuda version=9b4e9788-b5968e91-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# setup route=graph slots=3 external_device_bytes=137469952 milliseconds=21.622
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=deepseek-cuda version=9b4e9788-b5968e91-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=deepseek-cuda version=9b4e9788-b5968e91-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=deepseek-cuda version=9b4e9788-b5968e91-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=sglang-cuda version=06992c92-block128-aot
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# provider=ggml-cuda version=456172ec+hyle-resource-v1
+# setup route=direct slots=3 external_device_bytes=139890640 milliseconds=26.889
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+ggml_backend_cuda_graph_compute: CUDA graph warmup complete
+# verify PASS profile=DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6 replays=3 aa=off
+<end of output>
+Test time =   0.72 sec
+----------------------------------------------------------
+Test Passed.
+"d5_cuda_fragment_verify" end time: Sep 27 11:42 中国标准时间
+"d5_cuda_fragment_verify" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 27 11:42 中国标准时间

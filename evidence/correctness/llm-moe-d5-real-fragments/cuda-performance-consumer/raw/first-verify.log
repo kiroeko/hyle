@@ -1,0 +1,15 @@
+Test project C:/hv/d5a6
+    Start 1: d5_cuda_fragment_verify
+1/1 Test #1: d5_cuda_fragment_verify ..........***Failed    0.31 sec
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+D5 CUDA fragment benchmark failed: graph workload context
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.36 sec
+
+The following tests FAILED:
+	  1 - d5_cuda_fragment_verify (Failed)
+Errors while running CTest
