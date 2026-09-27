@@ -68,7 +68,7 @@ Quantized weight(const mx::array &carrier, int count, int n, int k,
   auto codes = mx::reshape(mx::slice(carrier, {0}, {count * payload}, s),
                             {count, n, blocks, 128}, s);
   auto scales = mx::view(
-      mx::contiguous(mx::slice(carrier, {count * payload}, {bytes}, s), s),
+      mx::contiguous(mx::slice(carrier, {count * payload}, {bytes}, s), false, s),
       mx::float32, s);
   scales = mx::reshape(scales, {count, (n + 127) / 128, blocks}, s);
   scales = mx::slice(mx::repeat(scales, 128, 1, s), {0, 0, 0},
