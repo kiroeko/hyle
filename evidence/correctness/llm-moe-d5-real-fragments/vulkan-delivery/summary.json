@@ -1,0 +1,623 @@
+{
+  "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "A5": "PASS",
+  "A6": "NOT_RUN",
+  "delivery_checks": 36,
+  "normal_checks": 30,
+  "expected_rejection_checks": 6,
+  "skipped": 0,
+  "product_changes": 0,
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14",
+    "vulkan_sdk": "C:/public/tools/hyle-vulkan/1.4.357.0",
+    "validation_layer": true
+  },
+  "stages": {
+    "shared": {
+      "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+      "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+      "stage": "shared",
+      "steps": [
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\d5vk\\consumer",
+            "-B",
+            "C:\\hv\\d5vk\\shared-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=C:\\hv\\d5vk\\shared-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 0.219
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\d5vk\\shared-consumer",
+            "--target",
+            "d5_vulkan_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 8.984
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\d5vk\\shared-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\d5vk\\receipts\\shared-fixture-guard\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 24.812
+        }
+      ],
+      "reused_sdk_candidate": "f05be242b68842ab785d6fa4cff9f9decc6d57a8",
+      "reused_sdk_receipt": "receipts/shared/receipt.json",
+      "verdict": "PASS",
+      "tests": 12,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    },
+    "source": {
+      "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+      "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+      "stage": "source",
+      "steps": [
+        {
+          "label": "source-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\d5vk\\consumer",
+            "-B",
+            "C:\\hv\\d5vk\\source-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DD5_SOURCE_ROOT=C:\\hv\\d5cd\\source-tree",
+            "-DCMAKE_INSTALL_PREFIX=C:\\hv\\d5vk\\static-staging",
+            "-DHYLE_WERROR=ON"
+          ],
+          "returncode": 0,
+          "seconds": 81.313
+        },
+        {
+          "label": "source-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\d5vk\\source-build",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 291.109
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\d5vk\\source-build",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\d5vk\\receipts\\source-fixture-guard\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 20.938
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 12,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    },
+    "static": {
+      "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+      "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+      "stage": "static",
+      "steps": [
+        {
+          "label": "install",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--install",
+            "C:\\hv\\d5vk\\source-build",
+            "--prefix",
+            "C:\\hv\\d5vk\\static-staging"
+          ],
+          "returncode": 0,
+          "seconds": 0.89
+        },
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\d5vk\\consumer",
+            "-B",
+            "C:\\hv\\d5vk\\static-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=C:\\hv\\d5vk\\static-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 1.922
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\d5vk\\static-consumer",
+            "--target",
+            "d5_vulkan_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 12.515
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\d5vk\\static-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\d5vk\\receipts\\static-fixture-guard\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 20.922
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 12,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    }
+  },
+  "rejected_cells": 8,
+  "new_run_pass_cells": 2,
+  "run_fail_cells": 2,
+  "rejections": [
+    {
+      "entry": "direct",
+      "model": "GLM-5.3",
+      "region": "722439",
+      "nodes": "30",
+      "prepared": "11",
+      "operation": "GroupedFloat8Linear",
+      "code": "12",
+      "message": "Vulkan plan requires supported plain or named compressed storage within device limits"
+    },
+    {
+      "entry": "direct",
+      "model": "GLM-5.3-Flash",
+      "region": "722439",
+      "nodes": "48",
+      "prepared": "11",
+      "operation": "GroupedFloat8Linear",
+      "code": "12",
+      "message": "Vulkan plan requires supported plain or named compressed storage within device limits"
+    },
+    {
+      "entry": "direct",
+      "model": "DeepSeek-V4-Pro",
+      "region": "168494593",
+      "nodes": "51",
+      "prepared": "14",
+      "operation": "GroupedFloat4Linear",
+      "code": "12",
+      "message": "Vulkan plan requires supported plain or named compressed storage within device limits"
+    },
+    {
+      "entry": "direct",
+      "model": "DeepSeek-V4-Flash",
+      "region": "168494593",
+      "nodes": "51",
+      "prepared": "14",
+      "operation": "GroupedFloat4Linear",
+      "code": "12",
+      "message": "Vulkan plan requires supported plain or named compressed storage within device limits"
+    },
+    {
+      "entry": "graph",
+      "model": "GLM-5.3",
+      "region": "722439",
+      "nodes": "30",
+      "prepared": "0",
+      "operation": "complete_moe",
+      "code": "12",
+      "message": "Vulkan custom schema needs a cold native lowering"
+    },
+    {
+      "entry": "graph",
+      "model": "GLM-5.3-Flash",
+      "region": "722439",
+      "nodes": "48",
+      "prepared": "0",
+      "operation": "complete_moe",
+      "code": "12",
+      "message": "Vulkan custom schema needs a cold native lowering"
+    },
+    {
+      "entry": "graph",
+      "model": "DeepSeek-V4-Pro",
+      "region": "168494593",
+      "nodes": "51",
+      "prepared": "0",
+      "operation": "complete_moe",
+      "code": "12",
+      "message": "Vulkan custom schema needs a cold native lowering"
+    },
+    {
+      "entry": "graph",
+      "model": "DeepSeek-V4-Flash",
+      "region": "168494593",
+      "nodes": "51",
+      "prepared": "0",
+      "operation": "complete_moe",
+      "code": "12",
+      "message": "Vulkan custom schema needs a cold native lowering"
+    }
+  ],
+  "precision": {
+    "direct": [
+      {
+        "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+        "failures": 24,
+        "primary_gguf_failures": 0,
+        "fidelity_gguf_failures": 24,
+        "official_failures": 0
+      },
+      {
+        "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+        "failures": 1344,
+        "primary_gguf_failures": 0,
+        "fidelity_gguf_failures": 456,
+        "official_failures": 888
+      }
+    ],
+    "graph": [
+      {
+        "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+        "failures": 24,
+        "primary_gguf_failures": 0,
+        "fidelity_gguf_failures": 24,
+        "official_failures": 0
+      },
+      {
+        "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+        "failures": 1344,
+        "primary_gguf_failures": 0,
+        "fidelity_gguf_failures": 456,
+        "official_failures": 888
+      }
+    ]
+  },
+  "primary_gguf_region_mapping": {
+    "direct": {
+      "R01": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "D5ExactMoeVocabulary/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "D5ExactMoeVocabulary/VulkanQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R02": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R03": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R07": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekNativeSinkAttention",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R08": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        }
+      ],
+      "R09": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        }
+      ],
+      "R10": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekTokenTableRouting",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanMoeFragments.D5ThirteenProfilesModelRouters",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R11": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R12": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R14": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R15": [
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanMoeFragments.D5DeepSeekStatefulCompression",
+          "receipt": "raw/precision-current-driver/direct.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "D5ExactMoeVocabulary/VulkanQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ]
+    },
+    "graph": {
+      "R01": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R02": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R03": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R07": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekNativeSinkAttention",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R08": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        }
+      ],
+      "R09": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        }
+      ],
+      "R10": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekTokenTableRouting",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5ThirteenProfilesModelRouters",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R11": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R12": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R14": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ],
+      "R15": [
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekFullAttentionChain",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "VulkanGraphMoeFragments.D5DeepSeekStatefulCompression",
+          "receipt": "raw/precision-current-driver/graph.xml.gz",
+          "scope": "UD-Q4_K_XL subcases only; aggregate test retains Q8/official failures"
+        },
+        {
+          "test": "D5ExactMoeVocabulary/VulkanGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5",
+          "receipt": "../deepseek-gguf-three-route/receipt.json"
+        }
+      ]
+    }
+  },
+  "reuse": {
+    "baseline": "91af756942857472f951f19804d6cf1a44fb1d1c",
+    "unchanged_paths": [
+      "src/compute_ggml_runtime",
+      "src/compute_provider_ggml_vulkan",
+      "src/compute_provider_iree_vulkan",
+      "src/compute_route_vulkan",
+      "src/graph_route_vulkan",
+      "third_party/ggml",
+      "third_party/iree_vulkan_runtime",
+      "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "tests/compute_models/d5_moe_execution_cases.h",
+      "tests/compute_models/d5_moe_execution_fragments.h",
+      "tests/compute_models/d5_moe_profile_cases.h",
+      "tests/compute_models/d5_qwen35_gguf_fragment_support.h"
+    ],
+    "test_semantic_helper_changes": "Optional default-empty weight preparation fields and unused diagnostic helper only; existing numeric gate unchanged.",
+    "primary_gguf": "Both explicit profile loops execute UD-Q4_K_XL before UD-Q8_K_XL; current tests complete with no Q4 failure or skip. Individual subcases are qualified, never the failed aggregate test."
+  },
+  "limits": [
+    "Official grouped FP8/FP4 cold admission remains unsupported in this route.",
+    "DeepSeek Flash fidelity GGUF attention/compressor still fails the original numeric gate.",
+    "A5 passes apply to the declared supported fragment consumers and rejection behavior; rejected/failed complete profiles are not supported.",
+    "No model inference, throughput, A6 or all-provider unavailability claim."
+  ]
+}

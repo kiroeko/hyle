@@ -1,0 +1,5 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4070, 617.14",
+  "vulkan_sdk": "C:/public/tools/hyle-vulkan/1.4.357.0",
+  "validation_layer": true
+}

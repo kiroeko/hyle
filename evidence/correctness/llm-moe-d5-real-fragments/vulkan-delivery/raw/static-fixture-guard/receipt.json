@@ -1,0 +1,71 @@
+{
+  "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "static",
+  "steps": [
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\d5vk\\source-build",
+        "--prefix",
+        "C:\\hv\\d5vk\\static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.89
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5vk\\consumer",
+        "-B",
+        "C:\\hv\\d5vk\\static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5vk\\static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 1.922
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5vk\\static-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 12.515
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5vk\\static-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5vk\\receipts\\static-fixture-guard\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 20.922
+    }
+  ],
+  "verdict": "PASS",
+  "tests": 12,
+  "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+}

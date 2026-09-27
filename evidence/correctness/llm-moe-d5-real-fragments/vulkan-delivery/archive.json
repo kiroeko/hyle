@@ -1,0 +1,314 @@
+{
+  "environment.json": {
+    "original_bytes": 137,
+    "original_sha256": "2fc5c895bbf938f3d605c6f60cdcdaa8e48b09d053b38d2d33ccfa2012cfc417",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/environment.json"
+  },
+  "owner/build.log": {
+    "original_bytes": 3400,
+    "original_sha256": "f9e3fdf9cba592464c9e017c66e2ffcb860fdd33811335294f65a12f5ed5c8e6",
+    "encoding": "gzip",
+    "stored_path": "raw/owner/build.log.gz"
+  },
+  "owner/configure.log": {
+    "original_bytes": 2107,
+    "original_sha256": "9b633d5b006ab88e09776f06d27990e1ab272b08bb89f8139bd11186aa27e765",
+    "encoding": "gzip",
+    "stored_path": "raw/owner/configure.log.gz"
+  },
+  "owner/inputs.log": {
+    "original_bytes": 117,
+    "original_sha256": "0a648b80fc4b09aa546ec9c9a8c969c5c8616ee0ce40cd7a064d29f267a166d2",
+    "encoding": "gzip",
+    "stored_path": "raw/owner/inputs.log.gz"
+  },
+  "owner/native-tests.log": {
+    "original_bytes": 5262,
+    "original_sha256": "b846c065b54e93cfe1ec87ef9b200adcf514e33817b012ed780f765dfdadfff1",
+    "encoding": "gzip",
+    "stored_path": "raw/owner/native-tests.log.gz"
+  },
+  "owner/receipt.json": {
+    "original_bytes": 1889,
+    "original_sha256": "5e555d0ebcd1400d82bcf0529e19587aec2b5b3e1c9e0e34eaf97162577c2f04",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/owner/receipt.json"
+  },
+  "owner/tests.log": {
+    "original_bytes": 490,
+    "original_sha256": "a03b933a2796a8037a8c1c1c630a69088929ee472f814ce8c681752d12cc0224",
+    "encoding": "gzip",
+    "stored_path": "raw/owner/tests.log.gz"
+  },
+  "owner/tests.xml": {
+    "original_bytes": 2982,
+    "original_sha256": "71b55dcf45c60cb84d7e00e59dc1be736afb028e1987986a941ec938ea605103",
+    "encoding": "gzip",
+    "stored_path": "raw/owner/tests.xml.gz"
+  },
+  "precision-current-driver/direct.log": {
+    "original_bytes": 1095110,
+    "original_sha256": "1d428a45f25a1edceecccb7de44999332808e69771e936b388e30cc4aa9835ae",
+    "encoding": "gzip",
+    "stored_path": "raw/precision-current-driver/direct.log.gz"
+  },
+  "precision-current-driver/direct.xml": {
+    "original_bytes": 2297176,
+    "original_sha256": "df97fa281bae85b82e2b8d381c85c19f83aa1601e2aaa5eebbfed09a97a8aedd",
+    "encoding": "gzip",
+    "stored_path": "raw/precision-current-driver/direct.xml.gz"
+  },
+  "precision-current-driver/graph.log": {
+    "original_bytes": 1083505,
+    "original_sha256": "c7c98c1ea7f7b15b461c0c53416bd3146c9acad82661d06ad2cb5ab3e734bed3",
+    "encoding": "gzip",
+    "stored_path": "raw/precision-current-driver/graph.log.gz"
+  },
+  "precision-current-driver/graph.xml": {
+    "original_bytes": 2273898,
+    "original_sha256": "67db3f83f29438359aa7fe377ddff6dd978ae888edd5e74fdd9a0afcd26b1750",
+    "encoding": "gzip",
+    "stored_path": "raw/precision-current-driver/graph.xml.gz"
+  },
+  "precision-current-driver/receipt.json": {
+    "original_bytes": 1233,
+    "original_sha256": "19f95f6c360f94b720adafad313988a5f950e260140338a485946dd874f2759c",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/precision-current-driver/receipt.json"
+  },
+  "shared/consumer-build.log": {
+    "original_bytes": 3966,
+    "original_sha256": "a08fc1a6bd6d9416d6cc496ef4426543d81dd9a4ad068219009548414f6d1de1",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/consumer-build.log.gz"
+  },
+  "shared/consumer-configure.log": {
+    "original_bytes": 2129,
+    "original_sha256": "37e8cc3da3792a9216670ace3dcdb0689b012bb1464653a3e4df05624c8e5871",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/consumer-configure.log.gz"
+  },
+  "shared/consumer-inputs.json": {
+    "original_bytes": 5263,
+    "original_sha256": "56c6eba7a97d84ac3009e3377c15c51739fd3ba93e9198447b964d38202bf387",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/consumer-inputs.json"
+  },
+  "shared/install.log": {
+    "original_bytes": 43580,
+    "original_sha256": "6677aba4e235ca4d66bcc5b70ea429908deebcc46aee88049dec6bb38e12f875",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/install.log.gz"
+  },
+  "shared/producer-build.log": {
+    "original_bytes": 6096,
+    "original_sha256": "c4a366344d569eee54efd4a858fd78c3f09b985fd45b2e8540e1d64e590b77e4",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/producer-build.log.gz"
+  },
+  "shared/producer-configure.log": {
+    "original_bytes": 2990,
+    "original_sha256": "a33cf61b72f7672a609400df62bcd70e5a1a01d8da176b147072781246ebf514",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/producer-configure.log.gz"
+  },
+  "shared/producer-original-cache.txt": {
+    "original_bytes": 45687,
+    "original_sha256": "5b69df43aea4152db4d50b9ad2d0d7e8194dca90de40bd5d02144ff693e9baac",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/producer-original-cache.txt.gz"
+  },
+  "shared/receipt.json": {
+    "original_bytes": 2735,
+    "original_sha256": "4de2cce985a0cb712b4d027c124590f156052388d97a88e144ddc9402f5179f2",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/receipt.json"
+  },
+  "shared/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "b5066aa366c90ed9bb9223d479e8d42f78cf6cffd0264288b842c0a93738c403",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/source-identity.json"
+  },
+  "shared-fixture-guard/compile-link-commands.log": {
+    "original_bytes": 14871,
+    "original_sha256": "41396b94f64097d5bb7bb90828f70a03a1eed937609487f0fe5192d9a09da8b7",
+    "encoding": "gzip",
+    "stored_path": "raw/shared-fixture-guard/compile-link-commands.log.gz"
+  },
+  "shared-fixture-guard/consumer-build.log": {
+    "original_bytes": 829,
+    "original_sha256": "6332ad0462421e8dd71feeeee4e9d285a09a53ffd39d9b5a3ef42695fb5fcfa9",
+    "encoding": "gzip",
+    "stored_path": "raw/shared-fixture-guard/consumer-build.log.gz"
+  },
+  "shared-fixture-guard/consumer-configure.log": {
+    "original_bytes": 376,
+    "original_sha256": "811bfaedb437ab438fd23c7e64a655a8f374a541dd6861e8bd6ee8e934510560",
+    "encoding": "gzip",
+    "stored_path": "raw/shared-fixture-guard/consumer-configure.log.gz"
+  },
+  "shared-fixture-guard/consumer-inputs.json": {
+    "original_bytes": 5263,
+    "original_sha256": "414844925a3005c910fa692a2ea4743cd8e6fcf66dfff7a604067255e5666adc",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared-fixture-guard/consumer-inputs.json"
+  },
+  "shared-fixture-guard/consumer-test.log": {
+    "original_bytes": 302,
+    "original_sha256": "57f50f3de7b5d478b420dca6518add01dec33778a08660099d002e2f41d35328",
+    "encoding": "gzip",
+    "stored_path": "raw/shared-fixture-guard/consumer-test.log.gz"
+  },
+  "shared-fixture-guard/dll-origins.json": {
+    "original_bytes": 2319,
+    "original_sha256": "957da497814c918d15848bc02d50086f7a022fafaa24ba9bfa739c4541d10d8b",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared-fixture-guard/dll-origins.json"
+  },
+  "shared-fixture-guard/native-tests.log": {
+    "original_bytes": 6863,
+    "original_sha256": "1ac568c94830bc6a17d065be90876581fb2110626fec38dd98f3bda1f69188dd",
+    "encoding": "gzip",
+    "stored_path": "raw/shared-fixture-guard/native-tests.log.gz"
+  },
+  "shared-fixture-guard/receipt.json": {
+    "original_bytes": 1868,
+    "original_sha256": "7e1295c0cead422250a8328d7ecff6347b235478745b658f2f6fd81c97daa923",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared-fixture-guard/receipt.json"
+  },
+  "shared-fixture-guard/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "5b01aff5126c9d503193abc8cb16eda9140b65abddc5e0ea4ceb60ec65b95e24",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared-fixture-guard/source-identity.json"
+  },
+  "shared-fixture-guard/tests.xml": {
+    "original_bytes": 2767,
+    "original_sha256": "e757d3480f45c15e586bebc9ff34406634fc8eb406c9f1985faf617988f3f646",
+    "encoding": "gzip",
+    "stored_path": "raw/shared-fixture-guard/tests.xml.gz"
+  },
+  "source-fixture-guard/compile-link-commands.log": {
+    "original_bytes": 788161,
+    "original_sha256": "5b112de06215fcc40d4b4962ee1024766adef189fefe197fcefc1eaef6c65be8",
+    "encoding": "gzip",
+    "stored_path": "raw/source-fixture-guard/compile-link-commands.log.gz"
+  },
+  "source-fixture-guard/consumer-inputs.json": {
+    "original_bytes": 5263,
+    "original_sha256": "414844925a3005c910fa692a2ea4743cd8e6fcf66dfff7a604067255e5666adc",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source-fixture-guard/consumer-inputs.json"
+  },
+  "source-fixture-guard/consumer-test.log": {
+    "original_bytes": 299,
+    "original_sha256": "2542ad57dce6cbeb45ac94c332b466e3fd592888e1c5aeb1c5f00a44e8b5f11f",
+    "encoding": "gzip",
+    "stored_path": "raw/source-fixture-guard/consumer-test.log.gz"
+  },
+  "source-fixture-guard/native-tests.log": {
+    "original_bytes": 6847,
+    "original_sha256": "b5d7d4c11efd91fabef38d102e622cc313dce027179453d57be7a2f7a2f166da",
+    "encoding": "gzip",
+    "stored_path": "raw/source-fixture-guard/native-tests.log.gz"
+  },
+  "source-fixture-guard/receipt.json": {
+    "original_bytes": 1763,
+    "original_sha256": "8636b08fe7aab26f5523d34e707b2a4e0007091c48a14650fd27d3a98ea271d8",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source-fixture-guard/receipt.json"
+  },
+  "source-fixture-guard/source-build.log": {
+    "original_bytes": 95844,
+    "original_sha256": "a3c0b1cd50d8fd9def3d709189f13115d2af609bd00d9580045ec5d5b00a91b7",
+    "encoding": "gzip",
+    "stored_path": "raw/source-fixture-guard/source-build.log.gz"
+  },
+  "source-fixture-guard/source-configure.log": {
+    "original_bytes": 5438,
+    "original_sha256": "3c849fc5ec84411b45ff2eeb5a51c88a91b3380a54974edc013958fd7587be28",
+    "encoding": "gzip",
+    "stored_path": "raw/source-fixture-guard/source-configure.log.gz"
+  },
+  "source-fixture-guard/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "5b01aff5126c9d503193abc8cb16eda9140b65abddc5e0ea4ceb60ec65b95e24",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source-fixture-guard/source-identity.json"
+  },
+  "source-fixture-guard/tests.xml": {
+    "original_bytes": 2767,
+    "original_sha256": "3df7f8e1b49c4e3cec3b998e74bcd2d240ff2ce3b99f1df7263affb2891c2a92",
+    "encoding": "gzip",
+    "stored_path": "raw/source-fixture-guard/tests.xml.gz"
+  },
+  "static-fixture-guard/compile-link-commands.log": {
+    "original_bytes": 16109,
+    "original_sha256": "8658dfa359bb45239f9d293d147857f207803d95679355ed9560154f456ae493",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/compile-link-commands.log.gz"
+  },
+  "static-fixture-guard/consumer-build.log": {
+    "original_bytes": 1876,
+    "original_sha256": "fda68ae4a42467b19c26794b1465d97cbe05e6db8d6699812a9a91fab3219928",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/consumer-build.log.gz"
+  },
+  "static-fixture-guard/consumer-configure.log": {
+    "original_bytes": 2129,
+    "original_sha256": "f0f9814f909796dcfcbc6bb7f1577810cd6bc970f6ef474b981250aee29648ac",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/consumer-configure.log.gz"
+  },
+  "static-fixture-guard/consumer-inputs.json": {
+    "original_bytes": 5263,
+    "original_sha256": "414844925a3005c910fa692a2ea4743cd8e6fcf66dfff7a604067255e5666adc",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-fixture-guard/consumer-inputs.json"
+  },
+  "static-fixture-guard/consumer-test.log": {
+    "original_bytes": 302,
+    "original_sha256": "b91a4d369f8c15168278f3eb06f6487dd9e85ff04b05a3db1e459b2bde2c83ad",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/consumer-test.log.gz"
+  },
+  "static-fixture-guard/dll-origins.json": {
+    "original_bytes": 4,
+    "original_sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-fixture-guard/dll-origins.json"
+  },
+  "static-fixture-guard/install.log": {
+    "original_bytes": 42943,
+    "original_sha256": "d5df57955c5f6eed101433b2aa0623f28841c780ee73d0d5e713089b13c2e385",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/install.log.gz"
+  },
+  "static-fixture-guard/native-tests.log": {
+    "original_bytes": 6858,
+    "original_sha256": "b336296fd5e55733251c4861627df31cfee6bc06db984cf6eb6a37a40ef04462",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/native-tests.log.gz"
+  },
+  "static-fixture-guard/receipt.json": {
+    "original_bytes": 2032,
+    "original_sha256": "8eaa24c67f574d928d6075c085954eb256f53e53809e11a410c8556192c5fd77",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-fixture-guard/receipt.json"
+  },
+  "static-fixture-guard/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "5b01aff5126c9d503193abc8cb16eda9140b65abddc5e0ea4ceb60ec65b95e24",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-fixture-guard/source-identity.json"
+  },
+  "static-fixture-guard/tests.xml": {
+    "original_bytes": 2767,
+    "original_sha256": "aefe7cb8611965b763515096363e81deb127ed57da46165dbfa82f63ee2bd599",
+    "encoding": "gzip",
+    "stored_path": "raw/static-fixture-guard/tests.xml.gz"
+  }
+}

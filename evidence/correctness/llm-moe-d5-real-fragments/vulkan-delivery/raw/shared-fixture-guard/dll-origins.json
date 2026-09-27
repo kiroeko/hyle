@@ -1,0 +1,58 @@
+{
+  "hyle_compute.dll": {
+    "sha256": "83f6bcecb20c7a8b7567b65593812aa3306e7c9687adb9f6996e14a2cd3a33ba",
+    "sdk_path": "bin\\hyle_compute.dll"
+  },
+  "hyle_compute_ggml_runtime.dll": {
+    "sha256": "6493d84bbf0712625602164949d435a4f47e6cf5f4ca04e6f6e5a4cf88f3f5a7",
+    "sdk_path": "bin\\hyle_compute_ggml_runtime.dll"
+  },
+  "hyle_compute_ops.dll": {
+    "sha256": "d6490ee654d9f965c9c49830343cb66bbba933e46c2a32b519ad1577d9dcaab9",
+    "sdk_path": "bin\\hyle_compute_ops.dll"
+  },
+  "hyle_compute_provider_ggml_vulkan.dll": {
+    "sha256": "a504d7f361953fc175bb9f023060e9947263876b38faf3354ab9c3ae29754ee4",
+    "sdk_path": "bin\\hyle_compute_provider_ggml_vulkan.dll"
+  },
+  "hyle_compute_provider_iree_vulkan.dll": {
+    "sha256": "c41ec5616b232d84daac4827079d1887af11f6154cc17b5c407b8fbba5b4c37a",
+    "sdk_path": "bin\\hyle_compute_provider_iree_vulkan.dll"
+  },
+  "hyle_compute_route_vulkan.dll": {
+    "sha256": "6f53d74295e0b24d951a2540bdb559cd6c4eae065f4da697f1cfb7a4b518a1f1",
+    "sdk_path": "bin\\hyle_compute_route_vulkan.dll"
+  },
+  "hyle_container.dll": {
+    "sha256": "c3c489baa23a8f727156ad9683e70058e64d6c2678bb24a08eb8908930b176a4",
+    "sdk_path": "bin\\hyle_container.dll"
+  },
+  "hyle_error.dll": {
+    "sha256": "30619526ae90415300b49c774c33bfd18fb68f8f7115a30c4df308a21a8f1e61",
+    "sdk_path": "bin\\hyle_error.dll"
+  },
+  "hyle_graph.dll": {
+    "sha256": "fea984345edcddda86756f76450d490d8d79cfffe38aa56fa3ff69c57666238d",
+    "sdk_path": "bin\\hyle_graph.dll"
+  },
+  "hyle_graph_route_vulkan.dll": {
+    "sha256": "f036a56cf0ccb58e5ecf3d0bc7b30ebab1eca95789cc6576ba437648e8bd3da5",
+    "sdk_path": "bin\\hyle_graph_route_vulkan.dll"
+  },
+  "hyle_mem.dll": {
+    "sha256": "1217a5868ce2996c03011f0129485ca3a479f12e09a434704db91dbca135132e",
+    "sdk_path": "bin\\hyle_mem.dll"
+  },
+  "hyle_platform.dll": {
+    "sha256": "cdcc86942aa06900927aa3779c7a08b8a90230f3ea0bf9ade1f67c174942d469",
+    "sdk_path": "bin\\hyle_platform.dll"
+  },
+  "hyle_simd.dll": {
+    "sha256": "8f4a0358dba88fc21355241967c95bfe94a60c8f555a54790ba7a1406d991c53",
+    "sdk_path": "bin\\hyle_simd.dll"
+  },
+  "hyle_time.dll": {
+    "sha256": "dca0b1757d4acc31cf18888d69e5f6b84176c070fbe0744fb996cc5fce677f7b",
+    "sdk_path": "bin\\hyle_time.dll"
+  }
+}

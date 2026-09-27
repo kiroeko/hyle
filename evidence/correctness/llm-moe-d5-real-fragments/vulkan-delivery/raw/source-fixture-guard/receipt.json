@@ -1,0 +1,59 @@
+{
+  "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "source",
+  "steps": [
+    {
+      "label": "source-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5vk\\consumer",
+        "-B",
+        "C:\\hv\\d5vk\\source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DD5_SOURCE_ROOT=C:\\hv\\d5cd\\source-tree",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\d5vk\\static-staging",
+        "-DHYLE_WERROR=ON"
+      ],
+      "returncode": 0,
+      "seconds": 81.313
+    },
+    {
+      "label": "source-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5vk\\source-build",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 291.109
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5vk\\source-build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5vk\\receipts\\source-fixture-guard\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 20.938
+    }
+  ],
+  "verdict": "PASS",
+  "tests": 12,
+  "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+}

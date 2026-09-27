@@ -1,0 +1,91 @@
+{
+  "candidate": "f05be242b68842ab785d6fa4cff9f9decc6d57a8",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "producer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build\\m2-vulkan-indexed",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPONENTS=compute,graph,simd",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=ON",
+        "-DHYLE_WERROR=ON",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\d5vk\\shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 40.688
+    },
+    {
+      "label": "producer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build\\m2-vulkan-indexed",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 149.265
+    },
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build\\m2-vulkan-indexed",
+        "--prefix",
+        "C:\\hv\\d5vk\\shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.891
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5vk\\consumer",
+        "-B",
+        "C:\\hv\\d5vk\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5vk\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.016
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5vk\\shared-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 2,
+      "seconds": 5.922
+    }
+  ]
+}

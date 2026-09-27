@@ -17,6 +17,7 @@ ROUTES = {"cpu", "cuda", "apple", "vulkan"}
 ENTRIES = {"direct", "graph"}
 STATES = {
     "RUN_PASS",
+    "RUN_FAIL",
     "BACKEND_REJECTED",
     "UPSTREAM_MISSING",
     "VALIDATION_NOT_RUN",

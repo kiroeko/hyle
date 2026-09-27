@@ -1,0 +1,262 @@
+{
+  "archive-plan.json": {
+    "bytes": 219444,
+    "sha256": "1b3bfec331469544e5fbef06ed45ec0364d2fd4fb5c09e293d2c3576dd77dc07"
+  },
+  "archive.json": {
+    "bytes": 13016,
+    "sha256": "c6212ad688708aea3b39833bd7b1d9079a2756f71b64252c1675888e4ca84c1c"
+  },
+  "checks.json": {
+    "bytes": 1046,
+    "sha256": "dfa2ccd8f752502dc64a06744d3bf74ab8583aa8f02ffaeaaf8109501a632616"
+  },
+  "cleanup.json": {
+    "bytes": 151,
+    "sha256": "dfdb7bf03012b08eecc032950944f612acf3da7b88f07ab05531f67a4b8f2191"
+  },
+  "consumer/CMakeLists.txt": {
+    "bytes": 2573,
+    "sha256": "cd12de083a3162b62a2a221193b634f4c2d1b2eceacb07ba1c7e8c7a6bce3e96"
+  },
+  "final-consumer-plan.json": {
+    "bytes": 206848,
+    "sha256": "7baa8f67e8445efab2c45a979c9545fbda31591f108ab5f73fbdc717049072b4"
+  },
+  "loc.json": {
+    "bytes": 3977,
+    "sha256": "cf8f2b8e5c395746bde97dd2d2b7b1ebadc7c207db1363e607582f21646446ab"
+  },
+  "raw/environment.json": {
+    "bytes": 132,
+    "sha256": "9a6548a54da2ea0cfa8b9b37c1bf3101200e6e1f83aed1872497b4779e2b7917"
+  },
+  "raw/owner/build.log.gz": {
+    "bytes": 701,
+    "sha256": "f847bc74a9d584cab09dd71742484758cef9fcb1e9c66f5fe04be40b08e5cd74"
+  },
+  "raw/owner/configure.log.gz": {
+    "bytes": 991,
+    "sha256": "b2b737955c1557d01aa47ae1748daf1371210432956a58f6d29a72559128038c"
+  },
+  "raw/owner/inputs.log.gz": {
+    "bytes": 60,
+    "sha256": "364318f29e192f533ef6afaa5ff0679e05bfb9689944ea47c96a8dcd8fe83395"
+  },
+  "raw/owner/native-tests.log.gz": {
+    "bytes": 1053,
+    "sha256": "8f3aa727e207fdd9c269700b2242dd4b94130fe83f027a43c3fd098dd839b7ba"
+  },
+  "raw/owner/receipt.json": {
+    "bytes": 1817,
+    "sha256": "67a2b438797e5bd073dce964af79d6934d47cb3a4f1308bf43c50d1e9789f7d9"
+  },
+  "raw/owner/tests.log.gz": {
+    "bytes": 257,
+    "sha256": "69742972fa91208b549b6e6b79ca2fc352528fe25fc99af4efc95d2ca5363692"
+  },
+  "raw/owner/tests.xml.gz": {
+    "bytes": 907,
+    "sha256": "18c9bb09ac70c173aebd953313ff82d5ae19e1b0208af16effb34acd91e0a60f"
+  },
+  "raw/precision-current-driver/direct.log.gz": {
+    "bytes": 69875,
+    "sha256": "91d00fb798c6c80697ec6841fa999e9362d9205d4012c8ebb86b6e924cae0d63"
+  },
+  "raw/precision-current-driver/direct.xml.gz": {
+    "bytes": 109658,
+    "sha256": "5749570b1b89dc5abbb08ac53495d7339e18c1486c5b40185f7a19da6765987a"
+  },
+  "raw/precision-current-driver/graph.log.gz": {
+    "bytes": 69998,
+    "sha256": "b618001386abdb6dee92428aeaa0a7d8e3d8bd70ac11306c94c70d9a34a558ca"
+  },
+  "raw/precision-current-driver/graph.xml.gz": {
+    "bytes": 108197,
+    "sha256": "04cbe05b329dda2c924365403031eb19c35d916257620613eb0b691bcae1d0ba"
+  },
+  "raw/precision-current-driver/receipt.json": {
+    "bytes": 1200,
+    "sha256": "37b37224234cf78befd5e5ac0240f000a98ad2ad5e79e27f75c7ecf75c197661"
+  },
+  "raw/shared/consumer-build.log.gz": {
+    "bytes": 942,
+    "sha256": "258948041982938fd496114574d0001369abb7cbd7fde64ef92df22ed8927bce"
+  },
+  "raw/shared/consumer-configure.log.gz": {
+    "bytes": 894,
+    "sha256": "46519cfdad8944d9611c8513864e26282708ba34063611ddaf0d7141da24af6a"
+  },
+  "raw/shared/consumer-inputs.json": {
+    "bytes": 5218,
+    "sha256": "cd8032e82e4a839f8f16f5dea5b987d4a0cfb3ef0076fd68e3d7deeeb280a207"
+  },
+  "raw/shared/install.log.gz": {
+    "bytes": 3196,
+    "sha256": "9de6cfbfe3a3d3e263222c434800a01d391dc45519debc707bc8cf17c516323c"
+  },
+  "raw/shared/producer-build.log.gz": {
+    "bytes": 792,
+    "sha256": "6d52d617beeab09884e63e37a6f9a49445bf85cde232bbbdb6262e738f965f13"
+  },
+  "raw/shared/producer-configure.log.gz": {
+    "bytes": 1192,
+    "sha256": "95b3bef1eb3e4792b766d2e1cc2cc437c5467e2bc0c092c9844d10f3f2380db2"
+  },
+  "raw/shared/producer-original-cache.txt.gz": {
+    "bytes": 10421,
+    "sha256": "86adb13dab03ff6d050a8980d5bbe11d431b09c8d6aa6a22f0be17e0b03a6c93"
+  },
+  "raw/shared/receipt.json": {
+    "bytes": 2644,
+    "sha256": "607d030981904ccad71855db4e3c126529e0f0c230db8230608478390514a9dc"
+  },
+  "raw/shared/source-identity.json": {
+    "bytes": 78640,
+    "sha256": "861fd3cfb4a6b53e234cf1e3d46344ce7b255d6fb1e6acdb01a6d84a0074f46e"
+  },
+  "raw/shared-fixture-guard/compile-link-commands.log.gz": {
+    "bytes": 1506,
+    "sha256": "12a7dc13a53bf80016458d1452eafb1ae9332c52685e23676db85b2b61ff6709"
+  },
+  "raw/shared-fixture-guard/consumer-build.log.gz": {
+    "bytes": 341,
+    "sha256": "d7d59c2d992a53e872cad0b3d7860450921ae558c291b53ac245a710e0d221c4"
+  },
+  "raw/shared-fixture-guard/consumer-configure.log.gz": {
+    "bytes": 292,
+    "sha256": "72d3207bc1cfdc8ac6dd7298b0b61b73746077ab034e2fc2610ae600a9497b99"
+  },
+  "raw/shared-fixture-guard/consumer-inputs.json": {
+    "bytes": 5218,
+    "sha256": "b1e4e5b480b6c1b2c2239cd46c32964ca01a31375b196a71ac872283cafeed47"
+  },
+  "raw/shared-fixture-guard/consumer-test.log.gz": {
+    "bytes": 186,
+    "sha256": "c6b3d29cef331b99eeaa1cbf3c1748ab011471a600c046ad5c81b0a747f93eef"
+  },
+  "raw/shared-fixture-guard/dll-origins.json": {
+    "bytes": 2261,
+    "sha256": "d1e9e31f16591a7d2551c4ea1dff9df45613ba61cbd151ce4b9a3fff042355f4"
+  },
+  "raw/shared-fixture-guard/native-tests.log.gz": {
+    "bytes": 1236,
+    "sha256": "4f0918266d63c7736887611e894b59d5d4d0c1e481eb6b04d1e06442b5fa878c"
+  },
+  "raw/shared-fixture-guard/receipt.json": {
+    "bytes": 1807,
+    "sha256": "e51b61fe8302f3240f0b9452bceb24c602fbfea6c9992a9ab5a4b24dea3ba53a"
+  },
+  "raw/shared-fixture-guard/source-identity.json": {
+    "bytes": 78640,
+    "sha256": "2dc550e77b7372244302f2e5a497202c6ab92282759a95f49ef9ddb3ef9fba55"
+  },
+  "raw/shared-fixture-guard/tests.xml.gz": {
+    "bytes": 759,
+    "sha256": "14b30061adbd0b611abddbd3a919ff3bdbd37f5e203148c48ce0e217ea296673"
+  },
+  "raw/source-fixture-guard/compile-link-commands.log.gz": {
+    "bytes": 27070,
+    "sha256": "cd666b679fa24e307bae657307c9ae2ee9cc78e1b6e2d45cc690df89c79f6700"
+  },
+  "raw/source-fixture-guard/consumer-inputs.json": {
+    "bytes": 5218,
+    "sha256": "b1e4e5b480b6c1b2c2239cd46c32964ca01a31375b196a71ac872283cafeed47"
+  },
+  "raw/source-fixture-guard/consumer-test.log.gz": {
+    "bytes": 181,
+    "sha256": "998addefdff6d856d4e120b64107be548495b50f7520ae854a4e79b862b13a3f"
+  },
+  "raw/source-fixture-guard/native-tests.log.gz": {
+    "bytes": 1212,
+    "sha256": "0b96b7ee59f6f984c27e8cb8d72896a4173925805cbddf94141417d18cf29523"
+  },
+  "raw/source-fixture-guard/receipt.json": {
+    "bytes": 1704,
+    "sha256": "deeca945a04f68515f9b34b8bbf8c29895ad7d8ab7b84e86ed2254d30919cd89"
+  },
+  "raw/source-fixture-guard/source-build.log.gz": {
+    "bytes": 8941,
+    "sha256": "6daed678f0b6b106314f64319e73c5248642d1f676b86619a729ec27c78cc21d"
+  },
+  "raw/source-fixture-guard/source-configure.log.gz": {
+    "bytes": 1809,
+    "sha256": "2fcbec787553e464f9b914f7ebe030cd4e9e4196c09176c768d2130e6fc8e7a5"
+  },
+  "raw/source-fixture-guard/source-identity.json": {
+    "bytes": 78640,
+    "sha256": "2dc550e77b7372244302f2e5a497202c6ab92282759a95f49ef9ddb3ef9fba55"
+  },
+  "raw/source-fixture-guard/tests.xml.gz": {
+    "bytes": 750,
+    "sha256": "c034198d0bac26ca943635d313f45f3a8d73a3dd1f6884b6823f6cd90b82d48b"
+  },
+  "raw/static-fixture-guard/compile-link-commands.log.gz": {
+    "bytes": 1620,
+    "sha256": "f78d5b3bbea3da90b72680ef6e45343407ee8450b2fc0706a3a1934eaea29bd3"
+  },
+  "raw/static-fixture-guard/consumer-build.log.gz": {
+    "bytes": 482,
+    "sha256": "e7b33a132aa111d702c1ffa94cd025134f5886fd915db8e5b773d6dddb881d1a"
+  },
+  "raw/static-fixture-guard/consumer-configure.log.gz": {
+    "bytes": 891,
+    "sha256": "9c98405fed43bc44e608775ebf08beb34392247704309b27186af0ac21e576fb"
+  },
+  "raw/static-fixture-guard/consumer-inputs.json": {
+    "bytes": 5218,
+    "sha256": "b1e4e5b480b6c1b2c2239cd46c32964ca01a31375b196a71ac872283cafeed47"
+  },
+  "raw/static-fixture-guard/consumer-test.log.gz": {
+    "bytes": 186,
+    "sha256": "72f4002ab0497f3f86b5ff6bdd5decc1a40b61d57b0e6456663a57898512b201"
+  },
+  "raw/static-fixture-guard/dll-origins.json": {
+    "bytes": 3,
+    "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  },
+  "raw/static-fixture-guard/install.log.gz": {
+    "bytes": 3177,
+    "sha256": "9871efa14016e27f4d0d7b5e8e9a1c0c7a986c92c231ae1cf840bdf0581a40dd"
+  },
+  "raw/static-fixture-guard/native-tests.log.gz": {
+    "bytes": 1224,
+    "sha256": "f69bc8e352e3cc0fb8a68c294ba46566980b8dfd6c8604e6d9cd09343a3439cf"
+  },
+  "raw/static-fixture-guard/receipt.json": {
+    "bytes": 1961,
+    "sha256": "20cbb088c105e8dd76855423fa7cd2899764ddef3926566c06a5af8517e90d57"
+  },
+  "raw/static-fixture-guard/source-identity.json": {
+    "bytes": 78640,
+    "sha256": "2dc550e77b7372244302f2e5a497202c6ab92282759a95f49ef9ddb3ef9fba55"
+  },
+  "raw/static-fixture-guard/tests.xml.gz": {
+    "bytes": 754,
+    "sha256": "2abd6cdee139699a8c0626359ca5f9bc3211b295142ddc929e45d54f33d3b792"
+  },
+  "README.md": {
+    "bytes": 4019,
+    "sha256": "95139a968406d687ee5d20737fa71ba9973c611da4953d47dd2a141d714d2b44"
+  },
+  "resume-fixture.py": {
+    "bytes": 2060,
+    "sha256": "1af9f39b4ac3f61a4238268103aeeaf7470d92287b20fc9bfe8ae297c8526291"
+  },
+  "run-batch.py": {
+    "bytes": 4148,
+    "sha256": "ac5c55fde3c1a80097c239fea6931c0e6478eacf308defb40668ed6fcf798ea4"
+  },
+  "run.py": {
+    "bytes": 11195,
+    "sha256": "2d12d26442ca3d4c5752e6d8483948ab8e126997ede740823d0939d5bbeb1b00"
+  },
+  "storage.json": {
+    "bytes": 528,
+    "sha256": "293da0f9fea03e945f0d3d6dd47d32ce439d8f71db1bde89fa8420a9231bab5f"
+  },
+  "summary.json": {
+    "bytes": 22158,
+    "sha256": "d8f2ab7710823d89c03409cac09fd940ea5822902733ddfc4049c9e1fa7ee2ff"
+  }
+}

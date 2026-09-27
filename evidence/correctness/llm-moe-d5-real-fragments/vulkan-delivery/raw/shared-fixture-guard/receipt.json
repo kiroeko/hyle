@@ -1,0 +1,61 @@
+{
+  "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5vk\\consumer",
+        "-B",
+        "C:\\hv\\d5vk\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5vk\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.219
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5vk\\shared-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 8.984
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5vk\\shared-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5vk\\receipts\\shared-fixture-guard\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 24.812
+    }
+  ],
+  "reused_sdk_candidate": "f05be242b68842ab785d6fa4cff9f9decc6d57a8",
+  "reused_sdk_receipt": "receipts/shared/receipt.json",
+  "verdict": "PASS",
+  "tests": 12,
+  "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+}

@@ -1,0 +1,44 @@
+{
+  "consumer_candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+  "owner_candidate": "f05be242b68842ab785d6fa4cff9f9decc6d57a8",
+  "registry_previous_ref": "758c157e",
+  "results": {
+    "docs": {
+      "verdict": "PASS",
+      "markdown": 668,
+      "relative_links": 2965
+    },
+    "closure": {
+      "verdict": "PASS",
+      "components": 57,
+      "schema": 4
+    },
+    "inputs": {
+      "verdict": "PASS",
+      "tests": 13
+    },
+    "ledger": {
+      "verdict": "PASS",
+      "profiles": 22,
+      "cells": 176
+    },
+    "affected_owner_tests": {
+      "verdict": "PASS",
+      "gtests": 4,
+      "scope": "New cold boundary and representative FFN only; not full owner PASS"
+    },
+    "deliveries": {
+      "verdict": "PASS",
+      "gtests": 36
+    },
+    "deepseek_fidelity_precision": {
+      "verdict": "RUN_FAIL",
+      "gtests": 4
+    },
+    "P1": {
+      "verdict": "NOT_RUN"
+    }
+  },
+  "cleanup_bytes": 223246111,
+  "retained": "Source producer and relocated static/shared SDKs for A6; regenerated consumers removed."
+}

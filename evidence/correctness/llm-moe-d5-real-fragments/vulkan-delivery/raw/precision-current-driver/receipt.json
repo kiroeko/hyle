@@ -1,0 +1,33 @@
+{
+  "candidate": "758c157e90c81c75ddedb5144c6ea6a71a46d19e",
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 4070, 617.14",
+    "vulkan_sdk": "C:/public/tools/hyle-vulkan/1.4.357.0",
+    "validation_layer": true
+  },
+  "filter": "*D5DeepSeekFullAttentionChain:*D5DeepSeekStatefulCompression",
+  "steps": [
+    {
+      "entry": "direct",
+      "argv": [
+        "C:\\hv\\d5vk\\shared-consumer\\d5_vulkan_direct.exe",
+        "--gtest_filter=*D5DeepSeekFullAttentionChain:*D5DeepSeekStatefulCompression",
+        "--gtest_output=xml:C:\\hv\\d5vk\\receipts\\precision-current-driver\\direct.xml"
+      ],
+      "returncode": 1,
+      "seconds": 17.204,
+      "executable_sha256": "bcca647ff4c86c8d4fd886e0aa969755126bb4cb4289d77bb149b936854c45e8"
+    },
+    {
+      "entry": "graph",
+      "argv": [
+        "C:\\hv\\d5vk\\shared-consumer\\d5_vulkan_graph.exe",
+        "--gtest_filter=*D5DeepSeekFullAttentionChain:*D5DeepSeekStatefulCompression",
+        "--gtest_output=xml:C:\\hv\\d5vk\\receipts\\precision-current-driver\\graph.xml"
+      ],
+      "returncode": 1,
+      "seconds": 11.515,
+      "executable_sha256": "edf4eecabf2169034b0824064a64dda9429bca51fd651312e48468b6521fe6b0"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source-build": {
+    "bytes": 702626328,
+    "files": 12477,
+    "action": "retain_for_A6"
+  },
+  "shared-consumer": {
+    "bytes": 90897609,
+    "files": 73,
+    "action": "remove_regenerable_consumer"
+  },
+  "static-consumer": {
+    "bytes": 132348502,
+    "files": 59,
+    "action": "remove_regenerable_consumer"
+  },
+  "shared-relocated": {
+    "bytes": 80104096,
+    "files": 474,
+    "action": "retain_for_A6"
+  },
+  "static-relocated": {
+    "bytes": 143490328,
+    "files": 465,
+    "action": "retain_for_A6"
+  }
+}
