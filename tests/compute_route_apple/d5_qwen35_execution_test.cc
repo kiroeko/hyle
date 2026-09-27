@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <fstream>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -1373,12 +1374,36 @@ TEST(AppleQwen38_24T, D5OfficialBfloatRouterPreservesF32NearTieScores) {
   }
 }
 
+std::string d5_mla_trace_prefix;
+void d5_dump_values(const std::string &name, std::span<const float> values) {
+  std::ofstream file(d5_mla_trace_prefix + name, std::ios::binary);
+  file.write(reinterpret_cast<const char *>(values.data()), values.size_bytes());
+}
+
 void execute_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture,
     std::vector<mx::array> *capture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
   SCOPED_TRACE("region=" + std::to_string(fixture.region));
   auto context = a::Context::create().value();
+  const bool trace_mla = !d5_mla_trace_prefix.empty() && fixture.region == 0x07030801;
+  if (trace_mla) {
+    std::ofstream meta(d5_mla_trace_prefix + "nodes.txt");
+    for (const auto &node : fixture.nodes) {
+      for (auto id : node.outputs) {
+        meta << id.ordinal() << " " << c::operation_name(node.operation.kind()) << " inputs";
+        for (auto input : node.inputs) meta << " " << input.ordinal();
+        meta << " shape";
+        for (auto dim : fixture.description(id).dimensions()) meta << " " << dim;
+        meta << "\n";
+      }
+    }
+    for (std::size_t r = 0; r < fixture.replays.size(); ++r)
+      for (std::size_t p = 0; p < fixture.outputs.size(); ++p)
+        d5_dump_values("r" + std::to_string(r) + "p" + std::to_string(p) + "-expected.f32",
+                       fixture.replays[r].outputs[p]);
+  }
+
   std::vector<mx::array> prepared;
   if (fixture.preparation) {
     execute_q24_semantic_fragment(*fixture.preparation, &prepared);
@@ -1472,6 +1497,16 @@ void execute_q24_semantic_fragment(
       ASSERT_EQ(outputs.size(), step.outputs.size());
       for (std::size_t index = 0; index < outputs.size(); ++index)
         tensors[step.outputs[index].ordinal()] = outputs[index];
+      if (trace_mla) {
+        for (auto id : step.outputs) {
+          const auto type = fixture.description(id).data_type();
+          if (type != c::DataType::kFloat32 && type != c::DataType::kBFloat16) continue;
+          const auto values = float_values(*tensors[id.ordinal()]);
+          d5_dump_values("r" + std::to_string(replay_index - 1) + "v" +
+                         std::to_string(id.ordinal()) + ".f32", values);
+        }
+      }
+
     }
     if (capture) {
       capture->clear();
@@ -1481,6 +1516,9 @@ void execute_q24_semantic_fragment(
       SCOPED_TRACE("fragment output=" + std::to_string(output));
       const auto actual =
           float_values(*tensors[fixture.outputs[output].ordinal()]);
+      if (trace_mla)
+        d5_dump_values("r" + std::to_string(replay_index - 1) + "p" +
+                       std::to_string(output) + "-actual.f32", actual);
       feedback.observe(output, actual);
       SCOPED_TRACE(sem::error_summary(actual, expected.outputs[output]));
       sem::expect_output(fixture, actual, expected.outputs[output], {},
@@ -1719,6 +1757,16 @@ TEST(AppleMoeFragments, D5Fp8WeightPreparation) {
       SCOPED_TRACE(shape[0]);
       run_q24_semantic_fragment(d5_fp8_weight_preparation::decode_weights(shape[0], shape[1], bf16));
     }
+}
+
+TEST(AppleMoeFragments, D5GlmMlaFirstDivergence) {
+  for (auto model : {0, 3}) {
+    d5_mla_trace_prefix = "/Users/kiro/hyle-scratch/d5-f45-mla-capture/" +
+        std::string(model == 0 ? "official-" : "flash-");
+    run_q24_semantic_fragment(d5_glm_remaining_fragments::mla(
+        d5_glm_remaining_fragments::kCases[model]));
+  }
+  d5_mla_trace_prefix.clear();
 }
 
 TEST(AppleMoeFragments, D5GlmFp8AccumulationBoundaries) {
