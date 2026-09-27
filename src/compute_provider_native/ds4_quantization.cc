@@ -81,8 +81,8 @@ Status prepare_ds4_quantization(Operation operation,
                                 std::span<const TensorDesc> inputs,
                                 std::span<const TensorDesc> outputs,
                                 NativePlan &plan) noexcept {
-  const auto *roundtrip = operation.custom_as<model_ops::BlockQuantizationRoundtrip>();
-  if (roundtrip == nullptr || inputs.size() != 1 || outputs.size() != 1)
+  const auto roundtrip = operation.custom_as<model_ops::BlockQuantizationRoundtrip>();
+  if (!roundtrip || inputs.size() != 1 || outputs.size() != 1)
     return Status::Unimplemented("CPU ds4 supports exact quantization roundtrip only");
   if (roundtrip->format != Format::kFloat4E2M1Block32 &&
       roundtrip->format != Format::kFloat8E4M3Block64)
