@@ -40,5 +40,12 @@ P0审成本；没有自研算法比较或逐算子P1。D5完整片段P1义务保
 ## AUDITED 决定
 
 来源归档通过本地代理取得并与Windows固定Git blob核对，六个数学函数原样借用；
-许可为MIT。只有既有CPU provider取得私有依赖，不改变中央模块依赖边、公开头或路线对象。
+许可为MIT。只有既有CPU provider取得私有依赖，不改变公开头或路线对象。
 N1–N4固定；同一操作家族的group128仍拒绝，C10和Apple失败候选不进入本批产品。
+
+### 首次配置的接缝纠正
+
+候选 `1486d10c` 首次 configure 检出 `model_ops.h` 的 owner 是 `compute_ops`；
+native 过去仅间接使用它，新增直接 include 必须如其他 Provider 一样声明直接私有依赖。
+本卡允许的一次 adapter/build 纠正限定为 native 的 `PRIVATE_DEPS compute_ops`；
+这是现有 schema 的显式依赖，不增加运行路线、模块或自研数学。配置失败不计任何测试 PASS。
