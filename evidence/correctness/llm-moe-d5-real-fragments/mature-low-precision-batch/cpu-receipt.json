@@ -1,0 +1,33 @@
+{
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-mature-native-q1\\build.cmd"
+      ],
+      "exit_code": 0,
+      "seconds": 1.8280000000086147
+    },
+    {
+      "name": "run",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-mature-native-q1\\cpu.exe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3279999999795109
+    }
+  ],
+  "numeric_verdict": "see run.log per-candidate counters",
+  "files": {
+    "all_finite_bf16.bin": "bf7148a7bfda758982a6218f7c74077a198605183d5a21d61fe14cdea1b07378",
+    "cpu.cc": "3469f0584888f7d49b34cac864713db3dc9fba7abae3884605e5055b02378b6b",
+    "cpu.exe": "878b2ddec4fe74a5e707f724875f751ac6e8e30a48237860a0af3ac3038c1d74",
+    "ds4_cpu.inc": "f7bca1ff61580e326e461da511a99517c83042e7a8ad61b8a5e66c3003665c3b",
+    "oracle.h": "f14101b7eb9dd16e5b0b474e2e28d10ec12911d08599110ad72f5190f8595e8e",
+    "ordinary.bin": "9c70d50f6cb155f645b10fe63b1c839c9ed1a9b42d7bb3aaa794d26a9bdec0d3",
+    "tiny_and_scale.bin": "3fbf63f4e4c21e134152f1c7f896ca93e269accd0349159b3deaf775dc4dbe4d"
+  }
+}

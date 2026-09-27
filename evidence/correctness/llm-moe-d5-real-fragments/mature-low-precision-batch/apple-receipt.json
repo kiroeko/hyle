@@ -1,0 +1,40 @@
+{
+  "steps": [
+    {
+      "name": "sync",
+      "argv": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=10",
+        "kiro@172.22.10.198",
+        "mkdir -p hyle-scratch/d5-mature-native-q1 && tar -xzf - -C hyle-scratch/d5-mature-native-q1"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2960000000020955
+    },
+    {
+      "name": "run",
+      "argv": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=10",
+        "kiro@172.22.10.198",
+        "cd hyle-scratch/d5-mature-native-q1 && /usr/bin/clang++ -std=c++20 -O2 -ffp-contract=off -fobjc-arc -framework Foundation -framework Metal apple.mm -o apple && ./apple"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6410000000032596
+    }
+  ],
+  "inputs": {
+    "oracle.h": "f14101b7eb9dd16e5b0b474e2e28d10ec12911d08599110ad72f5190f8595e8e",
+    "apple.mm": "5ba137c41dbf8e8e8007cecd28ac90e1db8d149ec789f60706d11933b4d48329",
+    "ds4.metal": "f6ed54a9711bd9a882c4703bfce1c38a65f01f76a08f65af7987528d2e388280",
+    "all_finite_bf16.bin": "bf7148a7bfda758982a6218f7c74077a198605183d5a21d61fe14cdea1b07378",
+    "ordinary.bin": "9c70d50f6cb155f645b10fe63b1c839c9ed1a9b42d7bb3aaa794d26a9bdec0d3",
+    "tiny_and_scale.bin": "3fbf63f4e4c21e134152f1c7f896ca93e269accd0349159b3deaf775dc4dbe4d"
+  }
+}

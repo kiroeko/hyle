@@ -1,0 +1,30 @@
+[
+  {
+    "path": "ds4.c",
+    "revision": "9139e2ae58a41503968a500f36f75895c1ba63fc",
+    "sha256": "7880f2a7a230e506b71b100a9d74a63783fee654244841a6967b2415754fa88f",
+    "extracted_sha256": "a44deed53d0c8ae334f00d62a7107407714df106544815337c9395a29e120083",
+    "from_line": 3690,
+    "to_line": 3827
+  },
+  {
+    "path": "metal/dsv4_kv.metal",
+    "revision": "9139e2ae58a41503968a500f36f75895c1ba63fc",
+    "sha256": "65e6e12ac3266fdf72b1e9c69bfbd07ea7324e930a8117b63b651b5016b1b5f6",
+    "extracted_sha256": "95c16baea98877dc4291782384022fbea98ffd5a4fe9183129d7d952668b672e",
+    "from_line": 1,
+    "to_line": 210
+  },
+  {
+    "path": "torch/include/c10/util/Float8_e4m3fn.h",
+    "sha256": "237fdc4ddd0e9c222c13aceac9f6ba4e3b5f7438fe939fc8fe0e767dff4fd4cf"
+  },
+  {
+    "path": "torch/include/c10/util/Float8_e4m3fn-inl.h",
+    "sha256": "d4db6500aaec8768707f7c0983e9c2cf6d8c771abf64353c060224ed57873434"
+  },
+  {
+    "path": "torch/version.py",
+    "sha256": "41c0afd1b14d4123905a4f64f14823d751896e2f239c1406e639638ec2314b60"
+  }
+]
