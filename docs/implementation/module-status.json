@@ -284,7 +284,7 @@
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：固定22画像×四路线×两入口为154通过/20后端拒绝/2数值失败，无未验格；四路线源码/静态/动态A5均完成。Vulkan Q4逐画像资格已核对，Q8长位置与官方低精度缺口保留；四路线A6与D6尚未完成，不签整体完成。"
+      "summary": "D5 AUDITED：22画像×四路线×两入口为154运行通过/20准备拒绝/2数值失败，无未验格。四路线A5和CPU/Apple代表片段P1完成；Vulkan A/A通过、n15数据完整，扩样按用户桌面限制停止，CUDA恢复未运行，GPU A6仍未签。D6文档对账开始，残余能力与终审未关闭。"
     },
     {
       "module": "container_concurrent",
@@ -371,7 +371,7 @@
       "module": "compute_provider_ggml",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30 AUDITED：已验F29 Kimi MLA保留；仅追加GLM F32 QK576/V512的64/1 heads冷准入及共享正负测试，原shape/资源检查与原版数学不变。D5剩余范围、三交付/P1待验。"
+      "summary": "D5-F30 AUDITED：Kimi MLA、GLM F32 QK576/V512的64/1 heads与原shape/资源检查已验，数学不变；当前固定画像与四路线A5已完成裁决，CPU代表片段P1通过。官方CPU低精度拒绝域和D6终审保留。"
     },
     {
       "module": "graph_provider_onednn",
@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger152/176，CUDA正确性44/44。其它路线24格及A5/A6/D6未完成。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44；总ledger154通过/20拒绝/2数值失败。四路线A5完成，CPU/Apple代表片段P1通过；GPU A6和残余能力裁决、D6尚未关闭。"
     },
     {
       "module": "compute_backend_cpu",
@@ -476,13 +476,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger152/176，CUDA正确性44/44。其它路线24格及A5/A6/D6未完成。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44且源码/static/shared A5完成；CUDA A/A原失败保留，产品P1尚未运行，不签D6。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5 AUDITED：F41冷准备与F43/F44官方完整消费均已验，CUDA22画像Direct/Graph正确性44/44。完整ledger152/176；三交付/P1等聚合门仍待A5/A6，不提前CLOSED。"
+      "summary": "D5 AUDITED：F41冷准备和F43/F44官方完整消费已验，22画像Direct/Graph正确性44/44，三交付A5完成。CUDA A/A原失败保留、恢复未运行，A6与D6仍未完成。"
     },
     {
       "module": "graph_route_cuda",
@@ -499,13 +499,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：Apple40格运行通过；e9afd4a3完成真实片段源码/静态/动态三交付。DeepSeek官方FP4的4格确认当前路线拒绝，不计运行支持；A6和完整支持缺口未完成，无新数学。"
+      "summary": "D5-F45 AUDITED：Apple40格运行通过、DeepSeek官方FP4四格准备拒绝。三交付与BF16 FFN/GGUF MoE代表片段P1已通过；未外推官方FP4或其它形状性能，残余能力与D6未关闭，无新数学。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：Apple40格运行通过；e9afd4a3完成真实片段源码/静态/动态三交付。DeepSeek官方FP4的4格确认当前路线拒绝，不计运行支持；A6和完整支持缺口未完成，无新数学。"
+      "summary": "D5-F45 AUDITED：Apple40格运行通过、DeepSeek官方FP4四格准备拒绝。三交付与BF16 FFN/GGUF MoE代表片段P1已通过；未外推官方FP4或其它形状性能，残余能力与D6未关闭，无新数学。"
     },
     {
       "module": "compute_route_vulkan",
@@ -523,26 +523,26 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30 AUDITED：已验F29 Kimi MLA保留；仅追加GLM F32 QK576/V512的64/1 heads冷准入及共享正负测试，原shape/资源检查与原版数学不变。D5剩余范围、三交付/P1待验。"
+      "summary": "D5-F30 AUDITED：Kimi MLA、GLM64-head及原资源边界已验，Vulkan A5完成；当前34通过/8拒绝/2数值失败。A/A通过、n15数据完整但扩样中止，A6和D6未关闭。"
     },
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-explicit-rope-phase.md",
-      "summary": "F35 AUDITED: shared private ggml construction for explicit-frequency RoPE without reciprocal phase loss; MB1-MB3 Metal rollback candidate evidence and pending D5-A5 deliveries are carried forward unchanged."
+      "summary": "F35 AUDITED：显式频率RoPE共享构造与原精度边界已验，Metal回滚修正和四路线A5完成；产品数学不变。CPU/Apple代表片段P1通过，GPU剩余A6及D6不由此代签。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30/F31 AUDITED：64-head压缩MLA与原生I32 Concat已通过GLM Direct/Graph及定向边界；I32首段复制使用原CPY，保留精确整数、单输入ownership和拒绝域。未新增kernel，D5完整画像/三交付/P1待验。"
+      "summary": "D5-F30/F31 AUDITED：64-head压缩MLA、原生I32 Concat及拒绝/所有权边界已验，无新kernel。CUDA22画像两入口44/44、三交付A5完成；CUDA A6未签，D6未关闭。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "CANDIDATE",
       "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实 ggml/GGUF storage 的 CPU/CUDA Direct/Graph 接缝与三交付已通过，等待 D5 真实 profile 片段验收。"
+      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实ggml/GGUF storage接缝、当前CUDA22画像两入口与三交付A5已有收据；D5-A6仍未完成，D6不提前CLOSED。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -559,14 +559,14 @@
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "summary": "D5-F24/MB AUDITED：原生Clamp、recurrent gate/GDN及原生buffer分配失败回滚已验，Apple A5和两个代表完整片段P1通过；官方DeepSeek FP4拒绝域保留，D6未关闭。"
     },
     {
       "module": "compute_provider_iree_vulkan",
       "state": "CANDIDATE",
       "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 2757ecc：IREE Vulkan 的 checked Scan、BF16 conversion 与具名 FP8 MatMul 限定域回归通过；仍不将 legalization 或相近格式登记为 GGUF/MXFP4 覆盖。"
+      "summary": "M3-D3 CANDIDATE 2757ecc：checked Scan、BF16 conversion和具名FP8 MatMul限定域已有收据，Vulkan A5完成；不代签官方grouped FP8/FP4或Q8数值失败域。D5-A6及D6未关闭。"
     }
   ]
 }

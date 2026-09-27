@@ -90,6 +90,9 @@ CUDA13.3/CCCL3.3.4/SM89的普通Scan/TopK/Gather由原版CCCL承载，Graph为�
 不推断跨 stream 依赖。`graph::compile(graph, context)` 的通用简写使用 host storage，CUDA
 普通代码使用上面的 `graph::cuda::compile`，显式提供设备资源。
 
+当前22个固定画像的两入口覆盖、拒绝/数值限制与适用三交付/P1结果见
+[模型片段覆盖](model-fragment-coverage.md)；旧R4/R5/R6验收不代表本轮新增模型域全部完成。
+
 ## 普通 CPU 入口
 
 ```cpp
@@ -100,7 +103,7 @@ if (!context) return context.error();
 auto compiled = hyle::graph::compile(logical_graph, *context, options);
 ```
 
-该入口自动组装 CPU 的 region 与 leaf 实现。M2 当前新增原版 ggml 的合法多节点片段，能保留
+该入口自动组装 CPU 的 region 与 leaf 实现。已接入原版 ggml 的合法多节点片段，能保留
 已发布中间值和多个输出；对应有限域见[ggml CPU 接入检查点](compute.md#ggml-cpu-接入检查点)。
 L2 可以直接用 F32 输入（低精度先 Cast）、平方、末轴 Sum、加 epsilon、Sqrt、除法组成同一
 原版 region；epsilon 位于根号内，低精度输出最后显式 Cast。普通入口支持这份组合的重复执行
@@ -111,7 +114,8 @@ L2 可以直接用 F32 输入（低精度先 Cast）、平方、末轴 Sum、加
 其实现；oneDNN 不可用时继续匹配 ggml/Native。超出已有能力明确返回错误。
 `compute::cpu::DefaultContextOptions` 可传入借用的 metadata allocator、同步 executor 和独立
 `native_threads` 预算；默认1使用调用线程，显式大于1才为每个 ggml invocation 准备持久 workers。
-M2 新增映射仍在验收中，不代表全部模型需求或跨平台性能已经完成。
+固定画像的当前运行结果及Windows三交付、代表片段性能资格见[覆盖表](model-fragment-coverage.md)，
+不外推到所有模型、形状或平台。
 
 `graph/cpu.h` 是普通 Graph CPU 入口；`compute/cpu.h` 用于 Direct Compute。两者的 Context、
 PreparedOperation/Executable、Invocation 和 Completion 仍遵守本文的真实生命周期。可运行的
@@ -172,8 +176,8 @@ HYLE region 翻译成 provider-native artifact；单节点 region 可以像函�
 每个invocation持有独立原生资源，旧结果不被其他槽覆盖；prefer-capture对该managed程序使用
 commands，ggml保留自己的内部capture。它不是全算子覆盖或其他平台接入完成的声明。
 普通SDPA节点亦复用Compute的完整原版attention程序；Windows选择ggml，Linux优先
-FlashInfer，具体类型/head/数值域见Compute指南。M2新增的多节点张量region会保留逐节点的半精度舍入和发布中间值，适用平台/交付仍按
-[M2-B1 CUDA当前卡](../implementation/tasks/compute/llm-moe-m2-b1-cuda.md)逐项验收；attention不由
+FlashInfer，具体类型/head/数值域见Compute指南。多节点张量region保留逐节点的半精度舍入和发布中间值；
+当前固定画像的Windows三交付已通过，完整成本P1尚未完成，见[覆盖表](model-fragment-coverage.md)。attention不由
 这项region规则抢占Linux已准入的FlashInfer路线。
 需要外部 CUDA capture 的消费者，应在编译时用
 `CompileOptions{.provider_replay = ProviderReplayPolicy::kRequirePrepared}` 排除 managed 程序，

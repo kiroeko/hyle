@@ -15,6 +15,8 @@ HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph �
 它与既有原生 `Environment` 一起供冷准备匹配规则；无注解仍使用合法 baseline。
 模型名不放宽数值/资源检查，也不代表新增专用优化；变更后重新准备，submit 不查询这些字段。
 
+固定模型画像的当前片段支持、拒绝与数值限制统一见[四路线覆盖表](model-fragment-coverage.md)。
+
 ## 构建与运行条件
 
 源码构建需要 C++23、Python 3、glslangValidator/glslang，以及 Vulkan SDK 提供的 glslc、

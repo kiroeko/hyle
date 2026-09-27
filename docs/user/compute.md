@@ -10,6 +10,9 @@
 > Vulkan/SPIR-V 的 R6 也已完成真实计算、三交付与已测设备/版本域的有限性能验收。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
 
+当前22个固定模型画像的Direct/Graph结果、逐路线限制及三交付/P1范围见
+[模型片段覆盖](model-fragment-coverage.md)。下文R4/R5/R6基础验收不代签后来新增的全部模型域。
+
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
 研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。
 `cpu::create_context()` 在冷路径组装默认实现，prepare 只匹配和绑定固定规则，不运行计时比赛。
@@ -105,12 +108,12 @@ auto prepared = hyle::compute::prepare(
 ```
 
 MoE 的连续专家权重使用 `gguf_grouped_weight_description(type, logical_type, experts, n, k)`，其逻辑与
-物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA 与 Apple 默认路线会在准备期把合格的
+物理轴均为 `[E,N,K]`，交给普通 `GroupedMatMul`。当前 CPU、CUDA、Apple 与 Vulkan 默认路线会在准备期把合格的
 MatMul/GroupedMatMul 绑定到固定 ggml 原生程序；具体设备和上游版本仍可能拒绝某种格式或 shape。
 Graph 使用相同描述器与 Provider recipe，重复 submit 不重新选路、不重新量化，也不复制压缩权重。
 伪造已知格式 ID 但给出错误 block byte 数会在准备前被拒绝。Apple 用 `apple::input_spec()` 将逻辑描述
-映射到一维 MLX `uint8` carrier；Vulkan 的对应原生接线仍以当前模块状态和路线任务为准，不能用其它
-路线收据代签。
+映射到一维 MLX `uint8` carrier；Vulkan使用其原生buffer与ggml程序。精确画像的当前结果见
+[四路线覆盖](model-fragment-coverage.md)，一种压缩格式接通不代表完整模型的其它必需片段也已通过。
 
 固定的模型专用规则必须完整匹配身份及其余适用条件；缺失/未知信息只允许合法通用路径，
 或返回明确拒绝。传入模型名本身不代表已有该模型专用优化。用户无需排列 Provider 或提供计时资料；
@@ -374,7 +377,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 设备发现 | `Backend::device_count/device` | 每个显式 backend 只枚举自己的设备；`cpu::device()` 直接取得唯一 CPU |
 | 执行域 | `Backend -> Device -> Context -> Queue` | CPU Queue 在调用线程同步、按序执行；没有全局 registry、隐藏 worker 或默认设备 |
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
-| operation schema | 21 个 typed family + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
+| operation schema | typed operation families + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
 | materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
@@ -406,16 +409,17 @@ Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 G
 | provider 诊断 | `provider_identity` / `runtime_properties` / `persistent_bytes` | O(1) 读取 provider/version、shared/delegated owner、replay 成本类别、threading/capture/workspace owner；`persistent_bytes == nullopt` 表示 provider 无法给出完整精确值，不是零 |
 | 稳定重复执行 | `prepare -> PreparedOperation -> OperationInvocation::submit` | prepared artifact 可共享；每个并发 lane 独占 invocation/workspace；submit 不重新推 shape/路由 |
 
-公共 schema 包括上表的普通张量运算、Scan、QuantizedMatMul 和 GatedDeltaNet，共 22 个 family，并能做纯描述推导。
-Native 承载其中除 QuantizedMatMul 外的 20 个 family，具体 dtype/layout 域见上表。这不表示每种 dtype、
-layout 或 encoding 都由同一个 provider 执行：当前 SDPA 是 f32 reference/optimized fallback；block/opaque
-storage、量化 kernel 与窄 storage attention 仍应由理解相应格式的 provider 接管，不会被隐藏 materialize。
+公共schema可以做纯描述推导，存在描述不等于每个Provider都能执行。上表是普通CPU能力与合同，
+不是Native Provider目录；CPU的Scan/TopK由成熟标准库接线承载，原Native域已退场。
+默认路线先匹配已接入的oneDNN/ggml合法域，Native只保留具名残余；block/opaque storage、量化
+与窄storage attention由理解相应格式的Provider承载，不会被隐藏materialize成另一种合同。
 
 `GatedDeltaNet{}` 描述六个显式输入与两个输出：Q/K `[B,T,Hk,Dk]`、V `[B,T,Hv,Dv]`、
 FP32 log-decay/beta `[B,T,Hv,1]`、FP32 初态 `[B,Hv,Dv,Dk]`；输出为 V 同形结果与新 FP32 状态。
 Q/K/V 使用同一 F16/BF16/F32 类型，Hv 是 Hk 的正整数倍。它不修改初态，也不隐含 Q/K 归一化、
-gate 激活或状态写回。目前只完成公共描述与推导；原版后端的实际准入由
-[M1-A 接入卡](../implementation/tasks/compute/llm-moe-m1-apple-admission.md)记录，不能据此认为四路线已可执行。
+gate 激活或状态写回。四路线已通过固定Qwen画像的完整recurrent消费者，
+见[覆盖范围](model-fragment-coverage.md)；模型的raw gate使用下述完整片段，不以预先在host计算gate代签。
+该资格限实际受测的dtype/shape/数值域，不将描述允许的全部参数组合都视为已验证。
 
 `model_ops::recurrent_gated_delta_net()` 描述包含动态门控的完整模型片段，输入依次为
 Q、K、V、raw a、raw b、negative_a、dt_bias、state；输出只有 attended 与 next state。
@@ -447,7 +451,7 @@ CPU/Apple/Vulkan 的同一模型片段继续使用各自成熟算子组合，不
 此描述不代表完整模型、三交付或性能验收已经完成。
 
 `model_ops::sqrt_softplus_hash_routing()` 是 DeepSeek 前三层的 token 查表路由描述，
-当前为 [D5-F32 待批量验证候选](../implementation/tasks/compute/llm-moe-d5-deepseek-native-binding.md)。
+已通过CUDA普通两入口的完整MoE消费与三交付，精确画像见[当前覆盖](model-fragment-coverage.md)。
 输入依次为 plain dense F32 logits `[T,E]`、I64 token IDs `[T]`、I32专家表 `[V,6]`，
 T/V非空、E=256或384；输出依次为 F32 weights `[T,6]`、I32 expert IDs `[T,6]`。
 按表中顺序保留六个专家（包括重复项），以选中 logit 的 `sqrt(softplus)` 分数除以
@@ -456,14 +460,15 @@ Completion 报告 `OutOfRange`，失败输出不可消费。非有限 logits 不
 CUDA 绑定原 SGLang 程序和现有异步错误通道；其它路线的单 token 消费者用成熟
 Gather/Softplus/Sqrt/Reduce/Divide 组合。禁止输入输出别名，保活至完成；不新增数学 kernel。
 
-`model_ops::sink_attention(scale)` 是 DeepSeek 带 learned sink 的完整注意力描述，当前为
-[D5-F33 待批量验证候选](../implementation/tasks/compute/llm-moe-d5-sink-attention-binding.md)。
+`model_ops::sink_attention(scale)` 是 DeepSeek 带 learned sink 的完整注意力描述。
+普通入口已实际接入，完整画像的逐路线结果与Vulkan长位置数值限制见[当前覆盖](model-fragment-coverage.md)。
 五个F32 plain dense输入依次为 Q `[1,T,H,512]`、K/V `[1,S,1,512]`、additive mask `[T,S]`、
 sink `[H]`；H=64或128，T/S非空，scale为正且有限，输出与Q同描述。mask自行表达因果、窗口和
 压缩块选择，接口不再额外施加causal；sink只增加softmax分母，不贡献value。有限输入和sink下，
 mask可含负无穷，全部key被屏蔽时输出零。CPU/CUDA/Vulkan执行ggml原生图，Apple执行MLX
 完整attention调用；mask/sink是可变化输入，输出禁止别名。ggml准备期还会检查分数张量的原生
-索引容量。该候选不代表FP8投影、压缩状态或完整画像已经验收。
+索引容量。单个sink-attention程序可执行不代表整幅画像通过；FP8投影、压缩状态等必需片段
+分别由完整画像收据覆盖，拒绝/失败域不能用此接口接通替代。
 
 CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
 找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
@@ -840,10 +845,12 @@ operation、全部端口、资源和完成边界。旧 `RouteProfile`、运行�
 
 oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
-物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K 权重会回落到 HYLE-native SIMD route。
-全部 GatedActivation、batched/零尺寸 MatMul 和其他未支持形状也走 native，不会在 submit 时重新选择。在默认串行
-executor 下，`M < 16` 的 decode MatMul 同样选择结构更轻的 HYLE-native kernel；传入真实并行 executor
-时，oneDNN 可以把 N 维拆成互不重叠的连续 tile。
+物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K权重在满足ggml rank-2 F32准入时选择ggml；
+其余域继续匹配具名Native残余，不能将所有转置权重都描述为HYLE SIMD执行。
+SiLU的packed/separate门控在ggml合法域使用原版SwiGLU程序，不能把全部GatedActivation称为Native执行。
+oneDNN对单任务且`M < 16`的MatMul冷拒绝，后续仍按完整shape/layout匹配ggml或Native；
+batched、零尺寸及其它未被成熟路径覆盖的已准入域由具名Native残余承载。真实并行executor
+可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
 
 oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]`，显式 F32
 accumulation，可选 scale/bias；scale 和 bias 同时存在时需同类型。F16/BF16 原生执行受
@@ -879,7 +886,7 @@ Graph叶程序桥接。准备时固定匹配原版 `ref:any`：该版本默认JI
 
 ### ggml CPU 接入检查点
 
-[M2-B1](../implementation/tasks/compute/llm-moe-m2-b1-cpu.md)正在接入原版 ggml CPU 程序。
+原版ggml CPU程序已进入普通Direct/Graph；[M2-B1](../implementation/tasks/compute/llm-moe-m2-b1-cpu.md)保留最初接线记录，当前画像结果见[覆盖表](model-fragment-coverage.md)。
 普通 CPU 工厂已组装这一 Provider；独立入口为 `compute/providers/ggml_cpu.h` 中的
 `ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、任意轴 Gather、Add/Sub/Mul/Div、
 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和任意轴集 Sum/Mean 的有限域。
@@ -916,7 +923,8 @@ keep-dim；必要的分组转置沿原版 view/cont 执行。空归约集合发�
 `cpu::DefaultContextOptions::native_threads` 默认1，包括提交线程，显式大于1才创建持久 workers。
 借用的 executor 接收一个完整原版程序，不把其 concurrency 自动变为 ggml worker 数量。
 程序同步完成后返回终态，索引越界先于输出写入拒绝；一个 invocation 不允许并发运行或关闭。
-当前完成 Windows CPU-only 的阶段开发验证，跨平台、三交付与性能资格仍以活动卡为准。
+当前固定画像已完成普通入口验证；Windows代表消费者的源码/static/shared及两个完整片段P1已通过，
+见[覆盖与限定环境](model-fragment-coverage.md)。其它硬件、形状与未通过画像不能据此取得资格。
 
 ```cpp
 #include <hyle/compute/providers/onednn.h>

@@ -24,6 +24,9 @@ Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-fail
 CPU八格、Apple四格与Vulkan八格已固定当前成熟路线的冷拒绝；Vulkan Q8两格数值失败；CPU/Apple P1已通过，CUDA/Vulkan P1和D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
+[D6有限文档对账](llm-moe-d6-coverage-review.md)并行整理已验证范围，A6和残余能力裁决仍由当前owner持有；
+不因有176格结果就宣称全部支持。用户入口见[固定画像覆盖](../../../user/model-fragment-coverage.md)。
+
 D5-A5外部CUDA交付发现两个Provider的私有SDK DLL依赖未导出；
 `compute_provider_ggml_cuda`当前AUDITED范围仅追加
 [E2私有runtime接线](../build/cuda-provider-runtime-exports-v1.md)，不改原产品数学或性能口径。

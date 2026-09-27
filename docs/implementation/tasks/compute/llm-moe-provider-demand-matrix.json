@@ -5,6 +5,10 @@
   "generated_at": "2026-09-24",
   "authority": {
     "model_facts": "llm-moe-model-weight-operator-audit.md",
+    "snapshot_scope": "profile_catalog and demand definitions remain the fixed requirements; storage_reachability, route_status, provider_inventory, finite_fix_set and counts describe the D1/D2 baseline audit, not current runtime support or a new work queue.",
+    "current_runtime_ledger": "llm-moe-d5-acceptance-ledger.json",
+    "retirement_record": "llm-moe-d4-self-operator-retirement.md",
+    "current_review": "llm-moe-d6-coverage-review.md",
     "legacy_crosswalk_only": [
       "llm-moe-coverage-matrix.json",
       "llm-moe-provider-map.json"

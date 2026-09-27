@@ -31,6 +31,7 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [process](process.md)：受管本地 child、stdio、等待、tree termination 与可靠 reap
 - [compute](compute.md)：显式 CPU execution、tensor binding、prepared operation 与 typed host kernel
 - [graph](graph.md)：逻辑计算图、冷编译、可共享 Executable 与独占 Invocation
+- [固定模型片段覆盖](model-fragment-coverage.md)：22个官方/量化画像的四路线支持、拒绝/数值限制与验收范围
 - [Apple MLX/Metal](apple-compute.md)：原生 Direct/Graph region、结果 owner、资源随包交付与限制
 - [Vulkan](vulkan-compute.md)：原生录制、Direct/Graph、自定义 SPIR-V、结果寿命和三交付
 

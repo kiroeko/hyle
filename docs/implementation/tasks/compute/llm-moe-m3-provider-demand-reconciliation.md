@@ -6,7 +6,8 @@
 154通过、20冷拒绝、2数值失败。四路线三交付与CPU/Apple P1已完成，CUDA/Vulkan P1和D6仍待完成。
 见[D5 当前卡](llm-moe-d5-real-fragment-acceptance.md)与
 [本批证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
-D6 尚未开始。后文各包的旧 candidate 和进展数字是历史，不替代当前 ledger。
+[D6文档与覆盖对账](llm-moe-d6-coverage-review.md)已开始；A6及残余能力边界未解决前不签终审关闭。
+后文各包的旧candidate和进展数字是历史，不替代当前ledger。
 
 ## Closure card
 
