@@ -779,6 +779,9 @@ block/group 与逐 tensor role 的混合格式。官方与 GGUF 是不同 profil
 CUDA正确性44/44稳定后，按[CUDA三交付批次](llm-moe-d5-cuda-delivery-batch.md)
 执行A5；复用现有真实消费者，不等待其它路线，不将交付结果代签性能。
 
+CPU当前可用画像按[CPU三交付批次](llm-moe-d5-cpu-delivery-batch.md)合并执行A5；
+官方FP8/FP4的8个拒绝格保留，不由GGUF或BF16交付通过代签。
+
 以上六项是 D5 全部动作。A2-A4 属于测试消费者和证据；若它们揭示产品缺陷，先停止并重开精确 owner，
 不得在测试内实现 fallback 或新数学。
 
