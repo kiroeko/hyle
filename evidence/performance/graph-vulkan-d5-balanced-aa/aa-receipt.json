@@ -1,0 +1,249 @@
+{
+  "schema": "hyle.d5-vulkan-balanced-aa/v1",
+  "identity": {
+    "candidate": "3a2e1f012945424953e41addbb43dbd78797b472",
+    "binary": "865a324757c41d7959c27e2f501457842f44d990b1060ea9d3acf32785e89d08",
+    "source_files": {
+      "bench/common/perf_process.h": "988c5af99fbf3169fb8e828da2dc26452a823bf459eac43716dd91501574e496",
+      "bench/graph_route_apple/d5_fragment_bench.cc": "4bb8b5486ed8d74ac83ca9341a16debb1fd76414f03739b6814c5d50725e895f",
+      "bench/graph_route_cpu/d5_common.h": "bd384abedfedba47ee4bdb4390d2fc42ef7b485c55298b3033e31c073f1113c1",
+      "bench/graph_route_cpu/d5_fragment_bench.cc": "27dee1b675e09691f28da4758da53d9f0d4b5f09443b9f0cf337889b45e5301d",
+      "bench/graph_route_cpu/external/CMakeLists.txt": "23e28d9bae635216f252a2dda0380b9f11c026b2ac58c5706fa41a3dc03c3adf",
+      "bench/graph_route_cpu/external/launch.py": "c74d0e35326df44799745dcd21f67cfeeb4ca221b2611cc35cb7bc28c2efa2ab",
+      "bench/graph_route_cpu/external/validate_aa.py": "543d9427d447d4f5d39c086d2692045776328c0a94962490eea5c5e3a1e4d794",
+      "bench/graph_route_vulkan/d5_fragment_bench.cc": "7a6c047fc067b656ad5ddd5485ea8d2bed9250eeb20763e8b95273880b0d8177",
+      "bench/integration/perf_control_bench.cc": "a6a6d33d1c83b9b008ef60805fe223984103f46905deae5daef8e0fa08bc1ada",
+      "bench/nanobench_impl.cc": "40ffacc30949a5a66b651ea492f5666e48e698564824414e5b4f183884f45a27",
+      "tests/compute/workload_fixture.h": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e",
+      "tests/compute_models/d5_gguf_test_support.h": "24e14e3a257120475dc023e21ecef422bc223a8e53ec3651e8ffb70c54335086",
+      "tests/compute_models/d5_kda_projection_cases.h": "9fb3854be11b4e99246d5a7f8cf453e8df284dd47bd395a1f81ebc02fe4cc917",
+      "tests/compute_models/d5_moe_execution_cases.h": "110d29834f8b6537b28bc75a75094cd7293a14ca4d31a25d36a25fd275e8b48a",
+      "tests/compute_models/d5_moe_execution_fragments.h": "b00bc12f55f6076c7b0365df34b2bf6dbc6663af8fcf69f0dff4bfc38f95158f",
+      "tests/compute_models/d5_moe_profile_cases.h": "8a9ac8752cbcd2c8436fd53f0081f2cc1fef861eda4ac93e2c41c0782468c840",
+      "tests/compute_models/d5_moe_semantic_fragments.h": "eb92aea3e85e6c86797a9eda6d880ca36fb0204ffab1a61535f5f0a1a78db1b0",
+      "tests/compute_models/d5_official_fp4_storage.h": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846",
+      "tests/compute_models/d5_qwen35_fixture.h": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393",
+      "tests/compute_models/d5_qwen35_gguf_fragment_support.h": "dbabc5d76a796f9932d17af3307c53f9a781fce24f8d1328017fbe6273e7400e",
+      "tests/compute_models/d5_qwen38_24t_fixture.h": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f",
+      "tests/compute_models/d5_qwen38_24t_full_router.h": "74cd12ae0a0022269467c6f10b3c69ae9db1c180b84a84bda3e792e4a20bca51",
+      "tests/compute_models/d5_qwen38_24t_moe_profiles.h": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee",
+      "tests/compute_models/d5_qwen38_24t_semantic_fragments.h": "d062ea65ac551f62a48eff3ce9e56c736df3abca58c1da447fcdbc78bdfff796",
+      "tests/compute_models/d5_qwen38_gdn_fixture.h": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed",
+      "tests/compute_models/d5_qwen38_official_fixture.h": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0",
+      "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655",
+      "tests/compute_provider_native/half_test_support.h": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8",
+      "tests/compute_route_apple/tensor_test_support.h": "bfb4ac9ba283b9b789b07af0b3cf06509bd017c61933d04d222ad1695edda0b4",
+      "third_party/nanobench/nanobench.h": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d"
+    },
+    "sdk_manifest": "69db18965cc6f7af5be69d86d7c97c4d261d2150c34a6a64aa30447177a7d952",
+    "fixture_files": {
+      "tensors/model_language_model_layers_0_mlp_gate_proj_weight.bin": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42",
+      "tensors/model_language_model_layers_0_mlp_up_proj_weight.bin": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e",
+      "tensors/model_language_model_layers_0_mlp_down_proj_weight.bin": "fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766",
+      "tensors/model_language_model_layers_0_input_layernorm_weight.bin": "e3bfb63b03722ec637ed4ea2cc552d68a87e661bbba1e889f721858b34162877",
+      "ffn_activation_seed5_1x2048.bf16": "5c578222ff5f26e5dd1afa9d57e67f93593ca053d8a5640b49f6238b13f32b15",
+      "ffn_expected_seed5_1x2048.f32": "ab3b8fbad5ef20ba993a65c1d6468783eea6996c0bc5c1f8de2929a3b93318bb",
+      "ffn_direct_expected_seed5_1x2048.f32": "840be4222754706a9d4533473e9eef7e5e4aabddc77b7f80e418a18064247ffe",
+      "ffn_activation_seed17_1x2048.bf16": "0567183befd305c765316c56d5c7febecebdac79915c9b61b5e14bc24a93335f",
+      "ffn_expected_seed17_1x2048.f32": "3598c9e7d697cccb29ce11900e058bdcb0b9a67ee65495ce6fa2e67dd4325756",
+      "ffn_direct_expected_seed17_1x2048.f32": "9acb37e037087d9b924f40990b79d0bb39ede3f4f0a887777eedcf5ce4acc95a"
+    },
+    "script_sha256": "874a2c30a583697de884c4320fbf913077ef5be0d973f9e8d5c529057ed41b51"
+  },
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "gate": "FAIL",
+  "formal_product_samples": 0,
+  "runs": [
+    {
+      "arm": "selected",
+      "order": 0,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0230281734328919,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0162971199337214
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-0-0.log",
+      "sha256": "13911c61f0e4f1c327018aec9a0c1915db598d407f826c14f710e2729b56e690",
+      "round_records": 96
+    },
+    {
+      "arm": "selected",
+      "order": 0,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9643182821003089,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9632328407366347
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-0-1.log",
+      "sha256": "48a20473abca4cfcac69efdeafbb3341970a9c68e5ab74cf4ee0ba621a34a57b",
+      "round_records": 96
+    },
+    {
+      "arm": "selected",
+      "order": 1,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9745706934721474,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9524828985329948
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-1-0.log",
+      "sha256": "586386a4ec428778ea35ca1246eebd4ceaf666f089d3e0617f4b7142cb0f2396",
+      "round_records": 96
+    },
+    {
+      "arm": "selected",
+      "order": 1,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9770532107943569,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9590749227326014
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-1-1.log",
+      "sha256": "621a23595dcc62721584749281400bd4befaec3378a9994767b7a08e5f15f79c",
+      "round_records": 96
+    },
+    {
+      "arm": "peer",
+      "order": 0,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9994675343884041,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.111688514880254
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-0-0.log",
+      "sha256": "1fc65af379e681ff7be590811d75561d0dd8ff83e0db678424dcf1d53dd5ebd2",
+      "round_records": 96
+    },
+    {
+      "arm": "peer",
+      "order": 0,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0072816072816073,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0491077031199016
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-0-1.log",
+      "sha256": "c55d2453bf5a46c43b0ca7b5ea95363a719f16f56eba4f1f2c47bb92b980668b",
+      "round_records": 96
+    },
+    {
+      "arm": "peer",
+      "order": 1,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.980732599128588,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.993492909095332
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-1-0.log",
+      "sha256": "ab81228143b51a349287163c49b41ad8094a60a6f24288aa402e2883a0e10054",
+      "round_records": 96
+    },
+    {
+      "arm": "peer",
+      "order": 1,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.013658624253044,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9470003453549756
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-1-1.log",
+      "sha256": "c105deecd2b14e2fda469357b0d4ae1c83cc1862270e05707de13f159982a7cc",
+      "round_records": 96
+    }
+  ],
+  "summaries": {
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0230281734328919,
+        0.9643182821003089,
+        0.9745706934721474,
+        0.9770532107943569
+      ],
+      "factor_medians": {
+        "all": 0.9758119521332522,
+        "order=0": 0.9936732277666004,
+        "order=1": 0.9758119521332522,
+        "allocation=0": 0.9987994334525196,
+        "allocation=1": 0.9706857464473329
+      }
+    },
+    "selected/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        1.0162971199337214,
+        0.9632328407366347,
+        0.9524828985329948,
+        0.9590749227326014
+      ],
+      "factor_medians": {
+        "all": 0.9611538817346181,
+        "order=0": 0.989764980335178,
+        "order=1": 0.9557789106327981,
+        "allocation=0": 0.9843900092333582,
+        "allocation=1": 0.9611538817346181
+      }
+    },
+    "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        0.9994675343884041,
+        1.0072816072816073,
+        0.980732599128588,
+        1.013658624253044
+      ],
+      "factor_medians": {
+        "all": 1.0033745708350057,
+        "order=0": 1.0033745708350057,
+        "order=1": 0.997195611690816,
+        "allocation=0": 0.990100066758496,
+        "allocation=1": 1.0104701157673257
+      }
+    },
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        1.111688514880254,
+        1.0491077031199016,
+        0.993492909095332,
+        0.9470003453549756
+      ],
+      "factor_medians": {
+        "all": 1.021300306107617,
+        "order=0": 1.0803981090000778,
+        "order=1": 0.9702466272251538,
+        "allocation=0": 1.052590711987793,
+        "allocation=1": 0.9980540242374386
+      }
+    }
+  },
+  "errors": [
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6: gross >10%",
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6: factor >5%"
+  ],
+  "seconds": 42.014999999984866,
+  "native_environment": "# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45",
+  "no_ready_marker_created": true
+}

@@ -1,0 +1,133 @@
+{
+  "note": "DIAGNOSTIC ONLY. Prespecified marginal gate remains FAIL; no post-hoc promotion.",
+  "runs": [
+    {
+      "arm": "selected",
+      "order": 0,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0230281734328919,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0162971199337214
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-0-0.log",
+      "sha256": "13911c61f0e4f1c327018aec9a0c1915db598d407f826c14f710e2729b56e690",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0118891136507164,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0338171696223561
+      }
+    },
+    {
+      "arm": "selected",
+      "order": 0,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9643182821003089,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9632328407366347
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-0-1.log",
+      "sha256": "48a20473abca4cfcac69efdeafbb3341970a9c68e5ab74cf4ee0ba621a34a57b",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9788741836573549,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0190844963987054
+      }
+    },
+    {
+      "arm": "selected",
+      "order": 1,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9745706934721474,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9524828985329948
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-1-0.log",
+      "sha256": "586386a4ec428778ea35ca1246eebd4ceaf666f089d3e0617f4b7142cb0f2396",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9846536683665191,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0108960431926857
+      }
+    },
+    {
+      "arm": "selected",
+      "order": 1,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9770532107943569,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9590749227326014
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\selected-1-1.log",
+      "sha256": "621a23595dcc62721584749281400bd4befaec3378a9994767b7a08e5f15f79c",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0284366911860054,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0681076560729545
+      }
+    },
+    {
+      "arm": "peer",
+      "order": 0,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9994675343884041,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.111688514880254
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-0-0.log",
+      "sha256": "1fc65af379e681ff7be590811d75561d0dd8ff83e0db678424dcf1d53dd5ebd2",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0020643205695863,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0139232103134475
+      }
+    },
+    {
+      "arm": "peer",
+      "order": 0,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0072816072816073,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0491077031199016
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-0-1.log",
+      "sha256": "c55d2453bf5a46c43b0ca7b5ea95363a719f16f56eba4f1f2c47bb92b980668b",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9826922494371007,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9773043859862576
+      }
+    },
+    {
+      "arm": "peer",
+      "order": 1,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.980732599128588,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.993492909095332
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-1-0.log",
+      "sha256": "ab81228143b51a349287163c49b41ad8094a60a6f24288aa402e2883a0e10054",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9933490336968633,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9776394284137014
+      }
+    },
+    {
+      "arm": "peer",
+      "order": 1,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.013658624253044,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9470003453549756
+      },
+      "log": ".scratch\\validation\\d5-vulkan-balance\\aa-raw\\peer-1-1.log",
+      "sha256": "c105deecd2b14e2fda469357b0d4ae1c83cc1862270e05707de13f159982a7cc",
+      "round_records": 96,
+      "paired_diagnostic": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9982458852523938,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9657717542677247
+      }
+    }
+  ]
+}
