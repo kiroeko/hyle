@@ -113,3 +113,12 @@ BF16中点改变后继FP8 codes并在实际cache反馈中传播；不是遗漏sc
 不改公共语义、不改产品、不放宽统一tolerance。
 最终批次为两入口Apple FP8+全部GLM相关消费者、资源回归，以及CUDA相关默认
 oracle回归一次；通过后归档旧失败与归因，不再对本机制追加调参。
+
+## 本批裁决
+
+`3f7a0eb5` 的Apple Direct31/31、Graph26/26、两组头检查通过；CUDA默认GLM参考
+两入口10组回归通过，输入工具13项通过。[完整证据与原因](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/README.md)
+保留所有旧失败和一次中间值捕获。固定有限FP8接线的正确性工作完成，停止本机制试改。
+新增GLM两个官方Apple画像四格，ledger152/176，Apple40/44；统一实现60,373行/241文件。
+完整owner仍属于D5 AUDITED：剩余Apple官方FP4、其它路线24格及A5/A6/D6未完成。
+本批未运行的三交付/性能不写PASS，也不据此将模块CLOSED。

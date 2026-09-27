@@ -127,6 +127,28 @@ examples。callable 接受 native arrays 和 Context 的 GPU stream，返回数�
 组合 typed 算子。完整 Direct Q4 FFN 见
 [样例](../../samples/package/compute/cpp/apple_ffn.h)，没有 Graph 依赖。
 
+### FP8 分块权重与动态激活
+
+Apple 的普通 `Context::prepare()` 和 Graph 支持 canonical E4M3FN/F32 block128 权重：
+预编码 activation 的 MatMul、`model_ops::float8_block_linear()`、
+`float8_weight_decode()` 和 `grouped_float8_linear()`。逻辑描述使用共同的
+`float8_activation_description()`、`float8_weight_description()` 或
+`float8_grouped_weight_description()`；`apple::input_spec(desc)` 给出承载完整 bytes 的
+一维 MLX uint8 array。Direct 按这些 InputSpec 准备，Graph 使用相同 TensorDesc。
+仅给一个 uint8 array 无法推断其权重格式，应显式保留逻辑描述。
+
+动态线性接受 BF16/F32 activation，按 K128 分组量化后执行各块 F32 点积、缩放和累加，
+输出保留 activation 类型；存储为 BF16 不代表省略中间 FP8。默认普通 scale floor 为1e-10，
+DeepSeek 的 power2 scale 和1e-4 floor 由操作描述显式选择。grouped 权重保留全部专家的
+压缩存储，仅对本次选择的专家解码；负值或越界 ID 通过 Completion 返回 OutOfRange，
+不发布输出。原生 F32 运算允许 fused/unfused 舍入差异，不承诺与 CUDA 逐位一致。
+
+这些程序由原版 MLX 编解码、MatMul、ReduceMax、Take 等原语在冷期编译。
+执行成本包括选中权重的 F32 解码、中间乘积、scale 广播和必要复制，不能视为零分配或
+硬件原生 FP8 GEMM。Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
+FP8 group64/128 roundtrip 也可用；FP4 roundtrip 的极小 scale 域尚不合格，会明确拒绝。
+本批已完成普通入口和资源正确性；新增 FP8 能力的最终三交付批次与性能资格仍待验。
+
 ### GGUF/ggml 原生压缩权重
 
 已经解析 GGUF tensor table 的调用方先用公共 `gguf_weight_description()` 或

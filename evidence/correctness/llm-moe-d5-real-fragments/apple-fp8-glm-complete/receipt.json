@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "candidate": "3f7a0eb55491d4ec65b691fe98e79d63acb79dd8",
+  "tree": "8f35e28f0c7aa9289c684ba41194d806f850283b",
+  "product_candidate": "b0d724acce7b74d10fc1b51d8387a0c21f8b83eb",
+  "verdict": "RUN_PASS",
+  "route": "apple",
+  "entries": [
+    "direct",
+    "graph"
+  ],
+  "profiles": [
+    "glm53:official:official-fp8",
+    "glm53_flash:official:official-fp8"
+  ],
+  "new_complete_cells": 4,
+  "region_receipts": {
+    "R01": [
+      "evidence/correctness/llm-moe-d5-real-fragments/moe-shared-core-batch/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R02": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R03": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json",
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-projection-role-batch/receipt.json"
+    ],
+    "R06": [
+      "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
+    ],
+    "R07": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R08": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R09": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R10": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R11": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R12": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R13": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R14": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ],
+    "R15": [
+      "evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/receipt.json"
+    ]
+  },
+  "gtests": {
+    "compute": 31,
+    "graph": 26
+  },
+  "scope": "All required-region correctness for the two fixed official GLM profiles on Apple; not other routes, A5 deliveries, A6 P1 or whole-model inference.",
+  "machine": "MacBook Air Mac16,12 / Apple M4 / AppleClang21; existing d5-graph-825c41f8 build, Windows bundle canonical source",
+  "provider": "MLX 1f8e74e3f12f31365464a6867c6579f0e9b29d85 native FP8 conversion and arithmetic, existing ggml Metal native regions",
+  "native_rounding": "MLX Safe F32 multiply/add is unfused; one fixed independent oracle policy across each GLM fixture. CUDA FMA remains default. No elementwise oracle choice or tolerance change.",
+  "atomic_gate": "Independent sparse two-term F32 gamma(3)*sum(abs(term)) interval, followed by outward F32 and BF16 rounding; finite BF16 actual checked. Other atomic gates unchanged.",
+  "chain_gate": "Original abs2e-5+rel0.025; original FP8/BF16/F32 roles, actual cache/hidden feedback, strict selected IDs, complete154880-row head and independent source trajectory retained.",
+  "cause_evidence": "32/32 captured local FP8 projections exactly equal independent unfused F32 oracle;16/16 cached/head projections exact; local norm/attention abs<=2.3841858e-7. Whole-chain independent unfused prediction passes all48 output/replay boundaries. Old fused and initial order failures retained.",
+  "preparation": "Actual FP8[28672,512] native decode -> BF16 key[64,512,192] and value[64,256,512], exact independent cache validation; cold owners destroyed before four ordinary MLA/NextN replays.",
+  "resources": "FP8 malformed bytes/group rejection, checked -1/E/INT_MAX expert IDs, recovery and retained outputs, owner destruction/queued work; AppleLifetime and AppleRegion suites, four Graph lifetime/failure consumers pass.",
+  "costs": "Native F32 weight decode, block products, scale expansion, staging/copies and allocations are nonzero. Only selected grouped expert payload decoded. Cold native compilation owns fusion and constant folding; no HYLE math kernels, weight cache or hot rule search.",
+  "reused_scope": "R01 vocabulary/gather and Flash BF16 KDA projection/R06 retain exact source, shapes, MLX/ggml pins and Apple M4 environment. New FP8 typed entries do not replace these old programs. R12 mHC rerun in final batch.",
+  "cuda_regression": {
+    "candidate": "3f7a0eb55491d4ec65b691fe98e79d63acb79dd8",
+    "route": "cuda",
+    "factors": [
+      "compute_route_cuda",
+      "graph_route_cuda"
+    ],
+    "steps": [
+      {
+        "name": "build",
+        "argv": [
+          "cmd",
+          "/c",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f45-cuda-final\\cuda\\build.cmd"
+        ],
+        "returncode": 0,
+        "seconds": 14.01
+      },
+      {
+        "name": "tests",
+        "argv": [
+          "ctest",
+          "--test-dir",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^(compute_route_cuda|graph_route_cuda)$",
+          "-LE",
+          "headers",
+          "-j",
+          "1",
+          "--output-junit",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f45-cuda-final\\cuda\\tests.xml"
+        ],
+        "returncode": 0,
+        "seconds": 25.88
+      }
+    ],
+    "test_filter": "*MoeFragments.D5GlmFp8AccumulationBoundaries:*MoeFragments.D5GlmOfficialMixedRemaining:*MoeFragments.D5GlmDsaPreparedKvAndNextN:*MoeFragments.D5GlmOfficialFp8FullMoe:*MoeFragments.D5GlmOfficialDynamicFp8SharedFfn"
+  },
+  "pending": [
+    "20 official CPU/Apple/Vulkan cells",
+    "4 DeepSeek GGUF Vulkan cells",
+    "A5 remaining selected gates/source/static/shared",
+    "A6 P1",
+    "D6"
+  ],
+  "ledger_counts_after": {
+    "RUN_PASS": 152,
+    "VALIDATION_NOT_RUN": 24
+  },
+  "files": {
+    "first-batch-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/first-batch/build.log",
+      "raw_sha256": "0afd93a7fe6714a12bfe9ce5b93e1b3416981355dcb67251159e6e5fda319bf4",
+      "gz_sha256": "b456d3c29a226944cff6563bcf64880398fba98f4102cd4f14c028c8aadf77b7"
+    },
+    "first-batch-compute-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/first-batch/compute-tests.log",
+      "raw_sha256": "6fc2497d9c0c0c4ab4503e5f868bdffacb4e53ace6ef34775399ab31f1b11218",
+      "gz_sha256": "36a789050d5541a649d66d283702fa33ea151b9263aa5bf6997dfa95b5e76b9c"
+    },
+    "first-batch-compute-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/first-batch/compute-tests.xml",
+      "raw_sha256": "00a9ff0d0e4cad5915659eff90c9682467ce778122c023cf1b5abbafe5ab1491",
+      "gz_sha256": "a86bb37ceba47f7111b943b0359a6be644827bc0db378fcc95707d49e91ead3b"
+    },
+    "first-batch-graph-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/first-batch/graph-tests.log",
+      "raw_sha256": "c593daca198fbe73e2db9e5bb03bbb11f2bc5a7bc0a605e3ee9719d5eb71ffe8",
+      "gz_sha256": "dbcd5d2ccd579878290657131fa9ad8b621fdb9fdd73e979dc33bf7d4e48c73c"
+    },
+    "first-batch-graph-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/first-batch/graph-tests.xml",
+      "raw_sha256": "ef93cf4762a791ee974ddf0b1c94587abb9998fe9d8894c93f021435b287d2b8",
+      "gz_sha256": "d394e73c387df0600f7845353737d780b29fc0b569819c4bef288fd1cdd83fe8"
+    },
+    "first-batch-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/first-batch/receipt.json",
+      "raw_sha256": "486fddefc78ee0a3dfb78c050973fd260a63cd4c74a131e7d4e197f44ca8e4ef",
+      "gz_sha256": "0be57eaf5549b4bfe6e1c2ad00253bfc78bb702771b96b00062f2b44c78e1713"
+    },
+    "ordered-batch-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/ordered-batch/build.log",
+      "raw_sha256": "ac403f82fe6af3e3590d82ec574598a8d4eb7199b932f5cdedc64c5a8b85f2a0",
+      "gz_sha256": "2c25e531f3818c3d5580b89319a1f789de9be186be0e1dce6250d1b2db1dca9f"
+    },
+    "ordered-batch-compute-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/ordered-batch/compute-tests.log",
+      "raw_sha256": "425ea841b6c90f69d6d37656c0a9ce566462782ddf5707484a91401185ab244b",
+      "gz_sha256": "55a6acf94c17d786ad5fc3ae283148ac44c7829e015919e30c45cb81a3ff6755"
+    },
+    "ordered-batch-compute-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/ordered-batch/compute-tests.xml",
+      "raw_sha256": "3c7fb2227db95620db92c0aabcb49edefecebc97a8387a3a1239600511ff7197",
+      "gz_sha256": "25584af96609fa21b849a957b032c585d24df745aa384a5efddc6f5276d30ce3"
+    },
+    "ordered-batch-graph-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/ordered-batch/graph-tests.log",
+      "raw_sha256": "8daf5d093faa3d4646ebf5ca30a952373eef40130948382cb4fe7a607d541580",
+      "gz_sha256": "e8a7c490c62276d1ffcfda9379c1ed10326b5a50dc842bb5340294740f5cba8f"
+    },
+    "ordered-batch-graph-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/ordered-batch/graph-tests.xml",
+      "raw_sha256": "3d60df85d28ad382b79167fdee65dcc00c46b0ba09a9fc958eae0bc6ff7c6c78",
+      "gz_sha256": "fd1c144afc97b47f188bbc965e57b23144f23db352ed97390b17a28d6d9eb9e6"
+    },
+    "ordered-batch-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/ordered-batch/receipt.json",
+      "raw_sha256": "c65f4e1b2d65d321e8115606adb3396a2c5ef4ec5b8165dff8f3959793fb0d12",
+      "gz_sha256": "737fd9623757e5ab84cfc0da4dfd0856910ac6b7d557c9a9abe9a0d11b6d85d3"
+    },
+    "trace-batch-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/trace-batch/build.log",
+      "raw_sha256": "273da7f1f3739774b169dc3f7c824f53054432c68523f89f11f40211737b7516",
+      "gz_sha256": "553ff4980e111b87111c006420d7c4bf1366a2b66e4207494bb432d8fb579569"
+    },
+    "trace-batch-compute-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/trace-batch/compute-tests.log",
+      "raw_sha256": "819352e463579e615239c1ab039fa26c3c9538235b694756ac6e7eafea7f7727",
+      "gz_sha256": "85b0ca6051077cd09b932acadc461e27e2373b27a5ff69f6c14a335ae34317b1"
+    },
+    "trace-batch-compute-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/trace-batch/compute-tests.xml",
+      "raw_sha256": "43b6b15659267b0e11eda441d8ecdcb0ff4209d5e147eec08a134a79154af257",
+      "gz_sha256": "2856d5bdfa93d24a981611d9950f170af2fd4225b3161a47b74e682171fa5608"
+    },
+    "trace-batch-graph-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/trace-batch/graph-tests.log",
+      "raw_sha256": "c30a121747215486eb7eba1a9cf5db334f09c55debc846a99d38b9799d6abf11",
+      "gz_sha256": "f8f96eb815db2f63f4ff1d430300ee66e46950d163d164180907862f323bff06"
+    },
+    "trace-batch-graph-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/trace-batch/graph-tests.xml",
+      "raw_sha256": "2308a09a100d447cc905a2a8c29eb3985906dfd64ecd03f2394d079dcb00d5ad",
+      "gz_sha256": "0176aedd1959648209f5c8277cc18b27c2b059e8848bdbcfca8d611ea0a2c6e4"
+    },
+    "trace-batch-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/trace-batch/receipt.json",
+      "raw_sha256": "217ee970da1bb13f0bfe886be48da96f483a438cdd212f93444065efe8809d89",
+      "gz_sha256": "27042a02062b1882dd6793a568c6628418d8aaa7a8963af9fb276b616af173ea"
+    },
+    "numeric-batch-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/numeric-batch/build.log",
+      "raw_sha256": "273da7f1f3739774b169dc3f7c824f53054432c68523f89f11f40211737b7516",
+      "gz_sha256": "553ff4980e111b87111c006420d7c4bf1366a2b66e4207494bb432d8fb579569"
+    },
+    "numeric-batch-compute-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/numeric-batch/compute-tests.log",
+      "raw_sha256": "e07fd684d13e66a677be77cdb33cacfd18ef4a55029a4f2d3aded3df07ba966c",
+      "gz_sha256": "ed8033599004769390e69d2b37359f3d74951387ad45ab0693dd8d6cd288aedc"
+    },
+    "numeric-batch-compute-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/numeric-batch/compute-tests.xml",
+      "raw_sha256": "17d18839105b3f6952565066632773a9f5f49e64eecb1e4389ee3739ed9c847f",
+      "gz_sha256": "a5b3525d1b02e214dc05ac38470790259dd0e9cfb42b7499fceca0a4cc129b99"
+    },
+    "numeric-batch-graph-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/numeric-batch/graph-tests.log",
+      "raw_sha256": "3249cebe09ec341ca1a7589dc1e7bfbc8e9200f1773a0b39504cee604b72c717",
+      "gz_sha256": "6c39c052229bcaa0380df2ab73d5ea9d52379128da90d3efe133865fb74e1572"
+    },
+    "numeric-batch-graph-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/numeric-batch/graph-tests.xml",
+      "raw_sha256": "380211afc16190c48ff0675aa9caa362f2843e583ab42ebfdcc6f87ee86e264e",
+      "gz_sha256": "2f35174267f8336d1f8b4e8f2ba761ae5c96932db24a1ad3b680364084e602f5"
+    },
+    "numeric-batch-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/numeric-batch/receipt.json",
+      "raw_sha256": "873d264b0fedc83e2f6487b7b44fb3b4381c02010e245cb3f8dd7fabd4d2b9d2",
+      "gz_sha256": "e19d327fb9bc1edefa1651a374d10ea4a097e6ac3b7b6140f64dc56b360994e5"
+    },
+    "final-batch-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-batch/build.log",
+      "raw_sha256": "273da7f1f3739774b169dc3f7c824f53054432c68523f89f11f40211737b7516",
+      "gz_sha256": "553ff4980e111b87111c006420d7c4bf1366a2b66e4207494bb432d8fb579569"
+    },
+    "final-batch-compute-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-batch/compute-tests.log",
+      "raw_sha256": "09400b535f26fe9f09d637318fe45f016c0aa64368cab6c192153c5c83934e4c",
+      "gz_sha256": "f2864f0bd97bd69c861fedd4065858e3799816e4d9e584be82ff356877ab3c72"
+    },
+    "final-batch-compute-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-batch/compute-tests.xml",
+      "raw_sha256": "d5ea3c1d2c551306550e42944a40ab1f9df1b0bd1b89f33131696e2b105d889d",
+      "gz_sha256": "e6f1f234165eda078d3f826b618f21c4f72ad6c0cd06392beca3dd9d16ae5044"
+    },
+    "final-batch-graph-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-batch/graph-tests.log",
+      "raw_sha256": "8e30b65e2b5c00876b4c13e8679e1e28e14725089680e06926d9481313377d44",
+      "gz_sha256": "17295e5fa66d6da643b9c2524fbf40a0dcea64ee2ce93c1052dfcc6e8c35bcc2"
+    },
+    "final-batch-graph-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-batch/graph-tests.xml",
+      "raw_sha256": "871007cd250bcfdb7b47d6230fa4a4276f3104c2b59338b7badaec56c0b02b5d",
+      "gz_sha256": "bf58edb3316d8187846ba4701b8e9bf042892054282df4962618f8420dec65e3"
+    },
+    "final-batch-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-batch/receipt.json",
+      "raw_sha256": "6f8321c4165fdcc7bedfeb7dc5fa92c0338cf90dcfae3a83c7b1e1ef81517f4c",
+      "gz_sha256": "9f9852f4907bafb3c750cd1c3ccf5b6c9d30dd5c9f15391da8c77d36891d30ca"
+    },
+    "headers.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-checks/headers.log",
+      "raw_sha256": "6524e167b25b560f21f21cf6e09d0ba0f29220bd363f44555416c73d61f448f7",
+      "gz_sha256": "b77e88e16f189d990dd759d7f3b1116ccef1ebc8cf474e05d502e58a8f9c75a2"
+    },
+    "headers-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-checks/headers-receipt.json",
+      "raw_sha256": "2243ff57c906f5d70bf1108f297a8ef6db8a571eb451ad2d12d9a4062e322866",
+      "gz_sha256": "53d337a06ee833d1699e84b68f39ed4b05726eecde8ca3d318dbe86d9efbd55a"
+    },
+    "cuda-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-cuda-final/cuda/build.log",
+      "raw_sha256": "828ef020fc390e5a7d0ef4b0a83306370eb7d0cb950232296c02ef3cd1aa0e85",
+      "gz_sha256": "7070e7b69228b13b4628c369a13d3391fb944cd2139255fd05a4578d3bee6613"
+    },
+    "cuda-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-cuda-final/cuda/tests.log",
+      "raw_sha256": "02f9600c5455cf926fe6a20629f11be7613934d69fee02aa17582180095c47fa",
+      "gz_sha256": "a24551696a505b676654807299b4be541fa6a692a0a0a865c047a67029dbaa25"
+    },
+    "cuda-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-cuda-final/cuda/tests.xml",
+      "raw_sha256": "c2a23fc68db373e92ad873995741c24c9078d098420b89736cc9de36a0fcf6a5",
+      "gz_sha256": "657b3daa69b75939e838624d27662c7752fab1a10435b6d4b78a4b8b8e25a8c3"
+    },
+    "cuda-native-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-cuda-final/cuda/native-tests.log",
+      "raw_sha256": "c6db899395aab4b51ac986639cbfedb2943d2c4d91301076402ee4ddb4200830",
+      "gz_sha256": "8b312c8030039d195f3e5df2993743e62a7355d512f54921f55c02d796bf6be2"
+    },
+    "cuda-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-cuda-final/cuda/receipt.json",
+      "raw_sha256": "7dd6640c20d0a4e1b8273e750d5ae69c18af11889ab16b22d58434a504297f6f",
+      "gz_sha256": "ba41a412fd0510a6fcfff7cb8f46a543af0e6ef481197fe49f2db03d13bf01a2"
+    },
+    "cuda-cache-identity.txt.gz": {
+      "source": ".scratch/validation/d5-f45-cuda-final/cuda/cache-identity.txt",
+      "raw_sha256": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+      "gz_sha256": "310fdd9e8c5accb7e23a1e639c4790f331f3a47464d170517d5bdd30600dccee"
+    },
+    "capture-diagnostic-test.cc.gz": {
+      "source": ".scratch/validation/d5-f45-mla-capture/diagnostic-test.cc",
+      "raw_sha256": "8562c3097a35336eb87b63669c24af3513863125cac8548373966254b43fef17",
+      "gz_sha256": "b2d1c20e76ee1949763000045e16fba4e44b5ab0197318e0ce286ab56e868115"
+    },
+    "capture-build.log.gz": {
+      "source": ".scratch/validation/d5-f45-mla-capture/build.log",
+      "raw_sha256": "191a2308790e4696d8e2956e2c20aefa9be0f2c827918ce22e6c8f1d9318099c",
+      "gz_sha256": "5dcdb85f4c835c5f6e630bba654374a464cbeb87be1a1490f21c29ddc62fa2bc"
+    },
+    "capture-compute-tests.log.gz": {
+      "source": ".scratch/validation/d5-f45-mla-capture/compute-tests.log",
+      "raw_sha256": "8fa1cfc111293fed8f47b54f563103d88ac216a73cca679314ae54cae8595460",
+      "gz_sha256": "e743daf02c008c509f0a593006e22e6c433637cc1bc45a8cdb0fe2bad654c1d3"
+    },
+    "capture-compute-tests.xml.gz": {
+      "source": ".scratch/validation/d5-f45-mla-capture/compute-tests.xml",
+      "raw_sha256": "ad19d4e67f5b5163285a93d4897ef0ea5e4cf427b375aeeeb62a28d91d80175f",
+      "gz_sha256": "7aadad60fc67b96d9d67106592ae13840756a3288992f762a5636c2c6d000222"
+    },
+    "capture-receipt.json.gz": {
+      "source": ".scratch/validation/d5-f45-mla-capture/receipt.json",
+      "raw_sha256": "57f0ea8049082c6475c9edde995b24160ff8f58dbe2a0bf890b35ad7559c9144",
+      "gz_sha256": "d3ced06d21e3ab879a1168d7d071dfa30e418cec5e4b8d499e3b0a8a9aff2ddc"
+    },
+    "selector-plan.json.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/final-validation-plan.json",
+      "raw_sha256": "2d7184127e9b6c247539d4f0ea0a29873f2799150a5125bd67fc329a3a004700",
+      "gz_sha256": "917df1ad75aaeef690f716c58d7478001f4ad187cf1df224dcbc52507ea8a0dd"
+    },
+    "quant-diagnostic.cpp.gz": {
+      "source": ".scratch/d5-f45-quant-diagnostic.cpp",
+      "raw_sha256": "3b744a8d37495f73ec03a5967a1f491d214bca65ec40693c7a3f1eb2b21c4b8e",
+      "gz_sha256": "84ae6ee79144de3ea40ffa19b335dd2381e5e043ed207c55192edfcbf5222b23"
+    },
+    "quant-diagnostic.log.gz": {
+      "source": ".scratch/validation/d5-f45-apple-entry/quant-diagnostic.log",
+      "raw_sha256": "f98d2a9612143fb535967f9ae8de9b4ea39b104426dc0b3a9c5f0b62e0399366",
+      "gz_sha256": "a29234d36d578923af46ad01bda7080271c84bf1e17482b258db4a9d07aa0057"
+    },
+    "analysis.json": {
+      "sha256": "db3774f24f97b4924e6607905794cd4f89a884a50e1cacf5b462cedbb09810e3"
+    },
+    "chain-prediction.json": {
+      "sha256": "b70a655ed1b718aee85aa190c93040d882ec27e911979bb4bc304ec024c1b6c0"
+    },
+    "capture.tar.gz": {
+      "sha256": "fb98bfa19a6a85189cc2c73e2ebe1d1f0212840d8fd4fddd66c1bcced07cfa46"
+    }
+  }
+}

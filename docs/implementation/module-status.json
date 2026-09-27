@@ -388,7 +388,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger148/176，CUDA正确性44/44。其它路线28格及A5/A6/D6未完成。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger152/176，CUDA正确性44/44。其它路线24格及A5/A6/D6未完成。"
     },
     {
       "module": "compute_backend_cpu",
@@ -476,13 +476,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger148/176，CUDA正确性44/44。其它路线28格及A5/A6/D6未完成。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43完整官方attention/compressor/MTP均已验；9e846d87新增DeepSeek官方CUDA四格，ledger152/176，CUDA正确性44/44。其它路线24格及A5/A6/D6未完成。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5 AUDITED：F41冷准备与F43/F44官方完整消费均已验，CUDA22画像Direct/Graph正确性44/44。完整ledger148/176；三交付/P1等聚合门仍待A5/A6，不提前CLOSED。"
+      "summary": "D5 AUDITED：F41冷准备与F43/F44官方完整消费均已验，CUDA22画像Direct/Graph正确性44/44。完整ledger152/176；三交付/P1等聚合门仍待A5/A6，不提前CLOSED。"
     },
     {
       "module": "graph_route_cuda",
@@ -499,13 +499,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：固定MLX FP8原生资格后批量连接canonical block128、动态量化、冷decode和checked grouped；FP4极小值失败保留。ledger148/176，普通入口及A5/A6待验。"
+      "summary": "D5-F45 AUDITED：3f7a0eb5普通FP8与完整GLM官方两画像Direct/Graph正确性通过；MLX unfused F32参考已归因，原门未放宽。新增Apple四格，ledger152/176、Apple40/44；FP4及A5/A6仍待验。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：固定MLX FP8原生资格后批量连接canonical block128、动态量化、冷decode和checked grouped；FP4极小值失败保留。ledger148/176，普通入口及A5/A6待验。"
+      "summary": "D5-F45 AUDITED：3f7a0eb5普通FP8与完整GLM官方两画像Direct/Graph正确性通过；MLX unfused F32参考已归因，原门未放宽。新增Apple四格，ledger152/176、Apple40/44；FP4及A5/A6仍待验。"
     },
     {
       "module": "compute_route_vulkan",

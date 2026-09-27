@@ -1,0 +1,1170 @@
+[
+  {
+    "model": "flash",
+    "replay": 0,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 2,
+          "max_abs": 3.814697265625e-06,
+          "gate_fail": 0,
+          "rms_relative": 4.4778434410952235e-06
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 5,
+          "max_abs": 0.0001220703125,
+          "gate_fail": 0,
+          "rms_relative": 2.1951396334256914e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 8.731149137020111e-10,
+          "gate_fail": 0,
+          "rms_relative": 1.7785294586734959e-09
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 3,
+          "max_abs": 3.0517578125e-05,
+          "gate_fail": 0,
+          "rms_relative": 0.00011415124135356878
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 436,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.6466287179872366e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 140,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.635900509779682e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 15293,
+        "max_abs": 1.1920928955078125e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.602816433362846e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 141,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.629279879632754e-08
+      },
+      {
+        "nonidentical": 5,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 2.1951396334256914e-05
+      },
+      {
+        "nonidentical": 10,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 3.102156321623788e-05
+      },
+      {
+        "nonidentical": 19472,
+        "max_abs": 1.5497207641601562e-06,
+        "gate_fail": 0,
+        "rms_relative": 3.266607235664596e-07
+      },
+      {
+        "nonidentical": 2,
+        "max_abs": 0.0009765625,
+        "gate_fail": 0,
+        "rms_relative": 4.9782291213563916e-05
+      },
+      {
+        "nonidentical": 3,
+        "max_abs": 3.0517578125e-05,
+        "gate_fail": 0,
+        "rms_relative": 0.00011415124135356878
+      }
+    ]
+  },
+  {
+    "model": "flash",
+    "replay": 1,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 2,
+          "max_abs": 0.0001220703125,
+          "gate_fail": 0,
+          "rms_relative": 0.00014342126241153694
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 2,
+          "max_abs": 7.62939453125e-06,
+          "gate_fail": 0,
+          "rms_relative": 1.4805862202739182e-06
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 7.62939453125e-06,
+          "gate_fail": 0,
+          "rms_relative": 1.5617856198749184e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 9.5367431640625e-07,
+          "gate_fail": 0,
+          "rms_relative": 1.3933450318996998e-06
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 429,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.578088935599224e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 156,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 5.073137123229176e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 17626,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.340543359101864e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 545,
+        "max_abs": 0.0003633052110671997,
+        "gate_fail": 0,
+        "rms_relative": 1.1627519743558376e-05
+      },
+      {
+        "nonidentical": 2,
+        "max_abs": 7.62939453125e-06,
+        "gate_fail": 0,
+        "rms_relative": 1.4805862202739182e-06
+      },
+      {
+        "nonidentical": 3,
+        "max_abs": 7.62939453125e-06,
+        "gate_fail": 0,
+        "rms_relative": 2.0134736124326016e-06
+      },
+      {
+        "nonidentical": 27996,
+        "max_abs": 9.615719318389893e-05,
+        "gate_fail": 0,
+        "rms_relative": 9.70913954213345e-06
+      },
+      {
+        "nonidentical": 9,
+        "max_abs": 0.0009765625,
+        "gate_fail": 0,
+        "rms_relative": 5.226236828786703e-05
+      },
+      {
+        "nonidentical": 1,
+        "max_abs": 9.5367431640625e-07,
+        "gate_fail": 0,
+        "rms_relative": 1.3933450318996998e-06
+      }
+    ]
+  },
+  {
+    "model": "flash",
+    "replay": 2,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 7,
+          "max_abs": 0.00048828125,
+          "gate_fail": 0,
+          "rms_relative": 8.591868010825463e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 4.656612873077393e-10,
+          "gate_fail": 0,
+          "rms_relative": 9.47373000189834e-10
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 1150,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 8.104592413741517e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 172,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 5.4228386594729154e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 17397,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.230240319268743e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 717,
+        "max_abs": 0.0003633052110671997,
+        "gate_fail": 0,
+        "rms_relative": 9.497692906599794e-06
+      },
+      {
+        "nonidentical": 7,
+        "max_abs": 0.00048828125,
+        "gate_fail": 0,
+        "rms_relative": 8.591868010825463e-05
+      },
+      {
+        "nonidentical": 12,
+        "max_abs": 0.00048828125,
+        "gate_fail": 0,
+        "rms_relative": 9.737609151096136e-05
+      },
+      {
+        "nonidentical": 28808,
+        "max_abs": 9.288638830184937e-05,
+        "gate_fail": 0,
+        "rms_relative": 1.1000875701878378e-05
+      },
+      {
+        "nonidentical": 24,
+        "max_abs": 0.001953125,
+        "gate_fail": 0,
+        "rms_relative": 7.629690346715468e-05
+      },
+      {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      }
+    ]
+  },
+  {
+    "model": "flash",
+    "replay": 3,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 7.62939453125e-06,
+          "gate_fail": 0,
+          "rms_relative": 8.931839833983956e-06
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 8,
+          "max_abs": 6.103515625e-05,
+          "gate_fail": 0,
+          "rms_relative": 2.153459959735914e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 3,
+          "max_abs": 1.52587890625e-05,
+          "gate_fail": 0,
+          "rms_relative": 3.479597595175529e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 387,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.375914674041411e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 117,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.124630847580253e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 21223,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 8.040323048262e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 693,
+        "max_abs": 0.0003633052110671997,
+        "gate_fail": 0,
+        "rms_relative": 9.500137381532928e-06
+      },
+      {
+        "nonidentical": 8,
+        "max_abs": 6.103515625e-05,
+        "gate_fail": 0,
+        "rms_relative": 2.153459959735914e-05
+      },
+      {
+        "nonidentical": 15,
+        "max_abs": 6.103515625e-05,
+        "gate_fail": 0,
+        "rms_relative": 2.555670569783704e-05
+      },
+      {
+        "nonidentical": 29211,
+        "max_abs": 9.188055992126465e-05,
+        "gate_fail": 0,
+        "rms_relative": 9.912689253962e-06
+      },
+      {
+        "nonidentical": 12,
+        "max_abs": 0.0078125,
+        "gate_fail": 0,
+        "rms_relative": 0.000224705530223636
+      },
+      {
+        "nonidentical": 4,
+        "max_abs": 0.000213623046875,
+        "gate_fail": 1,
+        "rms_relative": 0.0003266200686468795
+      }
+    ]
+  },
+  {
+    "model": "official",
+    "replay": 0,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 4,
+          "max_abs": 0.000244140625,
+          "gate_fail": 0,
+          "rms_relative": 0.0001611778296299567
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 10,
+          "max_abs": 0.000244140625,
+          "gate_fail": 0,
+          "rms_relative": 6.2785611960782e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 3,
+          "max_abs": 9.5367431640625e-07,
+          "gate_fail": 0,
+          "rms_relative": 3.081298665980421e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 703,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.926138108633463e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 191,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.983600665677419e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 15312,
+        "max_abs": 1.1920928955078125e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.11986440919376e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 212,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.972758082336177e-08
+      },
+      {
+        "nonidentical": 10,
+        "max_abs": 0.000244140625,
+        "gate_fail": 0,
+        "rms_relative": 6.2785611960782e-05
+      },
+      {
+        "nonidentical": 1628,
+        "max_abs": 6.036227568984032e-05,
+        "gate_fail": 0,
+        "rms_relative": 2.503052102950268e-05
+      },
+      {
+        "nonidentical": 19713,
+        "max_abs": 1.7881393432617188e-07,
+        "gate_fail": 0,
+        "rms_relative": 8.801757263561008e-08
+      },
+      {
+        "nonidentical": 1,
+        "max_abs": 3.0517578125e-05,
+        "gate_fail": 0,
+        "rms_relative": 2.427194386084699e-05
+      },
+      {
+        "nonidentical": 3,
+        "max_abs": 9.5367431640625e-07,
+        "gate_fail": 0,
+        "rms_relative": 3.081298665980421e-05
+      }
+    ]
+  },
+  {
+    "model": "official",
+    "replay": 1,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 6.103515625e-05,
+          "gate_fail": 0,
+          "rms_relative": 3.936346660861414e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 10,
+          "max_abs": 0.000244140625,
+          "gate_fail": 0,
+          "rms_relative": 6.206199264227215e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 4,
+          "max_abs": 9.5367431640625e-07,
+          "gate_fail": 0,
+          "rms_relative": 2.2342681967725388e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 1126,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.40600519070789e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 128,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.32470491792522e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 17862,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.561383397697697e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 367,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.6649507589978475e-08
+      },
+      {
+        "nonidentical": 10,
+        "max_abs": 0.000244140625,
+        "gate_fail": 0,
+        "rms_relative": 6.206199264227215e-05
+      },
+      {
+        "nonidentical": 1736,
+        "max_abs": 0.00012206099927425385,
+        "gate_fail": 0,
+        "rms_relative": 5.110225079348328e-05
+      },
+      {
+        "nonidentical": 20500,
+        "max_abs": 3.5762786865234375e-07,
+        "gate_fail": 0,
+        "rms_relative": 8.531900239694017e-08
+      },
+      {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      {
+        "nonidentical": 4,
+        "max_abs": 9.5367431640625e-07,
+        "gate_fail": 0,
+        "rms_relative": 2.2342681967725388e-05
+      }
+    ]
+  },
+  {
+    "model": "official",
+    "replay": 2,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 7,
+          "max_abs": 0.0001220703125,
+          "gate_fail": 0,
+          "rms_relative": 3.620658478728918e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 0.000244140625,
+          "gate_fail": 0,
+          "rms_relative": 0.00029347053317977767
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 3,
+          "max_abs": 3.814697265625e-06,
+          "gate_fail": 0,
+          "rms_relative": 6.335212214798776e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 584,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.441087225151305e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 240,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 5.649323017662957e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 18989,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 6.903282110860601e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 908,
+        "max_abs": 0.007604122161865234,
+        "gate_fail": 0,
+        "rms_relative": 0.00019762361220087963
+      },
+      {
+        "nonidentical": 7,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 3.620658478728918e-05
+      },
+      {
+        "nonidentical": 1786,
+        "max_abs": 0.00010919151827692986,
+        "gate_fail": 1,
+        "rms_relative": 4.765509360080328e-05
+      },
+      {
+        "nonidentical": 32689,
+        "max_abs": 0.0019047856330871582,
+        "gate_fail": 0,
+        "rms_relative": 0.00017787867183260178
+      },
+      {
+        "nonidentical": 100,
+        "max_abs": 0.000244140625,
+        "gate_fail": 0,
+        "rms_relative": 0.0004790844183908453
+      },
+      {
+        "nonidentical": 8,
+        "max_abs": 0.0001678466796875,
+        "gate_fail": 1,
+        "rms_relative": 0.0028260014385442134
+      }
+    ]
+  },
+  {
+    "model": "official",
+    "replay": 3,
+    "local": {
+      "qa": {
+        "fma": {
+          "nonidentical": 3,
+          "max_abs": 6.103515625e-05,
+          "gate_fail": 0,
+          "rms_relative": 4.000696530600399e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "qb": {
+        "fma": {
+          "nonidentical": 7,
+          "max_abs": 0.0001220703125,
+          "gate_fail": 0,
+          "rms_relative": 3.384363312577775e-05
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "kva": {
+        "fma": {
+          "nonidentical": 1,
+          "max_abs": 7.62939453125e-06,
+          "gate_fail": 0,
+          "rms_relative": 9.16526433002176e-06
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "out": {
+        "fma": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "separate": {
+          "nonidentical": 0,
+          "max_abs": 0.0,
+          "gate_fail": 0,
+          "rms_relative": 0.0
+        },
+        "outside_f32_bound": 0
+      },
+      "head_key": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "head_value": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "query_norm": {
+        "nonidentical": 529,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 4.418142198296038e-08
+      },
+      "query_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "latent_norm": {
+        "nonidentical": 204,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 5.226462335950841e-08
+      },
+      "latent_norm_bf16": {
+        "nonidentical": 0,
+        "max_abs": 0.0,
+        "gate_fail": 0,
+        "rms_relative": 0.0
+      },
+      "attention": {
+        "nonidentical": 21062,
+        "max_abs": 2.384185791015625e-07,
+        "gate_fail": 0,
+        "rms_relative": 7.866683784445755e-08
+      }
+    },
+    "whole": [
+      {
+        "nonidentical": 1037,
+        "max_abs": 0.007604122161865234,
+        "gate_fail": 0,
+        "rms_relative": 0.00019778442395903173
+      },
+      {
+        "nonidentical": 7,
+        "max_abs": 0.0001220703125,
+        "gate_fail": 0,
+        "rms_relative": 3.384363312577775e-05
+      },
+      {
+        "nonidentical": 1433,
+        "max_abs": 1.4612451195716858e-05,
+        "gate_fail": 0,
+        "rms_relative": 7.480817608175662e-06
+      },
+      {
+        "nonidentical": 32722,
+        "max_abs": 0.0019056200981140137,
+        "gate_fail": 0,
+        "rms_relative": 0.0002112192073507682
+      },
+      {
+        "nonidentical": 128,
+        "max_abs": 0.000244140625,
+        "gate_fail": 2,
+        "rms_relative": 0.0005956802595092822
+      },
+      {
+        "nonidentical": 8,
+        "max_abs": 1.6689300537109375e-05,
+        "gate_fail": 0,
+        "rms_relative": 0.0005295060838178907
+      }
+    ]
+  }
+]
