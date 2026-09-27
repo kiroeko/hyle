@@ -498,14 +498,14 @@
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
+      "summary": "D5-F45 AUDITED：固定MLX FP8原生资格后批量连接canonical block128、动态量化、冷decode和checked grouped；FP4极小值失败保留。ledger148/176，普通入口及A5/A6待验。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24 AUDITED：真实 MoE router/激活需要成熟 Clamp；仅追加具名 schema、原版 ggml 调用与 Apple/Vulkan 分类和容量检查。F1–F23 事实及 D5 三交付/P1 待办保留。"
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
+      "summary": "D5-F45 AUDITED：固定MLX FP8原生资格后批量连接canonical block128、动态量化、冷decode和checked grouped；FP4极小值失败保留。ledger148/176，普通入口及A5/A6待验。"
     },
     {
       "module": "compute_route_vulkan",

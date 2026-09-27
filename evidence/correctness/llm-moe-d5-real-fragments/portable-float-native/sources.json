@@ -1,0 +1,18 @@
+{
+  "mlx": {
+    "pin": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "files": {
+      "mlx/ops.cpp": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2",
+      "mlx/backend/metal/kernels/fp8.h": "3ee75c58a1e125ee9eaed3961ef89719d47ce4c8446bb930390d7a4579f08439",
+      "mlx/backend/metal/kernels/fp_quantized.h": "bdf6d419b623cdfd7493ff58fbf9c70b4a2c2c39511330d6a61646093148225e"
+    }
+  },
+  "onednn": {
+    "pin": "71094df451909e95ceeefc8f64c275cdcbbcdff5",
+    "files": {
+      "src/common/float8.cpp": "11ace14bf24da10bb14ba9d7f761d73707481ee1db2b7a78b3b2d25c4e2ab6be",
+      "src/cpu/reorder/cpu_reorder_regular_fp8.cpp": "894fa0f1becb0a7b8471cc6fe701286d0c88e3bc397dd82fc2690c2b944b7cb3",
+      "src/cpu/reorder/cpu_reorder_regular_fp4.cpp": "b8a6d0b821ec0456f301fae84eed3f13e39f727e773274fc007a669a67eb5553"
+    }
+  }
+}

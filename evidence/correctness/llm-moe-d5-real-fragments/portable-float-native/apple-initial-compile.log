@@ -1,0 +1,7 @@
+/Users/kiro/hyle-scratch/d5-f45-apple-native.cpp:31:21: error: no member named 'bitwise_right_shift' in namespace 'mlx::core'
+   31 |   auto exponent=mx::bitwise_right_shift(bits,mx::array(uint32_t{23}));
+      |                     ^~~~~~~~~~~~~~~~~~~
+/Users/kiro/hyle-scratch/d5-f45-apple-native.cpp:33:23: error: no member named 'bitwise_left_shift' in namespace 'mlx::core'
+   33 |   return mx::view(mx::bitwise_left_shift(mx::add(exponent,mx::astype(nonzero,mx::uint32)),mx::array(uint32_t{23})),mx::float32);
+      |                       ^~~~~~~~~~~~~~~~~~
+2 errors generated.

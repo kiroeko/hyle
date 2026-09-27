@@ -1,0 +1,30 @@
+{
+  "baseline": "55211caf1954f34a9322c08872ead3e0f3efd742",
+  "steps": [
+    {
+      "name": "apple-copy",
+      "argv": [
+        "scp",
+        "-q",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\d5-f45-apple-native.cpp",
+        "kiro@172.22.10.198:hyle-scratch/d5-f45-apple-native.cpp"
+      ],
+      "returncode": 0,
+      "seconds": 0.25
+    },
+    {
+      "name": "apple-native",
+      "argv": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=10",
+        "kiro@172.22.10.198",
+        "export PATH=\"/opt/homebrew/bin:$PATH\"; root=\"$HOME/hyle-scratch/d5-graph-825c41f8\"; clang++ -std=c++20 -O2 -I\"$root/_deps/mlx-338da189e54c0743/source\" \"$HOME/hyle-scratch/d5-f45-apple-native.cpp\" -L\"$root/bin\" -Wl,-rpath,\"$root/bin\" -lmlx -o \"$HOME/hyle-scratch/d5-f45-apple-native\" && \"$HOME/hyle-scratch/d5-f45-apple-native\""
+      ],
+      "returncode": 1,
+      "seconds": 2.688
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "baseline": "55211caf1954f34a9322c08872ead3e0f3efd742",
+  "steps": [
+    {
+      "name": "cpu-build",
+      "argv": [
+        "cmd",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f45-portable-native\\cpu-build.cmd"
+      ],
+      "returncode": 0,
+      "seconds": 3.094
+    },
+    {
+      "name": "cpu-native",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f45-portable-native\\cpu-native.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.031
+    }
+  ]
+}

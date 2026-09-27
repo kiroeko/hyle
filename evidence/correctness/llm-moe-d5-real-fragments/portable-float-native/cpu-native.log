@@ -1,0 +1,6 @@
+mismatch input_bits=2147483648 got=0 expected=128
+mismatch input_bits=981467137 got=0 expected=1
+mismatch input_bits=3128950785 got=128 expected=129
+mismatch input_bits=994050047 got=2 expected=1
+FP8 samples=1008 encode_mismatches=253 decode_mismatches=3 impl=simple:any
+FP4 samples=56 encode_mismatches=0 decode_mismatches=0 impl=simple:any

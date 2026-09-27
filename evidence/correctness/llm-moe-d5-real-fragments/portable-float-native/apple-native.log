@@ -1,0 +1,16 @@
+fp8_decode samples=254 mismatches=0
+fp8_encode samples=1016 mismatches=0
+fp4_roundtrip tiny=0 samples=256 mismatches=0
+fp4 mismatch index=32 got=-0 expected=-5.87747e-39
+fp4 mismatch index=36 got=0 expected=5.87747e-39
+fp4 mismatch index=37 got=0 expected=1.17549e-38
+fp4_roundtrip tiny=1 samples=256 mismatches=194
+fp8_groups group=64 power=0 bf16=0 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=64 power=0 bf16=1 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=64 power=1 bf16=0 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=64 power=1 bf16=1 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=128 power=0 bf16=0 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=128 power=0 bf16=1 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=128 power=1 bf16=0 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+fp8_groups group=128 power=1 bf16=1 samples=3072 codes_mismatches=0 output_mismatches=0 scale_relative_error=0
+total_mismatches=194
