@@ -35,5 +35,18 @@ struct ContextAccess final {
   compile(const Context &context, RegionPlan plan) noexcept;
 };
 
+// Cold lowering for model-native FP8 storage. Logical descriptions remain
+// distinct from the uint8 MLX carrier used at the native boundary.
+HYLE_COMPUTE_ROUTE_APPLE_API bool
+is_mlx_float_operation(const Operation &operation,
+                       std::span<const TensorDesc> inputs) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Result<InputSpec>
+mlx_float_input_spec(const TensorDesc &description) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
+lower_mlx_float(const Operation &operation,
+                std::span<const TensorDesc> descriptions,
+                std::span<const mlx::core::array> inputs,
+                mlx::core::Stream stream) noexcept;
+
 } // namespace hyle::compute::apple::detail
 #endif

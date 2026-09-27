@@ -147,6 +147,10 @@ Result<InputSpec> input_spec(const TensorDesc &description) noexcept {
         Status::InvalidArgument("Apple input requires a valid description"));
   InputSpec result;
   result.logical_description = description;
+  if (description.storage_format().id() == kFloat8ActivationFloat32Block128 ||
+      description.storage_format().id() == kFloat8WeightFloat32Block128 ||
+      description.storage_format().id() == kFloat8GroupedWeightFloat32Block128)
+    return detail::mlx_float_input_spec(description);
   if (gguf_quantized_type(description.storage_format())) {
     HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
     if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
@@ -268,7 +272,8 @@ Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
   const WorkloadContext &workload) const noexcept {
   try {
-    if (fixed_ggml_model_operation(operation)) {
+    if (fixed_ggml_model_operation(operation) ||
+        detail::is_mlx_float_operation(operation, {})) {
       std::vector<InputSpec> specs;
       specs.reserve(examples.size());
       for (const auto &input : examples) {
@@ -299,6 +304,11 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
       HYLE_ASSIGN_OR_RETURN(auto description, logical_description(input));
       descriptions.push_back(std::move(description));
     }
+    if (detail::is_mlx_float_operation(operation, descriptions))
+      return compile(
+          [operation, descriptions](const auto &values, mx::Stream stream) {
+            return detail::lower_mlx_float(operation, descriptions, values, stream);
+          }, inputs, workload);
     if (ggml_model_operation(operation, descriptions)) {
       detail::RegionPlan plan;
       plan.workload = workload;

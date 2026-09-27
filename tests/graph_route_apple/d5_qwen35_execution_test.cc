@@ -25,6 +25,8 @@
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
+#include "../compute_models/d5_grouped_fp8_fragments.h"
+#include "../compute_models/d5_quantization_roundtrip.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -82,6 +84,13 @@ struct Tensor final {
 
 Tensor upload(const a::Context &, const c::TensorDesc &description,
               std::span<const std::byte> bytes) {
+  if (!description.is_plain()) {
+    const auto spec = a::input_spec(description).value();
+    std::vector<std::uint8_t> data(bytes.size());
+    std::memcpy(data.data(), bytes.data(), bytes.size());
+    auto result = ready(mx::array(data.data(), spec.shape, spec.dtype));
+    return {description, std::move(result)};
+  }
   const bool transposed = !description.is_dense() && description.rank() == 2;
   const auto shape = native_shape(description, transposed);
   mx::array result = [&]() -> mx::array {
@@ -1445,19 +1454,39 @@ TEST(AppleGraphQwen38_24T,
   }
 }
 
-void run_q24_semantic_fragment(
-    d5_qwen38_24t_semantic_fragments::Fragment fixture) {
+void execute_q24_semantic_fragment(
+    d5_qwen38_24t_semantic_fragments::Fragment fixture,
+    std::vector<mx::array> *capture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
   auto full = sem::make_graph(fixture);
   auto context = a::Context::create().value();
+  std::vector<mx::array> prepared;
+  if (fixture.preparation) {
+    execute_q24_semantic_fragment(*fixture.preparation, &prepared);
+    ASSERT_EQ(prepared.size(), fixture.prepared_constants.size());
+    for (std::size_t i = 0; i < prepared.size(); ++i) {
+      const auto actual = float_values(prepared[i]);
+      const auto &expected = fixture.preparation->replays[0].outputs[i];
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t j = 0; j < actual.size(); ++j) ASSERT_EQ(actual[j], expected[j]);
+    }
+  }
+
   std::vector<mx::array> constants;
-  for (std::size_t index = 0; index < fixture.constant_bytes.size(); ++index)
+  for (std::size_t index = 0; index < fixture.constants.size(); ++index) {
+    const auto found = std::find(fixture.prepared_constants.begin(), fixture.prepared_constants.end(), index);
+    if (found != fixture.prepared_constants.end()) {
+      const auto prepared_index = std::size_t(found - fixture.prepared_constants.begin());
+      constants.push_back(prepared[prepared_index]);
+      continue;
+    }
     constants.push_back(
         fixture.description(fixture.constants[index]).is_plain()
             ? upload(context, fixture.description(fixture.constants[index]),
                      std::span<const std::byte>(fixture.constant_bytes[index]))
                   .native
             : packed_array(fixture.constant_bytes[index]));
+  }
   fixture.constant_bytes = {};
   const auto workload =
       q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
@@ -1485,6 +1514,7 @@ void run_q24_semantic_fragment(
     ASSERT_TRUE(result) << result.error().message();
     const auto outputs = result->get()->arrays();
     ASSERT_EQ(outputs.size(), full.outputs.size());
+    if (capture) capture->assign(outputs.begin(), outputs.end());
     for (std::size_t output = 0; output < outputs.size(); ++output) {
       const auto actual = float_values(outputs[output]);
       feedback.observe(output, actual);
@@ -1493,6 +1523,10 @@ void run_q24_semantic_fragment(
                          fixture.bfloat_chain_output(output));
     }
   }
+}
+
+void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture) {
+  execute_q24_semantic_fragment(std::move(fixture), nullptr);
 }
 
 TEST(AppleGraphMoeFragments, D5MatureClampBoundaries) {
@@ -1578,23 +1612,189 @@ TEST(AppleGraphMoeFragments, D5ThirteenProfilesExpertActivation) {
   }
 }
 
-TEST(AppleGraphMoeFragments, D5OfficialFp8DenseColdRejection) {
-  namespace fp8 = d5_official_fp8_fragments;
+Call prepare_fp8_call(const a::Context &context, c::Operation operation,
+                       std::span<const c::TensorDesc> descriptions) {
+  const auto workload = q::workload(d5_moe_profile_cases::glm53_official,
+                                     c::WorkloadPhase::kDecode, 0x4501);
+  std::vector<Argument> arguments;
+  for (const auto &description : descriptions) arguments.emplace_back(description);
+  return prepare(context, workload, operation, std::span<const Argument>(arguments));
+}
+
+TEST(AppleGraphMoeFragments, D5Fp8CheckedIdsCompletionAndColdBoundaries) {
+  namespace fp8 = d5_grouped_fp8_fragments;
   auto context = a::Context::create().value();
+  const auto wd = c::float8_grouped_weight_description(3, 128, 128).value();
+  const auto ad = dense(c::DataType::kBFloat16, {1, 1, 128});
+  const auto id = dense(c::DataType::kInt32, {1, 2});
+  auto packed = fp8::weight_bytes(3, 128, 128);
+  auto weight = packed_array(packed);
+  const auto input_values = d5_dynamic_fp8_fragments::input_values(1, 128, 1, true);
+  const auto input_bytes = d5_dynamic_fp8_fragments::input_bytes(input_values, true);
+  auto activation = upload(context, ad, std::span<const std::byte>(input_bytes)).native;
+  const std::array descriptions{wd, ad, id};
+  auto call = prepare_fp8_call(context, c::model_ops::grouped_float8_linear(), descriptions);
+  auto invoke = [&](std::int32_t last) {
+    const std::array<std::int32_t, 2> ids{1, last};
+    auto native_ids = upload(context, id, std::span(ids)).native;
+    auto invocation = call.program.create_invocation().value();
+    const std::array inputs{weight, activation, native_ids};
+    EXPECT_TRUE(invocation.bind(inputs).ok());
+    return invocation.submit();
+  };
+  auto first = invoke(1);
+  ASSERT_TRUE(first);
+  auto result = first->wait();
+  ASSERT_TRUE(result);
+  auto retained = result->get()->arrays()[0];
+  const auto original = bits(retained);
+  for (std::int32_t bad : {-1, 3, (std::numeric_limits<std::int32_t>::max)()}) {
+    auto work = invoke(bad);
+    ASSERT_TRUE(work);
+    auto failure = work->wait();
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().IsOutOfRange());
+    EXPECT_EQ(bits(retained), original);
+  }
+  auto left = invoke(0), right = invoke(2);
+  ASSERT_TRUE(left); ASSERT_TRUE(right);
+  // Completion retains the native plan and inputs after all caller handles die.
+  call.program = {};
+  context = {};
+  auto l = left->wait(), r = right->wait();
+  ASSERT_TRUE(l); ASSERT_TRUE(r);
+  EXPECT_EQ(bits(retained), original);
+
+  auto wrong = c::TensorDesc::opaque(c::DataType::kFloat32, wd.dimensions(),
+      wd.storage_format(), wd.required_bytes().value() - 4).value();
+  EXPECT_FALSE(a::input_spec(wrong));
+  auto group32 = c::float8_weight_description(128, 128,
+      c::Float8ScaleMode::kUnsignedExponent8Group32).value();
+  EXPECT_FALSE(a::input_spec(group32));
+}
+
+TEST(AppleGraphMoeFragments, D5Fp8DecodeRetainsReservedNanAndSignedZero) {
+  auto context = a::Context::create().value();
+  auto desc = c::float8_weight_description(128, 1, c::Float8ScaleMode::kFloat32Block128).value();
+  std::vector<std::byte> bytes(desc.required_bytes().value());
+  bytes[0] = std::byte{0x7f}; bytes[1] = std::byte{0xff}; bytes[2] = std::byte{0x80};
+  const float scale = 1;
+  std::memcpy(bytes.data() + 128, &scale, sizeof(scale));
+  auto input = packed_array(bytes);
+  auto call = prepare_fp8_call(context, c::model_ops::float8_weight_decode(c::DataType::kFloat32), std::array{desc});
+  const auto output = run(call, input);
+  ASSERT_EQ(output.size(), 1u);
+  auto actual = float_values(output[0]);
+  EXPECT_TRUE(std::isnan(actual[0])); EXPECT_TRUE(std::isnan(actual[1]));
+  EXPECT_EQ(actual[2], 0.0f); EXPECT_TRUE(std::signbit(actual[2]));
+  EXPECT_EQ(actual[3], 0.0f); EXPECT_FALSE(std::signbit(actual[3]));
+}
+
+TEST(AppleGraphMoeFragments, D5GroupedFp8Batch) {
+  d5_grouped_fp8_fragments::projection_batch([](auto fragment) {
+    run_q24_semantic_fragment(std::move(fragment));
+  });
+}
+
+TEST(AppleGraphMoeFragments, D5GlmOfficialFp8FullMoe) {
+  for (bool flash : {false, true}) {
+    SCOPED_TRACE(flash);
+    run_q24_semantic_fragment(d5_grouped_fp8_fragments::glm_moe(flash));
+  }
+}
+
+TEST(AppleGraphMoeFragments, D5DynamicFp8DenseBatch) {
+  namespace fp8 = d5_official_fp8_fragments;
+  namespace dynamic = d5_dynamic_fp8_fragments;
+  const auto check = [](const fp8::Case &shape) {
+    SCOPED_TRACE(shape.profile->model_name);
+    SCOPED_TRACE(shape.role);
+    for (auto m : {1, 3}) for (bool bf16 : {false, true}) {
+      SCOPED_TRACE(m);
+      SCOPED_TRACE(bf16);
+      run_q24_semantic_fragment(dynamic::projection(shape, m, bf16, false));
+      if (bf16) run_q24_semantic_fragment(dynamic::projection(shape, m, true, true));
+    }
+  };
+  for (const auto &shape : fp8::kCases) check(shape);
+  check(fp8::kGlmTailCase);
+}
+
+TEST(AppleGraphMoeFragments, D5GlmOfficialDynamicFp8SharedFfn) {
+  for (bool flash : {false, true}) {
+    SCOPED_TRACE(flash);
+    for (auto m : {1, 3}) {
+      SCOPED_TRACE(m);
+      run_q24_semantic_fragment(d5_dynamic_fp8_fragments::glm_shared_ffn(m, flash));
+    }
+  }
+}
+
+TEST(AppleGraphMoeFragments, D5OfficialFp8DenseNativeBatch) {
+  namespace fp8 = d5_official_fp8_fragments;
   for (const auto &shape : fp8::kCases) {
     SCOPED_TRACE(shape.profile->model_name);
     SCOPED_TRACE(shape.role);
     for (auto m : {1, 3}) {
       SCOPED_TRACE(m);
-      const auto workload = q::workload(*shape.profile, c::WorkloadPhase::kDecode, 0x0b0603);
-      auto fragment = fp8::boundary(shape, m);
-      auto full = fp8::sem::make_graph(fragment);
-      auto result = ga::compile(context, full.graph, {}, {.workload = workload});
-      ASSERT_FALSE(result);
-      fp8::record_rejection(shape, m, result.error());
-      EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+      run_q24_semantic_fragment(fp8::projection(shape, m));
     }
   }
+  for (auto m : {1, 3}) {
+    SCOPED_TRACE("GLM partial N block");
+    SCOPED_TRACE(m);
+    run_q24_semantic_fragment(fp8::projection(fp8::kGlmTailCase, m));
+  }
+}
+
+TEST(AppleGraphMoeFragments, D5Fp8WeightPreparation) {
+  for (bool bf16 : {false, true})
+    for (const auto shape : {std::array<std::int64_t, 2>{129, 256}, {576, 6144}, {28672, 512}}) {
+      SCOPED_TRACE(bf16);
+      SCOPED_TRACE(shape[0]);
+      run_q24_semantic_fragment(d5_fp8_weight_preparation::decode_weights(shape[0], shape[1], bf16));
+    }
+}
+
+TEST(AppleGraphMoeFragments, D5GlmFp8AccumulationBoundaries) {
+  run_q24_semantic_fragment(d5_dynamic_fp8_fragments::model_accumulation_boundaries());
+}
+
+TEST(AppleGraphMoeFragments, D5GlmOfficialMixedRemaining) {
+  namespace glm = d5_glm_remaining_fragments;
+  run_q24_semantic_fragment(glm::official_flash_clamped_activation());
+  for (const auto &model : glm::kCases) {
+    if (!model.official) continue;
+    SCOPED_TRACE(model.profile->model_name);
+    run_q24_semantic_fragment(glm::dense_ffn(model));
+    for (int tail : {0, 3}) {
+      if (!model.flash && tail) continue;
+      run_q24_semantic_fragment(glm::indexer(model, tail));
+      run_q24_semantic_fragment(glm::sparse_attention(model, tail));
+    }
+    glm::check_index_carry(model, run_q24_semantic_fragment);
+    if (model.flash) {
+      run_q24_semantic_fragment(glm::mla(model));
+      glm::check_mtp_head(model, run_q24_semantic_fragment);
+    }
+  }
+}
+
+TEST(AppleGraphMoeFragments, D5GlmDsaPreparedKvAndNextN) {
+  namespace glm = d5_glm_remaining_fragments;
+  const auto &model = glm::kCases[0];
+  ASSERT_TRUE(model.official && !model.flash);
+  run_q24_semantic_fragment(glm::mla(model));
+  glm::check_mtp_head(model, run_q24_semantic_fragment);
+}
+
+TEST(AppleGraphMoeFragments, D5Fp8QuantizationRoundtrip) {
+  for (std::size_t group : {64u, 128u})
+    for (std::int64_t rows : {1, 3, 33}) {
+      SCOPED_TRACE(group);
+      SCOPED_TRACE(rows);
+      run_q24_semantic_fragment(d5_quantization_roundtrip::fragment(false, rows, 512, group));
+    }
 }
 
 TEST(AppleGraphMoeFragments, D5OfficialFp4ExpertBatch) {
