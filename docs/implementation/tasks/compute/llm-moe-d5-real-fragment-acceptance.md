@@ -784,6 +784,12 @@ Apple 当前批次固定在 Air `Mac16,12`，Release/WERROR、插桩 OFF、低�
 installed执行隐藏producer bin及Metal资源、移除DYLD搜索环境，核对搬迁SDK的metallib来源。
 本批预算为一次配置/构建/验收及一次具体接缝纠正；已有F46原生探针不再运行，性能随后按A6执行。
 
+`4f56dc5e` 的消费者编译暴露新增测试把 `optional` 当指针比较，`78e9f243` 纠正后，
+shared 的10项计算和Graph拒绝检查通过；Direct新测试因 `input_spec(...).value()` 抛异常失败。
+现将这项消费者构造失配退回 AUDITED 定界：仅检查并记录公开 `input_spec` 的具名格式拒绝，
+不假定所有拒绝都发生在 `prepare`。产品FIX仍为零；11项通过结果复用，仅重跑该Direct检查。
+原编译/运行失败均保留。随后 source/static 按原整批继续，不扩大原生调查或数值纠正预算。
+
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
 |---|---:|---|---|
 | Qwen3.5-2B | 3 | H=2048、FFN=6144、GQA 8/2×256、GDN 16×128、conv K4 | official：R01-R05、R13-R15；两份 GGUF：R01-R05、R14-R15 |

@@ -12,6 +12,7 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument('stage', choices=['shared', 'source', 'static', 'all'])
 parser.add_argument('--attempt', default='')
+parser.add_argument('--correct-shared-boundary', action='store_true')
 args = parser.parse_args()
 repo = Path.cwd().resolve()
 root = Path.home()/'hyle-scratch/d5-apple-delivery'
@@ -34,7 +35,8 @@ while todo:
     data = source.read_bytes()
     target = consumer/name
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(data)
+    if not target.exists() or target.read_bytes() != data:
+        target.write_bytes(data)
     copied[name] = hashlib.sha256(data).hexdigest()
     for include in re.findall(rb'^\s*#include\s+"([^"]+)"', data, re.M):
         include = include.decode()
@@ -159,6 +161,23 @@ def stage(label):
             runtime.pop(name)
     runtime['DYLD_PRINT_LIBRARIES'] = '1'
     hidden = []
+    targeted = label == 'shared' and args.correct_shared_boundary
+    if targeted:
+        previous = root/'receipts/shared-consumer-optional'
+        prior = json.loads((previous/'inputs.json').read_text())
+        changed = [name for name in set(prior['consumer']) | set(copied)
+                   if prior['consumer'].get(name) != copied.get(name)]
+        if changed != ['tests/compute_route_apple/d5_qwen35_execution_test.cc']:
+            raise SystemExit('The bounded correction changed more than the Direct test TU.')
+        if prior['product_git_blobs'] != identity['product_git_blobs']:
+            raise SystemExit('The bounded correction changed product inputs.')
+        original = (previous/'native-tests.log').read_bytes()
+        failed_names = set(re.findall(rb'^\[  FAILED  \]\s+([A-Za-z_]\S+)', original, re.M))
+        if sum(map(int, re.findall(rb'\[  PASSED  \]\s+(\d+) tests?\.', original))) != 11 or \
+                failed_names != {b'AppleMoeFragments.D5OfficialDeepSeekFullMoeColdBoundary'}:
+            raise SystemExit('Prior results do not match the one-test correction.')
+        receipt['reused_tests'] = {'count': 11, 'candidate': prior['candidate'],
+            'log': str(previous/'native-tests.log'), 'sha256': hashlib.sha256(original).hexdigest()}
     try:
         if label != 'source':
             for directory in (producer/'bin', producer/'hyle/bin'):
@@ -172,19 +191,27 @@ def stage(label):
                 destination = asset.with_name(asset.name+'.d5-hidden')
                 rename_inside(asset, destination, producer)
                 hidden.append((destination, asset))
-        run('consumer-test', [ctest, '--test-dir', build, '--output-on-failure', '--no-tests=error',
-            '-j', '1', '--output-junit', out/'tests.xml'], runtime)
+        if targeted:
+            run('consumer-test', [build/'d5_apple_direct',
+                '--gtest_filter=AppleMoeFragments.D5OfficialDeepSeekFullMoeColdBoundary',
+                '--gtest_output=xml:'+str(out/'tests.xml')], runtime)
+        else:
+            run('consumer-test', [ctest, '--test-dir', build, '--output-on-failure', '--no-tests=error',
+                '-j', '1', '--output-junit', out/'tests.xml'], runtime)
     finally:
         for source, destination in reversed(hidden):
             rename_inside(source, destination, producer)
-    native = (build/'Testing/Temporary/LastTest.log').read_bytes()
+        native_path = out/'consumer-test.log' if targeted else build/'Testing/Temporary/LastTest.log'
+        if native_path.exists():
+            (out/'native-tests.log').write_bytes(native_path.read_bytes())
+    native = (out/'native-tests.log').read_bytes()
     (out/'native-tests.log').write_bytes(native)
     passed = sum(map(int, re.findall(rb'\[  PASSED  \]\s+(\d+) tests?\.', native)))
-    if b'[  SKIPPED ]' in native or passed != 12:
+    if b'[  SKIPPED ]' in native or passed != (1 if targeted else 12):
         raise SystemExit('Expected twelve executed passing tests, without skips.')
     if label != 'source' and str(producer).encode() in native:
         raise SystemExit('Installed execution loaded from the hidden producer.')
-    receipt.update(verdict='PASS', tests=12, runtime_path=runtime['PATH'])
+    receipt.update(verdict='PASS', tests=12, executed_tests=passed, runtime_path=runtime['PATH'])
     (out/'receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
     print(label, 'PASS, 12 tests, no skips', flush=True)
 

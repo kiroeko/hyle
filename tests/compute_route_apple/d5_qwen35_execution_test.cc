@@ -1778,22 +1778,34 @@ TEST(AppleMoeFragments, D5OfficialDeepSeekFullMoeColdBoundary) {
     for (const auto &node : fragment.nodes) {
       if (node.operation.kind() == c::OperationKind::kView)
         continue;
-      std::vector<a::InputSpec> specs;
-      for (auto id : node.inputs)
-        specs.push_back(a::input_spec(fragment.description(id)).value());
-      auto result = context.prepare(node.operation, specs, workload);
-      if (!result) {
+      const auto record_rejection = [&](const hyle::Status &status,
+                                         const char *phase) {
         ASSERT_TRUE(node.operation.custom_as<c::model_ops::GroupedFloat4Linear>()
-                        .has_value()) << result.error().message();
-        ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+                        .has_value()) << status.message();
+        ASSERT_TRUE(status.IsUnimplemented()) << status.message();
         const auto name = fragment.profile->model_name;
-        const auto message = result.error().message();
+        const auto message = status.message();
         std::printf("OFFICIAL_APPLE_REJECT entry=direct model=%.*s region=%llu "
-                    "nodes=%zu prepared=%zu operation=GroupedFloat4Linear code=%d message=%.*s\n",
+                    "nodes=%zu prepared=%zu operation=GroupedFloat4Linear phase=%s code=%d message=%.*s\n",
                     int(name.size()), name.data(),
                     static_cast<unsigned long long>(fragment.region), fragment.nodes.size(),
-                    prepared, int(result.error().code()), int(message.size()), message.data());
+                    prepared, phase, int(status.code()), int(message.size()), message.data());
         rejected = true;
+      };
+      std::vector<a::InputSpec> specs;
+      for (auto id : node.inputs) {
+        auto spec = a::input_spec(fragment.description(id));
+        if (!spec) {
+          record_rejection(spec.error(), "input_spec");
+          break;
+        }
+        specs.push_back(std::move(*spec));
+      }
+      if (rejected || ::testing::Test::HasFatalFailure())
+        break;
+      auto result = context.prepare(node.operation, specs, workload);
+      if (!result) {
+        record_rejection(result.error(), "prepare");
         break;
       }
       ++prepared;
