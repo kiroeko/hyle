@@ -1,0 +1,19 @@
+{
+  "candidate": "b20fb87c935103293cf3602f3f4fee53c660b95f",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "static",
+  "steps": [
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\d5cp\\source-build",
+        "--prefix",
+        "C:\\hv\\d5cp\\static-staging"
+      ],
+      "returncode": 1,
+      "seconds": 0.281
+    }
+  ]
+}

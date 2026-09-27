@@ -121,7 +121,9 @@ else:
     if args.stage == 'source':
         run('source-configure', [cmake, '-S', consumer, '-B', producer, *common, *dep_args,
             '-DD5_SOURCE_ROOT='+str(source_tree), '-DCMAKE_INSTALL_PREFIX='+str(staging), '-DHYLE_WERROR=ON'])
-        run('source-build', [cmake, '--build', producer, '--target', 'd5_cpu_delivery', '-j', '2'])
+        # The static SDK installs every configured public component, including
+        # base libraries not reached by the representative consumer targets.
+        run('source-build', [cmake, '--build', producer, '-j', '2'])
         (root/'source-candidate.txt').write_text(candidate+'\n')
         build = producer
     elif (root/'source-candidate.txt').read_text().strip() != candidate:

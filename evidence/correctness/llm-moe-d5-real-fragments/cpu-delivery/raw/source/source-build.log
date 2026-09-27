@@ -1,0 +1,722 @@
+[0/2] Re-checking globbed directories...
+[1/620] Building CXX object hyle\src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[2/620] Linking CXX static library hyle\src\error\hyle_error.lib
+[3/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[4/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform_cgroup_parser.dir\linux_cgroup.cc.obj
+[5/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[6/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[7/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[8/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[9/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[10/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[11/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[12/620] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[13/620] Building C object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml.c.obj
+[14/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[15/620] Building CXX object hyle\src\mem\CMakeFiles\mimalloc_static.dir\C_\hv\d5cd\source-tree\third_party\mimalloc\src\static.c.obj
+[16/620] Building C object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+[17/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[18/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-opt.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[19/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-backend-meta.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[20/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[21/620] Building C object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+[22/620] Linking CXX static library hyle\src\platform\hyle_platform.lib
+[23/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\gguf.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[24/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[25/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[26/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[27/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[28/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[29/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[30/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[31/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[32/620] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[33/620] Linking CXX static library hyle\src\mem\mimalloc_static.lib
+[34/620] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[35/620] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[36/620] Linking CXX static library hyle\src\compute_ggml_runtime\vendor\src\ggml-base.lib
+[37/620] Building C object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ggml-cpu.c.obj
+[38/620] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[39/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ggml-cpu.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[40/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\repack.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[41/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\iqp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[42/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\hbm.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[43/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\traits.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[44/620] Building C object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\quants.c.obj
+[45/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\amx\amx.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[46/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\amx\mmq.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[47/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\binary-ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[48/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\unary-ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[49/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\vec.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[50/620] Building C object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\arch\x86\quants.c.obj
+[51/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\arch\x86\repack.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[52/620] Linking CXX static library hyle\src\mem\hyle_mem.lib
+[53/620] Linking CXX static library hyle\src\compute_ops\hyle_compute_ops.lib
+[54/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[55/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[56/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[57/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[58/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[59/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[60/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[61/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[62/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[63/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[64/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[65/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[66/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[67/620] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[68/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml.dir\ggml-backend-dl.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[69/620] Linking CXX static library hyle\src\compute_ggml_runtime\vendor\src\ggml-cpu.lib
+[70/620] Building RC object hyle\_deps\onednn-build\src\CMakeFiles\dnnl.dir\version.rc.res
+[71/620] Building CXX object hyle\src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml.dir\ggml-backend-reg.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[72/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\bfloat16.cpp.obj
+[73/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\batch_normalization.cpp.obj
+[74/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\binary.cpp.obj
+[75/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\broadcast_strategy.cpp.obj
+[76/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\cache_blob_id.cpp.obj
+[77/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\concat.cpp.obj
+[78/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\convolution.cpp.obj
+[79/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\convolution_pd.cpp.obj
+[80/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\dnnl_debug.cpp.obj
+[81/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\deconvolution.cpp.obj
+[82/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\dnnl_threadpool.cpp.obj
+[83/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\dnnl_debug_autogenerated.cpp.obj
+[84/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\eltwise.cpp.obj
+[85/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\engine.cpp.obj
+[86/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\experimental.cpp.obj
+[87/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\float4.cpp.obj
+[88/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\float8.cpp.obj
+[89/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\fpmath_mode.cpp.obj
+[90/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\gated_mlp_iface.cpp.obj
+[91/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\gemm.cpp.obj
+[92/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\group_normalization.cpp.obj
+[93/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\impl_list_item.cpp.obj
+[94/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\ittnotify.cpp.obj
+[95/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\inner_product.cpp.obj
+[96/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\kernel_cache.cpp.obj
+[97/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\layer_normalization.cpp.obj
+[98/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\lrn.cpp.obj
+[99/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\matmul.cpp.obj
+[100/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory.cpp.obj
+[101/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_debug.cpp.obj
+[102/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_desc.cpp.obj
+[103/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_desc_wrapper.cpp.obj
+[104/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_storage.cpp.obj
+[105/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_tracking.cpp.obj
+[106/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\pooling.cpp.obj
+[107/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\prelu.cpp.obj
+[108/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_attr.cpp.obj
+[109/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_attr_quant.cpp.obj
+[110/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_cache.cpp.obj
+[111/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_zero_pad.cpp.obj
+[112/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_desc_iface.cpp.obj
+[113/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_exec_types.cpp.obj
+[114/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_hashing.cpp.obj
+[115/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_serialization.cpp.obj
+[116/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\query.cpp.obj
+[117/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\reduction.cpp.obj
+[118/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\reorder.cpp.obj
+[119/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\resampling.cpp.obj
+[120/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\rw_mutex.cpp.obj
+[121/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\rnn.cpp.obj
+[122/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\scratchpad.cpp.obj
+[123/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\scratchpad_debug.cpp.obj
+[124/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\sdpa_test_iface.cpp.obj
+[125/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\shuffle.cpp.obj
+[126/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\softmax.cpp.obj
+[127/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\stream.cpp.obj
+[128/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\stream_profiler.cpp.obj
+[129/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\stream_threadpool.cpp.obj
+[130/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\utils.cpp.obj
+[131/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\sum.cpp.obj
+[132/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\__\__\hyle-runtime\primitive_iface.cpp.obj
+[133/620] Building CXX object hyle\_deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\verbose.cpp.obj
+[134/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\binary_injector_utils.cpp.obj
+[135/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\bfloat16.cpp.obj
+[136/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_batch_normalization_list.cpp.obj
+[137/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_batch_normalization_utils.cpp.obj
+[138/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_concat.cpp.obj
+[139/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_binary_list.cpp.obj
+[140/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_deconvolution_list.cpp.obj
+[141/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_convolution_list.cpp.obj
+[142/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_engine.cpp.obj
+[143/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_eltwise_list.cpp.obj
+[144/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_group_normalization_list.cpp.obj
+[145/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_inner_product_list.cpp.obj
+[146/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_layer_normalization_list.cpp.obj
+[147/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_lrn_list.cpp.obj
+[148/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_prelu_list.cpp.obj
+[149/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_pooling_list.cpp.obj
+[150/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_reduction_list.cpp.obj
+[151/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_resampling_list.cpp.obj
+[152/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_shuffle_list.cpp.obj
+[153/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_rnn_list.cpp.obj
+[154/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_softmax_list.cpp.obj
+[155/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_sum.cpp.obj
+[156/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_convolution.cpp.obj
+[157/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\float16.cpp.obj
+[158/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_inner_product.cpp.obj
+[159/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_convolution_utils.cpp.obj
+[160/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_inner_product_utils.cpp.obj
+[161/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_conv_zp_src_pad_comp.cpp.obj
+[162/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_convolution_utils.cpp.obj
+[163/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_convolution.cpp.obj
+[164/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_inner_product.cpp.obj
+[165/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\nchw_pooling.cpp.obj
+[166/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ncsp_batch_normalization.cpp.obj
+[167/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ncsp_group_normalization.cpp.obj
+[168/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\nhwc_pooling.cpp.obj
+[169/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\nspc_batch_normalization.cpp.obj
+[170/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\primitive_attr_postops.cpp.obj
+[171/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\platform.cpp.obj
+[172/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_binary.cpp.obj
+[173/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_batch_normalization.cpp.obj
+[174/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_convolution.cpp.obj
+[175/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_convolution_int8.cpp.obj
+[176/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_eltwise.cpp.obj
+[177/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_deconvolution.cpp.obj
+[178/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_group_normalization.cpp.obj
+[179/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_inner_product.cpp.obj
+[180/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_inner_product_int8.cpp.obj
+[181/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_layer_normalization.cpp.obj
+[182/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_pooling.cpp.obj
+[183/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_lrn.cpp.obj
+[184/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_prelu.cpp.obj
+[185/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_reduction.cpp.obj
+[186/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_resampling.cpp.obj
+[187/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_shuffle.cpp.obj
+[188/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_softmax.cpp.obj
+[189/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\scale_utils.cpp.obj
+[190/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_layer_normalization.cpp.obj
+[191/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_concat.cpp.obj
+[192/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_resampling.cpp.obj
+[193/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_sum.cpp.obj
+[194/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\zero_point_utils.cpp.obj
+[195/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\bf16\ref_gemm_bf16.cpp.obj
+[196/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\f32\gemm_utils_f32.cpp.obj
+[197/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\f32\ref_gemm_f32.cpp.obj
+[198/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\gemm_pack.cpp.obj
+[199/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\gemm.cpp.obj
+[200/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\s8x8s32\ref_gemm_s8x8s32.cpp.obj
+[201/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\s8x8s32\simple_gemm_s8s8s32.cpp.obj
+[202/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\gemm_bf16_matmul.cpp.obj
+[203/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\cpu_matmul_list.cpp.obj
+[204/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\gemm_f32_matmul.cpp.obj
+[205/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\gemm_x8s8s32x_matmul.cpp.obj
+[206/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_grouped_gemm.cpp.obj
+[207/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_matmul_int8.cpp.obj
+[208/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_matmul.cpp.obj
+[209/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_sparse_matmul.cpp.obj
+[210/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder.cpp.obj
+[211/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_comp_bf16_s8.cpp.obj
+[212/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_comp_f32_s8.cpp.obj
+[213/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_comp_s8_s8.cpp.obj
+[214/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_bf16.cpp.obj
+[215/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_bf16.cpp.obj
+[216/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f16.cpp.obj
+[217/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_f16.cpp.obj
+[218/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_f32.cpp.obj
+[219/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_fp8.cpp.obj
+[220/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_s32.cpp.obj
+[221/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_u8.cpp.obj
+[222/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_s8.cpp.obj
+[223/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_fp4.cpp.obj
+[224/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_fp8.cpp.obj
+[225/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_s32.cpp.obj
+[226/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_s4.cpp.obj
+[227/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_s8.cpp.obj
+[228/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_u4.cpp.obj
+[229/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_u8.cpp.obj
+[230/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\brgemm_cell_common.cpp.obj
+[231/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\cell_common.cpp.obj
+[232/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\cell_gru.cpp.obj
+[233/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\cell_gru_lbr.cpp.obj
+[234/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_gru.cpp.obj
+[235/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_gru_lbr.cpp.obj
+[236/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_lstm.cpp.obj
+[237/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_lstm_projection.cpp.obj
+[238/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_rnn.cpp.obj
+[239/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\rnn_utils.cpp.obj
+[240/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ukernel\attr_params.cpp.obj
+[241/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ukernel\brgemm.cpp.obj
+[242/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ukernel\transform.cpp.obj
+[243/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\jit_utils\jit_utils.cpp.obj
+[244/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\jit_utils\linux_perf\linux_perf.cpp.obj
+[245/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\amx_tile_configure.cpp.obj
+[246/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\brgemm.cpp.obj
+[247/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\brgemm_containers.cpp.obj
+[248/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\brgemm_utils.cpp.obj
+[249/620] Building CXX object hyle\_deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_rnn.cpp.obj
+[250/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\jit_brdgmm_kernel.cpp.obj
+[251/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\jit_brgemm_amx_uker.cpp.obj
+[252/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\cpu_barrier.cpp.obj
+[253/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\jit_brgemm_kernel.cpp.obj
+[254/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\cpu_isa_traits.cpp.obj
+[255/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\amx\jit_avx512_core_amx_copy_kern.cpp.obj
+[256/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\cpu_reducer.cpp.obj
+[257/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\amx\jit_avx512_core_amx_gemm_kern.cpp.obj
+[258/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_gemm_bf16bf16f32_kern.cpp.obj
+[259/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[260/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_gemv_bf16bf16f32_kern.cpp.obj
+[261/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[262/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[263/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[264/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[265/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[266/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[267/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[268/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[269/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[270/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[271/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[272/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_kernel_sgemm_kern.cpp.obj
+[273/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[274/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_common_gemm_f32.cpp.obj
+[275/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_at_kern_part2_autogen.cpp.obj
+[276/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_at_kern_part1_autogen.cpp.obj
+[277/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[278/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[279/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[280/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_gemm_smalln_tn_f32_kern.cpp.obj
+[281/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[282/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[283/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[284/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_gemv_t_f32_kern.cpp.obj
+[285/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_gemm_f32.cpp.obj
+[286/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_b0_sgemm_kern_part1_autogen.cpp.obj
+[287/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_b0_sgemm_kern_part2_autogen.cpp.obj
+[288/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_sgemm_kern_part1_autogen.cpp.obj
+[289/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_sgemm_kern_part2_autogen.cpp.obj
+[290/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[291/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[292/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[293/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[294/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_gemv_t_f32_kern.cpp.obj
+[295/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_gemv_n_f32_kern.cpp.obj
+[296/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_kernel_b0_sgemm_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[297/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_kernel_sgemm_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[298/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemm_driver.cpp.obj
+[299/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemm_info.cpp.obj
+[300/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemm_pack.cpp.obj
+[301/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemv_driver.cpp.obj
+[302/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[303/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_gemm_s8u8s32_kern.cpp.obj
+[304/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[305/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[306/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[307/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[308/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[309/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[310/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[311/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[312/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[313/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[314/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[315/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[316/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[317/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[318/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[319/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_gemm_s8u8s32_kern.cpp.obj
+[320/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_gemv_s8x8s32.cpp.obj
+[321/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_kernel_gemv_s8x8s32_kern.cpp.obj
+[322/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[323/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[324/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[325/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[326/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[327/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[328/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[329/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[330/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[331/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[332/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[333/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[334/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[335/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[336/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[337/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[338/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[339/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[340/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[341/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[342/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[343/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[344/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[345/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[346/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[347/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[348/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[349/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[350/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[351/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[352/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[353/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[354/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[355/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[356/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[357/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[358/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_an_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[359/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_at_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[360/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[361/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl : Command line warning D9025 : overriding '/O2' with '/Od'
+[362/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm_bf16_convolution.cpp.obj
+[363/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm_bf16_inner_product.cpp.obj
+[364/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\injector_utils.cpp.obj
+[365/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\jit_uni_binary_injector.cpp.obj
+[366/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\jit_uni_postops_injector.cpp.obj
+[367/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ip_convolution.cpp.obj
+[368/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\jit_uni_eltwise_injector.cpp.obj
+[369/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_1x1_conv_kernel_f32.cpp.obj
+[370/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_conv_kernel_f32.cpp.obj
+[371/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_1x1_convolution.cpp.obj
+[372/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_convolution.cpp.obj
+[373/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_1x1_conv_kernel.cpp.obj
+[374/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_1x1_convolution.cpp.obj
+[375/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_conv_kernel.cpp.obj
+[376/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_convolution.cpp.obj
+[377/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_1x1_conv_kernel.cpp.obj
+[378/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_1x1_convolution.cpp.obj
+[379/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_conv_kernel.cpp.obj
+[380/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_convolution.cpp.obj
+[381/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_deconvolution.cpp.obj
+[382/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_1x1_conv_kernel.cpp.obj
+[383/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_1x1_convolution.cpp.obj
+[384/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_conv_kernel.cpp.obj
+[385/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_convolution.cpp.obj
+[386/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_dw_conv_kernel.cpp.obj
+[387/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_f16_dw_conv_kernel.cpp.obj
+[388/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_fp16cvt.cpp.obj
+[389/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_fp8cvt.cpp.obj
+[390/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_resampling.cpp.obj
+[391/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_1x1_conv_kernel.cpp.obj
+[392/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_1x1_convolution.cpp.obj
+[393/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_convolution.cpp.obj
+[394/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_conv_kernel.cpp.obj
+[395/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_sparse_decompress_kernel.cpp.obj
+[396/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_deconvolution.cpp.obj
+[397/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brdgmm_dw_conv.cpp.obj
+[398/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_1x1_conv.cpp.obj
+[399/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd.cpp.obj
+[400/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv.cpp.obj
+[401/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_copy_kernel.cpp.obj
+[402/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_trans_kernel.cpp.obj
+[403/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_strided.cpp.obj
+[404/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_utils.cpp.obj
+[405/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_comp_pad_kernel.cpp.obj
+[406/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_w.cpp.obj
+[407/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_trans_kernel.cpp.obj
+[408/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_utils.cpp.obj
+[409/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_deconv.cpp.obj
+[410/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_inner_product.cpp.obj
+[411/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_inner_product_utils.cpp.obj
+[412/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_primitive_conf.cpp.obj
+[413/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_post_ops.cpp.obj
+[414/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_transpose_utils.cpp.obj
+[415/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_gemm_x8s8s32x_conv_zp_src_pad_comp.cpp.obj
+[416/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_gemm_inner_product_utils.cpp.obj
+[417/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_generator.cpp.obj
+[418/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_gemm_x8s8s32x_convolution_utils.cpp.obj
+[419/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_1x1_conv_kernel_f32.cpp.obj
+[420/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_1x1_convolution.cpp.obj
+[421/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_convolution.cpp.obj
+[422/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_conv_kernel_f32.cpp.obj
+[423/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_transpose_utils.cpp.obj
+[424/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_batch_normalization.cpp.obj
+[425/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_batch_normalization_s8.cpp.obj
+[426/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_binary.cpp.obj
+[427/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_convert_xf16.cpp.obj
+[428/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_binary_kernel.cpp.obj
+[429/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_deconv_zp_pad_str_kernel.cpp.obj
+[430/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_dw_conv_kernel_f32.cpp.obj
+[431/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_dw_conv_kernel_utils.cpp.obj
+[432/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_dw_convolution.cpp.obj
+[433/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_eltwise.cpp.obj
+[434/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_eltwise_int.cpp.obj
+[435/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_group_normalization.cpp.obj
+[436/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_i8i8_pooling.cpp.obj
+[437/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_instance_normalization.cpp.obj
+[438/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_layer_normalization.cpp.obj
+[439/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_ncsp_convolution.cpp.obj
+[440/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_pool_kernel.cpp.obj
+[441/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_pooling.cpp.obj
+[442/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reduction.cpp.obj
+[443/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reduction_kernel.cpp.obj
+[444/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reorder.cpp.obj
+[445/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reorder_utils.cpp.obj
+[446/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reorder_direct_copy.cpp.obj
+[447/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_resampling.cpp.obj
+[448/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_resampling_kernel.cpp.obj
+[449/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_softmax.cpp.obj
+[450/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_tbb_batch_normalization.cpp.obj
+[451/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_1x1_conv_kernel.cpp.obj
+[452/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_1x1_convolution.cpp.obj
+[453/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_convolution.cpp.obj
+[454/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_conv_kernel.cpp.obj
+[455/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_xf16_sum.cpp.obj
+[456/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_deconvolution.cpp.obj
+[457/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_bwd_base.cpp.obj
+[458/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn.cpp.obj
+[459/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_bwd_blocked.cpp.obj
+[460/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_bwd_nhwc.cpp.obj
+[461/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_fwd_base.cpp.obj
+[462/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_fwd_blocked.cpp.obj
+[463/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_fwd_nhwc.cpp.obj
+[464/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_uni_lrn.cpp.obj
+[465/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\amx_blocking_heuristics.cpp.obj
+[466/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_uni_lrn_kernel.cpp.obj
+[467/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul_copy_utils.cpp.obj
+[468/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul.cpp.obj
+[469/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul_reorders.cpp.obj
+[470/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul_utils.cpp.obj
+[471/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\jit_brgemm_matmul_per_mn_comp.cpp.obj
+[472/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul_inner_product.cpp.obj
+[473/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\jit_uni_sparse_matmul.cpp.obj
+[474/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\platform.cpp.obj
+[475/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_backward.cpp.obj
+[476/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_base_kernel.cpp.obj
+[477/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_forward.cpp.obj
+[478/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_utils.cpp.obj
+[479/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_reduction_kernel.cpp.obj
+[480/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_uni_prelu_backward_kernel.cpp.obj
+[481/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_uni_prelu_forward_kernel.cpp.obj
+[482/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_bwd.cpp.obj
+[483/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_fwd.cpp.obj
+[484/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_utils.cpp.obj
+[485/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_reorders.cpp.obj
+[486/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\jit_brgemm_transpose_single_row.cpp.obj
+[487/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\jit_diff_weights_peephole.cpp.obj
+[488/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\jit_gates_reduction.cpp.obj
+[489/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\rnn_brgemm_utils.cpp.obj
+[490/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\shuffle\jit_uni_shuffle.cpp.obj
+[491/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ukernel\attr_params.cpp.obj
+[492/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\shuffle\jit_uni_shuffle_kernel.cpp.obj
+[493/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ukernel\brgemm.cpp.obj
+[494/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ukernel\transform.cpp.obj
+[495/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\utils\jit_regops.cpp.obj
+[496/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[497/620] Building CXX object hyle\_deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\utils\jit_io_helper.cpp.obj
+[498/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[499/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[500/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[501/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[502/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[503/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[504/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_fp8_scalar.cc.obj
+[505/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[506/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_scalar.cc.obj
+[507/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\activations.cc.obj
+[508/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[509/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\top_k.cc.obj
+[510/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\radix_sort.cc.obj
+[511/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_scalar.cc.obj
+[512/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_f16c.cc.obj
+[513/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[514/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx_vnni.cc.obj
+[515/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512_vnni.cc.obj
+[516/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512bf16.cc.obj
+[517/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_f16c.cc.obj
+[518/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_avx512bf16.cc.obj
+[519/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway.cc.obj
+[520/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway_avx512.cc.obj
+[521/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[522/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[523/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[524/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[525/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[526/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[527/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[528/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[529/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[530/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[531/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[532/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[533/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[534/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[535/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[536/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[537/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[538/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[539/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[540/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[541/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[542/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[543/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[544/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[545/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[546/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[547/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[548/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[549/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\hash.cc.obj
+[550/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\pod_vector.cc.obj
+[551/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\flat_hash_map.cc.obj
+[552/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\dynamic_bitset.cc.obj
+[553/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\hash_xxh3_avx2.cc.obj
+[554/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_scalar.cc.obj
+[555/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_sse4.cc.obj
+[556/620] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_avx2.cc.obj
+[557/620] Linking CXX static library hyle\src\compute\hyle_compute.lib
+[558/620] Building CXX object hyle\src\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu.dir\cpu_backend.cc.obj
+[559/620] Building CXX object hyle\src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\metadata_arena.cc.obj
+[560/620] Building CXX object hyle\src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_execution.cc.obj
+[561/620] Linking CXX static library hyle\src\compute_ggml_runtime\vendor\src\ggml.lib
+[562/620] Linking CXX static library hyle\_deps\onednn-build\src\dnnl.lib
+[563/620] Linking CXX static library hyle\src\container\hyle_container.lib
+[564/620] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\graph.cc.obj
+[565/620] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\effect_order.cc.obj
+[566/620] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[567/620] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\view_domain.cc.obj
+[568/620] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\constant_artifact.cc.obj
+[569/620] Building CXX object hyle\src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\brgemm_internal.cc.obj
+[570/620] Building CXX object hyle\src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\normalization_internal.cc.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[571/620] Building CXX object hyle\src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\onednn_provider.cc.obj
+[572/620] Linking CXX static library hyle\src\compute_backend_cpu\hyle_compute_backend_cpu.lib
+[573/620] Linking CXX static library hyle\src\compute_ggml_runtime\hyle_compute_ggml_runtime.lib
+[574/620] Building CXX object hyle\src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj
+[575/620] Building CXX object hyle\src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\standard_index.cc.obj
+[576/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\attention.cc.obj
+[577/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\cast.cc.obj
+[578/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\elementwise.cc.obj
+[579/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\indexing.cc.obj
+[580/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\native_provider.cc.obj
+[581/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\normalization.cc.obj
+[582/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\reduction.cc.obj
+[583/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transform.cc.obj
+[584/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transformer.cc.obj
+[585/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_matmul\compute_matmul_scalar.cc.obj
+[586/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_matmul\compute_matmul_sse4.cc.obj
+[587/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_matmul\compute_matmul_avx2.cc.obj
+[588/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_matmul\compute_matmul_avx512.cc.obj
+[589/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_scalar.cc.obj
+[590/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_sse4.cc.obj
+[591/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_avx2.cc.obj
+[592/620] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_avx512.cc.obj
+[593/620] Linking CXX static library hyle\src\graph\hyle_graph.lib
+[594/620] Linking CXX static library hyle\src\compute_provider_onednn\hyle_compute_provider_onednn.lib
+[595/620] Linking CXX static library hyle\src\compute_provider_ggml\hyle_compute_provider_ggml.lib
+[596/620] Building CXX object hyle\src\graph_provider_onednn\CMakeFiles\hyle_graph_provider_onednn.dir\onednn_region_provider.cc.obj
+[597/620] Building CXX object hyle\src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\cpu_context.cc.obj
+[598/620] Building CXX object fixture-gtest\googletest\CMakeFiles\gtest.dir\src\gtest-all.cc.obj
+[599/620] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/source-build/hyle-runtime/d5_cpu_direct-Release.cmake"
+[600/620] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/source-build/hyle-runtime/d5_cpu_graph-Release.cmake"
+[601/620] Building CXX object hyle\src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\cpu_context.cc.obj
+[602/620] Building CXX object hyle\src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\ggml_region.cc.obj
+[603/620] Linking CXX static library lib\gtest.lib
+[604/620] Building CXX object fixture-gtest\googletest\CMakeFiles\gtest_main.dir\src\gtest_main.cc.obj
+[605/620] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen35_profile_test.cc.obj
+[606/620] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen38_official_test.cc.obj
+[607/620] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen_gguf_vocabulary_test.cc.obj
+[608/620] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen35_profile_test.cc.obj
+[609/620] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_hyle_avx2.cc.obj
+[610/620] Linking CXX static library hyle\src\simd\hyle_simd.lib
+[611/620] Linking CXX static library hyle\src\compute_provider_native\hyle_compute_provider_native.lib
+[612/620] Linking CXX static library hyle\src\graph_provider_onednn\hyle_graph_provider_onednn.lib
+[613/620] Linking CXX static library hyle\src\compute_route_cpu\hyle_compute_route_cpu.lib
+[614/620] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen_gguf_vocabulary_test.cc.obj
+[615/620] Linking CXX static library hyle\src\graph_route_cpu\hyle_graph_route_cpu.lib
+[616/620] Linking CXX static library lib\gtest_main.lib
+[617/620] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen38_official_test.cc.obj
+[618/620] Linking CXX executable d5_cpu_direct.exe
+[619/620] Linking CXX executable d5_cpu_graph.exe

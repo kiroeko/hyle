@@ -1,0 +1,23 @@
+{
+  "validation_root": "C:\\hv\\d5cp",
+  "removed": [
+    {
+      "path": "C:\\hv\\d5cp\\shared-consumer",
+      "removed_bytes": 68152080.0,
+      "removed_files": 79,
+      "verdict": "REMOVED"
+    },
+    {
+      "path": "C:\\hv\\d5cp\\static-consumer",
+      "removed_bytes": 85745400.0,
+      "removed_files": 63,
+      "verdict": "REMOVED"
+    }
+  ],
+  "retained": [
+    "source-build",
+    "shared-relocated",
+    "static-relocated"
+  ],
+  "reason": "CPU A5 passed; logs and source/link identities archived; retain reusable producers and SDKs for A6"
+}

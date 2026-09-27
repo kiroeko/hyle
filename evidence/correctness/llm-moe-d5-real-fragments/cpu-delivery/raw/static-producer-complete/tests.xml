@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="13"
+	timestamp="2026-09-27T13:04:17"
+	>
+	<testcase name="d5_cpu_direct" classname="d5_cpu_direct" time="6.65527" status="run">
+		<properties/>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5Qwen35Official*Ffn*:*D5Qwen35OfficialCausalConvAndGdn*:*D5Qwen35OfficialEmbeddingNormHeadAndFailure*:*D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuDefaultDirect
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (3 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls (110 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (7 ms)
+[----------] 3 tests from CpuDefaultDirect (121 ms total)
+
+[----...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="d5_cpu_graph" classname="d5_cpu_graph" time="6.65904" status="run">
+		<properties/>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5Qwen35Official*Ffn*:*D5Qwen35OfficialCausalConvAndGdn*:*D5Qwen35OfficialEmbeddingNormHeadAndFailure*:*D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph (3 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights (110 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay (7 ms)
+[----------] 3 tests ...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>

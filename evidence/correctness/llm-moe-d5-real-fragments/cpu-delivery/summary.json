@@ -1,0 +1,32 @@
+{
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "consumer_candidate": "b20fb87c935103293cf3602f3f4fee53c660b95f",
+  "stages": {
+    "source": {
+      "tests": 8,
+      "verdict": "PASS",
+      "receipt": "raw/source/receipt.json"
+    },
+    "static": {
+      "tests": 8,
+      "verdict": "PASS",
+      "receipt": "raw/static-producer-complete/receipt.json"
+    },
+    "shared": {
+      "tests": 8,
+      "verdict": "PASS",
+      "receipt": "raw/shared/receipt.json"
+    }
+  },
+  "tests": 24,
+  "skipped": 0,
+  "A5_cpu": "PASS",
+  "A6": "NOT_RUN",
+  "ledger": {
+    "RUN_PASS": 152,
+    "BACKEND_REJECTED": 8,
+    "VALIDATION_NOT_RUN": 16
+  },
+  "product_changes": 0,
+  "first_static_attempt": "Install failed because the targeted consumer build did not build all configured install targets. The same producer was completed once, without changing product or consumer sources; both attempts retained."
+}

@@ -1,0 +1,227 @@
+{
+  "shared/compile-link-commands.log": {
+    "original_bytes": 19168,
+    "original_sha256": "32361a76cf7b2aa20c476059d036d603e659221107c5ed1c3262b483a33376ab",
+    "stored_path": "raw/shared/compile-link-commands.log"
+  },
+  "shared/consumer-build.log": {
+    "original_bytes": 2304,
+    "original_sha256": "0e5c08eb006610dd60a115e70c8f89430ea7b3aa29a312b5adcf46b62bc58599",
+    "stored_path": "raw/shared/consumer-build.log"
+  },
+  "shared/consumer-configure.log": {
+    "original_bytes": 2129,
+    "original_sha256": "be93217b87c31d65958973cd1f25bfc5f545ac8b5eabdcc9f3b1e31ca1d2041c",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/consumer-configure.log.gz"
+  },
+  "shared/consumer-inputs.json": {
+    "original_bytes": 5784,
+    "original_sha256": "6d728956cad37e120675bb0b0435066ecd4194192f5b9f527be4f99cdc53b469",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/consumer-inputs.json"
+  },
+  "shared/consumer-test.log": {
+    "original_bytes": 296,
+    "original_sha256": "463f04bab95dc7eb194d99d13e549f0ecb58bf0ce18b97e197bf3ef6f406e0b8",
+    "stored_path": "raw/shared/consumer-test.log"
+  },
+  "shared/dll-origins.json": {
+    "original_bytes": 2683,
+    "original_sha256": "9f2bfe85ab3f1adcb4ba4ef5f96eb3e68906823ffc80fbfae8a78445af25219c",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/dll-origins.json"
+  },
+  "shared/install.log": {
+    "original_bytes": 39031,
+    "original_sha256": "8f713df31e63119082d02de274daa8dde460e9158b187de94d56156389dc0382",
+    "stored_path": "raw/shared/install.log"
+  },
+  "shared/native-tests.log": {
+    "original_bytes": 4448,
+    "original_sha256": "f9a497a2273067a38ee0ff8fd3453039b176e765fe7847c998c222884773ef1e",
+    "stored_path": "raw/shared/native-tests.log"
+  },
+  "shared/producer-build.log": {
+    "original_bytes": 5695,
+    "original_sha256": "6c9301cfa54aced7637f36dd2707c55c140b0dbe3255ee5d4bd2442bff6e651a",
+    "stored_path": "raw/shared/producer-build.log"
+  },
+  "shared/producer-configure.log": {
+    "original_bytes": 4189,
+    "original_sha256": "1bc8e6b9f9aa7edf65d84ce587a5197136549329a38cbbb2e872620140a73f20",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/producer-configure.log.gz"
+  },
+  "shared/producer-original-cache.txt": {
+    "original_bytes": 53195,
+    "original_sha256": "bbb0d5884ea021f9e08a75f560da38ac44622675573e44f04511ec5d3479d67a",
+    "encoding": "gzip",
+    "stored_path": "raw/shared/producer-original-cache.txt.gz"
+  },
+  "shared/receipt.json": {
+    "original_bytes": 3223,
+    "original_sha256": "b62bc13571cbd647565c6d9f4e694c05e8b34aba3078820ce93e4d2e76a1bba4",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/receipt.json"
+  },
+  "shared/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "98f40de8d7718c8da9d9c38fe6788976270b86632f274ddd157aace9d9f4378f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/source-identity.json"
+  },
+  "shared/tests.xml": {
+    "original_bytes": 2757,
+    "original_sha256": "00053f90d4f83687200e33c04dfd65a08e25e0453ca3c23fbd76563f213021e0",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/shared/tests.xml"
+  },
+  "source/compile-link-commands.log": {
+    "original_bytes": 750867,
+    "original_sha256": "ae47ad5a3ac27146fd3e1ede14c7a0d6b051b5fdb9125c87304e1d25c0dc5c30",
+    "encoding": "gzip",
+    "stored_path": "raw/source/compile-link-commands.log.gz"
+  },
+  "source/consumer-inputs.json": {
+    "original_bytes": 5784,
+    "original_sha256": "6d728956cad37e120675bb0b0435066ecd4194192f5b9f527be4f99cdc53b469",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source/consumer-inputs.json"
+  },
+  "source/consumer-test.log": {
+    "original_bytes": 293,
+    "original_sha256": "deca6964a06b99439f256b8fc662fb653c1430c1fb80990eabee66d40f470d08",
+    "stored_path": "raw/source/consumer-test.log"
+  },
+  "source/native-tests.log": {
+    "original_bytes": 4436,
+    "original_sha256": "8c1a6fe91a31855875a72886aeb96882eba20def23e77dbe95e57ca7265673be",
+    "stored_path": "raw/source/native-tests.log"
+  },
+  "source/receipt.json": {
+    "original_bytes": 1794,
+    "original_sha256": "b33ebb9a9fd7ef4c8690de66a10e59afb85649ecbc4521781f059f4b9d3b4e98",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source/receipt.json"
+  },
+  "source/source-build.log": {
+    "original_bytes": 82480,
+    "original_sha256": "849d6fa5b6ed323561d639501c8858302563df8b7234453daad53381a39a1e99",
+    "stored_path": "raw/source/source-build.log"
+  },
+  "source/source-configure.log": {
+    "original_bytes": 5895,
+    "original_sha256": "bda2a7e1c9caa3e8df4e7d335e664764810edb1f8275b38125b80651ec054646",
+    "encoding": "gzip",
+    "stored_path": "raw/source/source-configure.log.gz"
+  },
+  "source/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "98f40de8d7718c8da9d9c38fe6788976270b86632f274ddd157aace9d9f4378f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source/source-identity.json"
+  },
+  "source/tests.xml": {
+    "original_bytes": 2756,
+    "original_sha256": "e8663823bfddde1d99eafe696a54c509aa3f536ba34f1a1edfe2a85958ef09a8",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/source/tests.xml"
+  },
+  "static/consumer-inputs.json": {
+    "original_bytes": 5784,
+    "original_sha256": "6d728956cad37e120675bb0b0435066ecd4194192f5b9f527be4f99cdc53b469",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static/consumer-inputs.json"
+  },
+  "static/install.log": {
+    "original_bytes": 367,
+    "original_sha256": "c7d510e54c6b4c43c7cdc0910b2825981f6df292bdec1e33cbc41812663eb0b2",
+    "stored_path": "raw/static/install.log"
+  },
+  "static/receipt.json": {
+    "original_bytes": 466,
+    "original_sha256": "1f54dc5e58f77e3d30471865d2ab591280b8cd6f4f37fe5178e31850c681aaba",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static/receipt.json"
+  },
+  "static/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "98f40de8d7718c8da9d9c38fe6788976270b86632f274ddd157aace9d9f4378f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static/source-identity.json"
+  },
+  "static-producer-complete/compile-link-commands.log": {
+    "original_bytes": 20070,
+    "original_sha256": "50851295d5d733db426a1f736aa676ebfa1ac75872ca6a6e33d55d366e0875c9",
+    "stored_path": "raw/static-producer-complete/compile-link-commands.log"
+  },
+  "static-producer-complete/consumer-build.log": {
+    "original_bytes": 2304,
+    "original_sha256": "f76d3ce57e5d40b3061dd7c042a697eaaaa29f93c2b79fcd0cd4b86fc6a5435b",
+    "stored_path": "raw/static-producer-complete/consumer-build.log"
+  },
+  "static-producer-complete/consumer-configure.log": {
+    "original_bytes": 2129,
+    "original_sha256": "b3eb93087a879f84d6d234ea054b71070cf08a1a6058a3089afab35ed013475f",
+    "encoding": "gzip",
+    "stored_path": "raw/static-producer-complete/consumer-configure.log.gz"
+  },
+  "static-producer-complete/consumer-inputs.json": {
+    "original_bytes": 5784,
+    "original_sha256": "6d728956cad37e120675bb0b0435066ecd4194192f5b9f527be4f99cdc53b469",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-producer-complete/consumer-inputs.json"
+  },
+  "static-producer-complete/consumer-test.log": {
+    "original_bytes": 296,
+    "original_sha256": "8583276c12f9fb5a8d4b7ae1a3fe0d8b09be3a9bc5bf3acd0a84beddfd49ce62",
+    "stored_path": "raw/static-producer-complete/consumer-test.log"
+  },
+  "static-producer-complete/dll-origins.json": {
+    "original_bytes": 4,
+    "original_sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-producer-complete/dll-origins.json"
+  },
+  "static-producer-complete/install.log": {
+    "original_bytes": 40953,
+    "original_sha256": "c27cf71baacfb042e46ff58eb926fd2df7f490a9def0b2c7ea07fa13e07ec3f1",
+    "stored_path": "raw/static-producer-complete/install.log"
+  },
+  "static-producer-complete/native-tests.log": {
+    "original_bytes": 4448,
+    "original_sha256": "56fbc7c095d8bd1b4b266abdb103dd6638840b12c6d832fd4ae120b1278ef56b",
+    "stored_path": "raw/static-producer-complete/native-tests.log"
+  },
+  "static-producer-complete/receipt.json": {
+    "original_bytes": 2033,
+    "original_sha256": "7a0ec1e5d9410873373a36ffb29f7aa0fcef433cdbd45db9d46f21d16a07dc41",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-producer-complete/receipt.json"
+  },
+  "static-producer-complete/source-identity.json": {
+    "original_bytes": 79538,
+    "original_sha256": "98f40de8d7718c8da9d9c38fe6788976270b86632f274ddd157aace9d9f4378f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-producer-complete/source-identity.json"
+  },
+  "static-producer-complete/tests.xml": {
+    "original_bytes": 2757,
+    "original_sha256": "7c185374afe47a106239b12416518c473c8b1e8b6a8abe8898388747907f5ee1",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-producer-complete/tests.xml"
+  },
+  "static-producer-completion/build.log": {
+    "original_bytes": 10284,
+    "original_sha256": "9365f599f61d25e2dc212543868ffbe53bc00cf98cf7f49aedfbb901993f3a91",
+    "encoding": "gzip",
+    "stored_path": "raw/static-producer-completion/build.log.gz"
+  },
+  "static-producer-completion/receipt.json": {
+    "original_bytes": 271,
+    "original_sha256": "9a55a84ab05463417916f0750a9309dcf0e19038a8bede66d30bb1c857c3f099",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/static-producer-completion/receipt.json"
+  }
+}

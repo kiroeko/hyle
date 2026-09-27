@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "cmake",
+    "--build",
+    "C:/hv/d5cp/source-build",
+    "-j",
+    "2"
+  ],
+  "returncode": 0,
+  "seconds": 74.531,
+  "reason": "Complete all configured install targets; delivery target alone omitted hyle_time and other base libraries."
+}

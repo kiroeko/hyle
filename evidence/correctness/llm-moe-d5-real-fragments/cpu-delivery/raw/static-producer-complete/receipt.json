@@ -1,0 +1,71 @@
+{
+  "candidate": "b20fb87c935103293cf3602f3f4fee53c660b95f",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "static",
+  "steps": [
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\d5cp\\source-build",
+        "--prefix",
+        "C:\\hv\\d5cp\\static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 1.922
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5cp\\consumer",
+        "-B",
+        "C:\\hv\\d5cp\\static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cp\\static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.266
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5cp\\static-consumer",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 19.781
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5cp\\static-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cp\\receipts\\static-producer-complete\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 13.406
+    }
+  ],
+  "verdict": "PASS",
+  "tests": 8,
+  "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+}

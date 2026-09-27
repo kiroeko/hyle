@@ -1,0 +1,8 @@
+{
+  "docs": "PASS: 666 Markdown files, 2947 relative links",
+  "closure": "PASS: 57 components, schema 4; registry unchanged",
+  "selector": "READY: docs and closure selected, 130 skipped/reused",
+  "driver_syntax": "PASS: py_compile",
+  "native_delivery": "24/24 PASS, zero skips; retained per-stage receipts",
+  "P1": "NOT_RUN; this batch only signs CPU A5"
+}

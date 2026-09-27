@@ -1,0 +1,9 @@
+-- Install configuration: "Release"
+-- Installing: C:\hv\d5cp\static-staging/lib/hyle_error.lib
+CMake Error at C:/hv/d5cp/source-build/hyle/cmake_install.cmake:225 (file):
+  file INSTALL cannot find
+  "C:/hv/d5cp/source-build/hyle/src/time/hyle_time.lib": File exists.
+Call Stack (most recent call first):
+  C:/hv/d5cp/source-build/cmake_install.cmake:37 (include)
+
+

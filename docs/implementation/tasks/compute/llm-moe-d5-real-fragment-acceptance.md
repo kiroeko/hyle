@@ -30,7 +30,11 @@ D5-A5外部CUDA交付发现两个Provider的私有SDK DLL依赖未导出；
 
 CUDA A5已在`9273bc71`完成源码/static/shared各8项真实片段测试，459项模块测试与3组独立头
 已收尾，见[三交付证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md)。
-保留旧Provider名单断言失败和单项纠正；其它路线A5、全部A6/D6仍待完成，152/176 ledger不变。
+保留旧Provider名单断言失败和单项纠正。
+CPU A5另在`b20fb87c`完成源码/static/shared各8项真实片段测试，共24/24、零跳过，
+见[CPU三交付证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-delivery/README.md)。
+源码/static复用同一producer；首次安装漏建基础库的命令纠正及原失败均已保留，产品FIX为零。
+Apple/Vulkan A5、全部A6/D6仍待完成，152通过/8拒绝/16未验的ledger不变。
 
 CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)推进：复用上述静态 SDK，
 合并接入 Qwen BF16 FFN 与 DeepSeek 官方 FP4/FP8 MoE 的普通 Direct/Graph 消费者。

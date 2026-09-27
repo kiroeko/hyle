@@ -1,0 +1,110 @@
+{
+  "candidate": "b20fb87c935103293cf3602f3f4fee53c660b95f",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "producer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPONENTS=compute,graph,simd",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_ONEDNN=ON",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\d5cp\\shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 8.703
+    },
+    {
+      "label": "producer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 151.094
+    },
+    {
+      "label": "install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--prefix",
+        "C:\\hv\\d5cp\\shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.781
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\hv\\d5cp\\consumer",
+        "-B",
+        "C:\\hv\\d5cp\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cp\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.328
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\d5cp\\shared-consumer",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 20.109
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\hv\\d5cp\\shared-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5cp\\receipts\\shared\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 13.328
+    }
+  ],
+  "verdict": "PASS",
+  "tests": 8,
+  "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+}

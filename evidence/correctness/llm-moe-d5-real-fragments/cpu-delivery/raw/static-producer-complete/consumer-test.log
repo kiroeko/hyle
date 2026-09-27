@@ -1,0 +1,9 @@
+Test project C:/hv/d5cp/static-consumer
+    Start 1: d5_cpu_direct
+1/2 Test #1: d5_cpu_direct ....................   Passed    6.66 sec
+    Start 2: d5_cpu_graph
+2/2 Test #2: d5_cpu_graph .....................   Passed    6.66 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =  13.37 sec

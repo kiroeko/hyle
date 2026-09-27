@@ -1,0 +1,75 @@
+Start testing: Sep 27 13:00 中国标准时间
+----------------------------------------------------------
+1/2 Testing: d5_cpu_direct
+1/2 Test: d5_cpu_direct
+Command: "C:/hv/d5cp/source-build/d5_cpu_direct.exe" "--gtest_filter=*D5Qwen35Official*Ffn*:*D5Qwen35OfficialCausalConvAndGdn*:*D5Qwen35OfficialEmbeddingNormHeadAndFailure*:*D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+Directory: C:/hv/d5cp/source-build
+"d5_cpu_direct" start time: Sep 27 13:00 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5Qwen35Official*Ffn*:*D5Qwen35OfficialCausalConvAndGdn*:*D5Qwen35OfficialEmbeddingNormHeadAndFailure*:*D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuDefaultDirect
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (3 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls (112 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (7 ms)
+[----------] 3 tests from CpuDefaultDirect (123 ms total)
+
+[----------] 1 test from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[       OK ] CpuMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe (6529 ms)
+[----------] 1 test from CpuMoeFragments (6529 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 2 test suites ran. (6652 ms total)
+[  PASSED  ] 4 tests.
+<end of output>
+Test time =   6.70 sec
+----------------------------------------------------------
+Test Passed.
+"d5_cpu_direct" end time: Sep 27 13:00 中国标准时间
+"d5_cpu_direct" time elapsed: 00:00:06
+----------------------------------------------------------
+
+2/2 Testing: d5_cpu_graph
+2/2 Test: d5_cpu_graph
+Command: "C:/hv/d5cp/source-build/d5_cpu_graph.exe" "--gtest_filter=*D5Qwen35Official*Ffn*:*D5Qwen35OfficialCausalConvAndGdn*:*D5Qwen35OfficialEmbeddingNormHeadAndFailure*:*D5DeepSeekHashRoutingFeedsMixedWeightMoe"
+Directory: C:/hv/d5cp/source-build
+"d5_cpu_graph" start time: Sep 27 13:00 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5Qwen35Official*Ffn*:*D5Qwen35OfficialCausalConvAndGdn*:*D5Qwen35OfficialEmbeddingNormHeadAndFailure*:*D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph (3 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights (111 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay (8 ms)
+[----------] 3 tests from CpuDefaultGraph (123 ms total)
+
+[----------] 1 test from CpuGraphMoeFragments
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[       OK ] CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe (6535 ms)
+[----------] 1 test from CpuGraphMoeFragments (6535 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 2 test suites ran. (6659 ms total)
+[  PASSED  ] 4 tests.
+<end of output>
+Test time =   6.70 sec
+----------------------------------------------------------
+Test Passed.
+"d5_cpu_graph" end time: Sep 27 13:00 中国标准时间
+"d5_cpu_graph" time elapsed: 00:00:06
+----------------------------------------------------------
+
+End testing: Sep 27 13:00 中国标准时间

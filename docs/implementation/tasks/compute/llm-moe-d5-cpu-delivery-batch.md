@@ -35,3 +35,12 @@ SDK路径/DLL来源核对及 docs/closure；未运行不记 PASS。成功后保�
 source/static producer供A6，清理独立 consumer 的可再生构建产物，登记占用/清理量。
 
 结果只签 CPU A5，不签 A6、其它路线或 D6，也不新增完整画像通过格。
+
+## 2026-09-27 本批结果
+
+消费者 `b20fb87c`、产品字节 `9273bc71`：三种交付各8项通过，共24/24、零跳过。
+installed 两种交付均完成搬迁、producer运行目录隐藏及隔离PATH验证；动态16个DLL来源逐项一致。
+首轮静态安装暴露消费者定向构建未生成所有安装目标；同一producer补齐默认目标后一次纠正通过，
+未改产品，也未重跑此前通过的交付。脚本已纳入该默认目标命令。
+见[完整证据与原始失败](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-delivery/README.md)。
+实现仍60,373行/241文件；本批结束，不扩张产品或验证预算。A6与D5整体状态仍未完成。
