@@ -13,7 +13,10 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument('stage', choices=['shared', 'source', 'static'])
 parser.add_argument('--attempt', default='')
+parser.add_argument('--reuse-shared-sdk', action='store_true')
 args = parser.parse_args()
+if args.reuse_shared_sdk and args.stage != 'shared':
+    parser.error('--reuse-shared-sdk applies only to shared consumers')
 repo = Path.cwd().resolve()
 root = Path('C:/hv/d5vk').resolve()
 source_tree = Path('C:/hv/d5cd/source-tree').resolve()
@@ -107,6 +110,15 @@ common = ['-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_EXPORT_COMPILE_C
 if args.stage == 'shared':
     producer = repo/'.scratch/build/m2-vulkan-indexed'
     staging, prefix = root/'shared-staging', root/'shared-relocated'
+    if args.reuse_shared_sdk:
+        original = json.loads((root/'receipts/shared/receipt.json').read_text())
+        assert original['product_candidate'] == product and prefix.is_dir()
+        for label in ('producer-configure', 'producer-build', 'install'):
+            assert any(step['label'] == label and step['returncode'] == 0
+                       for step in original['steps'])
+        receipt['reused_sdk_candidate'] = original['candidate']
+        receipt['reused_sdk_receipt'] = 'receipts/shared/receipt.json'
+if args.stage == 'shared' and not args.reuse_shared_sdk:
     (out/'producer-original-cache.txt').write_bytes((producer/'CMakeCache.txt').read_bytes())
     run('producer-configure', [cmake, '-S', repo, '-B', producer, '-U', 'HYLE_DEV_FACTORS',
         '-DHYLE_COMPONENTS=compute,graph,simd', '-DHYLE_BUILD_TESTS=OFF', '-DHYLE_BUILD_BENCH=OFF',
@@ -115,7 +127,7 @@ if args.stage == 'shared':
         '-DHYLE_COMPUTE_APPLE=OFF', '-DHYLE_COMPUTE_VULKAN=ON', '-DHYLE_WERROR=ON',
         '-DCMAKE_INSTALL_PREFIX='+str(staging)])
     run('producer-build', [cmake, '--build', producer, '-j', '2'])
-else:
+elif args.stage != 'shared':
     producer = root/'source-build'
     staging, prefix = root/'static-staging', root/'static-relocated'
     if args.stage == 'source':
@@ -130,8 +142,9 @@ else:
         raise SystemExit('Static producer is not this consumer candidate.')
 
 if args.stage != 'source':
-    run('install', [cmake, '--install', producer, '--prefix', staging])
-    rename_inside(staging, prefix, root)
+    if not args.reuse_shared_sdk:
+        run('install', [cmake, '--install', producer, '--prefix', staging])
+        rename_inside(staging, prefix, root)
     build = root/(args.stage+'-consumer')
     run('consumer-configure', [cmake, '-S', consumer, '-B', build, *common, *dep_args,
         '-DCMAKE_PREFIX_PATH='+str(prefix)])

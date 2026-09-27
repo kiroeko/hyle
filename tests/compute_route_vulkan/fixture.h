@@ -102,6 +102,7 @@ struct Ffn final {
   }
 };
 
+#if defined(HYLE_VULKAN_TEST_SHADER)
 inline hyle::Result<v::Kernel> affine(const v::Context &context) {
   std::ifstream stream(HYLE_VULKAN_TEST_SHADER,
                        std::ios::binary | std::ios::ate);
@@ -117,6 +118,7 @@ inline hyle::Result<v::Kernel> affine(const v::Context &context) {
     return std::unexpected(hyle::Status::DataLoss("test SPIR-V truncated"));
   return v::Kernel::create(context, {words, 2, 4, {}});
 }
+#endif
 
 inline std::vector<std::byte> count_push(std::uint32_t count) {
   std::vector<std::byte> bytes(sizeof(count));
