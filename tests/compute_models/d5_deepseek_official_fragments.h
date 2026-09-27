@@ -27,7 +27,7 @@ inline ValueId roundtrip(Fragment &f, ValueId value, quant::Format format) {
   return fp8::visible(f, f.one(c::model_ops::block_quantization_roundtrip(format), {value}), true);
 }
 
-// Full expert selection, original A8 boundary, packed FP4 gate/up/down and
+// Full expert selection, original A8 boundary, original FP4 gate/up/down and
 // shared block128 FP8. The route weight belongs before down's quantization.
 inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
                            moe::MoeReference *reference_out = nullptr) {
@@ -46,25 +46,20 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
         f.input(sem::dense({moe::kHashVocabulary, 6}, c::DataType::kInt32))};
   auto route = moe::routing(f, model, x, true, 64.0F, lookup);
   const auto resident = model.top_k + 1;
-  auto quantized_x = roundtrip(f, x, quant::Format::kFloat8E4M3Block128);
-  const auto replicate = f.constant(sem::dense({model.top_k}, c::DataType::kInt32),
-      sem::bytes(std::vector<std::int32_t>(model.top_k, 0)));
-  auto slots = core::reshape(f, f.one(c::Operation(c::Gather{}), {quantized_x, replicate}),
-                             {1, model.top_k, model.hidden});
-  auto wg = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 71);
-  auto wu = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 79);
-  auto wd = d5_official_fp4_storage::weight(resident, model.hidden, model.intermediate, 83);
+  auto slots = core::reshape(f, x, {1, 1, model.hidden});
+  auto wg = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 71, true);
+  auto wu = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 79, true);
+  auto wd = d5_official_fp4_storage::weight(resident, model.hidden, model.intermediate, 83, true);
   const auto grouped = [&](sem::Weight &w, ValueId value) {
     const auto stored = f.constant(w.description, std::move(w.storage));
-    return bfloat_boundary(f, f.one(c::model_ops::grouped_matmul(), {stored, value, route.ids}));
+    value = f.one(c::Operation(c::Cast{c::DataType::kBFloat16}), {value});
+    return fp8::visible(f, f.one(c::model_ops::grouped_float4_linear(), {stored, value, route.ids}), true);
   };
   auto gate = grouped(wg, slots), up = grouped(wu, slots);
   auto activated = moe::gated(f, model, gate, up);
   auto weighted = core::binary(f, c::BinaryKind::kMultiply, activated,
                                core::reshape(f, route.weights, {1, model.top_k, 1}));
-  auto down_input = roundtrip(f, core::reshape(f, weighted, {model.top_k, model.intermediate}),
-                              quant::Format::kFloat8E4M3Block128);
-  auto routed = grouped(wd, core::reshape(f, down_input, {1, model.top_k, model.intermediate}));
+  auto routed = grouped(wd, weighted);
   auto combined = f.one(c::Operation(c::Copy{}),
       {core::reshape(f, moe::sum(f, routed, 1), {1, model.hidden})});
 
@@ -75,10 +70,10 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
   auto output = bfloat_boundary(f, core::binary(f, c::BinaryKind::kAdd, combined, sd.output));
   f.outputs = {moe::gathered_ids(f, model, route.ids), route.weights, routed, combined,
                 sd.output, output, gate, up, activated, sg.output, su.output,
-                shared_activated, quantized_x, down_input};
-  f.exact_outputs = {0, 12};
-  // Error includes the mature packed FP4 executor's own activation conversion;
-  // do not replace the source oracle with that executor's internal Q8 values.
+                shared_activated};
+  f.exact_outputs = {0};
+  // Keep the established full-chain gate and independent source decoding.
+  // The failed ggml composition and its extra Q8 conversion remain in F43 evidence.
   auto evaluate = [model, sg, su, sd, wg = std::move(wg), wu = std::move(wu), wd = std::move(wd)]
       (std::span<const float> incoming, std::span<const std::int32_t> hash_ids) -> moe::ReferenceOutputs {
     const auto source = bfloat_boundary(std::vector<float>(incoming.begin(), incoming.end()));
@@ -114,7 +109,7 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
     return {std::move(route_ref.tags), std::move(route_ref.weights), std::move(routed_ref),
             std::move(combined_ref), std::move(shared), std::move(full), std::move(gate_ref),
             std::move(up_ref), std::move(act), std::move(shared_gate), std::move(shared_up),
-            std::move(shared_act), std::move(a8), std::move(down_ref)};
+            std::move(shared_act)};
   };
   if (reference_out) {
     *reference_out = [evaluate = std::move(evaluate)](std::span<const float> values) {
@@ -132,6 +127,36 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
       f.replays.push_back({{sem::bytes(values), moe::hash_tokens(token, true), sem::bytes(table)},
                             std::move(expected)});
     } else f.replays.push_back({{sem::bytes(values)}, evaluate(values, {})});
+  }
+  return f;
+}
+
+inline Fragment projection(const moe::Case &model, bool down, bool shared,
+                            std::int64_t tokens) {
+  const auto n = down ? model.hidden : model.intermediate;
+  const auto k = down ? model.intermediate : model.hidden;
+  const auto slots = model.top_k, a = shared ? 1 : slots, experts = slots + 1;
+  Fragment f{.profile = model.profile, .region = 0x0b0607};
+  auto weight = d5_official_fp4_storage::weight(experts, n, k, down ? 83 : 71, true);
+  auto w = f.constant(weight.description, std::move(weight.storage));
+  auto input = f.input(sem::dense({tokens, a, k}, c::DataType::kBFloat16));
+  auto ids = f.input(sem::dense({tokens, slots}, c::DataType::kInt32));
+  auto output = f.one(c::model_ops::grouped_float4_linear(), {w, input, ids});
+  f.outputs = {fp8::visible(f, output, true)};
+  f.exact_outputs = {0};
+  for (int replay = 0; replay < 2; ++replay) {
+    auto values = bfloat_boundary(d5_gguf_test::activation(tokens * a * k, 17 + replay * 31));
+    const auto quantized = quant::reference(values, false, 128);
+    std::vector<std::int32_t> selected(tokens * slots);
+    std::vector<float> expanded;
+    for (std::int64_t slot = 0; slot < tokens * slots; ++slot) {
+      selected[slot] = std::int32_t((slot * (replay ? 2 : 1) + replay) % experts);
+      const auto row = shared ? slot / slots : slot;
+      expanded.insert(expanded.end(), quantized.begin() + row * k, quantized.begin() + (row + 1) * k);
+    }
+    if (replay) selected[1] = selected[0];
+    auto expected = bfloat_boundary(moe::project(expanded, weight, selected, n, k));
+    f.replays.push_back({{fp8::input_bytes(values, true), sem::bytes(selected)}, {std::move(expected)}});
   }
   return f;
 }

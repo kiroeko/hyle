@@ -54,6 +54,20 @@ TEST(ComputeOpsLowPrecision, GroupedFloat8LayoutAndOverflow) {
   EXPECT_FALSE(float8_grouped_weight_description(2, INT64_MAX, 256));
 }
 
+TEST(ComputeOpsLowPrecision, GroupedFloat4LayoutAndOverflow) {
+  const auto w = float4_grouped_weight_description(7, 129, 256);
+  ASSERT_TRUE(w);
+  EXPECT_TRUE(std::ranges::equal(w->dimensions(), std::array<std::int64_t, 3>{7, 129, 256}));
+  EXPECT_EQ(w->required_bytes().value(), 7u * 129 * (128 + 8 * 4));
+  EXPECT_EQ(w->required_alignment(), 4u);
+  EXPECT_EQ(w->storage_format().id(), kFloat4GroupedWeightFloat32Group32);
+  EXPECT_NE(w->storage_format().id(), kMxfp4Weight);
+  EXPECT_FALSE(float4_grouped_weight_description(0, 129, 256));
+  EXPECT_FALSE(float4_grouped_weight_description(7, 129, 257));
+  EXPECT_FALSE(float4_grouped_weight_description(INT64_MAX, 129, 256));
+  EXPECT_FALSE(float4_grouped_weight_description(2, INT64_MAX, 256));
+}
+
 TEST(ComputeOpsLowPrecision, Mxfp4BlockAxisFollowsLogicalK) {
   const auto weight = mxfp4_weight_description(64, 5);
   ASSERT_TRUE(weight);

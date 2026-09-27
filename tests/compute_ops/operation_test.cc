@@ -39,6 +39,34 @@ TEST(ModelQuantizationRoundtrip, ExplicitFormatsShapeAndRejections) {
   }
 }
 
+TEST(ModelGroupedFloat4, SharedAndSlotActivationAndInvalidLayouts) {
+  const auto w = float4_grouped_weight_description(7, 4096, 2048).value();
+  const auto op = model_ops::grouped_float4_linear();
+  const auto ids = TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 2>{3, 6}).value();
+  for (std::int64_t a : {1, 6}) {
+    const auto x = TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, a, 2048}).value();
+    const std::array inputs{w, x, ids};
+    const auto output = infer_single_output(op, inputs);
+    ASSERT_TRUE(output);
+    EXPECT_EQ(*output, TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, 6, 4096}).value());
+    for (const auto invalid : {float8_grouped_weight_description(7, 4096, 2048).value(),
+        gguf_grouped_weight_description(GgufQuantizedType::kMxfp4, DataType::kFloat32, 7, 4096, 2048).value(),
+        TensorDesc::opaque(w.data_type(), w.dimensions(), w.storage_format(), w.required_bytes().value() + 4).value()})
+      EXPECT_FALSE(infer_single_output(op, std::array{invalid, x, ids}));
+    for (const auto invalid : {
+        TensorDesc::dense(DataType::kFloat32, x.dimensions()).value(),
+        TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, 2, 2048}).value(),
+        TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, a, 1024}).value()})
+      EXPECT_FALSE(infer_single_output(op, std::array{w, invalid, ids}));
+    EXPECT_FALSE(infer_single_output(op, std::array{w, x,
+        TensorDesc::dense(DataType::kInt64, ids.dimensions()).value()}));
+    EXPECT_FALSE(infer_single_output(op, std::span(inputs).first(2)));
+  }
+  const auto partial = float4_grouped_weight_description(7, 128, 32).value();
+  const auto x = TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, 1, 32}).value();
+  EXPECT_FALSE(infer_single_output(op, std::array{partial, x, ids}));
+}
+
 TEST(ModelFloat8Decode, PhysicalLayoutAndInvalidStorageAreExplicit) {
   const auto w = float8_weight_description(256, 129, Float8ScaleMode::kFloat32Block128).value();
   for (auto type : {DataType::kFloat32, DataType::kBFloat16}) {

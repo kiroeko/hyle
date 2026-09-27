@@ -189,6 +189,51 @@ inline Operation grouped_float8_linear(float absmax_floor = 1.0e-10F) noexcept {
   return Operation::custom(GroupedFloat8Linear{absmax_floor});
 }
 
+// Original FP4 experts: encoded E2M1/F32 group32 [E,N,K], finite dense BF16
+// activations [T,A,K], I32 IDs [T,S] -> BF16 [T,S,N]. A=1 or S; K%128=0.
+// Each activation group128 is quantized to E4M3FN with absmax floor1e-4,
+// scale rounded upward to power2 and saturated nearest-even codes; dot and
+// scaling accumulate in F32. No second Q8 activation conversion is implied.
+// Duplicate IDs are valid; out-of-range IDs fail Completion. Failed outputs
+// are not consumable, and no cross-row rollback is promised.
+struct GroupedFloat4Linear final {
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                             0x4650344752500001ULL};
+  static constexpr std::string_view operation_name = "grouped-float4-linear";
+  constexpr OperationTraits operation_traits() const noexcept {
+    return {{3, 3}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 3 || outputs.size() != 1)
+      return Status::InvalidArgument("grouped FP4 linear requires three inputs and one output");
+    const auto &w = inputs[0];
+    const auto &a = inputs[1];
+    const auto &ids = inputs[2];
+    if (w.rank() != 3 || !a.valid() || !a.is_plain() || !a.is_dense() || a.rank() != 3 ||
+        a.data_type() != DataType::kBFloat16 || !ids.valid() || !ids.is_plain() ||
+        !ids.is_dense() || ids.rank() != 2 || ids.data_type() != DataType::kInt32)
+      return Status::InvalidArgument("grouped FP4 linear requires encoded [E,N,K], BF16 [T,A,K], I32 [T,S]");
+    const auto t = a.dimensions()[0], slots = ids.dimensions()[1];
+    auto weight = float4_grouped_weight_description(
+        w.dimensions()[0], w.dimensions()[1], w.dimensions()[2]);
+    if (!weight || w != *weight || w.dimensions()[2] % 128 != 0 || t <= 0 ||
+        slots <= 0 || ids.dimensions()[0] != t ||
+        (a.dimensions()[1] != 1 && a.dimensions()[1] != slots) ||
+        a.dimensions()[2] != w.dimensions()[2])
+      return Status::InvalidArgument("grouped FP4 dimensions or encoded layout do not match");
+    auto output = TensorDesc::dense(DataType::kBFloat16, std::array{t, slots, w.dimensions()[1]});
+    if (!output) return std::move(output).error();
+    outputs[0] = *output;
+    return Status::Ok();
+  }
+};
+
+inline Operation grouped_float4_linear() noexcept {
+  return Operation::custom(GroupedFloat4Linear{});
+}
+
 // Native model clamp. Finite values and infinities are clamped to [min,max].
 // NaN data and signed-zero bit patterns follow the selected native backend;
 // this operation does not promise Binary minimum/maximum's NaN semantics.

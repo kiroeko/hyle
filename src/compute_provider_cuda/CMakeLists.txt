@@ -8,7 +8,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     collectives_provider.cc collectives.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
     router_provider.cc sglang_router_kernel.cu fp8_provider.cc grouped_fp8_provider.cc
-    deepseek_fp8_provider.cc
+    deepseek_fp8_provider.cc deepseek_grouped_fp4_provider.cc
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu

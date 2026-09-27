@@ -788,6 +788,133 @@ TEST(CudaKernels, PendingCompletionRetainsProgramAndSlotAfterClose) {
 }
 
 
+TEST(DeepSeekFp4, WorkspaceOomConcurrencyCompletionAndInvalidIds) {
+  MetadataAllocator allocator;
+  {
+    constexpr int experts = 2, n = 4096, k = 2048, slots = 6, tokens = 3;
+    const std::array providers{compute::ProviderBinding{compute::cuda_native::deepseek_provider(), 100}};
+    auto owner = compute::Context::create(cuda::device(0).value(),
+        {.metadata_allocator = allocator.ref(), .providers = providers}).value();
+    auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+    const auto ad = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+        std::array<std::int64_t, 3>{tokens, 1, k}).value();
+    const auto wd = compute::float4_grouped_weight_description(experts, n, k).value();
+    const auto id = matrix(compute::DataType::kInt32, tokens, slots);
+    const auto cd = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+        std::array<std::int64_t, 3>{tokens, slots, n}).value();
+    Tensor input(ad, resource.ref()), weight(wd, resource.ref());
+    std::array ids{Tensor(id, resource.ref()), Tensor(id, resource.ref())};
+    std::array outputs{Tensor(cd, resource.ref()), Tensor(cd, resource.ref())};
+    const auto make = [&] { return compute::prepare(owner, compute::model_ops::grouped_float4_linear(),
+        std::array{weight.view.as_const(), input.view.as_const(), ids[0].view.as_const()},
+        std::array{outputs[0].view}); };
+    const auto check_failures = [&](auto create) {
+      const auto live = allocator.live, start = allocator.attempts;
+      { auto result = create(); ASSERT_TRUE(result) << result.error().message(); }
+      const auto count = allocator.attempts - start;
+      ASSERT_LT(count, 32u);
+      for (std::size_t i = 0; i < count; ++i) {
+        allocator.fail_at = allocator.attempts + i;
+        { auto result = create(); ASSERT_FALSE(result); EXPECT_TRUE(result.error().IsResourceExhausted()); }
+        EXPECT_EQ(allocator.live, live);
+        allocator.fail_at = SIZE_MAX;
+      }
+    };
+    check_failures(make);
+    auto prepared = make().value();
+    EXPECT_EQ(prepared.provider().id, compute::cuda_native::kDeepSeekProviderId);
+    const auto need = prepared.workspace_requirement();
+    EXPECT_EQ(need.alignment, 16u);
+    EXPECT_EQ(need.size, tokens * k + tokens * (k / 128) * 4u);
+    EXPECT_EQ(prepared.invocation_private_bytes(), 0u);
+    EXPECT_TRUE(prepared.capture_compatible());
+    std::array workspace{
+        mem::Buffer::create(resource.ref(), need.size + 16, need.alignment).value(),
+        mem::Buffer::create(resource.ref(), need.size, need.alignment).value()};
+    EXPECT_FALSE(prepared.create_invocation(workspace[0].view().subview(0, need.size - 1).value()));
+    EXPECT_FALSE(prepared.create_invocation(workspace[0].view().subview(4, need.size).value()));
+    auto host = mem::Buffer::create(mem::system_resource(), need.size, 16).value();
+    EXPECT_FALSE(prepared.create_invocation(host.view()));
+    check_failures([&] { return prepared.create_invocation(workspace[0].view()); });
+    std::array lanes{prepared.create_invocation(workspace[0].view()).value(),
+                     prepared.create_invocation(workspace[1].view()).value()};
+    std::array queues{owner.create_queue().value(), owner.create_queue().value()};
+    for (auto &queue : queues) ASSERT_TRUE(queue.reserve_completions(1).ok());
+    auto shifted_storage = mem::Buffer::create(resource.ref(), ad.required_bytes().value() + 16, 256).value();
+    auto shifted = compute::ConstTensorView::create(ad, shifted_storage.view().subview(2).value()).value();
+    EXPECT_FALSE(lanes[0].submit(queues[0], std::array{weight.view.as_const(), shifted, ids[0].view.as_const()},
+                                 std::array{outputs[0].view}));
+    EXPECT_FALSE(lanes[0].in_flight());
+    auto aliased = compute::TensorView::create(cd, weight.storage.view()).value();
+    EXPECT_FALSE(lanes[0].submit(queues[0],
+        std::array{weight.view.as_const(), input.view.as_const(), ids[0].view.as_const()}, std::array{aliased}));
+    std::vector<std::byte> weights(wd.required_bytes().value(), std::byte{0x22});
+    for (int ex = 0; ex < experts; ++ex) for (int block = 0; block < n * (k / 32); ++block) {
+      const float scale = float(1 << ex);
+      std::memcpy(weights.data() + experts * n * (k / 2) + (ex * n * (k / 32) + block) * 4, &scale, 4);
+    }
+    ASSERT_TRUE(weight.storage.view().write(weights).ok());
+    for (int replay = 0; replay < 3; ++replay) {
+      std::vector<__nv_bfloat16> x(tokens * k, __float2bfloat16(float(replay + 1)));
+      ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(x))).ok());
+      std::array<std::vector<std::int32_t>, 2> selected;
+      for (int lane = 0; lane < 2; ++lane) {
+        selected[lane].resize(tokens * slots);
+        for (int i = 0; i < tokens * slots; ++i) selected[lane][i] = (i + lane + replay) % experts;
+        if (replay == 2 && lane == 1) {
+          selected[lane][0] = -1; selected[lane][1] = experts;
+          selected[lane][2] = INT32_MIN; selected[lane][3] = INT32_MAX;
+        }
+        ASSERT_TRUE(ids[lane].storage.view().write(std::as_bytes(std::span(selected[lane]))).ok());
+      }
+      const auto before = allocator.attempts;
+      std::array<compute::Completion, 2> done;
+      for (std::size_t lane = 0; lane < 2; ++lane) {
+        auto result = lanes[lane].submit(queues[lane],
+            std::array{weight.view.as_const(), input.view.as_const(), ids[lane].view.as_const()},
+            std::array{outputs[lane].view});
+        ASSERT_TRUE(result) << result.error().message();
+        done[lane] = std::move(*result);
+      }
+      if (replay == 2) { prepared = {}; lanes = {}; ASSERT_TRUE(owner.close().ok()); }
+      for (int lane = 0; lane < 2; ++lane) {
+        const auto status = done[lane].wait();
+        if (replay == 2 && lane == 1) { EXPECT_TRUE(status.IsOutOfRange()); continue; }
+        ASSERT_TRUE(status.ok()) << status.message();
+        std::vector<__nv_bfloat16> actual(tokens * slots * n);
+        ASSERT_TRUE(outputs[lane].storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+        for (int slot = 0; slot < tokens * slots; ++slot) for (int col = 0; col < n; ++col)
+          ASSERT_EQ(__bfloat162float(actual[slot * n + col]), float(k * (replay + 1) * (1 << selected[lane][slot])));
+      }
+      EXPECT_EQ(allocator.attempts, before);
+    }
+  }
+  EXPECT_EQ(allocator.live, 0u);
+}
+
+TEST(DeepSeekFp4, ColdShapeDomainAndHostMemory) {
+  auto owner = context(compute::cuda_native::deepseek_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto check = [&](std::int64_t experts, std::int64_t tokens, std::int64_t slots,
+                         std::int64_t n, std::int64_t k, mem::MemoryResourceRef target) {
+    const auto w = compute::float4_grouped_weight_description(experts, n, k).value();
+    const auto a = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+        std::array<std::int64_t, 3>{tokens, 1, k}).value();
+    const auto ids = matrix(compute::DataType::kInt32, tokens, slots);
+    const auto c = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+        std::array<std::int64_t, 3>{tokens, slots, n}).value();
+    auto result = compute::prepare(owner, compute::model_ops::grouped_float4_linear(),
+        std::array{w, a, ids}, std::array{c}, target);
+    ASSERT_FALSE(result);
+  };
+  check(2, 1, 6, 128, 128, resource.ref());
+  check(std::int64_t(INT32_MAX) + 1, 1, 6, 4096, 2048, resource.ref());
+  check(2, 65536, 1, 4096, 2048, resource.ref());
+  check(2, 1, 65536, 4096, 2048, resource.ref());
+  check(2, 1, 6, 4096, 2048, mem::system_resource());
+}
+
+
 TEST(DeepSeekRoundtrip, WorkspaceRejectionsRollbackConcurrencyAndLifetime) {
   using Format = compute::model_ops::BlockQuantizationFormat;
   for (auto format : {Format::kFloat8E4M3Block64, Format::kFloat4E2M1Block32, Format::kFloat8E4M3Block128}) {

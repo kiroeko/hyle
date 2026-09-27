@@ -95,6 +95,11 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 // require distinct 16-byte-aligned input/output and caller workspace of four
 // bytes per group (4-byte aligned), kept alive until Completion. One launch;
 // no private invocation allocation or Python/TileLang runtime dependency.
+// GroupedFloat4Linear retains the original E4M3 activation and FP4 GEMM,
+// with device-side checked expert addressing. Two launches, caller-owned
+// FP8 codes/F32 scales workspace, no host ID transfer or weight expansion.
+// Four DeepSeek N/K pairs only, BF16 activations/output aligned16, I32 IDs
+// aligned4; invalid IDs fail Completion. Workspace lasts until completion.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider deepseek_provider() noexcept;
 
 // Original CCCL3.3.4 device collectives, qualified with CUDA13.3

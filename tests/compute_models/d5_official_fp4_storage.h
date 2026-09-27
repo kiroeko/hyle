@@ -56,8 +56,9 @@ inline bool matches_original_converter() {
 }
 
 inline sem::Weight weight(std::int64_t experts, std::int64_t n, std::int64_t k,
-                           int seed) {
-  auto desc = c::gguf_grouped_weight_description(c::GgufQuantizedType::kMxfp4,
+                           int seed, bool original_layout = false) {
+  auto desc = original_layout ? c::float4_grouped_weight_description(experts, n, k).value()
+      : c::gguf_grouped_weight_description(c::GgufQuantizedType::kMxfp4,
                   c::DataType::kFloat32, experts, n, k).value();
   sem::Weight result{desc, std::vector<std::byte>(desc.required_bytes().value()),
       std::vector<std::vector<std::pair<std::size_t, float>>>(experts * n)};
@@ -78,7 +79,14 @@ inline sem::Weight weight(std::int64_t experts, std::int64_t n, std::int64_t k,
       const float value = std::ldexp(sign * e2m1[code & 7], int(scales[col / 32]) - 127);
       result.decoded[row].emplace_back(col, value);
     }
-    repack(packed, scales, std::span(result.storage).subspan(row * row_bytes, row_bytes));
+    if (original_layout) {
+      std::memcpy(result.storage.data() + row * (k / 2), packed.data(), packed.size());
+      for (std::size_t block = 0; block < scales.size(); ++block) {
+        const float scale = std::ldexp(1.0F, int(scales[block]) - 127);
+        std::memcpy(result.storage.data() + experts * n * (k / 2) +
+                      (row * (k / 32) + block) * sizeof(float), &scale, sizeof(scale));
+      }
+    } else repack(packed, scales, std::span(result.storage).subspan(row * row_bytes, row_bytes));
   }
   return result;
 }

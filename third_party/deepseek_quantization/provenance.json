@@ -10,7 +10,7 @@
     "target": "sm_89",
     "host": "MSVC 19.50"
   },
-  "adaptations": "Original helpers/kernel bodies unchanged. Compile with N=group, dynamic M=total groups, inplace=True, scale_dtype=float32; scales are scratch, BF16 result unchanged. No product Python runtime.",
+  "adaptations": "Original helpers/kernel bodies unchanged. Compile with N=group, dynamic M=total groups, inplace=True, scale_dtype=float32; scales are scratch, BF16 result unchanged. No product Python runtime. Indexed GEMM: change generated entry qualifier to an inline device function; checked CUDA entry selects expert/token pointers, then calls the unchanged original arithmetic with M=1. See indexed_entry.py.",
   "programs": [
     {
       "kernel": "act_quant_kernel",
@@ -57,6 +57,70 @@
         "bf16* output",
         "int32 groups"
       ]
+    },
+    {
+      "kernel": "act_quant_kernel",
+      "artifact": "act_quant_kernel_encoded",
+      "group": 128,
+      "inplace": false,
+      "symbol": "kDeepSeekFp8Encoded",
+      "threads": 128,
+      "dynamic_shared_bytes": 8192,
+      "original_cuda_sha256": "f8afeba1c561582331575d0d685beb0528415d8449d0ad13d63f1cf9735faddf",
+      "bytes": 18592,
+      "sha256": "10a0ef155e7b8ee8955431a8bf152d11a167b7676c5ea363d424bb14670ec2da"
+    },
+    {
+      "kernel": "fp4_gemm_kernel",
+      "artifact": "fp4_3072_7168",
+      "n": 3072,
+      "k": 7168,
+      "indexed": true,
+      "symbol": "kDeepSeekFp4_3072_7168",
+      "threads": 128,
+      "dynamic_shared_bytes": 10240,
+      "original_cuda_sha256": "6ec74b6d745efe01ed4295839da6c67ee8c526ea7e6312b34fd471d1eb7f13ac",
+      "bytes": 63840,
+      "sha256": "436ddaf82bb636a06d9fab886502f9dece1b9a75a2b827e5acc28f93db893cac"
+    },
+    {
+      "kernel": "fp4_gemm_kernel",
+      "artifact": "fp4_7168_3072",
+      "n": 7168,
+      "k": 3072,
+      "indexed": true,
+      "symbol": "kDeepSeekFp4_7168_3072",
+      "threads": 128,
+      "dynamic_shared_bytes": 10240,
+      "original_cuda_sha256": "39a006c11209e0345a8a408b8470e85806e87bd286f7bf5af974f617ed3307ab",
+      "bytes": 63840,
+      "sha256": "703030ee7ca693951fac3e80fccbef5b171fa6ed9530fece2bd9ec926a75f6de"
+    },
+    {
+      "kernel": "fp4_gemm_kernel",
+      "artifact": "fp4_2048_4096",
+      "n": 2048,
+      "k": 4096,
+      "indexed": true,
+      "symbol": "kDeepSeekFp4_2048_4096",
+      "threads": 128,
+      "dynamic_shared_bytes": 10240,
+      "original_cuda_sha256": "4055c3314e9faed712750ec7af6f92a8d11416eeb15e153b882e5c7a34ab47e1",
+      "bytes": 63840,
+      "sha256": "b792666730191e9a65bb27d49db03060b440c22f030c84d31ff11ba6f77647b8"
+    },
+    {
+      "kernel": "fp4_gemm_kernel",
+      "artifact": "fp4_4096_2048",
+      "n": 4096,
+      "k": 2048,
+      "indexed": true,
+      "symbol": "kDeepSeekFp4_4096_2048",
+      "threads": 128,
+      "dynamic_shared_bytes": 10240,
+      "original_cuda_sha256": "e892918c39c44e68c044d9b3656226cad697338eb02b78d91ee8e6e1fe30a69a",
+      "bytes": 63840,
+      "sha256": "5c3cc50ea441918a3db7ca9da657ffb37208b79918dd95d4d155d4d52c45d144"
     }
   ]
 }

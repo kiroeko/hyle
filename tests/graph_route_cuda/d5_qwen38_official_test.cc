@@ -1132,6 +1132,20 @@ TEST(CudaGraphMoeFragments, D5GlmOfficialMixedRemaining) {
   }
 }
 
+TEST(CudaGraphMoeFragments, D5DeepSeekOriginalFp4Projections) {
+  for (int index : {3, 4})
+    for (bool down : {false, true})
+      for (bool shared : {false, true})
+        for (std::int64_t tokens : {1, 3}) {
+          SCOPED_TRACE(index);
+          SCOPED_TRACE(down);
+          SCOPED_TRACE(shared);
+          SCOPED_TRACE(tokens);
+          run_q24_semantic_fragment(d5_deepseek_official_fragments::projection(
+              d5_moe_execution_fragments::cases::kCases[index], down, shared, tokens));
+        }
+}
+
 TEST(CudaGraphMoeFragments, D5DeepSeekOfficialMoe) {
   for (int index : {3, 4})
     for (bool hash : {false, true}) {

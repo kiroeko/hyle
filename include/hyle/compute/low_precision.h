@@ -26,6 +26,8 @@ inline constexpr StorageFormatId kFloat8WeightUnsignedExponent8Group32{
 inline constexpr StorageFormatId kMxfp4Weight{0x48594c454c4f5750ULL, 5};
 inline constexpr StorageFormatId kFloat8GroupedWeightFloat32Block128{
     0x48594c454c4f5750ULL, 6};
+inline constexpr StorageFormatId kFloat4GroupedWeightFloat32Group32{
+    0x48594c454c4f5750ULL, 7};
 
 // GGUF/ggml native block encodings. These identities describe existing model
 // bytes and are independent of the executing route. They deliberately do not
@@ -92,6 +94,14 @@ float8_weight_description(std::int64_t k, std::int64_t n,
 // Positive dimensions, complete K blocks, and 4-byte alignment are required.
 HYLE_COMPUTE_OPS_API Result<TensorDesc>
 float8_grouped_weight_description(std::int64_t experts, std::int64_t n,
+                                  std::int64_t k) noexcept;
+
+// Logical F32 [E,N,K]. All E2M1 bytes [E,N,K/2] precede all F32 scales
+// [E,N,K/32]. Low/high nibbles encode consecutive even/odd K elements.
+// Source UE8M0 scales can be widened losslessly. This is not ggml's block
+// layout. Positive dimensions, complete group32 K and 4-byte alignment.
+HYLE_COMPUTE_OPS_API Result<TensorDesc>
+float4_grouped_weight_description(std::int64_t experts, std::int64_t n,
                                   std::int64_t k) noexcept;
 
 // Logical F16 [K,N], physical row-major [N,K] in 32-value/17-byte blocks.

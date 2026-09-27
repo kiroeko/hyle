@@ -7,6 +7,7 @@
 
 #include "deepseek_fp8_sm89.h"
 #include "deepseek_quantization_sm89.h"
+#include "deepseek_grouped_fp4_provider.h"
 #include "fp8_provider.h"
 #include "hyle/compute/model_ops.h"
 #include "native_context.h"
@@ -79,6 +80,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
                detail::ProviderOperationProposal *proposal) noexcept {
   if (!proposal) return Status::InvalidArgument("DeepSeek proposal is null");
   *proposal = {};
+  if (request.operation.custom_as<model_ops::GroupedFloat4Linear>())
+    return deepseek_fp4::propose(state, request, inputs, outputs, proposal);
   HYLE_ASSIGN_OR_RETURN(const auto shape, select(request));
   if (inputs.size() != 1 || outputs.size() != 1)
     return Status::InvalidArgument("DeepSeek binding counts differ");
@@ -155,6 +158,8 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
                                mem::AllocatorRef allocator, detail::ProviderPrepared *output) noexcept {
   if (!output) return ProviderPrepareOutcome::error(Status::InvalidArgument("DeepSeek prepared output is null"));
   *output = {};
+  if (request.route == deepseek_fp4::kRoute)
+    return deepseek_fp4::prepare(state, request, allocator, output);
   if (request.route != 1)
     return ProviderPrepareOutcome::unsupported(Status::Unimplemented("DeepSeek route mismatch"));
   auto shape = select({.operation = request.operation, .inputs = request.inputs,

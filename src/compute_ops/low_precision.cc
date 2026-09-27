@@ -101,6 +101,23 @@ Result<TensorDesc> float8_grouped_weight_description(std::int64_t experts,
                             *format, *bytes);
 }
 
+Result<TensorDesc> float4_grouped_weight_description(std::int64_t experts,
+                                                    std::int64_t n,
+                                                    std::int64_t k) noexcept {
+  if (experts <= 0 || n <= 0 || k <= 0 || k % 32 != 0)
+    return std::unexpected(Status::InvalidArgument("grouped FP4 requires positive dimensions and complete group32 K"));
+  const auto e = math::try_integer_cast<std::size_t>(experts);
+  const auto rows = math::try_integer_cast<std::size_t>(n);
+  const auto blocks = math::try_integer_cast<std::size_t>(k / 32);
+  const auto row_bytes = blocks ? math::try_multiply(*blocks, std::size_t{20}) : std::nullopt;
+  const auto matrix = row_bytes && rows ? math::try_multiply(*row_bytes, *rows) : std::nullopt;
+  const auto bytes = matrix && e ? math::try_multiply(*matrix, *e) : std::nullopt;
+  if (!bytes)
+    return std::unexpected(Status::OutOfRange("grouped FP4 storage size overflows"));
+  const auto format = StorageFormat::opaque(kFloat4GroupedWeightFloat32Group32, 4);
+  return TensorDesc::opaque(DataType::kFloat32, std::array{experts, n, k}, *format, *bytes);
+}
+
 std::optional<GgufQuantizedType>
 gguf_quantized_type(StorageFormatId id) noexcept {
   constexpr std::array types{

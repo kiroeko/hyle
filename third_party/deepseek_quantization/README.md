@@ -14,3 +14,10 @@ CUDA13.3/MSVC developer environment run `python rebuild.py --output <scratch>`.
 The script compares all cubin hashes to the pinned manifest. Python bytecode
 and generated files stay outside this source directory. Compiler/CUTLASS runtime
 template notices are preserved beside the official MIT license.
+
+Indexed FP4 expert programs preserve the original `fp4_gemm_kernel` math.
+`indexed_entry.py` changes only the generated entry qualifier and adds checked
+expert/token pointer selection before calling that body with M=1. No FP4
+arithmetic is added by HYLE. Four actual DeepSeek N/K pairs are instantiated;
+the encoded group128 activation program supplies original E4M3 codes/scales.
+The per-slot M32 tile utilization is part of this implementation's cost.
