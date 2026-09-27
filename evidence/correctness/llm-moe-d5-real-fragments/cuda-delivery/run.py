@@ -18,10 +18,16 @@ import xml.etree.ElementTree as ET
 parser = argparse.ArgumentParser()
 parser.add_argument('stage', choices=['shared', 'source', 'static'])
 parser.add_argument('--resume-shared-consumer', action='store_true')
+parser.add_argument('--attempt', default='')
 args = parser.parse_args()
 repo = Path.cwd().resolve()
 root = Path('C:/hv/d5cd')
-out = root / 'receipts' / (args.stage+'-corrected' if args.resume_shared_consumer else args.stage)
+if args.attempt and not re.fullmatch(r'[a-z0-9-]+', args.attempt):
+    raise SystemExit('Attempt names must contain only lowercase letters, digits and hyphens.')
+suffix = '-'+args.attempt if args.attempt else ('-corrected' if args.resume_shared_consumer else '')
+out = root / 'receipts' / (args.stage+suffix)
+if (out / 'receipt.json').exists():
+    raise SystemExit('Preserve the prior receipt; use a distinct attempt name.')
 out.mkdir(parents=True, exist_ok=True)
 flags = {'creationflags': subprocess.CREATE_NO_WINDOW}
 ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
@@ -82,6 +88,7 @@ while todo:
             todo.append(source.parent / name)
 shutil.copyfile(Path(__file__).parent / 'consumer/CMakeLists.txt', consumer / 'CMakeLists.txt')
 (root / 'consumer-inputs.json').write_text(json.dumps({'candidate': candidate, 'files': copied}, indent=2)+'\n')
+shutil.copyfile(root / 'consumer-inputs.json', out / 'consumer-inputs.json')
 receipt['consumer_files'] = len(copied)
 cache = Path('C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources')
 dep_args = ['-DD5_GGML_SOURCE='+str(cache/'ggml-456172ec733a-41b7e10fd424'),
@@ -94,7 +101,9 @@ if args.stage == 'shared':
     staging = root / 'shared-staging'
     prefix = root / 'shared-relocated'
 if args.stage == 'shared' and not args.resume_shared_consumer:
-    (root / 'shared-original-CMakeCache.txt').write_bytes((producer/'CMakeCache.txt').read_bytes())
+    original_cache = root / 'shared-original-CMakeCache.txt'
+    if not original_cache.exists():
+        original_cache.write_bytes((producer/'CMakeCache.txt').read_bytes())
     run('producer-configure', [cmake, '-S', repo, '-B', producer, '-U', 'HYLE_DEV_FACTORS',
         '-DHYLE_COMPONENTS=compute,graph,simd', '-DHYLE_BUILD_TESTS=OFF', '-DHYLE_BUILD_BENCH=OFF',
         '-DHYLE_TEST_INSTRUMENTATION=OFF', '-DHYLE_INSTALL=ON', '-DHYLE_STATIC=OFF',

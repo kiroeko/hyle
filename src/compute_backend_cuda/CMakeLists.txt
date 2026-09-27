@@ -3,6 +3,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
   endif()
   enable_language(CUDA)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/HyleCudaSdkConfig.cmake")
   # Keep Toolkit ownership in the CUDA factor so source and installed
   # consumers see the same public header contract while the Driver API remains
   # implementation-private.
@@ -48,7 +49,9 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     NAME compute_cuda_sdk
     OWNER compute_backend_cuda
     FEATURES compute_cuda
-    FIND_DEPENDENCIES CUDAToolkit|13.3)
+    FIND_DEPENDENCIES HyleCudaSdk|CONFIG
+    DEVELOPMENT_FILE_SPECS
+      "${CMAKE_CURRENT_SOURCE_DIR}/HyleCudaSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleCudaSdk|HyleCudaSdkConfig.cmake")
 else()
   hyle_add_module(compute_backend_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_backend_cuda PROPERTY
