@@ -1,6 +1,6 @@
 # CUDA Provider 私有 SDK runtime 的导出
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`d32fa727`；Windows canonical。
 - owner：`compute_provider_cublas`；`compute_provider_ggml_cuda`承接当前D5 AUDITED卡。

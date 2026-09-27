@@ -447,8 +447,8 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "SCOPED",
-      "summary": "D5-A5 SCOPED：真实shared SDK漏cuBLASLt私有runtime依赖；仅修CMake导出与三交付，不改数学。",
+      "state": "AUDITED",
+      "summary": "D5-A5 AUDITED：真实shared SDK漏cuBLASLt私有runtime依赖；仅修CMake导出与三交付，不改数学。",
       "record": "docs/implementation/tasks/build/cuda-provider-runtime-exports-v1.md"
     },
     {
