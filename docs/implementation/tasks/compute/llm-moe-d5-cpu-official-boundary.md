@@ -21,8 +21,10 @@
 
 ## 有限验证与停止
 
-1. 原样复用已在 CUDA 运行的 GLM `glm_moe`、DeepSeek `moe_chain` 完整配方，保留真实
+1. 复用已在 CUDA 运行的 GLM `glm_moe`、DeepSeek `moe_chain` 完整配方，保留真实
    内宽、top-k、逐角色编码和原版激活量化；仅复用既定的 resident expert 缩容。
+   DeepSeek 路由门选择已经通过 CPU GGUF 消费者验证的成熟算子组合，不能写死 CUDA
+   融合门，再把缺少融合绑定误判成 CPU 数学缺失。
 2. Direct 按原配方逐节点准备，记录第一个 `Unimplemented`，要求它确为官方 FP8/FP4
    语义节点；不能把其它错误算作预期拒绝。Graph 提交同一个完整图和真实常量绑定，
    记录 `compile` 返回值。所有先前准备的资源正常销毁，不执行未准备成功的图。
@@ -39,3 +41,11 @@
 
 预声明检查：本批两入口测试、模型输入/ledger 检查、selector 所选 docs/closure。
 本卡不改公共头、产品、组件图或交付，故不因本卡重跑三交付或 P1。
+
+## 首轮测试接缝纠正
+
+`08cfa769` 编译通过；Direct 的 GLM 两画像明确拒绝 `GroupedFloat8Linear`。
+DeepSeek 消费者固定了 `native_routing=true`，先在 CPU 未绑定的融合门失败，
+未到官方 FP4 节点。保留原日志；唯一纠正是让测试 recipe 显式选择已有 portable routing，
+默认仍为原 CUDA 路线。原模型数学、量化、常量、共享/专家节点及产品代码均不变。
+完成这次纠正后只运行一次两入口批验，不再扩张原生调查预算。

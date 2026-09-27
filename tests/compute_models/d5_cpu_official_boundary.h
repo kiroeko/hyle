@@ -4,8 +4,9 @@
 #include "d5_grouped_fp8_fragments.h"
 
 // A cold-entry diagnostic for the exact official MoE recipes. These fixtures
-// use the same constants and nodes as the CUDA acceptance consumers; only the
-// independent numerical oracle is not evaluated for a rejected program.
+// use the same precision boundaries and expert/shared nodes as the CUDA
+// consumers. DeepSeek selects the already qualified CPU routing composition;
+// the independent oracle is not evaluated for a rejected program.
 namespace d5_cpu_official_boundary {
 namespace c = hyle::compute;
 namespace sem = d5_qwen38_24t_semantic_fragments;
@@ -19,7 +20,7 @@ void for_each(Check check) {
   for (auto index : {3u, 4u}) {
     d5_moe_execution_fragments::MoeReference unused;
     check(d5_deepseek_official_fragments::moe_chain(
-        d5_moe_execution_cases::kCases[index], false, &unused));
+        d5_moe_execution_cases::kCases[index], false, &unused, false));
   }
 }
 

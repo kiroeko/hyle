@@ -30,7 +30,8 @@ inline ValueId roundtrip(Fragment &f, ValueId value, quant::Format format) {
 // Full expert selection, original A8 boundary, original FP4 gate/up/down and
 // shared block128 FP8. The route weight belongs before down's quantization.
 inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
-                           moe::MoeReference *reference_out = nullptr) {
+                           moe::MoeReference *reference_out = nullptr,
+                           bool native_routing = true) {
   if (model.gguf || (model.profile != moe::cases::kCases[3].profile &&
                     model.profile != moe::cases::kCases[4].profile) ||
       (use_hash && reference_out))
@@ -42,9 +43,10 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
   std::optional<moe::HashInputs> lookup;
   if (use_hash)
     lookup = moe::HashInputs{
-        f.input(sem::dense({1}, c::DataType::kInt64)),
+        f.input(sem::dense({1}, native_routing ? c::DataType::kInt64
+                                              : c::DataType::kInt32)),
         f.input(sem::dense({moe::kHashVocabulary, 6}, c::DataType::kInt32))};
-  auto route = moe::routing(f, model, x, true, 64.0F, lookup);
+  auto route = moe::routing(f, model, x, native_routing, 64.0F, lookup);
   const auto resident = model.top_k + 1;
   auto slots = core::reshape(f, x, {1, 1, model.hidden});
   auto wg = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 71, true);
