@@ -19,6 +19,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
+#include "../compute_models/d5_vulkan_official_boundary.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
@@ -33,11 +34,15 @@
 #include "../compute_models/d5_qwen38_official_fixture.h"
 #include "gate_norm_test_support.h"
 #include "hyle/compute/model_ops.h"
+#if !defined(HYLE_D5_EXTERNAL_CONSUMER)
 #include "vulkan_program_internal.h"
+#endif
 
 namespace {
 using namespace vulkan_gate_norm_test;
+#if !defined(HYLE_D5_EXTERNAL_CONSUMER)
 namespace d = v::detail;
+#endif
 namespace q = d5_qwen38_official_fixture;
 namespace q24 = d5_qwen38_24t_fixture;
 namespace qfull = d5_qwen38_24t_full_router;
@@ -69,6 +74,7 @@ Call prepare(const v::Context &context, const c::WorkloadContext &workload,
              c::Operation operation, std::span<const v::Argument> arguments) {
   SCOPED_TRACE(c::operation_name(operation));
   auto program = v::prepare(context, operation, arguments, workload).value();
+#if !defined(HYLE_D5_EXTERNAL_CONSUMER)
   const auto &state = *d::Access::program(program);
   const auto &dispatches = state.dispatches;
   const bool mature = std::ranges::any_of(dispatches, [](const auto &dispatch) {
@@ -102,6 +108,7 @@ Call prepare(const v::Context &context, const c::WorkloadContext &workload,
   } else {
     EXPECT_TRUE(mature);
   }
+#endif
   EXPECT_EQ(program.workload(), workload);
   return {std::move(program)};
 }
@@ -190,6 +197,7 @@ void run_quantized_embedding(
   const auto table = upload(context, table_desc, packed.bytes);
   auto call =
       prepare(context, workload, c::Operation(c::Gather{}), table, ids_desc);
+#if !defined(HYLE_D5_EXTERNAL_CONSUMER)
   const auto &dispatches = d::Access::program(call.program)->dispatches;
   EXPECT_EQ(std::ranges::count_if(dispatches,
                                   [](const auto &dispatch) {
@@ -197,6 +205,7 @@ void run_quantized_embedding(
                                   }),
             1);
 
+#endif
   auto invocation = call.program.create_invocation().value();
   constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
       {{{0, 5}}, {{6, 2}}}};
@@ -346,6 +355,7 @@ void run_quantized_projections(
         profile, c::WorkloadPhase::kDecode, test.region);
     auto call = prepare(context, workload, c::Operation(c::MatMul{}),
                         input_desc, weight);
+#if !defined(HYLE_D5_EXTERNAL_CONSUMER)
     const auto &dispatches = d::Access::program(call.program)->dispatches;
     EXPECT_EQ(std::ranges::count_if(dispatches,
                                     [](const auto &dispatch) {
@@ -353,6 +363,7 @@ void run_quantized_projections(
                                     }),
               1);
 
+#endif
     auto invocation = call.program.create_invocation().value();
     auto activation_values =
         d5_gguf_test::activation(test.reduction, test.seed);
@@ -1475,6 +1486,46 @@ TEST(VulkanMoeFragments, D5OfficialFp8DenseBoundaries) {
       run_q24_semantic_fragment(fp8::projection(shape, m));
     }
   }
+}
+
+TEST(VulkanMoeFragments, D5OfficialFullMoeColdBoundary) {
+  namespace boundary = d5_vulkan_official_boundary;
+  boundary::for_each([](const boundary::sem::Fragment &fragment) {
+    SCOPED_TRACE(fragment.profile->model_name);
+    auto context = vulkan_test::context().value();
+    const auto workload = q::workload(
+        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
+    std::vector<v::Tensor> constants(fragment.descriptions.size());
+    for (std::size_t i = 0; i < fragment.constants.size(); ++i) {
+      const auto id = fragment.constants[i];
+      auto tensor = context.upload(fragment.description(id), fragment.constant_bytes[i]);
+      ASSERT_TRUE(tensor) << tensor.error().message();
+      constants[id.ordinal()] = std::move(*tensor);
+    }
+    std::size_t prepared = 0;
+    for (const auto &node : fragment.nodes) {
+      if (node.operation.kind() == c::OperationKind::kView)
+        continue;
+      std::vector<v::Argument> arguments;
+      for (auto id : node.inputs) {
+        if (id.kind() == qfull::ValueKind::kConstant)
+          arguments.emplace_back(constants[id.ordinal()]);
+        else
+          arguments.emplace_back(fragment.description(id));
+      }
+      auto result = v::prepare(context, node.operation, arguments, workload);
+      if (!result) {
+        const char *operation = boundary::missing_operation(node.operation);
+        ASSERT_NE(operation, nullptr) << result.error().message();
+        ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+        boundary::record("direct", fragment, prepared, operation, result.error());
+        return;
+      }
+      ++prepared;
+    }
+    FAIL() << "Official Vulkan MoE now prepares; qualify execution before "
+              "replacing its rejection record.";
+  });
 }
 
 TEST(VulkanMoeFragments, D5OfficialFp4ExpertBatch) {

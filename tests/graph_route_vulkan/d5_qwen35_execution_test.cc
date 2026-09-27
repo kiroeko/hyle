@@ -21,6 +21,7 @@
 #include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "../compute_models/d5_qwen38_24t_grouped_gguf_fixture.h"
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
+#include "../compute_models/d5_vulkan_official_boundary.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
@@ -1440,6 +1441,29 @@ TEST(VulkanGraphMoeFragments, D5OfficialFp8DenseBoundaries) {
       run_q24_semantic_fragment(fp8::projection(shape, m));
     }
   }
+}
+
+TEST(VulkanGraphMoeFragments, D5OfficialFullMoeColdBoundary) {
+  namespace boundary = d5_vulkan_official_boundary;
+  boundary::for_each([](const boundary::sem::Fragment &fragment) {
+    SCOPED_TRACE(fragment.profile->model_name);
+    auto full = boundary::sem::make_graph(fragment);
+    auto context = vulkan_test::context().value();
+    std::vector<v::Tensor> constants;
+    for (std::size_t i = 0; i < fragment.constants.size(); ++i) {
+      auto tensor = context.upload(fragment.description(fragment.constants[i]),
+                                   fragment.constant_bytes[i]);
+      ASSERT_TRUE(tensor) << tensor.error().message();
+      constants.push_back(std::move(*tensor));
+    }
+    const auto workload = q::workload(
+        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
+    auto result = gv::compile(context, full.graph, constants, {.workload = workload});
+    ASSERT_FALSE(result) << "Official Vulkan MoE now compiles; qualify execution "
+                            "before replacing its rejection record.";
+    ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+    boundary::record("graph", fragment, 0, "complete_moe", result.error());
+  });
 }
 
 TEST(VulkanGraphMoeFragments, D5OfficialFp4ExpertBatch) {

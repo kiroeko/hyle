@@ -794,6 +794,20 @@ shared 的10项计算和Graph拒绝检查通过；Direct新测试因 `input_spec
 不假定所有拒绝都发生在 `prepare`。产品FIX仍为零；11项通过结果复用，仅重跑该Direct检查。
 原编译/运行失败均保留。随后 source/static 按原整批继续，不扩大原生调查或数值纠正预算。
 
+Vulkan当前批次baseline为`7352f5b2`，产品FIX为零。有限测试FIX：四份官方完整MoE的
+普通Direct/Graph冷拒绝；将Direct测试中的私有dispatch断言仅留在仓内owner模式，外部三交付
+使用同一公开执行和数值检查；同一批验证Qwen BF16 embedding/FFN/GDN、DeepSeek GGUF hash-MoE、
+既有预编码FP8 dense。每交付10项正常计算与2项拒绝检查，后者覆盖四份官方画像。
+Windows/MSVC Release/WERROR，插桩OFF、Vulkan验证层ON、DLL邻置、低并行2与测试串行。
+source/static共用一次构建，shared复用原producer；一次整批及一轮具体消费者接缝纠正。
+同一驱动先编译仓内owner断言分支，定向执行新增冷边界和代表FFN，再转入外部三交付；
+这只签本次受影响消费者，不将保留数值失败的完整owner记PASS。selector对应输入工具、
+配置和两个factor均保留命令与筛选范围，未变的原测试结果按下述身份核对复用。
+与`91af7569`相比，Vulkan路线、两个成熟Provider、共享ggml runtime、相关vendor和DeepSeek原配方
+文件无变化；既有完整attention/压缩数值失败按相同合同复用，不重复IREE三角函数探针。
+本地D5 ledger增加`RUN_FAIL`以如实记录已运行的数值失败，先逐profile核对原日志再登记；
+不得把数值失败写成后端拒绝或新增通过。只调整该ledger的结构检查，不改公共治理或性能核心。
+
 | 模型批次 | profile 数 | 真实宽度锚点 | 必验 region |
 |---|---:|---|---|
 | Qwen3.5-2B | 3 | H=2048、FFN=6144、GQA 8/2×256、GDN 16×128、conv K4 | official：R01-R05、R13-R15；两份 GGUF：R01-R05、R14-R15 |
