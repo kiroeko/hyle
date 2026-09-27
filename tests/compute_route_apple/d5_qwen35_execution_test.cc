@@ -1482,6 +1482,7 @@ void execute_q24_semantic_fragment(
       const auto actual =
           float_values(*tensors[fixture.outputs[output].ordinal()]);
       feedback.observe(output, actual);
+      SCOPED_TRACE(sem::error_summary(actual, expected.outputs[output]));
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
                          fixture.bfloat_chain_output(output));

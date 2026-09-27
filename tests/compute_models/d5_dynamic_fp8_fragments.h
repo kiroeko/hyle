@@ -221,6 +221,7 @@ inline sem::Fragment model_accumulation_boundaries() {
   auto input = f.input(sem::dense({1, 4096}));
   auto projected = model_linear(f, input, 1536, 4096, 197);
   f.outputs = {projected.output};
+  std::vector<std::vector<std::pair<float, float>>> intervals;
   for (int seed : {3, 17, 31, 45}) {
     auto x = d5_gguf_test::activation(4096, seed);
     x = sem::oracle::rms_norm_rows(x, sem::oracle::scale(4096), 4096, 1.0e-5F);
@@ -229,9 +230,50 @@ inline sem::Fragment model_accumulation_boundaries() {
     // These real consumer inputs exercise the missing rounding boundary;
     // an all-double chain is a different numerical program.
     EXPECT_FALSE(std::equal(expected.begin(), expected.end(), unrounded.begin()));
+    // Two sparse terms have exact E4M3 dot products. Each term has two
+    // F32 scale products followed by one addition: gamma(3)*sum(abs(term))
+    // bounds fused and unfused accumulation, including cancellation. This
+    // follows the declared F32 accumulator, without requiring CUDA's FMA.
+    auto rounded = x;
+    for (auto &value : rounded) value = bfloat(value);
+    const auto encoded = quantized(rounded, projected.k, projected.power2);
+    const fp8::Case shape{f.profile, projected.n, projected.k, false, "linear bound"};
+    constexpr double unit = 0x1p-24;
+    constexpr double gamma = 3 * unit / (1 - 3 * unit);
+    std::vector<std::pair<float, float>> bounds;
+    for (std::int64_t row = 0; row < projected.n; ++row) {
+      double exact = 0, magnitude = 0;
+      for (int term = 0; term < 2; ++term) {
+        const auto col = (row * 17 + projected.seed + term * (projected.k / 2 + 13)) % projected.k;
+        const double value = encoded[col] * fp8::kValues[(row + projected.seed + term) % 4] *
+            fp8::scale(shape, row / 128, col / 128, projected.seed);
+        exact += value;
+        magnitude += std::abs(value);
+      }
+      const auto lower = bfloat(std::nextafter(float(exact - gamma * magnitude),
+          -std::numeric_limits<float>::infinity()));
+      const auto upper = bfloat(std::nextafter(float(exact + gamma * magnitude),
+          std::numeric_limits<float>::infinity()));
+      EXPECT_GE(expected[row], lower);
+      EXPECT_LE(expected[row], upper);
+      bounds.emplace_back(lower, upper);
+    }
+    intervals.push_back(std::move(bounds));
     f.replays.push_back({{sem::bytes(x)}, {std::move(expected)}});
   }
-  strict_output_check(f, true, 1);
+  f.observe = [bounds = std::move(intervals), replay = std::size_t{0}]
+      (std::size_t port, std::span<const float> actual) mutable {
+    ASSERT_EQ(port, 0U);
+    ASSERT_EQ(actual.size(), bounds.at(replay).size());
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+      EXPECT_TRUE(std::isfinite(actual[i])) << i;
+      EXPECT_EQ(actual[i], bfloat(actual[i])) << i;
+      EXPECT_GE(actual[i], bounds[replay][i].first) << i;
+      EXPECT_LE(actual[i], bounds[replay][i].second) << i;
+    }
+    ++replay;
+  };
+  f.bfloat_chain_outputs = {0};
   return f;
 }
 

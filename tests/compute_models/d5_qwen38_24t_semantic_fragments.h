@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -661,6 +662,22 @@ inline std::vector<float> decode_output(const Fragment &fragment, std::size_t po
   if (fragment.description(fragment.outputs[port]).data_type() == c::DataType::kInt32)
     for (auto &word : words) word = float(std::bit_cast<std::int32_t>(word));
   return words;
+}
+
+// Diagnostics only: these metrics do not alter any accuracy gate.
+inline std::string error_summary(std::span<const float> actual,
+                                  std::span<const float> expected) {
+  if (actual.size() != expected.size()) return "output size mismatch";
+  double error_square = 0, reference_square = 0, max_error = 0, peak = 0;
+  for (std::size_t i = 0; i < actual.size(); ++i) {
+    const double error = double(actual[i]) - expected[i];
+    error_square += error * error;
+    reference_square += double(expected[i]) * expected[i];
+    max_error = std::max(max_error, std::abs(error));
+    peak = std::max(peak, std::abs(double(expected[i])));
+  }
+  return "relative_l2=" + std::to_string(std::sqrt(error_square / reference_square)) +
+      " peak_normalized_max=" + std::to_string(max_error / peak);
 }
 
 inline void expect_output(const Fragment &fragment,

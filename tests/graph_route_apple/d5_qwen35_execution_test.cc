@@ -1521,6 +1521,7 @@ void execute_q24_semantic_fragment(
     for (std::size_t output = 0; output < outputs.size(); ++output) {
       const auto actual = float_values(outputs[output]);
       feedback.observe(output, actual);
+      SCOPED_TRACE(sem::error_summary(actual, expected.outputs[output]));
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
                          fixture.bfloat_chain_output(output));
