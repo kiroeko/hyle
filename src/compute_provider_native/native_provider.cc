@@ -775,6 +775,13 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
+  case OperationKind::kCustom: {
+    Status status =
+        internal::prepare_ds4_quantization(operation, inputs, outputs, plan);
+    if (!status.ok())
+      return status;
+    break;
+  }
   case OperationKind::kUnary:
   case OperationKind::kBinary:
   case OperationKind::kSelect: {

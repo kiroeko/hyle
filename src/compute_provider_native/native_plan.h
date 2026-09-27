@@ -202,6 +202,10 @@ Status prepare_transform(Operation operation,
 Status prepare_cast(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs,
                     NativePlan &plan) noexcept;
+Status prepare_ds4_quantization(Operation operation,
+                                std::span<const TensorDesc> inputs,
+                                std::span<const TensorDesc> outputs,
+                                NativePlan &plan) noexcept;
 Status prepare_elementwise(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,

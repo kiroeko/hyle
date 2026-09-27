@@ -1,6 +1,7 @@
 hyle_add_header_self_contained_test(graph_route_cpu
   HEADER_DIR graph HEADERS cpu.h)
 hyle_add_test(graph_route_cpu SOURCES
+  ../compute_route_cpu/ds4_roundtrip_test.cc
   ../compute_route_cpu/context_test.cc d5_qwen35_profile_test.cc
   d5_qwen_gguf_vocabulary_test.cc
   d5_qwen38_official_test.cc

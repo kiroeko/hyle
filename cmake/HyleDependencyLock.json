@@ -339,6 +339,32 @@
       ] }
     },
     {
+      "name": "ds4_quantization",
+      "class": "in_tree",
+      "repository": "https://github.com/antirez/ds4.git",
+      "version": "ds4-snapshot-9139e2ae58a4",
+      "revision": "9139e2ae58a41503968a500f36f75895c1ba63fc",
+      "git_tree": "f29629bbdfe659bb4e307902cf4a172d76e9256a",
+      "archive": {
+        "url": "https://codeload.github.com/antirez/ds4/tar.gz/9139e2ae58a41503968a500f36f75895c1ba63fc",
+        "sha256": "ae010cf96a2b533aac231834323fc4fe30e682cf99b0a149a85b65fe9e3aaf09"
+      },
+      "vendored": {
+        "path": "third_party/ds4_quantization",
+        "tree_sha256": "233173008598a763ef1081f2f7a614f27a210ea728dce32a41f17ba4301c9ebe"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ds4_quantization/LICENSE",
+            "sha256": "4a8a1358f5b048627d71e4988de0bafd386f4988991929629e6cb9e29b7b9b2f"
+          }
+        ]
+      }
+    },
+    {
       "name": "deepseek_fp8",
       "class": "in_tree",
       "repository": "https://github.com/deepseek-ai/DeepSeek-V3.git",

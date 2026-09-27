@@ -1,0 +1,39 @@
+{
+  "repository": "https://github.com/antirez/ds4.git",
+  "revision": "9139e2ae58a41503968a500f36f75895c1ba63fc",
+  "path": "ds4.c",
+  "source_sha256": "7880f2a7a230e506b71b100a9d74a63783fee654244841a6967b2415754fa88f",
+  "functions": [
+    {
+      "function": "dsv4_e4m3fn_value_cpu",
+      "first_line": 3690,
+      "sha256": "f521cb23e358b62f7c8fd53e478da8e5ecd3d013f6c170a254054d911653e520"
+    },
+    {
+      "function": "dsv4_e4m3fn_dequant_cpu",
+      "first_line": 3705,
+      "sha256": "07ea73650b477da8e3fe47f85c60d21ea3485c24c5982d4c2038aa4be261595e"
+    },
+    {
+      "function": "dsv4_fp8_kv_quantize_row_inplace_cpu",
+      "first_line": 3735,
+      "sha256": "1d1f0a6e9468ff7f1cacbf7794ea66c2a09c11579a118af42850240fb79b1953"
+    },
+    {
+      "function": "dsv4_e2m1fn_value_cpu",
+      "first_line": 3755,
+      "sha256": "10a3e91913c4f79b2d146f37e774e27ac8388f087f20793b6eeb6de45eb7b7e6"
+    },
+    {
+      "function": "dsv4_e2m1fn_dequant_cpu",
+      "first_line": 3762,
+      "sha256": "c8e9b37f1d0952308b0e7fc3cf4f37d5db5d8dac84766b37f54a82a0c28eb05c"
+    },
+    {
+      "function": "dsv4_fp4_act_quantize_row_inplace_cpu",
+      "first_line": 3792,
+      "sha256": "058880e37a6ef1d01a2473a565c4527a6bae92f41228c9d34e030f98620b961a"
+    }
+  ],
+  "adaptation": "Includes, private namespace and abort hook only; original function bodies unchanged."
+}

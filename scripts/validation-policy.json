@@ -75,6 +75,7 @@
     "third_party/sglang_activation/": ["compute_provider_cuda"],
     "third_party/deepseek_fp8/": ["compute_provider_cuda"],
     "third_party/deepseek_quantization/": ["compute_provider_cuda"],
+    "third_party/ds4_quantization/": ["compute_provider_native"],
     "third_party/mimalloc/": ["mem"],
     "third_party/xxhash/": ["container"],
     "third_party/wyhash/": ["container"],
