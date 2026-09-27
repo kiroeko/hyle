@@ -14,13 +14,14 @@ DeepSeek Pro/Flash官方混合FP4/FP8也已通过CUDA两入口全部必需region
 MTP与129280行F32 head见[F43完成收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/README.md)。
 GLM两个官方FP8画像另已通过Apple两入口，见
 [F45完整片段收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/README.md)。
-当前 ledger 为 **152/176 RUN_PASS、24/176 VALIDATION_NOT_RUN**；CUDA正确性44/44、Apple40/44。Qwen 见
+当前 ledger 为 **152/176 RUN_PASS、8/176 BACKEND_REJECTED、16/176 VALIDATION_NOT_RUN**；
+CPU36通过/8拒绝，CUDA正确性44/44、Apple40/44。Qwen 见
 [九画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)，
 Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/README.md)，
 GLM 见[四 GGUF 画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md)。
 Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
 旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
-剩余CPU八格、Apple四格、Vulkan十二格，以及D5三交付/P1和D6尚未完成，
+CPU八格已固定当前成熟路线的冷拒绝；剩余Apple四格、Vulkan十二格，以及D5三交付/P1和D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
 D5-A5外部CUDA交付发现两个Provider的私有SDK DLL依赖未导出；
@@ -37,9 +38,12 @@ CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)�
 按[失败与环境收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)等待空闲窗口，
 不记产品性能FAIL、不升级样本。其它D5工作继续，A6不提前计作通过。
 
-CPU 剩余四个官方画像按[F47 完整 MoE 冷边界](llm-moe-d5-cpu-official-boundary.md)批验。
-固定 oneDNN 的快速 FP8 ISA 门、SGLang AMX 门和 vLLM W8A16 合同已核对，不能通过改格式
-或恢复自研来绕过；本批只验证实际普通入口拒绝，不增加支持通过格。
+CPU 四个官方画像已按[F47 完整 MoE 冷边界](llm-moe-d5-cpu-official-boundary.md)完成两入口批验。
+GLM在grouped FP8、DeepSeek在grouped FP4冷拒绝，完整Graph也拒绝，见
+[具体证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/README.md)。
+固定 oneDNN 的快速 FP8 ISA 门、SGLang AMX 门和 vLLM W8A16 合同已核对；停止本批试拼。
+这8格只说明当前路线不能完成，不能通过改格式或恢复自研绕过，不增加支持通过格，
+也不证明所有成熟CPU库缺失。现有可用画像的A5/A6继续，新成熟承载需另行定界。
 
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。

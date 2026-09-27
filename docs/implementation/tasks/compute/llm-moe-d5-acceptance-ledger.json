@@ -7353,18 +7353,30 @@
       "profile": "deepseek_v4_pro:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:cpu:graph",
       "profile": "deepseek_v4_pro:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:cuda:direct",
@@ -7547,18 +7559,30 @@
       "profile": "deepseek_v4_flash:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:official:official-fp4-fp8:cpu:graph",
       "profile": "deepseek_v4_flash:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ]
     },
     {
       "id": "deepseek_v4_flash:official:official-fp4-fp8:cuda:direct",
@@ -8557,18 +8581,30 @@
       "profile": "glm53:official:official-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ]
     },
     {
       "id": "glm53:official:official-fp8:cpu:graph",
       "profile": "glm53:official:official-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": []
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ]
     },
     {
       "id": "glm53:official:official-fp8:cuda:direct",
@@ -9893,9 +9929,15 @@
       "profile": "glm53_flash:official:official-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -9911,9 +9953,15 @@
       "profile": "glm53_flash:official:official-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "VALIDATION_NOT_RUN",
-      "receipt": null,
-      "region_verdicts": [],
+      "status": "BACKEND_REJECTED",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "region_verdicts": [
+        {
+          "region": "R11",
+          "verdict": "BACKEND_REJECTED",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+        }
+      ],
       "partial_receipts": [
         {
           "regions": [
@@ -11648,9 +11696,9 @@
     "entries": 2,
     "cells": 176,
     "RUN_PASS": 152,
-    "BACKEND_REJECTED": 0,
+    "BACKEND_REJECTED": 8,
     "UPSTREAM_MISSING": 0,
-    "VALIDATION_NOT_RUN": 24
+    "VALIDATION_NOT_RUN": 16
   },
   "qualification_correction": {
     "reason": "The 48 former Qwen3.5-2B and Qwen3.8-27B complete cells used seven R01 vocabulary rows; the fixed real-profile capacity policy does not permit reducing the 248320-row vocabulary. Their non-R01 successful regions remain linked as partial receipts.",

@@ -54,3 +54,13 @@ DeepSeek 消费者固定了 `native_routing=true`，先在 CPU 未绑定的融�
 中文 showIncludes，新增两个测试对象均为 `#deps 0`。`eb75e235` 的该次运行仍使用旧对象，
 不得计作纠正候选的验证。局部驱动固定 `VSLANG=1033`，一次清理该 CPU build 的 HYLE
 产品对象和两个受影响测试对象后重建，保留原始记录；不清第三方缓存、不改公共治理脚本。
+
+## 本批裁决
+
+`2ce38555` 的有效批次完成两入口四画像，全部得到具名普通路线的冷拒绝：GLM 在
+`GroupedFloat8Linear`、DeepSeek 在 `GroupedFloat4Linear`；Graph 的完整配方编译均拒绝。
+没有新增运行通过格。原失败、失效对象清单、修复后的头依赖、源码 pin 和日志见
+[F47 证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/README.md)。
+预算结束，停止本卡的编译/原生调查。CPU 8 格记 `BACKEND_REJECTED`，只限当前已接入路线；
+其它上游候选不据此判缺失。完整 ledger 为152通过、8拒绝、16未验；统一实现60,373行/241文件。
+产品 owner 状态不变，新的成熟 CPU 承载需要另外定界。D5 A5/A6、其它路线与 D6 继续未完成。

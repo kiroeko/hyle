@@ -1,0 +1,29 @@
+{
+  "candidate": "eb75e23535a2af8ee504cfe1a694738f2a432abc",
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/d",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f47-cpu-boundary-corrected\\build.cmd"
+      ],
+      "started_utc": "2026-09-27T04:30:46.292046+00:00",
+      "seconds": 1.2660000000032596,
+      "returncode": 0
+    },
+    {
+      "name": "compute",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+        "--gtest_filter=*D5OfficialFullMoeColdBoundary",
+        "--gtest_color=no",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f47-cpu-boundary-corrected\\compute.xml"
+      ],
+      "started_utc": "2026-09-27T04:30:47.570852+00:00",
+      "seconds": 0.3129999999946449,
+      "returncode": 1
+    }
+  ]
+}

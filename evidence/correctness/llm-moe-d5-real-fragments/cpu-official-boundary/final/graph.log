@@ -1,0 +1,16 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5OfficialFullMoeColdBoundary
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuGraphMoeFragments
+[ RUN      ] CpuGraphMoeFragments.D5OfficialFullMoeColdBoundary
+OFFICIAL_CPU_REJECT entry=graph model=GLM-5.3 region=722439 nodes=30 prepared=0 operation=complete_moe code=12 message=no complete graph route satisfies the available candidates
+OFFICIAL_CPU_REJECT entry=graph model=GLM-5.3-Flash region=722439 nodes=48 prepared=0 operation=complete_moe code=12 message=no complete graph route satisfies the available candidates
+OFFICIAL_CPU_REJECT entry=graph model=DeepSeek-V4-Pro region=168494593 nodes=51 prepared=0 operation=complete_moe code=12 message=no complete graph route satisfies the available candidates
+OFFICIAL_CPU_REJECT entry=graph model=DeepSeek-V4-Flash region=168494593 nodes=51 prepared=0 operation=complete_moe code=12 message=no complete graph route satisfies the available candidates
+[       OK ] CpuGraphMoeFragments.D5OfficialFullMoeColdBoundary (400 ms)
+[----------] 1 test from CpuGraphMoeFragments (400 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (400 ms total)
+[  PASSED  ] 1 test.

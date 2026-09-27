@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="0.4" timestamp="2026-09-27T12:35:37.952" name="AllTests">
+  <testsuite name="CpuGraphMoeFragments" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.4" timestamp="2026-09-27T12:35:37.953">
+    <testcase name="D5OfficialFullMoeColdBoundary" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc" line="690" status="run" result="completed" time="0.4" timestamp="2026-09-27T12:35:37.953" classname="CpuGraphMoeFragments" />
+  </testsuite>
+</testsuites>

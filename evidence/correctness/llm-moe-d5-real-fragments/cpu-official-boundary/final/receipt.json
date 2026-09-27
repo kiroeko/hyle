@@ -1,0 +1,61 @@
+{
+  "candidate": "2ce385555f140865ef7857682c792c774b85d8df",
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd",
+        "/d",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f47-cpu-boundary-final\\build.cmd"
+      ],
+      "started_utc": "2026-09-27T04:32:31.100958+00:00",
+      "seconds": 186.375,
+      "returncode": 0
+    },
+    {
+      "name": "compute",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+        "--gtest_filter=*D5OfficialFullMoeColdBoundary",
+        "--gtest_color=no",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f47-cpu-boundary-final\\compute.xml"
+      ],
+      "started_utc": "2026-09-27T04:35:37.466919+00:00",
+      "seconds": 0.4220000000204891,
+      "returncode": 0
+    },
+    {
+      "name": "graph",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+        "--gtest_filter=*D5OfficialFullMoeColdBoundary",
+        "--gtest_color=no",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-f47-cpu-boundary-final\\graph.xml"
+      ],
+      "started_utc": "2026-09-27T04:35:37.894147+00:00",
+      "seconds": 0.48399999999674037,
+      "returncode": 0
+    },
+    {
+      "name": "model-inputs",
+      "argv": [
+        "python",
+        "tests/compute_models/inputs_test.py"
+      ],
+      "started_utc": "2026-09-27T04:35:38.380384+00:00",
+      "seconds": 0.29699999999138527,
+      "returncode": 0
+    },
+    {
+      "name": "ledger",
+      "argv": [
+        "python",
+        "tests/compute_models/d5_acceptance_test.py"
+      ],
+      "started_utc": "2026-09-27T04:35:38.673140+00:00",
+      "seconds": 0.062000000005355105,
+      "returncode": 0
+    }
+  ]
+}

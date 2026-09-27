@@ -1,0 +1,28 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *D5OfficialFullMoeColdBoundary
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5OfficialFullMoeColdBoundary
+OFFICIAL_CPU_REJECT entry=direct model=GLM-5.3 region=722439 nodes=30 prepared=11 operation=GroupedFloat8Linear code=12 message=hyle-native: operation has no current HYLE native executable route
+OFFICIAL_CPU_REJECT entry=direct model=GLM-5.3-Flash region=722439 nodes=48 prepared=11 operation=GroupedFloat8Linear code=12 message=hyle-native: operation has no current HYLE native executable route
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(951): error: Expected: (operation) != (nullptr), actual: NULL vs (nullptr)
+hyle-native: operation has no current HYLE native executable route
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(936): DeepSeek-V4-Pro
+
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(951): error: Expected: (operation) != (nullptr), actual: NULL vs (nullptr)
+hyle-native: operation has no current HYLE native executable route
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(936): DeepSeek-V4-Flash
+
+[  FAILED  ] CpuMoeFragments.D5OfficialFullMoeColdBoundary (292 ms)
+[----------] 1 test from CpuMoeFragments (292 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (292 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CpuMoeFragments.D5OfficialFullMoeColdBoundary
+
+ 1 FAILED TEST

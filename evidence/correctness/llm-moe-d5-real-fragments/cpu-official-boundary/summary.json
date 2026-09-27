@@ -1,0 +1,211 @@
+{
+  "candidate": "2ce385555f140865ef7857682c792c774b85d8df",
+  "baseline": "9e7830c291e6a2cc9a50a039e088a21ee35ce209",
+  "verdict": "BACKEND_REJECTED",
+  "route": "cpu",
+  "machine": {
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "cores": 24,
+    "logical_processors": 32
+  },
+  "profiles": 4,
+  "entries": [
+    "direct",
+    "graph"
+  ],
+  "rejected_cells": 8,
+  "new_run_pass_cells": 0,
+  "scope": "Four exact official complete MoE recipes fail cold preparation/compilation. No runtime output or whole-model inference claim.",
+  "limits": [
+    "No assertion that all mature CPU implementations are unavailable.",
+    "No execution, state feedback, three-delivery or performance PASS for these rejected profiles.",
+    "Other regions are not marked rejected or passed merely because a required MoE region cannot prepare."
+  ],
+  "records": [
+    {
+      "entry": "direct",
+      "model": "GLM-5.3",
+      "region": 722439,
+      "nodes": 30,
+      "prepared_before_rejection": 11,
+      "operation": "GroupedFloat8Linear",
+      "status_code": 12,
+      "message": "hyle-native: operation has no current HYLE native executable route"
+    },
+    {
+      "entry": "direct",
+      "model": "GLM-5.3-Flash",
+      "region": 722439,
+      "nodes": 48,
+      "prepared_before_rejection": 11,
+      "operation": "GroupedFloat8Linear",
+      "status_code": 12,
+      "message": "hyle-native: operation has no current HYLE native executable route"
+    },
+    {
+      "entry": "direct",
+      "model": "DeepSeek-V4-Pro",
+      "region": 168494593,
+      "nodes": 51,
+      "prepared_before_rejection": 14,
+      "operation": "GroupedFloat4Linear",
+      "status_code": 12,
+      "message": "hyle-native: operation has no current HYLE native executable route"
+    },
+    {
+      "entry": "direct",
+      "model": "DeepSeek-V4-Flash",
+      "region": 168494593,
+      "nodes": 51,
+      "prepared_before_rejection": 14,
+      "operation": "GroupedFloat4Linear",
+      "status_code": 12,
+      "message": "hyle-native: operation has no current HYLE native executable route"
+    },
+    {
+      "entry": "graph",
+      "model": "GLM-5.3",
+      "region": 722439,
+      "nodes": 30,
+      "prepared_before_rejection": 0,
+      "operation": "complete_moe",
+      "status_code": 12,
+      "message": "no complete graph route satisfies the available candidates"
+    },
+    {
+      "entry": "graph",
+      "model": "GLM-5.3-Flash",
+      "region": 722439,
+      "nodes": 48,
+      "prepared_before_rejection": 0,
+      "operation": "complete_moe",
+      "status_code": 12,
+      "message": "no complete graph route satisfies the available candidates"
+    },
+    {
+      "entry": "graph",
+      "model": "DeepSeek-V4-Pro",
+      "region": 168494593,
+      "nodes": 51,
+      "prepared_before_rejection": 0,
+      "operation": "complete_moe",
+      "status_code": 12,
+      "message": "no complete graph route satisfies the available candidates"
+    },
+    {
+      "entry": "graph",
+      "model": "DeepSeek-V4-Flash",
+      "region": 168494593,
+      "nodes": 51,
+      "prepared_before_rejection": 0,
+      "operation": "complete_moe",
+      "status_code": 12,
+      "message": "no complete graph route satisfies the available candidates"
+    }
+  ],
+  "artifacts": {
+    "bin\\hyle_compute_route_cpu_test.exe": {
+      "sha256": "ddc6c24ab73f1c890128f8f631a159fc806733d452d154b2406fb7ae4bd611b7",
+      "bytes": 2205696
+    },
+    "bin\\hyle_graph_route_cpu_test.exe": {
+      "sha256": "0bfed3594d339c68a30aa7a97842d2d1b0ab0f06f201f845b4414c92e52eb766",
+      "bytes": 2647552
+    },
+    "bin\\hyle_compute.dll": {
+      "sha256": "3907fbb945bc7a70a9d133efd94ca359d42070ae8f3adc6457820cdd5248ac55",
+      "bytes": 189440
+    },
+    "bin\\hyle_compute_backend_cpu.dll": {
+      "sha256": "d80e8e4b885369c9432dde185201ac799cceeeae3f7e53f2a08b12548c5998bf",
+      "bytes": 16384
+    },
+    "bin\\hyle_compute_ggml_runtime.dll": {
+      "sha256": "5c399fb39a75508ae961a96137dd3c6b851c124b5f900f6ee32ac8e7c9b3905b",
+      "bytes": 1135104
+    },
+    "bin\\hyle_compute_ops.dll": {
+      "sha256": "c0c4e46182f7ea0b3ac32380dae91dfeff3433b9f8afeb01c8e049f55d7bd38c",
+      "bytes": 70144
+    },
+    "bin\\hyle_compute_ops_custom_fixture.dll": {
+      "sha256": "a2d3242da688604e94aea3e4a5581e1516b14d04c6503be712b326cc65904e62",
+      "bytes": 13824
+    },
+    "bin\\hyle_compute_provider_ggml.dll": {
+      "sha256": "fd727150108273f16b186318d9cb3df1beb3b387eeea1e8cc01f18944606c212",
+      "bytes": 401408
+    },
+    "bin\\hyle_compute_provider_native.dll": {
+      "sha256": "10b6d557a77c7e27ba8e87b257ea23906fc7a0dd510b3ae170fea31a19000cbc",
+      "bytes": 266240
+    },
+    "bin\\hyle_compute_provider_onednn.dll": {
+      "sha256": "a181db5d3218e7a693ebc96124af60207899f4cde38e53c70dffef605eab67f3",
+      "bytes": 16674304
+    },
+    "bin\\hyle_compute_result_fixture.dll": {
+      "sha256": "681fa33439cf912c7b69f8ceafd5723e0759e241a16d05393bdb091f4e19958c",
+      "bytes": 14336
+    },
+    "bin\\hyle_compute_route_cpu.dll": {
+      "sha256": "d394035833c5f752de0cbc8594c4fc3b18e50c5f78190f2c684d5924fe841655",
+      "bytes": 11264
+    },
+    "bin\\hyle_container.dll": {
+      "sha256": "f3876d36169d61247ed675844bd47f206f0bea80c52a41826c52152f262f9cf2",
+      "bytes": 41472
+    },
+    "bin\\hyle_error.dll": {
+      "sha256": "9745125c0c0578d6ba52b54159da9ac632b56847c13c0311d9a750ad11dad69e",
+      "bytes": 28160
+    },
+    "bin\\hyle_graph.dll": {
+      "sha256": "8f9ad25fa732382aecc97527d64e96a9894fa7f27e9acbf3ae1b0210b86d757d",
+      "bytes": 509952
+    },
+    "bin\\hyle_graph_provider_onednn.dll": {
+      "sha256": "60798fd664b0203dea32a90ea0ebcc6ad2fdfd3c4146acb91fd4c8a791c36a4d",
+      "bytes": 61440
+    },
+    "bin\\hyle_graph_route_cpu.dll": {
+      "sha256": "c3edf98d838b77fa8a91a301afd56c325151cc910deffef9628499ed3ca5487d",
+      "bytes": 43520
+    },
+    "bin\\hyle_mem.dll": {
+      "sha256": "6f4a93f9723f3f893bd64038e7fc702e8bcd79d8d2821a3d44238f77f70c6418",
+      "bytes": 230912
+    },
+    "bin\\hyle_mem_vm.dll": {
+      "sha256": "53efe8b784d00e36518ed296fc764daa36ce89c65692af2f8a22df87edf3b4fe",
+      "bytes": 36864
+    },
+    "bin\\hyle_platform.dll": {
+      "sha256": "595e252ee62e0024966d00e7991b0e4abc5199ffbbe3683b449a22e07b24c539",
+      "bytes": 85504
+    },
+    "bin\\hyle_platform_fs.dll": {
+      "sha256": "6910831c157abb5be6df159253553243e0da3991c27710bda9abb68dee7c875e",
+      "bytes": 53760
+    },
+    "bin\\hyle_platform_thread.dll": {
+      "sha256": "9ba16a1aa85ec017cbb00535ed1bb3827614347e1eadf41944dd9f85be8c6ac5",
+      "bytes": 25088
+    },
+    "bin\\hyle_sched.dll": {
+      "sha256": "37ae6337b331011d2295d87fc84ae824096f72c8147096e2e89d88d724ed9302",
+      "bytes": 145408
+    },
+    "bin\\hyle_simd.dll": {
+      "sha256": "4b9214a230412e53fd64c7a1a7ea91163de23e708c216096febf3be2e776352b",
+      "bytes": 1571840
+    },
+    "bin\\hyle_time.dll": {
+      "sha256": "842e12e00a8646d5644fcd70c34ad4fc75dc8df6307932768e7578563d18a227",
+      "bytes": 20992
+    }
+  },
+  "test_boundary_correction": "DeepSeek uses existing portable mature routing; initial CUDA-fused gate was an inappropriate CPU consumer choice.",
+  "invalid_attempt": "eb75e235 reused stale test objects: Chinese showIncludes did not match the English Ninja dependency prefix. Not a candidate validation.",
+  "dependency_repair": "VSLANG=1033; 179 HYLE/test objects invalidated once, external dependency caches retained; final header dependency lists verified."
+}
