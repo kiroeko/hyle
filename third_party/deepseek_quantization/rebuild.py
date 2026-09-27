@@ -41,6 +41,10 @@ spec.loader.exec_module(module)
 adapter_spec = importlib.util.spec_from_file_location('deepseek_indexed_entry', root/'indexed_entry.py')
 adapter = importlib.util.module_from_spec(adapter_spec)
 adapter_spec.loader.exec_module(adapter)
+identity_spec = importlib.util.spec_from_file_location('deepseek_rebuild_identity', root/'rebuild_identity.py')
+identity = importlib.util.module_from_spec(identity_spec)
+identity_spec.loader.exec_module(identity)
+embedded = (root/'deepseek_quantization_sm89.h').read_text(encoding='utf-8')
 compiler = Path(tilelang.__file__).resolve().parent
 lines = ['#pragma once', '// Original DeepSeek V4; TileLang0.1.14 + CUDA13.3 SM89 AOT.']
 receipt = []
@@ -74,11 +78,11 @@ for job in provenance['programs']:
         subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
     blob = blob_path.read_bytes()
     digest = hashlib.sha256(blob).hexdigest()
-    receipt.append({'artifact': artifact, 'sha256': digest, 'matches_pinned': digest == job['sha256']})
+    receipt.append({'artifact': artifact, 'sha256': digest, **identity.compare(blob, job, embedded)})
     lines.append('alignas(16) inline constexpr unsigned char '+job['symbol']+'[] = {')
     for offset in range(0, len(blob), 24):
         lines.append('  '+','.join(f'0x{x:02x}' for x in blob[offset:offset+24])+',')
     lines.append('};')
 (args.output/'deepseek_quantization_sm89.h').write_text('\n'.join(lines)+'\n', encoding='utf-8', newline='\n')
 (args.output/'receipt.json').write_text(json.dumps(receipt, indent=2)+'\n', encoding='utf-8')
-assert all(row['matches_pinned'] for row in receipt), receipt
+assert all(row['matches_program'] for row in receipt), receipt

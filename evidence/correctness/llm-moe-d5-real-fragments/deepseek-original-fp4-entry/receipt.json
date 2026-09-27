@@ -1,0 +1,126 @@
+{
+  "candidate": "bc72243d49746ce1b1b938b31e2f37cffd5094c6",
+  "verdict": "PASS_CUDA_OFFICIAL_FP4_AND_COMPLETE_MOE_ONLY",
+  "domain": {
+    "device": "RTX 4070",
+    "sm": 89,
+    "driver_api": 13040
+  },
+  "entry_gtests": {
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0
+  },
+  "entry_paths": [
+    "Direct",
+    "Graph"
+  ],
+  "expert_projections": {
+    "nk": [
+      [
+        3072,
+        7168
+      ],
+      [
+        7168,
+        3072
+      ],
+      [
+        2048,
+        4096
+      ],
+      [
+        4096,
+        2048
+      ]
+    ],
+    "tokens": [
+      1,
+      3
+    ],
+    "activation_slots": [
+      1,
+      6
+    ],
+    "replays": 2,
+    "executions": 64,
+    "verdict": "EXACT_BF16_PASS"
+  },
+  "complete_moe": {
+    "models": [
+      "DeepSeek V4 Pro official",
+      "DeepSeek V4 Flash official"
+    ],
+    "routing": [
+      "score",
+      "hash"
+    ],
+    "replays": 3,
+    "executions": 24,
+    "unchanged_max_error_gate": 0.04,
+    "verdict": "PASS"
+  },
+  "resources": [
+    "workspace/alignment/alias rejection",
+    "metadata OOM rollback",
+    "two queues and independent workspaces",
+    "Completion after owner destruction",
+    "invalid IDs fail through Completion",
+    "no hot metadata allocations"
+  ],
+  "native_cases": 40,
+  "independent_headers": 4,
+  "input_tools": {
+    "command": "python tests/compute_models/inputs_test.py",
+    "tests": 13,
+    "verdict": "PASS"
+  },
+  "rebuild": {
+    "programs": 8,
+    "raw_hashes_equal": 4,
+    "indexed_programs_only_nvcc_internal_string_hash_differs": 4,
+    "identity": "All binary bytes equal except eleven eight-digit hashes in ELF .strtab",
+    "mutated_instructions_constants_and_header_rejected": true,
+    "raw_failure_retained": true
+  },
+  "cost": {
+    "dispatches": 2,
+    "host_id_downloads": 0,
+    "private_invocation_bytes": 0,
+    "limitation": "Original M32 tile executes M1 per selected slot; no large-prefill SOTA claim"
+  },
+  "new_complete_profile_cells": 0,
+  "ledger": {
+    "RUN_PASS": 144,
+    "VALIDATION_NOT_RUN": 32
+  },
+  "pending": [
+    "official DeepSeek full attention/compressor/MTP",
+    "other official routes",
+    "DeepSeek GGUF Vulkan",
+    "D5-A5 remaining selected gates/deliveries",
+    "D5-A6 P1",
+    "D6"
+  ],
+  "uncompressed_sha256": {
+    "build.log.gz": "b6bd0d317bcd26aaed65f64749a52ba7751e6cdd651f8f024ae04c9af8eaebbd",
+    "tests.log.gz": "151ab0acba811694c31f23ffe8ecd4b729fda10289e4b05bad34be3c6fd891a3",
+    "tests.xml.gz": "d1ef135645165a375e358d603c0b8a48420ab79f6e2129345636fc40bef0efbc",
+    "native-tests.log.gz": "613066211c5bc2a3f56bbc89055713cab271d86e21ea517a37a7e317092a21f5",
+    "cache-identity.txt.gz": "3b0cd68dc1b345a9d534d13cd9e11f76f319a5ac23bab66a1d1efe0786ce3e65",
+    "entry-receipt.json.gz": "f1f01a25991a92d7b30abe6092ddb67cc38c4b9d7fd142beb7889b89fcaabe6e",
+    "headers.log.gz": "c71a7e2ef9d043e81d6a14a007cfaadfdd53b957b981234f980bcf8ae8661d58",
+    "headers-receipt.json.gz": "75cb510942cd7a3ee9f7c3ea02bb21e8cd03a13c5a5686be61446df9c3f8a13b",
+    "native-receipt.json.gz": "e034a62eb60488945efac0424bb5aa31b5979aa5c34e812479d1a071c8005eec",
+    "rebuild-raw-receipt.json.gz": "1a52f3b443c06442b1e08ed05c2b87f5c43aab3004d04abbe5c00a0dddd0d82b",
+    "rebuild-identity-receipt.json.gz": "f96593672acb957b25a86b98624e6bb276a16418d57e91a88ced4a7f9f91632f",
+    "rebuild-raw.log.gz": "cf919c9f646f8234ba5978c45c9bd3898e02f030a96888adf6b7120daaa89c68",
+    "compile.json.gz": "2a66d8a94770f43ceb02ea0ac0a6413bd53ec5cd5017f36794fd6c6b54e7e5eb",
+    "selector-plan.json.gz": "208dc59610b975ca88d3e2ceaedc8361949aae69e16c41db2d9754a929d110f8",
+    "act_quant_kernel_encoded.cu.gz": "f8afeba1c561582331575d0d685beb0528415d8449d0ad13d63f1cf9735faddf",
+    "fp4_3072_7168.cu.gz": "3dcd91c1612ab725ae3580087c09a7d4fa570334e99cdc6afda32e2976e59465",
+    "fp4_7168_3072.cu.gz": "0b4b90b43f61be87f67cbe8c110efc6f592caa599ff8ff4b69c8e8b157aeb242",
+    "fp4_2048_4096.cu.gz": "7aa79b2a993cae5723e7001a83d4f2ef3f6c0648c2c5174cb00d840bbba629d3",
+    "fp4_4096_2048.cu.gz": "d599389a977fc202264e3b43f13fcf3d620116cec32dee952412d3b3ae1fef5e"
+  }
+}

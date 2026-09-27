@@ -382,7 +382,7 @@
       },
       "vendored": {
         "path": "third_party/deepseek_quantization",
-        "tree_sha256": "8d2e2700e94eccf969289bdb392a343a350dfb3721f506aad6baa84a933ab01d"
+        "tree_sha256": "1aefe1a3193927875e37e2f865503a5078d61323b6b7ea29c3fcc6e06ae24114"
       },
       "license": {
         "expression": "MIT AND BSD-3-Clause",

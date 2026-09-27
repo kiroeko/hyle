@@ -67,6 +67,12 @@ F43在`a4b70bc2`完成group128原子/资源资格，但ggml完整MoE组合超出
 [检查点](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-moe-checkpoint/README.md)
 保留失败及官方原版FP8×FP4程序的6个精确native案例。后续定向接该成熟程序，ledger仍144/176。
 
+F44在`bc72243d`已完成原版FP8×FP4接线：CUDA普通两入口64次专家投影、24次完整MoE执行及
+资源/失败测试通过，合计21项普通测试零失败/零跳过，见
+[收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/README.md)。
+F43原完整MoE失败保留；官方attention/compressor/MTP仍待接合，完整ledger保持144/176。
+统一实现60,150行/240文件；不将部分片段或文档提交计算为新完整画像资格。
+
 DeepSeek GPU 失败批次按 [F36 有限接线修正](llm-moe-d5-deepseek-gpu-seams.md)处理：
 当前 AUDITED 的 Metal Provider 补原版 BF16 激活扩宽，Vulkan Graph 补 SinkAttention 冷分类。
 Apple修正和静态故障注入已通过；Vulkan分类修正已验，数值失败仍保留。

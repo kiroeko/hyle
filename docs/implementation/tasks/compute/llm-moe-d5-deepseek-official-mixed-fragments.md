@@ -71,3 +71,9 @@ attention/compressor/MTP消费者继续按FIX3/4接合后统一下一组验证�
 
 原版专家接线按[F44有限范围](llm-moe-d5-original-fp4-expert-binding.md)推进，数学主体保持官方，
 只增加设备端索引寻址/验证与已有资源接合。
+
+F44在`bc72243d`完成原版接线：两种官方模型的score/hash完整MoE在CUDA Direct/Graph
+通过原门，资源与四形状专家投影同时通过，见
+[F44收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-original-fp4-entry/README.md)。
+FIX2的ggml执行腿由该具名原版替代；完整attention/compressor/MTP按FIX3/4继续批量接合。
+完整ledger仍144/176，A5/A6/D6未完成，不再把局部推进隐藏在固定百分比中。
