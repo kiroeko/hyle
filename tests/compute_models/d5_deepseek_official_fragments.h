@@ -126,7 +126,7 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
       const std::array token{tokens[replay]};
       auto table = moe::hash_table(resident, replay);
       auto expected = evaluate(values, std::span<const std::int32_t>(table).subspan(token[0] * 6, 6));
-      f.replays.push_back({{sem::bytes(values), moe::hash_tokens(token, true), sem::bytes(table)},
+      f.replays.push_back({{sem::bytes(values), moe::hash_tokens(token, native_routing), sem::bytes(table)},
                             std::move(expected)});
     } else f.replays.push_back({{sem::bytes(values)}, evaluate(values, {})});
   }
