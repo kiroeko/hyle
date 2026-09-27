@@ -110,3 +110,13 @@ baseline `15dae3023b94c97b8a538347be623384bc40e930`；承接本卡当前owner/AU
 
 CPU/Apple已通过证据、四路线A5和所有产品正确性结果继续复用。CUDA按独立原卡完成其既定恢复；
 两GPU路线重型验证串行，DLL邻置、隐藏子进程，结束后立即告知用户可正常使用GPU。
+
+## 恢复结果与有限预算停止
+
+上述唯一恢复候选`d24360ca`完成8进程A/A，但Graph/Graph和Direct/Direct自比较未通过原门。
+ready marker未生成，首个产品进程被guard立即拒绝，正式产品样本和公共控制样本均为0。
+本批没有n31或进一步重试，GPU测试已全部退出并告知用户。CUDA独立恢复现已合格，无需重测。
+[恢复收据](../../../../evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/README.md)
+与原中断数据分别保留；不记产品性能FAIL，不签P1 PASS。
+Vulkan适用A6为BLOCKED、聚合INCONCLUSIVE，当前owner与恢复条件见
+[停止记录](llm-moe-d5-vulkan-performance-blocker.md)。不要求用户继续关闭应用。

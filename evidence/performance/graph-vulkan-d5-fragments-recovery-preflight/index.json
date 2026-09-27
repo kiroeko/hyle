@@ -1,0 +1,109 @@
+{
+  "schema": "hyle.d5-native-performance-preflight/v1",
+  "candidate": "d24360ca4fee884d1d765ffea840f54267f1f07e",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "reference": "c0de38c9b9d6fa32b19fb9791171ce5b8df3cb42",
+  "route": "vulkan",
+  "workload_aa_gate": "FAIL",
+  "workload_aa_processes": 8,
+  "product_processes_sampled": 0,
+  "guard_refusals": 1,
+  "control_processes_sampled": 0,
+  "performance_gate": "INCONCLUSIVE",
+  "product_performance_failure": false,
+  "status": "BLOCKED",
+  "qualification": "WORKLOAD_AA_FAILED",
+  "strict_manifest_replay": "NOT_RUN_NO_COMPLETED_MANIFEST",
+  "files": [
+    {
+      "path": "run/d5-aa-raw/peer-0-0.log.gz",
+      "sha256": "0dce58d56af1aa60bda6155182761ca64706b4626eaeeda53a2892ac2781e115",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\peer-0-0.log",
+      "raw_sha256": "19ea0aea3ecc297d1f604aa7a84b9347fc680211bfc9539da46cd74198b1308a"
+    },
+    {
+      "path": "run/d5-aa-raw/peer-0-1.log.gz",
+      "sha256": "03d8901065843b514c15c865573270ea84aec4ea6d76700609df0a1d5349c0aa",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\peer-0-1.log",
+      "raw_sha256": "223094c1414b7145826be5f2985be4dcee37bdf301c7be07b782d8b0597d8657"
+    },
+    {
+      "path": "run/d5-aa-raw/peer-1-0.log.gz",
+      "sha256": "3af12ba020cf7f1fffe9e41cdce4adba82611caaea3a73f4c81dc4aa28f6f4dc",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\peer-1-0.log",
+      "raw_sha256": "f228f19e90ef93506aaacc3cd928acb16fa7fa7479c7abed677e7efe5b92bdb8"
+    },
+    {
+      "path": "run/d5-aa-raw/peer-1-1.log.gz",
+      "sha256": "b41ea18b2c0ad616e4f9bd481c001d2cd8bfb0e9ffc701a3a506192255cfe6a4",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\peer-1-1.log",
+      "raw_sha256": "cdbe499c8d5533c75fafbee9527ddf2660dcbf85e732ca1ad0b77ab430b71b99"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-0-0.log.gz",
+      "sha256": "e9fa54b83dd5f959e703ea403835d80370acd165e1a15dc2c832009b072ac0cc",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\selected-0-0.log",
+      "raw_sha256": "fde1df0a9471db07e661515777a9bb0a91a29197d6da738b406a7f62f6737f8d"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-0-1.log.gz",
+      "sha256": "d8af809196e3b42b92cae1419cab7ab9b7f3fcd74f2f709939d8d6c964f90843",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\selected-0-1.log",
+      "raw_sha256": "21ea431caaf4d14b9e1cd37d8cd03fd5ae719098127638d6c40d71cc2cde682c"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-1-0.log.gz",
+      "sha256": "84d506424f3cc40c1e752181121c2fcd51e67808120e740461f17e217e86bd17",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\selected-1-0.log",
+      "raw_sha256": "e6017ce99ea5205e0ced7cbf66f78acf2d43e4097dcb482090d5c4757f64bf24"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-1-1.log.gz",
+      "sha256": "7734190486c88cb803aa787ec9e7bdd1423a4dda6c0528f40a9b4daa1faf64db",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-aa-raw\\selected-1-1.log",
+      "raw_sha256": "8cc4e01605dc53471f923e27b0da84ae7b2c809250949d5f4904b6158464b8b5"
+    },
+    {
+      "path": "run/d5-workload-aa.json",
+      "sha256": "ca0e8e48c8f5c950bb1e80e7b336259c7f88bb91f0bcfa9bc80165da9a1873c1",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\d5-workload-aa.json",
+      "raw_sha256": "ca0e8e48c8f5c950bb1e80e7b336259c7f88bb91f0bcfa9bc80165da9a1873c1"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-01.log.gz",
+      "sha256": "fe9d013621e4f0f5f422b3a41deeaaa4d8c3c795c568792f5a1341ccdf9f500c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-01.log",
+      "raw_sha256": "4940d680b3f496c9ceb4ae8b249dbbd51cca251efd54423eb220f572491ae5c9"
+    },
+    {
+      "path": "run/validators/native-workload-aa.log.gz",
+      "sha256": "f1f7832af303d2b3e4005587dce807a797e86cd7ad97f9764adb69d4164220f3",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan-recovery\\validators\\native-workload-aa.log",
+      "raw_sha256": "3cf2e07663ea3df86cfbeb2e275b96c0f7f2d431390be6f53771ec02ff968d83"
+    },
+    {
+      "path": "build/CMakeCache.txt.gz",
+      "sha256": "5e476e1efa9c1f296396d3906778cc9a4cbc3ed2bbd426f9152d046a91d9c861",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan-recovery\\CMakeCache.txt",
+      "raw_sha256": "3948909133374732cd33e07804b8c5158de603c1cb5d345ad78942ce222c27ac"
+    },
+    {
+      "path": "build/compile_commands.json.gz",
+      "sha256": "d6eae6810204ac3a8dd90ea5ae750e22288509bf6a37460a01d522624e41cd2e",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan-recovery\\compile_commands.json",
+      "raw_sha256": "a60412c27b488ce8e4bbe96abcce617b72cb678055b4ed6d6dc1a5bc88fb6167"
+    },
+    {
+      "path": "build/d5-input-paths.json.gz",
+      "sha256": "bc6c9613c0c5835f74ab5f59f7e41447adf8bb5e9acd4d67d3c36a9424a0e19a",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan-recovery\\d5-input-paths.json",
+      "raw_sha256": "40e837c94539e065a3af0bdfeb19ca2dfef66a6475be77952669de37f751d7f8"
+    },
+    {
+      "path": "contract.json",
+      "sha256": "a4b552dfcbfda63a6cda30778ab80018fca29e3cd92152441548524d11aad7d5",
+      "original_path": "C:\\public\\project-hyle\\hyle\\bench\\contracts\\graph-vulkan-d5-fragments-p1-v1.json",
+      "raw_sha256": "a4b552dfcbfda63a6cda30778ab80018fca29e3cd92152441548524d11aad7d5"
+    }
+  ]
+}

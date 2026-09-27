@@ -27,7 +27,7 @@
 | 固定画像需求 | [模型事实](llm-moe-model-weight-operator-audit.md)、[需求矩阵](llm-moe-provider-demand-matrix.json) | 文档对账，不重新调研所有模型 |
 | 普通入口完整片段、状态、资源/失败 | [D5 ledger](llm-moe-d5-acceptance-ledger.json)：154运行通过、20冷拒绝、2数值失败、0未验 | 22个非通过格仍是不支持域，不能当作通过 |
 | source/static/shared | [CPU](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-delivery/README.md)、[CUDA](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md)、[Apple](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md)、[Vulkan](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md)均完成代表消费者验证 | 不把拒绝测试通过称为该画像可执行，不把代表消费者代签任意硬件 |
-| 适用完整成本P1 | [CPU](../../../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)、[Apple](../../../../evidence/performance/graph-apple-d5-fragments-p1/README.md)通过；[Vulkan中断](../../../../evidence/performance/graph-vulkan-d5-fragments-interrupted/README.md)；[CUDA预检失败](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md) | GPU两路线尚未完成，维持INCONCLUSIVE；不要求用户提供绝对平稳桌面 |
+| 适用完整成本P1 | [CPU](../../../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)、[Apple](../../../../evidence/performance/graph-apple-d5-fragments-p1/README.md)及[CUDA](../../../../evidence/performance/graph-cuda-d5-fragments-p1/README.md)通过；[Vulkan恢复A/A失败](../../../../evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/README.md) | Vulkan适用A6为BLOCKED、聚合INCONCLUSIVE；不记产品性能FAIL，不要求用户提供绝对平稳桌面 |
 | 成熟覆盖闭合 | 当前拒绝证明所接路线不能完成，未证明所有合格成熟来源均缺失；[CPU](llm-moe-d5-cpu-official-boundary.md)、[Apple](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp4-native-boundary/README.md)均明确此边界 | 不能只把20格改名UPSTREAM_MISSING后关闭；后续若有具名成熟候选，按owner另定有限接线，禁止恢复自研数学 |
 | 红队、最终owner状态与停止 | 本批只处理DOC1–3 | A6及残余能力边界未解决前不签CLOSED，不发“基础架构重构完成” |
 
@@ -57,3 +57,11 @@ registry只更新摘要，不改状态；closure使用上述baseline为`--previo
   不含测试。产品`include/src/cmake/CMakeLists.txt`相对`9273bc71`无变化。
 
 DOC1–DOC3到此停止。本卡保持AUDITED；完整D6未完成，GPU A6和上表残余能力裁决仍待处理。
+
+## GPU有限验收后的对账
+
+CUDA在原合同n15完成两个完整片段的PARITY/5%非劣PASS，严格重放通过；Vulkan唯一中断恢复
+因A/A自比较不合格而停止，正式样本0。`graph`聚合及Vulkan Direct/Graph按
+[停止记录](llm-moe-d5-vulkan-performance-blocker.md)进入BLOCKED，不缩减原完整覆盖需求。
+20格冷拒绝、2格数值失败及成熟来源残余裁决保持未完成，不能以本次CUDA性能通过结束goal。
+统一Compute+Graph仍为60,373实现行/241文件。本批没有产品修改或重跑三交付。

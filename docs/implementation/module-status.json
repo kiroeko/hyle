@@ -282,9 +282,13 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：22画像×四路线×两入口为154运行通过/20准备拒绝/2数值失败，无未验格。四路线A5和CPU/Apple代表片段P1完成；Vulkan A/A通过、n15数据完整，扩样按用户桌面限制停止，CUDA恢复未运行，GPU A6仍未签。D6文档对账开始，残余能力与终审未关闭。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
+      "summary": "D5 BLOCKED：总ledger154通过/20拒绝/2数值失败，四路线A5完成，CPU/Apple/CUDA代表片段P1通过。Vulkan恢复A/A失败、正式样本0，保留原中断数据；A6与D6未关闭，产品FIX零。",
+      "blocked_from": "AUDITED",
+      "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
+      "blocker_owner": "D5性能验证维护者（Windows canonical）",
+      "resume_condition": "针对已记录自比较偏差的具名测量修正或执行环境变化，重新SCOPED有限预算并通过原同拓扑双顺序A/A；或用户明确修订工程验收要求。重复原命令不解除；残余正确性/覆盖要求不取消。"
     },
     {
       "module": "container_concurrent",
@@ -388,7 +392,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44；总ledger154通过/20拒绝/2数值失败。四路线A5完成，CPU/Apple代表片段P1通过；GPU A6和残余能力裁决、D6尚未关闭。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44；总ledger154通过/20拒绝/2数值失败。四路线A5和CPU/Apple/CUDA代表片段P1完成；Vulkan A6资格阻塞，残余覆盖与D6未关闭。"
     },
     {
       "module": "compute_backend_cpu",
@@ -476,13 +480,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44且源码/static/shared A5完成；CUDA A/A原失败保留，产品P1尚未运行，不签D6。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44且A5完成；CUDA完整BF16 FFN/官方FP4-FP8 MoE P1已在n15合格通过，旧A/A失败保留。D6未关闭。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5 AUDITED：F41冷准备和F43/F44官方完整消费已验，22画像Direct/Graph正确性44/44，三交付A5完成。CUDA A/A原失败保留、恢复未运行，A6与D6仍未完成。"
+      "summary": "D5 AUDITED：F41冷准备和F43/F44官方完整消费已验，CUDA正确性44/44、三交付A5完成；CUDA两完整形状A6在n15 PARITY/非劣PASS，严格重放通过；D6未关闭。"
     },
     {
       "module": "graph_route_cuda",
@@ -509,40 +513,48 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：758c157e整批完成三交付各12项，产品未改；Vulkan两入口合计34通过/8后端拒绝/2数值失败。官方完整MoE在grouped FP8/FP4冷准备拒绝；Q4旧聚合失败按逐画像纠正，Q8长位置仍失败。A6/D6待验。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
+      "summary": "D5 BLOCKED：Vulkan两入口合计34通过/8冷拒绝/2数值失败，A5三交付完成。唯一A6恢复的自比较不合格，guard阻止正式采样，聚合INCONCLUSIVE；非产品性能FAIL。原Q4通过、Q8数值失败和官方低精度拒绝均保留。",
+      "blocked_from": "AUDITED",
+      "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
+      "blocker_owner": "D5性能验证维护者（Windows canonical）",
+      "resume_condition": "针对已记录自比较偏差的具名测量修正或执行环境变化，重新SCOPED有限预算并通过原同拓扑双顺序A/A；或用户明确修订工程验收要求。重复原命令不解除；残余正确性/覆盖要求不取消。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5 AUDITED：758c157e三交付已完成；完整官方MoE冷编译拒绝，DeepSeek Q4全部必需region逐项资格通过，Q8压缩/attention原数值门仍失败。原SinkAttention分类修正通过结果复用，无新数学。A6/D6待验。"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
+      "summary": "D5 BLOCKED：Vulkan两入口合计34通过/8冷拒绝/2数值失败，A5三交付完成。唯一A6恢复的自比较不合格，guard阻止正式采样，聚合INCONCLUSIVE；非产品性能FAIL。原Q4通过、Q8数值失败和官方低精度拒绝均保留。",
+      "blocked_from": "AUDITED",
+      "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
+      "blocker_owner": "D5性能验证维护者（Windows canonical）",
+      "resume_condition": "针对已记录自比较偏差的具名测量修正或执行环境变化，重新SCOPED有限预算并通过原同拓扑双顺序A/A；或用户明确修订工程验收要求。重复原命令不解除；残余正确性/覆盖要求不取消。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30 AUDITED：Kimi MLA、GLM64-head及原资源边界已验，Vulkan A5完成；当前34通过/8拒绝/2数值失败。A/A通过、n15数据完整但扩样中止，A6和D6未关闭。"
+      "summary": "D5-F30 AUDITED：Kimi MLA、GLM64-head及资源边界已验，Vulkan A5完成；当前34通过/8拒绝/2数值失败。A6原中断数据保留，唯一恢复A/A失败、正式样本0；路线A6阻塞，D6未关闭。"
     },
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-explicit-rope-phase.md",
-      "summary": "F35 AUDITED：显式频率RoPE共享构造与原精度边界已验，Metal回滚修正和四路线A5完成；产品数学不变。CPU/Apple代表片段P1通过，GPU剩余A6及D6不由此代签。"
+      "summary": "F35 AUDITED：显式频率RoPE共享构造与原精度边界、Metal回滚、四路线A5已验，产品数学不变。CPU/Apple/CUDA代表片段P1通过；Vulkan A6资格阻塞和D6不由此代签。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30/F31 AUDITED：64-head压缩MLA、原生I32 Concat及拒绝/所有权边界已验，无新kernel。CUDA22画像两入口44/44、三交付A5完成；CUDA A6未签，D6未关闭。"
+      "summary": "D5-F30/F31 AUDITED：64-head压缩MLA、原生I32 Concat及拒绝/所有权边界已验，无新kernel。CUDA正确性44/44、三交付A5和两完整片段A6均通过；D6未关闭。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "CANDIDATE",
       "candidate": "08b8e2f154477d2bde2d9f0539a804312658a265",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实ggml/GGUF storage接缝、当前CUDA22画像两入口与三交付A5已有收据；D5-A6仍未完成，D6不提前CLOSED。"
+      "summary": "M3-D3 CANDIDATE 08b8e2f1：十种真实ggml/GGUF storage接缝、CUDA22画像两入口、三交付A5和两完整片段A6已有收据；D6残余覆盖和终审未完成，不提前CLOSED。"
     },
     {
       "module": "compute_provider_flashinfer",

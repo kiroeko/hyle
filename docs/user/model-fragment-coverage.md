@@ -72,12 +72,13 @@ CPU为36/44通过，CUDA为44/44，Apple为40/44，Vulkan为34/44。这个计数
 | 路线 | source / static / shared代表消费者 | 本轮两个完整片段P1 |
 |---|---|---|
 | CPU | [24/24通过](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-delivery/README.md) | [已通过](../../evidence/performance/graph-cpu-d5-fragments-p1/README.md) |
-| CUDA | [24/24通过](../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md) | [原A/A不合格，产品P1尚未运行](../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md) |
+| CUDA | [24/24通过](../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md) | [已通过，原失败保留](../../evidence/performance/graph-cuda-d5-fragments-p1/README.md) |
 | Apple | [36项通过，含预期拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md) | [已通过](../../evidence/performance/graph-apple-d5-fragments-p1/README.md) |
-| Vulkan | [36项通过，含预期拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) | [A/A通过、首轮完整，扩样中止；结论未完成](../../evidence/performance/graph-vulkan-d5-fragments-interrupted/README.md) |
+| Vulkan | [36项通过，含预期拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) | [恢复A/A未合格，正式采样被阻止；P1未完成](../../evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/README.md) |
 
 P1比较普通Graph与同完成/资源合同的Direct完整片段，计入必要转换、同步与释放。
-CPU/Apple通过5%工程非劣门仅覆盖受测BF16 FFN和混合GGUF MoE，不表示每个算子都更快或整模型SOTA。
+CPU/Apple/CUDA通过5%工程非劣门仅覆盖各自受测片段：共同BF16 FFN，CPU/Apple混合GGUF MoE、
+CUDA官方FP4/FP8 MoE；不表示每个算子都更快或整模型SOTA。
 三交付验证也不为上表拒绝/失败的画像提供运行支持。
 
 ## 普通使用与证据

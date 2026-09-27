@@ -1,0 +1,22 @@
+{
+  "schema": "hyle.d5-gpu-obsolete-build-cleanup/v1",
+  "removed": [
+    {
+      "path": "C:\\hv\\d5pf\\p1-vulkan",
+      "bytes": 73343319.0,
+      "reason": "Archived superseded interrupted/failed consumer build; no qualified manifest; SDK and current builds retained"
+    },
+    {
+      "path": "C:\\hv\\d5p2",
+      "bytes": 598827543.0,
+      "reason": "Archived superseded interrupted/failed consumer build; no qualified manifest; SDK and current builds retained"
+    }
+  ],
+  "total_bytes": 672170862.0,
+  "retained": [
+    "C:/hv/d5pf/p1-cuda",
+    "C:/hv/d5pf/p1-vulkan-recovery",
+    "C:/hv/d5cd/static-relocated",
+    "C:/hv/d5vk/static-relocated"
+  ]
+}

@@ -21,7 +21,7 @@ Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragm
 GLM 见[四 GGUF 画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md)。
 Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
 旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
-CPU八格、Apple四格与Vulkan八格已固定当前成熟路线的冷拒绝；Vulkan Q8两格数值失败；CPU/Apple P1已通过，CUDA/Vulkan P1和D6尚未完成，
+CPU八格、Apple四格与Vulkan八格已固定当前成熟路线的冷拒绝；Vulkan Q8两格数值失败；CPU/Apple/CUDA P1已通过，Vulkan A6资格阻塞和D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
 [D6有限文档对账](llm-moe-d6-coverage-review.md)并行整理已验证范围，A6和残余能力裁决仍由当前owner持有；
@@ -43,17 +43,21 @@ Apple A5也已完成，两入口每交付10项正常计算和2项拒绝检查；
 DeepSeek两份官方画像的完整MoE在FP4输入规格阶段拒绝，四格未增加运行支持；产品FIX为零。
 Vulkan A5也已完成源码/static/shared各12项，共36/36、零跳过；新驱动一次定向复验结合未变证据，
 明确DeepSeek Q4两格通过、Q8两格失败。见[Vulkan整批证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md)。
-四路线A5已完成；CPU与Apple A6均已在n15完成PARITY/5%非劣PASS，见[CPU证据](../../../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)和[Apple证据](../../../../evidence/performance/graph-apple-d5-fragments-p1/README.md)。CUDA/Vulkan A6与D6仍待完成；当前ledger为154通过/20拒绝/2失败/0未验。
+四路线A5已完成；CPU与Apple A6均已在n15完成PARITY/5%非劣PASS，见[CPU证据](../../../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)和[Apple证据](../../../../evidence/performance/graph-apple-d5-fragments-p1/README.md)。CUDA A6也已完成n15/PARITY/非劣PASS，见[CUDA证据](../../../../evidence/performance/graph-cuda-d5-fragments-p1/README.md)；Vulkan A6资格阻塞，D6仍待完成。当前ledger为154通过/20拒绝/2失败/0未验。
 
 CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)推进：复用上述静态 SDK，
 合并接入 Qwen BF16 FFN 与 DeepSeek 官方 FP4/FP8 MoE 的普通 Direct/Graph 消费者。
-8进程工作负载A/A出现明显同实现偏差，正式P1未启动；测试退出后GPU仍占用42%–43%，
-按[失败与环境收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)保留原环境失败；用户已结束串流，本次CUDA恢复尚未运行，
-不记产品性能FAIL、不升级样本。其它D5工作继续，A6不提前计作通过。
+原8进程A/A失败及42%–43%背景见[历史收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)。
+用户明确授权当前桌面环境后，唯一CUDA恢复的A/A、n15完整比较/控制与严格重放全部通过，
+两个形状PARITY/5%非劣PASS；未触发n31，不改变原数学、精度或性能门。
 
 Vulkan A6已完成8进程A/A（PASS）和n15的60个比较/30个控制进程；自动n31扩样因用户需要
 恢复桌面使用而中止。所有已完成数据已[归档](../../../../evidence/performance/graph-vulkan-d5-fragments-interrupted/README.md)，
-最终资格尚未完成，维持INCONCLUSIVE；本轮不再进行GPU测试，正常桌面波动不要求用户消除。
+用户随后授权当前桌面环境下唯一恢复，8进程A/A同实现偏差超过原门，产品采样被guard阻止。
+正式样本为0，适用A6为BLOCKED、聚合INCONCLUSIVE，不记产品性能FAIL；
+原批与[恢复收据](../../../../evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/README.md)分别保留。
+`graph`聚合及Vulkan Direct/Graph当前进入[停止记录](llm-moe-d5-vulkan-performance-blocker.md)，
+恢复须满足具名条件；本卡其余owner仍保留原需求。GPU测试已全部结束，不要求用户再关闭应用。
 
 CPU 四个官方画像已按[F47 完整 MoE 冷边界](llm-moe-d5-cpu-official-boundary.md)完成两入口批验。
 GLM在grouped FP8、DeepSeek在grouped FP4冷拒绝，完整Graph也拒绝，见
@@ -2000,7 +2004,8 @@ ledger 现有 8 个 `RUN_PASS`、168 个 `VALIDATION_NOT_RUN`。已有 R03 三�
 D5-A5 的最终稳定 Apple 路线批次；D5-A6 P1 也仍未运行。
 
 CPU/Apple/Vulkan的A6当前按[原生片段性能批次](llm-moe-d5-portable-fragment-performance.md)
-统一接线，复用已验SDK。CUDA保持原官方MoE性能合同；环境空闲前不重复采样。
+统一接线并完成本次有界验收，复用已验SDK；CPU/Apple/CUDA通过，Vulkan资格阻塞。
+CUDA保持原官方MoE性能合同，不把普通桌面绝对空闲作为用户义务。
 
 ## 验收合同
 

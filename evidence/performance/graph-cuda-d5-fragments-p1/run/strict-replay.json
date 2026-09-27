@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "089412e58aa2c4ffd87d85d90bb2826275145ce880159f7ee50f4064dfc98126",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cuda-resume\\manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}
