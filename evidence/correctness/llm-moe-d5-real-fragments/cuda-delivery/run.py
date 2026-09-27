@@ -17,10 +17,11 @@ import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
 parser.add_argument('stage', choices=['shared', 'source', 'static'])
+parser.add_argument('--resume-shared-consumer', action='store_true')
 args = parser.parse_args()
 repo = Path.cwd().resolve()
 root = Path('C:/hv/d5cd')
-out = root / 'receipts' / args.stage
+out = root / 'receipts' / (args.stage+'-corrected' if args.resume_shared_consumer else args.stage)
 out.mkdir(parents=True, exist_ok=True)
 flags = {'creationflags': subprocess.CREATE_NO_WINDOW}
 ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
@@ -28,6 +29,15 @@ candidate = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).str
 if subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip():
     raise SystemExit('Freeze the candidate before delivery.')
 receipt = {'candidate': candidate, 'stage': args.stage, 'steps': []}
+if args.resume_shared_consumer:
+    if args.stage != 'shared':
+        raise SystemExit('Only the recorded shared consumer correction can resume.')
+    old = json.loads((root/'receipts/shared/receipt.json').read_text())
+    changed = subprocess.check_output(['git', 'diff', '--name-only', old['candidate'], candidate], text=True).splitlines()
+    if any(not p.startswith(('tests/', 'docs/', 'evidence/')) for p in changed):
+        raise SystemExit('Product identity changed; existing SDK cannot be reused.')
+    receipt['producer_candidate'] = old['candidate']
+    receipt['producer_reused_reason'] = 'Only tests/docs/evidence changed; product and vendor inputs identical.'
 
 def run(label, command, env=None):
     command = list(map(str, command))
@@ -79,9 +89,10 @@ common = ['-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_CUDA_ARCHITECTUR
 
 if args.stage == 'shared':
     producer = repo / '.scratch/b-cuda-d5'
-    (root / 'shared-original-CMakeCache.txt').write_bytes((producer/'CMakeCache.txt').read_bytes())
     staging = root / 'shared-staging'
     prefix = root / 'shared-relocated'
+if args.stage == 'shared' and not args.resume_shared_consumer:
+    (root / 'shared-original-CMakeCache.txt').write_bytes((producer/'CMakeCache.txt').read_bytes())
     run('producer-configure', [cmake, '-S', repo, '-B', producer, '-U', 'HYLE_DEV_FACTORS',
         '-DHYLE_COMPONENTS=compute,graph,simd', '-DHYLE_BUILD_TESTS=OFF', '-DHYLE_BUILD_BENCH=OFF',
         '-DHYLE_TEST_INSTRUMENTATION=OFF', '-DHYLE_INSTALL=ON', '-DHYLE_STATIC=OFF',
@@ -106,18 +117,19 @@ elif args.stage == 'source':
         '-DD5_SOURCE_ROOT='+str(source_tree), '-DCMAKE_INSTALL_PREFIX='+str(staging), '-DHYLE_WERROR=ON'])
     run('source-build', [cmake, '--build', producer, '--target', 'd5_cuda_delivery', '-j', '2'])
     build = producer
-else:
+elif args.stage == 'static':
     producer = root / 'source-build'
     staging = root / 'static-staging'
     prefix = root / 'static-relocated'
     if (root/'source-candidate.txt').read_text().strip() != candidate:
         raise SystemExit('Static producer is not this candidate.')
 
-if args.stage != 'source':
+if args.stage != 'source' and not args.resume_shared_consumer:
     run('install', [cmake, '--install', producer, '--prefix', staging])
     if prefix.exists():
         raise SystemExit('Relocated prefix already exists; inspect the prior run instead of replacing it.')
     staging.rename(prefix)
+if args.stage != 'source':
     build = root / (args.stage+'-consumer')
     run('consumer-configure', [cmake, '-S', consumer, '-B', build, *common, *dep_args,
         '-DCMAKE_PREFIX_PATH='+str(prefix)])

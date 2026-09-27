@@ -36,7 +36,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/providers/cuda.h"
-#include "hyle/compute/providers/flashinfer.h"
+#include "../compute_models/d5_optional_cuda_provider.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/mem/stats.h"
@@ -102,7 +102,7 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
                 provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kDeepSeekProviderId ||
                 provider == c::cuda_native::kCcclProviderId ||
-                provider == c::flashinfer::kProviderId || retained_storage)
+                d5_optional_cuda_provider::is_flashinfer(provider) || retained_storage)
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)
         << " provider=" << report.provider.name;

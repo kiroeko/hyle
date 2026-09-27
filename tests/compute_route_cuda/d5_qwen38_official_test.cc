@@ -39,7 +39,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/providers/cuda.h"
-#include "hyle/compute/providers/flashinfer.h"
+#include "../compute_models/d5_optional_cuda_provider.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/stats.h"
@@ -131,7 +131,7 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
               provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kDeepSeekProviderId ||
               provider == c::cuda_native::kCcclProviderId ||
-              provider == c::flashinfer::kProviderId || retained_storage)
+              d5_optional_cuda_provider::is_flashinfer(provider) || retained_storage)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
   EXPECT_EQ(call.prepared.workload(), workload);
@@ -2014,7 +2014,7 @@ TEST_P(CudaQwenOfficialVocabulary, D5WholeVocabularyGatherMapsGlobalRows) {
                     provider == c::cublas::kProviderId ||
                     provider == c::cuda_native::kSglangProviderId ||
                     provider == c::cuda_native::kCcclProviderId ||
-                    provider == c::flashinfer::kProviderId);
+                    d5_optional_cuda_provider::is_flashinfer(provider));
       });
 }
 

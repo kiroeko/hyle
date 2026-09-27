@@ -32,3 +32,11 @@
 ## 结果
 
 源码、static、shared均待运行。尚不签A5 PASS；没有新增完整画像正确性格。
+
+### 首次外部编译的单次consumer纠正
+
+`5f5b657c`的shared SDK已构建、安装、搬迁；外部消费者编译发现四个测试文件无条件
+引用Linux专用FlashInfer头。Windows SDK正确省略未启用Provider，故不是安装漏文件。
+有限纠正仅把该Provider的测试身份断言按公开`HYLE_COMPUTE_FLASHINFER`条件编译，
+其它Provider、模型夹具和数值门不变。新consumer复用产品输入完全相同的shared SDK，
+保留第一次失败，随后source/static消费同一纠正候选；不因此重编CUDA产品或放宽原断言。
