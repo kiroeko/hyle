@@ -59,7 +59,8 @@ Graph 对象与缺少同等保证的裸库调用。若实际实现无法达成�
 - 只改 benchmark 时验证其编译/真实执行和 docs/closure；已通过 CUDA A5 的 24 项交付与
   459 项模块用例不重复。产品缺陷必须另按当前 owner 固定有限 FIX。
 
-当前 verdict：**VALIDATION_NOT_RUN**。本卡和 harness 不能增加 152/176 正确性账本或签 D6。
+当前 verdict：**工作负载A/A FAIL；产品P1 VALIDATION_NOT_RUN，聚合性能INCONCLUSIVE**。
+本卡和 harness 不能增加152/176正确性账本或签D6。
 
 ## 消费者批次结果
 
@@ -69,6 +70,11 @@ DeepSeek 40 steps/0 regions；未声称已经融合。详见
 [正确性收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-performance-consumer/README.md)。
 原 consumer 编译与 region identity 初始化失败保留；仅修 consumer，不改产品和数值合同。
 此结果只完成上述动作1–4的消费者准备/正确性，统一仪器合同与 A/A/P1 尚未运行。
+
+上述为消费者准备时快照。后续`82229660`已完成一次8进程A/A，出现同实现超过10%的偏差及
+factor median超过5%，因此正式P1被guard阻止，产品样本为0。测试全退出后GPU仍持续42%–43%
+占用，当前测量阶段因环境待恢复；见[完整失败/环境收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)。
+保留原失败，不记产品性能FAIL，不升级n。等GPU空闲再恢复一次原预算资格化；期间其它D5工作继续。
 
 ## 固定采样接缝
 

@@ -1,0 +1,197 @@
+{
+  "schema": "hyle.d5-cuda-workload-aa/v1",
+  "gate": "FAIL",
+  "identity": {
+    "binary": "25f1eab5de3d9a49d298b6f306a4f3c4c9c65fcf1d042bf2858774b2ceadb395",
+    "inputs": "7558004d18a73beea42f32731e3cad0ae57f43fc47e139e7d48adaa966c31da5",
+    "reference_consumer": "3472fb119cd69d21ca54a48c0ad87483e7f1453373752da392e15a2162b7b0fd"
+  },
+  "native_environment": "# D5_CUDA_ENV device=NVIDIA GeForce RTX 4070 sm=89 driver_api=13040 runtime=13040 toolkit=13030",
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "runs": [
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0613233447549324,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 0.8699073147962927
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\selected-0-0.log",
+      "sha256": "f8e790a4df98c006e5628a2c557bf58c135531d1c5220c9788253eef54b33405"
+    },
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9561162804234126,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0080949440900047
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\selected-0-1.log",
+      "sha256": "87f4deff5276f6c39274fc0d3fd978d77fd3429fc08c89a568d3b20afca87b2a"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0832729968653938,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0189451022604952
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\selected-1-0.log",
+      "sha256": "d62c557621f96caa9743b09ab0679a5fd2ea13226e5959daebdbf851be14fccc"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.1199572708365366,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.1532423988417284
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\selected-1-1.log",
+      "sha256": "8d650f27f42906a8e2460a0d33207eb0e001a32b9cdca8df83fedc16efb29de4"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9322894929986905,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0092831716339776
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\peer-0-0.log",
+      "sha256": "5caf63d26bc46c22288a190cf1955fb23dc50013c240cce5340e0c7b1f47e67f"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0211069997572928,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0464575202641848
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\peer-0-1.log",
+      "sha256": "0662b642f119faacc58e026ae3953d0eecaf78fe9497305059754a1d5d65a8e5"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0725422525989414,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.0236171960569551
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\peer-1-0.log",
+      "sha256": "569cc19dc3b78edd1e03572e6dea8f86ac51cb4b55bb597d4de065b57a831601"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9936656366575238,
+        "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": 1.1491372843210803
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\performance\\d5-cuda-a6-v2\\d5-cuda-aa-raw\\peer-1-1.log",
+      "sha256": "b61110406e73a915e13986f8c1aa324b7602192564840875e657fa46a683e207"
+    }
+  ],
+  "summaries": {
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0613233447549324,
+        0.9561162804234126,
+        1.0832729968653938,
+        1.1199572708365366
+      ],
+      "factor_medians": {
+        "all": 1.072298170810163,
+        "peer_first=False": 1.0087198125891725,
+        "peer_first=True": 1.1016151338509652,
+        "allocation_first=False": 1.072298170810163,
+        "allocation_first=True": 1.0380367756299747
+      }
+    },
+    "selected/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+      "ratios": [
+        0.8699073147962927,
+        1.0080949440900047,
+        1.0189451022604952,
+        1.1532423988417284
+      ],
+      "factor_medians": {
+        "all": 1.01352002317525,
+        "peer_first=False": 0.9390011294431486,
+        "peer_first=True": 1.086093750551112,
+        "allocation_first=False": 0.9444262085283939,
+        "allocation_first=True": 1.0806686714658666
+      }
+    },
+    "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        0.9322894929986905,
+        1.0211069997572928,
+        1.0725422525989414,
+        0.9936656366575238
+      ],
+      "factor_medians": {
+        "all": 1.0073863182074083,
+        "peer_first=False": 0.9766982463779916,
+        "peer_first=True": 1.0331039446282326,
+        "allocation_first=False": 1.002415872798816,
+        "allocation_first=True": 1.0073863182074083
+      }
+    },
+    "peer/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6": {
+      "ratios": [
+        1.0092831716339776,
+        1.0464575202641848,
+        1.0236171960569551,
+        1.1491372843210803
+      ],
+      "factor_medians": {
+        "all": 1.03503735816057,
+        "peer_first=False": 1.0278703459490812,
+        "peer_first=True": 1.0863772401890177,
+        "allocation_first=False": 1.0164501838454663,
+        "allocation_first=True": 1.0977974022926325
+      }
+    }
+  },
+  "errors": [
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: gross process instability over 10%",
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: factor median bias over 5%",
+    "selected/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: gross process instability over 10%",
+    "selected/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: factor median bias over 5%",
+    "peer/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: gross process instability over 10%",
+    "peer/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: factor median bias over 5%"
+  ]
+}

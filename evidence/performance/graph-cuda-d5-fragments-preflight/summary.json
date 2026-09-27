@@ -1,0 +1,26 @@
+{
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "consumer_candidate": "82229660ae176ffc1d80a32a31e9affb7a82b206",
+  "attempt_1": "No sampling: Windows path escaping prevented input validator; consumer guard rejected product sampling.",
+  "attempt_2": "Workload A/A FAIL; all eight processes completed correctly; product sampling guard rejected execution.",
+  "qualification": "DIAGNOSTIC",
+  "performance_gate": "INCONCLUSIVE",
+  "product_p1_samples": 0,
+  "workload_aa_processes": 8,
+  "product_performance_failure": false,
+  "errors": [
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: gross process instability over 10%",
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144: factor median bias over 5%",
+    "selected/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: gross process instability over 10%",
+    "selected/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: factor median bias over 5%",
+    "peer/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: gross process instability over 10%",
+    "peer/DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6: factor median bias over 5%"
+  ],
+  "followup": "After all HYLE benchmark processes exited, GPU utilization remained 42-43% across three observations. This is evidence of external load, not unique proof of every earlier timing deviation.",
+  "resume": "One idle-GPU qualification attempt under unchanged shapes, completion boundary, 5% margin and n15->31 schedule; no extra tuning/samples under the currently busy environment.",
+  "independent_work": "Remaining CPU/Apple provider domain adjudication and route delivery work may proceed.",
+  "ledger": {
+    "RUN_PASS": 152,
+    "VALIDATION_NOT_RUN": 24
+  }
+}

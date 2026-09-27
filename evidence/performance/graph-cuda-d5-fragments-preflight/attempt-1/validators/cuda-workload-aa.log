@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\bench\graph_route_cuda\external\validate_aa.py", line 161, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\public\project-hyle\hyle\bench\graph_route_cuda\external\validate_aa.py", line 50, in main
+    paths = json.loads((build / 'd5-input-paths.json').read_text())
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\decoder.py", line 338, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\json\decoder.py", line 354, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Invalid \escape: line 1 column 77 (char 76)

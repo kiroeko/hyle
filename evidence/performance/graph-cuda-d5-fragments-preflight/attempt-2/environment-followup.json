@@ -1,0 +1,30 @@
+{
+  "fields": [
+    "name",
+    "pstate",
+    "temperature.gpu",
+    "clocks.sm",
+    "clocks.mem",
+    "utilization.gpu",
+    "utilization.memory",
+    "power.draw"
+  ],
+  "samples": [
+    {
+      "utc": "2026-09-27T04:03:24.915639+00:00",
+      "gpu": "NVIDIA GeForce RTX 4070, P0, 38, 2835 MHz, 10501 MHz, 43 %, 14 %, 56.38 W",
+      "hyle_processes": "信息: 没有运行的任务匹配指定标准。"
+    },
+    {
+      "utc": "2026-09-27T04:03:27.187723+00:00",
+      "gpu": "NVIDIA GeForce RTX 4070, P0, 38, 2835 MHz, 10501 MHz, 42 %, 13 %, 56.28 W",
+      "hyle_processes": "信息: 没有运行的任务匹配指定标准。"
+    },
+    {
+      "utc": "2026-09-27T04:03:29.394785+00:00",
+      "gpu": "NVIDIA GeForce RTX 4070, P0, 38, 2835 MHz, 10501 MHz, 42 %, 14 %, 56.87 W",
+      "hyle_processes": "信息: 没有运行的任务匹配指定标准。"
+    }
+  ],
+  "scope": "Diagnostic follow-up after A/A process and goal exec session were terminal; not a unique attribution to a desktop application."
+}
