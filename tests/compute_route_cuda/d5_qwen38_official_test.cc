@@ -20,6 +20,7 @@
 #include "../compute_models/d5_fp8_weight_preparation.h"
 #include "../compute_models/d5_quantization_roundtrip.h"
 #include "../compute_models/d5_deepseek_official_fragments.h"
+#include "../compute_models/d5_deepseek_official_attention.h"
 #include "../compute_models/d5_grouped_fp8_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
@@ -1253,6 +1254,37 @@ TEST(CudaMoeFragments, D5GlmOfficialMixedRemaining) {
       run_q24_semantic_fragment(glm::mla(model));
       glm::check_mtp_head(model, run_q24_semantic_fragment);
     }
+  }
+}
+
+TEST(CudaMoeFragments, D5DeepSeekOfficialCompression) {
+  for (int index : {3, 4}) {
+    SCOPED_TRACE(index);
+    const auto &model = d5_moe_execution_fragments::cases::kCases[index];
+    for (std::int64_t ratio : {4, 128}) {
+      SCOPED_TRACE(ratio);
+      run_q24_semantic_fragment(d5_deepseek_official_attention::compressor(model, ratio));
+    }
+    run_q24_semantic_fragment(d5_deepseek_official_attention::compressor(model, 4, true));
+  }
+}
+
+TEST(CudaMoeFragments, D5DeepSeekOfficialAttention) {
+  for (int index : {3, 4}) {
+    SCOPED_TRACE(index);
+    const auto &model = d5_moe_execution_fragments::cases::kCases[index];
+    for (std::int64_t ratio : {0, 4, 128}) {
+      SCOPED_TRACE(ratio);
+      run_q24_semantic_fragment(d5_deepseek_official_attention::attention(model, ratio));
+    }
+  }
+}
+
+TEST(CudaMoeFragments, D5DeepSeekOfficialMtpAndFullHead) {
+  for (int index : {3, 4}) {
+    SCOPED_TRACE(index);
+    d5_deepseek_official_attention::check_mtp_head(
+        d5_moe_execution_fragments::cases::kCases[index], run_q24_semantic_fragment);
   }
 }
 
