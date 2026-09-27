@@ -4,6 +4,10 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda")
   target_link_libraries(hyle_compute_provider_cublas PRIVATE CUDA::cublasLt)
+  if(TARGET HyleCudaSdk::cublasLt_runtime)
+    # A direct SHARED edge survives export as a private DLL dependency.
+    target_link_libraries(hyle_compute_provider_cublas PRIVATE HyleCudaSdk::cublasLt_runtime)
+  endif()
   target_compile_definitions(hyle_compute_provider_cublas
     PUBLIC HYLE_COMPUTE_CUDA=1)
   hyle_register_package_dependency(
