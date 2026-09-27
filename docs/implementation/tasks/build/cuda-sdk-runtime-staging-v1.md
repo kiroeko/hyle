@@ -1,6 +1,6 @@
 # CUDA SDK DLL 的公开 staging 接缝
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`9401a0c3`；Windows canonical。owner：`compute_backend_cuda`。
 - reopen trigger：D5-A5外部SDK消费者编译/链接完成，去掉SDK PATH、隐藏producer后，
@@ -43,7 +43,7 @@ CUDA13.3的`bin/x64`；原SDK目标、版本和include传播保留，未选CUDA�
 在同一AUDITED范围固定最后一项配置纠正：改为合法包名`HyleCudaSdk`，由标准config包搜索
 发现已安装文件；不扩registry协议或修改公共脚本。保留两份失败收据，完成后只运行原三交付批次。
 
-## 候选验收
+## 终审结果
 
 产品candidate：`9273bc71017a1febb69db240b6ea8970b88dd77c`。随后确认共享Provider必须
 显式导出私有SHARED边，按[独立有限修复](cuda-provider-runtime-exports-v1.md)处理，未扩公共协议。

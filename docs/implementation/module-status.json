@@ -403,10 +403,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cuda-sdk-runtime-staging-v1.md",
-      "summary": "D5-A5 CANDIDATE：系统CUDA DLL身份与Provider私有runtime导出已补齐；三交付24项、459项模块测试（含一次旧名单断言纠正）、3组独立头通过。仅CMake修复，P0无热路径变化；不代签D5-A6。",
-      "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c"
+      "summary": "D5-A5 CLOSED：系统CUDA DLL身份与Provider私有runtime导出已补齐；三交付24项、459项模块测试（含一次旧名单断言纠正）、3组独立头通过。仅CMake修复，P0无热路径变化；不代签D5-A6。",
+      "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md"
+      }
     },
     {
       "module": "compute_provider_native",
@@ -448,10 +452,14 @@
     },
     {
       "module": "compute_provider_cublas",
-      "state": "CANDIDATE",
-      "summary": "D5-A5 CANDIDATE：系统CUDA DLL身份与Provider私有runtime导出已补齐；三交付24项、459项模块测试（含一次旧名单断言纠正）、3组独立头通过。仅CMake修复，P0无热路径变化；不代签D5-A6。",
+      "state": "CLOSED",
+      "summary": "D5-A5 CLOSED：系统CUDA DLL身份与Provider私有runtime导出已补齐；三交付24项、459项模块测试（含一次旧名单断言纠正）、3组独立头通过。仅CMake修复，P0无热路径变化；不代签D5-A6。",
       "record": "docs/implementation/tasks/build/cuda-provider-runtime-exports-v1.md",
-      "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c"
+      "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md"
+      }
     },
     {
       "module": "compute_provider_marlin",

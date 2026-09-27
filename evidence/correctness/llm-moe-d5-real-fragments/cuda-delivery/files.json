@@ -7,6 +7,10 @@
     "bytes": 2145,
     "sha256": "535afe296d3aff702ffff1c6c7805446c5f825119aa3e390823d62d3ac27d67f"
   },
+  "cleanup.json": {
+    "bytes": 527,
+    "sha256": "fd96c9a93570d45fbace3baa6ce20c260aa92a5ebb7e674246373b9adcc60553"
+  },
   "consumer/CMakeLists.txt": {
     "bytes": 2814,
     "sha256": "bf0cf4b12846e59780e5ae258f97142c53655ff4f74b9050ab0029b68b99b55b"
@@ -408,8 +412,8 @@
     "sha256": "107a0d07d4f9aa76b832e717ba8c7210ac2c1770dda52b5679ad24113f097d41"
   },
   "README.md": {
-    "bytes": 4032,
-    "sha256": "d00bd7b6d7497dc9192f622cf1c186d83dcb1f3c9d3cd3463a859c2909159734"
+    "bytes": 4217,
+    "sha256": "8f223d1377233e8c7eca11d973c58fac1d36e4055e45a7ccef945fa2f3f97663"
   },
   "run-correction.py": {
     "bytes": 3221,

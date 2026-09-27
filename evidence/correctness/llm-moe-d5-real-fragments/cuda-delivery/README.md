@@ -50,6 +50,8 @@ fixture依赖及原失败保留。SDK及第三方许可证来源不变，驱动�
 
 首次外部编译的可选FlashInfer头、测试helper链接，以及SDK配置/导出失败分别保留在`raw/shared*`
 目录；这些均未被写成数值PASS。两个失败SDK的CMake导出快照保留后可清理其临时二进制副本。
+归档后已清理两个旧SDK及两个验收完成的独立consumer构建目录，见[清理记录](cleanup.json)。
+保留有效SDK与唯一源码/static producer供后续P1复用。
 
 统一脚本统计Compute+Graph实现 **60,373行/241文件**，不含测试与第三方源码，见[LOC](loc.json)。
 其余路线A5、全部A6及24个未完成画像格仍待验收；本结果不代表整模型推理或整个goal完成。

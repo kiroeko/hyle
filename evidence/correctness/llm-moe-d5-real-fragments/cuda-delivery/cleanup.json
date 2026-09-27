@@ -1,0 +1,25 @@
+{
+  "removed": [
+    {
+      "path": "C:\\hv\\d5cd\\shared-before-sdk-fix",
+      "bytes": 58578720.0,
+      "removed": true
+    },
+    {
+      "path": "C:\\hv\\d5cd\\shared-before-provider-fix",
+      "bytes": 58580798.0,
+      "removed": true
+    },
+    {
+      "path": "C:\\hv\\d5cd\\shared-consumer",
+      "bytes": 645817680.0,
+      "removed": true
+    },
+    {
+      "path": "C:\\hv\\d5cd\\static-consumer",
+      "bytes": 666329409.0,
+      "removed": true
+    }
+  ],
+  "bytes": 1429306607.0
+}

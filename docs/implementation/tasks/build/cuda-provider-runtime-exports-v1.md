@@ -1,6 +1,6 @@
 # CUDA Provider 私有 SDK runtime 的导出
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`d32fa727`；Windows canonical。
 - owner：`compute_provider_cublas`；`compute_provider_ggml_cuda`承接当前D5 AUDITED卡。
@@ -22,7 +22,7 @@
 预算：上述两处有限CMake接线和原定批次；如仍缺失runtime，依据具体导出图停止裁决，不
 启动随机全库构建或在测试里补DLL。仅在适用门完成后CANDIDATE/CLOSED。
 
-## 候选验收
+## 终审结果
 
 `9273bc71017a1febb69db240b6ea8970b88dd77c`完成E1/E2；E3的三交付24项、受影响459个
 模块测试（含一次旧名单断言纠正）、3组独立头和公共门全部完成，见
