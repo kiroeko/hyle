@@ -92,3 +92,14 @@ known-delta 和 timer-floor controls。GPU 片段不增加第二份 CPU text-pla
 记录实际 caller、parent affinity mask、priority 与完整 CUDA 环境，不变更系统电源方案或提权。
 当前观测为SM89、driver API13040、runtime API13040、编译Toolkit13030；原CUDA13.3安装目录
 及其三个DLL哈希与A5一致。这三类版本事实分别记录，不能从编译器版本推测runtime版本。
+
+## 当前环境变化后的有限恢复
+
+用户已结束正在使用VideoEncode/Copy/3D的GameViewerServer，并尽量退出其它程序；其父服务保留，
+HYLE没有结束用户进程或改电源/权限。显存背景由约2.9GiB降至约1.1GiB，总GPU利用率仍有桌面波动。
+旧8进程A/A失败及原始42%–43%背景记录保留，不能唯一追溯旧失败原因。
+
+本次在变化后的环境只恢复一次相同8进程A/A；通过才启动既定n15→至多一次n31合同，失败即停止。
+只更新输入身份：F47在共享MoE夹具增加了默认true的native_routing参数，CUDA仍使用true，消费者
+代码、模型形状、数学和精度均未变。SDK、runtime DLL与原版程序身份继续逐文件检查。
+CPU/Apple当前已通过，CUDA失败不影响其现有资格，不修改公共统计核心或产品实现。

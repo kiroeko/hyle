@@ -1,0 +1,170 @@
+{
+  "schema": "hyle.d5-native-workload-aa/v1",
+  "gate": "PASS",
+  "identity": {
+    "binary": "2c68bc323bfeba8e4da369e2efa5906efa8d65cc723766a7f3385b08f00b1e3b",
+    "inputs": "7edbd7aef1292f8d767b76462856c0080d145c70a23fe1e49d1cd1fd0ec4ae00",
+    "route": "apple",
+    "sdk_manifest": "5d88fc7bde06ac56eef2e3744dc2d2f67bf808bd08effaf74a69f25bbeb5becf"
+  },
+  "policy": {
+    "environment": "macos",
+    "hard_affinity_supported": false,
+    "qos": "interactive",
+    "applied_by": "benchmark-child"
+  },
+  "native_environment": "# D5_APPLE_ENV device=Apple M4 arch=applegpu_g16g os=Version 27.0 (Build 26A428) mlx=0.32.2 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000",
+  "runs": [
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0180843491413827,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9963770075163575
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/selected-0-0.log",
+      "sha256": "55a8cb8be82ff9487cb4d907a71dd6c18201c8b8fe4396cad7586f5bb054d1cf"
+    },
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9902794653705953,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9992937853107343
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/selected-0-1.log",
+      "sha256": "ec68d8df5fb4f7547e5c339cab6319f7c16c2cf3d57cda158236c65c3d3229b0"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9962873501520844,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0031487513572206
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/selected-1-0.log",
+      "sha256": "c1b46964617a172edabf689b8f0c0c46d588fd586674f0549fce148a1ba92233"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.002752416756176,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0051273659521083
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/selected-1-1.log",
+      "sha256": "ddedc672cf79c44c17fa933a975ad1f113eed46b7ac9fdf6dcbe11b932453437"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.017349781138082,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9992564630519333
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/peer-0-0.log",
+      "sha256": "de175cecabc9c01a39a622013f1ee788ce8ae3b0c8965f6ff0cebaf9101c172f"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9922060017122336,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0074708350094823
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/peer-0-1.log",
+      "sha256": "5356ed3e85fe49e0ead6baf8e291b9f926ad25803009f8b398f4d23b344138d5"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9995219406984113,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0036169479848431
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/peer-1-0.log",
+      "sha256": "9eb6b52e54b4c6cb8451b81f478d177765b197c102cb42cbe5047816050d4331"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9970381709873872,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0095999080248332
+      },
+      "log": "/Users/kiro/hyle-scratch/d5pf/evidence/p1-apple/d5-aa-raw/peer-1-1.log",
+      "sha256": "9162bc6b143ba1de84e644847ded4c6cb72cc169129d25a804d89944ba24562f"
+    }
+  ],
+  "summaries": {
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0180843491413827,
+        0.9902794653705953,
+        0.9962873501520844,
+        1.002752416756176
+      ],
+      "factor_medians": {
+        "all": 0.9995198834541302,
+        "peer_first=False": 1.004181907255989,
+        "peer_first=True": 0.9995198834541302,
+        "allocation_first=False": 1.0071858496467336,
+        "allocation_first=True": 0.9965159410633857
+      }
+    },
+    "selected/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        0.9963770075163575,
+        0.9992937853107343,
+        1.0031487513572206,
+        1.0051273659521083
+      ],
+      "factor_medians": {
+        "all": 1.0012212683339774,
+        "peer_first=False": 0.9978353964135459,
+        "peer_first=True": 1.0041380586546644,
+        "allocation_first=False": 0.999762879436789,
+        "allocation_first=True": 1.0022105756314212
+      }
+    },
+    "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.017349781138082,
+        0.9922060017122336,
+        0.9995219406984113,
+        0.9970381709873872
+      ],
+      "factor_medians": {
+        "all": 0.9982800558428992,
+        "peer_first=False": 1.004777891425158,
+        "peer_first=True": 0.9982800558428992,
+        "allocation_first=False": 1.0084358609182467,
+        "allocation_first=True": 0.9946220863498104
+      }
+    },
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        0.9992564630519333,
+        1.0074708350094823,
+        1.0036169479848431,
+        1.0095999080248332
+      ],
+      "factor_medians": {
+        "all": 1.0055438914971626,
+        "peer_first=False": 1.0033636490307078,
+        "peer_first=True": 1.0066084280048382,
+        "allocation_first=False": 1.0014367055183881,
+        "allocation_first=True": 1.0085353715171577
+      }
+    }
+  },
+  "errors": []
+}

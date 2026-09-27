@@ -147,7 +147,7 @@ DeepSeek 的 power2 scale 和1e-4 floor 由操作描述显式选择。grouped �
 执行成本包括选中权重的 F32 解码、中间乘积、scale 广播和必要复制，不能视为零分配或
 硬件原生 FP8 GEMM。Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
 FP8 group64/128 roundtrip 也可用；FP4 roundtrip 的极小 scale 域尚不合格，会明确拒绝。
-本批已完成普通入口和资源正确性；新增 FP8 能力的最终三交付批次与性能资格仍待验。
+本批已完成普通入口、资源正确性及最终三交付。当前完整BF16 FFN与量化MoE的[Apple性能批次](../implementation/tasks/compute/llm-moe-d5-portable-fragment-performance.md)也已通过；该成绩不代签FP8所有形状的独立性能。
 
 ### GGUF/ggml 原生压缩权重
 

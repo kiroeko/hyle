@@ -2,8 +2,8 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
-**当前施工：D5。** D1–D4 已完成；九个 Qwen 画像在四路线 Direct/Graph 的完整片段通过，
-当前为72/176验收格，其余13画像104格、三交付及适用 P1 仍未完成。
+**当前施工：D5。** D1–D4 已完成；22画像×四路线×Direct/Graph共176格已全部实测，
+154通过、20冷拒绝、2数值失败。四路线三交付与CPU/Apple P1已完成，CUDA/Vulkan P1和D6仍待完成。
 见[D5 当前卡](llm-moe-d5-real-fragment-acceptance.md)与
 [本批证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/README.md)。
 D6 尚未开始。后文各包的旧 candidate 和进展数字是历史，不替代当前 ledger。

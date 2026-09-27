@@ -1,0 +1,191 @@
+{
+  "schema": "hyle.d5-native-workload-aa/v1",
+  "gate": "PASS",
+  "identity": {
+    "binary": "002e9cacedb4caa300dda42a0dfba8d3a1d7a327d862042174ca500ccb9fccb4",
+    "inputs": "7edbd7aef1292f8d767b76462856c0080d145c70a23fe1e49d1cd1fd0ec4ae00",
+    "route": "cpu",
+    "sdk_manifest": "aed438689d52d7977088f84aff104ff6f885645458555d1f63b62c95a7c2d919"
+  },
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "native_environment": null,
+  "runs": [
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0133418043202034,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.007936507936508
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\selected-0-0.log",
+      "sha256": "874744368ef2bb6c35e183faff6a02ce2d9cdacecbca4e2fbe437b6e5b89973b"
+    },
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0337582625118036,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0060483870967742
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\selected-0-1.log",
+      "sha256": "ecaf13741fe86966da5a73660ba82464994e4dc8bef39286e1c1b968e0ad6a8e"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.001367053998633,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.99800796812749
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\selected-1-0.log",
+      "sha256": "b4f5b290e6f86a1fcf307902b5b32f76fb0a898bd90627354bfeeaad5a862ce4"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9918159699181598,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0119521912350598
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\selected-1-1.log",
+      "sha256": "d5587b31dc31503591220586647ad9734254aae09cf25f542697252edce25815"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9907782276203329,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.019723865877712
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\peer-0-0.log",
+      "sha256": "9c89bd0f9decc0bcf5b95244ca281078ab03ba967ece6f3b59fcab6a06973976"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0030732860520095,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0284552845528454
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\peer-0-1.log",
+      "sha256": "2ec9f7b8f7b0d08d365a4c8e9c0a2c5b200d7912e1d9186de7dbda2be4ee990a"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0004752851711027,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9939271255060729
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\peer-1-0.log",
+      "sha256": "21e1e5b316908e91f06a7cf02e975b84eb48fba1b48edab854271cb01f337c88"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0077220077220077,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0098039215686276
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\d5-aa-raw\\peer-1-1.log",
+      "sha256": "8b0af597ae709f794e8b50805f653d292baee6061bab97b952bd134950c16d79"
+    }
+  ],
+  "summaries": {
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0133418043202034,
+        1.0337582625118036,
+        1.001367053998633,
+        0.9918159699181598
+      ],
+      "factor_medians": {
+        "all": 1.007354429159418,
+        "peer_first=False": 1.0235500334160035,
+        "peer_first=True": 0.9965915119583963,
+        "allocation_first=False": 1.007354429159418,
+        "allocation_first=True": 1.0127871162149817
+      }
+    },
+    "selected/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        1.007936507936508,
+        1.0060483870967742,
+        0.99800796812749,
+        1.0119521912350598
+      ],
+      "factor_medians": {
+        "all": 1.006992447516641,
+        "peer_first=False": 1.006992447516641,
+        "peer_first=True": 1.004980079681275,
+        "allocation_first=False": 1.002972238031999,
+        "allocation_first=True": 1.0090002891659169
+      }
+    },
+    "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        0.9907782276203329,
+        1.0030732860520095,
+        1.0004752851711027,
+        1.0077220077220077
+      ],
+      "factor_medians": {
+        "all": 1.0017742856115561,
+        "peer_first=False": 0.9969257568361711,
+        "peer_first=True": 1.0040986464465553,
+        "allocation_first=False": 0.9956267563957177,
+        "allocation_first=True": 1.0053976468870087
+      }
+    },
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        1.019723865877712,
+        1.0284552845528454,
+        0.9939271255060729,
+        1.0098039215686276
+      ],
+      "factor_medians": {
+        "all": 1.0147638937231698,
+        "peer_first=False": 1.0240895752152785,
+        "peer_first=True": 1.0018655235373504,
+        "allocation_first=False": 1.0068254956918925,
+        "allocation_first=True": 1.0191296030607364
+      }
+    }
+  },
+  "errors": []
+}

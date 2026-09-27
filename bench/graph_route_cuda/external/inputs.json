@@ -399,7 +399,7 @@
     "bench/graph_route_cuda/d5_fragment_bench.cc": "3472fb119cd69d21ca54a48c0ad87483e7f1453373752da392e15a2162b7b0fd",
     "bench/graph_route_cuda/external/CMakeLists.txt": "3e3366c8c8053e292079530e0f54f06c8a8a99d7dcef722f5c715c6f768b78e3",
     "tests/compute_models/d5_deepseek_official_attention.h": "d470fef9f96cf56844903b0c63133e0b740965145cb619daa902a7c84b3965fb",
-    "tests/compute_models/d5_deepseek_official_fragments.h": "18567ca776d186ac0c5dc2e2075cf492abb0cd0492ba18972374a67978a555f4",
+    "tests/compute_models/d5_deepseek_official_fragments.h": "41bd6a7e0216b241b627772fa543c52508af999a82abc805b5c1204347cb7bf9",
     "tests/compute_models/d5_deepseek_remaining_fragments.h": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895",
     "tests/compute_models/d5_dynamic_fp8_fragments.h": "22487c44966621e5bc17618d25fde05539a3bb19bfcee70426d8f4c3b66cd9e7",
     "tests/compute_models/d5_fp8_weight_preparation.h": "f24911c20e7f7323f7b04e78b2a7a08dc40410981ad4ebfcb04eb4b8689c9551",

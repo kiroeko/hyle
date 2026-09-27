@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "5c5f0d3c7d70907c05fa8748f4e451fb2c7337317537207f60b264e94b28eba4",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

@@ -21,7 +21,7 @@ Kimi 见[三画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragm
 GLM 见[四 GGUF 画像收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md)。
 Metal workspace 分配失败已按[有限修复卡](llm-moe-d5-metal-buffer-failure.md)修复。
 旧失败及撤回资格保留；下文0/48/72/96等数字是历史快照，不能覆盖当前 ledger。
-CPU八格、Apple四格与Vulkan八格已固定当前成熟路线的冷拒绝；Vulkan Q8两格数值失败；四路线P1和D6尚未完成，
+CPU八格、Apple四格与Vulkan八格已固定当前成熟路线的冷拒绝；Vulkan Q8两格数值失败；CPU/Apple P1已通过，CUDA/Vulkan P1和D6尚未完成，
 不把完整片段正确性当作整个goal完成率；下文128等数字同样为历史快照。
 
 D5-A5外部CUDA交付发现两个Provider的私有SDK DLL依赖未导出；
@@ -40,7 +40,7 @@ Apple A5也已完成，两入口每交付10项正常计算和2项拒绝检查；
 DeepSeek两份官方画像的完整MoE在FP4输入规格阶段拒绝，四格未增加运行支持；产品FIX为零。
 Vulkan A5也已完成源码/static/shared各12项，共36/36、零跳过；新驱动一次定向复验结合未变证据，
 明确DeepSeek Q4两格通过、Q8两格失败。见[Vulkan整批证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md)。
-四路线A5已完成，全部A6/D6仍待完成；当前ledger为154通过/20拒绝/2失败/0未验。
+四路线A5已完成；CPU与Apple A6均已在n15完成PARITY/5%非劣PASS，见[CPU证据](../../../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)和[Apple证据](../../../../evidence/performance/graph-apple-d5-fragments-p1/README.md)。CUDA/Vulkan A6与D6仍待完成；当前ledger为154通过/20拒绝/2失败/0未验。
 
 CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)推进：复用上述静态 SDK，
 合并接入 Qwen BF16 FFN 与 DeepSeek 官方 FP4/FP8 MoE 的普通 Direct/Graph 消费者。

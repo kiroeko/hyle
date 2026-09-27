@@ -1,0 +1,1059 @@
+{
+  "entries": [
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-01.log",
+        "sha256": "4af4a142dded7420aa5d2bdb9069b6cbd8bdede4291db0305a61909a745150c4"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "3eea46ebac1cd953240fc3e126f41762",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-02.log",
+        "sha256": "befcea19f75b49fb49903212574edc0672f2bd3a69da39b48603dd1aa8c449e8"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "114d00ed617d599c80610557acf6a061",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-03.log",
+        "sha256": "5f99bfa01181dc430d14effe96b5cca03fa612dedd0e73624b6cb41d1d7a76b9"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "3db674edb3e32855c7bae1f71d926a1f",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-04.log",
+        "sha256": "eae90fdc493cd8aa0a06454e29be62520d2e6a2db41268503f044b19c9f3b0b4"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "8d49c9aacd193e73accb17d4a6f0eb18",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-05.log",
+        "sha256": "21d054a6a550ad3b90ef4b56a1b472ac078b574f1f9d618309a6c4c0cc3cedb4"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "3c950a86ceec8db787964e8859c69829",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-06.log",
+        "sha256": "2248935dcdddc3e2fe55d5d2e8fd37b5d17b2afe08219c2dd1b40239b002cda9"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "b96033a47c4a6d52ad09985807d4f5af",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-07.log",
+        "sha256": "b16fb49c158c669e5b36d188f31a1056a889e764a07ce5f3c7c89d4cd8903f1f"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "adff122e4a7d2e8cbb359a0e5c9926c3",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-08.log",
+        "sha256": "9d5f1fad0a920020e78c333a8cf9ebb2298b6f870cff734d80bc7d130dffd2c0"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "8d8f2b204d9f8f4b3b39d537a4f94a07",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-09.log",
+        "sha256": "bb3f5125fb36cd22ec99b8dcd12fa948587fde93c4d1689c5b4d67e503feff47"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "33e1a788a6f2f5a8948cfb45036dc631",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-10.log",
+        "sha256": "c1389188109daabc70a76fcb92c615131be76f3dfb00ef532389acb0f1274b21"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "2cb23a50c2339eda700a79883305219c",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-11.log",
+        "sha256": "b9a802fc6c9a5ef6290ed86c98c3dc735c314c974f02c4fcd02da49bd2a87f71"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "04df21af7db06fe2a12b5c9434e8db5f",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-12.log",
+        "sha256": "0e201bc6c2f729b335e856e50dd9bda0476e61c62784d5b609dc60b24875538d"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "7a83d11eb68e37a5ecd83202908b7b37",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-13.log",
+        "sha256": "8b887f628145e914172ce133bab5c488f118118cf9752a1d35c7b0aa98c6350a"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "340f66e23fb280d2bf0b5ca3ee183658",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-14.log",
+        "sha256": "99a7ba0ee915ba0fb7b43f469860cb68edfe45cf2771b1264d8d3ceb5b9e453e"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "867d58bdcecff907ffe2edaa32cf7df0",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-15.log",
+        "sha256": "f6e8e61fdadd60f6b276a95a10f4f3bf16e1383e60d345760f578186fbcc376c"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "153fd444eadea46c1398c224ba9085b6",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-01.log",
+        "sha256": "40f1e089eea5afc402ab095b440fc55e4d357e5d26015ebc8f88e880905c0781"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "c19ae16b09f6f99ad649c8238952d08c",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-02.log",
+        "sha256": "f2d8448ff9274f3732f783a45302a46f639144725a078b356006a6d883218b58"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "8cef9468f0c6f3f1a62b5571b388de7a",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-03.log",
+        "sha256": "8528d7ffcf8eb074af86b143151b447bbf237a2ff70772cc9cbe35ffa150e842"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "1e4a7d0592391cd987c2a716614cdd52",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-04.log",
+        "sha256": "a56e492a89c4fbd8e9fc05330173b853f841c80e65aa13e1da5394ec8b806576"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "c6233a37f475a9a9291e9619aa9d9cf3",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-05.log",
+        "sha256": "a51cbfb02560cda3088d6ce420174eb71fcbe952058a95abb61a38504bcfb688"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "60c11f862d18ee5b87cb8ceb13e113d7",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-06.log",
+        "sha256": "e482b2e7c7afe3e7f0896a11442922899917a30067b1e4feba36be62085677ef"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "7c09e193f33444e4b0e3d087b71f4d0c",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-07.log",
+        "sha256": "ff19ce78bcd544826cf8bb6dc7ae373798423b9b3fb08dda8537bec0973ab1ad"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "598cb5de6c8fa47aa2961e3b581aecf3",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-08.log",
+        "sha256": "ce709d50ba39f8560a01b20a20491c602afa759dddac0b8caa3a4a20d01acf46"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "d9031e67f50aa7951fd51f2842e34112",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-09.log",
+        "sha256": "7864a858fd32d1d51a5bc2882387d32d85b8ecd7ebc7c2fe205a35922ab680a2"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "479fe806b521ac534dc5965aa3b1f6e0",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-10.log",
+        "sha256": "87ab7f1c1d0465ef741cda358704980ad9d411056229b76a66c08252dbaadf80"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "1128df9d64d6eb054fd24be3c12e87d1",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-11.log",
+        "sha256": "7c8440601a78e75f09aeccc82183984ac03a48ae81ea79107b8999261054faba"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "418e9b34b4b619d194fc0bdd2597085b",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-12.log",
+        "sha256": "d5b3c5dac858e888aecb3dc2a0f1da14532d19006b3542a7efe91c0ee5c0690d"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "6f4d0b325c5b3be27448b8397f7e8d35",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-13.log",
+        "sha256": "9f396190498dded3ca092ee29a950393a25289ba590cede4239cd104aa00cede"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "8f23d59b86517f4b77c6f134e27e4898",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-14.log",
+        "sha256": "cc3777c11fa9d0b0f2db434f0586f2cd5a67631edfbaee553160cae1796d4576"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "c0c031f024f9f52facbaf3c631e4ffb6",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-15.log",
+        "sha256": "1ddc252ff0e60c216444ac2c73d83a3c78f941fadfed580b6c551b8001b87ab1"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "35675ee88136b91acdb526112d96aeff",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-01.log",
+        "sha256": "9f5d02881dc42da7b0d8da43b3b2503114b6310fb8c341e97124c36e8d85634c"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "76bfff0ed44e241ff119c1f067195d4d",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-02.log",
+        "sha256": "6accbecb987b697c49608069a7a871fc7fb59e39b1c5839b2c120cac71d8449d"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "b5b7ea28506c78a8e5cb1744b673e47e",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-03.log",
+        "sha256": "58adbaa58782ed534b26479a7c6f22ec1e1c42bfce97361feb0e00887c0b13ca"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "56e2a45b7aba6bf0b22acc6d9da6c0df",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-04.log",
+        "sha256": "644b7426354acab18b05ad1eb8f7ddf004e609ee000c5af380c8556ce49f790d"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "bc9f7a1f13afddb5da2cac9bf75d52e3",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-05.log",
+        "sha256": "e5243a6e2c704ecaf191e05c69610eb1f54c3ae0ab3e82d385ba2576996f3904"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "456bd02f68446c39bbe6e34ac8284269",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-06.log",
+        "sha256": "803685a2f0cb7057e14f0626bdd5f6eba61c511b97c4417244b18efca2549677"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "90b077dbcea6fb10af855305dec5e33c",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-07.log",
+        "sha256": "42e6f18c75667c7d03ee45e21d1da3ac4f0e8d049563cce36880022f0d886d01"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "82502811f1c8ee0b6ee6474e01b42fa0",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-08.log",
+        "sha256": "06b6cc45b5dfe325b42a3cae4d2457c19e48ed54296a21c4be2ae08005ed7071"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "e609bce6c95c203ecd9765655c3a7342",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-09.log",
+        "sha256": "53a9d70840d678d378080751bb15fc1175b56bee02ce8a8f67e0a03a64ef9375"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "8462297e1f8f24bd031381dc22385da7",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-10.log",
+        "sha256": "153d65c137d1681aec79a8156c330af9208ede35dc0316e2ee27b4c1a14ba672"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "a65816d1545e215d68096830d79bfdc6",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-11.log",
+        "sha256": "d50b9462a36b0080f9b936faf286ca379ba1f7fb941700393de65086a8133aec"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "625b9eb1e2cfa00303c2b066dd75a0d2",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-12.log",
+        "sha256": "200d0fba68709e3565134569361754d1eb1bd91d684a6497fea4675ffa3915df"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "8bc79c53417fb066e4d96689d6536021",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-13.log",
+        "sha256": "8eaaeab0d3925ba6f455b0e994c8e2f4cc503b7b77432bd198ed49ea972cf5a9"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ce259fd7dcf0d4ac93420ca684d15baa",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-14.log",
+        "sha256": "079a7ddab39c2828e0ad2e4ecee4898121b14201c68bc6ec0ee22c2639903bf5"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "c55e386f780a29d584ef361260f9830b",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-15.log",
+        "sha256": "dd65570d47b32374f7e59d1133657b1390afc50b87ccd3f458afe71b8f5dae5f"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "1390e8579142364c0f29b1d7c49a0cb2",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-01.log",
+        "sha256": "6e896182a5cd3744ba3d18986ab301caec4df3ae2f97279f087ad0fa1e21f0a9"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "4319ee8e8ee216e3f285a24fc26652cc",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-02.log",
+        "sha256": "41dde8c21c7cb7401c1c55a80be6d2ddf3f21f12240e2480ac6caca515108f44"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "df3a3956f42e5f051518ad1c4985a7b0",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-03.log",
+        "sha256": "1331ee5857f5007211209eb38d5fe28dbdc98406a95f9b511233e0dd800f422b"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "090ac4d0f434f6c85ab3553dc85cc5d7",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-04.log",
+        "sha256": "82140b01681509503a6de378ee8cd88219aaaad5245a59c1ffd57ca90e8b38d5"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "fe07e6eb2a7a8005ae9b35df43e7ae1b",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-05.log",
+        "sha256": "d44cb42407cfbbd9a7cfebc7fc60c29f3bb0bd812a96d5a36ed7f8c152250030"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "c03bdda490045fe9faf09353acf17e69",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-06.log",
+        "sha256": "9f3ae7f49fcd2e9fa38207d32212f34490334bb1e551abb08ac00bba05d0a2c9"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "6a1e4574e932459998d9cb87eb4f4b9c",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-07.log",
+        "sha256": "d4b12001ac752626e58c2e5f24e448b1f374dc7fe2a1d1a44525864ec36c791a"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "19ccea3d1e41476231840115777db094",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-08.log",
+        "sha256": "fbba2e3485339efcb5e2ee34a81686d46a8e7b67e45065f1c33932f9324f66a3"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "96064d3edce9d7fb4d1e57fc40794711",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-09.log",
+        "sha256": "c32e78108968e43e63bc3db563c7d21b95e1c73bebcfdfa28f5442c6516ec5b3"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "fcb5be91eba35ff13f37706397b10899",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-10.log",
+        "sha256": "1d56c6269fb22ad7f6f9f6ad74bef2e652531f184b3a2b06e3cb28326646ef9f"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "151fcf63f974467c72a18a67b8a00501",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-11.log",
+        "sha256": "1be82be116775e8f421b0e2ee418cc973b30942e380e443ac808a2648d23daa9"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "d08d1b31bf6368e5fee4ad110e0649af",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-12.log",
+        "sha256": "004b610550adc4d3e4517cb4e1eda828e5d561b1ecbbf525a533c3a8918d2979"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "4f8bf8d770846040da31c7ef3a194b3d",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-13.log",
+        "sha256": "ac011c8a24d8859477c23ad4452a1b763c4e88f293872dfef0c85e71b1522b90"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "c603bfbc8d77a7d817df75c26b8290d4",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-14.log",
+        "sha256": "cd2d574df9d73b7625f1d1be3c6a17fdb49df2befa5096568139f59e7059a350"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "1f59647048f3705dd68d432f3228cd96",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-15.log",
+        "sha256": "857a55d9953170862972aeafa368f2acf81edb11029fc2743db0f1b32b44a03c"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "38d6b83b6b5e9d1f4d6c463c42fb7426",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-01.log",
+        "sha256": "1d41887fe9b6768c8d3433c55ca20dc22e296be0b49109833aa8fd42c2124e73"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "d65d89084db17ad1bc18919dea75726e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-02.log",
+        "sha256": "1c51864ab97d0b4ecb0360c0543a9c1040c31fc37808fcf4c8497e0cb84470dc"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "1b5ab4f0cbe4322e4c2663530660c465",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-03.log",
+        "sha256": "11285e58ec2dcb43f09c6f4644ac9610516de04f8063dfef4fb0903fe6f52e77"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "be2bdcd4326952afed5e3c334cf3835b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-04.log",
+        "sha256": "59b454f18ae648893d9471e9579ace4c0ad6b332526ad0d2eba10add675a60aa"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "6699c4d25dcb1258772e48e2e78dcb00",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-05.log",
+        "sha256": "ae7de31ef1c0a552917954ea70060258b6fc7ce2a9987938e881baed3d323d41"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "3d052b90832b43d142f7e5cadae5b084",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-06.log",
+        "sha256": "949d2c8fd184f051a9646bfefc50f53ecb5978747cc861511ddc2cfbd8080b1e"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "aefbafa8bab287c4f002a6df9530f885",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-07.log",
+        "sha256": "7e654d52ce72dec67d341ce599e58bec2e5ec824a9772281cdfaf0eba8dad4f5"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "45a700a37154f7f9b1343d1c7fa60513",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-08.log",
+        "sha256": "97794f9d8db839688f8d5b43b9635c74e82d06672d55f8ceae79c764a438f904"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "fbdd81c63e2dc2ac5963a2beb9a7dd7b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-09.log",
+        "sha256": "5e6465ffe2d90ab661508209f21df914bbf7cfb63065d5872cf3a45d54a6b416"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "2154b6d1d0632ebbe43d329836bc8ef2",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-10.log",
+        "sha256": "7172a20b0e1f6c0c9d3075e8d1d29762bf7559255a42952374c94283c8449cc5"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "b339dd3c6bb0b8e663ce5360843ee860",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-11.log",
+        "sha256": "e7ca241e9109a3295636b5454b57ed0570d944d0024415ddcb090b134d87bb80"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "1ed13ff02e360e9a9b3f1c3fd718d162",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-12.log",
+        "sha256": "62dd4f3215868ab6f13a69290153128bfc37a2d6367a6afb033860cb5fb869a0"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "3501e670526230f645c12350090d4367",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-13.log",
+        "sha256": "f8f93bc0e287338513656a7203a7fb877ff9abd1946db73e3deb7c0aa9bb5fb9"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "79de4e38302884f0189be2981a31e48f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-14.log",
+        "sha256": "560b9bd1355437a2760b708e9b0d607913e06ffc578eadff1aaa782db68151d6"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "a39513b80e642a2cc4341731e294d029",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-candidate-first-run-15.log",
+        "sha256": "91f77b134cf8ad0e8cb5de57c4794142afe22b56bb17791cb6191581afb0790d"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "2bf542dd570d4e2485d8982c62b64d37",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-01.log",
+        "sha256": "0a62024cab41aaa9f0b1fe46a156d0a5fe43496e59121682d467f5546a5e1f33"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "eb7cbb54b98d38a3cbed9b164410db32",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-02.log",
+        "sha256": "2d62a503969510b9d833bc11a437493d553a2ee79094bfd08c26566ed1b57cd2"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "f3e7851ce5d50c09a88392ffc387a8bb",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-03.log",
+        "sha256": "0e99c774c8c8df30db21f4f700a78bd84dd4e490bf4e6f71d5bc1499ec2574be"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "e1bc3deb18628318470653641cfa3fe0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-04.log",
+        "sha256": "44d34ef45432b0499dcc5e2bab9fe4df253f37210bc2c956c00c46b25a5165af"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "7f53d71fab05bc5a3dba642e6f21cdfd",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-05.log",
+        "sha256": "d15475d84d1c5b36a36646d80bd723114bae13b3cbae39fceee3a4efddc0b02b"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "d93c950b0a9446bb2af3daba7e5e940c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-06.log",
+        "sha256": "474d80e0caabaead679eca2dff551097f3723c88dbea3fd7f5dfd9c22cd358ef"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "7ff2a43cc60b424b6b6d83dcbe122b35",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-07.log",
+        "sha256": "2137c881011e1ff13caddb643bcf3e04649a1f51b8444ca5526da248ff101b5b"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "e5c11ca95e63f004dd1d2f6ab8bf006b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-08.log",
+        "sha256": "435bd0760cb2dd85b44de798f705b59c379e53995aa68b97fb26089f92e5fab3"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "b462753bc9a3c918f92737d9c2a4e00b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-09.log",
+        "sha256": "006cd35e5840373cab3d2611e41e2077907f5ce7f5461ee6d86802f38881ea69"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "69b4c3e66317da4d293685eb4080d163",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-10.log",
+        "sha256": "0c1fd0f6736286aecedfa60f1abd6128b67d889adc3f16f179ed68fc5d068b16"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "6dd3304ffd4596c145bb42a0bf0b681d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-11.log",
+        "sha256": "58b1a62d549a2e5fe729ae959d4dc4437f245c1597e5c3b96222189ad8e2811e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "f6bd15fe250091d5d7c5ee344187919f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-12.log",
+        "sha256": "47280f07f70a4a26c079b22e79d6fdcb30a75c44d090af71ac3e057f80f9dadc"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "ceae7fdb186966cfebf043e7d042404b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-13.log",
+        "sha256": "743944eb7ba81b3cf40f0b4c9555de2c79368239b4f9fa897f768e1fd9b40201"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "2d552c4b4ae0f88e68a3c1bfaab5c463",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-14.log",
+        "sha256": "e8dfd9a329f6e89fe64db79d330c2a4d34b7ad7891917a03877597d244ddb633"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "1724efeb7b21fad140a3a2f531da0480",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\cpu2\\raw\\n-15\\control-peer-first-run-15.log",
+        "sha256": "d214b3b40b3ea12beed5b3190e8e2e0af6c963822b5e5a0d9d19587d3ae6c8ca"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "65533a64aaf7b8252a82a075add79f2f",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

@@ -1,0 +1,104 @@
+[
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -isystem /Users/kiro/hyle/third_party/nanobench -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -o CMakeFiles/d5_nanobench.dir/Users/kiro/hyle/bench/nanobench_impl.cc.o -c /Users/kiro/hyle/bench/nanobench_impl.cc",
+  "file": "/Users/kiro/hyle/bench/nanobench_impl.cc",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/CMakeFiles/d5_nanobench.dir/Users/kiro/hyle/bench/nanobench_impl.cc.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -isystem /Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated/include -isystem /Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated/include/metal_cpp -isystem /Users/kiro/hyle/third_party/nanobench -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Werror -o CMakeFiles/hyle_graph_route_apple_d5_bench.dir/Users/kiro/hyle/bench/graph_route_apple/d5_fragment_bench.cc.o -c /Users/kiro/hyle/bench/graph_route_apple/d5_fragment_bench.cc",
+  "file": "/Users/kiro/hyle/bench/graph_route_apple/d5_fragment_bench.cc",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/CMakeFiles/hyle_graph_route_apple_d5_bench.dir/Users/kiro/hyle/bench/graph_route_apple/d5_fragment_bench.cc.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -D_CRT_SECURE_NO_WARNINGS -isystem /Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated/include -isystem /Users/kiro/hyle/third_party/nanobench -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -o CMakeFiles/hyle_perf_control_bench.dir/Users/kiro/hyle/bench/integration/perf_control_bench.cc.o -c /Users/kiro/hyle/bench/integration/perf_control_bench.cc",
+  "file": "/Users/kiro/hyle/bench/integration/perf_control_bench.cc",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/CMakeFiles/hyle_perf_control_bench.dir/Users/kiro/hyle/bench/integration/perf_control_bench.cc.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/cc -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wdouble-promotion -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml.c",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml.c",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/cc -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wdouble-promotion -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-alloc.c",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-alloc.c",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend-meta.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend-meta.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-opt.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-opt.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-threading.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-threading.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/cc -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wdouble-promotion -o fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-quants.c",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-quants.c",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/. -I/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml-base.dir/gguf.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/gguf.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/gguf.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml-base.dir/gguf.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -DGGML_USE_BLAS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend-dl.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend-dl.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DGGML_SCHED_MAX_COPIES=4 -DGGML_USE_BLAS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend-reg.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-backend-reg.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -DACCELERATE_LAPACK_ILP64 -DACCELERATE_NEW_LAPACK -DGGML_BLAS_USE_ACCELERATE -DGGML_SCHED_MAX_COPIES=4 -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE=600 -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-blas/.. -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/../include -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -o fixture-ggml/src/ggml-blas/CMakeFiles/ggml-blas.dir/ggml-blas.cpp.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-blas/ggml-blas.cpp",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-blas/ggml-blas.cpp",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-ggml/src/ggml-blas/CMakeFiles/ggml-blas.dir/ggml-blas.cpp.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -I/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4  -DGTEST_HAS_PTHREAD=1   -o fixture-gtest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest-all.cc",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest-all.cc",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-gtest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o"
+},
+{
+  "directory": "/Users/kiro/hyle-scratch/d5pf/p1-apple",
+  "command": "/usr/bin/c++ -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=c++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4  -DGTEST_HAS_PTHREAD=1   -o fixture-gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc",
+  "file": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc",
+  "output": "/Users/kiro/hyle-scratch/d5pf/p1-apple/fixture-gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
+}
+]

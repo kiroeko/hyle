@@ -169,7 +169,7 @@ shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。FP8 准备期
 `align64(4*M*K)+align64(4*N*K)`，输出为4*M*N，均须落在 storage buffer range 与32位索引域。
 超出域在准备期拒绝；执行不下载 payload 到 CPU 计算或重新选路。
 既有小形状的普通 Direct/Graph、两个槽和混合片段已有 Windows/Air 正确性与三交付证据；
-D5 新增真实模型宽度在 Windows Direct/Graph 通过，完整 D5 三交付及性能验收仍待完成。
+D5 新增真实模型宽度在 Windows Direct/Graph 通过，完整 D5 三交付已完成；性能验收仍待完成。完整模型画像的官方格式拒绝及DeepSeek Q8数值失败见[当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化

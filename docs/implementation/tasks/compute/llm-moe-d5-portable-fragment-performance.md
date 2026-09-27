@@ -44,7 +44,7 @@ baseline `51da0f8d6`。承接当前D5的A6；产品FIX为零，只接性能消�
 通过后每路线两个固定形状一次P1，工程非劣门5%，n15，至多一次n31。环境或A/A失败不记产品FAIL，
 不加样本、不换形状；有界定位后记录恢复条件。已有正确性/三交付不因文档改变重跑。
 
-当前：CPU、Apple、Vulkan消费者均已编译并通过两个完整片段的输出、变化输入与完成检查，合计60次；[原始记录](../../../../evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/README.md)保留初次失败及修正。A/A、P1均未运行，不能把准备检查写成性能PASS。全部结果进入D5同一批次汇总，D6不首次补测。
+当前：CPU、Apple、Vulkan消费者均已编译并通过两个完整片段的输出、变化输入与完成检查，合计60次；[原始记录](../../../../evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/README.md)保留初次失败及修正。CPU和Apple现已分别完成8进程A/A、60进程正式比较和30进程公共控制，两个形状均为PARITY/5%非劣PASS，停在n15；Vulkan的A/A/P1仍未运行。全部结果进入D5同一批次汇总，D6不首次补测。
 
 `784819ca`的CPU两个完整形状和两入口20次输出/完成检查已通过。Vulkan首个FFN输出通过后，
 消费者错误地将冷准备字节数当作ggml已热身资源；既有`managed_region_test.cc`已明确上游首次
@@ -66,3 +66,16 @@ Apple 补公共 QoS 设置与遥测，Windows 保留 P 核调用者和 native-ru
 失败不加样本、不启动产品性能裁决；通过才由原公共仪器执行固定 n15→至多一次 n31。
 使用 fresh 消费者和公共 control 编译目录；SDK 不重建。各路线串行执行，结果分别裁决，
 单路线环境问题不阻塞其他路线。A/A 和 P1 都保留最终输出、变化输入与完成检查。
+
+## CPU / Apple 已完成
+
+[CPU P1](../../../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)与
+[Apple P1](../../../../evidence/performance/graph-apple-d5-fragments-p1/README.md)均已完成，
+公共仪器严格重放通过。候选 `1bf0b556`，产品 SDK 未变；A6 不把这些结论外推到全部算子或整模型。
+CPU 两形状四顺序中位耗时差在约±0.4%内；Apple FFN约-0.65%至-0.19%、MoE约-3.64%至-3.50%，
+均按预定5%等价带裁决为PARITY，没有扩样。原始日志、控制项与全部区间已归档。
+
+Windows初次预检因reference稀疏checkout漏了测试头停止，补齐同一不可变reference的目录后才启动
+真正采样；原失败保留。CPU旧验证构建和失败预检构建已清理约91.6MiB，合格构建与SDK继续保留。
+Vulkan继续使用已固定同一合同；用户已结束GameViewer串流并关闭其它应用，记录变化后的GPU背景，
+以一次固定A/A裁决稳定性；不要求桌面计数器绝对为零，不重复调门或无限换配置。

@@ -1,0 +1,372 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract",
+        "native-workload-aa"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "graph_route_apple",
+      "delivery_shape": "static",
+      "entrypoint": "include/hyle/graph/apple.h",
+      "revision": "runtime-bound",
+      "target": "hyle_graph_route_apple_d5_bench"
+    },
+    "claim": "apple complete synchronous Graph fragment cost versus the same mature Provider Direct program. Qwen official BF16 FFN and DeepSeek UD-Q4_K_XL hash-MoE, all required conversion/check/completion/ownership costs. Not bare API overhead, mathematical SOTA or full-model throughput.",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "CMAKE_BUILD_TYPE": "Release",
+            "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+            "CMAKE_PREFIX_PATH": "/Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated",
+            "D5_GGML_SOURCE": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "D5_GTEST_SOURCE": "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "D5_ROUTE": "apple",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON"
+          },
+          "peer_cache": {
+            "mature-direct": "D5_DIRECT_REFERENCE"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+          "HYLE_BENCH_AA_ROUTE",
+          "HYLE_BENCH_VERIFY_ONLY",
+          "HYLE_PERF_APPLE_QOS",
+          "HYLE_BENCH_APPLE_QOS"
+        ],
+        "executables": [
+          {
+            "id": "native-fragments",
+            "measurement_batch": 1,
+            "stem": "hyle_graph_route_apple_d5_bench",
+            "target": "hyle_graph_route_apple_d5_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_D5_FRAGMENT_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "qwen35-official-bf16-ffn",
+                "title": "Qwen3.5-2B official BF16 FFN M1 H2048 N6144"
+              },
+              {
+                "id": "deepseek-flash-ud-q4-hash-moe",
+                "title": "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6"
+              }
+            ]
+          }
+        ],
+        "measurement_adapter": "nanobench-paired-rows-v1",
+        "profiles": {
+          "M1-MAC": {
+            "cache": {},
+            "compiler_id": "AppleClang",
+            "compiler_version_prefix": "21.0",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          },
+          {
+            "command": [
+              "{python}",
+              "validate_aa.py",
+              "--route",
+              "apple",
+              "--build",
+              "{build}",
+              "--output",
+              "{output}"
+            ],
+            "id": "native-workload-aa",
+            "kind": "command"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "macos"
+      ],
+      "certification_platforms": [
+        "macos"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "M1-MAC"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "graph-apple-d5-fragments-p1-v1",
+    "module": "graph_route_apple",
+    "peers": [
+      {
+        "configuration": {
+          "mathematics": "Same qualified mature Provider implementations; not a claim of independent mathematics.",
+          "role": "One public Context.compile MLX FFN; mixed MoE joins maximal contiguous MLX regions with complete native ggml Metal regions. All required region waits charged; complete immutable public Direct consumer source matches compiled source.",
+          "sdk_product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c"
+        },
+        "id": "mature-direct",
+        "revision": "c0de38c9b9d6fa32b19fb9791171ce5b8df3cb42"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first"
+        },
+        "environment": {},
+        "id": "candidate-first-candidate-first-allocation",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "candidate-first-peer-first-allocation",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "peer-first-candidate-first-allocation",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "peer-first-peer-first-allocation",
+        "target_variant": "primary"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "Complete ordinary blocking fragment through native math, checks, required conversions, terminal waits, completion destruction and output-owner release."
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-fragment/apple/qwen35-official-bf16-ffn",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "qwen35-official-bf16-ffn",
+        "input": {
+          "distribution": "Verified local checkpoint weights and original two D5 BF16 changed inputs.",
+          "scale": {
+            "hidden": 2048,
+            "input_slots": 2,
+            "intermediate": 6144,
+            "tokens": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete resident consumer fragment through final completion settlement",
+          "derivation": "Fixed model-shaped D5 consumer; cost is for one complete fragment, not invented production frequency or model throughput.",
+          "frequency": 1,
+          "unit": "complete-fragment",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Separate complete route owners, independently resident input slots and constants; all accepted completions and output leases released within each blocking call; Graph retains native planning and fusion.",
+          "equivalence": "Same complete consumer output, mixed-format math and original tolerances. Both synchronous calls settle every accepted completion and output lease before returning; no intentionally degraded per-leaf peer.",
+          "peer": "One public Context.compile MLX FFN; mixed MoE joins maximal contiguous MLX regions with complete native ggml Metal regions. All required region waits charged"
+        },
+        "pair": {
+          "candidate": "Graph complete fragment",
+          "peer": "Direct complete fragment"
+        },
+        "peer_id": "mature-direct",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "consumer.json",
+          "sha256": "3cb45c58040cc482b27ccc0394598081f7e3b511845491941be082476b615d5d"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first-candidate-first-allocation",
+          "candidate-first-peer-first-allocation",
+          "peer-first-candidate-first-allocation",
+          "peer-first-peer-first-allocation"
+        ],
+        "semantic_contract": "Official BF16 RMSNorm, gate/up, SiLU gate and down with original node precision boundaries.",
+        "setup": "Cold prepare, upload and all resident slots; original full output oracle with two complete sweeps before/after measurement. Required native warmup included before timing; cold and warm resource facts retained.",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "Complete ordinary blocking fragment through native math, checks, required conversions, terminal waits, completion destruction and output-owner release."
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference-fragment/apple/deepseek-flash-ud-q4-hash-moe",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "deepseek-flash-ud-q4-hash-moe",
+        "input": {
+          "distribution": "Original D5 header-bound format-valid mixed GGUF tensors and three changed activation/token/table inputs; not downloaded full-model weights.",
+          "scale": {
+            "hidden": 4096,
+            "input_slots": 3,
+            "intermediate": 2048,
+            "resident_experts": 7,
+            "router_experts": 256,
+            "tokens": 1,
+            "top_k": 6
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete resident consumer fragment through final completion settlement",
+          "derivation": "Fixed model-shaped D5 consumer; cost is for one complete fragment, not invented production frequency or model throughput.",
+          "frequency": 1,
+          "unit": "complete-fragment",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Separate complete route owners, independently resident input slots and constants; all accepted completions and output leases released within each blocking call; Graph retains native planning and fusion.",
+          "equivalence": "Same complete consumer output, mixed-format math and original tolerances. Both synchronous calls settle every accepted completion and output lease before returning; no intentionally degraded per-leaf peer.",
+          "peer": "One public Context.compile MLX FFN; mixed MoE joins maximal contiguous MLX regions with complete native ggml Metal regions. All required region waits charged"
+        },
+        "pair": {
+          "candidate": "Graph complete fragment",
+          "peer": "Direct complete fragment"
+        },
+        "peer_id": "mature-direct",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "consumer.json",
+          "sha256": "3cb45c58040cc482b27ccc0394598081f7e3b511845491941be082476b615d5d"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first-candidate-first-allocation",
+          "candidate-first-peer-first-allocation",
+          "peer-first-candidate-first-allocation",
+          "peer-first-peer-first-allocation"
+        ],
+        "semantic_contract": "GGUF mixed MXFP4 routed/Q8_0 shared experts, full hash routing over 256 scores, sqrt-softplus normalization, top6, expert weight/decode/combine and shared output sum.",
+        "setup": "Cold prepare, upload and all resident slots; original full output oracle with two complete sweeps before/after measurement. Required native warmup included before timing; cold and warm resource facts retained.",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "865a193ebb92d56f03ca38855d19f5b180c6f16d268be07eecfd3a18163e9df5",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

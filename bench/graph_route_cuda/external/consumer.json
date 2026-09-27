@@ -11,7 +11,7 @@
     "tests/compute_models/d5_deepseek_official_fragments.h"
   ],
   "input_identity_file": "inputs.json",
-  "input_identity_sha256": "7558004d18a73beea42f32731e3cad0ae57f43fc47e139e7d48adaa966c31da5",
+  "input_identity_sha256": "df3d61c851faa661082f933c7aa8a151fd263e32f0f2a7f26426b95ebddfcccd",
   "completion": "Both arms return only after every accepted run is settled and completion-owned references are released",
   "ownership": "Separate route owners with constant buffers, queue, independently resident input/output slots; all preparation cold",
   "mathematics": "Original qualified mature Provider calls and all required conversions/checks remain charged",
