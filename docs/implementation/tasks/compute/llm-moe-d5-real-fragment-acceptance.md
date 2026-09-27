@@ -37,6 +37,10 @@ CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)�
 按[失败与环境收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)等待空闲窗口，
 不记产品性能FAIL、不升级样本。其它D5工作继续，A6不提前计作通过。
 
+CPU 剩余四个官方画像按[F47 完整 MoE 冷边界](llm-moe-d5-cpu-official-boundary.md)批验。
+固定 oneDNN 的快速 FP8 ISA 门、SGLang AMX 门和 vLLM W8A16 合同已核对，不能通过改格式
+或恢复自研来绕过；本批只验证实际普通入口拒绝，不增加支持通过格。
+
 官方FP8剩余路径的[有界源码复核](llm-moe-d5-official-fp8-source-boundary.md)确认SGLang仍有
 Triton block128候选；现有cuBLASLt拒绝不能外推为所有成熟实现缺失。
 该具名候选按[F37有界原生资格](llm-moe-d5-fp8-native-qualification.md)完成AOT与Windows

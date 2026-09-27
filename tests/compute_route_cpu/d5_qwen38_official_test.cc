@@ -16,6 +16,7 @@
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
+#include "../compute_models/d5_cpu_official_boundary.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -927,6 +928,36 @@ TEST(CpuMoeFragments, D5OfficialFp8DenseColdRejection) {
       EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
     }
   }
+}
+
+TEST(CpuMoeFragments, D5OfficialFullMoeColdBoundary) {
+  namespace boundary = d5_cpu_official_boundary;
+  boundary::for_each([](const boundary::sem::Fragment &fragment) {
+    SCOPED_TRACE(fragment.profile->model_name);
+    auto context = c::cpu::create_context().value();
+    const auto workload = q::workload(
+        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
+    std::size_t prepared = 0;
+    for (const auto &node : fragment.nodes) {
+      if (node.operation.kind() == c::OperationKind::kView)
+        continue;
+      std::vector<c::TensorDesc> inputs, outputs;
+      for (auto id : node.inputs) inputs.push_back(fragment.description(id));
+      for (auto id : node.outputs) outputs.push_back(fragment.description(id));
+      auto result = c::prepare(context, node.operation, inputs, outputs,
+                               hyle::mem::system_resource(), workload);
+      if (!result) {
+        const char *operation = boundary::missing_operation(node.operation);
+        ASSERT_NE(operation, nullptr) << result.error().message();
+        ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+        boundary::record("direct", fragment, prepared, operation, result.error());
+        return;
+      }
+      ++prepared;
+    }
+    FAIL() << "Official CPU MoE preparation now succeeds; qualify execution "
+              "and replace the old rejection record.";
+  });
 }
 
 TEST(CpuMoeFragments, D5OfficialFp4ExpertBatch) {

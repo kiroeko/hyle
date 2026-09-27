@@ -1,6 +1,7 @@
 #include "../compute_models/d5_deepseek_remaining_fragments.h"
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
+#include "../compute_models/d5_cpu_official_boundary.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -684,6 +685,31 @@ TEST(CpuGraphMoeFragments, D5OfficialFp8DenseColdRejection) {
       EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
     }
   }
+}
+
+TEST(CpuGraphMoeFragments, D5OfficialFullMoeColdBoundary) {
+  namespace boundary = d5_cpu_official_boundary;
+  boundary::for_each([](const boundary::sem::Fragment &fragment) {
+    SCOPED_TRACE(fragment.profile->model_name);
+    auto full = boundary::sem::make_graph(fragment);
+    auto context = g::cpu::create_context().value();
+    std::vector<hyle::mem::Buffer> constants;
+    std::vector<g::ConstantBinding> bindings;
+    constants.reserve(fragment.constants.size());
+    for (std::size_t i = 0; i < fragment.constants.size(); ++i) {
+      constants.push_back(half_test::buffer<std::byte>(fragment.constant_bytes[i]));
+      bindings.push_back({full.constants[i], c::ConstTensorView::create(
+          fragment.description(fragment.constants[i]), constants.back().view()).value()});
+    }
+    const auto workload = q::workload(
+        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
+    auto result = g::compile(full.graph, context,
+                             {.constants = bindings, .workload = workload});
+    ASSERT_FALSE(result) << "Official CPU MoE compilation now succeeds; "
+                            "qualify execution and replace the old rejection record.";
+    ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
+    boundary::record("graph", fragment, 0, "complete_moe", result.error());
+  });
 }
 
 TEST(CpuGraphMoeFragments, D5OfficialFp4ExpertBatch) {
