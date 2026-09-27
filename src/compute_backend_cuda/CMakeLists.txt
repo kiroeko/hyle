@@ -49,7 +49,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     NAME compute_cuda_sdk
     OWNER compute_backend_cuda
     FEATURES compute_cuda
-    FIND_DEPENDENCIES CUDAToolkit|13.3 HyleCudaSdk|CONFIG
+    FIND_DEPENDENCIES CUDAToolkit|13.3 HyleCudaSdk
     DEVELOPMENT_FILE_SPECS
       "${CMAKE_CURRENT_SOURCE_DIR}/HyleCudaSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleCudaSdk|HyleCudaSdkConfig.cmake")
 else()

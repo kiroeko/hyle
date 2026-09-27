@@ -34,3 +34,11 @@ P0：纯配置/交付metadata，无热路径成本、对象/API/算法改变；D
 声明库并把`.lib`设为`IMPORTED_LOCATION`，未声明对应DLL。S1的SHARED叶节点仅补
 同一import library实际加载的文件，不改变其搜索结果。当前三个DLL实际位于
 CUDA13.3的`bin/x64`；原SDK目标、版本和include传播保留，未选CUDA时不创建这些节点。
+
+### 配置接线纠正的有限续项
+
+`c7781370`在configure暴露非本目录imported target不能由`target_link_libraries`修改；
+`41d7582e`已改为目标property并保留原`CUDAToolkit|13.3`依赖。随后configure确认registry
+现有语法只接受包名及数字版本，不能写`HyleCudaSdk|CONFIG`。两次均未进入产品编译或数值测试。
+在同一AUDITED范围固定最后一项配置纠正：改为合法包名`HyleCudaSdk`，由标准config包搜索
+发现已安装文件；不扩registry协议或修改公共脚本。保留两份失败收据，完成后只运行原三交付批次。
