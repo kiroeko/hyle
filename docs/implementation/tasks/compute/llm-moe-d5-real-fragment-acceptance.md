@@ -45,8 +45,12 @@ Vulkan A5也已完成源码/static/shared各12项，共36/36、零跳过；新�
 CUDA A6 按[真实片段性能批次](llm-moe-d5-cuda-fragment-performance.md)推进：复用上述静态 SDK，
 合并接入 Qwen BF16 FFN 与 DeepSeek 官方 FP4/FP8 MoE 的普通 Direct/Graph 消费者。
 8进程工作负载A/A出现明显同实现偏差，正式P1未启动；测试退出后GPU仍占用42%–43%，
-按[失败与环境收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)等待空闲窗口，
+按[失败与环境收据](../../../../evidence/performance/graph-cuda-d5-fragments-preflight/README.md)保留原环境失败；用户已结束串流，本次CUDA恢复尚未运行，
 不记产品性能FAIL、不升级样本。其它D5工作继续，A6不提前计作通过。
+
+Vulkan A6已完成8进程A/A（PASS）和n15的60个比较/30个控制进程；自动n31扩样因用户需要
+恢复桌面使用而中止。所有已完成数据已[归档](../../../../evidence/performance/graph-vulkan-d5-fragments-interrupted/README.md)，
+最终资格尚未完成，维持INCONCLUSIVE；本轮不再进行GPU测试，正常桌面波动不要求用户消除。
 
 CPU 四个官方画像已按[F47 完整 MoE 冷边界](llm-moe-d5-cpu-official-boundary.md)完成两入口批验。
 GLM在grouped FP8、DeepSeek在grouped FP4冷拒绝，完整Graph也拒绝，见

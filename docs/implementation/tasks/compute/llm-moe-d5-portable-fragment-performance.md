@@ -3,7 +3,7 @@
 <!-- MODULE REVIEW: AUDITED -->
 
 baseline `51da0f8d6`。承接当前D5的A6；产品FIX为零，只接性能消费者，复用各路线已验收的
-源码/static/shared SDK。CUDA保持原独立合同，不换掉其官方FP4/FP8 MoE；GPU未空闲不重启采样。
+源码/static/shared SDK。CUDA保持原独立合同，不换掉其官方FP4/FP8 MoE；GPU验证尊重用户正常桌面使用，不要求计数器绝对稳定。
 
 ## 固定消费者与有限FIX
 
@@ -44,7 +44,7 @@ baseline `51da0f8d6`。承接当前D5的A6；产品FIX为零，只接性能消�
 通过后每路线两个固定形状一次P1，工程非劣门5%，n15，至多一次n31。环境或A/A失败不记产品FAIL，
 不加样本、不换形状；有界定位后记录恢复条件。已有正确性/三交付不因文档改变重跑。
 
-当前：CPU、Apple、Vulkan消费者均已编译并通过两个完整片段的输出、变化输入与完成检查，合计60次；[原始记录](../../../../evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/README.md)保留初次失败及修正。CPU和Apple现已分别完成8进程A/A、60进程正式比较和30进程公共控制，两个形状均为PARITY/5%非劣PASS，停在n15；Vulkan的A/A/P1仍未运行。全部结果进入D5同一批次汇总，D6不首次补测。
+当前：CPU、Apple、Vulkan消费者均已编译并通过两个完整片段的输出、变化输入与完成检查，合计60次；[原始记录](../../../../evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/README.md)保留初次失败及修正。CPU和Apple现已分别完成8进程A/A、60进程正式比较和30进程公共控制，两个形状均为PARITY/5%非劣PASS，停在n15；Vulkan的8进程A/A已通过，n15的60进程正式比较与30进程控制已完成；自动n31因用户需要恢复桌面使用而中止，最终P1仍为INCONCLUSIVE。全部结果进入D5同一批次汇总，D6不首次补测。
 
 `784819ca`的CPU两个完整形状和两入口20次输出/完成检查已通过。Vulkan首个FFN输出通过后，
 消费者错误地将冷准备字节数当作ggml已热身资源；既有`managed_region_test.cc`已明确上游首次
@@ -79,3 +79,17 @@ Windows初次预检因reference稀疏checkout漏了测试头停止，补齐同�
 真正采样；原失败保留。CPU旧验证构建和失败预检构建已清理约91.6MiB，合格构建与SDK继续保留。
 Vulkan继续使用已固定同一合同；用户已结束GameViewer串流并关闭其它应用，记录变化后的GPU背景，
 以一次固定A/A裁决稳定性；不要求桌面计数器绝对为零，不重复调门或无限换配置。
+
+## 用户桌面窗口结束：Vulkan 本次采样终止
+
+Vulkan 固定 A/A 八进程通过，n15 的60个产品进程和30个公共控制进程完整保留。
+用原公共仪器离线解析，四项公共控制全部通过；Qwen FFN 的非劣区间仍未裁决，
+DeepSeek GGUF MoE 的诊断非劣门通过，但不能代替本次完整资格化。
+仪器自动进入 n31，已持久化8个产品日志时按用户桌面时间限制停止 launcher 和子进程；
+确认无 HYLE 测试进程继续使用GPU，本轮不再启动 CUDA 或 Vulkan 测量。
+
+[中断收据](../../../../evidence/performance/graph-vulkan-d5-fragments-interrupted/README.md)
+保存完整n15、部分n31、原A/A、固定合同及SHA256。缺少末尾环境/产物资格核对和正式manifest，
+本次裁决为 **INTERRUPTED / INCONCLUSIVE**，不记产品性能FAIL，也不以诊断结果签PASS。
+本次采样停止，退回本卡AUDITED的验证计划，产品FIX仍为零；未来GPU验证前先核对已有完整
+数据与有限剩余预算，不重跑CPU/Apple/A5，不要求用户继续关闭应用或提供绝对平稳GPU。

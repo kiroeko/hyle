@@ -1,0 +1,191 @@
+{
+  "schema": "hyle.d5-native-workload-aa/v1",
+  "gate": "PASS",
+  "identity": {
+    "binary": "901e66f0c47d4c0cc329c38084c9f270d11046cecfdd65314790c1ea9d23e201",
+    "inputs": "7edbd7aef1292f8d767b76462856c0080d145c70a23fe1e49d1cd1fd0ec4ae00",
+    "route": "vulkan",
+    "sdk_manifest": "69db18965cc6f7af5be69d86d7c97c4d261d2150c34a6a64aa30447177a7d952"
+  },
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "native_environment": "# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45",
+  "runs": [
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0271951782633,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9450630057446415
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-0-0.log",
+      "sha256": "070d058962fc768e32d914e78050a80bd57ed71305b343b2442d28ef268da121"
+    },
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0233935114844936,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9797797582186802
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-0-1.log",
+      "sha256": "c819fb2fb19b461200f85a9b960074a898039b76afa6fe4050d58517fe16e03d"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0312740265026457,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0880608464618493
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-1-0.log",
+      "sha256": "709c7f1c896162c4c101c338f38c5af7f9340170df33e2d77866eb9f1a9a48ba"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9694952497899566,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9719770013268465
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-1-1.log",
+      "sha256": "a6602bbad661f5ac00168342bebfb499b72841feb92eb2f83e16e6058131ccbb"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0520164722663168,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9919897010441996
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-0-0.log",
+      "sha256": "9ad436252e415b66cfc6a4b9aeaf8d5468a76cde932cf35dd2b5a9e905237640"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0401988475878432,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0446452566514377
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-0-1.log",
+      "sha256": "d1c7f5dabf32808c0580e2d0df894bdcae30fb2de39efffad58ce88011892ee9"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9489647189951558,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0450312632793055
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-1-0.log",
+      "sha256": "c84bef0e36a91fe1891676ec871f90b36a8936eb7ea1a421c5f801fa89eaadfa"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0046121045990513,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0051954924292534
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-1-1.log",
+      "sha256": "20c079b831949077855272fc0ccea95c96dbc2f31d1cf18bd1d87bddd8782782"
+    }
+  ],
+  "summaries": {
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0271951782633,
+        1.0233935114844936,
+        1.0312740265026457,
+        0.9694952497899566
+      ],
+      "factor_medians": {
+        "all": 1.0252943448738967,
+        "peer_first=False": 1.0252943448738967,
+        "peer_first=True": 1.000384638146301,
+        "allocation_first=False": 1.0292346023829728,
+        "allocation_first=True": 0.9964443806372252
+      }
+    },
+    "selected/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        0.9450630057446415,
+        0.9797797582186802,
+        1.0880608464618493,
+        0.9719770013268465
+      ],
+      "factor_medians": {
+        "all": 0.9758783797727634,
+        "peer_first=False": 0.9624213819816609,
+        "peer_first=True": 1.0300189238943478,
+        "allocation_first=False": 1.0165619261032455,
+        "allocation_first=True": 0.9758783797727634
+      }
+    },
+    "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0520164722663168,
+        1.0401988475878432,
+        0.9489647189951558,
+        1.0046121045990513
+      ],
+      "factor_medians": {
+        "all": 1.0224054760934473,
+        "peer_first=False": 1.04610765992708,
+        "peer_first=True": 0.9767884117971035,
+        "allocation_first=False": 1.0004905956307364,
+        "allocation_first=True": 1.0224054760934473
+      }
+    },
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        0.9919897010441996,
+        1.0446452566514377,
+        1.0450312632793055,
+        1.0051954924292534
+      ],
+      "factor_medians": {
+        "all": 1.0249203745403457,
+        "peer_first=False": 1.0183174788478186,
+        "peer_first=True": 1.0251133778542796,
+        "allocation_first=False": 1.0185104821617526,
+        "allocation_first=True": 1.0249203745403457
+      }
+    }
+  },
+  "errors": []
+}

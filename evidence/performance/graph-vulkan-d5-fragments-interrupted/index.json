@@ -1,0 +1,720 @@
+{
+  "schema": "hyle.d5-native-performance-interruption/v1",
+  "recorded_at_utc": "2026-09-27T07:56:06.462559+00:00",
+  "candidate": "6d2412d2a28eadd3b6fc0f85bd881e4ffa24a792",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "reference": "c0de38c9b9d6fa32b19fb9791171ce5b8df3cb42",
+  "route": "vulkan",
+  "status": "INTERRUPTED",
+  "qualification": "DIAGNOSTIC",
+  "performance_gate": "INCONCLUSIVE",
+  "product_performance_failure": false,
+  "reason": "User needs the desktop; automatic n31 escalation stopped, GPU processes terminated. No CUDA restart.",
+  "workload_aa_gate": "PASS",
+  "workload_aa_processes": 8,
+  "completed_stage": {
+    "n": 15,
+    "product_processes": 60,
+    "control_processes": 30
+  },
+  "interrupted_stage": {
+    "n": 31,
+    "persisted_product_logs": 8,
+    "control_processes": 0,
+    "included_in_summary": false
+  },
+  "strict_manifest_replay": "NOT_RUN_NO_COMPLETED_MANIFEST",
+  "diagnostic_note": "Original canonical parser, estimator and controls only; no final post-sampling identity/host qualification, no product PASS or FAIL.",
+  "files": [
+    {
+      "path": "run/d5-aa-raw/peer-0-0.log.gz",
+      "sha256": "90c0ace2ea2815a857da28f2bc5b86f7fb22c668593e69e6256a6ae163c4215c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-0-0.log",
+      "raw_sha256": "9ad436252e415b66cfc6a4b9aeaf8d5468a76cde932cf35dd2b5a9e905237640"
+    },
+    {
+      "path": "run/d5-aa-raw/peer-0-1.log.gz",
+      "sha256": "b9f3762d8cb35b98cb0523e5b6bee79d6b0af63dd810d452d4efffe24047e083",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-0-1.log",
+      "raw_sha256": "d1c7f5dabf32808c0580e2d0df894bdcae30fb2de39efffad58ce88011892ee9"
+    },
+    {
+      "path": "run/d5-aa-raw/peer-1-0.log.gz",
+      "sha256": "7054b7c77636ea69aafbec2661f30c43413d7e13f6b687c8bf146f26bcd686c4",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-1-0.log",
+      "raw_sha256": "c84bef0e36a91fe1891676ec871f90b36a8936eb7ea1a421c5f801fa89eaadfa"
+    },
+    {
+      "path": "run/d5-aa-raw/peer-1-1.log.gz",
+      "sha256": "6bfce2fb736d496e34d02a9b68d00ae2a2d5677b0e552e0600414a426efb67e3",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\peer-1-1.log",
+      "raw_sha256": "20c079b831949077855272fc0ccea95c96dbc2f31d1cf18bd1d87bddd8782782"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-0-0.log.gz",
+      "sha256": "5472d59c96eb352c9b78ad4a78d47f525e1e1ce0db5c51486d30f55454033993",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-0-0.log",
+      "raw_sha256": "070d058962fc768e32d914e78050a80bd57ed71305b343b2442d28ef268da121"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-0-1.log.gz",
+      "sha256": "e626a1493825074c446780d218ba30c293ad9572a11e0d566fcfd7bdd9164d48",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-0-1.log",
+      "raw_sha256": "c819fb2fb19b461200f85a9b960074a898039b76afa6fe4050d58517fe16e03d"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-1-0.log.gz",
+      "sha256": "dad871b5a700866e37fdfc5f638e36cde97473bb72a809c11f4748bea78cab64",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-1-0.log",
+      "raw_sha256": "709c7f1c896162c4c101c338f38c5af7f9340170df33e2d77866eb9f1a9a48ba"
+    },
+    {
+      "path": "run/d5-aa-raw/selected-1-1.log.gz",
+      "sha256": "f65d2ad2dd3818bc8359c5ed046fc178d45bd18b162ad06fccd0f1d6e44e5162",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-aa-raw\\selected-1-1.log",
+      "raw_sha256": "a6602bbad661f5ac00168342bebfb499b72841feb92eb2f83e16e6058131ccbb"
+    },
+    {
+      "path": "run/d5-workload-aa.json",
+      "sha256": "32d953615fe260e13f179806bd7e86352a6a6b65f0b074ec4ed0f3db0590ee8e",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\d5-workload-aa.json",
+      "raw_sha256": "32d953615fe260e13f179806bd7e86352a6a6b65f0b074ec4ed0f3db0590ee8e"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-01.log.gz",
+      "sha256": "060e9ec4f1e6861f00117de71cc11de5e02ecc843daf5fc4072c570d4f035cdb",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-01.log",
+      "raw_sha256": "a7e75bf475c6f97e22067aa8f827f89d12a44db847c9625de21ec04fae74c604"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-02.log.gz",
+      "sha256": "ed7627d6508a07879a3459354fd1b05229b09c6886065b917497e62c6b6e63ba",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-02.log",
+      "raw_sha256": "4b9e550884d227d343af2964aefc7753cd2fa3fbdd023a78ce057dbe7313c050"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-03.log.gz",
+      "sha256": "d9026d774734903005e10ff8b0f97829eba710843704e83fdc3c7a79cf0425cb",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-03.log",
+      "raw_sha256": "f5c3b7609bbb0f1023ab328abc69d0a8ad040f2be71e49ee45863279454874e7"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-04.log.gz",
+      "sha256": "838a16aca462f1c85967412056bbe5574f3ef346611698d5bc4784e3858e150c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-04.log",
+      "raw_sha256": "79e1b69fc25420b5ac2de3c41b22f60e7e8299b39b240daaddc2f8ec5292729d"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-05.log.gz",
+      "sha256": "8242782fb1f032ea9685e7ba945f40eff262e6607340e27bc40689053b347913",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-05.log",
+      "raw_sha256": "a9affdbf090c58e7eadfb568755f6169927bd10cd4c22e1c7893a6b77375d797"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-06.log.gz",
+      "sha256": "7ef081cafee9fa60e7abbc73cc90b8aeb7feb5541a30a9c1809573d10460157b",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-06.log",
+      "raw_sha256": "53b564c1c52d9781438c00ac46f89ad738753210fd21b24676c808764b79ee57"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-07.log.gz",
+      "sha256": "f1bd16f6346022522b17fd68ad3971d344eefa4eff61900c0214d98fe28e95bf",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-07.log",
+      "raw_sha256": "898e34749951819bbaabf845807394373f330d7260c2934d66efc94229c2fc5d"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-08.log.gz",
+      "sha256": "1dbb74de7f348f852c47cd91f583647b6e90307757f98922ee4c23408a8c1b9e",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-08.log",
+      "raw_sha256": "fc17dc6c4986f6d0746b01b7265efb704a98e159a2d077aa10de356f91863e64"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-09.log.gz",
+      "sha256": "5a70f50c32c6b6157d013c492105550b9c06761412bebc7445617700a95060e4",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-09.log",
+      "raw_sha256": "8086a05875f2675f28bc8963e77d00c964a73905b5f7ac008f605b12065eeefb"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-10.log.gz",
+      "sha256": "2b7b85808e2c95880cf1a1590c023e54abfa203dcf21c6fb12829a57cdf1e7f1",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-10.log",
+      "raw_sha256": "18c73eb4d85f9303a7257ad810dd263219c56e36444ee95e9be80e070ffba0d2"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-11.log.gz",
+      "sha256": "a5ce680881216a794143b1d0adff7571c66421e2a93c2af0c74c3aebac8ef162",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-11.log",
+      "raw_sha256": "1509cb62ef9e641dbc817d65a9aadfbeef237fdadc033a3ddd9c62c11faff112"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-12.log.gz",
+      "sha256": "f7c25720b480e12e3795fb54c62439cd0b8e10795474f1d71497cbf99a982bd3",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-12.log",
+      "raw_sha256": "686f64c3025959dc68e5e6bb0787be321291609c39ad0bf360ddc1dc0aebc49b"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-13.log.gz",
+      "sha256": "fb29fab0350c4e0e9493b6e4c7bae9568c0deb7f5c51c6641cc8c6a54f9adddd",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-13.log",
+      "raw_sha256": "d8bc99d5e9918715cf6ac3c601bb50eb1ddbbd9b7212c566bb271f286dac34c2"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-14.log.gz",
+      "sha256": "400e9ddaf58b59076bc0f92dc239eeec13b3798894696543fb2840d430c8d366",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-14.log",
+      "raw_sha256": "ac8a595367bac92820cd45d93f3a89d02defbecb302b24f2c7bf64f121595ac6"
+    },
+    {
+      "path": "run/raw/n-15/control-candidate-first-run-15.log.gz",
+      "sha256": "2b7c55f8d62d8173e5ec2259662ab4e6390eefc375e8b20b3e0df8f11bc60525",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-candidate-first-run-15.log",
+      "raw_sha256": "7c34971392000e77006fedb156bd41dab610c134ed5f543ab593a4ba159461e2"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-01.log.gz",
+      "sha256": "dbe2c6ae881f4664f92d2db2cdb07bd0bc2bfbb2ccec42fdcd16d395a6374f55",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-01.log",
+      "raw_sha256": "05a1159950dc443da2b7229bdd7a81042234dc694e580ce4ec97725860ce35c9"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-02.log.gz",
+      "sha256": "8b2514ae11f63d300bda8b9147eabd3749f435995b82dc2225b023c69e96058f",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-02.log",
+      "raw_sha256": "ceb5edb254e80a2adb4bdee043eb16e15b16a1497946795ffdd40ecac0a5f9b8"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-03.log.gz",
+      "sha256": "510b7cde062b01baabf21c36d14c0675301ba8e8c23731edf6980a90550a2e9d",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-03.log",
+      "raw_sha256": "1f6e3adb59ac86c6a7ce18204aca239b95586eaac3bfb44658a091253e837543"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-04.log.gz",
+      "sha256": "824c5a3e59fa9a3adc566d675716f973b5d2ab668bcce0a6aa3c5ea855e75a2c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-04.log",
+      "raw_sha256": "31ff846ad64488321d83fce030de57aa81a0b88215ce2f9706be8196d2039388"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-05.log.gz",
+      "sha256": "dd086ebb9e891af7fbbddc51d061877da88dbfea553ea382fe20eb4cc4682c29",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-05.log",
+      "raw_sha256": "dc69e9afb8e05fcf9947495e233cad0d78c0dcdd7ea7c58f3474897281c2aeb0"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-06.log.gz",
+      "sha256": "1ed78becb9a4aa61342bd419fc2940996405f2ba62fb41e48a02aa0b0b7d573e",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-06.log",
+      "raw_sha256": "9bf0b2875c76f5b9cb1b61f51805977d8290f63862b3d786e29d4b2808c40935"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-07.log.gz",
+      "sha256": "7ff6805c270730799d47f344c2bf5a87441f000c968dfdf45e063556cb88f52e",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-07.log",
+      "raw_sha256": "c5cbffb6b68c68a0c27bae20a99125d9624ac216d01cbce435e9f4144005d617"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-08.log.gz",
+      "sha256": "d7c3b96395722147b259502fd623892dc09ac860133eb1b214b942e0256825af",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-08.log",
+      "raw_sha256": "155d98d6b286f3aadeb0309c9ee0a202c28e62d3840a01b80839b0da63ce5acf"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-09.log.gz",
+      "sha256": "8ec81782a47722638944e5e71504def96ef04b12a8972afc7cad5a08f88e560d",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-09.log",
+      "raw_sha256": "345bc04b24ed7af53a373336d1a091f113cb4b5590a47225cf7142ddddac7a61"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-10.log.gz",
+      "sha256": "71778eb25f38c9e3cf6c45bb19cfb24648e4126528d858b415d01d809d7ced31",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-10.log",
+      "raw_sha256": "1098e5c7f0a9df27b2d6d8175e0d3a32816f20dc51d28abaf980593f0d40bdc1"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-11.log.gz",
+      "sha256": "fff65d935139e2cbf3ea1ae489d88eb7507e944cf712fedc71493dc7758b8948",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-11.log",
+      "raw_sha256": "e0b0347dc432e0e438f64441c398ce3a3b1385f33f7a00150ea701e4c0ab0545"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-12.log.gz",
+      "sha256": "d80af7cbcc96db5b8b251fb0ad43adfafba4c1dc1bb74a758dfac8ccc35c957d",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-12.log",
+      "raw_sha256": "2d68262ded0fdb6c701da932dee1ab744ad7b2c4a74926a6aef9a70e674ced80"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-13.log.gz",
+      "sha256": "fa8149b2595f2c0cfc6348bb2c5aef48c1680899d081d0f42a2717b69d8e348a",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-13.log",
+      "raw_sha256": "98d765da3eab277c01dc2276f6e789e604688519a8de8a74fb31121d8da8aa1f"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-14.log.gz",
+      "sha256": "8ac0e853a43e05adfddd396091d4b5dd5c87194542904228bc2dce09d1d5d446",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-14.log",
+      "raw_sha256": "dd7bca4e33917b97536a866e002ab50e2bcdac9f9a4a6925f81d83c312593221"
+    },
+    {
+      "path": "run/raw/n-15/control-peer-first-run-15.log.gz",
+      "sha256": "42e7d4de4939ca513c7c8606924cd3bb0fc48b1ad26e7f46d8bcc7b4c79069dc",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\control-peer-first-run-15.log",
+      "raw_sha256": "c2468dccc190bc956134af13f0fcbdfe78f67205872f6307067ea77abf35a032"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-01.log.gz",
+      "sha256": "5dc7d9ca1bbce2c49e73b72d1aea09cc472fd8ee2a72bc6e35acbf292182815b",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-01.log",
+      "raw_sha256": "2d95c00c2d73833e79845694c762f1d9e326613e5449d29753cc7f5accdddb99"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-02.log.gz",
+      "sha256": "1776a4a9ad3b5bfe27d53b7921e89d947158242061e3d8d615320f563c32e769",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-02.log",
+      "raw_sha256": "909200c8949009700198ddbd863f2e4f58991e096eab12610728314db71a8748"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-03.log.gz",
+      "sha256": "4f466bc0901f2209ec80e6579e5fb68560f9660b728ed01e8f3bf2557ab49d40",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-03.log",
+      "raw_sha256": "b7d5ae832129abace8240c2e4bd4a465b8d308b44f9322d087033c56efa4ad7b"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-04.log.gz",
+      "sha256": "00937fce1ad3b8f758fa5ae76f78e41287f42882a23d0c2560728dc1fb03957d",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-04.log",
+      "raw_sha256": "c3c135445207253aa9584de8cfd425b4cd9cc078b726d6945cd719f650727c92"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-05.log.gz",
+      "sha256": "f36bea3dca48e52edb3315ae8098edace982a05a7333e14e9d493b6f564f818d",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-05.log",
+      "raw_sha256": "fc1c9a0f871886c8120d5ccd70c0a2eca109d5b9525725f561853dee99d9338c"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-06.log.gz",
+      "sha256": "28340eae28505b65342ae891a4f45aa04deb6d5f591027b4119f7a8a769aba28",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-06.log",
+      "raw_sha256": "fd74af3dca2d568a8194ae1744c32e69f372c5a646e9009a7c30570c2831ee33"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-07.log.gz",
+      "sha256": "abce43423c2b28d2603caa80ec103e7e0de2f6d565bd963c39d75f48438ce71b",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-07.log",
+      "raw_sha256": "8c39abac97a5dede77941c1f1232af01861edc42f9a957dfd3e89da4266d0a50"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-08.log.gz",
+      "sha256": "f39390df9e3eb5a47403a78a0cf46a8700f0389c0aab8a219dc1a5734722c667",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-08.log",
+      "raw_sha256": "e598b4fb14692da0d3c736396d2823ca247febfc471078a5b54bfd6d70751adf"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-09.log.gz",
+      "sha256": "6aad75d6d94af6da8aeea0d7701b7018ffb3bdc53c67b4479220acab13031916",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-09.log",
+      "raw_sha256": "2c5f363154db20bed09b7bb0add1cb45cb705f94e70289fd172a196333c4cc1f"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-10.log.gz",
+      "sha256": "cdddf75ecc31b527fa37f9e70e359945071b1a671d055c5bcb404e5255862336",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-10.log",
+      "raw_sha256": "8e45f239b01c1bdf76ac58727815250cd86a8caa28e4f15a863938d9f30420f3"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-11.log.gz",
+      "sha256": "25e18eb3ab5ed92e5acdb6c40469673beaf42cecb59dce60c4a5e9dd4b78098c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-11.log",
+      "raw_sha256": "8acee4d8d8292c18bfb30508da0c45b50848df816424f0a434b66f03cc38c766"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-12.log.gz",
+      "sha256": "3475a4529522ce23e23062b39f0abfd9e9be6746ff110f8d6dc38320e431b721",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-12.log",
+      "raw_sha256": "ca181eb4dff37ad18b2ee4a7fda776f845fd8108d5eb6f04c1ac6d05923f61f6"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-13.log.gz",
+      "sha256": "36f084eeac7b7b5fc019e083ed8ab5acbb56aea9b0a3b7c5ce2fb45067428315",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-13.log",
+      "raw_sha256": "956a2754a4f2b3cabf398eabdff3e3e69c9d4b9ee78881447abc6184984af91a"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-14.log.gz",
+      "sha256": "42c74d23a3f26e51e48651ba47e9901e62ab2681ef17b1350b3790525937b684",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-14.log",
+      "raw_sha256": "0bd76f41c7ff179e780f1f4683eb22e8e855b3a0c5262d04e2dc51d13001ff54"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-candidate-first-allocation-native-fragments-run-15.log.gz",
+      "sha256": "47e34d7feabb57a31d135650dcd5f687978be82e55d74ef3a0f96b7ba5c4b6ec",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-15.log",
+      "raw_sha256": "7755458684462d97b759602c1168dccd4dd4a4c0c52cf0e31dbec971e33f7508"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-01.log.gz",
+      "sha256": "a1afa4eb86941a0273a20f7d8a13c836ab8598fe2216db5d834ce7ad2a42db84",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-01.log",
+      "raw_sha256": "35c3424a31d042d356dcb74fc448c5984638270d6642a812eddb5fd97037eef9"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-02.log.gz",
+      "sha256": "0f3474ca91ef6b4084738edadc7212a257a52ff1bd995f036170112131b1fdf6",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-02.log",
+      "raw_sha256": "2781178b9ae50c88a1cbba90b816ca29e3ecb3fbffe0f0930b936076dfb86ecb"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-03.log.gz",
+      "sha256": "747bd989b0cbb8d8d213426157dc09d516dbaeaa06c64c5670398149105886f1",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-03.log",
+      "raw_sha256": "427823d8df632075785128ebc29b1ab80fa1d7ea5ec1a83d6d54c8eff391bcd6"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-04.log.gz",
+      "sha256": "3e1b3c69bbf1cb33ff072d7f5c9b757a43baa150c5df49405dbe6663dbe6514c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-04.log",
+      "raw_sha256": "71f1deef52a4b8189bf4592b2cc6732929e534f557fa55c828139367ff6989a3"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-05.log.gz",
+      "sha256": "35b525258792fd0fa105d1a052f4ffd30f94c83d17af45b1d5039097562cecb2",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-05.log",
+      "raw_sha256": "5c90b40d396ab8ec9f20e17df02e19f61fc96f548b7d8234fc31eea6533748a6"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-06.log.gz",
+      "sha256": "d52d2d123d1437ee8308215b6f1545edcafeb1d08d3e4570c390abde26c20233",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-06.log",
+      "raw_sha256": "b929c5fef1d313f131fa489f340ed7f988080dbe9d26fb16980828e736c11bba"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-07.log.gz",
+      "sha256": "9256595fa8c18e6fd622e254243a343f92c313a73467f8dc444a9065e84b5481",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-07.log",
+      "raw_sha256": "8d3bfac567e443afa86c3d302ceffcbc66bdc00637eac9a594513e4c416d2bec"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-08.log.gz",
+      "sha256": "92cd1917af1cae24155b50cce4c414277690aa7a4f4a5c019f4d46d90b492e99",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-08.log",
+      "raw_sha256": "1f012c0d14dd462d2bc871b94bce8cd597117c969d3e1fa127442d8743eff4fd"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-09.log.gz",
+      "sha256": "505eb726eef2e03623c49fe1b584d24809bddfb8982bde6d632b90836efa60f9",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-09.log",
+      "raw_sha256": "8258468b7ccf91c9d426f9addcad22d7cf00b022969b9e62a05ea8226721d315"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-10.log.gz",
+      "sha256": "f24e1904cf43ab9e775d7775a20b86ac5e0ce44978999ea43fb02ea9b203b4e0",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-10.log",
+      "raw_sha256": "6c8bbf62e1453f66d2f1b9b476b85eda4dd33bdb48c4209b1282275d2e6bc25f"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-11.log.gz",
+      "sha256": "03bf171d327fef2b6f90b455125dbedc88d3075fc57a9b09c4bfd291b4e09a62",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-11.log",
+      "raw_sha256": "0582f865791032f1269af66dd70139f03969b18949b092c7bfe62cb481429113"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-12.log.gz",
+      "sha256": "9c63489c7c4a78aa0194a37380756cdc60acc330708a5055146f157ff1992e39",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-12.log",
+      "raw_sha256": "d5c54cf8d073c9eded18a0a51170212a78bcadec690c4c122df82a57b68df65e"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-13.log.gz",
+      "sha256": "0d35ef64ff63721cf425db01d6c443c59ba6eff44c73f6c81de7e44fd010abc3",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-13.log",
+      "raw_sha256": "773a3d2ed24f2b7358bf1c91dca53a6af357ba684ed029d8056a8cc223f18f66"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-14.log.gz",
+      "sha256": "81a5598664c52cc9e522d17444f6b30815075c27545d2ee25199d076e3379520",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-14.log",
+      "raw_sha256": "2d141830042340db33b948c32714bcc0939c27dded3054a6427b52859268b402"
+    },
+    {
+      "path": "run/raw/n-15/product-candidate-first-peer-first-allocation-native-fragments-run-15.log.gz",
+      "sha256": "18475f368af90d925cdfc65c98358e52531d83dc36c6d0630b883f9877a10327",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-15.log",
+      "raw_sha256": "cdeaf59a309198014a1bd7b1ac626e373abafdc2b07bdfe97cddb721f4c7a383"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-01.log.gz",
+      "sha256": "ba162eba85d39fe2fe86eff2cb65320907f30ab4e0df951473b4bba586158fcf",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-01.log",
+      "raw_sha256": "06eda5d55e65be5d83f346ba40c503e78311f601536be7404c9b951aa8ae7866"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-02.log.gz",
+      "sha256": "7c4190cd7d143d8e5c040365ce86e1ce4ef435c0bb3411b0a8c527e8c23aa932",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-02.log",
+      "raw_sha256": "4f7c1cdfc7cf8bc00c34fe3ab37fd7d788914354544e756a46fadf40e41bc176"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-03.log.gz",
+      "sha256": "8330d04f9245bdb39d9e5b4d71f5a1eb4726268e684ee50985b4d66beb6eca9e",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-03.log",
+      "raw_sha256": "5a23ff71af5ea1b51f6c0322b64cec768c323d0a0372cbe9d2f9272c6aaa5dfb"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-04.log.gz",
+      "sha256": "4dadd66172831f8cc5a469f234076e139961130661e1dbe23f7ea993b26be52e",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-04.log",
+      "raw_sha256": "551aec63e2473ba3ccbb6a824dba0697fc30c1312082551f6ad02bee975f869a"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-05.log.gz",
+      "sha256": "1df913c17b19c13da0b3ee3db02bf260f521c492abb06d1266e716f3b600dc40",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-05.log",
+      "raw_sha256": "3fb4bc6c96ef0f9bc7b9a6115946304f56a2ef4a745f0bc6758b39d9d6f19f21"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-06.log.gz",
+      "sha256": "a5d4841eb2526174ec2f48a962a010e5efda9d4ce1104a092cefa38d0613d492",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-06.log",
+      "raw_sha256": "270844e7df0f49df265944fa814e4e4e1002e242bb0bb40e1a12d149e6b56261"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-07.log.gz",
+      "sha256": "104ef4d10b990515b93d8ad9bcf0a3af2ab60af77fd068fc9cdfee629febca8d",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-07.log",
+      "raw_sha256": "14ba0c91afb87622bb36f19f4a4438d9b717218683a8a80ab422677c52c6999f"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-08.log.gz",
+      "sha256": "0cdbd7890819a386eb380cb9c6b26797058f9c8a6f4dd3b5f835dc958780927c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-08.log",
+      "raw_sha256": "3ab3ee46220cf57bb0ea89f4796fe10f82f27fb858302a601bb8ed8566b79453"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-09.log.gz",
+      "sha256": "0da4ef68e4e077fb40993fd2cace280fb906c3889a4b158e9d99bbd88b751d67",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-09.log",
+      "raw_sha256": "f4f2c3ade258b26080bbb7b5a93582d03d559c64c72897f5bb14224404c23f60"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-10.log.gz",
+      "sha256": "8753c60a9421fa6d09423d98a0bd4e2bfea0618685bfe268762e56fd73006c2b",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-10.log",
+      "raw_sha256": "c55660f3b92989fca16c78ec86d58f270f05f833641a573d042ad12d9c2b73bc"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-11.log.gz",
+      "sha256": "a00c404812758f89e1790c1542a9cfd8088df64d6e236c97583caa0809f7f2f9",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-11.log",
+      "raw_sha256": "3b827675fe4aecc94df7997f3b2c0a21d0f6eb8af2989c43cbbc698fff0bb0b4"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-12.log.gz",
+      "sha256": "edb6cfadd286422e76e2e6e510f65acaa066dd0c994bc373f2dfec9dcf53bcec",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-12.log",
+      "raw_sha256": "a7f34624775f97fb6042911fdba2409e4abf76cb928499b3f57c00ef85b4d0f3"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-13.log.gz",
+      "sha256": "c60b2aa7ca4699b566415b7611bd05d06fb66e7b17a929bc9014c8ceb316bc7f",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-13.log",
+      "raw_sha256": "ce2f3a9d8b1733f24830cb1971f0d313e5f441ba48960d05c7c537ebcdfbed13"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-14.log.gz",
+      "sha256": "4d0c048bc940fc060c117598ce46bf8f9cc53b8e656936071afed9d99e938b32",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-14.log",
+      "raw_sha256": "365d1bab11e031014d11f63d9fc6fcf02fee3923538917dcb0a3a81bc95ab9f9"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-candidate-first-allocation-native-fragments-run-15.log.gz",
+      "sha256": "89b29cb53693eac01fa633c7ff36e196df13817ecee1daf453766dd63685470c",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-15.log",
+      "raw_sha256": "c70b92f7dcc9b8ab20774df28089f2d0bf42082df1529fbb0919576201ac0199"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-01.log.gz",
+      "sha256": "9ae2e93e6cc6fa3defb063fa00cef0bc4333480e5e3d569fe93798937eef99c5",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-01.log",
+      "raw_sha256": "8a672b286356c73a42b7a33c9341352451ac3013ce7191ac8c8d468ee193660e"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-02.log.gz",
+      "sha256": "4c0ba94e6c980b553f54e71095d1701bd1ba242e78df3eb1b18ddba980c7dde5",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-02.log",
+      "raw_sha256": "7a585b8f76da0721818e0e1fdb830339d55808025bd6f8a765b3166994cf1709"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-03.log.gz",
+      "sha256": "a21f47a700cbb2c64f30c4a90528fb6655666f8711a53b9c302f552a17744897",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-03.log",
+      "raw_sha256": "046b4bf6f5a9191f44280ffb5b7358c5106d13d62d0da7a6402d77289a844e61"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-04.log.gz",
+      "sha256": "2025179de03b0913f58b0c6a474dad0b56626cd0141eec0b574996f64f2437b5",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-04.log",
+      "raw_sha256": "f86a291740061897178f118458959dc1c59dfd20bce51429e329cfb542c97114"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-05.log.gz",
+      "sha256": "25817e5290ca38f946816373e7aae537c0fbe20f8508f9d6f7824e961aed7c21",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-05.log",
+      "raw_sha256": "fd1bf78162bbc3fe8ea9a588780d039100715f28ad4c53345d80cdcea79a2710"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-06.log.gz",
+      "sha256": "d72c6bd79e1f0f84b8fbda8701d6f9c30c1ac93d717d6ff4841966b7f831e225",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-06.log",
+      "raw_sha256": "55cf6ece39d31337104b9a059cd6da48d4d04867adc4720c65a54c7c56374243"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-07.log.gz",
+      "sha256": "46e5d2d02a3cba2e9767f8b70bffcd06cfc40cfb3dba49ec1ba0984fe88b1cfd",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-07.log",
+      "raw_sha256": "6fb9d04da0bcfd466c06d51e3e53826c343fd5244cc12b55f4596e88903b7555"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-08.log.gz",
+      "sha256": "394e38d0face5208685a20c171a14aaa0c874b226d9808fb91006f8eb3fb03ff",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-08.log",
+      "raw_sha256": "17826ae521e1e12fe273accd475be3d79fcda6de0c92eb96f9ba20e246f22ab5"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-09.log.gz",
+      "sha256": "b1ba852c32a1e89b2399401b24516619f74af8f90291738890ebbd0176f2900a",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-09.log",
+      "raw_sha256": "31b10d59103ec716d016ca65ea1848c5ea5df9c915629f2e3a3c93b188ec2293"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-10.log.gz",
+      "sha256": "2367fd64bed7e90336ac4e20ba863460d50ca70c1abe716d869f148b5428c1da",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-10.log",
+      "raw_sha256": "5c3832f86680c016ba9430c635b5b1de174deac43cfd86a4405c477a432ac45d"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-11.log.gz",
+      "sha256": "60c7087ea871135c38afd56b5227a5a1ce80d9e85db3e9e9a86958262af9b53f",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-11.log",
+      "raw_sha256": "96b5f89980d14c8afd260c65416f13794c0640f7632c6acc1d9c5b072a16f467"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-12.log.gz",
+      "sha256": "ca7ae73020feb3ff61d912e0eda5dc64d8282b9a77285ef09783ac11e3fc50f1",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-12.log",
+      "raw_sha256": "c96fbe07f0fec85883b82f13c94d1d2a522f777b60c7289b07ab31e1aabeb234"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-13.log.gz",
+      "sha256": "e3f9b1db9297ac706f4e3fd5bb9633f35e1a195ba50f9d584a0a62e9a62aab94",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-13.log",
+      "raw_sha256": "c39513c0ab637f4d3fb5f4f3bc5fb93fa26cdb9c8ea84bcf8ad38006c1dd6a9d"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-14.log.gz",
+      "sha256": "dc43aac5452dfd22f2e2ed52d94675c51cd047fbc47b64721061451aa20b1265",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-14.log",
+      "raw_sha256": "28f4e03a6d4289c7fc58319c22d1b9a2df7f0fc934fc76fab83b6846f2dc13b6"
+    },
+    {
+      "path": "run/raw/n-15/product-peer-first-peer-first-allocation-native-fragments-run-15.log.gz",
+      "sha256": "c26fcee731058e0806c1ba620e6edd27aa14fb415f7a2ffc73cb5403cc343b15",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-15.log",
+      "raw_sha256": "b845f90dd69b643e8061f864e91dac97b5b6513334683afa6f9c3b4c74aef728"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-01.log.gz",
+      "sha256": "7890ee6ac64e5f30c10e9717b24fe1818e6c8c7baab84f5c7afa321dead03fae",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-01.log",
+      "raw_sha256": "46bc982a6816af6e4f78402645c50d97d0e1202debf498513d4e101691e7537c"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-02.log.gz",
+      "sha256": "d945c0d85f779a4d2ae471e61399111ddb3f7b1a356691a3aa4fe3bae498badb",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-02.log",
+      "raw_sha256": "c852bc62aa963018a82a6f3060f8b3d33ab64adc4fa19bf4dbc0fe149eb5d3b1"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-03.log.gz",
+      "sha256": "9753c5eb176661075fc57d71b243274c73b0affe90485dfa3b9026d0fc45cd16",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-03.log",
+      "raw_sha256": "9fe751cd1478eafb9798ff547ed9c82cea58c8b3e3d0e24c8bb91396b7135e79"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-04.log.gz",
+      "sha256": "c8534095ceb4e0942f44c825ae84006bf2d5f7c8ba3153f5583deb19885fe892",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-04.log",
+      "raw_sha256": "ff7e4961b1b0ce42893d31d2725ebd821ad6ccf501de0614b2aaf1b5eacc5c02"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-05.log.gz",
+      "sha256": "82d9f33723ffe4be5ab8000db196a0c16ec53502caf339ba828f6e20b4bc16a1",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-05.log",
+      "raw_sha256": "b89269a6a0b7be9a5934b8ea640bcaf38b71c5506ee9405ae096a73dc1b168c3"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-06.log.gz",
+      "sha256": "95949e90e749fa516a61fca216b3b9f31fd07e26a06dbc9965ea9adc78f9ae71",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-06.log",
+      "raw_sha256": "1a37e150230cb267252766e297f2d3a144f3263d24a2cbea7f7242b726690431"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-07.log.gz",
+      "sha256": "bdc33288951681cb8035c0f2e00b644921e87fab567bd0c4a60aec5029bc8ad7",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-07.log",
+      "raw_sha256": "87b06ab8f75ea9fe77f65074cdd3e407fd42797611cd029a3a0ce8c292c708bf"
+    },
+    {
+      "path": "run/raw/n-31/product-candidate-first-candidate-first-allocation-native-fragments-run-08.log.gz",
+      "sha256": "5c3d6f961b384270ef9304b2a48433d97d9db16ab16f30291a13e17113cf1a8f",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\raw\\n-31\\product-candidate-first-candidate-first-allocation-native-fragments-run-08.log",
+      "raw_sha256": "5a5288d1bf2c6e94f841470d354f0910a057a9769d73b65499465fb4ffbdfeb8"
+    },
+    {
+      "path": "run/validators/native-workload-aa.log.gz",
+      "sha256": "6f210dc1ef598c6174b7cc51af47edad13c248b5f5905435ea35e4c355815167",
+      "original_path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-native-p1\\vulkan2\\validators\\native-workload-aa.log",
+      "raw_sha256": "e5b085aa72ab4c0587be51726bdfafbdc012a40cee275a2c27da1638d5a86e90"
+    },
+    {
+      "path": "diagnostic/n15-summary.json",
+      "sha256": "e8c21100c60cb794d0435f11484f9f61af0f4bc4926e1819f23f959bda49b84d"
+    },
+    {
+      "path": "diagnostic/n15-common-controls.json",
+      "sha256": "c772200fc5071667816c55acfe08aba8a4152938d190e7f9ebbdd3afd1f9fe6c"
+    },
+    {
+      "path": "diagnostic/n15-observations.jsonl",
+      "sha256": "fbc25c25c682ffc788d2453d0c46f4e3eb8042dce435c69f2c61d476043d5946"
+    },
+    {
+      "path": "contract.json",
+      "sha256": "a4b552dfcbfda63a6cda30778ab80018fca29e3cd92152441548524d11aad7d5",
+      "original_path": "C:\\public\\project-hyle\\hyle\\bench\\contracts\\graph-vulkan-d5-fragments-p1-v1.json",
+      "raw_sha256": "a4b552dfcbfda63a6cda30778ab80018fca29e3cd92152441548524d11aad7d5"
+    },
+    {
+      "path": "build/CMakeCache.txt.gz",
+      "sha256": "10bd3a790ae3567c96f68f87d54f48b6b18f4c14b1b60521e9804428d25074ac",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan\\CMakeCache.txt",
+      "raw_sha256": "989311c09c66d83dd7e9beacd22957fdd369fa9e9cd7957c3dd4d82294fc32f0"
+    },
+    {
+      "path": "build/compile_commands.json.gz",
+      "sha256": "58a019b49e6c2c3160b176c0a566854ea1c1a158b42c3f4f2fbf52d2a514447b",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan\\compile_commands.json",
+      "raw_sha256": "84bb931ed0b01d0166bba535bc946c29f841d368a8968acd701400b175435d90"
+    },
+    {
+      "path": "build/d5-input-paths.json.gz",
+      "sha256": "bc6c9613c0c5835f74ab5f59f7e41447adf8bb5e9acd4d67d3c36a9424a0e19a",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan\\d5-input-paths.json",
+      "raw_sha256": "40e837c94539e065a3af0bdfeb19ca2dfef66a6475be77952669de37f751d7f8"
+    },
+    {
+      "path": "build/d5-fragment-aa.ready.gz",
+      "sha256": "20b52b55515790113183442b78e1e15f55f5689e59c0ecbfa970666bacd2599e",
+      "original_path": "C:\\hv\\d5pf\\p1-vulkan\\d5-fragment-aa.ready",
+      "raw_sha256": "d938fa189912f8776c3deb31a6bec42f403f57b9c8e3ed936bdb076caf6bd61c"
+    }
+  ]
+}
