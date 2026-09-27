@@ -1,0 +1,58 @@
+{
+  "candidate": "784819caece7eb650d72d73f889a4835b9ddeff6",
+  "route": "cpu",
+  "sdk": "C:/hv/d5cp/static-relocated",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "bench/graph_route_cpu/external",
+        "-B",
+        "C:\\hv\\d5pf\\cpu",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_ROUTE=cpu",
+        "-DCMAKE_PREFIX_PATH=C:/hv/d5cp/static-relocated",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6"
+      ],
+      "returncode": 0,
+      "seconds": 2.438
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5pf\\cpu",
+        "--target",
+        "hyle_graph_route_cpu_d5_bench",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 7.718
+    },
+    {
+      "label": "verify",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\hv\\d5pf\\cpu",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5pf\\receipts\\cpu\\784819ca\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 5.86
+    }
+  ],
+  "verify": "PASS"
+}

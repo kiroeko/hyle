@@ -1,0 +1,59 @@
+{
+  "candidate": "7e77c863ef5d6a4cf892bf74876d14c8f24e4320",
+  "route": "apple",
+  "sdk": "/Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle/bench/graph_route_cpu/external",
+        "-B",
+        "/Users/kiro/hyle-scratch/d5pf/apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_ROUTE=apple",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6"
+      ],
+      "returncode": 0,
+      "seconds": 0.101
+    },
+    {
+      "label": "build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/d5pf/apple",
+        "--target",
+        "hyle_graph_route_apple_d5_bench",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 2.654
+    },
+    {
+      "label": "verify",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/d5pf/apple",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/d5pf/receipts/apple/7e77c863/tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 16.586
+    }
+  ],
+  "verify": "PASS"
+}

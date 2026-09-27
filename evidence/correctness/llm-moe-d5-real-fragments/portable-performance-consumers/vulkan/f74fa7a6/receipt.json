@@ -1,0 +1,58 @@
+{
+  "candidate": "f74fa7a6e8e68adb9ae4311c04ea14ad2f9058c5",
+  "route": "vulkan",
+  "sdk": "C:/hv/d5vk/static-relocated",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "bench/graph_route_cpu/external",
+        "-B",
+        "C:\\hv\\d5pf\\vulkan",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_ROUTE=vulkan",
+        "-DCMAKE_PREFIX_PATH=C:/hv/d5vk/static-relocated",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6"
+      ],
+      "returncode": 0,
+      "seconds": 0.234
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5pf\\vulkan",
+        "--target",
+        "hyle_graph_route_vulkan_d5_bench",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 4.016
+    },
+    {
+      "label": "verify",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\hv\\d5pf\\vulkan",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\hv\\d5pf\\receipts\\vulkan\\f74fa7a6\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 4.812
+    }
+  ],
+  "verify": "PASS"
+}

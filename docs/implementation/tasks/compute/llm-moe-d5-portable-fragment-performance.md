@@ -44,7 +44,7 @@ baseline `51da0f8d6`。承接当前D5的A6；产品FIX为零，只接性能消�
 通过后每路线两个固定形状一次P1，工程非劣门5%，n15，至多一次n31。环境或A/A失败不记产品FAIL，
 不加样本、不换形状；有界定位后记录恢复条件。已有正确性/三交付不因文档改变重跑。
 
-当前：消费者接线尚未验证；A/A、P1均未运行。全部结果进入D5同一批次汇总，D6不首次补测。
+当前：CPU、Apple、Vulkan消费者均已编译并通过两个完整片段的输出、变化输入与完成检查，合计60次；[原始记录](../../../../evidence/correctness/llm-moe-d5-real-fragments/portable-performance-consumers/README.md)保留初次失败及修正。A/A、P1均未运行，不能把准备检查写成性能PASS。全部结果进入D5同一批次汇总，D6不首次补测。
 
 `784819ca`的CPU两个完整形状和两入口20次输出/完成检查已通过。Vulkan首个FFN输出通过后，
 消费者错误地将冷准备字节数当作ggml已热身资源；既有`managed_region_test.cc`已明确上游首次

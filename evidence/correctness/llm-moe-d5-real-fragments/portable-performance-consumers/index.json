@@ -1,0 +1,182 @@
+{
+  "schema": "hyle.d5-portable-consumer-correctness/v1",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "performance": "NOT_RUN",
+  "files": [
+    {
+      "path": "cpu/784819ca/build.log.gz",
+      "sha256": "50109839cebedef37c8e47c0955c032427fb7465c78a9f0bb3686323d31c1e89",
+      "raw_sha256": "a3cd43d5b1635ae3d5473ce4558db4c817fa2363c0ec43924da55a00b11bd0e5"
+    },
+    {
+      "path": "cpu/784819ca/configure.log.gz",
+      "sha256": "dd723239f83aaf674002b7007925a5b628a51ec91d835d17dabb1bcd58b3f145",
+      "raw_sha256": "2edae8a48bdd023d5bb2f754e447b010c8534e196495686c32201fcf37349a3e"
+    },
+    {
+      "path": "cpu/784819ca/native-tests.log.gz",
+      "sha256": "ebf41171cc2b82f44e45f356c85a0e4f4615cc09e61453f0cebd9e0a0f5d989c",
+      "raw_sha256": "5e8596cd26193735b2b792dcd1a0bb8024470cc2994d1b1414116f296c9e48cb"
+    },
+    {
+      "path": "cpu/784819ca/receipt.json",
+      "sha256": "348b55bbcdb48d9ba74d60a6da864264094a187e91aba4872cbba98bf808a1ad",
+      "raw_sha256": "348b55bbcdb48d9ba74d60a6da864264094a187e91aba4872cbba98bf808a1ad"
+    },
+    {
+      "path": "cpu/784819ca/sdk-inputs.json",
+      "sha256": "9fe1b39cdaa8b5b85e3da46890172c279e845850262b84b4078264add1a12121",
+      "raw_sha256": "9fe1b39cdaa8b5b85e3da46890172c279e845850262b84b4078264add1a12121"
+    },
+    {
+      "path": "cpu/784819ca/tests.xml.gz",
+      "sha256": "14f8c8172d24b14e3f9bcef192c65d59e5b2e5cd7add90357f48d5813090bfa7",
+      "raw_sha256": "1947583f1bb98772ecf07ad8215cd23c04f546ec32e4e28797ebae858a672b17"
+    },
+    {
+      "path": "cpu/784819ca/verify.log.gz",
+      "sha256": "41d04ecbda58ba95432946ab58da4af66110962758b1204b8196eb3cfc834928",
+      "raw_sha256": "9be6674ccaefe5e2d7b5b11882f1ad1ebbb32ea1a4dd35e7f647c367d9354a79"
+    },
+    {
+      "path": "vulkan/784819ca/build.log.gz",
+      "sha256": "33a1e2d1332480156bf8da094995b90d06153ceae6a70779a32f3104a30af9ca",
+      "raw_sha256": "60a509e370f15485d71555c5c552ff7ace780ce000e3a85340a78dfff04babf9"
+    },
+    {
+      "path": "vulkan/784819ca/configure.log.gz",
+      "sha256": "5e58c1c307607d41bcb4ca430d6f6d35ebba772f4173d43e5b0585c46aa6b877",
+      "raw_sha256": "be032c48fcb40a45d952fbd1f1c0309023da8dc4a11e22a52532a6d6bd33cd22"
+    },
+    {
+      "path": "vulkan/784819ca/native-tests.log.gz",
+      "sha256": "f1c9938ac6be3c8a6bda9ba125c6da667f2f82ac7b1a4dbced015d05583585d6",
+      "raw_sha256": "7c0b6fdd302958b363dfd563d4924fa04fb92bf371f6c5055f845488a3dc7ba6"
+    },
+    {
+      "path": "vulkan/784819ca/receipt.json",
+      "sha256": "6565b063fdd44275858f44f9638f4ca2ebfdf0e613010752e30b7d28d6ab9cec",
+      "raw_sha256": "6565b063fdd44275858f44f9638f4ca2ebfdf0e613010752e30b7d28d6ab9cec"
+    },
+    {
+      "path": "vulkan/784819ca/sdk-inputs.json",
+      "sha256": "366df54c1c74e3f4e0b85ef7c80bacba3fcae2966d934f8abb06ccd323fa5b6d",
+      "raw_sha256": "366df54c1c74e3f4e0b85ef7c80bacba3fcae2966d934f8abb06ccd323fa5b6d"
+    },
+    {
+      "path": "vulkan/784819ca/tests.xml.gz",
+      "sha256": "be1378e79bce6f9ea5ff64fd972c65e18a2f3249d5f86d9b8deb9753686f021a",
+      "raw_sha256": "a7d7d2f911fee90aeaed58a3aab82b6c5f3b62dcea0c935855d69f22c0f6fdef"
+    },
+    {
+      "path": "vulkan/784819ca/verify.log.gz",
+      "sha256": "e2265594fb0520b835da04bdad701a67a2fab0d30d399999a9a07656b1202518",
+      "raw_sha256": "551adadb96ab0c226fbc62e94cc9c9f970bfc3a0fa4a8a8a832db0bfbeb22628"
+    },
+    {
+      "path": "vulkan/f74fa7a6/build.log.gz",
+      "sha256": "e7e3926c8515ca8ca5122575e6878cdaddeb2c7a68669bc9de305f00691524fe",
+      "raw_sha256": "ef376ff033db719b915945d3b2845277a2a5b71705a2756a43e02f24325805ed"
+    },
+    {
+      "path": "vulkan/f74fa7a6/configure.log.gz",
+      "sha256": "91585c0d1c6bda01202783a4761a19a93016bf5473a2ea5ab7a4ac2508e0d2de",
+      "raw_sha256": "da81737836502a17e1700a248cb82c089714125e24fed696dab0351475d6d9a7"
+    },
+    {
+      "path": "vulkan/f74fa7a6/native-tests.log.gz",
+      "sha256": "1e541958610a88cd18362387aaa04e89d6bdc874355c23fcf76bcd533e492da5",
+      "raw_sha256": "1b6bed35dd2a31634e8a2801ef7e2970e68ab8a410a2147c9532e2f9f7adfb01"
+    },
+    {
+      "path": "vulkan/f74fa7a6/receipt.json",
+      "sha256": "e96bf8613f3d27fc32cd67cbe4978fc217fe62a8a8e8ec41b866611754ab362e",
+      "raw_sha256": "e96bf8613f3d27fc32cd67cbe4978fc217fe62a8a8e8ec41b866611754ab362e"
+    },
+    {
+      "path": "vulkan/f74fa7a6/sdk-inputs.json",
+      "sha256": "366df54c1c74e3f4e0b85ef7c80bacba3fcae2966d934f8abb06ccd323fa5b6d",
+      "raw_sha256": "366df54c1c74e3f4e0b85ef7c80bacba3fcae2966d934f8abb06ccd323fa5b6d"
+    },
+    {
+      "path": "vulkan/f74fa7a6/tests.xml.gz",
+      "sha256": "0c6d21317c205494ee39bfffc9d3dd4b43561176dfeaff5ceaad5970673b23d9",
+      "raw_sha256": "c07fd380af64a34fae4eada60338204fc7d4da12bc366dec15102fcde86b2040"
+    },
+    {
+      "path": "vulkan/f74fa7a6/verify.log.gz",
+      "sha256": "6fec77b7763a5a1dd0b36bcb50eb3cea05ec2be40221a34ad7a6335fe54850f8",
+      "raw_sha256": "f4346d7e995ee13e914800b59dfcfed6f65f9a94728c75fc8b87d4b8afc6a430"
+    },
+    {
+      "path": "apple/784819ca/verify.log.gz",
+      "sha256": "a4966462646f1d04da190ef9aedf8e0249a1cbc10b3f5b02d8a1141849c571e8",
+      "raw_sha256": "306917435231355ea512b61763d00ec2d5622642248924ce75026b10222300a7"
+    },
+    {
+      "path": "apple/784819ca/sdk-inputs.json",
+      "sha256": "5d88fc7bde06ac56eef2e3744dc2d2f67bf808bd08effaf74a69f25bbeb5becf",
+      "raw_sha256": "5d88fc7bde06ac56eef2e3744dc2d2f67bf808bd08effaf74a69f25bbeb5becf"
+    },
+    {
+      "path": "apple/784819ca/configure.log.gz",
+      "sha256": "863a9843a7c8f627d2d58651f9662a70fde3d476e3dc047415a8146243c4c36d",
+      "raw_sha256": "05374d419f9301c5675f518318eb0fbf82c184c4438db90e6329d9093548e017"
+    },
+    {
+      "path": "apple/784819ca/tests.xml.gz",
+      "sha256": "e1df990551f91c1b0789b0a1d3db2080360d0c9002f21761d4566cb5de3e00be",
+      "raw_sha256": "9f1e3e21d853f02609fc3fff6e6adaf07f43e852bd741826e9e95e0c2833cd62"
+    },
+    {
+      "path": "apple/784819ca/native-tests.log.gz",
+      "sha256": "9ed9484f3cfd6eb8f480804cf3d2b5784e560df23260659763f0d5b9d0e1f359",
+      "raw_sha256": "83eadda38238958152f94ec1a8fc5d2c440ca6c7e5340f92396bf6e71e2e4495"
+    },
+    {
+      "path": "apple/784819ca/receipt.json",
+      "sha256": "1bb6072f5e190f9e6a2abf50375bbf3c4224d60dbfa64cff6ebf0f56a3b54048",
+      "raw_sha256": "1bb6072f5e190f9e6a2abf50375bbf3c4224d60dbfa64cff6ebf0f56a3b54048"
+    },
+    {
+      "path": "apple/784819ca/build.log.gz",
+      "sha256": "f5baf7d304eedb3bfc69aca0fdce4154e92c0e2291ebc8523f5c35c7e542759a",
+      "raw_sha256": "65e83a0a2642033c0b4136a4a76a507a8ff87fd8df35f7fabfad15ff7fcf333a"
+    },
+    {
+      "path": "apple/7e77c863/verify.log.gz",
+      "sha256": "be7149e1e30ae9a4c0941ba6f7ff0a91cb1b53e0a20210493b33d539832f4767",
+      "raw_sha256": "2173cb87af38a0f15aa79165d3aef24e252d30094a0054ae6b89e222c63a7482"
+    },
+    {
+      "path": "apple/7e77c863/sdk-inputs.json",
+      "sha256": "5d88fc7bde06ac56eef2e3744dc2d2f67bf808bd08effaf74a69f25bbeb5becf",
+      "raw_sha256": "5d88fc7bde06ac56eef2e3744dc2d2f67bf808bd08effaf74a69f25bbeb5becf"
+    },
+    {
+      "path": "apple/7e77c863/configure.log.gz",
+      "sha256": "7b4d42e8d0f8e9c7575f1011b7a2e4db44bb65e380ec7fa5d64e6eed907c76ca",
+      "raw_sha256": "8ecf061ecda5a8afe5e3ed78b78b64f32e2b5796c5179e25d57b27d1baac364f"
+    },
+    {
+      "path": "apple/7e77c863/tests.xml.gz",
+      "sha256": "37c3613f92f81aac161074b3a551cda7fa153ac8c43bc18572754895d3287ad0",
+      "raw_sha256": "0b4aa386b3709e9e7988f5fc303554f30c7e38e6a45a0220f6cd46aaa324fbc8"
+    },
+    {
+      "path": "apple/7e77c863/native-tests.log.gz",
+      "sha256": "609acfb933cbfa6ac2a4d15fa1d3efd631db9ab2a96bdcc207f91c2c609958e1",
+      "raw_sha256": "5a14f37bba689a97ec69bb184068926c3cb04b6f1e06e11e36468adafebe0840"
+    },
+    {
+      "path": "apple/7e77c863/receipt.json",
+      "sha256": "cbc9cb123761e49c12217e1fcffe76ccbca874963413d9eac18c705991c4e2a2",
+      "raw_sha256": "cbc9cb123761e49c12217e1fcffe76ccbca874963413d9eac18c705991c4e2a2"
+    },
+    {
+      "path": "apple/7e77c863/build.log.gz",
+      "sha256": "b6656c76152f64278fc04b163db2503be9b65453511cbe75aa344f57e742c08e",
+      "raw_sha256": "7e3a7203611f5d581003a38f6331b9828eac4faab2bae366867d193bc2df4b63"
+    }
+  ]
+}
