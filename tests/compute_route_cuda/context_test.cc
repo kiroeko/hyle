@@ -22,6 +22,7 @@ void run_ffn(compute::DataType type, std::int64_t rows) {
         compute::ggml_cuda::kProviderId,
         compute::cublas::kProviderId,
         compute::cuda_native::kSglangProviderId,
+        compute::cuda_native::kDeepSeekProviderId,
         compute::cuda_native::kCcclProviderId,
         compute::cuda_native::kProviderId};
     ASSERT_EQ(owner.provider_count(), expected.size());

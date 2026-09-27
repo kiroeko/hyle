@@ -183,11 +183,13 @@ Compute/Graph 包含可选 CUDA 默认路线。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` �
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
 CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
 都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`
-找到。选择公开产品会接入 ggml CUDA、cuBLASLt、SGLang precise、CCCL 与有限 HYLE CUDA 实现；Direct 使用
+找到。选择公开产品会接入 ggml CUDA、cuBLASLt、SGLang、DeepSeek 与 CCCL 等实现；Direct 使用
 `compute::cuda::create_context()`，Graph 使用 `graph::cuda::create_context/compile/prepare_replay()`。
-ggml 与 SGLang activation 的许可证/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。R4 的当前
-三交付/性能验收状态见 module-status，不把可编译入口当作全部路线已验收。Windows 运行时将实际
-HYLE、CUDA Runtime、cuBLASLt 及所需 VC runtime DLL 放在 exe 同目录；不要依赖偶然的 PATH。
+ggml 与 SGLang activation 的许可证/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。
+当前三交付/性能验收状态见 module-status。Windows 消费者在链接公开产品后调用
+`hyle_stage_runtime_dependencies(my_app)`，会把所需 HYLE、CUDA Runtime、cuBLAS 与 cuBLASLt
+DLL 放在 exe 同目录；源码、静态 SDK 和动态 SDK 使用同一入口。构建时仍需安装 CUDA Toolkit，
+运行机器需具备相应 NVIDIA 驱动与 VC runtime。
 Apple MLX/Metal 的构建、metallib 邻置与已验收边界见 [Apple 指南](apple-compute.md)。
 Vulkan 的 ON/OFF、系统 loader、嵌入 SPIR-V 与当前交付验收见 [Vulkan 指南](vulkan-compute.md)；
 开启 Vulkan 不取得 CPU/CUDA/MLX 实现，二进制 SDK 不要求 glslang。各路线的验收状态以 registry

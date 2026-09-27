@@ -31,7 +31,9 @@
 
 ## 结果
 
-源码、static、shared均待运行。尚不签A5 PASS；没有新增完整画像正确性格。
+`9273bc71017a1febb69db240b6ea8970b88dd77c`的源码、static、shared各8/8通过，零跳过。
+两个installed消费者搬迁后隐藏producer运行目录、去掉CUDA PATH仍通过；三个SDK DLL的原始
+文件与EXE旁文件SHA256一致。尚待本次构建接缝修复的selected gates收尾，不增加完整画像正确性格。
 
 ### 首次外部编译的单次consumer纠正
 
@@ -46,3 +48,9 @@
 后续两个binary均已链接，但在隔离PATH/producer时遇到实际CUDA SDK DLL缺失。
 按[独立构建接缝修复](../build/cuda-sdk-runtime-staging-v1.md)绑定backend owner；
 不在消费者脚本手工复制DLL代替产品修复，也不重开数学实现。
+
+完整selected批次仅发现一个旧测试名单遗漏：`b421cb85`已经注册的DeepSeek Provider没有进入
+`DenseFfnUsesFixedRulesAndIndependentSlots`预期数组，导致实际6与预期5不符。
+本次仅补该具名ID，保留原失败；其余Direct 158项及Graph/Provider结果保留。
+只增量编译、重跑该用例，再执行尚未运行的独立头/公共门；产品、交付消费者和数值门不变，
+三交付收据继续绑定上述原产品candidate，不重复构建或重跑完整画像批次。
