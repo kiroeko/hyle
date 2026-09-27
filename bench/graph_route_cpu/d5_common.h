@@ -116,7 +116,7 @@ sem::Fragment deepseek_moe() {
 }
 
 inline void verify_output(const sem::Fragment &fixture, std::size_t replay,
-                          std::span<const std::byte> bytes) {
+                          std::span<const std::byte> bytes, float qwen_absolute = 1e-8F) {
   std::vector<float> actual;
   if (fixture.description(fixture.outputs[0]).data_type() == c::DataType::kBFloat16) {
     actual.resize(bytes.size() / sizeof(BF16));
@@ -135,8 +135,12 @@ inline void verify_output(const sem::Fragment &fixture, std::size_t replay,
     if (!std::isfinite(value)) throw std::runtime_error("nonfinite result");
   if (fixture.profile == &workload_test::kModel) {
     for (std::size_t i = 0; i < actual.size(); ++i)
-      if (std::abs(actual[i] - expected[i]) > std::abs(expected[i]) * .008F + 1e-8F)
+      if (std::abs(actual[i] - expected[i]) > std::abs(expected[i]) * .008F + qwen_absolute) {
+        std::fprintf(stderr, "# QWEN_ORACLE replay=%zu index=%zu actual=%.10g expected=%.10g limit=%.10g\n",
+                     replay, i, double(actual[i]), double(expected[i]),
+                     double(std::abs(expected[i]) * .008F + qwen_absolute));
         throw std::runtime_error("Qwen BF16 FFN oracle mismatch");
+      }
   } else {
     sem::expect_output(fixture, actual, expected);
     if (::testing::Test::HasFailure()) throw std::runtime_error("DeepSeek MoE oracle mismatch");

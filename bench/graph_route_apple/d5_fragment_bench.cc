@@ -153,7 +153,8 @@ public:
       for (std::size_t i = 0; i < slots_.size(); ++i) {
         std::vector<std::byte> bytes(*fixture_.description(fixture_.outputs[0]).required_bytes());
         execute(&bytes);
-        verify_output(fixture_, i, bytes);
+        // Same Apple tolerance as the original D5 ordinary-entry consumer.
+        verify_output(fixture_, i, bytes, 3e-8F);
       }
     next_ = 0;
   }
