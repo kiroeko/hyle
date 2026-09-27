@@ -418,9 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-cpu-ds4-roundtrip-binding.md",
-      "summary": "D5 CPU ds4原版group64 FP8/group32 FP4状态量化接线SCOPED：新成熟原函数资格通过；不恢复D4退场自研数学，不代签完整官方画像。"
+      "summary": "D5 CPU ds4原版状态量化N1–N4 AUDITED：六个原函数数学不变，既有默认Direct/Graph接入group64 FP8/group32 FP4，固定栈转换；完整官方MoE仍未完成。"
     },
     {
       "module": "compute_sched",
