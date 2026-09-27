@@ -82,9 +82,22 @@ mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
   auto lhs = mx::transpose(decode(a.codes, s), {0, 2, 1, 3}, s);
   auto rhs = mx::transpose(decode(b.codes, s), {0, 2, 3, 1}, s);
   auto dots = mx::matmul(lhs, rhs, s);
-  auto scale = mx::multiply(mx::transpose(a.scales, {0, 2, 1, 3}, s),
-                            mx::transpose(b.scales, {0, 2, 3, 1}, s), s);
-  return mx::sum(mx::multiply(dots, scale, s), 1, false, s);
+  auto scaled = mx::multiply(dots, mx::transpose(a.scales, {0, 2, 1, 3}, s), s);
+  auto weights = mx::transpose(b.scales, {0, 2, 3, 1}, s);
+  const int batch = dots.shape(0), rows = dots.shape(2), columns = dots.shape(3);
+  auto accumulated = mx::zeros({batch, 1, rows, columns}, mx::float32, s);
+  // SGLang applies the activation scale before the weight scale and the
+  // ordered F32 accumulation. Combining scales or a tree sum can cross a
+  // BF16 midpoint that a later dynamic quantizer makes observable. This loop
+  // builds native MLX nodes only at prepare/compile time; MLX owns fusion.
+  for (int block = 0; block < dots.shape(1); ++block) {
+    auto value = mx::slice(scaled, {0, block, 0, 0},
+                            {batch, block + 1, rows, columns}, s);
+    auto scale = mx::slice(weights, {0, block, 0, 0},
+                            {batch, block + 1, 1, columns}, s);
+    accumulated = mx::add(accumulated, mx::multiply(value, scale, s), s);
+  }
+  return mx::reshape(accumulated, {batch, rows, columns}, s);
 }
 } // namespace
 
