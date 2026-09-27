@@ -66,12 +66,47 @@ inline std::vector<float> query_norm_reference(std::vector<float> x, std::int64_
   }
   return x;
 }
+inline std::vector<float> rope_frequencies(bool compressed, bool inverse) {
+  const float base = compressed ? 160000.0F : 10000.0F;
+  const auto correction = [&](double rotations) {
+    return 64*std::log(65536/(rotations*2*std::acos(-1.0)))/(2*std::log(double(base)));
+  };
+  const auto low = std::max(0.0, std::floor(correction(32)));
+  const auto high = std::min(63.0, std::ceil(correction(1)));
+  std::vector<float> result(32);
+  for (std::size_t i = 0; i < result.size(); ++i) {
+    // Original torch F32 power/reciprocal and YaRN expression, not the
+    // iterative frequency recurrence used by the separate GGUF consumer.
+    auto frequency = 1.0F/std::pow(base, float(i)/32.0F);
+    if (compressed) {
+      const auto smooth = 1.0F-std::clamp((float(i)-float(low))/float(high == low ? 0.001 : high-low), 0.0F, 1.0F);
+      frequency = frequency/16.0F*(1.0F-smooth)+frequency*smooth;
+    }
+    result[i] = inverse ? -frequency : frequency;
+  }
+  return result;
+}
 inline ValueId rope(Fragment &f, ValueId x, ValueId positions, bool compressed, bool inverse = false) {
-  return bfloat_boundary(f, old::tail_rope(f, x, positions, compressed, inverse));
+  const auto depth = f.description(x).dimensions().back();
+  auto prefix = slice(f, x, 3, 0, depth-64), tail = slice(f, x, 3, depth-64, 64);
+  auto frequencies = f.constant(dense({32}), bytes(rope_frequencies(compressed, inverse)));
+  auto rotated = f.one(c::Operation(c::RoPE{.rotary_dimensions = 64,
+      .sequence_axis = 1, .layout = c::RopeLayout::kInterleaved}), {tail, positions, frequencies});
+  return bfloat_boundary(f, concat(f, prefix, rotated, 3));
 }
 inline std::vector<float> rope_reference(std::span<const float> x, std::int64_t depth,
                                          std::int32_t position, bool compressed, bool inverse = false) {
-  return bfloat_boundary(old::rope_reference(x, depth, position, compressed, inverse));
+  auto frequencies = rope_frequencies(compressed, inverse);
+  std::vector<float> result(x.begin(), x.end());
+  for (std::size_t row = 0; row < result.size(); row += depth)
+    for (std::size_t pair = 0; pair < 32; ++pair) {
+      const auto offset = row+depth-64+2*pair;
+      const float angle = float(position)*frequencies[pair];
+      const float cosine = std::cos(angle), sine = std::sin(angle);
+      result[offset] = x[offset]*cosine-x[offset+1]*sine;
+      result[offset+1] = x[offset]*sine+x[offset+1]*cosine;
+    }
+  return bfloat_boundary(std::move(result));
 }
 inline ValueId cache_quant(Fragment &f, ValueId x, bool indexer) {
   const auto width = f.description(x).dimensions()[1];
@@ -98,14 +133,14 @@ inline std::vector<float> cache_reference(std::vector<float> x, std::int64_t dep
 inline linear::Projection compressor_projection(Fragment &f, ValueId x,
                                                  std::int64_t n, std::int64_t k, int seed) {
   auto w = sem::weight(n, k, c::GgufQuantizedType::kQ8_0, true, seed);
-  for (auto &row : w.decoded)
-    for (auto &[column, value] : row) value = fp8::bfloat(value);
-  for (std::size_t i = 0; i < w.storage.size(); i += sizeof(float)) {
-    float value;
-    std::memcpy(&value, w.storage.data()+i, sizeof(float));
-    value = fp8::bfloat(value);
-    std::memcpy(w.storage.data()+i, &value, sizeof(float));
-  }
+  // Dense zero bytes already represent both BF16->F32 zeros. Convert the
+  // fixture's nonzero source terms once; do not round billions of host zeros
+  // while constructing full-vocabulary shards. The uploaded bytes are equal.
+  for (std::size_t row = 0; row < w.decoded.size(); ++row)
+    for (auto &[column, value] : w.decoded[row]) {
+      value = fp8::bfloat(value);
+      std::memcpy(w.storage.data()+(row*k+column)*sizeof(float), &value, sizeof(float));
+    }
   auto stored = f.constant(w.description, std::move(w.storage));
   auto output = f.one(c::Operation(c::MatMul{}), {x, stored});
   return {std::move(w), linear::Storage::kF32, output};
@@ -327,6 +362,10 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
       f.replays.push_back(std::move(replay));
     }
   }
+  // Assigning the compressor recipe must not discard this complete chain's
+  // predeclared quantized accuracy class. Standalone F32 compressor outputs
+  // continue to use their original tight gate in compressor().
+  f.quantized = true;
   const auto raw_port = f.inputs.size();
   auto raw_past = f.input(dense({127, depth}));
   auto positions = f.input(dense({chunk}, c::DataType::kInt32));
