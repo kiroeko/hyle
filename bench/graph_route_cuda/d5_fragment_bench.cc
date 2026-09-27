@@ -14,6 +14,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -136,6 +138,10 @@ public:
     if (fixture.preparation || !fixture.state_ports.empty())
       throw std::runtime_error("benchmark scope excludes cold weight recipes and recurrent state");
     context_ = graph ? take(g::cuda::create_context()) : take(c::cuda::create_context());
+    const auto native = take(c::cuda::environment(context_));
+    std::fprintf(stderr, "# D5_CUDA_ENV device=%s sm=%d%d driver_api=%d runtime=%d toolkit=%d\n",
+                 native.device_name.data(), native.sm_major, native.sm_minor,
+                 native.driver_cuda_version, native.runtime_version, native.build_toolkit_version);
     memory_ = take(c::cuda::MemoryResource::create(context_, c::cuda::MemoryKind::kDevice));
     queue_ = take(context_.create_queue());
     workload_ = d5_qwen35_fixture::workload(*fixture.profile,
@@ -382,11 +388,38 @@ int main(int argc, char **argv) {
   try {
     ::testing::InitGoogleTest(&argc, argv);
     const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
-    // No ad-hoc run may masquerade as a qualified unified-instrument receipt.
-    if (!verify && environment("HYLE_D5_DIAGNOSTIC") != "1")
-      throw std::runtime_error("sampling is diagnostic-only until the A6 instrument contract is bound");
+    const bool managed = !environment("HYLE_PERF_RUN_NONCE").empty();
+    const auto aa = environment("HYLE_BENCH_AA_ROUTE");
+    if (!verify && !managed && environment("HYLE_D5_DIAGNOSTIC") != "1")
+      throw std::runtime_error("sampling requires the instrument or explicit diagnostic mode");
+    if (!verify && managed && aa.empty()) {
+      std::string ready;
+      std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
+                    "d5-cuda-fragment-aa.ready") >> ready;
+      if (ready != "PASS")
+        throw std::runtime_error("this artifact has no passing workload A/A receipt");
+    }
     const auto affinity = hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
+#if defined(_WIN32)
+    DWORD_PTR mask = 0, system_mask = 0;
+    if (!GetProcessAffinityMask(GetCurrentProcess(), &mask, &system_mask))
+      throw std::runtime_error("cannot read process affinity");
+    const auto priority = GetPriorityClass(GetCurrentProcess());
+    if (managed && GetCurrentProcessorNumber() != std::stoul(affinity.cpu))
+      throw std::runtime_error("caller did not land on the declared CPU");
+    std::fprintf(stderr,
+        "# HYLE_D5_CUDA_RUN execution_order=%s allocation_order=%s aa_route=%s "
+        "paired_mode=nanobench-compare affinity_topology=%s caller_cpu=%s affinity_ok=%s "
+        "parent_mask=0x%llx priority=%s run_nonce=%s verify_only=%d\n",
+        environment("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
+        environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
+        aa.empty() ? "off" : aa.c_str(), affinity.topology, affinity.cpu, affinity.ok,
+        static_cast<unsigned long long>(mask),
+        priority == ABOVE_NORMAL_PRIORITY_CLASS ? "above-normal" : "other",
+        hyle::bench::perf::run_nonce(), verify);
+#else
     nb::doNotOptimizeAway(affinity);
+#endif
     measure(qwen_ffn(), "Qwen3.5-2B official BF16 FFN M1 H2048 N6144", verify);
     measure(deepseek_moe(), "DeepSeek V4 Flash official FP4-FP8 MoE H4096 N2048 top6", verify);
     return ::testing::Test::HasFailure() ? 1 : 0;

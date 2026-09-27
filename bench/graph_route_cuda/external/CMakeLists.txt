@@ -3,7 +3,7 @@ project(hyle_d5_cuda_fragment_consumer LANGUAGES C CXX)
 
 # Reuse the relocated A5 SDK: this target never configures/rebuilds CUDA
 # product libraries. The pinned host-only oracle dependencies are explicit.
-find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS compute graph simd)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS core compute graph simd)
 get_filename_component(_hyle_fixture_root "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
 if(NOT EXISTS "${D5_GGML_SOURCE}/src/ggml.c" OR
    NOT EXISTS "${D5_GTEST_SOURCE}/googletest/src/gtest-all.cc")
@@ -39,6 +39,15 @@ target_compile_options(hyle_graph_route_cuda_bench PRIVATE
 target_link_libraries(hyle_graph_route_cuda_bench PRIVATE hyle::graph hyle::compute
   hyle::simd d5_nanobench GTest::gtest ggml-base)
 hyle_stage_runtime_dependencies(hyle_graph_route_cuda_bench)
+# The canonical control executable is built unchanged, with the same compiler
+# and nanobench as the consumer. No module-local statistics or controls.
+add_executable(hyle_perf_control_bench
+  "${_hyle_fixture_root}/bench/integration/perf_control_bench.cc")
+target_compile_features(hyle_perf_control_bench PRIVATE cxx_std_23)
+target_compile_definitions(hyle_perf_control_bench PRIVATE _CRT_SECURE_NO_WARNINGS)
+target_link_libraries(hyle_perf_control_bench PRIVATE hyle::core d5_nanobench)
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/d5-input-paths.json" CONTENT
+  "{\"sdk\":\"${Hyle_DIR}/../../..\",\"reference\":\"${D5_DIRECT_REFERENCE}\"}\n")
 enable_testing()
 add_test(NAME d5_cuda_fragment_verify COMMAND hyle_graph_route_cuda_bench)
 set_tests_properties(d5_cuda_fragment_verify PROPERTIES TIMEOUT 600

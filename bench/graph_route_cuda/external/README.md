@@ -14,9 +14,10 @@
 Graph 使用普通默认规划；Direct 使用普通 prepared operation，在同一 queue 上提交整个片段后
 drain 全部 completion。两侧计时区都不重新建描述、选 Provider 或分配消费者容器。
 
-性能采样目前锁为 diagnostic-only；`HYLE_D5_DIAGNOSTIC=1` 仅允许开发诊断，**不能产生 P1 PASS**。
-后续由 [A6 任务卡](../../../docs/implementation/tasks/compute/llm-moe-d5-cuda-fragment-performance.md)
-绑定统一性能仪器、不可变候选和 A/A 收据后才能签署。
+`HYLE_D5_DIAGNOSTIC=1` 仅允许开发诊断，**不能产生 P1 PASS**。统一仪器的正式采样还要求
+本 artifact 已生成通过的 A/A 收据；没有该收据时消费者拒绝启动产品采样。
+按 [A6 任务卡](../../../docs/implementation/tasks/compute/llm-moe-d5-cuda-fragment-performance.md)
+绑定不可变候选、`inputs.json` 的 SDK/fixture/DLL 字节身份及 `consumer.json` 的消费边界。
 
 沿用已有环境约定：`HYLE_BENCH_AA_ROUTE=selected|peer` 替换两侧为 Graph 或 Direct；
 `HYLE_BENCH_RIVAL_FIRST=1` 交换执行顺序；`HYLE_BENCH_PEER_ALLOCATION_FIRST=1` 交换分配顺序。

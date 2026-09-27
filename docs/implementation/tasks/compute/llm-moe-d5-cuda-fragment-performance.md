@@ -69,3 +69,20 @@ DeepSeek 40 steps/0 regions；未声称已经融合。详见
 [正确性收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cuda-performance-consumer/README.md)。
 原 consumer 编译与 region identity 初始化失败保留；仅修 consumer，不改产品和数值合同。
 此结果只完成上述动作1–4的消费者准备/正确性，统一仪器合同与 A/A/P1 尚未运行。
+
+## 固定采样接缝
+
+使用原 `hyle-perf.py`，source 指向本仓库 `bench/graph_route_cuda/external`；Git 身份仍由
+Windows canonical 仓库提供。fresh 只指新建外部 consumer/control 构建，既有静态 SDK 复用，
+不是重新编译 CUDA 产品。SDK 393 个相关文件、全部使用的 Qwen 数据、recipe 与 DLL 的
+SHA256 固定在该目录 `inputs.json`，validator 前后核对，不用缓存路径名字代替输入身份。
+Direct reference 是同一消费者源码的不可变稀疏检出，validator 逐字节比对；它证明同一个
+Direct 调用程序，没有冒称另一份独立数学实现。两侧共享锁定成熟 Provider 数学是本实验的设计。
+
+A/A 固定为 Graph/Graph 与 Direct/Direct，各执行双顺序×分配双顺序，共8个进程；复用
+已有 GPU validator 的5% factor median门、10%单进程粗不稳定门，失败不启动完整产品采样。
+产品 P1 固定四个顺序/分配 strata，两个模型形状均属于预声明批次；使用原公共 A/A、5%/10%
+known-delta 和 timer-floor controls。GPU 片段不增加第二份 CPU text-placement binary。
+记录实际 caller、parent affinity mask、priority 与完整 CUDA 环境，不变更系统电源方案或提权。
+当前观测为SM89、driver API13040、runtime API13040、编译Toolkit13030；原CUDA13.3安装目录
+及其三个DLL哈希与A5一致。这三类版本事实分别记录，不能从编译器版本推测runtime版本。

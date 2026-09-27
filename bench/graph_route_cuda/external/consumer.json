@@ -1,0 +1,24 @@
+{
+  "consumer": "Complete synchronous resident CUDA fragment through ordinary HYLE Direct/Graph",
+  "source_kind": "Qwen local checkpoint and fixed official DeepSeek header-bound fragment recipe",
+  "scope": "Fragment cost; not full-model throughput or mathematical SOTA",
+  "profiles": [
+    "Qwen3.5-2B official BF16 FFN, M1 H2048 N6144, two resident changed inputs",
+    "DeepSeek V4 Flash official FP4/FP8 MoE, H4096 N2048 top6, three changed inputs, seven resident experts"
+  ],
+  "recipe_files": [
+    "tests/compute_models/d5_qwen35_fixture.h",
+    "tests/compute_models/d5_deepseek_official_fragments.h"
+  ],
+  "input_identity_file": "inputs.json",
+  "input_identity_sha256": "ebe476e4ba8968c722601a2c131f5dbf7d43a76ffd6aa4b351f5a05c7489f5f1",
+  "completion": "Both arms return only after every accepted run is settled and completion-owned references are released",
+  "ownership": "Separate route owners with constant buffers, queue, independently resident input/output slots; all preparation cold",
+  "mathematics": "Original qualified mature Provider calls and all required conversions/checks remain charged",
+  "oracle": "Original D5 full output tolerances; verify all inputs before and after every measured process",
+  "materiality": "One whole fragment per sample unit, 5% bound; no invented production invocation frequency",
+  "limitations": [
+    "Full Graph/Direct fragment comparison cannot establish Direct superiority over raw provider APIs",
+    "No full-model inference, download, loader, serving or token throughput claim"
+  ]
+}
