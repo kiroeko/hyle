@@ -1,6 +1,6 @@
 # CUDA SDK DLL 的公开 staging 接缝
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`9401a0c3`；Windows canonical。owner：`compute_backend_cuda`。
 - reopen trigger：D5-A5外部SDK消费者编译/链接完成，去掉SDK PATH、隐藏producer后，
@@ -29,3 +29,8 @@ P0：纯配置/交付metadata，无热路径成本、对象/API/算法改变；D
 沿D5-A5复用现有shared构建，source/static共用producer；无新增全库build或P1。
 若需要改全局package/staging协议，停止并另行定界，不在本卡扩张。
 满足S1-S3及适用门后才CANDIDATE/CLOSED；未运行项保持未验。
+
+源码审计确认当前CMake 4.4的`FindCUDAToolkit.cmake`用`UNKNOWN IMPORTED`
+声明库并把`.lib`设为`IMPORTED_LOCATION`，未声明对应DLL。S1的SHARED叶节点仅补
+同一import library实际加载的文件，不改变其搜索结果。当前三个DLL实际位于
+CUDA13.3的`bin/x64`；原SDK目标、版本和include传播保留，未选CUDA时不创建这些节点。

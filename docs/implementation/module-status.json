@@ -403,9 +403,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cuda-sdk-runtime-staging-v1.md",
-      "summary": "D5-A5 SCOPED：真实relocated CUDA消费者缺少cuBLAS SDK DLL；仅修复backend-owned系统SDK runtime目标描述与三交付，不改C++或数学。"
+      "summary": "D5-A5 AUDITED：真实relocated CUDA消费者缺少cuBLAS SDK DLL；仅修复backend-owned系统SDK runtime目标描述与三交付，不改C++或数学。"
     },
     {
       "module": "compute_provider_native",
