@@ -57,8 +57,10 @@ consumer = root / 'consumer'
 sources = [
     'tests/compute_route_cuda/d5_qwen35_execution_test.cc',
     'tests/compute_route_cuda/d5_qwen38_official_test.cc',
+    'tests/compute_route_cuda/d5_qwen_gguf_vocabulary_test.cc',
     'tests/graph_route_cuda/d5_qwen35_profile_test.cc',
     'tests/graph_route_cuda/d5_qwen38_official_test.cc',
+    'tests/graph_route_cuda/d5_qwen_gguf_vocabulary_test.cc',
 ]
 copied = {}
 todo = [repo / name for name in sources]
@@ -159,7 +161,8 @@ finally:
 
 native = (build/'Testing/Temporary/LastTest.log').read_bytes()
 (out/'native-tests.log').write_bytes(native)
-if b'[  SKIPPED ]' in native or b'[  PASSED  ] 8 tests.' not in native:
+passed = sum(map(int, re.findall(rb'\[  PASSED  \]\s+(\d+) tests?\.', native)))
+if b'[  SKIPPED ]' in native or passed != 8:
     raise SystemExit('Expected eight executed, passing tests with no skips.')
 receipt['verdict'] = 'PASS'
 receipt['tests'] = 8

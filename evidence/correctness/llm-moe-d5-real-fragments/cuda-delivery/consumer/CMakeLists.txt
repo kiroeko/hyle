@@ -42,17 +42,24 @@ if(NOT TARGET GTest::gtest_main)
   add_subdirectory("${D5_GTEST_SOURCE}" fixture-gtest EXCLUDE_FROM_ALL)
 endif()
 
-add_executable(d5_cuda_delivery
+add_executable(d5_cuda_direct
   tests/compute_route_cuda/d5_qwen35_execution_test.cc
   tests/compute_route_cuda/d5_qwen38_official_test.cc
+  tests/compute_route_cuda/d5_qwen_gguf_vocabulary_test.cc)
+add_executable(d5_cuda_graph
   tests/graph_route_cuda/d5_qwen35_profile_test.cc
-  tests/graph_route_cuda/d5_qwen38_official_test.cc)
-target_compile_features(d5_cuda_delivery PRIVATE cxx_std_23)
-target_compile_options(d5_cuda_delivery PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
-target_link_libraries(d5_cuda_delivery PRIVATE
-  hyle::compute hyle::graph hyle::simd GTest::gtest_main ggml-base)
-hyle_stage_runtime_dependencies(d5_cuda_delivery)
+  tests/graph_route_cuda/d5_qwen38_official_test.cc
+  tests/graph_route_cuda/d5_qwen_gguf_vocabulary_test.cc)
+target_link_libraries(d5_cuda_direct PRIVATE hyle::compute)
+target_link_libraries(d5_cuda_graph PRIVATE hyle::graph)
+add_custom_target(d5_cuda_delivery DEPENDS d5_cuda_direct d5_cuda_graph)
 enable_testing()
-add_test(NAME d5_cuda_delivery COMMAND d5_cuda_delivery
-  "--gtest_filter=*D5Qwen35OfficialFfn*:*.D5Qwen35OfficialCausalConvAndGdn*:*.D5DeepSeekOfficialMoe:*.D5DeepSeekQuantizationRoundtrip")
-set_tests_properties(d5_cuda_delivery PROPERTIES TIMEOUT 1800)
+foreach(_target IN ITEMS d5_cuda_direct d5_cuda_graph)
+  target_compile_features(${_target} PRIVATE cxx_std_23)
+  target_compile_options(${_target} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+  target_link_libraries(${_target} PRIVATE hyle::simd GTest::gtest_main ggml-base)
+  hyle_stage_runtime_dependencies(${_target})
+  add_test(NAME ${_target} COMMAND ${_target}
+    "--gtest_filter=*D5Qwen35OfficialFfn*:*.D5Qwen35OfficialCausalConvAndGdn*:*.D5DeepSeekOfficialMoe:*.D5DeepSeekQuantizationRoundtrip")
+  set_tests_properties(${_target} PROPERTIES TIMEOUT 1800)
+endforeach()

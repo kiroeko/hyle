@@ -40,3 +40,5 @@
 有限纠正仅把该Provider的测试身份断言按公开`HYLE_COMPUTE_FLASHINFER`条件编译，
 其它Provider、模型夹具和数值门不变。新consumer复用产品输入完全相同的shared SDK，
 保留第一次失败，随后source/static消费同一纠正候选；不因此重编CUDA产品或放宽原断言。
+外部构建另保留原Direct/Graph两个binary的边界，并带上各自已有的词表helper实现，
+避免把两个不同执行入口的同名测试辅助符号合进一个binary；运行清单仍为总计8项。
