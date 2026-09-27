@@ -1458,6 +1458,7 @@ void execute_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture,
     std::vector<mx::array> *capture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
+  SCOPED_TRACE("region=" + std::to_string(fixture.region));
   auto full = sem::make_graph(fixture);
   auto context = a::Context::create().value();
   std::vector<mx::array> prepared;
@@ -1501,7 +1502,9 @@ void execute_q24_semantic_fragment(
   EXPECT_EQ(compiled->workload(), workload);
   auto invocation = compiled->create_invocation().value();
   sem::StateFeedback feedback{fixture};
+  std::size_t replay_index = 0;
   for (const auto &expected : fixture.replays) {
+    SCOPED_TRACE("replay=" + std::to_string(replay_index++));
     std::vector<mx::array> inputs;
     for (std::size_t i = 0; i < fixture.inputs.size(); ++i)
       inputs.push_back(upload(context, fixture.description(fixture.inputs[i]),

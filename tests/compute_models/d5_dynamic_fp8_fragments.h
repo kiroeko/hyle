@@ -112,7 +112,7 @@ inline void strict_output_check(sem::Fragment &f, bool bf16, int ulps = 1) {
       if (bf16 && actual[i] != target[i]) {
         const auto a = std::bit_cast<std::uint32_t>(actual[i]) >> 16;
         const auto b = std::bit_cast<std::uint32_t>(target[i]) >> 16;
-        EXPECT_LE(std::abs(std::int64_t(a) - b), ulps) << i << " output=" << port;
+        EXPECT_LE(std::abs(std::int64_t(a) - b), ulps) << i << " output=" << port << " actual=" << actual[i] << " expected=" << target[i];
       } else if (!bf16) {
         EXPECT_NEAR(actual[i], target[i], 2.0e-6F + 2.0e-6F * std::abs(target[i])) << i;
       }

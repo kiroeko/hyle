@@ -1377,6 +1377,7 @@ void execute_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture,
     std::vector<mx::array> *capture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
+  SCOPED_TRACE("region=" + std::to_string(fixture.region));
   auto context = a::Context::create().value();
   std::vector<mx::array> prepared;
   if (fixture.preparation) {
@@ -1422,7 +1423,9 @@ void execute_q24_semantic_fragment(
   }
 
   sem::StateFeedback feedback{fixture};
+  std::size_t replay_index = 0;
   for (const auto &expected : fixture.replays) {
+    SCOPED_TRACE("replay=" + std::to_string(replay_index++));
     // The previous outputs have been checked; release their leases before
     // replay.
     for (const auto &step : fixture.nodes)
