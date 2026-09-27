@@ -404,7 +404,7 @@ _hyle_declare_component(compute_backend_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/backends/cuda.h)
 
 _hyle_declare_component(compute_provider_native
-  PRIVATE_DEPS math mem platform simd compute_backend_cpu
+  PRIVATE_DEPS math mem platform simd compute_backend_cpu compute_ops
   PUBLIC_DEPS compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/native.h)
 
