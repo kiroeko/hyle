@@ -1,0 +1,72 @@
+{
+  "candidate": "e9afd4a3d84c8eeec7d34f5e86f4602c51ac50e8",
+  "stage": "static",
+  "steps": [
+    {
+      "label": "install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.349
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.632
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+        "--target",
+        "d5_apple_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 13.896
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/static-boundary-api/tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 25.404
+    }
+  ],
+  "verdict": "PASS",
+  "tests": 12,
+  "executed_tests": 12,
+  "runtime_path": "/usr/bin:/bin"
+}

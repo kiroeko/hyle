@@ -1,0 +1,314 @@
+{
+  "inputs.json": {
+    "original_bytes": 83501,
+    "original_sha256": "27b48779bfe767ada1beb63cd604a421e94e6819cae8f3e27276f3f06ce775b3",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/inputs.json"
+  },
+  "metadata.json": {
+    "original_bytes": 17393,
+    "original_sha256": "d2729eba13434e899621aedd483bfd6fb5f6362cfefd70c21e74de9f7ee79bce",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/metadata.json"
+  },
+  "receipts/shared/consumer-build.log": {
+    "original_bytes": 26217,
+    "original_sha256": "fedd95f734cd8c296b70da86d0684f46a15d874e578ea07304116669749ad042",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared/consumer-build.log.gz"
+  },
+  "receipts/shared/consumer-configure.log": {
+    "original_bytes": 1458,
+    "original_sha256": "35973a46554cfc83f8897557e85000d4007022abb5ec033c3627b52b218142f0",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared/consumer-configure.log.gz"
+  },
+  "receipts/shared/inputs.json": {
+    "original_bytes": 83501,
+    "original_sha256": "c045d06afee97bb04493aa0f8d35e8b2f97abb5b73cdbbb2be0083b4ad686ccc",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared/inputs.json"
+  },
+  "receipts/shared/install.log": {
+    "original_bytes": 94832,
+    "original_sha256": "29c808dd7ff5df497accf37c6f043316060d67a7710e2f00bde9f43cdc06e5d5",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared/install.log.gz"
+  },
+  "receipts/shared/producer-build.log": {
+    "original_bytes": 3571,
+    "original_sha256": "402ceae4dcc62c9136fb545cbaf6409f238436b21778dfb5316fa6a916202f8c",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared/producer-build.log.gz"
+  },
+  "receipts/shared/producer-configure.log": {
+    "original_bytes": 2789,
+    "original_sha256": "4816bcc44a9a286fef6773a25ad821529ee76d389d38d56fed778e2c73a63a55",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared/producer-configure.log.gz"
+  },
+  "receipts/shared/producer-original-cache.txt": {
+    "original_bytes": 35963,
+    "original_sha256": "9fe44283738e7e36279d970626261e4690c23f885e6caafe576cc12a5c4c2c46",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared/producer-original-cache.txt.gz"
+  },
+  "receipts/shared/receipt.json": {
+    "original_bytes": 2604,
+    "original_sha256": "d7afda67eb543f08382818adfc7d2616dedf64547975a94ee52178d491594286",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared/receipt.json"
+  },
+  "receipts/shared-boundary-api/compile-link-commands.log": {
+    "original_bytes": 16791,
+    "original_sha256": "125c9b138764db0e45d21749c3fceb24232dd08f62b6da2cb704692799c70e50",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/compile-link-commands.log.gz"
+  },
+  "receipts/shared-boundary-api/consumer-build.log": {
+    "original_bytes": 569,
+    "original_sha256": "91a4e7a2c4ecfe8e4bda8a0569f57905e0424a9852f97b64844ed8f66b8d374d",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/consumer-build.log.gz"
+  },
+  "receipts/shared-boundary-api/consumer-configure.log": {
+    "original_bytes": 555,
+    "original_sha256": "39e5c0a195771e6ef4c0d1082916b243d437de4b22e6927f0b940bea165c79b1",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/consumer-configure.log.gz"
+  },
+  "receipts/shared-boundary-api/consumer-test.log": {
+    "original_bytes": 82193,
+    "original_sha256": "a17b6a70d6dbfc2c6f84b07de3ad3b3be75330950a325235011e18430e41fc4c",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/consumer-test.log.gz"
+  },
+  "receipts/shared-boundary-api/inputs.json": {
+    "original_bytes": 83501,
+    "original_sha256": "27b48779bfe767ada1beb63cd604a421e94e6819cae8f3e27276f3f06ce775b3",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-boundary-api/inputs.json"
+  },
+  "receipts/shared-boundary-api/loaded-hyle-libraries.log": {
+    "original_bytes": 6011,
+    "original_sha256": "66e6a43e991dc6ab76a3680086c099230afff485a091cb1d9811a3d2c53983cd",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/loaded-hyle-libraries.log.gz"
+  },
+  "receipts/shared-boundary-api/native-linkage.log": {
+    "original_bytes": 2825,
+    "original_sha256": "501e96a22f1ad41a56b7c8089e381c0206caa42d369b6aa5f90c616020b98a15",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/native-linkage.log.gz"
+  },
+  "receipts/shared-boundary-api/native-tests.log": {
+    "original_bytes": 82193,
+    "original_sha256": "a17b6a70d6dbfc2c6f84b07de3ad3b3be75330950a325235011e18430e41fc4c",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-boundary-api/native-tests.log.gz"
+  },
+  "receipts/shared-boundary-api/receipt.json": {
+    "original_bytes": 2175,
+    "original_sha256": "aae4a9b8d3b81c267064d61717ce782624872e8d3b99b921cc650824acc6fa94",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-boundary-api/receipt.json"
+  },
+  "receipts/shared-boundary-api/runtime-resource.json": {
+    "original_bytes": 117,
+    "original_sha256": "1a7b6b89eeb0408583c14de047484547aa46b210bd26885dc58b9fa3f2081e3e",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-boundary-api/runtime-resource.json"
+  },
+  "receipts/shared-boundary-api/tests.xml": {
+    "original_bytes": 638,
+    "original_sha256": "d500521ae3897c1e97abf2bc5697e0fec0a129738a1a6250afa35a635f09c590",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-boundary-api/tests.xml"
+  },
+  "receipts/shared-consumer-optional/compile-link-commands.log": {
+    "original_bytes": 16791,
+    "original_sha256": "125c9b138764db0e45d21749c3fceb24232dd08f62b6da2cb704692799c70e50",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-consumer-optional/compile-link-commands.log.gz"
+  },
+  "receipts/shared-consumer-optional/consumer-build.log": {
+    "original_bytes": 841,
+    "original_sha256": "6c274ba5d55829add68d30cdc6fc39f6cc79e702d9532c6be57ad4bf513e6a3a",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-consumer-optional/consumer-build.log.gz"
+  },
+  "receipts/shared-consumer-optional/consumer-configure.log": {
+    "original_bytes": 555,
+    "original_sha256": "39e5c0a195771e6ef4c0d1082916b243d437de4b22e6927f0b940bea165c79b1",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-consumer-optional/consumer-configure.log.gz"
+  },
+  "receipts/shared-consumer-optional/consumer-test.log": {
+    "original_bytes": 196771,
+    "original_sha256": "86aa38581fb822fc0e3123a2e9f734e2e098740b3ccfeb26b79a24de3acfa54e",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-consumer-optional/consumer-test.log.gz"
+  },
+  "receipts/shared-consumer-optional/inputs.json": {
+    "original_bytes": 83501,
+    "original_sha256": "3818a8b8603c749df0bd5b57f6489ab1021780f2c90b6ee513aadac412b6c620",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-consumer-optional/inputs.json"
+  },
+  "receipts/shared-consumer-optional/native-tests.log": {
+    "original_bytes": 230289,
+    "original_sha256": "bcb54259bd1f5e4d6eab447887986f06766ab92bf4d3cabf7fe9368e6805d80f",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/shared-consumer-optional/native-tests.log.gz"
+  },
+  "receipts/shared-consumer-optional/receipt.json": {
+    "original_bytes": 1848,
+    "original_sha256": "d7ae75594145068851fa6c4e3afa4dd1ac5537199e9f1aac5b636f9910a73c9e",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-consumer-optional/receipt.json"
+  },
+  "receipts/shared-consumer-optional/runtime-resource.json": {
+    "original_bytes": 117,
+    "original_sha256": "1a7b6b89eeb0408583c14de047484547aa46b210bd26885dc58b9fa3f2081e3e",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-consumer-optional/runtime-resource.json"
+  },
+  "receipts/shared-consumer-optional/tests.xml": {
+    "original_bytes": 127866,
+    "original_sha256": "82605af549e5c4d295a721b77b79488715b950c194bbe1a0f74a6d5bf3ed911f",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/shared-consumer-optional/tests.xml"
+  },
+  "receipts/source-boundary-api/compile-link-commands.log": {
+    "original_bytes": 387010,
+    "original_sha256": "595e190230bb32ea3906ae17cadb2909a0ae46127784e700ab13d9ae0869a2c5",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/compile-link-commands.log.gz"
+  },
+  "receipts/source-boundary-api/consumer-test.log": {
+    "original_bytes": 74049,
+    "original_sha256": "8a44f689b26240aa196377f4af45d939aa4abf6ea87a97db18d77c6f0ab88986",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/consumer-test.log.gz"
+  },
+  "receipts/source-boundary-api/inputs.json": {
+    "original_bytes": 83501,
+    "original_sha256": "27b48779bfe767ada1beb63cd604a421e94e6819cae8f3e27276f3f06ce775b3",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/source-boundary-api/inputs.json"
+  },
+  "receipts/source-boundary-api/loaded-hyle-libraries.log": {
+    "original_bytes": 1,
+    "original_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/loaded-hyle-libraries.log.gz"
+  },
+  "receipts/source-boundary-api/native-linkage.log": {
+    "original_bytes": 1905,
+    "original_sha256": "0a98dfe6c5b9f0588f966a6bdb9a2c685f3abeac4626c6f29dc6dec6b72bf108",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/native-linkage.log.gz"
+  },
+  "receipts/source-boundary-api/native-tests.log": {
+    "original_bytes": 226897,
+    "original_sha256": "a80d54ba0a236ccb1d57162d56fd83e5967310072bade287118beb5e55804f9d",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/native-tests.log.gz"
+  },
+  "receipts/source-boundary-api/receipt.json": {
+    "original_bytes": 1777,
+    "original_sha256": "26510087471adb40e2f0421fb53211c07e9fb0de84047120616b20f8d53cb4b8",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/source-boundary-api/receipt.json"
+  },
+  "receipts/source-boundary-api/source-build.log": {
+    "original_bytes": 35580,
+    "original_sha256": "d203c823a753b83dc8b8539a1bf9fc282e1e33bef76748ed5873baaeca1f9234",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/source-build.log.gz"
+  },
+  "receipts/source-boundary-api/source-configure.log": {
+    "original_bytes": 4337,
+    "original_sha256": "d0cf8c03c42f986a646ae04bbdcd63de2fae1354b8813fe144f0d64acca35fef",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/source-boundary-api/source-configure.log.gz"
+  },
+  "receipts/source-boundary-api/tests.xml": {
+    "original_bytes": 2859,
+    "original_sha256": "1b6e70af237a740b9f9082eb5eb06953a7410f5b97644680d359b0e695e4a798",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/source-boundary-api/tests.xml"
+  },
+  "receipts/static-boundary-api/compile-link-commands.log": {
+    "original_bytes": 18203,
+    "original_sha256": "2548a4474f0d2fdbaeb66d708803d613a5ab70de8b77df2af8b036e4ee60a477",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/compile-link-commands.log.gz"
+  },
+  "receipts/static-boundary-api/consumer-build.log": {
+    "original_bytes": 1855,
+    "original_sha256": "a93d4966918bf93327bdc3c86e7586f15be81fe51e0e982b6920f0214a6b8bb8",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/consumer-build.log.gz"
+  },
+  "receipts/static-boundary-api/consumer-configure.log": {
+    "original_bytes": 1458,
+    "original_sha256": "442f19cc2dc6cf001fedbc1848587afb99243b3ee520bc3eea78a3ef2cbb9c1b",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/consumer-configure.log.gz"
+  },
+  "receipts/static-boundary-api/consumer-test.log": {
+    "original_bytes": 74052,
+    "original_sha256": "2cac56c78218c0823e9f721b172669103018d5d34df1fadc1c88ddc37e23c952",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/consumer-test.log.gz"
+  },
+  "receipts/static-boundary-api/inputs.json": {
+    "original_bytes": 83501,
+    "original_sha256": "27b48779bfe767ada1beb63cd604a421e94e6819cae8f3e27276f3f06ce775b3",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/static-boundary-api/inputs.json"
+  },
+  "receipts/static-boundary-api/install.log": {
+    "original_bytes": 93620,
+    "original_sha256": "500d983e47a56690e8c215a4e1291bbbe8f73ff02f33c768ee8f817defec2da4",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/install.log.gz"
+  },
+  "receipts/static-boundary-api/loaded-hyle-libraries.log": {
+    "original_bytes": 1,
+    "original_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/loaded-hyle-libraries.log.gz"
+  },
+  "receipts/static-boundary-api/native-linkage.log": {
+    "original_bytes": 1911,
+    "original_sha256": "4063aa08a3f06a5b69c2688abf9c9ac52f60dc5e7dbccb51dbce27647bedbb23",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/native-linkage.log.gz"
+  },
+  "receipts/static-boundary-api/native-tests.log": {
+    "original_bytes": 226914,
+    "original_sha256": "06c52f7b6fbc86c1a7422776e87f2955782ce1adfdcd32e0b4e0c7b8f34e577b",
+    "encoding": "gzip",
+    "stored_path": "raw/receipts/static-boundary-api/native-tests.log.gz"
+  },
+  "receipts/static-boundary-api/receipt.json": {
+    "original_bytes": 2086,
+    "original_sha256": "2b662f29f0ed29691a5acf0309b9c49e7504e25a6d9045b513aeb933b798a480",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/static-boundary-api/receipt.json"
+  },
+  "receipts/static-boundary-api/runtime-resource.json": {
+    "original_bytes": 117,
+    "original_sha256": "1a7b6b89eeb0408583c14de047484547aa46b210bd26885dc58b9fa3f2081e3e",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/static-boundary-api/runtime-resource.json"
+  },
+  "receipts/static-boundary-api/tests.xml": {
+    "original_bytes": 2824,
+    "original_sha256": "cfc2b6499b2bfdef6bda4f654e0baf603a91b48095aef409be52c652e9992792",
+    "encoding": "utf8_lf",
+    "stored_path": "raw/receipts/static-boundary-api/tests.xml"
+  }
+}

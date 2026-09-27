@@ -1,0 +1,259 @@
+{
+  "candidate": "e9afd4a3d84c8eeec7d34f5e86f4602c51ac50e8",
+  "product_candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
+  "shared_sdk_candidate": "4f56dc5ec9455168c8210d1e97d8b0e47f7bb4b5",
+  "shared_reused_tests_candidate": "78e9f243c81accacfa130d46003563852348b84e",
+  "route": "apple",
+  "A5": "PASS",
+  "A6": "NOT_RUN",
+  "per_delivery": {
+    "normal_computation_tests": 10,
+    "expected_rejection_tests": 2
+  },
+  "completed_checks": 36,
+  "initial_runtime_failures": 1,
+  "targeted_correction_passes": 1,
+  "reused_shared_passes": 11,
+  "skipped": 0,
+  "product_changes": 0,
+  "rejected_cells": 4,
+  "new_run_pass_cells": 0,
+  "rejections": [
+    {
+      "entry": "direct",
+      "model": "DeepSeek-V4-Pro",
+      "region": "168494593",
+      "nodes": "51",
+      "prepared": "14",
+      "operation": "GroupedFloat4Linear",
+      "phase": "input_spec",
+      "code": "12",
+      "message": "Apple input storage encoding is not admitted"
+    },
+    {
+      "entry": "direct",
+      "model": "DeepSeek-V4-Flash",
+      "region": "168494593",
+      "nodes": "51",
+      "prepared": "14",
+      "operation": "GroupedFloat4Linear",
+      "phase": "input_spec",
+      "code": "12",
+      "message": "Apple input storage encoding is not admitted"
+    },
+    {
+      "entry": "graph",
+      "model": "DeepSeek-V4-Pro",
+      "region": "168494593",
+      "nodes": "51",
+      "operation": "complete_moe",
+      "code": "12",
+      "message": "Apple input storage encoding is not admitted"
+    },
+    {
+      "entry": "graph",
+      "model": "DeepSeek-V4-Flash",
+      "region": "168494593",
+      "nodes": "51",
+      "operation": "complete_moe",
+      "code": "12",
+      "message": "Apple input storage encoding is not admitted"
+    }
+  ],
+  "limits": [
+    "Current Apple input admission rejects required original grouped FP4 format.",
+    "Does not establish that all mature Apple providers lack this capability.",
+    "No runtime, delivery, performance or complete-model PASS for the rejected official profiles.",
+    "Other regions are not marked rejected or passed because mandatory R11 cannot prepare."
+  ],
+  "ledger": {
+    "RUN_PASS": 152,
+    "BACKEND_REJECTED": 12,
+    "VALIDATION_NOT_RUN": 12
+  },
+  "environment": {
+    "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+    "hardware": "Mac16,12\n",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "sdk": "27.0\n"
+  },
+  "stages": {
+    "shared": {
+      "verdict": "PASS",
+      "tests": 12,
+      "executed_tests": 1,
+      "steps": [
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/shared-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 0.131
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+            "--target",
+            "d5_apple_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 9.374
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer/d5_apple_direct",
+            "--gtest_filter=AppleMoeFragments.D5OfficialDeepSeekFullMoeColdBoundary",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/shared-boundary-api/tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 1.223
+        }
+      ]
+    },
+    "source": {
+      "verdict": "PASS",
+      "tests": 12,
+      "executed_tests": 12,
+      "steps": [
+        {
+          "label": "source-configure",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "-DD5_SOURCE_ROOT=/Users/kiro/hyle",
+            "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/d5-apple-delivery/static-staging",
+            "-DHYLE_WERROR=ON"
+          ],
+          "returncode": 0,
+          "seconds": 3.916
+        },
+        {
+          "label": "source-build",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 83.262
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "/opt/homebrew/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/source-boundary-api/tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 26.464
+        }
+      ]
+    },
+    "static": {
+      "verdict": "PASS",
+      "tests": 12,
+      "executed_tests": 12,
+      "steps": [
+        {
+          "label": "install",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-staging"
+          ],
+          "returncode": 0,
+          "seconds": 0.349
+        },
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 0.632
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+            "--target",
+            "d5_apple_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 13.896
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "/opt/homebrew/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/static-boundary-api/tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 25.404
+        }
+      ]
+    }
+  }
+}

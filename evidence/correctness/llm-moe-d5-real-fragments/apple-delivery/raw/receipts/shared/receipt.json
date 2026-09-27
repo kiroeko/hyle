@@ -1,0 +1,91 @@
+{
+  "candidate": "4f56dc5ec9455168c8210d1e97d8b0e47f7bb4b5",
+  "stage": "shared",
+  "steps": [
+    {
+      "label": "producer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle",
+        "-B",
+        "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPONENTS=compute,graph,simd",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_COMPUTE_CPU=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=ON",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/d5-apple-delivery/shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 3.165
+    },
+    {
+      "label": "producer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 13.595
+    },
+    {
+      "label": "install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/d5-graph-825c41f8",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.266
+    },
+    {
+      "label": "consumer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.608
+    },
+    {
+      "label": "consumer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+        "--target",
+        "d5_apple_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 1,
+      "seconds": 13.481
+    }
+  ]
+}

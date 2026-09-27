@@ -1,0 +1,466 @@
+{
+  "receipts": {
+    "shared": {
+      "candidate": "e9afd4a3d84c8eeec7d34f5e86f4602c51ac50e8",
+      "stage": "shared",
+      "steps": [
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/shared-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 0.131
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+            "--target",
+            "d5_apple_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 9.374
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer/d5_apple_direct",
+            "--gtest_filter=AppleMoeFragments.D5OfficialDeepSeekFullMoeColdBoundary",
+            "--gtest_output=xml:/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/shared-boundary-api/tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 1.223
+        }
+      ],
+      "reused_sdk": {
+        "candidate": "4f56dc5ec9455168c8210d1e97d8b0e47f7bb4b5",
+        "receipt": "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/shared/receipt.json"
+      },
+      "reused_tests": {
+        "count": 11,
+        "candidate": "78e9f243c81accacfa130d46003563852348b84e",
+        "log": "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/shared-consumer-optional/native-tests.log",
+        "sha256": "bcb54259bd1f5e4d6eab447887986f06766ab92bf4d3cabf7fe9368e6805d80f"
+      },
+      "verdict": "PASS",
+      "tests": 12,
+      "executed_tests": 1,
+      "runtime_path": "/usr/bin:/bin"
+    },
+    "source": {
+      "candidate": "e9afd4a3d84c8eeec7d34f5e86f4602c51ac50e8",
+      "stage": "source",
+      "steps": [
+        {
+          "label": "source-configure",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "-DD5_SOURCE_ROOT=/Users/kiro/hyle",
+            "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/d5-apple-delivery/static-staging",
+            "-DHYLE_WERROR=ON"
+          ],
+          "returncode": 0,
+          "seconds": 3.916
+        },
+        {
+          "label": "source-build",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 83.262
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "/opt/homebrew/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/source-boundary-api/tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 26.464
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 12,
+      "executed_tests": 12,
+      "runtime_path": "/usr/bin:/bin"
+    },
+    "static": {
+      "candidate": "e9afd4a3d84c8eeec7d34f5e86f4602c51ac50e8",
+      "stage": "static",
+      "steps": [
+        {
+          "label": "install",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--install",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+            "--prefix",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-staging"
+          ],
+          "returncode": 0,
+          "seconds": 0.349
+        },
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "-S",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+            "-B",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/d5-apple-delivery/static-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 0.632
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "/opt/homebrew/bin/cmake",
+            "--build",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+            "--target",
+            "d5_apple_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 13.896
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "/opt/homebrew/bin/ctest",
+            "--test-dir",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/static-boundary-api/tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 25.404
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 12,
+      "executed_tests": 12,
+      "runtime_path": "/usr/bin:/bin"
+    }
+  },
+  "artifacts": {
+    "shared-consumer/d5_apple_direct": {
+      "sha256": "150b23a6500ede5a79e3a068b0da07e71b0b6149fdd2d728e007836a9b599c47",
+      "bytes": 2685728
+    },
+    "shared-consumer/d5_apple_graph": {
+      "sha256": "33da6e2c16a97d6797d5fe791a9fda8f9a067848d7f36e6cbbf50f50eeee5342",
+      "bytes": 2716432
+    },
+    "shared-consumer/mlx.metallib": {
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+      "bytes": 1455256
+    },
+    "shared-relocated/lib/libhyle_compute_ggml_runtime.dylib": {
+      "sha256": "c9579f97200f2db318fe77d0475d7ec578345b4fd6f6f47bbb9c0e147609da45",
+      "bytes": 590568
+    },
+    "shared-relocated/lib/libhyle_compute_provider_ggml_metal.dylib": {
+      "sha256": "0d41e7eafc69322045e564de49ddd913c98b6e9d14be4abbf40c1920573c8169",
+      "bytes": 2720032
+    },
+    "shared-relocated/lib/libhyle_simd.dylib": {
+      "sha256": "e61fd2f84facba64902b470fc0ff8af511274ea3ecae68df411d45dad13f5314",
+      "bytes": 1214744
+    },
+    "shared-relocated/lib/libhyle_compute_route_apple.0.1.0.dylib": {
+      "sha256": "ba5486f01f7bef58c3955d0571fa8763229d14f0ac6f7970f91838d3f0f9f401",
+      "bytes": 356440
+    },
+    "shared-relocated/lib/libhyle_time.dylib": {
+      "sha256": "e89b892dc30b0675982d6e34c9349e039b2ccc4df49b6a0e202304d3fc749711",
+      "bytes": 54856
+    },
+    "shared-relocated/lib/libhyle_container.0.1.0.dylib": {
+      "sha256": "52ee400a4304f76ef8944afda7d1bd1782d4dc9d27bdfe4474b597263036f3e5",
+      "bytes": 77520
+    },
+    "shared-relocated/lib/libhyle_compute_ops.0.1.0.dylib": {
+      "sha256": "01000f391cbf3b261b79f3444f612d3347ae5a1dbc7112680b29a7c3748fecdc",
+      "bytes": 94592
+    },
+    "shared-relocated/lib/libhyle_graph_route_apple.0.1.0.dylib": {
+      "sha256": "272b5976a9dfa98066f742b0b8f6dcfab980626624fedf92f7f37b7bfa70273c",
+      "bytes": 128056
+    },
+    "shared-relocated/lib/libhyle_platform_thread.0.1.0.dylib": {
+      "sha256": "d48cddccdd12c7177890315ab31bc9adaf70fdd8882998a6b262e24d98be5fb8",
+      "bytes": 57040
+    },
+    "shared-relocated/lib/libhyle_time.0.1.0.dylib": {
+      "sha256": "e89b892dc30b0675982d6e34c9349e039b2ccc4df49b6a0e202304d3fc749711",
+      "bytes": 54856
+    },
+    "shared-relocated/lib/libhyle_error.dylib": {
+      "sha256": "025e6bc9d53fd57d723d5bf6fe079828897080ec8602221d5be4cb1e22be3ded",
+      "bytes": 74312
+    },
+    "shared-relocated/lib/libhyle_mem.0.1.0.dylib": {
+      "sha256": "408b9b5888a0a5bf722e0d2a84b9b9b3e4f9273803926731128162bf23679da0",
+      "bytes": 365416
+    },
+    "shared-relocated/lib/libhyle_platform_thread.dylib": {
+      "sha256": "d48cddccdd12c7177890315ab31bc9adaf70fdd8882998a6b262e24d98be5fb8",
+      "bytes": 57040
+    },
+    "shared-relocated/lib/libhyle_compute_provider_ggml_metal.0.1.0.dylib": {
+      "sha256": "0d41e7eafc69322045e564de49ddd913c98b6e9d14be4abbf40c1920573c8169",
+      "bytes": 2720032
+    },
+    "shared-relocated/lib/libmlx.dylib": {
+      "sha256": "446b7e6b3db34272ab59a31a54b26c4f48d4bd0e710f3691e3fd586973a8cf45",
+      "bytes": 6183104
+    },
+    "shared-relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib": {
+      "sha256": "c9579f97200f2db318fe77d0475d7ec578345b4fd6f6f47bbb9c0e147609da45",
+      "bytes": 590568
+    },
+    "shared-relocated/lib/mlx.metallib": {
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+      "bytes": 1455256
+    },
+    "shared-relocated/lib/libhyle_graph_route_apple.dylib": {
+      "sha256": "272b5976a9dfa98066f742b0b8f6dcfab980626624fedf92f7f37b7bfa70273c",
+      "bytes": 128056
+    },
+    "shared-relocated/lib/libhyle_compute.0.1.0.dylib": {
+      "sha256": "a6d6d0dbc3c48e6968098b944b44ba2a6a26a38ce964f390846c878137d71109",
+      "bytes": 224248
+    },
+    "shared-relocated/lib/libhyle_compute_route_apple.dylib": {
+      "sha256": "ba5486f01f7bef58c3955d0571fa8763229d14f0ac6f7970f91838d3f0f9f401",
+      "bytes": 356440
+    },
+    "shared-relocated/lib/libhyle_compute_ops.dylib": {
+      "sha256": "01000f391cbf3b261b79f3444f612d3347ae5a1dbc7112680b29a7c3748fecdc",
+      "bytes": 94592
+    },
+    "shared-relocated/lib/libhyle_mem.dylib": {
+      "sha256": "408b9b5888a0a5bf722e0d2a84b9b9b3e4f9273803926731128162bf23679da0",
+      "bytes": 365416
+    },
+    "shared-relocated/lib/libhyle_error.0.1.0.dylib": {
+      "sha256": "025e6bc9d53fd57d723d5bf6fe079828897080ec8602221d5be4cb1e22be3ded",
+      "bytes": 74312
+    },
+    "shared-relocated/lib/libhyle_platform.0.1.0.dylib": {
+      "sha256": "56799b172776f9e6a68fc86c1e218fdae32982b3ed5e03687dcadacbd3a271b0",
+      "bytes": 118816
+    },
+    "shared-relocated/lib/libhyle_container.dylib": {
+      "sha256": "52ee400a4304f76ef8944afda7d1bd1782d4dc9d27bdfe4474b597263036f3e5",
+      "bytes": 77520
+    },
+    "shared-relocated/lib/libhyle_simd.0.1.0.dylib": {
+      "sha256": "e61fd2f84facba64902b470fc0ff8af511274ea3ecae68df411d45dad13f5314",
+      "bytes": 1214744
+    },
+    "shared-relocated/lib/libhyle_graph.0.1.0.dylib": {
+      "sha256": "1dffcfbbd46507eab861744978f1b143c43b73cb2e1c11667c11895ace735af1",
+      "bytes": 524696
+    },
+    "shared-relocated/lib/libhyle_platform.dylib": {
+      "sha256": "56799b172776f9e6a68fc86c1e218fdae32982b3ed5e03687dcadacbd3a271b0",
+      "bytes": 118816
+    },
+    "shared-relocated/lib/libhyle_compute.dylib": {
+      "sha256": "a6d6d0dbc3c48e6968098b944b44ba2a6a26a38ce964f390846c878137d71109",
+      "bytes": 224248
+    },
+    "shared-relocated/lib/libhyle_graph.dylib": {
+      "sha256": "1dffcfbbd46507eab861744978f1b143c43b73cb2e1c11667c11895ace735af1",
+      "bytes": 524696
+    },
+    "source-build/d5_apple_direct": {
+      "sha256": "f03b374e4617baa48c3bb4e57add7a14b833a07316147e2cbef05340024b93e0",
+      "bytes": 10231184
+    },
+    "source-build/d5_apple_graph": {
+      "sha256": "9dd106871f015434c4090732f6788965d9189ef2e4cbea4de4d906b5a0c8787c",
+      "bytes": 10379424
+    },
+    "source-build/mlx.metallib": {
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+      "bytes": 1455256
+    },
+    "static-consumer/d5_apple_direct": {
+      "sha256": "f0b511a842d2151a534208c9d9e9266bcad6646075ce79590d864a2241214184",
+      "bytes": 10242496
+    },
+    "static-consumer/d5_apple_graph": {
+      "sha256": "84e1ca7882b53c7c75e903fdac31508054b5ea28db50ee65d3c30501cffe0b7d",
+      "bytes": 10407232
+    },
+    "static-consumer/mlx.metallib": {
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+      "bytes": 1455256
+    },
+    "static-relocated/lib/libhyle_platform.a": {
+      "sha256": "651f50aa96ab01dbc208461a1164226c305d55107099bf3caab1ecf84f1bf6af",
+      "bytes": 141232
+    },
+    "static-relocated/lib/libggml-base.a": {
+      "sha256": "21f9f55f586890b5aaa4e9ba7ff74e903e2027664e6a8b1a31188c52b12f1286",
+      "bytes": 1029120
+    },
+    "static-relocated/lib/libhyle_platform_thread.a": {
+      "sha256": "2b1ffc30ad511056a0012168989a90f6525ae3819f6aea47e0db446e1df9b423",
+      "bytes": 20048
+    },
+    "static-relocated/lib/libhyle_time.a": {
+      "sha256": "96e4c1c5c170f0b85363e946a813fce45da0711b5c99623b13930488334cf0ce",
+      "bytes": 16056
+    },
+    "static-relocated/lib/libmlx.a": {
+      "sha256": "078efb99cd575d966bbc4ced05ea53a6483f558b7e1eda50b99092f3edd014f3",
+      "bytes": 11462384
+    },
+    "static-relocated/lib/libhyle_graph.a": {
+      "sha256": "4dee83b791e03903cffa2cb29370ab71d4624600de28509b56368f6554b22c3c",
+      "bytes": 619536
+    },
+    "static-relocated/lib/libhyle_error.a": {
+      "sha256": "a13372d76a8b985741a826db44f8553d31941c7c9d24e70deffbe81185010616",
+      "bytes": 30136
+    },
+    "static-relocated/lib/mlx.metallib": {
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c",
+      "bytes": 1455256
+    },
+    "static-relocated/lib/libhyle_compute_route_apple.a": {
+      "sha256": "eb9229073eef6fbf849e428244ad3df81f76e561aa5877edd0dfe9531a14f6e4",
+      "bytes": 525680
+    },
+    "static-relocated/lib/libmimalloc_static.a": {
+      "sha256": "feb291e6260733f34edae55430b51e1c4cad14c174b4dccd473f6708604fed70",
+      "bytes": 308632
+    },
+    "static-relocated/lib/libhyle_compute.a": {
+      "sha256": "751ee8900f6b6c87593e3818b79293e522ef2854afe2031f886eb06b8bd44434",
+      "bytes": 290568
+    },
+    "static-relocated/lib/libhyle_simd.a": {
+      "sha256": "0eb47a166e5c34af3c903d55dabea34464594c09a0662b96e9f74d3e9b8a962e",
+      "bytes": 1516016
+    },
+    "static-relocated/lib/libggml.a": {
+      "sha256": "5552a94bcd3d1615acc260ffc114a4fde9f403a378b08e4c3c2d1cf4f216cef8",
+      "bytes": 41672
+    },
+    "static-relocated/lib/libggml-metal.a": {
+      "sha256": "3d298386656bcd3511c83a6426fbc39e8f209b96117f9ba4ba16b6a61ea86a19",
+      "bytes": 2242144
+    },
+    "static-relocated/lib/libhyle_compute_ggml_runtime.a": {
+      "sha256": "c292fdd5902d80a7dea35e57f76b4620f2b81e794330b23d2ef0e3eb7315bdec",
+      "bytes": 9656
+    },
+    "static-relocated/lib/libhyle_container.a": {
+      "sha256": "56f0b9061faa6463442838b5b7d0a1b697ce26cf81e9bf752a67baa72bc09bd8",
+      "bytes": 56224
+    },
+    "static-relocated/lib/libhyle_compute_ops.a": {
+      "sha256": "297fcdfe1d465bed9db928aa1205919e71d714fda431d727a688f99946768029",
+      "bytes": 90320
+    },
+    "static-relocated/lib/libhyle_mem.a": {
+      "sha256": "5f3f35be7622046d75e0642ace105263b4b09cd46aadea135a8bf968ec985d54",
+      "bytes": 200696
+    },
+    "static-relocated/lib/libhyle_compute_provider_ggml_metal.a": {
+      "sha256": "abc9ad60677ab004b3980b34ddd252946c188e1f5deeb98865751649fbbb5bed",
+      "bytes": 34072
+    },
+    "static-relocated/lib/libhyle_graph_route_apple.a": {
+      "sha256": "37f4c2c56f9074d93a50eb0f2c8d6ab952feca1c4286f9d14792878203025149",
+      "bytes": 86336
+    }
+  },
+  "storage": {
+    "source-build": {
+      "bytes": 109845633,
+      "files": 3766
+    },
+    "shared-consumer": {
+      "bytes": 15232646,
+      "files": 59
+    },
+    "static-consumer": {
+      "bytes": 30483920,
+      "files": 58
+    },
+    "shared-relocated": {
+      "bytes": 33000734,
+      "files": 777
+    },
+    "static-relocated": {
+      "bytes": 32339294,
+      "files": 767
+    }
+  },
+  "environment": {
+    "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+    "hardware": "Mac16,12\n",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "sdk": "27.0\n"
+  }
+}

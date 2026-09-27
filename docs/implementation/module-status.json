@@ -499,13 +499,13 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：3f7a0eb5普通FP8与完整GLM官方两画像Direct/Graph正确性通过；MLX unfused F32参考已归因，原门未放宽。新增Apple四格，ledger152/176、Apple40/44；FP4及A5/A6仍待验。"
+      "summary": "D5-F45 AUDITED：Apple40格运行通过；e9afd4a3完成真实片段源码/静态/动态三交付。DeepSeek官方FP4的4格确认当前路线拒绝，不计运行支持；A6和完整支持缺口未完成，无新数学。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：3f7a0eb5普通FP8与完整GLM官方两画像Direct/Graph正确性通过；MLX unfused F32参考已归因，原门未放宽。新增Apple四格，ledger152/176、Apple40/44；FP4及A5/A6仍待验。"
+      "summary": "D5-F45 AUDITED：Apple40格运行通过；e9afd4a3完成真实片段源码/静态/动态三交付。DeepSeek官方FP4的4格确认当前路线拒绝，不计运行支持；A6和完整支持缺口未完成，无新数学。"
     },
     {
       "module": "compute_route_vulkan",

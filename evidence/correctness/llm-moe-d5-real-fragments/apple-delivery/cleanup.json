@@ -1,0 +1,20 @@
+{
+  "removed": [
+    {
+      "path": "/Users/kiro/hyle-scratch/d5-apple-delivery/shared-consumer",
+      "bytes": 15232646,
+      "files": 59
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer",
+      "bytes": 30483920,
+      "files": 58
+    }
+  ],
+  "retained": [
+    "source-build",
+    "shared-relocated",
+    "static-relocated"
+  ],
+  "reason": "Completed Apple batch, archived receipts and artifacts; retain SDKs and one source/static producer for A6."
+}

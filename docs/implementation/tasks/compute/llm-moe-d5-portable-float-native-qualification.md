@@ -2,6 +2,11 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
+**2026-09-27后续：** Apple当前可用画像的三交付已按D5整批完成，见
+[A5与普通入口FP4边界证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md)。
+Apple40格保持通过，DeepSeek官方4格为当前路线精确拒绝；未增加运行支持，也未改产品数学。
+本卡owner保持AUDITED，A6和完整官方FP4支持缺口未完成；下文A5待验是历史快照。
+
 - baseline：`55211caf1954f34a9322c08872ead3e0f3efd742`；Windows canonical。
 - 属于[当前 D5](llm-moe-d5-real-fragment-acceptance.md)的剩余官方画像边界调查；
   本批产品 FIX 为零，不改变任何模块 owner 状态或提前增加完整画像通过格。

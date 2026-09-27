@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "cmake",
+    "-S",
+    ".",
+    "-B",
+    "C:/hv/d5ao",
+    "-G",
+    "Ninja",
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DHYLE_DEV_FACTORS=compute_route_apple,graph_route_apple",
+    "-DHYLE_BUILD_TESTS=ON",
+    "-DHYLE_BUILD_BENCH=OFF",
+    "-DHYLE_INSTALL=OFF",
+    "-DHYLE_TEST_INSTRUMENTATION=OFF",
+    "-DHYLE_WERROR=ON",
+    "-DHYLE_COMPUTE_APPLE=OFF"
+  ],
+  "returncode": 0,
+  "seconds": 5.25
+}

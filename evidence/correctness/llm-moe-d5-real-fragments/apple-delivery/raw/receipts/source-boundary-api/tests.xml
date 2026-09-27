@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="26"
+	timestamp="2026-09-27T13:27:51"
+	>
+	<testcase name="d5_apple_direct" classname="d5_apple_direct" time="21.9596" status="run">
+		<properties/>
+		<system-out>dyld[20692]: &lt;72A8A031-9C6B-3800-8AD6-DB806DC58215&gt; /Users/kiro/hyle-scratch/d5-apple-delivery/source-build/d5_apple_direct
+dyld[20692]: &lt;4FDC9AA6-B344-37FE-B8C6-A4C94A038F57&gt; /usr/lib/libSystem.B.dylib
+dyld[20692]: &lt;80BAE197-E285-3F6E-A1EE-B77FE37D7E5D&gt; /usr/lib/system/libcache.dylib
+dyld[20692]: &lt;41C99F45-C5E6-39DB-B1F2-A1BEA9D242A4&gt; /usr/lib/system/libcommonCrypto.dylib
+dyld[20692]: &lt;DFB5CE7F-A36E-36AA-BECE-1392D3D43607&gt; /usr/lib/system/libcompiler_rt.dylib
+dyld[20692]: &lt;72D95AF9-BF5E-3A84-81A6-BCC5BDB99857&gt; /usr/lib/system/libcopyfile.dylib
+dyld[20692]: &lt;807AA6C9-5D8A-3CA5-B4CE-FACE5296EF6A&gt; /usr/lib/system/libcorecrypto.dylib
+dyld[20692]: &lt;022BF08F-0B3A-3225-9E65-16D1553CE90D&gt; /usr/lib/system/libdispatch.dylib
+dyld[20692]: &lt;62863BCA-DD60-3D32-A9DB-89099BA6F3D7&gt; /usr/lib/system/libdyld.dylib
+dyld[20692]: &lt;5EC997EF-3ADA-360B-9FCD-5F940C83FA4E&gt; /usr/lib/system/libkeymgr.dylib
+dyld[20692]: &lt;50DEADEC-3E99-3519-AFC3-4A3FEB3F14C3&gt; /usr/lib/system/libmacho.dylib
+dyld[20692]: &lt;7FD4AE22-86EF-382B-83F5-ADF9336C1160...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="d5_apple_graph" classname="d5_apple_graph" time="4.49114" status="run">
+		<properties/>
+		<system-out>dyld[20733]: &lt;1762EE0A-4091-3BEF-84FE-24E3E309D0C3&gt; /Users/kiro/hyle-scratch/d5-apple-delivery/source-build/d5_apple_graph
+dyld[20733]: &lt;4FDC9AA6-B344-37FE-B8C6-A4C94A038F57&gt; /usr/lib/libSystem.B.dylib
+dyld[20733]: &lt;80BAE197-E285-3F6E-A1EE-B77FE37D7E5D&gt; /usr/lib/system/libcache.dylib
+dyld[20733]: &lt;41C99F45-C5E6-39DB-B1F2-A1BEA9D242A4&gt; /usr/lib/system/libcommonCrypto.dylib
+dyld[20733]: &lt;DFB5CE7F-A36E-36AA-BECE-1392D3D43607&gt; /usr/lib/system/libcompiler_rt.dylib
+dyld[20733]: &lt;72D95AF9-BF5E-3A84-81A6-BCC5BDB99857&gt; /usr/lib/system/libcopyfile.dylib
+dyld[20733]: &lt;807AA6C9-5D8A-3CA5-B4CE-FACE5296EF6A&gt; /usr/lib/system/libcorecrypto.dylib
+dyld[20733]: &lt;022BF08F-0B3A-3225-9E65-16D1553CE90D&gt; /usr/lib/system/libdispatch.dylib
+dyld[20733]: &lt;62863BCA-DD60-3D32-A9DB-89099BA6F3D7&gt; /usr/lib/system/libdyld.dylib
+dyld[20733]: &lt;5EC997EF-3ADA-360B-9FCD-5F940C83FA4E&gt; /usr/lib/system/libkeymgr.dylib
+dyld[20733]: &lt;50DEADEC-3E99-3519-AFC3-4A3FEB3F14C3&gt; /usr/lib/system/libmacho.dylib
+dyld[20733]: &lt;7FD4AE22-86EF-382B-83F5-ADF9336C1160&gt;...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>

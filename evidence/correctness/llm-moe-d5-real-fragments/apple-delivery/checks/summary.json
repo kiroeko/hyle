@@ -1,0 +1,10 @@
+{
+  "docs": "PASS: 667 Markdown files, 2960 relative links",
+  "closure": "PASS: 57 components; --previous-ref e9afd4a3; owner states unchanged",
+  "ledger": "PASS: 152 RUN_PASS, 12 BACKEND_REJECTED, 12 VALIDATION_NOT_RUN",
+  "windows_off": "PASS: exact compute_route_apple/graph_route_apple configure, native paths excluded",
+  "final_selector": "READY: docs/closure selected, 130 skipped/reused",
+  "product_inputs": "git diff 9273bc71 over include/src/cmake/third_party/CMakeLists.txt empty",
+  "native": "Three deliveries, 12 checks each; 11 immutable shared passes reused and one correction executed",
+  "P1": "NOT_RUN; pending A6"
+}

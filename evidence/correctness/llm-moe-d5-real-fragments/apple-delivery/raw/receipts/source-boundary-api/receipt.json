@@ -1,0 +1,60 @@
+{
+  "candidate": "e9afd4a3d84c8eeec7d34f5e86f4602c51ac50e8",
+  "stage": "source",
+  "steps": [
+    {
+      "label": "source-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DD5_SOURCE_ROOT=/Users/kiro/hyle",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/d5-apple-delivery/static-staging",
+        "-DHYLE_WERROR=ON"
+      ],
+      "returncode": 0,
+      "seconds": 3.916
+    },
+    {
+      "label": "source-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 83.262
+    },
+    {
+      "label": "consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/d5-apple-delivery/receipts/source-boundary-api/tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 26.464
+    }
+  ],
+  "verdict": "PASS",
+  "tests": 12,
+  "executed_tests": 12,
+  "runtime_path": "/usr/bin:/bin"
+}

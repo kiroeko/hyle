@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="0.819" timestamp="2026-09-27T13:26:23.843" name="AllTests">
+  <testsuite name="AppleMoeFragments" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.819" timestamp="2026-09-27T13:26:23.843">
+    <testcase name="D5OfficialDeepSeekFullMoeColdBoundary" file="/Users/kiro/hyle-scratch/d5-apple-delivery/consumer/tests/compute_route_apple/d5_qwen35_execution_test.cc" line="1767" status="run" result="completed" time="0.819" timestamp="2026-09-27T13:26:23.843" classname="AppleMoeFragments" />
+  </testsuite>
+</testsuites>

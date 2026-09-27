@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="25"
+	timestamp="2026-09-27T13:28:33"
+	>
+	<testcase name="d5_apple_direct" classname="d5_apple_direct" time="20.805" status="run">
+		<properties/>
+		<system-out>dyld[20993]: &lt;D6B1326B-5E1D-3366-8278-C883513ED9F3&gt; /Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer/d5_apple_direct
+dyld[20993]: &lt;4317F7C6-73D2-3BE9-B010-F318F1198A1B&gt; /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation
+dyld[20993]: &lt;C0680DF6-9900-3C29-A071-95A031686EF8&gt; /usr/lib/libobjc.A.dylib
+dyld[20993]: &lt;727E905E-F344-3823-8E13-E7A096388321&gt; /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+dyld[20993]: &lt;031A156F-8BB6-36B2-96D2-4CCFF1D3174C&gt; /System/Library/PrivateFrameworks/NSPredicateSecurityPolicy.framework/Versions/A/NSPredicateSecurityPolicy
+dyld[20993]: &lt;10869E21-4B5A-3D06-9A03-F0BA544A6DC8&gt; /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration
+dyld[20993]: &lt;09881E57-159D-3E5F-B9EB-B708249AC31E&gt; /usr/lib/libz.1.dylib
+dyld[20993]: &lt;759521BC-E562-3BE6-8AA2-3248573B8E1E&gt; /System/Library/PrivateFrameworks/CoreAutoLayout.framework/Versions/A/CoreAutoLayout
+dyld[20993]: &lt;34803C9F-07DD-3ADD-A787-D665611A6646&gt; /usr/l...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="d5_apple_graph" classname="d5_apple_graph" time="4.5861" status="run">
+		<properties/>
+		<system-out>dyld[20997]: &lt;68B861DA-34A2-3FD4-A858-3D497660E638&gt; /Users/kiro/hyle-scratch/d5-apple-delivery/static-consumer/d5_apple_graph
+dyld[20997]: &lt;4317F7C6-73D2-3BE9-B010-F318F1198A1B&gt; /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation
+dyld[20997]: &lt;C0680DF6-9900-3C29-A071-95A031686EF8&gt; /usr/lib/libobjc.A.dylib
+dyld[20997]: &lt;727E905E-F344-3823-8E13-E7A096388321&gt; /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+dyld[20997]: &lt;031A156F-8BB6-36B2-96D2-4CCFF1D3174C&gt; /System/Library/PrivateFrameworks/NSPredicateSecurityPolicy.framework/Versions/A/NSPredicateSecurityPolicy
+dyld[20997]: &lt;10869E21-4B5A-3D06-9A03-F0BA544A6DC8&gt; /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration
+dyld[20997]: &lt;09881E57-159D-3E5F-B9EB-B708249AC31E&gt; /usr/lib/libz.1.dylib
+dyld[20997]: &lt;759521BC-E562-3BE6-8AA2-3248573B8E1E&gt; /System/Library/PrivateFrameworks/CoreAutoLayout.framework/Versions/A/CoreAutoLayout
+dyld[20997]: &lt;34803C9F-07DD-3ADD-A787-D665611A6646&gt; /usr/li...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>
