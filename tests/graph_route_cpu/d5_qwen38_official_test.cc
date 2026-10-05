@@ -71,15 +71,15 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
     const auto node = compiled.report.node(report.node_begin).value();
     if (node.kind == c::OperationKind::kView && report.provider.name.empty())
       continue;
-    EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
-                provider == c::onednn::kProviderId ||
-                provider == g::onednn::kProviderId
+    bool mature = provider == c::ggml_cpu::kProviderId ||
+                  provider == c::onednn::kProviderId ||
+                  provider == g::onednn::kProviderId;
 #if defined(HYLE_TEST_TORCH_CPU)
-                || (provider == c::native::kProviderId &&
-                    report.implementation.value() >= 0x544f524348000001ULL &&
-                    report.implementation.value() <= 0x544f524348000006ULL)
+    mature = mature || (provider == c::native::kProviderId &&
+                       report.implementation.value() >= 0x544f524348000001ULL &&
+                       report.implementation.value() <= 0x544f524348000006ULL);
 #endif
-                )
+    EXPECT_TRUE(mature)
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)
         << " provider=" << report.provider.name;

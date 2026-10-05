@@ -95,14 +95,14 @@ DirectCall make_call(const c::Context &context, c::Operation operation,
 
 void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
-  EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
-              provider == c::onednn::kProviderId
+  bool mature = provider == c::ggml_cpu::kProviderId ||
+                provider == c::onednn::kProviderId;
 #if defined(HYLE_TEST_TORCH_CPU)
-              || (provider == c::native::kProviderId &&
-                  call.prepared.implementation().value() >= 0x544f524348000001ULL &&
-                  call.prepared.implementation().value() <= 0x544f524348000006ULL)
+  mature = mature || (provider == c::native::kProviderId &&
+                     call.prepared.implementation().value() >= 0x544f524348000001ULL &&
+                     call.prepared.implementation().value() <= 0x544f524348000006ULL);
 #endif
-              )
+  EXPECT_TRUE(mature)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
   EXPECT_EQ(call.prepared.workload(), workload);
