@@ -144,8 +144,9 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
                   .write(std::as_bytes(std::span(sentinel)))
                   .ok());
   auto failure = tail_invocation.submit(queue);
-  if (failure)
+  if (failure) {
     EXPECT_TRUE(failure->wait().IsOutOfRange());
+  }
   else
     EXPECT_TRUE(failure.error().IsOutOfRange());
   std::vector<fixture::BF16> retained(sentinel.size());

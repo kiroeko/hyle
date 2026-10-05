@@ -187,8 +187,9 @@ inline void check_gather(const c::Context &context,
     const std::array outputs{
         c::TensorView::create(output_desc, output.view()).value()};
     auto failed = call.invocation.submit(queue, inputs, outputs);
-    if (failed)
+    if (failed) {
       EXPECT_TRUE(failed->wait().IsOutOfRange());
+    }
     else
       EXPECT_TRUE(failed.error().IsOutOfRange());
     EXPECT_EQ(read(output, output.size()), sentinel);

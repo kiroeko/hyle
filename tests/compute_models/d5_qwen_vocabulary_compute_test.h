@@ -85,8 +85,9 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
         c::TensorView::create(output_desc, output.view()).value()};
     auto done = call.invocation.submit(queue, inputs, outputs);
     EXPECT_TRUE(done) << done.error().message();
-    if (done)
+    if (done) {
       EXPECT_TRUE(done->wait().ok());
+    }
     std::vector<fixture::BF16> raw(static_cast<std::size_t>(hidden));
     EXPECT_TRUE(output.view().read(std::as_writable_bytes(std::span(raw))).ok());
     std::vector<double> result(raw.size());
@@ -124,8 +125,9 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
   const std::array outputs{
       c::TensorView::create(output_desc, output.view()).value()};
   auto failure = tail.invocation.submit(queue, inputs, outputs);
-  if (failure)
+  if (failure) {
     EXPECT_TRUE(failure->wait().IsOutOfRange());
+  }
   else
     EXPECT_TRUE(failure.error().IsOutOfRange());
   std::vector<fixture::BF16> retained(sentinel.size());

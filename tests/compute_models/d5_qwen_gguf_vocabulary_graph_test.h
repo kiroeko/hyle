@@ -137,8 +137,9 @@ void check_head(const c::Context &context, mem::MemoryResourceRef resource,
     EXPECT_TRUE(activation.view().write(bytes).ok());
     auto done = call.invocation.submit(queue);
     EXPECT_TRUE(done) << done.error().message();
-    if (done)
+    if (done) {
       EXPECT_TRUE(done->wait().ok());
+    }
     return fixture::decode_values(
         profile.output,
         read(output, dense(type, {1, shard.rows}).required_bytes().value()));
@@ -213,8 +214,9 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
     EXPECT_TRUE(ids.view().write(std::as_bytes(std::span(index))).ok());
     auto done = call.invocation.submit(queue);
     EXPECT_TRUE(done) << done.error().message();
-    if (done)
+    if (done) {
       EXPECT_TRUE(done->wait().ok());
+    }
     return fixture::decode_values(profile.embedding,
                                   read(output, output.size()));
   };
@@ -225,8 +227,9 @@ void check_gather(const c::Context &context, mem::MemoryResourceRef resource,
     const std::array index{static_cast<std::int32_t>(local_id)};
     ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(index))).ok());
     auto failed = call.invocation.submit(queue);
-    if (failed)
+    if (failed) {
       EXPECT_TRUE(failed->wait().IsOutOfRange());
+    }
     else
       EXPECT_TRUE(failed.error().IsOutOfRange());
     EXPECT_EQ(read(output, output.size()), sentinel);

@@ -248,8 +248,9 @@ void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
         gated_actual, down_packed.decoded, hidden, expanded);
     d5_gguf_test::expect_quantized_chain_matmul_close(final_actual,
                                                       final_expected);
-    if (!previous_final.empty())
+    if (!previous_final.empty()) {
       EXPECT_NE(final_actual, previous_final);
+    }
     previous_final = final_actual;
   }
   EXPECT_EQ(stats.snapshot().total_allocs, before_replay.total_allocs);
@@ -433,8 +434,9 @@ void run_qwen35_gguf_attention(
         EXPECT_NEAR(actual[head * depth + column],
                     values[(head / (query_heads / kv_heads)) * depth + column],
                     2.0e-6F);
-    if (!previous_attention.empty())
+    if (!previous_attention.empty()) {
       EXPECT_NE(actual, previous_attention);
+    }
     previous_attention = actual;
   }
 }
@@ -571,8 +573,9 @@ void run_qwen35_gguf_gdn(const c::ModelArtifactProfileDescription &profile) {
                                           4.0e-6F);
     d5_qwen35_gguf_fragment::expect_close(actual_state, expected.state,
                                           4.0e-6F);
-    if (!previous_scores.empty())
+    if (!previous_scores.empty()) {
       EXPECT_NE(actual_scores, previous_scores);
+    }
     previous_scores = actual_scores;
   }
 }

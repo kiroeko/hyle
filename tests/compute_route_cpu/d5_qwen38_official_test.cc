@@ -893,9 +893,10 @@ void run_q24_semantic_fragment(
       SCOPED_TRACE("fragment output=" + std::to_string(output));
       const auto actual = sem::decode_output(fixture, output, half_test::read<float>(buffers[fixture.outputs[output].ordinal()]));
       SCOPED_TRACE(::testing::Message() << "output " << output << " region " << fixture.region);
-      if (std::ranges::all_of(expected.outputs[output], [](float value) { return std::isfinite(value); }))
+      if (std::ranges::all_of(expected.outputs[output], [](float value) { return std::isfinite(value); })) {
         ASSERT_TRUE(std::ranges::all_of(actual, [](float value) { return std::isfinite(value); }))
             << "non-finite output for a finite-reference model fragment";
+      }
       std::size_t worst = 0;
       for (std::size_t i = 1; i < actual.size(); ++i)
         if (std::abs(actual[i] - expected.outputs[output][i]) >

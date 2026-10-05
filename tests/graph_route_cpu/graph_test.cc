@@ -659,12 +659,13 @@ void check_norm_post_op_graph(std::int64_t rows, bool rms, bool scalar,
           }
           for (std::int64_t col = 0; col < width; ++col) {
             const auto index = static_cast<std::size_t>(row * width + col);
-            if (published)
+            if (published) {
               EXPECT_NEAR(published_values[index],
                           (current[index] - mean) /
                               std::sqrt(squares / width + 1.e-5),
                           4.e-5)
                   << index;
+            }
             const double weighted_value =
                 (current[index] - mean) / std::sqrt(squares / width + 1.e-5) *
                 scales[scalar ? 0 : static_cast<std::size_t>(col)];
@@ -1352,9 +1353,10 @@ TEST(CpuDefaultGraph, SelectedGroupMeansBroadcastWithinOneMatureRegion) {
         EXPECT_NEAR(actual_variance[i], expected_variance[i], 2.e-6);
       }
       previous[slot] = actual_variance;
-      if (run != 0)
+      if (run != 0) {
         EXPECT_EQ(half_test::read<float>(variances[1 - slot]),
                   previous[1 - slot]);
+      }
     }
     EXPECT_EQ(stats.snapshot().total_allocs, allocations);
   }
@@ -1866,9 +1868,10 @@ TEST(CpuGraph, SelectRetainsBitsAndResultsAcrossTwoInvocations) {
     for (std::size_t i = 0; i < masks.size(); ++i)
       EXPECT_EQ(actual[i], masks[i] ? left[i] : right[i]);
     previous[run % 2] = actual;
-    if (run != 0)
+    if (run != 0) {
       EXPECT_EQ(half_test::read<std::uint32_t>(outputs[(run + 1) % 2]),
                 previous[(run + 1) % 2]);
+    }
   }
 }
 } // namespace
