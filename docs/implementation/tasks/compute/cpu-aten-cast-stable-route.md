@@ -1,6 +1,6 @@
 # CPU成熟接线：浮点Cast与稳定泛型路由
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner：`compute_provider_native`、`compute_provider_ggml`；baseline `b881d2788e0848404c536342b806d6642f3aefa7`，Windows canonical。
   CPU/Graph现有assembler不变；只改原成熟factory的精确准入/数值程序。不修改其已关闭公共规划器。
@@ -94,3 +94,11 @@ TC4批量迁移六个CPU/Graph直接消费者的白名单到精确ATen身份；�
 Windows只重跑实际失败的37项，114通过及7跳过以完整初次XML、产品全输入相同和单调身份谓词
 证明复用；Graph首次完整受影响factor照常运行。Linux完整受影响factor与两平台同ordinary consumer
 三交付仍待验，不把原Cast witness或已通过Provider单元代签。此处没有新增产品纠正或P1。
+
+
+## 不可变候选
+
+CANDIDATE `c2df0b8973a80b7140e69983c8e861668483a97c`（产品payload为`689e9a1b`相同字节）。
+原manifest与候选1335输入对照只有上述六个测试变化；1329输入不变。原114通过/7skip的复用证明
+和37失败位置另存fixture-reuse.json，原执行receipt保持原身份，不改写失败历史。算法/API/普通程序
+与有限FIX已停止变化；剩余资格逐项运行，当前不是CLOSED，也没有P1/WIN。

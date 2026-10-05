@@ -373,9 +373,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 AUDITED：原Cast/Sigmoid1,005,272断言通过；ggml generic有限尾部反例实证，固定五dtype成熟转换/稳定generic原程序与必要图边界接缝。未改产品，Native自研比较冻结。"
+      "summary": "TC1–4 CANDIDATE：五dtype成熟Cast/NaN storage边界、原Double Sigmoid和必要generic图边界已固定；Windows124/124及58/58通过，旧模型身份fixture批量迁移。CPU/Graph全factor与两平台三交付仍在验收，自研裁决冻结。",
+      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c"
     },
     {
       "module": "graph_provider_onednn",
@@ -418,9 +419,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 AUDITED：原Cast/Sigmoid1,005,272断言通过；ggml generic有限尾部反例实证，固定五dtype成熟转换/稳定generic原程序与必要图边界接缝。未改产品，Native自研比较冻结。"
+      "summary": "TC1–4 CANDIDATE：五dtype成熟Cast/NaN storage边界、原Double Sigmoid和必要generic图边界已固定；Windows124/124及58/58通过，旧模型身份fixture批量迁移。CPU/Graph全factor与两平台三交付仍在验收，自研裁决冻结。",
+      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c"
     },
     {
       "module": "compute_sched",
