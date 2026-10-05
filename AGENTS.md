@@ -14,6 +14,8 @@
 
 ## 远程验证工作区
 
+- 2026-10-05 用户确认：当前只有 MacBook Air 可用；Mac mini 当前不可用。
+  后续 Apple 验证只使用 MacBook Air，运行前读取实际硬件、系统和工具链身份。
 - 产品真相只在 Windows `C:\public\project-hyle\hyle`；WSL 与两台 macOS 主机上的 checkout/
   archive 都是可丢弃的验证副本，不得反向覆盖产品源码。
 - MacBook Air `Mac16,12`：`ssh kiro@172.22.10.198`。使用 Windows OpenSSH 的默认身份；不要强制
