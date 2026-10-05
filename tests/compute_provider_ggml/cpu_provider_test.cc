@@ -1175,16 +1175,11 @@ TEST(GgmlCpuProvider, D5RouterSoftmaxUsesMatureRowsAndKeepsNarrowDomain) {
                   std::exp(scores[row * 512 + expert]) / denominator,
                   2.0e-7);
   }
-  for (const auto operation : {Softmax{.axis = 0},
-                               Softmax{.scale = 0.5F}}) {
-    auto rejected = prepare(context, operation, description);
-    ASSERT_FALSE(rejected);
-    EXPECT_TRUE(rejected.error().IsUnimplemented());
-  }
-  auto rejected_half =
-      prepare(context, Softmax{}, dense(DataType::kFloat16, {2, 512}));
-  ASSERT_FALSE(rejected_half);
-  EXPECT_TRUE(rejected_half.error().IsUnimplemented());
+  auto rejected = prepare(context, Softmax{.axis = 0}, description);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
+  EXPECT_TRUE(prepare(context, Softmax{.scale = 0.5F}, description));
+  EXPECT_TRUE(prepare(context, Softmax{}, dense(DataType::kFloat16, {2, 512})));
 }
 
 TEST(GgmlCpuProvider, InvocationAllocationFailureRollsBackAndCanRecover) {

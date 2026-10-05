@@ -42,6 +42,11 @@ struct Program final {
   // mask payloads, broadcast across batch and heads during replay.
   std::vector<std::vector<ggml_fp16_t>> attention_masks;
   std::vector<IndexCheck> index_checks;
+  // Exact native scalar bytes, owned by the immutable prepared program.
+  struct alignas(float) FillValue {
+    std::array<std::byte, sizeof(float)> bytes{};
+  };
+  std::vector<FillValue> fill_values;
   float one = 1.0F;
   float zero = 0.0F;
   float nan = std::numeric_limits<float>::quiet_NaN();
@@ -373,6 +378,54 @@ ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
   return value;
 }
 
+bool valid_softmax_row(const float *values, std::int64_t width) noexcept {
+  bool finite = false;
+  for (std::int64_t i = 0; i < width; ++i) {
+    if (std::isnan(values[i]) || values[i] == INFINITY)
+      return false;
+    finite = finite || std::isfinite(values[i]);
+  }
+  return finite;
+}
+
+// Upstream debug Softmax asserts on undefined rows. Replace those rows
+// before its kernel, then restore the public NaN result before consumers.
+// Neither boundary computes exp, a sum or normalization.
+void softmax_safe_rows(ggml_tensor *output, const ggml_tensor *input,
+                        int ith, int nth, void *) noexcept {
+  const auto width = output->ne[0];
+  const auto count = ggml_nrows(output);
+  const auto *source = static_cast<const float *>(input->data);
+  auto *destination = static_cast<float *>(output->data);
+  for (auto row = std::int64_t{ith}; row < count; row += nth) {
+    const auto *values = source + row * width;
+    auto *target = destination + row * width;
+    if (valid_softmax_row(values, width))
+      std::copy_n(values, width, target);
+    else
+      std::fill_n(target, width, 0.0F);
+  }
+}
+void softmax_restore_rows(ggml_tensor *output, const ggml_tensor *,
+                           const ggml_tensor *scores, int ith, int nth,
+                           void *) noexcept {
+  const auto width = output->ne[0];
+  const auto count = ggml_nrows(output);
+  const auto *source = static_cast<const float *>(scores->data);
+  auto *destination = static_cast<float *>(output->data);
+  for (auto row = std::int64_t{ith}; row < count; row += nth)
+    if (!valid_softmax_row(source + row * width, width))
+      std::fill_n(destination + row * width, width,
+                  std::numeric_limits<float>::quiet_NaN());
+}
+ggml_tensor *safe_softmax(ggml_context *context, ggml_tensor *scores) {
+  auto *safe = ggml_map_custom1(context, scores, &softmax_safe_rows,
+                                 GGML_N_TASKS_MAX, nullptr);
+  return ggml_map_custom2_inplace(context, ggml_soft_max(context, safe),
+                                   scores, &softmax_restore_rows,
+                                   GGML_N_TASKS_MAX, nullptr);
+}
+
 // ggml ReLU maps NaN to zero. Keep the public propagation contract before
 // downstream region consumers; all non-NaN arithmetic stays in the original.
 void relu_nan(ggml_tensor *output, const ggml_tensor *,
@@ -440,7 +493,11 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     return as_float(context, input(index));
   };
   ggml_tensor *result = nullptr;
-  if (node.operation.get_if<Copy>()) {
+  if (node.operation.get_if<Fill>()) {
+    auto *scalar = ggml_new_tensor_1d(context, native_type(output.data_type()), 1);
+    scalar->data = program.fill_values[node_index].bytes.data();
+    result = ggml_repeat_4d(context, scalar, columns(output), rows(output), 1, 1);
+  } else if (node.operation.get_if<Copy>()) {
     result = ggml_dup(context, input(0));
   } else if (node.operation.get_if<Cast>()) {
     result = ggml_cast(context, input(0), native_type(output.data_type()));
@@ -537,8 +594,15 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       result = ggml_mul(context, result, fp(1));
     if (node.inputs.size() > 2)
       result = ggml_add(context, result, fp(2));
-  } else if (node.operation.get_if<Softmax>()) {
-    result = ggml_soft_max(context, fp(0));
+  } else if (const auto *softmax = node.operation.get_if<Softmax>()) {
+    auto *scores = fp(0);
+    if (softmax->scale != 1.0F)
+      scores = ggml_scale(context, scores, softmax->scale);
+    if (softmax->mask == MaskKind::kAdditive)
+      scores = ggml_add(context, scores,
+                         expand_broadcast(context, fp(1),
+                                          recipe.values[node.inputs[1]], output));
+    result = safe_softmax(context, scores);
   } else if (const auto *reduce = node.operation.get_if<Reduce>()) {
     const auto &source = recipe.values[node.inputs[0]];
     if (elements(source) == 0) {
@@ -697,7 +761,7 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     query = ggml_permute(context, as_float(context, query), 0, 2, 1, 3);
     key = ggml_permute(context, key, 0, 2, 1, 3);
     value = ggml_permute(context, value, 0, 2, 1, 3);
-    if (type == GGML_TYPE_F16) {
+    if (type == GGML_TYPE_F16 && attention->causal) {
       const auto &mask_values = program.attention_masks[node_index];
       if (mask_values.empty())
         return {};
@@ -715,9 +779,10 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       if (!ggml_prec_set_acc(scores, GGML_PREC_F32))
         return {};
       scores = ggml_scale(context, scores, attention->scale);
-      scores = ggml_diag_mask_inf(context, scores,
-                                  static_cast<int>(key->ne[1] - query->ne[1]));
-      auto *probabilities = ggml_soft_max(context, scores);
+      if (attention->causal)
+        scores = ggml_diag_mask_inf(context, scores,
+                                    static_cast<int>(key->ne[1] - query->ne[1]));
+      auto *probabilities = safe_softmax(context, scores);
       value = ggml_cont(context, ggml_transpose(context, value));
       result = ggml_mul_mat(context, value, probabilities);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
@@ -1128,7 +1193,7 @@ ProviderRuntimeProperties runtime(void *value) noexcept {
 bool supports(void *context, Operation operation,
               std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
-  if (!context || inputs.empty() || outputs.empty() ||
+  if (!context || (inputs.empty() && !operation.get_if<Fill>()) || outputs.empty() ||
       !std::ranges::all_of(outputs, [](const auto &description) {
         return description.is_dense() && representable(description);
       }))
@@ -1214,6 +1279,8 @@ bool supports(void *context, Operation operation,
   if (!nonempty && elements(output) != 0 && !operation.get_if<Concat>() &&
       !operation.get_if<Reduce>() && !operation.get_if<Scatter>())
     return false;
+  if (operation.get_if<Fill>())
+    return inputs.empty() && floating(output.data_type());
   if (operation.get_if<Copy>() || operation.get_if<Concat>())
     return true;
   if (operation.get_if<Cast>())
@@ -1247,12 +1314,17 @@ bool supports(void *context, Operation operation,
   if (const auto *norm = operation.get_if<LayerNorm>())
     return norm->accumulation_type == DataType::kFloat32;
   if (const auto *softmax = operation.get_if<Softmax>())
-    return inputs.size() == 1 && inputs[0].rank() == 2 &&
+    return inputs.size() == (softmax->mask == MaskKind::kNone ? 1U : 2U) &&
+           inputs[0].rank() > 0 && elements(inputs[0]) > 0 &&
            inputs[0].is_plain() && inputs[0].is_dense() &&
-           inputs[0].data_type() == DataType::kFloat32 &&
-           output == inputs[0] && softmax->axis == -1 &&
-           softmax->scale == 1.0F && softmax->kind == SoftmaxKind::kSoftmax &&
-           softmax->mask == MaskKind::kNone &&
+           floating(inputs[0].data_type()) && output == inputs[0] &&
+           axis(softmax->axis, inputs[0].rank()) ==
+               static_cast<std::int32_t>(inputs[0].rank() - 1) &&
+           std::isfinite(softmax->scale) &&
+           softmax->kind == SoftmaxKind::kSoftmax &&
+           (softmax->mask == MaskKind::kNone ||
+            (softmax->mask == MaskKind::kAdditive && inputs[1].is_dense() &&
+             inputs[1].data_type() == inputs[0].data_type())) &&
            softmax->accumulation_type == DataType::kFloat32;
   if (const auto *reduce = operation.get_if<Reduce>())
     return (reduce->kind == ReductionKind::kSum ||
@@ -1323,7 +1395,7 @@ bool supports(void *context, Operation operation,
            floating(inputs[0].data_type()) &&
            hadamard->accumulation_type == DataType::kFloat32;
   if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
-    if (inputs.size() != 3 || !attention->causal ||
+    if (inputs.size() != 3 ||
         attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
         attention->accumulation_type != DataType::kFloat32 ||
@@ -1346,14 +1418,15 @@ bool supports(void *context, Operation operation,
         (q[2] == 64 || q[2] == 96) &&
         k[2] == 1 && q[3] == 576 && v[3] == 512 && v[0] == k[0] &&
         v[1] == k[1] && v[2] == k[2] && mla_output && output == *mla_output;
-    return q[0] > 0 && q[1] > 0 && k[1] >= q[1] && q[2] > 0 && k[2] > 0 &&
+    return q[0] > 0 && q[1] > 0 && k[1] > 0 &&
+           (!attention->causal || k[1] >= q[1]) && q[2] > 0 && k[2] > 0 &&
            q[2] % k[2] == 0 && q[3] > 0 && q[3] == k[3] && q[0] == k[0] &&
            ((inputs[1] == inputs[2] && output == inputs[0]) || absorbed_mla);
   }
   return false;
 }
 bool region_operation(Operation operation) noexcept {
-  return operation.get_if<Copy>() || operation.get_if<Cast>() ||
+  return operation.get_if<Fill>() || operation.get_if<Copy>() || operation.get_if<Cast>() ||
          operation.get_if<Unary>() || operation.get_if<Binary>() ||
          operation.get_if<GatedActivation>() ||
          operation.get_if<RmsNorm>() || operation.get_if<LayerNorm>() ||
@@ -1446,9 +1519,23 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
             Status::InvalidArgument("ggml CPU output identity is invalid"));
     std::vector<std::vector<float>> hadamards(recipe.nodes.size());
     std::vector<std::vector<ggml_fp16_t>> attention_masks(recipe.nodes.size());
+    std::vector<Program::FillValue> fill_values;
+    if (std::ranges::any_of(recipe.nodes, [](const auto &node) {
+          return node.operation.template get_if<Fill>() != nullptr;
+        }))
+      fill_values.resize(recipe.nodes.size());
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
+      if (const auto *fill = node.operation.get_if<Fill>()) {
+        if (fill->output_type == DataType::kFloat32) {
+          const auto bits = static_cast<std::uint32_t>(fill->value.bits());
+          std::memcpy(fill_values[node_index].bytes.data(), &bits, sizeof(bits));
+        } else {
+          const auto bits = static_cast<std::uint16_t>(fill->value.bits());
+          std::memcpy(fill_values[node_index].bytes.data(), &bits, sizeof(bits));
+        }
+      }
       if (node.operation.get_if<Hadamard>()) {
         const auto width = static_cast<std::size_t>(
             recipe.values[node.outputs[0]].dimensions().back());
@@ -1464,7 +1551,8 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
             matrix[row * width + column] =
                 std::popcount(row & column) % 2 == 0 ? scale : -scale;
       }
-      if (node.operation.get_if<ScaledDotProductAttention>() &&
+      if (const auto *attention = node.operation.get_if<ScaledDotProductAttention>();
+          attention && attention->causal &&
           recipe.values[node.inputs[0]].data_type() == DataType::kFloat16) {
         const auto query_length = static_cast<std::size_t>(
             recipe.values[node.inputs[0]].dimensions()[1]);
@@ -1488,7 +1576,8 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
     auto *program = ::new (storage)
         Program{static_cast<Configuration *>(context)->options,
                 std::move(recipe), std::move(hadamards),
-                std::move(attention_masks), std::move(index_checks)};
+                std::move(attention_masks), std::move(index_checks),
+                std::move(fill_values)};
     *output = {.vtable = &kPrepared,
                .state = program,
                .workspace = {},
