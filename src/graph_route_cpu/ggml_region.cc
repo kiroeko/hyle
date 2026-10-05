@@ -27,6 +27,14 @@ matmul_repack_bytes(const Graph &graph,
       return std::unexpected(std::move(operation).error());
     if (operation->get_if<compute::MatMul>() == nullptr)
       continue;
+    auto left_id = graph.node_input(node, 0);
+    if (!left_id)
+      return std::unexpected(std::move(left_id).error());
+    auto left = graph.value_description(*left_id);
+    if (!left)
+      return std::unexpected(std::move(left).error());
+    if (left->dimensions().back() == 0)
+      continue; // Original zero identity requires neither operand repack.
     auto input = graph.node_input(node, 1);
     if (!input)
       return std::unexpected(std::move(input).error());
@@ -34,15 +42,31 @@ matmul_repack_bytes(const Graph &graph,
     if (!description)
       return std::unexpected(std::move(description).error());
     auto physical = description->transposed();
-    if (physical && physical->is_dense())
-      continue;
-    auto bytes = description->required_bytes();
-    if (!bytes)
-      return std::unexpected(std::move(bytes).error());
-    if (*bytes > SIZE_MAX - total)
-      return std::unexpected(
-          Status::OutOfRange("ggml CPU region repack bytes overflow"));
-    total += *bytes;
+    if (!physical || !physical->is_dense()) {
+      auto bytes = description->required_bytes();
+      if (!bytes)
+        return std::unexpected(std::move(bytes).error());
+      if (*bytes > SIZE_MAX - total)
+        return std::unexpected(
+            Status::OutOfRange("ggml CPU region repack bytes overflow"));
+      total += *bytes;
+    }
+    auto result_id = graph.result(node);
+    if (!result_id)
+      return std::unexpected(std::move(result_id).error());
+    auto result = graph.value_description(*result_id);
+    if (!result)
+      return std::unexpected(std::move(result).error());
+    const auto expanded = result->element_count().value() /
+        static_cast<std::size_t>(result->dimensions().back()) *
+        static_cast<std::size_t>(left->dimensions().back());
+    if (expanded != left->element_count().value()) {
+      const auto element_size = compute::data_type_size(left->data_type());
+      if (expanded > (SIZE_MAX - total) / element_size)
+        return std::unexpected(
+            Status::OutOfRange("ggml CPU region broadcast bytes overflow"));
+      total += expanded * element_size;
+    }
   }
   return total;
 }
@@ -69,9 +93,6 @@ Result<bool> supported_node(void *context, const Graph &graph,
       auto description = graph.value_description(*id);
       if (!description)
         return std::unexpected(std::move(description).error());
-      if (description->element_count().value() == 0)
-        return false; // Zero-size leaves do not need a native execution
-                      // episode.
       inputs.push_back(*description);
     }
     auto id = graph.result(node);
@@ -80,6 +101,8 @@ Result<bool> supported_node(void *context, const Graph &graph,
     auto output = graph.value_description(*id);
     if (!output)
       return std::unexpected(std::move(output).error());
+    if (output->element_count().value() == 0)
+      return false; // Empty outputs do not bind a nonempty native backing.
     return native::supports(context, *operation, inputs,
                             std::span(&*output, 1));
   } catch (const std::bad_alloc &) {
