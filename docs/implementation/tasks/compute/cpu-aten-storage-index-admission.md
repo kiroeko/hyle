@@ -1,6 +1,6 @@
 # CPU ATen：存储与索引批量接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner：`compute_provider_native`、`compute_route_cpu`、`graph_route_cpu`；baseline
   `79ded44e1307b5161f3068b65b22b9feb894d029`，Windows canonical。
@@ -48,7 +48,10 @@
 | SI3 | checked mappings、冷 slots、借用 Tensor 清理、真实完成/错误、有限 exact alias | replay、资源平衡、OOM/close、两个独立 invocation |
 | SI4 | 普通 Direct/Graph 默认候选、成本/限制文档与一批三交付 | 用户不注册或排序 Provider；变化输入与下游消费、所有适用门真实运行 |
 
-SI1–4 尚待原 duplicate-safe 程序 witness 后固定 AUDITED；此时无产品改动、未运行 gate 均 UNPROVEN。
+原版程序 witness 已完成：[454个具名原程序断言与边界](../../../../evidence/correctness/cpu-aten-storage-index/README.md)。
+包括 I32/I64、odd-byte stride、rank9 Byte、重复读与原稳定排序选择最后逻辑写入。
+所需原 API 已提供且可运行，SI1–4 固定 BORROW/FIX；其它数学差异明确 DEFER。
+owner AUDITED，产品未改、产品 gate 均 UNPROVEN；不会继承原程序 witness 当普通路线通过。
 
 ## 七问
 
@@ -64,5 +67,5 @@ SI1–4 尚待原 duplicate-safe 程序 witness 后固定 AUDITED；此时无产
 
 ## 验证状态
 
-所有产品 correctness/delivery/usability/red-team gate 尚未运行；scope 正在审计，P0 成本已声明。
+所有产品 correctness/delivery/usability/red-team gate 尚未运行；scope/architecture 已固定，P0 成本已声明。
 原 API diagnostic 不计成新普通路线接线完成或性能胜负。

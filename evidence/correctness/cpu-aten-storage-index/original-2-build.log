@@ -1,0 +1,4 @@
+[1/4] Scanning C:\public\project-hyle\hyle\.scratch\validation\cpu-aten-storage-probe\probe.cc for CXX dependencies
+[2/4] Generating CXX dyndep file CMakeFiles\cpu_aten_storage_probe.dir\CXX.dd
+[3/4] Building CXX object CMakeFiles\cpu_aten_storage_probe.dir\probe.cc.obj
+[4/4] Linking CXX executable cpu_aten_storage_probe.exe

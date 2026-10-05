@@ -1,0 +1,44 @@
+[
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-storage-probe",
+      "-B",
+      "C:\\hv\\cpu-aten-storage-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "7d67b3fc858f25809d6a9cf227429f3c700335ae",
+    "log": "1-configure.log",
+    "returncode": 0,
+    "seconds": 0.985
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-aten-storage-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "7d67b3fc858f25809d6a9cf227429f3c700335ae",
+    "log": "2-build.log",
+    "returncode": 0,
+    "seconds": 5.672
+  },
+  {
+    "name": "original-storage-and-math-boundaries",
+    "args": [
+      "C:\\hv\\cpu-aten-storage-probe\\cpu_aten_storage_probe.exe"
+    ],
+    "candidate": "7d67b3fc858f25809d6a9cf227429f3c700335ae",
+    "log": "3-original-storage-and-math-boundaries.log",
+    "returncode": 0,
+    "seconds": 0.234
+  }
+]

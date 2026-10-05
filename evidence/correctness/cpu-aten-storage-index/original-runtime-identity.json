@@ -1,0 +1,47 @@
+[
+  {
+    "name": "asmjit.dll",
+    "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+    "hardlink": true
+  },
+  {
+    "name": "c10.dll",
+    "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "hardlink": true
+  },
+  {
+    "name": "fbgemm.dll",
+    "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+    "hardlink": true
+  },
+  {
+    "name": "libiomp5md.dll",
+    "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+    "hardlink": true
+  },
+  {
+    "name": "libiompstubs5md.dll",
+    "sha256": "daeb39e4ced3bfce4a622b63b8b0281613eb8180266f8dd1dc678346df1c7697",
+    "hardlink": true
+  },
+  {
+    "name": "torch.dll",
+    "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "hardlink": true
+  },
+  {
+    "name": "torch_cpu.dll",
+    "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "hardlink": true
+  },
+  {
+    "name": "torch_global_deps.dll",
+    "sha256": "30273402d3ae7b0841ee8a65ec6464c52ec0f9e8c52ad73908c9d80d113d2692",
+    "hardlink": true
+  },
+  {
+    "name": "uv.dll",
+    "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+    "hardlink": true
+  }
+]

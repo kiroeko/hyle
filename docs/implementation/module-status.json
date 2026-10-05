@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 SCOPED：现存宽Select/I64索引/Assign/Fill及odd-byte存储成熟ATen准入；独立identity和普通默认接缝，原库程序与资源一批资格，Native数学冻结；无产品PASS或WIN。"
+      "summary": "SI1–4 AUDITED：原ATen宽Byte/I32-I64/稳定重复Assign454项diagnostic通过；固定独立identity、checked生命周期与普通默认接缝，产品gate未运行，Native数学/P1冻结。"
     },
     {
       "module": "compute_sched",
@@ -434,15 +434,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 SCOPED：现存宽Select/I64索引/Assign/Fill及odd-byte存储成熟ATen准入；独立identity和普通默认接缝，原库程序与资源一批资格，Native数学冻结；无产品PASS或WIN。"
+      "summary": "SI1–4 AUDITED：原ATen宽Byte/I32-I64/稳定重复Assign454项diagnostic通过；固定独立identity、checked生命周期与普通默认接缝，产品gate未运行，Native数学/P1冻结。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 SCOPED：现存宽Select/I64索引/Assign/Fill及odd-byte存储成熟ATen准入；独立identity和普通默认接缝，原库程序与资源一批资格，Native数学冻结；无产品PASS或WIN。"
+      "summary": "SI1–4 AUDITED：原ATen宽Byte/I32-I64/稳定重复Assign454项diagnostic通过；固定独立identity、checked生命周期与普通默认接缝，产品gate未运行，Native数学/P1冻结。"
     },
     {
       "module": "compute_provider_cublas",
