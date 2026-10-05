@@ -273,8 +273,7 @@ template <class T> void reductions() {
             static_cast<float>(static_cast<int>(i % 9) - 4) / 4);
       write(inb, desc, std::span<const T>(values));
       auto input = ConstTensorView::create(desc, inb.view()).value();
-      std::vector<Axes> all{
-          Axes::all(), Axes::from(std::span<const std::int32_t>{}).value()};
+      std::vector<Axes> all{Axes::all()};
       if (!shape.empty())
         all.push_back(Axes::from(std::array<std::int32_t, 1>{-1}).value());
       if (shape.size() > 1)
