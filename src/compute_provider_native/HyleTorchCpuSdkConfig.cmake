@@ -1,7 +1,19 @@
 # CPU-only machine SDK, private to the Native adapter. This same check runs in
 # a static installed consumer; finding a GPU Torch package is not CPU isolation.
 include(CMakeFindDependencyMacro)
-find_dependency(Torch 2.8.0 EXACT CONFIG)
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/HyleDependencyLock.json")
+  include("${CMAKE_CURRENT_LIST_DIR}/torch_cpu_fetch.cmake")
+  hyle_resolve_torch_cpu_sdk("${CMAKE_CURRENT_LIST_DIR}/HyleDependencyLock.json" _hyle_torch_cpu_root)
+  set(Torch_DIR "${_hyle_torch_cpu_root}/share/cmake/Torch")
+  set(Caffe2_DIR "${_hyle_torch_cpu_root}/share/cmake/Caffe2")
+  unset(TORCH_LIBRARY CACHE)
+  unset(c10_LIBRARY CACHE)
+  find_dependency(Torch 2.8.0 EXACT CONFIG
+    PATHS "${_hyle_torch_cpu_root}/share/cmake/Torch" NO_DEFAULT_PATH)
+  hyle_register_torch_cpu_runtime("${_hyle_torch_cpu_root}")
+else()
+  find_dependency(Torch 2.8.0 EXACT CONFIG)
+endif()
 if(NOT EXISTS "${TORCH_INSTALL_PREFIX}/build-version")
   message(FATAL_ERROR "HYLE low precision requires a versioned LibTorch CPU SDK")
 endif()

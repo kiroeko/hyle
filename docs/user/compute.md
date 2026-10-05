@@ -46,9 +46,32 @@ factor seam，也不要把单个 family 的域支持当成整个算子目录都�
 
 ### 可选 CPU FP8/FP4 成熟程序
 
-Windows/Linux x86_64 可用 CPU-only LibTorch `2.8.0+cpu` SDK 开启 TorchAO/ATen
-低精度组合，构建选项为 `HYLE_COMPUTE_TORCH_CPU=ON` 和
-`HYLE_COMPUTE_TORCH_CPU_ROOT=<libtorch prefix>`。默认 `AUTO` 只在发现该 CPU SDK 时接入；
+普通CPU源码构建选择`HYLE_COMPONENTS="compute;graph"`即可；CPU默认开启，其它路线默认关闭，
+oneDNN、ggml与支持平台的TorchAO/ATen依赖由HYLE组装。顶层可直接使用：
+
+```text
+cmake --preset compute-cpu
+cmake --build --preset compute-cpu
+```
+
+Windows未初始化开发工具链的shell先用`./scripts/hyle-windows.ps1 -Action Configure -Preset compute-cpu`，
+再用同脚本`-Action Build -Preset compute-cpu`；预设构建并行2。源码嵌入只设置产品并`add_subdirectory`，
+不需要手工枚举Provider。
+
+Windows/Linux x86_64默认`HYLE_COMPUTE_TORCH_CPU=AUTO`取得CPU-only LibTorch `2.8.0+cpu`，
+使用中央锁中的原archive/SHA与统一cache的SDK子区；有合格本地SDK则复用，缺少时取得一次，
+不因下载失败静默缺失已验收域。高级参数为：
+
+| 参数 | 含义 |
+|---|---|
+| `HYLE_COMPUTE_TORCH_CPU=OFF` | 显式裁剪官方低精度组合，不探测或下载SDK；对应画像拒绝 |
+| `HYLE_COMPUTE_TORCH_CPU=ON` | 强制能力；不支持的平台明确失败 |
+| `HYLE_COMPUTE_TORCH_CPU_ROOT=<prefix>` | 复用外部CPU SDK；错误版本/不完整root明确失败 |
+| `HYLE_COMPUTE_TORCH_CPU_ARCHIVE=<zip>` | 使用已下载的锁定原archive，验SHA后一次解包，不再下载一份 |
+| `HYLE_DEP_SOURCE_CACHE=<path>` | 统一缓存位置；SDK只保留一个平台/版本身份，不复制到每个build |
+| `FETCHCONTENT_FULLY_DISCONNECTED=ON` | 禁止网络；使用已转移cache、本地archive或外部SDK，真正miss明确失败 |
+
+`Torch_DIR`与`CMAKE_PREFIX_PATH`中的CPU SDK仍可复用。明确root优先于这些发现与archive输入。
 `OFF` 不探测 Torch。CUDA Torch SDK 不能替代它。GLM 5.3/Flash 官方FP8、DeepSeek V4
 Pro/Flash 官方FP4/FP8的普通完整片段已通过正确性、Windows三交付与WSL检查；两条代表
 完整MoE的Graph/Direct成本通过原5%门。具体模型与平台范围见
@@ -67,10 +90,11 @@ CPU 内部把已量化数值表达为 F32 并计算，不宣称硬件原生 FP8 
 非有限激活与越界专家 ID 返回失败；失败输出不可消费，失败执行槽需重新创建。
 
 source/static/shared 三种 HYLE 交付都依赖此外部 shared CPU runtime。
-HYLE static 不代表把 LibTorch 静态链接进进程；安装消费者通过 `CMAKE_PREFIX_PATH`
-同时提供 HYLE 与 CPU LibTorch prefix。Windows 运行前把 CPU SDK `lib` 目录的 DLL
-复制到 exe 所在目录，同时部署 HYLE 及其它已启用 Provider 的 DLL；不要让程序依赖
-Python 或 CUDA 的 DLL 搜索目录。Linux 运行时提供 CPU SDK `lib` 的 loader 路径。
+HYLE static 不代表把 LibTorch 静态链接进进程；安装消费者只需提供HYLE prefix，Native依赖shim
+复用或取得同一锁定CPU SDK，高级用户也可提供外部CPU LibTorch prefix。Windows消费者调用
+`hyle_stage_runtime_dependencies(my_app)`，由HYLE将完整CPU DLL闭包邻置到exe目录；不要让程序依赖
+Python 或 CUDA 的 DLL 搜索目录。Linux使用同一helper为实际CPU SDK依赖绑定loader路径，
+覆盖shared adapter的间接依赖；无需另设`LD_LIBRARY_PATH`或逐应用复制整份SDK。
 分发 CPU SDK 时同时保留其原许可证和第三方 notices，HYLE 安装包另附所借用 TorchAO 的 BSD 许可。
 
 ## 可选模型与阶段信息

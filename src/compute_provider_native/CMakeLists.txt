@@ -29,16 +29,26 @@ if(HYLE_COMPUTE_TORCH_CPU_ENABLED)
     separate_arguments(_hyle_torch_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
     target_compile_options(hyle_compute_provider_native PRIVATE ${_hyle_torch_flags})
   endif()
-  target_link_libraries(hyle_compute_provider_native PRIVATE ${TORCH_LIBRARIES})
+  # Use imported identities, not TORCH_LIBRARIES' absolute c10.lib path. A
+  # relocated consumer resolves its own SDK through the dependency shim.
+  target_link_libraries(hyle_compute_provider_native PRIVATE torch torch_cpu c10)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Let the consuming application's SDK RPATH reach this adapter's private
+    # Torch dependency; a DT_RUNPATH here would suppress that ancestor search.
+    # The adapter itself keeps HYLE's relocatable $ORIGIN installation path.
+    target_link_options(hyle_compute_provider_native PRIVATE LINKER:--disable-new-dtags)
+  endif()
   target_compile_definitions(hyle_compute_provider_native PRIVATE HYLE_COMPUTE_TORCH_CPU=1)
   set_property(TARGET hyle_compute_provider_native PROPERTY HYLE_TORCH_CPU_ENABLED TRUE)
   hyle_register_package_dependency(
     NAME torch_cpu_sdk
     OWNER compute_provider_native
     FEATURES compute_torch_cpu
-    STATIC_FIND_DEPENDENCIES Torch|2.8.0 HyleTorchCpuSdk
-    STATIC_DEVELOPMENT_FILE_SPECS
-      "${CMAKE_CURRENT_SOURCE_DIR}/HyleTorchCpuSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCpuSdk|HyleTorchCpuSdkConfig.cmake")
+    FIND_DEPENDENCIES HyleTorchCpuSdk
+    DEVELOPMENT_FILE_SPECS
+      "${CMAKE_CURRENT_SOURCE_DIR}/HyleTorchCpuSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCpuSdk|HyleTorchCpuSdkConfig.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/torch_cpu_fetch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCpuSdk|torch_cpu_fetch.cmake"
+      "${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCpuSdk|HyleDependencyLock.json")
   hyle_register_package_dependency(
     NAME torchao_cpu
     OWNER compute_provider_native

@@ -12,6 +12,25 @@
       }
     },
     {
+      "name": "compute-cpu",
+      "displayName": "CPU Compute and Graph",
+      "description": "Standard CPU C++ build with qualified mature providers and a shared dependency cache; GPU routes, tests and benchmarks are off.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-compute-cpu",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_CPU": "ON",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_APPLE": "OFF",
+        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_COMPUTE_ONEDNN": "AUTO",
+        "HYLE_COMPUTE_TORCH_CPU": "AUTO",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_BUILD_BENCH": "OFF"
+      }
+    },
+    {
       "name": "windows",
       "displayName": "Windows VS 2022 CPU development",
       "description": "Visual Studio 2022 solution fallback. Use scripts/hyle-windows.ps1 so side-by-side v143 toolsets resolve to the highest installed MSVC 19.43+ version.",
@@ -168,6 +187,7 @@
     }
   ],
   "buildPresets": [
+    { "name": "compute-cpu", "configurePreset": "compute-cpu", "configuration": "Release", "jobs": 2 },
     { "name": "windows", "configurePreset": "windows", "configuration": "Release" },
     { "name": "windows-vs2026", "configurePreset": "windows-vs2026", "configuration": "Release" },
     { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release" },

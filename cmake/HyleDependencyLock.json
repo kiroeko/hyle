@@ -1,6 +1,23 @@
 {
   "schema_version": 3,
   "expanded_tree_algorithm": "hyle-path-hex-v1-raw-sha256",
+  "sdks": {
+    "torch_cpu": {
+      "owner": "compute_provider_native",
+      "version": "2.8.0+cpu",
+      "license": "BSD-3-Clause; SDK redistribution also retains the licenses of its bundled dependencies",
+      "platforms": {
+        "Windows-x86_64": {
+          "url": "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.8.0%2Bcpu.zip",
+          "sha256": "bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d"
+        },
+        "Linux-x86_64": {
+          "url": "https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.8.0%2Bcpu.zip",
+          "sha256": "8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824"
+        }
+      }
+    }
+  },
   "dependencies": [
     {
       "name": "iree_runtime",
