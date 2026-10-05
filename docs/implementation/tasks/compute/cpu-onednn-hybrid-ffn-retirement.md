@@ -42,3 +42,15 @@ match_norm/propose_norms及NormRegionPlan/compile_norm保留，不能误删有�
 确认的机制是Sigmoid先F32舍入再乘x，亚正常负尾部丢失SiLU有效位后被value放大；已有ATen原
 Double SiLU→F32 activation→F32 value的完整阶段已由MN/TC资格化。不能为保留旧fusion放宽规范，
 也不在此优化SIMD或引入新的HYLE数学。AUDITED后只实施NX1–3。
+
+
+## 实施状态
+
+产品`80c9ab0075c667bd16255d43d46a21d46df234ac`已退役旧generic FFN route/artifact/执行与HYLE SIMD
+callback，保留norm全部数学/生命周期、共享oneDNN MatMul与SIMD本体。仅Graph owner产品改变。
+旧FFN专属测试随退役迁移到真实norm region、旧FFN资格拒绝与普通完整FFN：两个独立槽/变化输入、
+−80/−90/−100大值/Inf、最终输出、真实wait，norm并发/close/冷compile与invocation OOM恢复。
+Windows初编译失败为测试Status/ResultError三元式歧义；fixture commit
+`1b50371c94f2a8f5560b5f7efb5c59c6844ccdee`只改两处测试表达式，产品/API/成本不变，原日志保留。
+首批Windows provider 3/3和selected Graph已通过，Linux与三交付未运行；状态仍AUDITED，不签CLOSED。
+统一Compute+Graph实现LOC **61,318/249文件**（产品80c9ab00，不含tests/vendor），比TC减少692实现行。

@@ -109,7 +109,9 @@ L2 可以直接用 F32 输入（低精度先 Cast）、平方、末轴 Sum、加
 原版 region；epsilon 位于根号内，低精度输出最后显式 Cast。普通入口支持这份组合的重复执行
 和中间归约结果发布，不需要新增 L2 专用 API。
 同一接线也能保留按批次/头/分组轴归约、将结果广播回输入的组合；必要的物化由原版程序执行。
-支持的常量权重四节点 gated FFN 仍可保留 oneDNN 完整 region，其余节点按 CPU leaf 规则处理。
+常量权重 gated FFN 经有效 MatMul 程序与稳定 activation 组合执行；oneDNN 保留已资格的 norm
+与 scale/residual region。原混合 FFN 的 HYLE SIMD gate 已撤回通用资格，当前验收见
+[接缝修复](../implementation/tasks/compute/cpu-onednn-hybrid-ffn-retirement.md)。
 普通用户不排列 Provider，compile 不接受 timing profile。标准 x64 构建通过 oneDNN AUTO 提供
 其实现；oneDNN 不可用或不支持该域时继续匹配 ggml、已构建的ATen与Native。超出已有能力明确返回错误。
 `compute::cpu::DefaultContextOptions` 可传入借用的 metadata allocator、同步 executor 和独立
