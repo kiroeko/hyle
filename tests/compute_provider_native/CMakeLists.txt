@@ -2,6 +2,7 @@ hyle_add_header_self_contained_test(compute_provider_native
   HEADER_DIR compute
   HEADERS providers/native.h)
 hyle_add_test(compute_provider_native SOURCES
+  aten_storage_test.cc
   ../compute/operation_test.cc
   cast_test.cc
   elementwise_test.cc
@@ -17,6 +18,7 @@ target_include_directories(hyle_compute_provider_native_test PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute")
 get_target_property(_hyle_torch_cpu hyle_compute_provider_native HYLE_TORCH_CPU_ENABLED)
 if(_hyle_torch_cpu)
+  target_compile_definitions(hyle_compute_provider_native_test PRIVATE HYLE_TEST_TORCH_CPU=1)
   target_sources(hyle_compute_provider_native_test PRIVATE torch_cpu_test.cc)
   target_link_libraries(hyle_compute_provider_native_test PRIVATE torch)
 endif()

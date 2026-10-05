@@ -13,7 +13,7 @@
 namespace hyle::compute::cpu {
 
 Result<Context> create_context(DefaultContextOptions options) noexcept {
-  const std::array providers{
+  std::array providers{
 #if defined(HYLE_COMPUTE_ONEDNN)
       ProviderBinding{onednn::provider({.executor = options.executor}), 100},
 #endif
@@ -23,10 +23,16 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
                               .native_threads = options.native_threads}),
           200},
 #endif
+      ProviderBinding{aten_cpu::provider(), 350},
       ProviderBinding{native::provider({.executor = options.executor}), 1000}};
+  auto count = providers.size();
+  if (!providers[count - 2].provider.valid()) {
+    providers[count - 2] = std::move(providers[count - 1]);
+    --count;
+  }
   return Context::create(device(),
                          {.metadata_allocator = options.metadata_allocator,
-                          .providers = providers});
+                          .providers = std::span(providers).first(count)});
 }
 
 } // namespace hyle::compute::cpu
