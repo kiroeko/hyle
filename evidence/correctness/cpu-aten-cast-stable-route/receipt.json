@@ -1,0 +1,453 @@
+{
+  "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c",
+  "product_payload": "689e9a1b0fd912f57387f38caf42e920fc9c7617",
+  "platforms": {
+    "windows": {
+      "commands": 25,
+      "actual_validation_commits": [
+        "689e9a1b0fd912f57387f38caf42e920fc9c7617",
+        "c2df0b8973a80b7140e69983c8e861668483a97c"
+      ],
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "ggml-provider-tests",
+        "graph_route_cpu-affected-tests",
+        "provider-tests",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 124,
+          "passed": 124,
+          "skipped": []
+        },
+        "ggml": {
+          "registered": 58,
+          "passed": 58,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 158,
+          "passed": 151,
+          "skipped": [
+            "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays",
+            "CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls",
+            "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 175,
+          "passed": 168,
+          "skipped": [
+            "CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph",
+            "CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights",
+            "CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay",
+            "CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays",
+            "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+          ]
+        }
+      },
+      "source_identity": {
+        "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c",
+        "checked": 1335,
+        "forward_updated": [
+          "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "src/compute_provider_native/aten_cpu_provider.cc",
+          "tests/compute_provider_ggml/cpu_provider_test.cc",
+          "tests/compute_provider_native/CMakeLists.txt",
+          "tests/compute_provider_native/aten_cast_reference.h",
+          "tests/compute_provider_native/aten_cast_test.cc",
+          "tests/compute_provider_native/aten_numeric_test.cc",
+          "tests/compute_route_cpu/d5_qwen35_gguf_fragment_test.cc",
+          "tests/compute_route_cpu/d5_qwen35_profile_test.cc",
+          "tests/compute_route_cpu/d5_qwen38_official_test.cc",
+          "tests/graph_route_cpu/d5_qwen35_gguf_fragment_test.cc",
+          "tests/graph_route_cpu/d5_qwen35_profile_test.cc",
+          "tests/graph_route_cpu/d5_qwen38_official_test.cc",
+          "tests/graph_route_cpu/graph_test.cc",
+          ".scratch/validation/cpu-aten-cast-stable-route/consumer.cc",
+          ".scratch/validation/cpu-aten-cast-stable-route/windows-overlay.cmake",
+          ".scratch/validation/cpu-aten-cast-stable-route/linux-overlay.cmake",
+          ".scratch/validation/cpu-aten-cast-stable-route/consumer/CMakeLists.txt"
+        ]
+      }
+    },
+    "linux": {
+      "commands": 22,
+      "actual_validation_commits": [
+        "c2df0b8973a80b7140e69983c8e861668483a97c"
+      ],
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "ggml-provider-tests",
+        "graph_route_cpu-affected-tests",
+        "native-public-header",
+        "provider-tests",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 124,
+          "passed": 124,
+          "skipped": []
+        },
+        "ggml": {
+          "registered": 58,
+          "passed": 58,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 158,
+          "passed": 151,
+          "skipped": [
+            "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays",
+            "CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls",
+            "CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls",
+            "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 175,
+          "passed": 168,
+          "skipped": [
+            "CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph",
+            "CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights",
+            "CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay",
+            "CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays",
+            "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+          ]
+        }
+      },
+      "source_identity": {
+        "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c",
+        "checked": 1335,
+        "forward_updated": [
+          "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "src/compute_provider_native/aten_cpu_provider.cc",
+          "tests/compute_provider_ggml/cpu_provider_test.cc",
+          "tests/compute_provider_native/CMakeLists.txt",
+          "tests/compute_provider_native/aten_cast_reference.h",
+          "tests/compute_provider_native/aten_cast_test.cc",
+          "tests/compute_provider_native/aten_numeric_test.cc",
+          "tests/compute_route_cpu/d5_qwen35_gguf_fragment_test.cc",
+          "tests/compute_route_cpu/d5_qwen35_profile_test.cc",
+          "tests/compute_route_cpu/d5_qwen38_official_test.cc",
+          "tests/graph_route_cpu/d5_qwen35_gguf_fragment_test.cc",
+          "tests/graph_route_cpu/d5_qwen35_profile_test.cc",
+          "tests/graph_route_cpu/d5_qwen38_official_test.cc",
+          "tests/graph_route_cpu/graph_test.cc",
+          ".scratch/validation/cpu-aten-cast-stable-route/consumer.cc",
+          ".scratch/validation/cpu-aten-cast-stable-route/windows-overlay.cmake",
+          ".scratch/validation/cpu-aten-cast-stable-route/linux-overlay.cmake",
+          ".scratch/validation/cpu-aten-cast-stable-route/consumer/CMakeLists.txt"
+        ]
+      }
+    }
+  },
+  "scope": "TC1-4; generic Cast/Sigmoid and qualified stable gate carrier",
+  "performance": "P0 only; no Native comparison or WIN",
+  "raw_original_assertions": 1005272,
+  "loc": {
+    "code": 62010,
+    "files": 249,
+    "measured_commit": "689e9a1b0fd912f57387f38caf42e920fc9c7617",
+    "reuse": "Product inputs identical; fixture-only successor is candidate."
+  },
+  "cleanup": {
+    "windows": [
+      {
+        "original_probe_hardlinks": false,
+        "removed": true,
+        "files": 52,
+        "adjacent_runtime_dlls": [
+          {
+            "bytes": 367104,
+            "name": "asmjit.dll"
+          },
+          {
+            "bytes": 1046528,
+            "name": "c10.dll"
+          },
+          {
+            "bytes": 5721600,
+            "name": "fbgemm.dll"
+          },
+          {
+            "bytes": 16384,
+            "name": "hyle_compute_backend_cpu.dll"
+          },
+          {
+            "bytes": 1136640,
+            "name": "hyle_compute_ggml_runtime.dll"
+          },
+          {
+            "bytes": 70144,
+            "name": "hyle_compute_ops.dll"
+          },
+          {
+            "bytes": 404480,
+            "name": "hyle_compute_provider_ggml.dll"
+          },
+          {
+            "bytes": 441856,
+            "name": "hyle_compute_provider_native.dll"
+          },
+          {
+            "bytes": 16674304,
+            "name": "hyle_compute_provider_onednn.dll"
+          },
+          {
+            "bytes": 11776,
+            "name": "hyle_compute_route_cpu.dll"
+          },
+          {
+            "bytes": 189440,
+            "name": "hyle_compute.dll"
+          },
+          {
+            "bytes": 41472,
+            "name": "hyle_container.dll"
+          },
+          {
+            "bytes": 28160,
+            "name": "hyle_error.dll"
+          },
+          {
+            "bytes": 1153536,
+            "name": "hyle_ggml_cpu_avx2_456172ec.dll"
+          },
+          {
+            "bytes": 61440,
+            "name": "hyle_graph_provider_onednn.dll"
+          },
+          {
+            "bytes": 45056,
+            "name": "hyle_graph_route_cpu.dll"
+          },
+          {
+            "bytes": 509952,
+            "name": "hyle_graph.dll"
+          },
+          {
+            "bytes": 230912,
+            "name": "hyle_mem.dll"
+          },
+          {
+            "bytes": 85504,
+            "name": "hyle_platform.dll"
+          },
+          {
+            "bytes": 1571328,
+            "name": "hyle_simd.dll"
+          },
+          {
+            "bytes": 1613680,
+            "name": "libiomp5md.dll"
+          },
+          {
+            "bytes": 255948800,
+            "name": "torch_cpu.dll"
+          },
+          {
+            "bytes": 9728,
+            "name": "torch.dll"
+          },
+          {
+            "bytes": 195072,
+            "name": "uv.dll"
+          }
+        ],
+        "logical_bytes": 289027727.0,
+        "path": "C:\\hv\\cpu-tc-shared-consumer"
+      },
+      {
+        "original_probe_hardlinks": false,
+        "removed": true,
+        "files": 38,
+        "adjacent_runtime_dlls": [
+          {
+            "bytes": 367104,
+            "name": "asmjit.dll"
+          },
+          {
+            "bytes": 1046528,
+            "name": "c10.dll"
+          },
+          {
+            "bytes": 5721600,
+            "name": "fbgemm.dll"
+          },
+          {
+            "bytes": 1153024,
+            "name": "hyle_ggml_cpu_avx2_456172ec.dll"
+          },
+          {
+            "bytes": 1613680,
+            "name": "libiomp5md.dll"
+          },
+          {
+            "bytes": 255948800,
+            "name": "torch_cpu.dll"
+          },
+          {
+            "bytes": 9728,
+            "name": "torch.dll"
+          },
+          {
+            "bytes": 195072,
+            "name": "uv.dll"
+          }
+        ],
+        "logical_bytes": 287822933.0,
+        "path": "C:\\hv\\cpu-tc-static-consumer"
+      },
+      {
+        "original_probe_hardlinks": true,
+        "removed": true,
+        "files": 38,
+        "adjacent_runtime_dlls": [
+          {
+            "bytes": 367104,
+            "name": "asmjit.dll"
+          },
+          {
+            "bytes": 1046528,
+            "name": "c10.dll"
+          },
+          {
+            "bytes": 5721600,
+            "name": "fbgemm.dll"
+          },
+          {
+            "bytes": 1613680,
+            "name": "libiomp5md.dll"
+          },
+          {
+            "bytes": 43888,
+            "name": "libiompstubs5md.dll"
+          },
+          {
+            "bytes": 255948800,
+            "name": "torch_cpu.dll"
+          },
+          {
+            "bytes": 9728,
+            "name": "torch_global_deps.dll"
+          },
+          {
+            "bytes": 9728,
+            "name": "torch.dll"
+          },
+          {
+            "bytes": 195072,
+            "name": "uv.dll"
+          }
+        ],
+        "logical_bytes": 267935629.0,
+        "path": "C:\\hv\\cpu-tc-original-probe"
+      },
+      {
+        "original_probe_hardlinks": false,
+        "removed": true,
+        "files": 38,
+        "adjacent_runtime_dlls": [
+          {
+            "bytes": 367104,
+            "name": "asmjit.dll"
+          },
+          {
+            "bytes": 1046528,
+            "name": "c10.dll"
+          },
+          {
+            "bytes": 5721600,
+            "name": "fbgemm.dll"
+          },
+          {
+            "bytes": 1153024,
+            "name": "hyle_ggml_cpu_avx2_456172ec.dll"
+          },
+          {
+            "bytes": 1613680,
+            "name": "libiomp5md.dll"
+          },
+          {
+            "bytes": 255948800,
+            "name": "torch_cpu.dll"
+          },
+          {
+            "bytes": 9728,
+            "name": "torch.dll"
+          },
+          {
+            "bytes": 195072,
+            "name": "uv.dll"
+          }
+        ],
+        "logical_bytes": 287346250.0,
+        "path": "C:\\hv\\cpu-ggml-finite-tail-probe"
+      }
+    ],
+    "linux": [
+      {
+        "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-tc-consumer",
+        "files": 24,
+        "logical_bytes": 3726409,
+        "removed": true
+      },
+      {
+        "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/static-tc-consumer",
+        "files": 24,
+        "logical_bytes": 45770825,
+        "removed": true
+      }
+    ]
+  },
+  "artifact": {
+    "file": "qualification.zip",
+    "entries": 119,
+    "bytes": 479408,
+    "sha256": "eb21ef006f32e3c5f0dc67677f0f7140133b74ab71f2b0a173cc954ca75eb21f"
+  }
+}

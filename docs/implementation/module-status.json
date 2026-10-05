@@ -373,10 +373,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 CANDIDATE：五dtype成熟Cast/NaN storage边界、原Double Sigmoid和必要generic图边界已固定；Windows124/124及58/58通过，旧模型身份fixture批量迁移。CPU/Graph全factor与两平台三交付仍在验收，自研裁决冻结。",
-      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c"
+      "summary": "TC1–4 CLOSED：五dtype原Cast与NaN storage边界、stable Sigmoid及generic必要图边界，两平台124/124+58/58、CPU151/7skip、Graph168/7skip、普通Direct/Graph三交付与P0通过。仅本批关闭，Native自研裁决和其它CPU接缝未完成。",
+      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-aten-cast-stable-route/README.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -419,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 CANDIDATE：五dtype成熟Cast/NaN storage边界、原Double Sigmoid和必要generic图边界已固定；Windows124/124及58/58通过，旧模型身份fixture批量迁移。CPU/Graph全factor与两平台三交付仍在验收，自研裁决冻结。",
-      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c"
+      "summary": "TC1–4 CLOSED：五dtype原Cast与NaN storage边界、stable Sigmoid及generic必要图边界，两平台124/124+58/58、CPU151/7skip、Graph168/7skip、普通Direct/Graph三交付与P0通过。仅本批关闭，Native自研裁决和其它CPU接缝未完成。",
+      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-aten-cast-stable-route/README.md"
+      }
     },
     {
       "module": "compute_sched",

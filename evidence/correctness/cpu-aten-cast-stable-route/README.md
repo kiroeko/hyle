@@ -33,3 +33,33 @@ TC1补充：旧SDK默认ggml mixed Cast的NaN bits实际不匹配公开canonical
 WindowsProvider124/124与ggml58/58已通过；CPU首次158项114通过/7缺fixture跳过/37旧身份失败，
 数值oracle未改。六个直接消费者白名单现仅增加精确ATen身份，保留原XML/失败位置与复用证明。
 剩余Windows失败批重跑、Graph完整factor、Linux完整factor和两平台三交付尚未完成，不写PASS/CLOSED。
+
+
+## 最终产品资格：CLOSED（仅TC1–4）
+
+候选`c2df0b8973a80b7140e69983c8e861668483a97c`，算法/API/正常程序固定后未改产品。
+Win/Linux各Native124/124、ggml58/58、CPU151通过/7旧fixture skip、Graph168通过/7旧fixture skip；
+Linux公开头1/1。两平台source shared/static、installed shared/static同一ordinary consumer均通过。
+完整CPU最初37身份失败原XML保留，六处精确ATen身份迁移后37/37通过；114通过/7skip以1329不变输入
+和单调身份谓词复用。没有将Native任意fallback认作成熟，也没有降低数值或将skip签PASS。
+
+五float storage全25 Cast对，F16/BF16/FP8全源bits、F32特殊/tie/random、rank0/8/empty/zero-odd stride；
+同dtype原bits，不同dtypeRNE/finite FP8 sat/Inf/NaN，Cast全拒绝alias。stable Sigmoid原Double→F32→storage；
+默认SiLU gate→MatMul的−90/−100、large-value与Inf输出实测正确，旧默认0/NaN反例已消除。
+其他ggml有效region与具名模型原program保留；模型原内Sigmoid不继承泛型严格合同。本批不是整模型
+或其它路线新资格。7个缺fixture的旧测试不计PASS；普通主/正交消费者实际运行。
+
+复用原private native packing、checked mappings、实际Completion/异常/close及冷OOM/两线程资源回归。
+native物理OOM/非coherent故障未注入，仅源码传播审计。原Double转换/clamp/where/bit-view/Byte packing、
+所有原临时数据与热Tensor metadata计入managed成本；内部内存unknown、私有线程、不保证capture或
+零热分配，SDK资格只到Win/Linux x86_64。feature-OFF按关闭branch/header/assembler完全相同复用MN
+stub；只证明关闭adapter/TU/assembler，不声称全SDK关闭重建或移除Torch DLL。
+
+root复核七门通过，tier P0；无新Native性能比较/WIN。统一实现LOC **62,010行/249文件**，不含tests/vendor。
+消费者/探针已清理（除原探针硬链接外文件逻辑大小913,694,144 bytes），SDK/producer/cache保留。
+实际命令、所有初次失败/XML/复用证明、同一consumer/驱动、1335输入manifest、selector、源码快照、
+cleanup/LOC与复用关闭stub见[qualification.zip](qualification.zip)，摘要见[receipt.json](receipt.json)。
+工件SHA256 `eb21ef006f32e3c5f0dc67677f0f7140133b74ab71f2b0a173cc954ca75eb21f`。
+
+CPU全收口尚未完成；额外oneDNN-labelled完整FFN的小probe发现内部实际HYLE SIMD SwiGLU提前舍入，
+−100/1e38最终输出差约1.7%，另owner有限卡处理，不将其写成原oneDNN kernel失败或本批已修复。

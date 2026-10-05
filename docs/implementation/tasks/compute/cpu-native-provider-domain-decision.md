@@ -5,7 +5,7 @@
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
 - owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
-  当前绑定[TC卡](cpu-aten-cast-stable-route.md) CANDIDATE；ggml同卡CANDIDATE；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[TC卡](cpu-aten-cast-stable-route.md) CLOSED；ggml同卡CLOSED；`compute_route_cpu`、`graph_route_cpu`
   当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
@@ -61,15 +61,15 @@ Fill 与 unique I64 row-write 有实际 witness。未资格的特殊值/alias/du
 |---|---|---|---|
 | MatMul | ggml rank2..4 plain F32 row-major/contiguous-K转置RHS、双向leading广播与K0；oneDNN非空exact dense row-major F32含小M | rank>4、非vendor可表达strides/空输出region/预算档；转换成本不得抹掉 | DECISION_REQUIRED；两种物理布局按实际消费者匹配，旧Native-vs-Native不签WIN |
 | RMSNorm/LayerNorm | oneDNN dense浮点、input0精确原位；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、非vendor布局；原位不能一概归唯一 | DECISION_REQUIRED；普通out-of-place与oneDNN原位均须比较，旧Graph不能代签新融合 |
-| Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU三floating dtype；oneDNN dense F32稳定Softplus；ATen三dtype稳定SiLU/GELU/GELU-tanh/Softplus，rank<=8/odd-byte与限定exact alias | bounded/严格预算及原ggml有限尾部仍待具名核对 | DECISION_REQUIRED，按kind/dtype/精度与资源分开；MN成熟接线已验 |
+| Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/ReLU三floating dtype；oneDNN dense F32稳定Softplus；ATen三dtype稳定Sigmoid/SiLU/GELU/GELU-tanh/Softplus，rank<=8/odd-byte与限定exact alias | bounded/严格预算及原ggml有限尾部仍待具名核对 | DECISION_REQUIRED，按kind/dtype/精度与资源分开；MN成熟接线已验 |
 | Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支；ATen全15scalar exact Select及三floating number Min/Max/odd-byte/broadcast/NaN-signed-zero与限定dense exact alias | 其它alias/严格预算/bounded域 | DECISION_REQUIRED；SI/MN成熟接线已验 |
 | Reduce | ggml Sum/Mean、Unknown/F32 accumulation；ATen三floating四kind、任意合法axes/keepdim/rank0..8/empty/byte stride，显式F32 accumulation，NaN与零号资格 | bounded/严格预算；native内部内存unknown | DECISION_REQUIRED；MN成熟接线已验 |
-| GatedActivation | ggml SiLU packed/separate与-Inf边界；ATen三kind/三dtype packed-separate、rank<=8/odd-byte，稳定F32 activation+乘法后一次舍入，普通Graph下游已验 | 原ggml SiLU有限负尾部另核对；bounded/严格预算；公共gate禁止alias | DECISION_REQUIRED；MN成熟接线已验，完整Double/F32 cast/packing/原节点成本包含 |
+| GatedActivation | ATen三kind/三dtype packed-separate、rank<=8/odd-byte，稳定F32 activation+乘法后一次舍入，普通Graph下游已验 | bounded/严格预算；公共gate禁止alias | DECISION_REQUIRED；MN成熟接线已验，完整Double/F32 cast/packing/原节点成本包含 |
 | RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
 | Softmax | ggml dense三floating dtype任意axis、finite scale、同类型dense additive广播，安全特殊行 | Bool mask/log-softmax、非dense/alias/bounded预算等剩余域 | DECISION_REQUIRED；包含安全score扫描/scale-add和原布局materialization成本 |
 | SDPA | ggml unmasked BSHD/BHSD、三floating dtype、causal/noncausal、独立Dk/Dv与GQA | mask/alias/预算与具体非有限合同；不把同head Native与GQA完整程序混比 | DECISION_REQUIRED，只测同合同共同shape及真实资源/完成 |
 | Gather/Scatter | ggml i32 indices浮点Gather、浮点Scatter Add；ATen全15scalar/I32-I64/各axis/多维indices/odd-byte stride Gather与最后逻辑写入Assign，exact dense input0 Assign alias | bounded/严格预算/其它alias；Assign不与Add比较 | DECISION_REQUIRED；SI成熟接线已验，late越界不写输出与失败槽重建 |
-| Concat/Cast/Copy | ggml全15plain scalar位Copy/Concat、三floating dtype Cast；oneDNN plain reorder；ATen全15scalar Copy/Concat含odd/unaligned stride | FP8 numeric Cast、bounded整域与预算；宽载体不等于宽math | DECISION_REQUIRED；宽存储成熟接线已验，数值转换另资格 |
+| Concat/Cast/Copy | ggml全15plain scalar位Copy/Concat、三floating dtype Cast；oneDNN plain reorder；ATen全15scalar Copy/Concat含odd/unaligned stride及五float storage全25对Cast | bounded整域与预算；宽载体不等于宽math | DECISION_REQUIRED；宽存储成熟接线已验，数值转换另资格 |
 | View/Fill | ggml三floating dtype原精确scalar bits→repeat Fill；ATen全15scalar exact bits Fill；View为无数值payload的schema操作 | alias/bounded/严格预算仍单列，不能以adapter拒绝签唯一 | Fill DECISION_REQUIRED；全宽Fill成熟接线已验，View非payload不虚构胜负 |
 | ds4/Torch官方lowp | 原版ds4/TorchAO数学与ATen CPU程序 | HYLE只拥有描述、checked mapping、生命周期与组合 | BORROW；官方44/44不重开数学 |
 | Scan/TopK接缝 | `standard_index.cc`采用C++标准库inclusive_scan/partial_sort | 明确并非ggml数学；checked overflow、stable tie/NaN/storage-bits为语义适配 | BORROW/STANDARD；不重添旧Native实现 |
@@ -129,3 +129,10 @@ MN数值批已完成Windows/Linux120/120、三dtype普通Direct/Graph与三交�
 已接域，不是性能WIN或CPU整体完成。已锁ggml的Sigmoid与SiLU scalar尾部仍用exp(−x)，可能在有限
 负尾部溢出归零，特别是大value的gate；此具体源码疑点在CPU最终收口前必须做一次完整消费反例
 核对，不由当前ATen后备或旧−Inf边界通过掩盖，也不借Native owner权限修改ggml。
+
+
+TC批已真实CLOSED：两平台Cast/稳定Sigmoid/必要Graph边界与三交付全部通过；泛型ggml Sigmoid/SiLU
+资格撤回，原模型program仍独立。上方MN关闭时的有限尾部疑点现已复现并完成本批修复，不再列为
+未接FP8 Cast或未查ggml尾部。最新small FFN probe揭示oneDNN-labelled region内的HYLE SIMD
+SwiGLU提前舍入，x=-100/value1e38下游约1.7%差异；该混合接缝不能仅凭oneDNN身份算成熟，下一有限
+owner卡处理。Native/SIMD性能比较和清退保持冻结，SIMD本体不删除。

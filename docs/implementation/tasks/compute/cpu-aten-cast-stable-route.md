@@ -1,6 +1,6 @@
 # CPU成熟接线：浮点Cast与稳定泛型路由
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner：`compute_provider_native`、`compute_provider_ggml`；baseline `b881d2788e0848404c536342b806d6642f3aefa7`，Windows canonical。
   CPU/Graph现有assembler不变；只改原成熟factory的精确准入/数值程序。不修改其已关闭公共规划器。
@@ -102,3 +102,37 @@ CANDIDATE `c2df0b8973a80b7140e69983c8e861668483a97c`（产品payload为`689e9a1b
 原manifest与候选1335输入对照只有上述六个测试变化；1329输入不变。原114通过/7skip的复用证明
 和37失败位置另存fixture-reuse.json，原执行receipt保持原身份，不改写失败历史。算法/API/普通程序
 与有限FIX已停止变化；剩余资格逐项运行，当前不是CLOSED，也没有P1/WIN。
+
+
+## 终审与七门
+
+不可变候选`c2df0b8973a80b7140e69983c8e861668483a97c`，两平台所有适用TC1–4验收完成，**CLOSED**。
+没有候选后产品纠正。fixture身份迁移不改数值合同；Windows原37失败保存，重跑37/37通过，
+其余114通过/7旧fixture跳过按产品输入与单调谓词证明复用；不把原失败XML改为PASS。
+
+| 工程门 | 结论与实际依据 |
+|---|---|
+| 第三方路径 | PASS：既有LibTorch2.8 CPU/ggml pin与许可证/SDK边界不变；无新依赖或HYLE有限payload数学 |
+| 功能完整 | PASS（TC范围）：全25对Cast、F16/BF16/FP8全源bits及F32特殊/tie/random、rank0/8/empty/zero-odd stride；三dtype稳定Sigmoid、large/Inf gate与普通Graph下游 |
+| 内部复用 | PASS：原CPU factory/private lane、checked mappings、core alias/真实Completion与close；其他模型原program未改 |
+| 性能 | PASS P0：转换/packing/Double/原Tensor masks与临时数据显式收费；ggml NaN O(n)原位边界、必要region分割/融合损失计入；无P1/WIN |
+| 交付边界 | PASS：普通public C++链接compute/graph，无新FFI/公开API或SDK factor；ATen独立身份不混作Native后备 |
+| 构建交付 | PASS：Win/Linux source shared/static和installed shared/static同一consumer均通过；1335前向输入hash匹配；既有feature-OFF stub证明限当前关闭branch/assembler，非全SDK-OFF |
+| 易用与文档 | PASS：普通CPU入口绑定成熟精确域、用户无需排序/profile；Cast alias拒绝、managed/unknown内存和SDK平台限制已写用户指南 |
+
+两平台各Native124/124、ggml58/58、CPU151通过/7skip、Graph168通过/7skip；Linux公开头1/1。
+7个旧模型fixture测试的跳过不计PASS，未改旧模型原program不以本批代签整模型资格；本批主/正交
+消费者均实际运行。原native物理OOM/非coherent故障未注入，仅源码审计传播；HYLE tracked冷OOM、
+两线程独立invocation与资源归零回归已实测。没有capture/零热分配/严格私有内存上界的新承诺。
+
+root已复核TC1–4：五storage准入、RNE/NaN/saturation、dense/byte packing、alias拒绝、borrowed生命周期、
+线程/异常/close、原模型合同隔离、普通最终输出和三交付。同dtype存储不经数学转换；不同dtype原库
+转换与位语义边界不构成新的HYLE算子。所有失败与selected/skipped保留于qualification.zip。
+统一Compute+Graph实现LOC **62,010/249文件**，原产品689e9a1b统计，候选仅fixture变化且产品hash相同。
+本批清理消费者/探针文件逻辑大小913,694,144 bytes（另268MB probe硬链接不计实际空间回收）；
+SDK/producer/cache保留。
+
+CPU整体未完成：RoPE/I64、Bool/log-softmax、shape/资源域与冻结自研去留仍有后续有限工作。
+收口额外小probe已确认oneDNN-labelled FFN内有HYLE SIMD SwiGLU，x=-100/value=1e38下游与
+稳定独立参考差约1.7%；这是另一owner的具名混合接缝事实，另卡处理，不能被本批CLOSED掩盖。
+本批重开仅限TC域具名数值/资源/组合/交付反例或相关依赖升级。

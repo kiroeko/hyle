@@ -498,6 +498,13 @@ equal-desc端口允许精确alias；Gate/Reduce无alias。Double转换/原Tensor
 仍为managed leaf，不承诺零热分配或性能WIN。已锁SDK仅Windows/Linux x86_64；其他平台不继承
 这项资格。[数值范围和两平台交付](../../evidence/correctness/cpu-aten-numeric/README.md)。
 
+同一factory增加五种浮点storage间的全部25种`Cast`：F32/F16/BF16/E4M3FN/E5M2，
+rank0..8、合法byte stride和dense output。相同dtype保留原bits；不同dtype按公开RNE、
+FP8有限saturation、Inf及NaN映射转换，不能把位copy当数值转换。Cast全部拒绝alias；
+原Tensor cast/clamp/where/bit-view、packing和临时存储计入managed成本。
+稳定Sigmoid使用原Double kernel后F32/storage舍入。限定已锁Windows/Linux x86_64 SDK，
+当前批次资格见[Cast与稳定路由](../../evidence/correctness/cpu-aten-cast-stable-route/README.md)。
+
 CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 `kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。
 输入/输出是相同形状、独立存储的 dense BF16 矩阵，最后一维必须是相应分组的正整数倍；
@@ -942,8 +949,10 @@ oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它
 `[M,K] * [K,N]`；模型常见的
 物理 `[...,N,K]`、逻辑转置为 `[...,K,N]` 的连续-K权重在满足ggml rank-2..4 F32准入时选择ggml；
 其余域继续匹配具名Native残余，不能将所有转置权重都描述为HYLE SIMD执行。
-SiLU的packed/separate门控在ggml合法域使用原版SwiGLU程序，并在内部中间值进入下游前处理
-`-Inf`的稳定零极限；该边界复用输出buffer，增加一次线性检查，其成本属于完整执行成本。
+泛型Sigmoid和SiLU packed/separate门控需要保留有限负尾部；原ggml泛型程序因具名反例
+撤回资格，在已构建ATen的合法域由稳定原程序承载。完整Graph在此必要边界组合后续成熟
+MatMul，packing、临时存储和融合损失计入成本。具名模型原program仍按自己的数值合同资格，
+不由这项泛型反例自动撤回，也不在执行时重新选择实现。
 oneDNN的非空exact dense F32 MatMul也接收单任务`M < 16`，不以未裁决的Native成本推断拒绝成熟能力；
 F32 MatMul 的 rank2..4 dense activation 可配 row-major 或 contiguous-K 转置权重，支持共享/
 逐批及两 leading axes 的双向 NumPy 广播；必要 RHS repack 和 LHS 原repeat展开均包含在执行成本。
@@ -1002,6 +1011,8 @@ Graph叶程序桥接。准备时固定匹配原版 `ref:any`：该版本默认JI
 普通 CPU 工厂已组装这一 Provider；独立入口为 `compute/providers/ggml_cpu.h` 中的
 `ggml_cpu::provider()`。当前映射包含 Copy、浮点 Cast、Concat、任意轴 Gather、Add/Sub/Mul/Div、
 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、RMSNorm/LayerNorm 和任意轴集 Sum/Mean 的有限域。
+不同浮点dtype的Cast保留原转换kernel，另有内部NaN storage位映射边界，以匹配公开Cast规范；
+有限值结果不改，额外一次O(n)检查和原位view节点计入整个原程序成本。
 half 计算显式经过原版 F32 cast/计算/输出舍入；转换属于真实执行成本。dense 可折叠高 rank，
 非连续输入限 ggml 四轴且 stride 满足元素对齐；无 alias 资格。完整特殊值激活等仍等待成熟
 承载，不能由名称相同推导已支持。

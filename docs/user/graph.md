@@ -123,6 +123,11 @@ stride与重复Assign的确切域见[CPU ATen资格](../../evidence/correctness/
 已通过普通Direct和op→Copy Graph三交付；[范围/数值阶段/alias/成本](../../evidence/correctness/cpu-aten-numeric/README.md)
 同Compute，限定已锁Windows/Linux x86_64 SDK。原Double/F32转换、packing和临时Tensor成本仍在
 该原程序中，不冒充完整模型region或性能WIN，不改变已有ggml/oneDNN融合。
+泛型Sigmoid/SiLU门控的稳定有限尾部由已构建的ATen leaf承载，必要时形成ATen→成熟MatMul
+的正确性边界；其转换/packing和融合损失属于实际成本。其余有效ggml/oneDNN region继续保留。
+五种浮点storage之间的全部25种Cast也可接普通Graph下游，Cast拒绝alias；ggml混合浮点Cast
+保持原转换/region，仅附加NaN storage位语义边界。资格与限制见
+[Cast与稳定路由](../../evidence/correctness/cpu-aten-cast-stable-route/README.md)，不外推到未锁SDK平台。
 固定画像的当前运行结果及Windows三交付、代表片段性能资格见[覆盖表](model-fragment-coverage.md)，
 不外推到所有模型、形状或平台。
 
