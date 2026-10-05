@@ -182,7 +182,9 @@ TEST(CpuDs4Roundtrip, ManagedGroup128DeclinesPreparedPolicyAndUnknownPrivateBudg
   EXPECT_FALSE(prepared_only);
   auto budgeted = g::compile(graph, context,
       {.invocation_storage = g::InvocationStorageLimits{.max_bytes = 1024 * 1024}});
-  if (budgeted) EXPECT_FALSE(budgeted->executable.create_invocation());
+  if (budgeted) {
+    EXPECT_FALSE(budgeted->executable.create_invocation());
+  }
 }
 #endif
 TEST(CpuDs4Roundtrip, MatureGroup128AllFiniteBfloatReplayAndFailureRecovery) {
