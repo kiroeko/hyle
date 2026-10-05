@@ -5,7 +5,7 @@
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
 - owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
-  当前绑定[TC卡](cpu-aten-cast-stable-route.md) CLOSED；ggml同卡CLOSED；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[TM卡](cpu-aten-transformer-matrix-admission.md) SCOPED；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
   当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，

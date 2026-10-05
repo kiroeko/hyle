@@ -423,14 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 CLOSED：五dtype原Cast与NaN storage边界、stable Sigmoid及generic必要图边界，两平台124/124+58/58、CPU151/7skip、Graph168/7skip、普通Direct/Graph三交付与P0通过。仅本批关闭，Native自研裁决和其它CPU接缝未完成。",
-      "candidate": "c2df0b8973a80b7140e69983c8e861668483a97c",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-cast-stable-route/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md",
+      "summary": "TM1–4 SCOPED：有限核对已锁ATen的矩阵/Bool-log-softmax/I64 RoPE/mask SDPA剩余域与norm布局候选；未改产品、未签资格或唯一，自研数学和性能冻结。"
     },
     {
       "module": "compute_sched",
