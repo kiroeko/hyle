@@ -78,22 +78,37 @@ Result<std::size_t> allocation_size(std::size_t header, std::size_t count,
 
 bool numeric_program(Operation operation) noexcept {
   if (const auto *unary = operation.get_if<Unary>())
-    return unary->kind == UnaryKind::kSilu || unary->kind == UnaryKind::kGelu ||
+    return unary->kind == UnaryKind::kSigmoid ||
+           unary->kind == UnaryKind::kSilu || unary->kind == UnaryKind::kGelu ||
            unary->kind == UnaryKind::kGeluTanh ||
            unary->kind == UnaryKind::kSoftplus;
   if (const auto *binary = operation.get_if<Binary>())
     return binary->kind == BinaryKind::kMinimum ||
            binary->kind == BinaryKind::kMaximum;
-  return operation.get_if<GatedActivation>() || operation.get_if<Reduce>();
+  return operation.get_if<Cast>() || operation.get_if<GatedActivation>() ||
+         operation.get_if<Reduce>();
 }
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
 }
+bool cast_storage(DataType type) noexcept {
+  return floating(type) || type == DataType::kFloat8E4M3FN ||
+         type == DataType::kFloat8E5M2;
+}
 at::ScalarType native_type(DataType type) noexcept {
-  return type == DataType::kFloat16    ? at::kHalf
-         : type == DataType::kBFloat16 ? at::kBFloat16
-                                       : at::kFloat;
+  switch (type) {
+  case DataType::kFloat16:
+    return at::kHalf;
+  case DataType::kBFloat16:
+    return at::kBFloat16;
+  case DataType::kFloat8E4M3FN:
+    return at::kFloat8_e4m3fn;
+  case DataType::kFloat8E5M2:
+    return at::kFloat8_e5m2;
+  default:
+    return at::kFloat;
+  }
 }
 
 Status select(Operation operation, std::span<const TensorDesc> inputs,
@@ -129,11 +144,14 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
   for (const auto &input : inputs)
     HYLE_RETURN_IF_ERROR(validate(input));
   if (numeric_program(operation)) {
-    if (!floating(outputs[0].data_type()))
-      return Status::Unimplemented("ATen CPU math requires F32/F16/BF16");
+    const auto admitted = operation.get_if<Cast>() ? &cast_storage : &floating;
+    if (!admitted(outputs[0].data_type()))
+      return Status::Unimplemented(
+          "ATen CPU numerical storage is not admitted");
     for (const auto &input : inputs)
-      if (!floating(input.data_type()))
-        return Status::Unimplemented("ATen CPU math input is not floating");
+      if (!admitted(input.data_type()))
+        return Status::Unimplemented(
+            "ATen CPU numerical input is not admitted");
     if (const auto *reduce = operation.get_if<Reduce>())
       if (reduce->accumulation_type != DataType::kFloat32 &&
           !(reduce->accumulation_type == DataType::kUnknown &&
@@ -311,8 +329,75 @@ at::Tensor numeric_input(const Program &p, Invocation &inv, std::size_t index) {
   auto bytes = inv.numeric_inputs[index].flatten().view(at::kByte).view(
       at::IntArrayRef(shape.sizes.data(), shape.rank));
   bytes.copy_(inv.tensors[index]);
-  return inv.numeric_inputs[index].to(at::kFloat);
+  return inv.numeric_inputs[index];
 }
+// Original ATen conversion followed by public NaN/finite-overflow semantics.
+// All payload transformations below are original Tensor kernels, not HYLE
+// loops.
+at::Tensor storage_cast(const at::Tensor &input, at::ScalarType target) {
+  if (input.scalar_type() == target)
+    return input;
+  auto value = input.to(at::kFloat);
+  if (target == at::kFloat) {
+    // Restore the declared widening payload bits, including signalling NaNs.
+    // Native arithmetic conversions can quiet them before a storage write.
+    const bool half = input.scalar_type() == at::kHalf;
+    const bool bf16 = input.scalar_type() == at::kBFloat16;
+    const bool e4 = input.scalar_type() == at::kFloat8_e4m3fn;
+    auto bits = input.flatten()
+                    .view(half || bf16 ? at::kShort : at::kByte)
+                    .to(at::kInt);
+    auto sign = bits.bitwise_and(half || bf16 ? 0x8000 : 0x80)
+                    .bitwise_left_shift(half || bf16 ? 16 : 24);
+    at::Tensor nan, payload;
+    if (half) {
+      nan = bits.bitwise_and(0x7c00).eq(0x7c00).logical_and(
+          bits.bitwise_and(0x3ff).ne(0));
+      payload = bits.bitwise_and(0x3ff)
+                    .bitwise_left_shift(13)
+                    .bitwise_or(0x7f800000)
+                    .bitwise_or(sign);
+    } else if (bf16) {
+      nan = bits.bitwise_and(0x7f80).eq(0x7f80).logical_and(
+          bits.bitwise_and(0x7f).ne(0));
+      payload = bits.bitwise_and(0xffff).bitwise_left_shift(16);
+    } else if (e4) {
+      nan = bits.bitwise_and(0x7f).eq(0x7f);
+      payload = sign.bitwise_or(0x7fc00000);
+    } else {
+      nan = bits.bitwise_and(0x7c).eq(0x7c).logical_and(
+          bits.bitwise_and(3).ne(0));
+      payload = bits.bitwise_and(3)
+                    .bitwise_left_shift(21)
+                    .bitwise_or(0x7f800000)
+                    .bitwise_or(sign);
+    }
+    auto output = at::where(nan, payload, value.flatten().view(at::kInt));
+    return output.view(at::kFloat).view(input.sizes());
+  }
+  const bool e4 = target == at::kFloat8_e4m3fn;
+  const bool e5 = target == at::kFloat8_e5m2;
+  auto converted = value;
+  if (e4 || e5) {
+    const double maximum = e4 ? 448 : 57344;
+    converted = value.clamp(-maximum, maximum);
+    if (e5)
+      converted = at::where(value.isinf(), value, converted);
+  }
+  auto output = converted.to(target);
+  const auto storage = e4 || e5 ? at::kByte : at::kShort;
+  auto bits = output.flatten().view(storage);
+  const int positive = e4                    ? 0x7f
+                       : e5                  ? 0x7e
+                       : target == at::kHalf ? 0x7fff
+                                             : 0x7fc0;
+  const int negative = e4 ? 0xff : e5 ? 0xfe : target == at::kHalf ? -1 : -64;
+  auto nan = at::where(value.flatten().signbit(), at::full_like(bits, negative),
+                       at::full_like(bits, positive));
+  bits = at::where(value.flatten().isnan(), nan, bits);
+  return bits.view(target).view(input.sizes());
+}
+
 at::Tensor activation(const at::Tensor &input, GatedActivationKind kind) {
   auto wide = input.to(at::kDouble);
   at::Tensor result;
@@ -388,32 +473,39 @@ at::Tensor reduction(const Program &p, const at::Tensor &input) {
 void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
   auto first = numeric_input(p, inv, 0);
   at::Tensor result;
-  if (const auto *unary = p.operation.get_if<Unary>()) {
-    if (unary->kind == UnaryKind::kSoftplus)
-      result = at::softplus(first, 1, 20);
-    else
-      result = activation(first, unary->kind == UnaryKind::kSilu
-                                     ? GatedActivationKind::kSilu
-                                 : unary->kind == UnaryKind::kGelu
-                                     ? GatedActivationKind::kGelu
-                                     : GatedActivationKind::kGeluTanh);
-  } else if (const auto *binary = p.operation.get_if<Binary>()) {
-    result = number_minmax(first, numeric_input(p, inv, 1),
-                           binary->kind == BinaryKind::kMinimum);
-  } else if (const auto *gate = p.operation.get_if<GatedActivation>()) {
-    at::Tensor values;
-    if (gate->inputs == GatedInputKind::kSeparate)
-      values = numeric_input(p, inv, 1);
-    else {
-      const auto axis = static_cast<std::int64_t>(p.output.rank() - 1);
-      const auto hidden = p.output.dimensions().back();
-      values = first.slice(axis, hidden);
-      first = first.slice(axis, 0, hidden);
-    }
-    // Keep an F32 activation and multiplication, with one storage rounding.
-    result = activation(first, gate->activation).mul(values);
-  } else
-    result = reduction(p, first);
+  if (p.operation.get_if<Cast>()) {
+    result = storage_cast(first, native_type(p.output.data_type()));
+  } else {
+    first = first.to(at::kFloat);
+    if (const auto *unary = p.operation.get_if<Unary>()) {
+      if (unary->kind == UnaryKind::kSigmoid)
+        result = at::sigmoid(first.to(at::kDouble)).to(at::kFloat);
+      else if (unary->kind == UnaryKind::kSoftplus)
+        result = at::softplus(first, 1, 20);
+      else
+        result = activation(first, unary->kind == UnaryKind::kSilu
+                                       ? GatedActivationKind::kSilu
+                                   : unary->kind == UnaryKind::kGelu
+                                       ? GatedActivationKind::kGelu
+                                       : GatedActivationKind::kGeluTanh);
+    } else if (const auto *binary = p.operation.get_if<Binary>()) {
+      result = number_minmax(first, numeric_input(p, inv, 1).to(at::kFloat),
+                             binary->kind == BinaryKind::kMinimum);
+    } else if (const auto *gate = p.operation.get_if<GatedActivation>()) {
+      at::Tensor values;
+      if (gate->inputs == GatedInputKind::kSeparate)
+        values = numeric_input(p, inv, 1).to(at::kFloat);
+      else {
+        const auto axis = static_cast<std::int64_t>(p.output.rank() - 1);
+        const auto hidden = p.output.dimensions().back();
+        values = first.slice(axis, hidden);
+        first = first.slice(axis, 0, hidden);
+      }
+      // Keep an F32 activation and multiplication, with one storage rounding.
+      result = activation(first, gate->activation).mul(values);
+    } else
+      result = reduction(p, first);
+  }
   const auto shape = byte_shape(p.output);
   auto bytes = result.to(native_type(p.output.data_type()))
                    .contiguous()
@@ -730,7 +822,7 @@ ProviderPrepareOutcome prepare(void *,
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "ATen CPU programs",
-                 .version = "libtorch-2.8.0-cpu+programs-2"},
+                 .version = "libtorch-2.8.0-cpu+programs-3"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

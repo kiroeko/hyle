@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <climits>
 #include <cmath>
 #include <cstdint>
@@ -11,7 +10,6 @@
 #include <exception>
 #include <limits>
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include "cpu_execution.h"
@@ -457,42 +455,37 @@ void relu_nan(ggml_tensor *output, const ggml_tensor *,
       destination[i] = source[i];
 }
 
-// Preserve the stable -Inf activation limit inside the ggml region, before
-// its downstream consumers. The original SwiGLU owns all finite arithmetic;
-// this in-place boundary only repairs zero * finite-value storage bits.
-template <class T, bool Packed>
-void gated_negative_infinity(ggml_tensor *output, const ggml_tensor *,
-                             const ggml_tensor *gate, const ggml_tensor *value,
-                             int ith, int nth, void *) noexcept {
-  constexpr bool half = std::is_same_v<T, ggml_fp16_t>;
-  using Bits = std::conditional_t<half, std::uint16_t, std::uint32_t>;
-  constexpr Bits negative_infinity = half ? 0xfc00U : 0xff800000U;
-  constexpr Bits exponent = half ? 0x7c00U : 0x7f800000U;
-  constexpr Bits sign = half ? 0x8000U : 0x80000000U;
+// Original casts own finite arithmetic. This boundary only restores the
+// public NaN storage mapping before any downstream region consumer.
+void cast_nan_storage(ggml_tensor *output, const ggml_tensor *,
+                      const ggml_tensor *input, int ith, int nth,
+                      void *) noexcept {
   const auto count = ggml_nelements(output);
   const auto chunk = (count + nth - 1) / nth;
-  const auto begin = chunk * ith;
-  const auto end = std::min(count, begin + chunk);
-  if (begin >= end)
-    return;
-  const auto hidden = output->ne[0];
-  auto row = begin / hidden, column = begin % hidden;
-  const auto *gates = static_cast<const T *>(gate->data);
-  const auto *values = static_cast<const T *>(value->data);
-  auto *destination = static_cast<T *>(output->data);
-  for (auto i = begin; i < end; ++i) {
-    const auto index = Packed ? row * hidden * 2 + column : i;
-    if (std::bit_cast<Bits>(gates[index]) == negative_infinity) {
-      const auto value_index = Packed ? index + hidden : i;
-      const auto bits = std::bit_cast<Bits>(values[value_index]);
-      // Infinite/NaN values still produce NaN, as the original kernel did.
-      if ((bits & exponent) != exponent)
-        destination[i] = std::bit_cast<T>(static_cast<Bits>(bits & sign));
-    }
-    if (++column == hidden) {
-      column = 0;
-      ++row;
-    }
+  const auto end = std::min(count, chunk * (ith + 1));
+  const auto source_width = input->type == GGML_TYPE_F32 ? 4U : 2U;
+  const auto output_width = output->type == GGML_TYPE_F32 ? 4U : 2U;
+  const std::uint32_t exponent = input->type == GGML_TYPE_F32 ? 0x7f800000U
+                               : input->type == GGML_TYPE_F16 ? 0x7c00U : 0x7f80U;
+  const std::uint32_t fraction = input->type == GGML_TYPE_F32 ? 0x7fffffU
+                               : input->type == GGML_TYPE_F16 ? 0x3ffU : 0x7fU;
+  const auto *source = static_cast<const std::byte *>(input->data);
+  auto *destination = static_cast<std::byte *>(output->data);
+  for (auto i = chunk * ith; i < end; ++i) {
+    std::uint32_t bits = 0;
+    std::memcpy(&bits, source + i * source_width, source_width);
+    if ((bits & exponent) != exponent || (bits & fraction) == 0)
+      continue;
+    const auto sign = bits >> (source_width * 8 - 1);
+    std::uint32_t stored = 0;
+    if (output->type == GGML_TYPE_F32)
+      stored = input->type == GGML_TYPE_F16
+                   ? (sign << 31) | 0x7f800000U | ((bits & 0x3ffU) << 13)
+                   : bits << 16;
+    else
+      stored = (sign << 15) |
+               (output->type == GGML_TYPE_F16 ? 0x7fffU : 0x7fc0U);
+    std::memcpy(destination + i * output_width, &stored, output_width);
   }
 }
 
@@ -517,7 +510,12 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
   } else if (node.operation.get_if<Copy>()) {
     result = ggml_dup(context, input(0));
   } else if (node.operation.get_if<Cast>()) {
-    result = ggml_cast(context, input(0), native_type(output.data_type()));
+    auto *source = input(0);
+    result = ggml_cast(context, source, native_type(output.data_type()));
+    if (source->type != result->type)
+      result = ggml_map_custom2_inplace(context, result, source,
+                                       &cast_nan_storage, GGML_N_TASKS_MAX,
+                                       nullptr);
   } else if (const auto *unary = node.operation.get_if<Unary>()) {
     auto *a = fp(0);
     switch (unary->kind) {
@@ -545,9 +543,6 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     }
     case UnaryKind::kTanh:
       result = ggml_tanh(context, a);
-      break;
-    case UnaryKind::kSigmoid:
-      result = ggml_sigmoid(context, a);
       break;
     case UnaryKind::kRelu:
       result = ggml_map_custom2_inplace(context, ggml_relu(context, a), a,
@@ -579,28 +574,6 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     default:
       break; // Rejected by the cold capability predicate.
     }
-  } else if (const auto *gate = node.operation.get_if<GatedActivation>()) {
-    auto *a = input(0);
-    if (a->type == GGML_TYPE_BF16)
-      a = as_float(context, a);
-    auto *b = a;
-    const bool packed = gate->inputs == GatedInputKind::kPackedHalves;
-    if (packed) {
-      result = ggml_swiglu(context, a);
-    } else {
-      b = input(1);
-      if (b->type == GGML_TYPE_BF16)
-        b = as_float(context, b);
-      result = ggml_swiglu_split(context, a, b);
-    }
-    const auto guard =
-        a->type == GGML_TYPE_F16
-            ? (packed ? &gated_negative_infinity<ggml_fp16_t, true>
-                      : &gated_negative_infinity<ggml_fp16_t, false>)
-            : (packed ? &gated_negative_infinity<float, true>
-                      : &gated_negative_infinity<float, false>);
-    result = ggml_map_custom3_inplace(context, result, a, b, guard,
-                                      GGML_N_TASKS_MAX, nullptr);
   } else if (const auto *rms = node.operation.get_if<RmsNorm>()) {
     result = ggml_rms_norm(context, fp(0), rms->epsilon);
     if (node.inputs.size() > 1)
@@ -1362,7 +1335,6 @@ bool supports(void *context, Operation operation,
     case UnaryKind::kSqrt:
     case UnaryKind::kRsqrt:
     case UnaryKind::kTanh:
-    case UnaryKind::kSigmoid:
     case UnaryKind::kRelu:
       return true;
     default:
@@ -1372,8 +1344,10 @@ bool supports(void *context, Operation operation,
   if (const auto *binary = operation.get_if<Binary>())
     return binary->kind != BinaryKind::kMinimum &&
            binary->kind != BinaryKind::kMaximum;
-  if (const auto *gate = operation.get_if<GatedActivation>())
-    return gate->activation == GatedActivationKind::kSilu;
+  // Generic stable-tail semantics are not supplied by this pinned kernel.
+  // Qualified model programs retain their independent native numeric contract.
+  if (operation.get_if<GatedActivation>())
+    return false;
   if (const auto *rms = operation.get_if<RmsNorm>())
     return rms->accumulation_type == DataType::kFloat32;
   if (const auto *norm = operation.get_if<LayerNorm>())

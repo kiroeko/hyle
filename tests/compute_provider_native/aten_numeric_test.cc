@@ -116,8 +116,8 @@ template <class T> void activations() {
     auto input = storage(desc);
     write(input, desc, std::span<const T>(g));
     const auto view = ConstTensorView::create(desc, input.view()).value();
-    for (auto kind : {UnaryKind::kSilu, UnaryKind::kGelu, UnaryKind::kGeluTanh,
-                      UnaryKind::kSoftplus}) {
+    for (auto kind : {UnaryKind::kSigmoid, UnaryKind::kSilu, UnaryKind::kGelu,
+                      UnaryKind::kGeluTanh, UnaryKind::kSoftplus}) {
       auto prepared = prepare(ctx, Unary{kind}, desc).value();
       EXPECT_EQ(prepared.provider().id, aten_cpu::kProviderId);
       auto inv = prepared.create_invocation().value();
@@ -132,7 +132,10 @@ template <class T> void activations() {
         SCOPED_TRACE(i);
         const double x = half_test::decode(g[i]);
         const float expected =
-            kind == UnaryKind::kSoftplus
+            kind == UnaryKind::kSigmoid
+                ? static_cast<float>(x < 0 ? std::exp(x) / (1 + std::exp(x))
+                                           : 1 / (1 + std::exp(-x)))
+            : kind == UnaryKind::kSoftplus
                 ? static_cast<float>((std::max)(x, 0.0) +
                                      std::log1p(std::exp(-std::abs(x))))
                 : static_cast<float>(activation_reference(

@@ -20,6 +20,7 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/graph/providers/onednn.h"
 #include "hyle/mem/stats.h"
@@ -62,11 +63,13 @@ template <class T> void stable_gate_region() {
   auto context = graph::cpu::create_context({.native_threads = 4}).value();
   auto compiled = graph::compile(logical, context);
   ASSERT_TRUE(compiled) << compiled.error().message();
-  ASSERT_EQ(compiled->report.region_count(), 1U);
-  ASSERT_EQ(compiled->report.step_count(), 1U);
-  EXPECT_EQ(compiled->report.step(0)->provider.id,
-            compute::ggml_cpu::kProviderId);
-  EXPECT_EQ(compiled->report.step(0)->node_count, 2U);
+  ASSERT_EQ(compiled->report.step_count(), 2U);
+#if defined(HYLE_TEST_TORCH_CPU)
+  EXPECT_EQ(compiled->report.step(0)->provider.id, compute::aten_cpu::kProviderId);
+#endif
+  EXPECT_EQ(compiled->report.step(1)->provider.id, compute::ggml_cpu::kProviderId);
+  EXPECT_EQ(compiled->report.step(0)->node_count, 1U);
+  EXPECT_EQ(compiled->report.step(1)->node_count, 1U);
   auto queue = context.create_queue().value();
   auto invocation = compiled->executable.create_invocation().value();
   ASSERT_TRUE(invocation
@@ -110,7 +113,7 @@ template <class T> void stable_gate_region() {
   }
 }
 
-TEST(CpuDefaultGraph, StableGateBoundaryFeedsMatureMatMulWithinWholeRegion) {
+TEST(CpuDefaultGraph, StableGateCarrierFeedsMatureMatMulAcrossNecessaryBoundary) {
   stable_gate_region<float>();
   stable_gate_region<hyle::simd::float16_t>();
   stable_gate_region<hyle::simd::bfloat16_t>();

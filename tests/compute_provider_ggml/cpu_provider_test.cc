@@ -2,6 +2,7 @@
 
 #include <ggml.h>
 #include <gtest/gtest.h>
+#include "../compute_provider_native/aten_cast_reference.h"
 
 #include <array>
 #include <cmath>
@@ -116,122 +117,18 @@ TEST(GgmlCpuProvider, NormsUseIndependentOracleAcrossStorageTypes) {
   norms<hyle::simd::bfloat16_t>();
 }
 
-template <class T> void swiglu(std::uint32_t threads = 1) {
-  constexpr std::size_t rows = 3;
-  constexpr std::size_t width = 7;
-  const auto description = dense(half_test::data_type<T>(), {rows, width});
-  const auto packed_description =
-      dense(half_test::data_type<T>(), {rows, width * 2});
-  std::vector<T> gate(rows * width), value(rows * width),
-      packed(rows * width * 2);
-  auto gate_buffer = half_test::buffer<T>(gate);
-  auto value_buffer = half_test::buffer<T>(value);
-  auto packed_buffer = half_test::buffer<T>(packed);
-  auto separate_output = output_buffer(description);
-  auto packed_output = output_buffer(description);
-  const GatedActivation separate{.activation = GatedActivationKind::kSilu,
-                                 .inputs = GatedInputKind::kSeparate};
-  const GatedActivation packed_halves{.activation = GatedActivationKind::kSilu,
-                                      .inputs = GatedInputKind::kPackedHalves};
-  auto context =
-      Context::create(cpu::device(),
-                      ggml_cpu::provider({.native_threads = threads}))
-          .value();
-  auto separate_program = prepare(context, separate, description, description);
-  ASSERT_TRUE(separate_program) << separate_program.error().message();
-  EXPECT_EQ(separate_program->provider().id, ggml_cpu::kProviderId);
-  auto packed_program = prepare(context, packed_halves, packed_description);
-  ASSERT_TRUE(packed_program) << packed_program.error().message();
-  EXPECT_EQ(packed_program->provider().id, ggml_cpu::kProviderId);
-  auto separate_invocation = separate_program->create_invocation().value();
-  auto packed_invocation = packed_program->create_invocation().value();
-  auto queue = context.create_queue().value();
-  const auto gate_view =
-      ConstTensorView::create(description, gate_buffer.view()).value();
-  const auto value_view =
-      ConstTensorView::create(description, value_buffer.view()).value();
-  const auto packed_view =
-      ConstTensorView::create(packed_description, packed_buffer.view()).value();
-  const auto separate_result =
-      TensorView::create(description, separate_output.view()).value();
-  const auto packed_result =
-      TensorView::create(description, packed_output.view()).value();
-  for (int seed : {3, 0, 11}) {
-    for (std::size_t row = 0; row < rows; ++row) {
-      for (std::size_t column = 0; column < width; ++column) {
-        const auto index = row * width + column;
-        gate[index] = half_test::encode<T>(
-            static_cast<double>(static_cast<int>((index * 7 + seed) % 31) -
-                                15) /
-            8.0);
-        value[index] = half_test::encode<T>(
-            static_cast<double>(static_cast<int>((index * 5 + seed) % 23) -
-                                11) /
-            16.0);
-        if (seed == 0) {
-          constexpr auto infinity = std::numeric_limits<double>::infinity();
-          constexpr auto nan = std::numeric_limits<double>::quiet_NaN();
-          constexpr std::array gates{infinity, nan,   -0.0, 0.0,
-                                     -10000.0, -20.0, 2.0};
-          constexpr std::array values{1.0,      -2.0,      0.0, -0.0,
-                                      infinity, -infinity, nan};
-          gate[index] =
-              half_test::encode<T>(row == 1 ? gates[column] : -infinity);
-          value[index] = half_test::encode<T>(values[column]);
-        }
-        packed[row * width * 2 + column] = gate[index];
-        packed[row * width * 2 + width + column] = value[index];
-      }
+TEST(GgmlCpuProvider, GenericSwiGluRequiresStableTailCarrier) {
+  for (auto type : {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16})
+    for (auto threads : {1U, 4U}) {
+      auto context = Context::create(cpu::device(), ggml_cpu::provider({.native_threads = threads})).value();
+      auto d = dense(type, {3, 7}), packed = dense(type, {3, 14});
+      auto separate = prepare(context, GatedActivation{.inputs = GatedInputKind::kSeparate}, d, d);
+      auto halves = prepare(context, GatedActivation{}, packed);
+      ASSERT_FALSE(separate);
+      ASSERT_FALSE(halves);
+      EXPECT_TRUE(separate.error().IsUnimplemented());
+      EXPECT_TRUE(halves.error().IsUnimplemented());
     }
-    ASSERT_TRUE(gate_buffer.view().write(std::as_bytes(std::span(gate))).ok());
-    ASSERT_TRUE(
-        value_buffer.view().write(std::as_bytes(std::span(value))).ok());
-    ASSERT_TRUE(
-        packed_buffer.view().write(std::as_bytes(std::span(packed))).ok());
-    auto separate_done = separate_invocation.submit(
-        queue, gate_view, value_view, separate_result);
-    ASSERT_TRUE(separate_done) << separate_done.error().message();
-    ASSERT_TRUE(separate_done->wait().ok());
-    auto packed_done =
-        packed_invocation.submit(queue, packed_view, packed_result);
-    ASSERT_TRUE(packed_done) << packed_done.error().message();
-    ASSERT_TRUE(packed_done->wait().ok());
-    const auto separate_actual = half_test::read<T>(separate_output);
-    const auto packed_actual = half_test::read<T>(packed_output);
-    for (std::size_t i = 0; i < gate.size(); ++i) {
-      const auto x = half_test::decode(gate[i]);
-      const auto activation =
-          std::isinf(x) && x < 0 ? 0.0 : x / (1.0 + std::exp(-x));
-      const auto expected = activation * half_test::decode(value[i]);
-      half_test::expect_near(separate_actual[i], expected);
-      half_test::expect_near(packed_actual[i], expected);
-      if (std::isinf(x) && x < 0 && expected == 0) {
-        EXPECT_EQ(std::signbit(half_test::decode(separate_actual[i])),
-                  std::signbit(expected));
-        EXPECT_EQ(std::signbit(half_test::decode(packed_actual[i])),
-                  std::signbit(expected));
-      }
-    }
-  }
-  auto rejected =
-      prepare(context,
-              GatedActivation{.activation = GatedActivationKind::kGelu,
-                              .inputs = GatedInputKind::kSeparate},
-              description, description);
-  ASSERT_FALSE(rejected);
-  EXPECT_TRUE(rejected.error().IsUnimplemented());
-}
-
-TEST(GgmlCpuProvider, MatureSwiGluCoversStorageTypesAndInputLayouts) {
-  swiglu<float>();
-  swiglu<hyle::simd::float16_t>();
-  swiglu<hyle::simd::bfloat16_t>();
-}
-
-TEST(GgmlCpuProvider, StableSwiGluBoundaryKeepsParallelPackedRowsAndReplay) {
-  swiglu<float>(4);
-  swiglu<hyle::simd::float16_t>(4);
-  swiglu<hyle::simd::bfloat16_t>(4);
 }
 
 TEST(GgmlCpuProvider, MatureCausalConvUsesNaturalSequenceLayout) {
@@ -410,8 +307,7 @@ TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {
       ConstTensorView::create(description, source.view()).value();
   for (auto kind :
        {UnaryKind::kAbs, UnaryKind::kNeg, UnaryKind::kExp, UnaryKind::kLog,
-        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh,
-        UnaryKind::kSigmoid}) {
+        UnaryKind::kSqrt, UnaryKind::kRsqrt, UnaryKind::kTanh}) {
     auto status =
         execute(context, Unary{kind}, std::span(&input, 1),
                 TensorView::create(description, output.view()).value());
@@ -440,9 +336,6 @@ TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {
         break;
       case UnaryKind::kTanh:
         expected = std::tanh(values[i]);
-        break;
-      case UnaryKind::kSigmoid:
-        expected = 1.0 / (1.0 + std::exp(-values[i]));
         break;
       default:
         FAIL();
@@ -473,27 +366,53 @@ TEST(GgmlCpuProvider, AdmittedUnarySpecialValuesAndHalfCastRounding) {
   check.template operator()<hyle::simd::bfloat16_t>();
 }
 
-TEST(GgmlCpuProvider, MatureSigmoidPreservesBfloatBoundary) {
-  using BF16 = hyle::simd::bfloat16_t;
-  const std::array source_values{-8.0, -1.0, 0.0, 1.0, 8.0};
-  std::array<BF16, source_values.size()> encoded{};
-  for (std::size_t i = 0; i < encoded.size(); ++i)
-    encoded[i] = half_test::encode<BF16>(source_values[i]);
-  const auto description = dense(DataType::kBFloat16, {encoded.size()});
-  auto source = half_test::buffer<BF16>(encoded);
-  auto output = output_buffer(description);
+TEST(GgmlCpuProvider, GenericSigmoidRequiresStableTailCarrier) {
+  for (auto type : {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16}) {
+    auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+    auto result = prepare(context, Unary{UnaryKind::kSigmoid}, dense(type, {8}));
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsUnimplemented());
+  }
+}
+
+TEST(GgmlCpuProvider, OriginalFloatingCastPreservesAllSourceNaNStorageMappings) {
+  namespace ref = cast_reference;
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  const auto input =
-      ConstTensorView::create(description, source.view()).value();
-  auto status = execute(context, Unary{UnaryKind::kSigmoid},
-                        std::span(&input, 1),
-                        TensorView::create(description, output.view()).value());
-  ASSERT_TRUE(status.ok()) << status.message();
-  const auto actual = half_test::read<BF16>(output);
-  for (std::size_t i = 0; i < actual.size(); ++i) {
-    const auto input_value = half_test::decode(encoded[i]);
-    const auto expected = 1.0 / (1.0 + std::exp(-input_value));
-    half_test::expect_near(actual[i], expected);
+  for (const auto &source : ref::formats) {
+    if (source.width == 1) continue;
+    const std::size_t count = source.width == 4 ? 12U : 65536U;
+    const std::array<std::uint32_t, 12> samples{
+        0, 0x80000000, 0x3f801000, 0x3f803000, 0x3f808000, 0x3f818000,
+        0x7f800000, 0xff800000, 0x7fc12345, 0xffc12345, 0x7f800001, 0xff800001};
+    const auto description = dense(source.type, {static_cast<std::int64_t>(count)});
+    auto input_buffer = output_buffer(description);
+    std::vector<std::byte> bytes(count * source.width);
+    for (std::size_t i = 0; i < count; ++i) {
+      const auto bits = source.width == 4 ? samples[i] : static_cast<std::uint32_t>(i);
+      std::memcpy(bytes.data() + i * source.width, &bits, source.width);
+    }
+    ASSERT_TRUE(input_buffer.view().write(bytes).ok());
+    const auto input = ConstTensorView::create(description, input_buffer.view()).value();
+    for (const auto &destination : ref::formats) {
+      if (destination.width == 1) continue;
+      const auto result = dense(destination.type, {static_cast<std::int64_t>(count)});
+      auto output = output_buffer(result);
+      ASSERT_TRUE(execute(context, Cast{destination.type}, std::span(&input, 1),
+          TensorView::create(result, output.view()).value()).ok());
+      std::vector<std::byte> actual(count * destination.width);
+      ASSERT_TRUE(output.view().read(actual).ok());
+      for (std::size_t i = 0; i < count; ++i) {
+        const auto source_bits = source.width == 4 ? samples[i] : static_cast<std::uint32_t>(i);
+        const auto wide = ref::float_bits(source_bits, source);
+        const auto expected = source.type == destination.type ? source_bits
+            : destination.width == 4 ? wide
+            : ref::encode(std::bit_cast<float>(wide), destination, (wide >> 31) != 0);
+        std::uint32_t value = 0;
+        std::memcpy(&value, actual.data() + i * destination.width, destination.width);
+        ASSERT_EQ(value, expected) << "index=" << i << " source=" << int(source.type)
+                                  << " target=" << int(destination.type);
+      }
+    }
   }
 }
 
