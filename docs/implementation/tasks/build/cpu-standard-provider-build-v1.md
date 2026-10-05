@@ -1,6 +1,6 @@
 # CPU标准构建：默认取得已验收Provider
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`59f68e326`，Windows canonical；CPU官方四画像新能力已独立CLOSED，工作树干净。
 - owner：`compute_provider_native`。用户要求普通用户只选CPU模式，HYLE处理成熟库依赖；
@@ -80,3 +80,8 @@ source-lock记录、无runtime metadata的其它owner、其它库数学及GPU实
 Native DT_RPATH保留$ORIGIN并允许应用的SDK路径作用于间接依赖；修正后实际启动通过。
 重开条件：真实SDK取得/隔离/缓存破损误判、普通CPU能力静默缺失或三交付loader/relocation缺陷。
 Compute + Graph为60,866实现行/244文件（统一脚本，不含测试/vendor），本包未新增C++行。
+
+## CLOSED
+
+本卡七门在有限构建范围内通过，接受固定候选；停止SDK/构建施工。CPU算子和路由按逐域裁决卡继续，
+不能以本CLOSED记录将剩余自研域写成WIN、将所有CPU实现宣布完成或恢复其它路线。

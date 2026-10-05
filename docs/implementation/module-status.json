@@ -418,10 +418,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/cpu-standard-provider-build-v1.md",
-      "summary": "CPU标准构建CANDIDATE：CB1–4已实现并完成锁定SDK/失败隔离、CPU入口、Windows28×三交付及WSL真实FP8 Direct/Graph三交付；原数学/P1不变。CPU自研逐域与路由裁决仍未完成，其它路线暂停。",
-      "candidate": "eb7f97b8ff8d82071ce65aa3f6fcd89715f7b174"
+      "summary": "CPU标准构建CLOSED：CB1–4已实现并完成锁定SDK/失败隔离、CPU入口、Windows28×三交付及WSL真实FP8 Direct/Graph三交付；原数学/P1不变。CPU自研逐域与路由裁决仍未完成，其它路线暂停。",
+      "candidate": "eb7f97b8ff8d82071ce65aa3f6fcd89715f7b174",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-standard-provider-build-v1/README.md"
+      }
     },
     {
       "module": "compute_sched",
