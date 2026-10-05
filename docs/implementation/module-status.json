@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-transformer-fill-admission.md",
-      "summary": "TF1–4 SCOPED：审计已证 Softmax/非因果Attention/Fill 接线遗漏，批量固定成熟原程序与特殊行资源边界；Native冻结。"
+      "summary": "TF1–4 AUDITED：Softmax最后轴三dtype/scale/additive与特殊行安全边界、非因果原Attention、精确bits原repeat Fill，有限接线和一次批次验收固定；无自研数学。"
     },
     {
       "module": "graph_provider_onednn",
