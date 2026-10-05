@@ -58,3 +58,9 @@
 硬件/OS/编译器/Provider版本/线程预算绑定证据，未知域不套用WIN。
 SIMD基础与通用primitive保留，只清理随已退场算子失去独立用途的专属调用/kernel。
 目前未删除新的payload或宣布新WIN。
+
+## 成熟CPU ISA准入前置
+
+默认ggml当前是旧M1的安全基线profile，禁用AVX2/FMA/F16C/BMI2；不能与Native SIMD比较后把配置
+优势误写成算法WIN。[独立有限接入卡](cpu-ggml-isa-admission-v1.md)先保留基线并接通原版优化程序，
+此后才固定本卡不可变批次。该前置不授权新数学、GPU施工或无界ISA/benchmark扩张。
