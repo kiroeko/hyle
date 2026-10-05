@@ -1,6 +1,6 @@
 # CPU成熟接线：Transformer与矩阵剩余域
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_native`；baseline `7a6d35353626e332d7d0a1f7d984c6cabebea7a9`，Windows canonical。
   CPU/Graph assembler、oneDNN、ggml产品不改；本轮只在已有ATen独立factory接入原库程序。
@@ -46,3 +46,22 @@
 RoPE限已有F32 data/frequency域，I32/I64和全部公开axis/prefix，mask为Bool非零或可广播三floating。
 未证dtype/bounded/严格native内存预算不签支持/唯一。RMS/LayerNorm增加非vendor-layout成熟候选；
 合法省略gamma/beta、已声明F32阶段必须保持。AUDITED后只改现有ATen factory的TM1–4。
+
+
+## 不可变产品候选与首批验证
+
+CANDIDATE `3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d`：原matrix/Softmax/log、Double RoPE、完整
+attention math及norm程序已经接到既有ATen factory；普通Byte packing、Bool非零与I32/I64原typed
+carrier复用现有生命周期，限定公共equal-dense input0 alias；MatMul/SDPA/Cast继续无alias。
+没有新Native payload算法。RMS/LayerNorm仍显式F32 accumulation和原浮点affine。
+
+首批Windows Provider130/130、CPU12通过/1旧fixture skip、Graph33通过/6旧fixture skip，未重写skip。
+新增6个批量case覆盖三storage rank8/broadcast/transposed/odd-byte MatMul/K0，Bool/log/additive/非末轴
+Softmax与无效行NaN、I32/I64 batched prefix RoPE/两layout/长正负位置/未旋转signalling NaN bits，
+两attention layout/GQA/Dk-Dv/Bool-additive/bottom-right causal/odd stride，norm浮点gamma/beta、
+Softmax dense exact alias/独立slot变化输入/close/资源归零。后续empty/更高rank/并发/OOM与ordinary
+Direct/Graph三交付资格仍需按本卡补齐，不能以这批unit代签完成。
+
+fixture-only commits7ee7baf0、46e43573修正span prepare的显式resource、alias Result访问和mixed
+special-value initializer；所有失败log保留，产品源码未改，未消耗产品算法纠正预算。Linux与
+普通三交付尚未运行，状态不CLOSED，不签性能WIN。候选后的产品变更依法退回AUDITED。

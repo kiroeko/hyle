@@ -423,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md",
-      "summary": "TM1–4 AUDITED：原库四族+norm212断言与fused SDPA all-mask差异实证；固定原Tensor完整程序、packing/数值/alias/资源与批量交付FIX。未改产品，无自研数学或性能裁决。"
+      "summary": "TM1–4 CANDIDATE：原Tensor matrix/Bool-log-softmax/long RoPE/masked GQA/norm接线固定；Windows130/130、CPU12/1skip、Graph33/6skip。原库managed完整成本已显式，后续边界/两平台三交付未验，不CLOSED，自研性能冻结。",
+      "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d"
     },
     {
       "module": "compute_sched",
