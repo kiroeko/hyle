@@ -16,7 +16,7 @@ inline c::TensorDesc dense(std::initializer_list<std::int64_t> shape,
   return c::TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
 }
 
-template <class Accept> void check(Accept accept) {
+template <class Accept> void check(Accept accept, bool general_value_depth = false) {
   const c::Operation operation(c::ScaledDotProductAttention{
       .scale = 0.072168782F, .causal = true,
       .accumulation_type = c::DataType::kFloat32});
@@ -45,15 +45,15 @@ template <class Accept> void check(Accept accept) {
   changed[1] = dense({1, 4, 1, 575});
   EXPECT_FALSE(accept(operation, changed, outputs));
   EXPECT_FALSE(accept(operation, inputs, std::array{inputs[0]}));
-  // The admitted asymmetric domain is intentionally narrow. These are
-  // schema-valid descriptions, but are outside this qualified native program.
+  // CPU's general SDPA intake also qualifies independent value depth; other
+  // routes retain their existing narrow admission until independently tested.
   changed = inputs;
   changed[0] = dense({1, 1, 48, 576});
-  EXPECT_FALSE(accept(operation, changed, std::array{dense({1, 1, 48, 512})}));
+  EXPECT_EQ(accept(operation, changed, std::array{dense({1, 1, 48, 512})}), general_value_depth);
   for (std::size_t i = 0; i < changed.size(); ++i)
     changed[i] = c::TensorDesc::dense(c::DataType::kBFloat16,
                                       inputs[i].dimensions()).value();
-  EXPECT_FALSE(accept(operation, changed,
-                      std::array{dense({1, 1, 96, 512}, c::DataType::kBFloat16)}));
+  EXPECT_EQ(accept(operation, changed,
+                      std::array{dense({1, 1, 96, 512}, c::DataType::kBFloat16)}), general_value_depth);
 }
 } // namespace d5_kimi_mla_admission

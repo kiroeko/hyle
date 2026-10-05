@@ -2228,6 +2228,6 @@ TEST(GgmlCpuProvider, D5AbsorbedMlaColdShapeBoundary) {
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   d5_kimi_mla_admission::check([&](auto operation, const auto &inputs, const auto &outputs) {
     return bool(prepare(context, operation, inputs, outputs, hyle::mem::system_resource()));
-  });
+  }, true);
 }
 } // namespace
