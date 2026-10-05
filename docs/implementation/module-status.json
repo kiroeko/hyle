@@ -540,8 +540,8 @@
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-explicit-rope-phase.md",
-      "summary": "F35 AUDITED：显式频率RoPE共享构造与原精度边界、Metal回滚、四路线A5已验，产品数学不变。CPU/Apple/CUDA代表片段P1通过；Vulkan A6资格阻塞和D6不由此代签。"
+      "record": "docs/implementation/tasks/compute/cpu-ggml-isa-admission-v1.md",
+      "summary": "CPU ISA接入AUDITED：CI1–4固定，保留ggml安全基线，独立原版AVX2整程序按Platform CPU/OS事实冷绑定；资源与三交付待验，不签Native WIN。旧F35/GPU待验保留，其它路线暂停。"
     },
     {
       "module": "compute_provider_ggml_cuda",

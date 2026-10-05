@@ -1,6 +1,6 @@
 # CPU ggml原版优化程序接入
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`12904dc99`，Windows canonical；普通CPU SDK取得/loader已独立关闭。
 - owner：`compute_ggml_runtime`，仍为AUDITED；本卡重新定界CPU有限范围后绑定当前record。
@@ -39,3 +39,11 @@ selector记录selected/skipped及适用范围；docs/closure使用明确previous
 完成本卡仅表示成熟CPU优化程序有真实可用路径。随后按
 [Native逐域裁决](cpu-native-provider-domain-decision.md)冻结有限重叠域比较和清退/路由FIX；
 两者都完成才可通知CPU算子与路由收口。其它三路线暂停，SIMD基础保留。
+
+## AUDITED绑定
+
+CI1–4已经固定；Windows原版程序探针成功，没有改上游数学。当前runtime owner重新绑定本卡，
+旧F35只保留历史与GPU待验事实，不重新施工。Platform缓存事实通过runtime的显式private依赖复用，
+不扩充Platform API。AVX2 flags复用既有HyleIsa；私有bridge只用于一个完整CPU程序的pool/plan/run/free，
+不是公共或跨路线逐kernel vtable。源/安装runtime登记通过本包私有shim，不修改通用helper。
+公开CPU/Graph API与Provider顺序保持；赢的精确规则及自研删除仍由后续裁决卡固定。
