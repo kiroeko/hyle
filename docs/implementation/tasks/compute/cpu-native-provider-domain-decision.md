@@ -36,12 +36,12 @@
 
 | Native 能力族 | 成熟重叠候选 | 不能用重叠域结果直接删除的边界 | 动作 |
 |---|---|---|---|
-| MatMul | ggml 非空 rank2 plain F32，row-major/转置权重；oneDNN 非空 dense F32、serial M≥16 | Native F32 NumPy batch 广播、空K、非vendor可表达批次布局 | DECISION_REQUIRED；旧M1 Native-vs-Native不是胜出 |
+| MatMul | ggml 非空 rank2 plain F32，row-major/转置权重；oneDNN 非空 dense F32、当前adapter限制serial M≥16 | Native F32 NumPy batch 广播、空K、非vendor可表达批次布局；M<16并非原kernel缺失 | ADMISSION_FIX_REQUIRED后DECISION_REQUIRED；旧M1 Native-vs-Native不是胜出 |
 | RMSNorm/LayerNorm | oneDNN dense浮点、input0精确原位；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、非vendor布局；原位不能一概归唯一 | DECISION_REQUIRED；普通out-of-place与oneDNN原位均须比较，旧Graph不能代签新融合 |
 | Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid；oneDNN dense F32稳定Softplus | 未接ReLU/SiLU/GELU/GELU-tanh、narrow Softplus、layout/alias/非有限值 | DECISION_REQUIRED，按kind/dtype分开 |
 | Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支 | number Min/Max的NaN/signed-zero、特殊alias/layout/scalar-width | DECISION_REQUIRED |
 | Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
-| GatedActivation | ggml SiLU、合格packed/separate浮点端口 | GELU/GELU-tanh当前无相同已接片段；alias/layout单列 | DECISION_REQUIRED |
+| GatedActivation | ggml SiLU已验有限输入的packed/separate浮点端口 | 已发现gate=-Inf时Native与ggml不等价；GELU/GELU-tanh原函数未接，alias/layout单列 | ADMISSION_FIX_REQUIRED；先裁决/资格化完整数值边界，再比较 |
 | RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
 | Softmax | ggml dense rank2 F32、axis−1、scale1、unmasked普通Softmax | mask/log-softmax、其它axis/scale/narrow/strides与非有限值 | DECISION_REQUIRED |
 | SDPA | ggml causal BSHD、unmasked、F32 accumulation，满足具体Q/K/V shape | non-causal/mask/BHSD/不同depth；Native仅相同Q/K/V heads | DECISION_REQUIRED，只测共同shape |
@@ -74,3 +74,14 @@ SIMD基础与通用primitive保留，只清理随已退场算子失去独立用�
 当前具体疑点：oneDNN的serial M<16冷拒绝来自旧“Native更便宜”判断，非成熟kernel能力声明；
 Unary/Gated激活必须核对NaN、±Inf与尾部，不能仅以同名算子或有限随机数签等价。
 一次batch保存正向/拒绝/数值结果，不计时、不优化自研；之后固定接入/清退/规则FIX及一次P1批次。
+
+第一批已在同一Windows安装SDK上实际复现两项，见
+[准入证据](../../../../evidence/correctness/cpu-native-domain-admission/README.md)：
+
+- oneDNN普通prepare拒绝M1，而同版已接原BRGEMM carrier对M1/K64/N64正确产生64个结果。
+  这证明旧adapter条件挡住真实成熟能力，不能据该拒绝给Native签唯一实现或WIN。
+- 相同F32 separate SiLU gate的`-Inf`输入、value=1，Native输出0，原版优化ggml输出NaN；
+  其余此次列出的有限/NaN/+Inf输入符合预期。该差异须在固定普通数值合同和成熟接缝后处理，
+  不能拿有限随机数的通过外推整个域，不能直接启动性能比赛或因同名而删除自研。
+
+这次是准入/正确性诊断，不是性能比较、完整目录资格或产品完成。Native仍冻结，未增加任何数学。

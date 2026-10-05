@@ -1,0 +1,45 @@
+[
+  {
+    "name": "mature-admission-probe-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\consumer",
+      "-B",
+      "C:\\hv\\cpu-ggml-isa-static-installed",
+      "-DCPU_DOMAIN_PROBE=ON",
+      "-DCPU_DOMAIN_SOURCE=C:\\public\\project-hyle\\hyle",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "8f8cf1e41389afa9a2127c222b6b88b7dabef1fb",
+    "log": "1-mature-admission-probe-configure.log",
+    "returncode": 0,
+    "seconds": 11.828
+  },
+  {
+    "name": "mature-admission-probe-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-ggml-isa-static-installed",
+      "--target",
+      "cpu_domain_probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "8f8cf1e41389afa9a2127c222b6b88b7dabef1fb",
+    "log": "2-mature-admission-probe-build.log",
+    "returncode": 0,
+    "seconds": 2.422
+  },
+  {
+    "name": "mature-admission-probe-execute",
+    "args": [
+      "C:\\hv\\cpu-ggml-isa-static-installed\\cpu_domain_probe.exe"
+    ],
+    "candidate": "8f8cf1e41389afa9a2127c222b6b88b7dabef1fb",
+    "log": "3-mature-admission-probe-execute.log",
+    "returncode": 0,
+    "seconds": 0.266
+  }
+]

@@ -1,0 +1,4 @@
+Native separate SiLU gate: +0 +nan +inf -0 +0 -0 -4.12230747e-08 +1.76159406
+ggml optimized separate SiLU gate: -nan(ind) +nan +inf -0 +0 -0 -4.12230747e-08 +1.7615943
+oneDNN ordinary M1 rejected: onednn: small serial MatMul remains on the HYLE-native decode route
+oneDNN original M1 numeric: 64/64 outputs equal 64 PASS (not a timing or ordinary admission claim)
