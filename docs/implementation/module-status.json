@@ -373,9 +373,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB1–5 AUDITED：原布局/广播/byte-copy接口、数值和资源有限FIX已固定，批量接线后统一资格；Native冻结。"
+      "summary": "LB1–5 CANDIDATE：Windows58/58与普通Direct/Graph已验；空输入region遗漏已定向修复。Linux/三交付待验，Native冻结。",
+      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364"
     },
     {
       "module": "graph_provider_onednn",
@@ -435,9 +436,10 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB5 AUDITED：普通K0 MatMul被空输入总拒绝打断region；有限修复合法空输入准入和LHS广播展开成本，空输出保留拒绝。Native裁决冻结。"
+      "summary": "LB1–5 CANDIDATE：Windows58/58与普通Direct/Graph已验；空输入region遗漏已定向修复。Linux/三交付待验，Native冻结。",
+      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364"
     },
     {
       "module": "compute_provider_cublas",

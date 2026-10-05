@@ -1,6 +1,6 @@
 # CPU ggml：布局、广播与宽标量批量接线
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_ggml`、`graph_route_cpu`，baseline `786a3ec36e4a9b19b6eed572f1e9c96dc93396f5`，Windows canonical。
 - trigger：全族审计的 MatMul row-major batch/左小右大、Softmax 非末轴、SDPA BHSD/value depth、
@@ -62,3 +62,11 @@ K0 MatMul→Copy 得到两个 leaf、零region。源码 `graph_route_cpu/ggml_re
 据此把当前SCOPED的 `graph_route_cpu` 绑定本卡并AUDITED；LB5仅去除该空输入总拒绝、保留空输出
 区域拒绝，把原supports作为语义准入，补LHS展开字节并检查加法溢出。无Graph公共规划/API重写。
 这是本批一次产品纠正，测试语法/旧冷拒绝断言迁移另保留原失败收据，不放宽数值门。
+
+## 不可变候选
+
+候选 `395418f62cfb1226a76c8a5e1d4d319fe5543364`；Windows Provider58/58、普通CPU12通过/1旧fixture
+跳过、Graph15/15及同一普通Direct/Graph consumer已通过。K0 MatMul→Copy已保留完整region；
+三dtype两attention布局/独立depth、非末轴Softmax、15种scalar Concat均在普通入口变化输入重放。
+首次测试语法、旧MLA冷拒绝断言及空输入region反例收据均保留；后者一次有限产品纠正已验证。
+Linux与安装静态/动态交付尚未运行，本卡保持CANDIDATE，不签这些门PASS。
