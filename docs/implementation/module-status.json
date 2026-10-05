@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-numeric-admission.md",
-      "summary": "MN1–4 SCOPED：剩余activation/GELU gate/narrow Softplus/number MinMax/reduce原ATen数值程序有限审计；原极限/尾部/零号先验，Native自研冻结。"
+      "summary": "MN1–4 AUDITED：原ATen数值程序48,780具名断言，稳定activation/gate/number minmax/reduce零号与对齐byte packing固定BORROW/FIX；产品尚未资格，Native自研冻结。"
     },
     {
       "module": "compute_sched",

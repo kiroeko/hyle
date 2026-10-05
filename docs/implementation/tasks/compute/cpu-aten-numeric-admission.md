@@ -1,6 +1,6 @@
 # CPU ATen：数值成熟程序批量接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner：`compute_provider_native`，baseline `7c263f8631902b01b20b06007fc59db4fd6a2506`，Windows canonical。
   现有普通CPU/Graph已经组装独立ATen factory；本批不新增优先级或改公共规划器。若新的具名原库
@@ -43,3 +43,19 @@
 | MN4 | 一批普通Direct/Graph三交付、用法/成本/remaining ledger | 默认真实成熟identity；不把原probe代签产品PASS |
 
 SCOPED只授权本轮有限审计。完成实际原程序witness并固定BORROW/FIX/DEFER后才进入AUDITED并写产品。
+
+
+## 冻结审计结果
+
+[原程序48,780断言与失效参考边界](../../../../evidence/correctness/cpu-aten-numeric/README.md)已完成。
+MN1–4固定BORROW/FIX。erf-GELU采用原Double erfc Tensor等价程序，tanh-GELU采用原Double
+sigmoid/pow/add/mul程序，SiLU采用原Double silu；原where仅处理−Inf极限，activation显式F32
+后乘value的F32，再一次cast输出。直接raw gelu与消减参考失败保留，不放宽数值门。
+number Min/Max与Reduce用原kernel及零号mask组合；empty/reduce axes由cold Program固定。
+冷native typed input槽包含对齐Byte packing；旧SI借用slots与映射顺序保持。仅Unary/Binary/
+separate gate的允许dense equal-desc端口可精确alias，所有输入先native packing后才写输出。
+公共trait允许与实际可行域分别匹配，广播/strided/packed gate/reduce外部alias拒绝。
+P0为O(input+output)原Tensor程序，Double cast/原library多节点temporary/全部packing均收费；
+不承诺热零分配/完整内部内存上界，不制造prepared-only资格。软件/资源合同不变，无SDK或架构重写。
+owner AUDITED，产品gate尚未运行；原program witness不代签产品成功。已经存在的GGML有限尾部
+源码疑点在remaining ledger记录，不能据本批新ATen后备宣称所有现有默认数学已合格。

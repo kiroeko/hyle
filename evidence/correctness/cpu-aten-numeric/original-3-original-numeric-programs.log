@@ -1,0 +1,3 @@
+dtype=Float activation=0 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-3.72045e-42
+dtype=Float activation=1 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+activation precision/special-value witness failed

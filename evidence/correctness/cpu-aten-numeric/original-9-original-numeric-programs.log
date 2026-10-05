@@ -1,0 +1,10 @@
+dtype=Float activation=0 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-3.72045e-42
+dtype=Float activation=1 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+dtype=Float activation=2 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+dtype=Half activation=0 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-3.72045e-42
+dtype=Half activation=1 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+dtype=Half activation=2 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+dtype=BFloat16 activation=0 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-3.72045e-42
+dtype=BFloat16 activation=1 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+dtype=BFloat16 activation=2 raw-neg-inf=-nan(ind) qualified-neg-inf=0 tail=-0
+checks=48780 original-numeric-program-witness=PASS

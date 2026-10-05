@@ -1,0 +1,128 @@
+[
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-numeric",
+      "-B",
+      "C:\\hv\\cpu-mn-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "1-configure.log",
+    "returncode": 0,
+    "seconds": 1.375
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-mn-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "2-build.log",
+    "returncode": 0,
+    "seconds": 5.765
+  },
+  {
+    "name": "original-numeric-programs",
+    "args": [
+      "C:\\hv\\cpu-mn-original-probe\\cpu_aten_numeric_probe.exe"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "3-original-numeric-programs.log",
+    "returncode": 2,
+    "seconds": 0.25
+  },
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-numeric",
+      "-B",
+      "C:\\hv\\cpu-mn-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "4-configure.log",
+    "returncode": 0,
+    "seconds": 0.391
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-mn-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "5-build.log",
+    "returncode": 0,
+    "seconds": 5.672
+  },
+  {
+    "name": "original-numeric-programs",
+    "args": [
+      "C:\\hv\\cpu-mn-original-probe\\cpu_aten_numeric_probe.exe"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "6-original-numeric-programs.log",
+    "returncode": 2,
+    "seconds": 0.25
+  },
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-numeric",
+      "-B",
+      "C:\\hv\\cpu-mn-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "7-configure.log",
+    "returncode": 0,
+    "seconds": 0.406
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-mn-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "8-build.log",
+    "returncode": 0,
+    "seconds": 5.625
+  },
+  {
+    "name": "original-numeric-programs",
+    "args": [
+      "C:\\hv\\cpu-mn-original-probe\\cpu_aten_numeric_probe.exe"
+    ],
+    "candidate": "ec466a379cd8d0467f99fa57fbe7889191bed013",
+    "log": "9-original-numeric-programs.log",
+    "returncode": 0,
+    "seconds": 0.375
+  }
+]
