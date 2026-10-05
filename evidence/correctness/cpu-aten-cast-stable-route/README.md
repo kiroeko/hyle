@@ -22,3 +22,6 @@ Cast与stable Sigmoid原候选还未资格化。TC1–4只是有限审计对象�
 原fixture早期三个错误（缺header、Byte数量、低精度oracle少舍入）全保留；Byte容量修正后所有Cast
 通过，不把无效测试构造误归因vendor。原程序资格不代签产品普通入口、资源、alias/strides或三交付。
 TC1–4已固定AUDITED，产品实现/验收仍UNPROVEN；Native/SIMD比较与其它路线继续冻结。
+
+
+TC1补充：旧SDK默认ggml mixed Cast的NaN bits实际不匹配公开canonical。cast-nan-prior-*绑定原SDK0763fd3e产品；consumer HEAD为7eda8477（只有审计文档，当前产品草稿未编译）。原转换finite数学/region保留，仅NaN storage boundary列入本批有限FIX，所有产品门仍UNPROVEN。

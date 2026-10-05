@@ -73,3 +73,10 @@ kernel或跨vendor回调/vtable。TC2固定撤回这两种generic冷准入及其
 
 其它Cast dtype、SDK平台、模型program、public API、性能仪器与Native自研payload不变。
 owner已AUDITED，有限TC1–4已固定；全部产品工程门尚未运行，不能写CLOSED或新性能WIN。
+
+
+### TC1有限接缝补充（仍AUDITED，产品未固定）
+
+同一旧SDK实际默认ggml Cast对F32 quiet NaN 0x7fc12345/0xffc12345：F16给7e00/fe00，BF16给7fc1/ffc1；公共Cast的既有canonical为7fff/ffff和7fc0/ffc0。此诊断仍链接先前合格SDK产品0763fd3e，不是当前未编译草稿；收据HEAD只标原consumer生成时revision，命令/source见cast-nan-prior-*。
+
+TC1补充固定GGML mixed浮点Cast的原位NaN storage-boundary：原kernel保留全部finite conversion与内存/融合，只检查原stored NaN bits并写已有规定bits；不做有限payload数学。额外O(n)检查和一个internal view node包含成本。新增全源bits/普通Graph下游回归，完整原转换与其它region保持；不因NaN编码差异撤掉有效成熟Cast。该FIX仍在已有五dtype Cast与同两个owner范围内，无新公开合同/SDK/常态成本等级；没有Native自研优化或P1。
