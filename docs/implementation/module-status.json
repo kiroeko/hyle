@@ -384,9 +384,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-onednn-hybrid-ffn-retirement.md",
-      "summary": "NX1–3 SCOPED：完整oneDNN-labelled FFN实有HYLE SIMD SwiGLU，−100/1e38约1.7%下游偏差。有限退役错误generic混合region、保留有效norm/MatMul与SIMD本体；未改产品，不计性能WIN。"
+      "summary": "NX1–3 AUDITED：实证旧FFN内部HYLE SIMD Sigmoid提前舍入；固定退役错误generic混合route/artifact/回调，保留有效norm/MatMul与SIMD本体，批量普通mature FFN/交付资格。尚未改产品，自研性能冻结。"
     },
     {
       "module": "compute_ops",

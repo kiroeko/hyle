@@ -1,6 +1,6 @@
 # CPU混合FFN：撤回错误自研gate资格
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `graph_provider_onednn`；baseline `9489dd2af0e698e13ff5951c346b9a06e4215799`，Windows canonical。
 - trigger：普通四节点F32 FFN完整输出在−100/value1e38误差约1.7%；该region内部是HYLE SIMD SwiGLU，
@@ -22,3 +22,23 @@
   四组unit、旧模型、P1或扩建仪器。源码/动态/静态交付在本卡完成。
 - stop：不合格generic route不能保留为默认/SOTA；新的范围事实另绑owner，缺验不能PASS。此卡
   完成也不是CPU全部完工。未审计固定FIX前不改产品。
+
+
+## 固定审计/FIX
+
+源码live引用已核对：MlpPattern/match_pattern、WorkspaceLayout/RegionPlan/RegionInvocation、
+contains_constant、旧create/destroy_invocation与submit/apply_swiglu、kPreparedVTable及
+compile_region_checked均只服务旧四节点混合FFN。UseTable/build_use_table和NormPattern/
+match_norm/propose_norms及NormRegionPlan/compile_norm保留，不能误删有效norm融合。
+共用Brgemm source/helper与SIMD公共函数不改；并非宣称这些函数性能落后。
+
+| FIX | 固定动作 | 验收 |
+|---|---|---|
+| NX1 | RETIRE_INVALID_QUAL：删除仅此FFN的提案、私有artifact、workspace/执行及HYLE SwiGLU调用；不留可误选旧路线 | expert region-only不再提案FFN；普通Graph实际mature gate与完整−100/large输出正确 |
+| NX2 | KEEP/BORROW：保留原oneDNN norm region与已资格MatMul；自然Graph经有效region/qualified leaf组合，不新建跨provider逐kernel执行器 | scale/residual norm region/alias/close/OOM/两个invocation回归与Direct同合同 |
+| NX3 | FIX：迁移旧whole-oneDNN/step-count属性，新增公共实际完整FFN witness、变化输入与独立槽，批量三交付及docs | 不接纳任意Native数学为成熟；旧性能历史不当新WIN；跳过/未验不签PASS |
+
+原oneDNN JIT exp截断源码只是最初有界疑点；实际旧完整FFN没有调用其swish，而调用HYLE SIMD。
+确认的机制是Sigmoid先F32舍入再乘x，亚正常负尾部丢失SiLU有效位后被value放大；已有ATen原
+Double SiLU→F32 activation→F32 value的完整阶段已由MN/TC资格化。不能为保留旧fusion放宽规范，
+也不在此优化SIMD或引入新的HYLE数学。AUDITED后只实施NX1–3。
