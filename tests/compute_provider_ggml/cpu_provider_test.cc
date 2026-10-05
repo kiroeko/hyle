@@ -116,8 +116,8 @@ TEST(GgmlCpuProvider, NormsUseIndependentOracleAcrossStorageTypes) {
   norms<hyle::simd::bfloat16_t>();
 }
 
-template <class T> void swiglu() {
-  constexpr std::size_t rows = 2;
+template <class T> void swiglu(std::uint32_t threads = 1) {
+  constexpr std::size_t rows = 3;
   constexpr std::size_t width = 7;
   const auto description = dense(half_test::data_type<T>(), {rows, width});
   const auto packed_description =
@@ -129,13 +129,14 @@ template <class T> void swiglu() {
   auto packed_buffer = half_test::buffer<T>(packed);
   auto separate_output = output_buffer(description);
   auto packed_output = output_buffer(description);
-  const GatedActivation separate{
-      .activation = GatedActivationKind::kSilu,
-      .inputs = GatedInputKind::kSeparate};
-  const GatedActivation packed_halves{
-      .activation = GatedActivationKind::kSilu,
-      .inputs = GatedInputKind::kPackedHalves};
-  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const GatedActivation separate{.activation = GatedActivationKind::kSilu,
+                                 .inputs = GatedInputKind::kSeparate};
+  const GatedActivation packed_halves{.activation = GatedActivationKind::kSilu,
+                                      .inputs = GatedInputKind::kPackedHalves};
+  auto context =
+      Context::create(cpu::device(),
+                      ggml_cpu::provider({.native_threads = threads}))
+          .value();
   auto separate_program = prepare(context, separate, description, description);
   ASSERT_TRUE(separate_program) << separate_program.error().message();
   EXPECT_EQ(separate_program->provider().id, ggml_cpu::kProviderId);
@@ -155,7 +156,7 @@ template <class T> void swiglu() {
       TensorView::create(description, separate_output.view()).value();
   const auto packed_result =
       TensorView::create(description, packed_output.view()).value();
-  for (int seed : {3, 11}) {
+  for (int seed : {3, 0, 11}) {
     for (std::size_t row = 0; row < rows; ++row) {
       for (std::size_t column = 0; column < width; ++column) {
         const auto index = row * width + column;
@@ -167,6 +168,17 @@ template <class T> void swiglu() {
             static_cast<double>(static_cast<int>((index * 5 + seed) % 23) -
                                 11) /
             16.0);
+        if (seed == 0) {
+          constexpr auto infinity = std::numeric_limits<double>::infinity();
+          constexpr auto nan = std::numeric_limits<double>::quiet_NaN();
+          constexpr std::array gates{infinity, nan,   -0.0, 0.0,
+                                     -10000.0, -20.0, 2.0};
+          constexpr std::array values{1.0,      -2.0,      0.0, -0.0,
+                                      infinity, -infinity, nan};
+          gate[index] =
+              half_test::encode<T>(row == 1 ? gates[column] : -infinity);
+          value[index] = half_test::encode<T>(values[column]);
+        }
         packed[row * width * 2 + column] = gate[index];
         packed[row * width * 2 + width + column] = value[index];
       }
@@ -176,8 +188,8 @@ template <class T> void swiglu() {
         value_buffer.view().write(std::as_bytes(std::span(value))).ok());
     ASSERT_TRUE(
         packed_buffer.view().write(std::as_bytes(std::span(packed))).ok());
-    auto separate_done =
-        separate_invocation.submit(queue, gate_view, value_view, separate_result);
+    auto separate_done = separate_invocation.submit(
+        queue, gate_view, value_view, separate_result);
     ASSERT_TRUE(separate_done) << separate_done.error().message();
     ASSERT_TRUE(separate_done->wait().ok());
     auto packed_done =
@@ -188,17 +200,24 @@ template <class T> void swiglu() {
     const auto packed_actual = half_test::read<T>(packed_output);
     for (std::size_t i = 0; i < gate.size(); ++i) {
       const auto x = half_test::decode(gate[i]);
-      const auto expected =
-          x / (1.0 + std::exp(-x)) * half_test::decode(value[i]);
+      const auto activation =
+          std::isinf(x) && x < 0 ? 0.0 : x / (1.0 + std::exp(-x));
+      const auto expected = activation * half_test::decode(value[i]);
       half_test::expect_near(separate_actual[i], expected);
       half_test::expect_near(packed_actual[i], expected);
+      if (std::isinf(x) && x < 0 && expected == 0) {
+        EXPECT_EQ(std::signbit(half_test::decode(separate_actual[i])),
+                  std::signbit(expected));
+        EXPECT_EQ(std::signbit(half_test::decode(packed_actual[i])),
+                  std::signbit(expected));
+      }
     }
   }
-  auto rejected = prepare(
-      context,
-      GatedActivation{.activation = GatedActivationKind::kGelu,
-                      .inputs = GatedInputKind::kSeparate},
-      description, description);
+  auto rejected =
+      prepare(context,
+              GatedActivation{.activation = GatedActivationKind::kGelu,
+                              .inputs = GatedInputKind::kSeparate},
+              description, description);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsUnimplemented());
 }
@@ -207,6 +226,12 @@ TEST(GgmlCpuProvider, MatureSwiGluCoversStorageTypesAndInputLayouts) {
   swiglu<float>();
   swiglu<hyle::simd::float16_t>();
   swiglu<hyle::simd::bfloat16_t>();
+}
+
+TEST(GgmlCpuProvider, StableSwiGluBoundaryKeepsParallelPackedRowsAndReplay) {
+  swiglu<float>(4);
+  swiglu<hyle::simd::float16_t>(4);
+  swiglu<hyle::simd::bfloat16_t>(4);
 }
 
 TEST(GgmlCpuProvider, MatureCausalConvUsesNaturalSequenceLayout) {

@@ -6,10 +6,12 @@
 #include <bit>
 #include <climits>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <limits>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "cpu_execution.h"
@@ -371,6 +373,45 @@ ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
   return value;
 }
 
+// Preserve the stable -Inf activation limit inside the ggml region, before
+// its downstream consumers. The original SwiGLU owns all finite arithmetic;
+// this in-place boundary only repairs zero * finite-value storage bits.
+template <class T, bool Packed>
+void gated_negative_infinity(ggml_tensor *output, const ggml_tensor *,
+                             const ggml_tensor *gate, const ggml_tensor *value,
+                             int ith, int nth, void *) noexcept {
+  constexpr bool half = std::is_same_v<T, ggml_fp16_t>;
+  using Bits = std::conditional_t<half, std::uint16_t, std::uint32_t>;
+  constexpr Bits negative_infinity = half ? 0xfc00U : 0xff800000U;
+  constexpr Bits exponent = half ? 0x7c00U : 0x7f800000U;
+  constexpr Bits sign = half ? 0x8000U : 0x80000000U;
+  const auto count = ggml_nelements(output);
+  const auto chunk = (count + nth - 1) / nth;
+  const auto begin = chunk * ith;
+  const auto end = std::min(count, begin + chunk);
+  if (begin >= end)
+    return;
+  const auto hidden = output->ne[0];
+  auto row = begin / hidden, column = begin % hidden;
+  const auto *gates = static_cast<const T *>(gate->data);
+  const auto *values = static_cast<const T *>(value->data);
+  auto *destination = static_cast<T *>(output->data);
+  for (auto i = begin; i < end; ++i) {
+    const auto index = Packed ? row * hidden * 2 + column : i;
+    if (std::bit_cast<Bits>(gates[index]) == negative_infinity) {
+      const auto value_index = Packed ? index + hidden : i;
+      const auto bits = std::bit_cast<Bits>(values[value_index]);
+      // Infinite/NaN values still produce NaN, as the original kernel did.
+      if ((bits & exponent) != exponent)
+        destination[i] = std::bit_cast<T>(static_cast<Bits>(bits & sign));
+    }
+    if (++column == hidden) {
+      column = 0;
+      ++row;
+    }
+  }
+}
+
 std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                  const internal::Node &node,
                                  std::size_t node_index) {
@@ -450,14 +491,24 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     auto *a = input(0);
     if (a->type == GGML_TYPE_BF16)
       a = as_float(context, a);
-    if (gate->inputs == GatedInputKind::kPackedHalves) {
+    auto *b = a;
+    const bool packed = gate->inputs == GatedInputKind::kPackedHalves;
+    if (packed) {
       result = ggml_swiglu(context, a);
     } else {
-      auto *b = input(1);
+      b = input(1);
       if (b->type == GGML_TYPE_BF16)
         b = as_float(context, b);
       result = ggml_swiglu_split(context, a, b);
     }
+    const auto guard =
+        a->type == GGML_TYPE_F16
+            ? (packed ? &gated_negative_infinity<ggml_fp16_t, true>
+                      : &gated_negative_infinity<ggml_fp16_t, false>)
+            : (packed ? &gated_negative_infinity<float, true>
+                      : &gated_negative_infinity<float, false>);
+    result = ggml_map_custom3_inplace(context, result, a, b, guard,
+                                      GGML_N_TASKS_MAX, nullptr);
   } else if (const auto *rms = node.operation.get_if<RmsNorm>()) {
     result = ggml_rms_norm(context, fp(0), rms->epsilon);
     if (node.inputs.size() > 1)

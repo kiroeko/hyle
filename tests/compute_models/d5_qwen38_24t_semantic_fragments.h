@@ -45,11 +45,11 @@ struct Fragment final {
   std::uint64_t region;
   bool quantized = false;
   float absolute_tolerance = 8.0e-5F;
-  std::vector<c::TensorDesc> descriptions;
-  std::vector<ValueId> inputs, constants, outputs;
-  std::vector<std::vector<std::byte>> constant_bytes;
-  std::vector<recipe::DirectNode> nodes;
-  std::vector<Replay> replays;
+  std::vector<c::TensorDesc> descriptions{};
+  std::vector<ValueId> inputs{}, constants{}, outputs{};
+  std::vector<std::vector<std::byte>> constant_bytes{};
+  std::vector<recipe::DirectNode> nodes{};
+  std::vector<Replay> replays{};
   std::vector<std::pair<std::size_t, std::size_t>> state_ports{};
   std::vector<std::size_t> exact_outputs{};
   std::vector<std::size_t> bfloat_chain_outputs{};
@@ -701,7 +701,9 @@ inline void expect_output(const Fragment &fragment,
         EXPECT_EQ(selected[i], std::floor(selected[i]));
         EXPECT_GE(selected[i], 0);
         EXPECT_LT(selected[i], ids->extent);
-        if (i) EXPECT_NE(selected[i], selected[i - 1]);
+        if (i) {
+          EXPECT_NE(selected[i], selected[i - 1]);
+        }
       }
       if (ids->compare_members) {
         std::vector<float> members(expected.begin() + row,

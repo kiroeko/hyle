@@ -29,6 +29,93 @@ namespace compute = hyle::compute;
 namespace graph = hyle::graph;
 
 #if defined(HYLE_COMPUTE_GGML_CPU)
+template <class T> void stable_gate_region() {
+  constexpr std::int64_t rows = 3, hidden = 7, columns = 2;
+  const auto dtype = half_test::data_type<T>();
+  const auto description =
+      compute::TensorDesc::dense(dtype, std::array{rows, hidden}).value();
+  const auto physical_weights =
+      compute::TensorDesc::dense(dtype, std::array{columns, hidden}).value();
+  const auto weights = physical_weights.transposed().value();
+  const auto result =
+      compute::TensorDesc::dense(dtype, std::array{rows, columns}).value();
+  std::vector<T> gates(rows * hidden),
+      values(rows * hidden, half_test::encode<T>(1));
+  auto gate_buffer = half_test::buffer<T>(gates);
+  auto value_buffer = half_test::buffer<T>(values);
+  auto weight_buffer = half_test::buffer<T>(
+      std::vector<T>(hidden * columns, half_test::encode<T>(1)));
+  auto output_buffer = half_test::buffer<T>(std::vector<T>(rows * columns));
+  auto builder = graph::GraphBuilder::create().value();
+  const auto gate = builder.input(description).value();
+  const auto value = builder.input(description).value();
+  const auto weight = builder.input(weights).value();
+  const auto activated =
+      builder
+          .add(compute::GatedActivation{.inputs =
+                                            compute::GatedInputKind::kSeparate},
+               gate, value)
+          .value();
+  const auto output = builder.add(compute::MatMul{}, activated, weight).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto logical = std::move(builder).finish().value();
+  auto context = graph::cpu::create_context({.native_threads = 4}).value();
+  auto compiled = graph::compile(logical, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.region_count(), 1U);
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::ggml_cpu::kProviderId);
+  EXPECT_EQ(compiled->report.step(0)->node_count, 2U);
+  auto queue = context.create_queue().value();
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation
+                  .bind(gate, compute::ConstTensorView::create(
+                                  description, gate_buffer.view())
+                                  .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(value, compute::ConstTensorView::create(
+                                   description, value_buffer.view())
+                                   .value())
+                  .ok());
+  ASSERT_TRUE(invocation
+                  .bind(weight, compute::ConstTensorView::create(
+                                    weights, weight_buffer.view())
+                                    .value())
+                  .ok());
+  ASSERT_TRUE(
+      invocation
+          .bind(
+              output,
+              compute::TensorView::create(result, output_buffer.view()).value())
+          .ok());
+  const std::array queues{
+      graph::QueueBinding{.lane = graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  for (const double x : {-std::numeric_limits<double>::infinity(), 2.0}) {
+    std::fill(gates.begin(), gates.end(), half_test::encode<T>(x));
+    ASSERT_TRUE(gate_buffer.view().write(std::as_bytes(std::span(gates))).ok());
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto activation = std::isinf(x) ? 0.0 : x / (1 + std::exp(-x));
+    const auto stored = half_test::decode(half_test::encode<T>(activation));
+    for (const auto actual : half_test::read<T>(output_buffer)) {
+      // A boundary fix applied only after exporting cannot repair the NaNs
+      // already consumed by this internal MatMul.
+      EXPECT_FALSE(std::isnan(half_test::decode(actual)));
+      half_test::expect_near(actual, hidden * stored);
+    }
+  }
+}
+
+TEST(CpuDefaultGraph, StableGateBoundaryFeedsMatureMatMulWithinWholeRegion) {
+  stable_gate_region<float>();
+  stable_gate_region<hyle::simd::float16_t>();
+  stable_gate_region<hyle::simd::bfloat16_t>();
+}
+
 TEST(CpuDefaultGraph, NativeQ8GraphImportsGgufBytesAndReplays) {
   constexpr std::int64_t reduction = 256;
   constexpr std::int64_t columns = 2;
