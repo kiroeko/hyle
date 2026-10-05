@@ -1,0 +1,1140 @@
+{
+  "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+  "archive": {
+    "name": "qualification.zip",
+    "sha256": "b360c407f199b262dae8e999b0b0ce7681956435e41bea81f76d7ccdf41deafb",
+    "bytes": 250684,
+    "entries": 114
+  },
+  "receipts": {
+    "onednn_windows": [
+      {
+        "name": "selector-plan",
+        "args": [
+          "python",
+          "scripts/validation-select.py",
+          "plan",
+          "--base",
+          "60534925",
+          "--candidate",
+          "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-onednn-admission\\windows\\selector-plan.json"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "1-selector-plan.log",
+        "returncode": 0,
+        "seconds": 2.516
+      },
+      {
+        "name": "configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "2-configure.log",
+        "returncode": 0,
+        "seconds": 74.578
+      },
+      {
+        "name": "selected-cpu-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "hyle_compute_provider_onednn_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_provider_onednn_tests",
+          "hyle_graph_route_cpu_tests",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "3-selected-cpu-batch-build.log",
+        "returncode": 0,
+        "seconds": 44.735
+      },
+      {
+        "name": "selected-cpu-batch-tests",
+        "args": [
+          "ctest",
+          "--test-dir",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^(compute_provider_onednn|compute_route_cpu|graph_provider_onednn|graph_route_cpu)$",
+          "-LE",
+          "headers",
+          "-j",
+          "1",
+          "--output-junit",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-onednn-admission\\windows\\tests.xml"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "4-selected-cpu-batch-tests.log",
+        "returncode": 0,
+        "seconds": 658.328
+      }
+    ],
+    "onednn_windows_delivery": [
+      {
+        "name": "shared-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-onednn-admission\\windows-overlay.cmake"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "1-shared-producer-configure.log",
+        "returncode": 0,
+        "seconds": 29.484
+      },
+      {
+        "name": "shared-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "cpu_onednn_admission_consumer",
+          "hyle_time",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "2-shared-producer-build.log",
+        "returncode": 0,
+        "seconds": 146.938
+      },
+      {
+        "name": "shared-source-ordinary-expert-graph",
+        "args": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_onednn_admission_consumer.exe"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "3-shared-source-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.25
+      },
+      {
+        "name": "shared-install",
+        "args": [
+          "cmake",
+          "--install",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--prefix",
+          "C:\\hv\\cpu-ggml-isa-shared-sdk"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "4-shared-install.log",
+        "returncode": 0,
+        "seconds": 2.187
+      },
+      {
+        "name": "shared-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-onednn-admission\\consumer",
+          "-B",
+          "C:\\hv\\cpu-onednn-shared-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-shared-sdk",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "5-shared-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 12.391
+      },
+      {
+        "name": "shared-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\hv\\cpu-onednn-shared-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "6-shared-consumer-build.log",
+        "returncode": 0,
+        "seconds": 1.922
+      },
+      {
+        "name": "shared-installed-ordinary-expert-graph",
+        "args": [
+          "C:\\hv\\cpu-onednn-shared-consumer\\cpu_onednn_admission_consumer.exe"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "7-shared-installed-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.984
+      },
+      {
+        "name": "static-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\hv\\d5cp\\consumer",
+          "-B",
+          "C:\\hv\\d5cp\\source-build",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-onednn-admission\\windows-overlay.cmake"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "8-static-producer-configure.log",
+        "returncode": 0,
+        "seconds": 96.813
+      },
+      {
+        "name": "static-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\hv\\d5cp\\source-build",
+          "--target",
+          "cpu_onednn_admission_consumer",
+          "hyle_time",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "9-static-producer-build.log",
+        "returncode": 0,
+        "seconds": 40.422
+      },
+      {
+        "name": "static-source-ordinary-expert-graph",
+        "args": [
+          "C:\\hv\\d5cp\\source-build\\cpu_onednn_admission_consumer.exe"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "10-static-source-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.234
+      },
+      {
+        "name": "static-install",
+        "args": [
+          "cmake",
+          "--install",
+          "C:\\hv\\d5cp\\source-build",
+          "--prefix",
+          "C:\\hv\\cpu-ggml-isa-static-sdk"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "11-static-install.log",
+        "returncode": 0,
+        "seconds": 2.203
+      },
+      {
+        "name": "static-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-onednn-admission\\consumer",
+          "-B",
+          "C:\\hv\\cpu-onednn-static-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-static-sdk",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "12-static-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 12.641
+      },
+      {
+        "name": "static-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\hv\\cpu-onednn-static-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "13-static-consumer-build.log",
+        "returncode": 0,
+        "seconds": 2.672
+      },
+      {
+        "name": "static-installed-ordinary-expert-graph",
+        "args": [
+          "C:\\hv\\cpu-onednn-static-consumer\\cpu_onednn_admission_consumer.exe"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "14-static-installed-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.922
+      }
+    ],
+    "cpu_linux": [
+      {
+        "name": "configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/active-cpu-z/source",
+          "-B",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-onednn-admission/linux-overlay.cmake"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "1-configure.log",
+        "returncode": 0,
+        "seconds": 31.721
+      },
+      {
+        "name": "selected-cpu-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "hyle_compute_provider_onednn_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_provider_onednn_tests",
+          "hyle_graph_route_cpu_tests",
+          "cpu_onednn_admission_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "df9006e8b7858e522a1d03ea433f31ca66102fe9",
+        "log": "2-selected-cpu-batch-build.log",
+        "returncode": 1,
+        "seconds": 67.826
+      },
+      {
+        "name": "selected-cpu-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "hyle_compute_provider_onednn_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_provider_onednn_tests",
+          "hyle_graph_route_cpu_tests",
+          "cpu_onednn_admission_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "b82c13a5fb09f31206faa3c13fa89e88a5170e0e",
+        "log": "3-selected-cpu-batch-build.log",
+        "returncode": 1,
+        "seconds": 12.259
+      },
+      {
+        "name": "selected-cpu-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "hyle_compute_provider_onednn_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_provider_onednn_tests",
+          "hyle_graph_route_cpu_tests",
+          "cpu_onednn_admission_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "f93fc6a0f31c128c46553d49d0e57e33c8992d19",
+        "log": "4-selected-cpu-batch-build.log",
+        "returncode": 1,
+        "seconds": 23.385
+      },
+      {
+        "name": "selected-cpu-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "hyle_compute_provider_onednn_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_provider_onednn_tests",
+          "hyle_graph_route_cpu_tests",
+          "cpu_onednn_admission_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "43a6634ff9fcabacf8e9d0fe652077f563d26539",
+        "log": "5-selected-cpu-batch-build.log",
+        "returncode": 1,
+        "seconds": 22.889
+      },
+      {
+        "name": "selected-cpu-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "hyle_compute_provider_onednn_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_provider_onednn_tests",
+          "hyle_graph_route_cpu_tests",
+          "cpu_onednn_admission_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "6-selected-cpu-batch-build.log",
+        "returncode": 0,
+        "seconds": 32.287
+      },
+      {
+        "name": "selected-cpu-batch-tests",
+        "args": [
+          "ctest",
+          "--test-dir",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^(compute_provider_ggml|compute_provider_onednn|compute_route_cpu|graph_provider_onednn|graph_route_cpu)$",
+          "-LE",
+          "headers",
+          "-j",
+          "1",
+          "--output-junit",
+          "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-onednn-admission/linux/tests.xml"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "7-selected-cpu-batch-tests.log",
+        "returncode": 0,
+        "seconds": 512.245
+      },
+      {
+        "name": "source-ordinary-expert-graph",
+        "args": [
+          "/root/hyle-scratch/active-cpu-z/build/bin/cpu_onednn_admission_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "8-source-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.158
+      },
+      {
+        "name": "shared-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/active-cpu-z/source",
+          "-B",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_STATIC=OFF",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "9-shared-producer-configure.log",
+        "returncode": 0,
+        "seconds": 19.804
+      },
+      {
+        "name": "shared-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "cpu_onednn_admission_consumer",
+          "hyle_time",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "10-shared-producer-build.log",
+        "returncode": 0,
+        "seconds": 48.613
+      },
+      {
+        "name": "shared-source-ordinary-expert-graph",
+        "args": [
+          "/root/hyle-scratch/active-cpu-z/build/bin/cpu_onednn_admission_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "11-shared-source-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.147
+      },
+      {
+        "name": "shared-install",
+        "args": [
+          "cmake",
+          "--install",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--prefix",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "12-shared-install.log",
+        "returncode": 1,
+        "seconds": 0.017
+      },
+      {
+        "name": "shared-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/active-cpu-z/source",
+          "-B",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_STATIC=OFF",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "13-shared-producer-configure.log",
+        "returncode": 0,
+        "seconds": 28.394
+      },
+      {
+        "name": "shared-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "14-shared-producer-build.log",
+        "returncode": 0,
+        "seconds": 27.675
+      },
+      {
+        "name": "shared-source-ordinary-expert-graph",
+        "args": [
+          "/root/hyle-scratch/active-cpu-z/build/bin/cpu_onednn_admission_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "15-shared-source-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.153
+      },
+      {
+        "name": "shared-install",
+        "args": [
+          "cmake",
+          "--install",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--prefix",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "16-shared-install.log",
+        "returncode": 0,
+        "seconds": 0.14
+      },
+      {
+        "name": "shared-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-onednn-admission/consumer",
+          "-B",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-onednn-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/cpu-ggml-isa-delivery/shared",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "17-shared-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 7.394
+      },
+      {
+        "name": "shared-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-onednn-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "18-shared-consumer-build.log",
+        "returncode": 0,
+        "seconds": 1.276
+      },
+      {
+        "name": "shared-installed-ordinary-expert-graph",
+        "args": [
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-onednn-consumer/cpu_onednn_admission_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "19-shared-installed-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.14
+      },
+      {
+        "name": "static-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/root/hyle-scratch/active-cpu-z/source",
+          "-B",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_STATIC=ON",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "20-static-producer-configure.log",
+        "returncode": 0,
+        "seconds": 41.962
+      },
+      {
+        "name": "static-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "21-static-producer-build.log",
+        "returncode": 0,
+        "seconds": 92.418
+      },
+      {
+        "name": "static-source-ordinary-expert-graph",
+        "args": [
+          "/root/hyle-scratch/active-cpu-z/build/bin/cpu_onednn_admission_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "22-static-source-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.146
+      },
+      {
+        "name": "static-install",
+        "args": [
+          "cmake",
+          "--install",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--prefix",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "23-static-install.log",
+        "returncode": 0,
+        "seconds": 0.169
+      },
+      {
+        "name": "static-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-onednn-admission/consumer",
+          "-B",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static-onednn-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/cpu-ggml-isa-delivery/static",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "24-static-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 7.337
+      },
+      {
+        "name": "static-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static-onednn-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "25-static-consumer-build.log",
+        "returncode": 0,
+        "seconds": 2.405
+      },
+      {
+        "name": "static-installed-ordinary-expert-graph",
+        "args": [
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static-onednn-consumer/cpu_onednn_admission_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "26-static-installed-ordinary-expert-graph.log",
+        "returncode": 0,
+        "seconds": 0.163
+      }
+    ],
+    "gated_windows": [
+      {
+        "name": "selector-plan",
+        "args": [
+          "python",
+          "scripts/validation-select.py",
+          "plan",
+          "--base",
+          "fe203c75",
+          "--candidate",
+          "65a02982ac108d57b13769029f56a6a6903895be",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\windows\\selector-plan.json"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "1-selector-plan.log",
+        "returncode": 0,
+        "seconds": 3.015
+      },
+      {
+        "name": "fixture-tool-tests",
+        "args": [
+          "python",
+          "tests/compute_models/inputs_test.py"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "2-fixture-tool-tests.log",
+        "returncode": 0,
+        "seconds": 0.829
+      },
+      {
+        "name": "configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\windows-overlay.cmake"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "3-configure.log",
+        "returncode": 1,
+        "seconds": 0.562
+      },
+      {
+        "name": "configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\windows-overlay.cmake"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "4-configure.log",
+        "returncode": 0,
+        "seconds": 139.0
+      },
+      {
+        "name": "selected-batch-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "hyle_compute_provider_ggml_tests",
+          "hyle_compute_route_cpu_tests",
+          "hyle_graph_route_cpu_tests",
+          "cpu_gated_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "5-selected-batch-build.log",
+        "returncode": 0,
+        "seconds": 163.188
+      },
+      {
+        "name": "selected-batch-tests",
+        "args": [
+          "ctest",
+          "--test-dir",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^(compute_provider_ggml|compute_route_cpu|graph_route_cpu)$",
+          "-LE",
+          "headers",
+          "-j",
+          "1",
+          "--output-junit",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\windows\\tests.xml"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "6-selected-batch-tests.log",
+        "returncode": 0,
+        "seconds": 651.078
+      },
+      {
+        "name": "shared-source-gated",
+        "args": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_gated_consumer.exe"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "7-shared-source-gated.log",
+        "returncode": 0,
+        "seconds": 0.234
+      },
+      {
+        "name": "shared-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "8-shared-producer-configure.log",
+        "returncode": 0,
+        "seconds": 38.531
+      },
+      {
+        "name": "shared-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--target",
+          "cpu_gated_consumer",
+          "hyle_time",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "9-shared-producer-build.log",
+        "returncode": 0,
+        "seconds": 138.375
+      },
+      {
+        "name": "shared-install",
+        "args": [
+          "cmake",
+          "--install",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+          "--prefix",
+          "C:\\hv\\cpu-ggml-isa-shared-sdk"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "10-shared-install.log",
+        "returncode": 0,
+        "seconds": 2.594
+      },
+      {
+        "name": "shared-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\consumer",
+          "-B",
+          "C:\\hv\\cpu-gated-shared-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-shared-sdk",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "11-shared-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 12.5
+      },
+      {
+        "name": "shared-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\hv\\cpu-gated-shared-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "12-shared-consumer-build.log",
+        "returncode": 0,
+        "seconds": 1.89
+      },
+      {
+        "name": "shared-installed-gated",
+        "args": [
+          "C:\\hv\\cpu-gated-shared-consumer\\cpu_gated_consumer.exe"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "13-shared-installed-gated.log",
+        "returncode": 0,
+        "seconds": 0.641
+      },
+      {
+        "name": "static-producer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:/hv/d5cp/consumer",
+          "-B",
+          "C:\\hv\\d5cp\\source-build",
+          "-DHYLE_INSTALL=ON",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+          "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\windows-overlay.cmake"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "14-static-producer-configure.log",
+        "returncode": 0,
+        "seconds": 121.063
+      },
+      {
+        "name": "static-producer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\hv\\d5cp\\source-build",
+          "--target",
+          "cpu_gated_consumer",
+          "hyle_time",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "15-static-producer-build.log",
+        "returncode": 0,
+        "seconds": 40.203
+      },
+      {
+        "name": "static-source-gated",
+        "args": [
+          "C:\\hv\\d5cp\\source-build\\cpu_gated_consumer.exe"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "16-static-source-gated.log",
+        "returncode": 0,
+        "seconds": 0.234
+      },
+      {
+        "name": "static-install",
+        "args": [
+          "cmake",
+          "--install",
+          "C:\\hv\\d5cp\\source-build",
+          "--prefix",
+          "C:\\hv\\cpu-ggml-isa-static-sdk"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "17-static-install.log",
+        "returncode": 0,
+        "seconds": 2.109
+      },
+      {
+        "name": "static-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-gated-numeric\\consumer",
+          "-B",
+          "C:\\hv\\cpu-gated-static-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-static-sdk",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "18-static-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 12.594
+      },
+      {
+        "name": "static-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "C:\\hv\\cpu-gated-static-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "19-static-consumer-build.log",
+        "returncode": 0,
+        "seconds": 2.781
+      },
+      {
+        "name": "static-installed-gated",
+        "args": [
+          "C:\\hv\\cpu-gated-static-consumer\\cpu_gated_consumer.exe"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "20-static-installed-gated.log",
+        "returncode": 0,
+        "seconds": 0.938
+      }
+    ],
+    "gated_linux_delivery": [
+      {
+        "name": "static-source-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/active-cpu-z/build",
+          "--target",
+          "cpu_gated_consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "1-static-source-build.log",
+        "returncode": 0,
+        "seconds": 0.044
+      },
+      {
+        "name": "static-source-gated",
+        "args": [
+          "/root/hyle-scratch/active-cpu-z/build/bin/cpu_gated_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "2-static-source-gated.log",
+        "returncode": 0,
+        "seconds": 0.158
+      },
+      {
+        "name": "shared-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-ggml-gated-numeric/consumer",
+          "-B",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-gated-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/cpu-ggml-isa-delivery/shared",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "3-shared-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 7.683
+      },
+      {
+        "name": "shared-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-gated-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "4-shared-consumer-build.log",
+        "returncode": 0,
+        "seconds": 1.92
+      },
+      {
+        "name": "shared-installed-gated",
+        "args": [
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-gated-consumer/cpu_gated_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "5-shared-installed-gated.log",
+        "returncode": 0,
+        "seconds": 0.146
+      },
+      {
+        "name": "static-consumer-configure",
+        "args": [
+          "cmake",
+          "-S",
+          "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-ggml-gated-numeric/consumer",
+          "-B",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static-gated-consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=g++-14",
+          "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/cpu-ggml-isa-delivery/static",
+          "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "6-static-consumer-configure.log",
+        "returncode": 0,
+        "seconds": 7.625
+      },
+      {
+        "name": "static-consumer-build",
+        "args": [
+          "cmake",
+          "--build",
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static-gated-consumer",
+          "--parallel",
+          "2"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "7-static-consumer-build.log",
+        "returncode": 0,
+        "seconds": 2.344
+      },
+      {
+        "name": "static-installed-gated",
+        "args": [
+          "/root/hyle-scratch/cpu-ggml-isa-delivery/static-gated-consumer/cpu_gated_consumer"
+        ],
+        "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+        "log": "8-static-installed-gated.log",
+        "returncode": 0,
+        "seconds": 0.153
+      }
+    ]
+  }
+}

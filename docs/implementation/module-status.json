@@ -362,17 +362,25 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-onednn-small-matmul-admission.md",
-      "summary": "CPU小矩阵准入CANDIDATE：OM1/OM2已实现，Windows定向与三交付、Linux批量与动态交付已验；静态交付收据待补。原数学/API/资源不变，不签Native WIN。",
-      "candidate": "65a02982ac108d57b13769029f56a6a6903895be"
+      "summary": "CPU小矩阵准入CLOSED：OM1/OM2原BRGEMM准入、正确性/重放、Windows/Linux三交付与P0已验。删除无资格M<16过滤，不签Native WIN；CPU逐域裁决仍SCOPED。",
+      "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-mature-admission-batch-v1/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-gated-numeric-admission.md",
-      "summary": "CPU门控数值CANDIDATE：GN1/GN2已实现；Linux 44/44与完整Graph中间值已验，Windows及独立三交付待补。原版SwiGLU加必要原位语义边界，Native/SIMD冻结。",
-      "candidate": "65a02982ac108d57b13769029f56a6a6903895be"
+      "summary": "CPU门控数值CLOSED：GN1/GN2三dtype/两布局/-Inf稳定边界、两平台44/44、完整Graph及三交付/P0已验；未部署旧fixture不计PASS。原版核保持，Native胜负与其它kind准入仍待逐域卡。",
+      "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-mature-admission-batch-v1/README.md"
+      }
     },
     {
       "module": "graph_provider_onednn",

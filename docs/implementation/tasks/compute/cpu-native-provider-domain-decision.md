@@ -41,7 +41,7 @@
 | Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid；oneDNN dense F32稳定Softplus | 未接ReLU/SiLU/GELU/GELU-tanh、narrow Softplus、layout/alias/非有限值 | DECISION_REQUIRED，按kind/dtype分开 |
 | Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支 | number Min/Max的NaN/signed-zero、特殊alias/layout/scalar-width | DECISION_REQUIRED |
 | Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
-| GatedActivation | ggml SiLU的packed/separate浮点端口；已实现原位-Inf数值边界，批量资格进行中 | 原版数学核不改；GELU/GELU-tanh原函数未接，alias/layout单列 | ADMISSION_QUALIFICATION_PENDING；资格通过后才比较，边界检查和必要cast成本全部计入 |
+| GatedActivation | ggml SiLU的packed/separate浮点端口；原位-Inf数值边界已完成两平台三交付资格 | 原版数学核不改；GELU/GELU-tanh原函数未接，alias/layout单列 | SiLU DECISION_REQUIRED；其它kind继续成熟准入核对，边界检查和必要cast成本全部计入 |
 | RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
 | Softmax | ggml dense rank2 F32、axis−1、scale1、unmasked普通Softmax | mask/log-softmax、其它axis/scale/narrow/strides与非有限值 | DECISION_REQUIRED |
 | SDPA | ggml causal BSHD、unmasked、F32 accumulation，满足具体Q/K/V shape | non-causal/mask/BHSD/不同depth；Native仅相同Q/K/V heads | DECISION_REQUIRED，只测共同shape |
@@ -89,9 +89,9 @@ Unary/Gated激活必须核对NaN、±Inf与尾部，不能仅以同名算子或�
 ### 已落实的有限准入修正
 
 [oneDNN 小矩阵卡](cpu-onednn-small-matmul-admission.md)的 OM1/OM2 已实现：普通 M1/M4/M15/M16
-可使用原 BRGEMM，Windows 定向 7/7 与三交付已通过；Linux 批量验证仍在执行，尚未关闭。
+可使用原 BRGEMM，Windows 定向 7/7、Linux 批量 8/8 与两平台三交付已通过，本接入卡已 CLOSED。
 [ggml 门控卡](cpu-ggml-gated-numeric-admission.md)的 GN1/GN2 已实现：保留原版 SwiGLU 与整程序，
-在中间值进入下游之前处理 -Inf 极限，数值/资源/普通完整 Graph 与三交付仍按该卡资格化。
+在中间值进入下游之前处理 -Inf 极限，数值/资源/普通完整 Graph 与两平台三交付已通过，该卡已 CLOSED。
 这些是成熟实现的准入修正，不是 Native 性能裁决；不复用未经适配的 ggml 原函数成本作为公平基线。
 
 MatMul 的 Native 比较应保持调用方真实 RHS 物理布局：row-major 对 oneDNN；contiguous-K 转置布局

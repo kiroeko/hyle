@@ -1,6 +1,6 @@
 # CPU oneDNN：恢复小矩阵的真实准入
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -46,7 +46,7 @@
 | OM1 | 删除 `kNativeSerialRowCutoff` 与 serial M<16 冷拒绝；不改 BRGEMM 数学/plan/submit | M1/M4/M15/M16，奇数 K17/N65 和 K64/N64 实际输出、两次重放 |
 | OM2 | 旧小矩阵拒绝测试改为准入；composition 回落用真实不支持的转置布局；增加 ordinary CPU 小矩阵身份测试及独立三交付 consumer | 冷 propose/prepare 同语义，真实 unsupported 不受影响，输出正确 |
 
-有限 FIX 已冻结，owner 为 AUDITED；不借此更改 Native、ggml、Graph planner、路由器 API 或性能工具。
+原审计阶段有限 FIX 已冻结，owner 先绑定 AUDITED 再改产品；不借此更改 Native、ggml、Graph planner、路由器 API 或性能工具。
 
 ## 七问
 
@@ -62,8 +62,27 @@
 
 固定产品候选为 `65a02982ac108d57b13769029f56a6a6903895be`；OM1/OM2 已实现，公开合同、数学、
 资源路径及冷准入停止变化。Windows 定向 7/7 和三交付已通过；Linux 批量 8/8、普通 Direct/Graph
-与动态安装消费者已通过，静态交付尚在验证。Linux 428 个注册 GTest 中 414 通过、14 因旧模型 fixture
+与三交付消费者已通过。Linux 428 个注册 GTest 中 414 通过、14 因旧模型 fixture
 未部署跳过；这些旧测试不冒充本次通过，也不将本次数值准入写成全模型或 Native 性能裁决。
 
-本卡进入 CANDIDATE，适用 delivery 的总裁决仍为 UNPROVEN；终审以实际剩余收据为准。
+本卡已先进入 CANDIDATE，再依据实际收据完成以下 terminal 裁决。
 文档/状态提交不改变上述不可变产品候选，不据此重构建或重跑 P1；本卡不签性能 WIN，也不关闭 CPU 逐域目标。
+
+## CLOSED
+
+上述候选全部适用有限验收通过，接受 OM1/OM2；
+[实际收据、失败纠正与限制](../../../../evidence/correctness/cpu-mature-admission-batch-v1/README.md)。
+
+| 门 | 裁决 |
+|---|---|
+| scope | PASS：只恢复成熟 BRGEMM 已存在的小矩阵能力，未优化或裁决 Native |
+| architecture | PASS：沿原 plan/workspace/执行/完成路径，无新增公共 API、kernel 或执行器 |
+| correctness | PASS：Windows 定向 7/7，Linux 共同批次 8/8，小矩阵数值、两次变化输入、默认身份；未部署旧 fixture 的跳过不计 PASS |
+| delivery | PASS：两平台 source/static/shared，独立普通及专家 Direct、普通 Graph，实际重复执行 |
+| usability_docs | PASS：普通 CPU factory 和默认小矩阵准入文档，不要求用户排序 Provider |
+| red_team | PASS：真实不支持的转置布局仍回落；原 shape/resource/workspace/失败检查相关测试通过 |
+| engineering_performance | PASS/P0：删除冷过滤，原数学与常态执行成本不变；不签算法 WIN、不启动 P1 |
+
+停止本卡施工；Native 重叠域与固定优选规则继续由逐域卡负责。重开条件为实际小矩阵准入/数值、
+资源与 completion 或三交付失效，不因计时点值或旧卡命令重开。
+统一脚本：Compute + Graph **61,035 实现行 / 248 文件**，不含测试与 vendor。

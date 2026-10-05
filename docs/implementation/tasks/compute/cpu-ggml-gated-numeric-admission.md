@@ -1,6 +1,6 @@
 # CPU ggml：门控非有限值语义接缝
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -50,15 +50,36 @@ F32/F16 storage 与 packed 行映射，不增加完整激活算法或 ISA 扩张
 冷绑定而不在请求中计时/选 Provider。无新 FFI/package 因子，三交付仍必须实际运行新接缝。
 性能比较仍未开始；SIMD 基础与自研 payload 冻结。原 owner 已处 AUDITED，本次在同一阶段重新绑定
 此卡及具名 GN1/GN2；未改公开架构合同，不借旧卡授权新修改。SOURCE/资源/私有 ABI 审计已经固定，
-实现前 registry 必须指向此 AUDITED 卡；所有新资格仍为 UNPROVEN。
+实现前 registry 已指向此 AUDITED 卡；实现后的新资格按以下固定候选记录。
 
 ## 固定候选与资格进度
 
 产品候选为 `65a02982ac108d57b13769029f56a6a6903895be`；GN1/GN2 已实现并停止变化。
 Linux ggml Provider 44/44 通过，包含三 dtype、packed/separate、非有限值与多线程变化输入重放；
 普通 CPU/Graph 批量测试通过，新增 gate→MatMul 完整 region 在三 dtype 实际消费修正后的中间值。
-旧模型 fixture 的 14 个跳过保持明确记录，不计为通过。Windows 数值批次与独立三交付仍待执行，
-总 correctness/delivery 尚不签 PASS。本卡为 CANDIDATE，接受收据后才能 terminal；Native 裁决未开始。
+旧模型 fixture 的 14 个跳过保持明确记录，不计为通过。Windows 对应数值批次与两平台独立三交付
+已通过。该候选先绑定 CANDIDATE，再接受收据并进入以下 terminal；Native 裁决未开始。
 
 验证期出现的 GCC 问题为旧 CPU 模型测试的 aggregate 默认初始化、GoogleTest 宏外缺少花括号；
 仅在该批 fixture 中修正，断言保留，警告不关闭，所有原失败日志保留。不是新数学优化预算。
+
+## CLOSED
+
+固定候选全部适用有限验收通过；
+[实际收据、失败纠正与限制](../../../../evidence/correctness/cpu-mature-admission-batch-v1/README.md)。
+
+| 门 | 裁决 |
+|---|---|
+| scope | PASS：generic SiLU 的已有数值合同，GN1/GN2 固定；未扩张自研算子 |
+| architecture | PASS：原版 SwiGLU 与整程序、原生 pool/slot；内部原位边界在冷 lowering 固定 |
+| correctness | PASS：两平台 Provider 各 44/44；三 dtype、两布局、1/4 threads、非有限值与重放；普通完整 Graph 的下游实际消费修正中间值 |
+| delivery | PASS：两平台 source/static/shared，同一独立普通 Direct＋完整 Graph 消费者实际重复执行 |
+| usability_docs | PASS：普通 CPU/Graph 无新增 glue；明确原版核、稳定边界与线性检查成本 |
+| red_team | PASS：NaN/±Inf/±0、非有限 value、奇数行与线程尾部；现有资源/slot/生命周期测试通过，未部署旧 fixture 不计 PASS |
+| engineering_performance | PASS/P0：O(n) 检查、一个内部 view node、无完整 payload 缓冲或热选路；后续 Native P1 必须计入全部适配成本 |
+
+Windows 4/4 CTest 程序通过，377 个注册 GTest 中 363 实际通过、14 旧 fixture 跳过；Linux 共同批次
+8/8，428 中 414 实际通过、14 跳过。跳过不代签完整模型权重或 D5/P1；本卡不签 Native WIN。
+停止本卡施工。重开条件为稳定门控数值、原位 view/slot 资源生命周期、下游完整 region 或交付的实际失效。
+其它激活的成熟准入仍由逐域卡处理，不因本卡关闭而签 UNIQUE。
+统一脚本：Compute + Graph **61,035 实现行 / 248 文件**，不含测试与 vendor。
