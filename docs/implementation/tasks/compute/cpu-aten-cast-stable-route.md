@@ -1,6 +1,6 @@
 # CPU成熟接线：浮点Cast与稳定泛型路由
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner：`compute_provider_native`、`compute_provider_ggml`；baseline `b881d2788e0848404c536342b806d6642f3aefa7`，Windows canonical。
   CPU/Graph现有assembler不变；只改原成熟factory的精确准入/数值程序。不修改其已关闭公共规划器。
@@ -43,3 +43,33 @@
 | TC4 | ordinary Direct/Graph原最终结果、三交付与剩余ledger | 不用Native fallback代签接入；记录必要region边界，不以未资格核计时 |
 
 当前SCOPED，Cast原程序尚未审计完成，产品/三交付/工程门UNPROVEN；完成原witness后固定有限FIX才写产品。
+
+
+## 固定审计与有限 FIX
+
+原版Cast/Sigmoid程序 **1,005,272独立断言**通过：25个容量断言，993,220个逐位Cast结果与
+12,027个三dtype Sigmoid结果。F32有67,060特殊/random/tie/相邻值；F16/BF16源各65,536完整bits；
+两FP8各256完整bits。枚举nearest-even参考及NaN widening/narrowing bits独立于原程序和SIMD实现。
+这只证明原程序可运行，不代签产品stride/资源/默认/交付。
+
+原native转换finite overflow/NaN mapping不是公共合同；采用原clamp/where/typed-bit view及原
+bitwise kernels恢复已有Inf/NaN规范，finite数学仍由原to执行。相同dtype原typed storage直接Byte
+copy，保持全部源bits；不同dtype先F32，FP8 finite sat与E5 Inf区分。没有新HYLE payload算术循环。
+所有原输出大小先校验；早期raw fixture少grad-mode include、Byte from_blob错误元素数、Sigmoid
+oracle忘记低精度storage舍入已修并保留失败日志，不把无效fixture读值写成原库失效。
+
+原ggml generic SiLU/Sigmoid没有承载已实证stable tail；不升级跨平台pin，不新增HYLE稳定math
+kernel或跨vendor回调/vtable。TC2固定撤回这两种generic冷准入及其死lowering，用已有ATen原程序
+承担稳定generic叶。完整Graph在必要正确边界组合，MatMul和其它有效ggml区域保留；融合损失属于
+此正确程序真实成本。ggml RecurrentGatedDeltaNet等具名模型原程序不继承generic严格合同，也不
+以本反例重开它们；原有画像/误差资格保持，不能宣称全部原模型已重验。
+
+| ID | 冻结动作 | 必需验收 |
+|---|---|---|
+| TC1 | BORROW/FIX：现有ATen factory接五dtype Cast与原NaN/saturation语义Tensor组合，对齐Byte packing；Cast禁止alias | 全25对、完整source bits/ties/empty/rank0/8/zero-odd stride与真实结果 |
+| TC2 | BORROW/FIX：ATen原Double Sigmoid→F32→storage；ggml generic Sigmoid/SiLU拒绝，不留死callback | 大value/Inf gate下游不再错；其它成熟region与原模型程序不改；用户无需排Provider |
+| TC3 | FIX：复用现有private槽与完成/异常/close；公开managed属性与所有转换/临时节点/packing费用 | tracked冷OOM/归零、不同invocation、alias拒绝、changed-input重放 |
+| TC4 | FIX：迁移这两个generic资格测试及普通消费者的合法承载/图边界假设；Win/Linux完整受影响factor与三交付一批 | 有效旧准入保持、fixture跳过不计PASS；输出完整下游oracle，不用错误whole region作性能基线 |
+
+其它Cast dtype、SDK平台、模型program、public API、性能仪器与Native自研payload不变。
+owner已AUDITED，有限TC1–4已固定；全部产品工程门尚未运行，不能写CLOSED或新性能WIN。

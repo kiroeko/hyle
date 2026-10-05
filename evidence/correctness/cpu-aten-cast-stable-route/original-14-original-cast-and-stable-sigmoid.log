@@ -1,0 +1,26 @@
+original Cast src=6 dst=6 67060 bit results PASS
+original Cast src=6 dst=5 67060 bit results PASS
+original Cast src=6 dst=15 67060 bit results PASS
+original Cast src=6 dst=24 67060 bit results PASS
+original Cast src=6 dst=23 67060 bit results PASS
+original Cast src=5 dst=6 65536 bit results PASS
+original Cast src=5 dst=5 65536 bit results PASS
+original Cast src=5 dst=15 65536 bit results PASS
+original Cast src=5 dst=24 65536 bit results PASS
+original Cast src=5 dst=23 65536 bit results PASS
+original Cast src=15 dst=6 65536 bit results PASS
+original Cast src=15 dst=5 65536 bit results PASS
+original Cast src=15 dst=15 65536 bit results PASS
+original Cast src=15 dst=24 65536 bit results PASS
+original Cast src=15 dst=23 65536 bit results PASS
+original Cast src=24 dst=6 256 bit results PASS
+original Cast src=24 dst=5 256 bit results PASS
+original Cast src=24 dst=15 256 bit results PASS
+original Cast src=24 dst=24 256 bit results PASS
+original Cast src=24 dst=23 256 bit results PASS
+original Cast src=23 dst=6 256 bit results PASS
+original Cast src=23 dst=5 256 bit results PASS
+original Cast src=23 dst=15 256 bit results PASS
+original Cast src=23 dst=24 256 bit results PASS
+original Cast src=23 dst=23 256 bit results PASS
+original ATen Cast/Sigmoid 1005272 independent assertions PASS

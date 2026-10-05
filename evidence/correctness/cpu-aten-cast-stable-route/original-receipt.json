@@ -1,0 +1,202 @@
+[
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-cast-stable-route",
+      "-B",
+      "C:\\hv\\cpu-tc-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "1-configure.log",
+    "returncode": 0,
+    "seconds": 0.954
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-tc-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "2-build.log",
+    "returncode": 2,
+    "seconds": 4.343
+  },
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-cast-stable-route",
+      "-B",
+      "C:\\hv\\cpu-tc-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "3-configure.log",
+    "returncode": 0,
+    "seconds": 0.391
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-tc-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "4-build.log",
+    "returncode": 0,
+    "seconds": 5.547
+  },
+  {
+    "name": "original-cast-and-stable-sigmoid",
+    "args": [
+      "C:\\hv\\cpu-tc-original-probe\\cpu_aten_cast_probe.exe"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "5-original-cast-and-stable-sigmoid.log",
+    "returncode": 2,
+    "seconds": 0.235
+  },
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-cast-stable-route",
+      "-B",
+      "C:\\hv\\cpu-tc-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "6-configure.log",
+    "returncode": 0,
+    "seconds": 0.407
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-tc-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "7-build.log",
+    "returncode": 0,
+    "seconds": 5.656
+  },
+  {
+    "name": "original-cast-and-stable-sigmoid",
+    "args": [
+      "C:\\hv\\cpu-tc-original-probe\\cpu_aten_cast_probe.exe"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "8-original-cast-and-stable-sigmoid.log",
+    "returncode": 2,
+    "seconds": 0.219
+  },
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-cast-stable-route",
+      "-B",
+      "C:\\hv\\cpu-tc-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "9-configure.log",
+    "returncode": 0,
+    "seconds": 0.391
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-tc-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "10-build.log",
+    "returncode": 0,
+    "seconds": 5.703
+  },
+  {
+    "name": "original-cast-and-stable-sigmoid",
+    "args": [
+      "C:\\hv\\cpu-tc-original-probe\\cpu_aten_cast_probe.exe"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "11-original-cast-and-stable-sigmoid.log",
+    "returncode": 2,
+    "seconds": 0.296
+  },
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-cast-stable-route",
+      "-B",
+      "C:\\hv\\cpu-tc-original-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "12-configure.log",
+    "returncode": 0,
+    "seconds": 0.407
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-tc-original-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "13-build.log",
+    "returncode": 0,
+    "seconds": 5.671
+  },
+  {
+    "name": "original-cast-and-stable-sigmoid",
+    "args": [
+      "C:\\hv\\cpu-tc-original-probe\\cpu_aten_cast_probe.exe"
+    ],
+    "candidate": "0aad95dd7f5f2fd9f1c81a86bff83dc6f877a888",
+    "log": "14-original-cast-and-stable-sigmoid.log",
+    "returncode": 0,
+    "seconds": 0.297
+  }
+]

@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 SCOPED：五dtype Cast原成熟候选与ggml generic有限尾部真实反例；仅原程序有限审计，未改产品/未启动Native比较，其它路线冻结。"
+      "summary": "TC1–4 AUDITED：原Cast/Sigmoid1,005,272断言通过；ggml generic有限尾部反例实证，固定五dtype成熟转换/稳定generic原程序与必要图边界接缝。未改产品，Native自研比较冻结。"
     },
     {
       "module": "graph_provider_onednn",
@@ -418,9 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
-      "summary": "TC1–4 SCOPED：五dtype Cast原成熟候选与ggml generic有限尾部真实反例；仅原程序有限审计，未改产品/未启动Native比较，其它路线冻结。"
+      "summary": "TC1–4 AUDITED：原Cast/Sigmoid1,005,272断言通过；ggml generic有限尾部反例实证，固定五dtype成熟转换/稳定generic原程序与必要图边界接缝。未改产品，Native自研比较冻结。"
     },
     {
       "module": "compute_sched",

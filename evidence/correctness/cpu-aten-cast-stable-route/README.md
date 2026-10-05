@@ -9,3 +9,16 @@ x=-100同样失效，x=-80参考匹配。Sigmoid(-90)原返回0，F32参考8.194
 6个门控组有4个具名反例；不是覆盖比例。完整输出/源码/命令见tail-*，不删除原日志。
 
 Cast与stable Sigmoid原候选还未资格化。TC1–4只是有限审计对象，未改产品，所有产品门UNPROVEN。
+
+
+## 原版准入程序已固定
+
+已锁LibTorch2.8.0 CPU，原DLL身份与原源码/命令/失败日志见original-*和original-manifest.json。
+最终 **1,005,272断言**：25容量、993,220 Cast逐位、12,027三dtype Sigmoid。Cast全25组合，
+完整F16/BF16/FP8源bits，F32特殊/random/tie上下邻值；独立数学decoder/nearest搜索/NaN位合同。
+原to执行有限值转换，原Tensor clamp/where/bit-view/bitwise承担规范中的finite saturation/NaN mapping，
+同dtype保持原bits，不写HYLE payload kernel。Sigmoid借原Double kernel后F32与storage舍入。
+
+原fixture早期三个错误（缺header、Byte数量、低精度oracle少舍入）全保留；Byte容量修正后所有Cast
+通过，不把无效测试构造误归因vendor。原程序资格不代签产品普通入口、资源、alias/strides或三交付。
+TC1–4已固定AUDITED，产品实现/验收仍UNPROVEN；Native/SIMD比较与其它路线继续冻结。

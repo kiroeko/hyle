@@ -1,0 +1,2 @@
+src=6 dst=5 input=8621e197 actual=00000000 expected=00008000
+original Cast src=6 dst=6 67060 bit results PASS
