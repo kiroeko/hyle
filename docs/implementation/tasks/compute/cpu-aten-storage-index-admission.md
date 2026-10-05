@@ -1,6 +1,6 @@
 # CPU ATen：存储与索引批量接线
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner：`compute_provider_native`、`compute_route_cpu`、`graph_route_cpu`；baseline
   `79ded44e1307b5161f3068b65b22b9feb894d029`，Windows canonical。
@@ -88,3 +88,18 @@ exact input0，测试改成 Copy alias 明确拒绝。另一个失败是测试�
 
 所有产品 correctness/delivery/usability/red-team gate 尚未运行；scope/architecture 已固定，P0 成本已声明。
 原 API diagnostic 不计成新普通路线接线完成或性能胜负。
+
+## 不可变候选
+
+`91ad443bbaa20d51535d0bfcae145ba46b07b4a4`：六组原存储/索引程序与默认组装、真实 completion、
+冷 private slots、原 stable duplicate winner、checked indices与限定 alias 已固定。
+Windows Provider114/114（其中新增8项批量资格）、普通CPU12通过/1旧fixture跳过、Graph15/15；
+同一普通消费者变化输入的 Direct 和 op→Copy Graph 已通过。两个 invocation 用独立 CPU queue
+实际并发执行12轮，各自结果与资源保持独立，tracked冷分配故障逐点恢复与 teardown平衡通过。
+
+普通消费者最初错误要求所有六组都必须选择ATen；现有oneDNN/ggml已具备某些Copy/Select/Concat域。
+仅修正该qualification假设：所有结果仍检查精确bits且必须是具名成熟identity，I64宽Gather、宽Assign、
+宽Fill本批具名消费仍必须绑定ATen。不给Native fallback签新接线通过；不修改产品排序。
+初始返回3保留收据与日志，此次仅消费者断言调整，不改变产品候选数学或常态成本。
+
+Linux、公开头、SDK关闭stub、installed static/shared尚未运行，均UNPROVEN；适用验证继续串行。

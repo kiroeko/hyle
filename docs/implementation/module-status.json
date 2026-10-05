@@ -423,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 AUDITED：原ATen宽Byte/I32-I64/稳定重复Assign454项diagnostic通过；固定独立identity、checked生命周期与普通默认接缝，产品gate未运行，Native数学/P1冻结。"
+      "summary": "SI1–4 CANDIDATE：原ATen六组存储/索引已接普通CPU/Graph；Win114/114、CPU12通过/1旧fixture跳过、Graph15/15与普通重放通过。Linux/三交付待验，不签WIN；Native数学冻结。",
+      "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4"
     },
     {
       "module": "compute_sched",
@@ -434,15 +435,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 AUDITED：原ATen宽Byte/I32-I64/稳定重复Assign454项diagnostic通过；固定独立identity、checked生命周期与普通默认接缝，产品gate未运行，Native数学/P1冻结。"
+      "summary": "SI1–4 CANDIDATE：原ATen六组存储/索引已接普通CPU/Graph；Win114/114、CPU12通过/1旧fixture跳过、Graph15/15与普通重放通过。Linux/三交付待验，不签WIN；Native数学冻结。",
+      "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 AUDITED：原ATen宽Byte/I32-I64/稳定重复Assign454项diagnostic通过；固定独立identity、checked生命周期与普通默认接缝，产品gate未运行，Native数学/P1冻结。"
+      "summary": "SI1–4 CANDIDATE：原ATen六组存储/索引已接普通CPU/Graph；Win114/114、CPU12通过/1旧fixture跳过、Graph15/15与普通重放通过。Linux/三交付待验，不签WIN；Native数学冻结。",
+      "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4"
     },
     {
       "module": "compute_provider_cublas",
