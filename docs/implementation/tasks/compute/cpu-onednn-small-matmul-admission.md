@@ -1,0 +1,52 @@
+# CPU oneDNN：恢复小矩阵的真实准入
+
+<!-- MODULE REVIEW: SCOPED -->
+
+## Closure card
+
+- owner：`compute_provider_onednn`；baseline `a1a1de89`，Windows canonical。
+- trigger：[实际准入反例](../../../../evidence/correctness/cpu-native-domain-admission/README.md)。
+  普通 M1 prepare 被旧“Native 更便宜”条件拒绝，而同版原 BRGEMM carrier 正确完成 M1/K64/N64。
+  这是已接成熟能力的错误准入，不是 benchmark 排名触发的重开。
+- 原 terminal：[模型画像冷路由](llm-moe-model-profile-routing-refactor.md)。其 API/画像/规则能力保持；
+  本轮只改 BRGEMM 小矩阵准入，不继承该 terminal 授权改其它域。
+- 主 consumer：LLM decode 的 dense F32 M1/M4 投影，用普通 CPU factory 或专家 oneDNN Context
+  prepare、caller workspace、独立 invocation、submit/wait 后重复执行。
+- 正交 consumer：批处理数值中的 M15/M16、奇数 K/N 矩阵乘法，同一 C++ 生命周期。
+- scope：非空 exact dense row-major F32、F32 accumulation、现有 BRGEMM 支持的维度。
+  空维度、转置权重、encoded dtype、bounded shape 仍按原真实能力拒绝；不新增 kernel/线程池。
+- 依赖：既有 pinned oneDNN 3.13.2 BRGEMM、Compute/Mem/ParallelExecutorRef；直接消费者 CPU Direct
+  及 Graph leaf。完整 ggml region 仍由原规划绑定，不为此拆分。
+- public API、资源 owner、完成/错误、并发与构建因子冻结：没有新增或改变类型；只扩大真实能力的准入。
+- tier：P0，本轮纠正 capability filter，不声明 Native/oneDNN 胜负；自研裁决仍由
+  [CPU 逐域卡](cpu-native-provider-domain-decision.md)以不可变候选启动适用 P1。
+- 预算：一次源码/实际准入批次、一次产品修改与一次批量验证；最多一次由具体失败触发的纠正。
+  不重写性能仪器或公共治理，不优化 Native，不增加 benchmark 目录。
+- 预声明验证：Windows/Linux oneDNN provider/normalization/tensor/composition/Graph 定向测试；
+  CPU ordinary factory 的小矩阵 Provider 身份和实际输出/重放；失败/shape/resource 已有相关测试；
+  两平台 source/static/shared 独立普通小矩阵 consumer（复用现有 producer/SDK 和 DLL 邻置）；
+  change-impact plan、closure/docs/diff。未运行项保持 UNPROVEN。
+- stop：适用验证通过后冻结候选/terminal；若原 carrier 在真实普通生命周期失败，则记录具体事实，
+  退回有限纠正或 BLOCKED，不恢复未经比较的 Native 优势假设。
+
+## 能力审计与有限改动集（待固定）
+
+| 能力 | 现状/语义 | 承载 | 动作 |
+|---|---|---|---|
+| exact 非空 dense F32 MatMul，M<16 serial | 同版 carrier 可运行，adapter 人为拒绝 | BORROW oneDNN | FIX 小矩阵准入 |
+| M≥16 或 caller executor 分片 | 已接 BRGEMM、caller scratch、真实 wait | BORROW，现有路径 | KEEP |
+| 空维度、非 plain/非 dense、非 F32、bounded shape | 本 carrier 不能兑现这些完整合同 | 已有其它合格 Provider 或明确拒绝 | KEEP 真实边界 |
+
+## 七问
+
+1. 原版版本、许可证和交付由已有 oneDNN factor/lock 持有，数学源不改。
+2. 小矩阵属于普通 MatMul 同一能力，不让用户选择 Provider 顺序或伪装更多行。
+3. 复用原 BRGEMM plan、scratch 验证、Compute invocation 与闭合资源生命周期。
+4. 冷过滤删除一条分支；没有新热 dispatch/search/计时。公平性能裁决在后续 CPU 逐域卡。
+5. 无新 C/FFI 或公共私有 carrier；诊断 carrier 调用不进入用户指南。
+6. ABI/组件图/package 输入不变；三交付实际小矩阵调用仍须验证。
+7. 普通 `cpu::create_context()` 按固定优先级匹配，专家 oneDNN 也能自然 prepare 小矩阵。
+
+## 验证与裁决
+
+当前 SCOPED，产品尚未修改。各适用 gate 为 UNPROVEN，不签性能 WIN，也不关闭 CPU 逐域目标。
