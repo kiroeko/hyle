@@ -1126,7 +1126,8 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
     ASSERT_FALSE(result);
     EXPECT_TRUE(result.error().IsUnimplemented());
   }
-  auto softmax = prepare(context, Softmax{.axis = 0}, description);
+  auto softmax =
+      prepare(context, Softmax{.kind = SoftmaxKind::kLogSoftmax}, description);
   ASSERT_FALSE(softmax);
   EXPECT_TRUE(softmax.error().IsUnimplemented());
   for (auto threads : {0U, std::numeric_limits<std::uint32_t>::max()}) {
@@ -1175,7 +1176,8 @@ TEST(GgmlCpuProvider, D5RouterSoftmaxUsesMatureRowsAndKeepsNarrowDomain) {
                   std::exp(scores[row * 512 + expert]) / denominator,
                   2.0e-7);
   }
-  auto rejected = prepare(context, Softmax{.axis = 0}, description);
+  auto rejected =
+      prepare(context, Softmax{.kind = SoftmaxKind::kLogSoftmax}, description);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsUnimplemented());
   EXPECT_TRUE(prepare(context, Softmax{.scale = 0.5F}, description));

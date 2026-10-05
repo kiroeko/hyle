@@ -117,7 +117,7 @@ TEST(GgmlCpuProvider, SoftmaxZeroScaleAndResidualContractsRemainExplicit) {
   const auto result = half_test::read<float>(output);
   for (std::size_t i = 0; i < 7; ++i) EXPECT_TRUE(std::isnan(result[i]));
   for (std::size_t i = 7; i < 14; ++i) EXPECT_NEAR(result[i], 1.F / 7.F, 2.e-7);
-  for (const auto operation : {Softmax{.axis = 0}, Softmax{.kind = SoftmaxKind::kLogSoftmax}}) {
+  for (const auto operation : {Softmax{.kind = SoftmaxKind::kLogSoftmax}}) {
     auto rejected = prepare(context, operation, desc);
     ASSERT_FALSE(rejected);
     EXPECT_TRUE(rejected.error().IsUnimplemented());

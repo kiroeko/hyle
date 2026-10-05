@@ -161,14 +161,13 @@ TEST(GgmlCpuProvider, F32BatchMatMulKeepsBothLeadingBroadcastAxesAndDecodeTail) 
   }
 }
 
-TEST(GgmlCpuProvider, F32BatchMatMulDeclinesLeftBroadcastUnsupportedByOriginal) {
+TEST(GgmlCpuProvider, F32BatchMatMulAdmitsLeftBroadcastThroughOriginalRepeat) {
   const auto lhs = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 3>{1, 3, 7}).value();
   const auto rhs = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 3>{2, 5, 7}).value().transposed().value();
   const std::array sources{lhs, rhs};
   const auto output = infer_single_output(Operation(MatMul{}), sources).value();
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   const auto prepared = prepare(context, Operation(MatMul{}), sources, std::span(&output, 1), hyle::mem::system_resource());
-  ASSERT_FALSE(prepared);
-  EXPECT_TRUE(prepared.error().IsUnimplemented());
+  ASSERT_TRUE(prepared) << prepared.error().message();
 }
 } // namespace

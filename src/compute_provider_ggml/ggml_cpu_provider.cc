@@ -73,8 +73,23 @@ ggml_type native_type(DataType type) noexcept {
     return GGML_TYPE_F16;
   case DataType::kBFloat16:
     return GGML_TYPE_BF16;
+  case DataType::kFloat64:
+    return GGML_TYPE_F64;
+  case DataType::kBool:
+  case DataType::kFloat8E4M3FN:
+  case DataType::kFloat8E5M2:
+  case DataType::kInt8:
+  case DataType::kUInt8:
+    return GGML_TYPE_I8;
+  case DataType::kInt16:
+  case DataType::kUInt16:
+    return GGML_TYPE_I16;
   case DataType::kInt32:
+  case DataType::kUInt32:
     return GGML_TYPE_I32;
+  case DataType::kInt64:
+  case DataType::kUInt64:
+    return GGML_TYPE_I64;
   default:
     return GGML_TYPE_COUNT;
   }
@@ -187,8 +202,8 @@ ggml_tensor *create_tensor_input(ggml_context *context,
     return ggml_new_tensor(context, native_type(description),
                            static_cast<int>(description.rank()), shape.data());
   }
-  if ((description.is_dense() && description.rank() <= GGML_MAX_DIMS) ||
-      elements(description) == 0) {
+  if ((description.is_dense() || elements(description) == 0) &&
+      description.rank() <= GGML_MAX_DIMS) {
     std::array<std::int64_t, GGML_MAX_DIMS> dimensions{1, 1, 1, 1};
     for (std::size_t i = 0; i < description.rank(); ++i)
       dimensions[i] =
@@ -255,8 +270,10 @@ ggml_tensor *matrix(ggml_context *context, ggml_tensor *value,
 }
 ggml_tensor *native_shape(ggml_context *context, ggml_tensor *value,
                           const TensorDesc &description) {
-  if (!ggml_is_contiguous(value) || description.rank() > GGML_MAX_DIMS)
+  if (description.rank() > GGML_MAX_DIMS)
     return matrix(context, value, description);
+  if (!ggml_is_contiguous(value))
+    value = ggml_cont(context, value);
   std::array<std::int64_t, GGML_MAX_DIMS> shape{1, 1, 1, 1};
   for (std::size_t i = 0; i < description.rank(); ++i)
     shape[i] = description.dimensions()[description.rank() - i - 1];
@@ -602,7 +619,23 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       scores = ggml_add(context, scores,
                          expand_broadcast(context, fp(1),
                                           recipe.values[node.inputs[1]], output));
+    const auto selected =
+        static_cast<std::size_t>(axis(softmax->axis, output.rank()));
+    const auto width = output.dimensions()[selected];
+    const auto inner =
+        extent_product(output.dimensions().subspan(selected + 1));
+    const auto outer = extent_product(output.dimensions().first(selected));
+    if (inner != 1) {
+      scores = ggml_reshape_3d(context, scores, inner, width, outer);
+      scores = ggml_cont(context, ggml_permute(context, scores, 1, 0, 2, 3));
+    } else {
+      scores = ggml_reshape_2d(context, scores, width, outer);
+    }
     result = safe_softmax(context, scores);
+    if (inner != 1) {
+      result = ggml_reshape_3d(context, result, width, inner, outer);
+      result = ggml_cont(context, ggml_permute(context, result, 1, 0, 2, 3));
+    }
   } else if (const auto *reduce = node.operation.get_if<Reduce>()) {
     const auto &source = recipe.values[node.inputs[0]];
     if (elements(source) == 0) {
@@ -708,12 +741,25 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                     invocation.values[node.inputs[3]]);
   } else if (const auto *matmul = node.operation.get_if<MatMul>();
              matmul || node.operation.custom_as<model_ops::BFloatLinearF32>()) {
+    if (matmul && columns(recipe.values[node.inputs[0]]) == 0) {
+      auto *identity = ggml_new_tensor_1d(context, GGML_TYPE_F32, 1);
+      identity->data = &program.zero;
+      result = ggml_repeat_4d(context, identity, columns(output), rows(output),
+                              1, 1);
+      return {as_output(context, result, output)};
+    }
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
     // ne1=N. Preserve up to two leading batch axes; ggml then broadcasts a
     // shared RHS across the corresponding activation batches.
     auto *left = native_shape(context, invocation.values[node.inputs[0]],
                               recipe.values[node.inputs[0]]);
     auto *right = invocation.values[node.inputs[1]];
+    std::array<std::int64_t, 2> batch{1, 1};
+    for (std::size_t i = 2; i < output.rank(); ++i)
+      batch[i - 2] = output.dimensions()[output.rank() - i - 1];
+    if (left->ne[2] != batch[0] || left->ne[3] != batch[1])
+      left = ggml_repeat_4d(context, left, left->ne[0], left->ne[1], batch[0],
+                            batch[1]);
     if (matmul && !native_quantized(recipe.values[node.inputs[1]])) {
       right = ggml_transpose(context, right);
       if (!ggml_is_contiguous(right))
@@ -758,9 +804,14 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     auto *key = invocation.values[node.inputs[1]];
     auto *value = invocation.values[node.inputs[2]];
     const auto type = query->type;
-    query = ggml_permute(context, as_float(context, query), 0, 2, 1, 3);
-    key = ggml_permute(context, key, 0, 2, 1, 3);
-    value = ggml_permute(context, value, 0, 2, 1, 3);
+    const bool bshd =
+        attention->layout == AttentionLayout::kBatchSequenceHeadDepth;
+    query = as_float(context, query);
+    if (bshd) {
+      query = ggml_permute(context, query, 0, 2, 1, 3);
+      key = ggml_permute(context, key, 0, 2, 1, 3);
+      value = ggml_permute(context, value, 0, 2, 1, 3);
+    }
     if (type == GGML_TYPE_F16 && attention->causal) {
       const auto &mask_values = program.attention_masks[node_index];
       if (mask_values.empty())
@@ -772,6 +823,8 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
                                    attention->scale, 0.0F, 0.0F);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
         return {};
+      if (!bshd)
+        result = ggml_permute(context, result, 0, 2, 1, 3);
     } else {
       key = as_float(context, key);
       value = as_float(context, value);
@@ -787,7 +840,8 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       result = ggml_mul_mat(context, value, probabilities);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
         return {};
-      result = ggml_permute(context, result, 0, 2, 1, 3);
+      if (bshd)
+        result = ggml_permute(context, result, 0, 2, 1, 3);
     }
   } else if (node.operation.get_if<GatedDeltaNet>() ||
              node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()) {
@@ -1120,11 +1174,21 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
   if (standard)
     output->cost = standard_index::costs();
   else if (request.operation.get_if<MatMul>() != nullptr &&
-           !native_matmul_rhs(request.inputs[1])) {
-    auto bytes = request.inputs[1].required_bytes();
-    if (!bytes)
-      return std::move(bytes).error();
-    output->cost.repack_bytes = *bytes;
+           columns(request.inputs[0]) != 0) {
+    std::size_t repack = 0;
+    if (!native_matmul_rhs(request.inputs[1])) {
+      auto bytes = request.inputs[1].required_bytes();
+      if (!bytes)
+        return std::move(bytes).error();
+      repack = *bytes;
+    }
+    const auto expanded =
+        elements(request.outputs[0]) /
+        static_cast<std::size_t>(columns(request.outputs[0])) *
+        static_cast<std::size_t>(columns(request.inputs[0]));
+    if (expanded != elements(request.inputs[0]))
+      repack += expanded * data_type_size(request.inputs[0].data_type());
+    output->cost.repack_bytes = repack;
   }
   return Status::Ok();
 }
@@ -1277,7 +1341,8 @@ bool supports(void *context, Operation operation,
   const auto nonempty = std::ranges::all_of(
       inputs, [](const auto &d) { return elements(d) != 0; });
   if (!nonempty && elements(output) != 0 && !operation.get_if<Concat>() &&
-      !operation.get_if<Reduce>() && !operation.get_if<Scatter>())
+      !operation.get_if<Reduce>() && !operation.get_if<Scatter>() &&
+      !operation.get_if<MatMul>())
     return false;
   if (operation.get_if<Fill>())
     return inputs.empty() && floating(output.data_type());
@@ -1318,8 +1383,6 @@ bool supports(void *context, Operation operation,
            inputs[0].rank() > 0 && elements(inputs[0]) > 0 &&
            inputs[0].is_plain() && inputs[0].is_dense() &&
            floating(inputs[0].data_type()) && output == inputs[0] &&
-           axis(softmax->axis, inputs[0].rank()) ==
-               static_cast<std::int32_t>(inputs[0].rank() - 1) &&
            std::isfinite(softmax->scale) &&
            softmax->kind == SoftmaxKind::kSoftmax &&
            (softmax->mask == MaskKind::kNone ||
@@ -1340,7 +1403,9 @@ bool supports(void *context, Operation operation,
              inputs[1].data_type() == DataType::kInt32 &&
              output.rank() == 2 && output.is_dense() &&
              output.data_type() == DataType::kFloat32;
-    return inputs[1].data_type() == DataType::kInt32;
+    return inputs[1].data_type() == DataType::kInt32 &&
+           (floating(inputs[0].data_type()) ||
+            inputs[0].data_type() == DataType::kInt32);
   }
   if (const auto *scatter = operation.get_if<Scatter>())
     return inputs.size() == 3 && scatter->kind == ScatterKind::kAdd &&
@@ -1350,12 +1415,13 @@ bool supports(void *context, Operation operation,
            output.data_type() == inputs[0].data_type();
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const bool quantized_rhs = native_quantized(inputs[1]);
-    const bool native_f32 = inputs[0].data_type() == DataType::kFloat32 &&
-                            inputs[0].is_dense() && inputs[0].is_plain() &&
-                            inputs[1].is_plain() && native_matmul_rhs(inputs[1]);
-    if (!nonempty || elements(output) == 0 || inputs.size() != 2 ||
-        inputs[0].rank() < 2 || inputs[0].rank() > 4 || inputs[1].rank() < 2 ||
-        inputs[1].rank() > 4 ||
+    const bool native_f32 =
+        inputs[0].data_type() == DataType::kFloat32 && inputs[0].is_dense() &&
+        inputs[0].is_plain() && inputs[1].is_plain() &&
+        (inputs[1].is_dense() || native_matmul_rhs(inputs[1]));
+    if ((!nonempty && columns(inputs[0]) != 0) || elements(output) == 0 ||
+        inputs.size() != 2 || inputs[0].rank() < 2 || inputs[0].rank() > 4 ||
+        inputs[1].rank() < 2 || inputs[1].rank() > 4 ||
         (inputs[0].rank() > 2 && !inputs[0].is_dense()) ||
         (!quantized_rhs && inputs[1].rank() > 2 && !inputs[1].is_dense() &&
          !native_matmul_rhs(inputs[1])) ||
@@ -1369,17 +1435,11 @@ bool supports(void *context, Operation operation,
         inputs[1].data_type() != inputs[0].data_type() ||
         output.data_type() != inputs[0].data_type())
       return false;
-    std::array<std::int64_t, 2> left_batch{1, 1}, right_batch{1, 1};
-    const auto fill_batch = [](const TensorDesc &description,
-                               std::array<std::int64_t, 2> &batch) {
-      const auto count = description.rank() - 2;
-      for (std::size_t i = 0; i < count; ++i)
-        batch[2 - count + i] = description.dimensions()[i];
-    };
-    fill_batch(inputs[0], left_batch);
-    fill_batch(inputs[1], right_batch);
-    return left_batch[0] % right_batch[0] == 0 &&
-           left_batch[1] % right_batch[1] == 0;
+    const auto activation_elements =
+        static_cast<std::uint64_t>(elements(output)) /
+        static_cast<std::uint64_t>(columns(output)) *
+        static_cast<std::uint64_t>(columns(inputs[0]));
+    return activation_elements <= INT32_MAX;
   }
   if (const auto *rope = operation.get_if<RoPE>())
     return inputs.size() == 3 && inputs[0].rank() == 4 &&
@@ -1396,7 +1456,6 @@ bool supports(void *context, Operation operation,
            hadamard->accumulation_type == DataType::kFloat32;
   if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
     if (inputs.size() != 3 ||
-        attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
         attention->accumulation_type != DataType::kFloat32 ||
         !std::isfinite(attention->scale))
@@ -1412,16 +1471,11 @@ bool supports(void *context, Operation operation,
     const auto q = inputs[0].dimensions();
     const auto k = inputs[1].dimensions();
     const auto v = inputs[2].dimensions();
-    const std::array mla_shape{q[0], q[1], q[2], std::int64_t{512}};
-    const auto mla_output = TensorDesc::dense(DataType::kFloat32, mla_shape);
-    const bool absorbed_mla = type == DataType::kFloat32 &&
-        (q[2] == 64 || q[2] == 96) &&
-        k[2] == 1 && q[3] == 576 && v[3] == 512 && v[0] == k[0] &&
-        v[1] == k[1] && v[2] == k[2] && mla_output && output == *mla_output;
-    return q[0] > 0 && q[1] > 0 && k[1] > 0 &&
-           (!attention->causal || k[1] >= q[1]) && q[2] > 0 && k[2] > 0 &&
-           q[2] % k[2] == 0 && q[3] > 0 && q[3] == k[3] && q[0] == k[0] &&
-           ((inputs[1] == inputs[2] && output == inputs[0]) || absorbed_mla);
+    const auto sequence =
+        attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U : 2U;
+    return q[0] > 0 && q[sequence] > 0 && k[sequence] > 0 &&
+           (!attention->causal || k[sequence] >= q[sequence]) && q[3] > 0 &&
+           v[3] > 0;
   }
   return false;
 }
@@ -1554,10 +1608,13 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       if (const auto *attention = node.operation.get_if<ScaledDotProductAttention>();
           attention && attention->causal &&
           recipe.values[node.inputs[0]].data_type() == DataType::kFloat16) {
+        const auto sequence =
+            attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U
+                                                                          : 2U;
         const auto query_length = static_cast<std::size_t>(
-            recipe.values[node.inputs[0]].dimensions()[1]);
+            recipe.values[node.inputs[0]].dimensions()[sequence]);
         const auto key_length = static_cast<std::size_t>(
-            recipe.values[node.inputs[1]].dimensions()[1]);
+            recipe.values[node.inputs[1]].dimensions()[sequence]);
         if (query_length > SIZE_MAX / key_length)
           return ProviderPrepareOutcome::error(
               Status::OutOfRange("attention mask size overflows"));
