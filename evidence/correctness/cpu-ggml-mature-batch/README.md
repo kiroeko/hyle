@@ -16,3 +16,23 @@ baseline `7053e854783c0d9ec42d0b8e80a79a7c02251b14`。这是无计时、未改�
 `raw-probe.log`保留三行输入、四种 unary/三种 separate gate 的特殊分类/有限误差和两种 batch。
 探针的 special_mismatches 是诊断计数，不是完整产品 pass/fail gate；未检查全部 dtype/layout/alias。
 普通精确域和新验收由[批量卡](../../../docs/implementation/tasks/compute/cpu-ggml-mature-admission-batch.md)持有。
+
+## GB1–3 产品资格与终审
+
+不可变候选 `ef9defea07bbc576a4c6bff1ce0d07e4e53acd19`。Windows 与单向同步的 Linux/GCC14.2
+各通过 ggml Provider **48/48**、普通 CPU **12通过/1个旧 fixture 跳过**、普通 Graph **15/15**；跳过不计 PASS。
+两个平台的源码、installed static、installed shared 使用同一个独立普通 C++ 消费者，三 dtype 的
+Direct ReLU→MatMul 与完整混合广播 Graph region、变化输入重放和真实 completion 均通过。
+没有重新运行完整模型权重、GPU、ISA loader 或 Native P1，不能由此签 CPU 全域完成。
+
+首次 Windows 测试误期待外部原位成功，两项收到既有 unsafe-overlap 拒绝；修正仅限测试预期，
+产品仍拒绝外部 alias，保留原失败及 append receipt。内部 inplace NaN view 不扩大公共原位能力。
+终审核对原数学、下游前 NaN 修复、dtype cast、广播拒绝、线程 chunk、slot/arena 生命周期、
+安装消费者独立性及文档边界，GB1–3 未发现未解决问题。七门在此有限范围通过。
+
+P0：ReLU 增加 O(n) 检查和一个 view node，无额外完整 payload；MatMul 只放宽冷准入，
+原执行/转换/资源成本不变。无热计时或重新搜 Provider。不是 Native 胜出证据。
+实际命令、XML、原始失败、同一消费者、selector selected/skipped、1,581 项单向源码身份和
+统一 LOC 在 [归档](qualification.zip)；摘要/hash 在 [收据](qualification-receipt.json)。
+Compute + Graph 为 **61,050 实现行 / 248 文件**，不含测试与第三方源码。
+状态/归档收口不重建、不跑 P1；重开仅由本轮具名数值、广播、生命周期或交付反例触发。

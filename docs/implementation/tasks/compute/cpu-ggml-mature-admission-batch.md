@@ -1,6 +1,6 @@
 # CPU ggml：剩余成熟能力批量准入
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## Closure card
 
@@ -65,14 +65,15 @@ P0 成本明确，无热 Provider 搜索或计时；未来 Native 逐域比较�
 GB1–3 已固定；开始产品修改前 owner 从 SCOPED 顺序进入 AUDITED。新增产品成本只限表内，
 其它激活仍未资格、Native 全部冻结。未运行的三交付与测试仍为 UNPROVEN。
 
-## 固定候选与当前验收
+## 固定候选与终审
 
-候选 `ef9defea07bbc576a4c6bff1ce0d07e4e53acd19`；GB1–3 产品停止变化。Windows Provider 48/48、
-普通 CPU/Graph 的具名受影响测试、三 dtype 的普通 Direct 与完整 ReLU→混合 batch MatMul region、
-source/static/shared 实际独立消费已通过。Linux 单向校验同步 1,581 项输入，正在同候选验收，
-未完成项不签 PASS。新试验曾错误期待外部原位成功，收到既有 unsafe-overlap 拒绝；纠正测试预期，
-保留原始失败。内部原位边界不改公开 alias 能力，不扩张资源映射。
+GB1–3 CLOSED，候选 `ef9defea07bbc576a4c6bff1ce0d07e4e53acd19`。Windows/Linux 各 Provider48/48、
+普通CPU12通过/1个旧 fixture 跳过、普通Graph15/15；两平台 source/static/shared 的同一普通 Direct 与完整
+ReLU→混合 batch MatMul region 已验，三 dtype、变化输入、真实完成均通过。
+首次 alias 测试预期错误及纠正、实际命令、输入身份、交付与 P0/红队结论见
+[终审证据](../../../../evidence/correctness/cpu-ggml-mature-batch/README.md#gb13-产品资格与终审)。
 
-用户要求的先专门排查已落入逐域卡 A1–A3；[全族回映与564条冷记录](../../../../evidence/correctness/cpu-ggml-mature-batch/adapter-audit.md)
-不代签新产品支持或 Native 胜负。Compute + Graph 当前 **61,050 实现行 / 248 文件**，统一脚本，
-不含测试与 vendor。本批 Linux 适用验收尚待完成，不提前 CLOSED。
+七门在有限 GB1–3 范围通过；没有新公开 API/依赖/ISA 数学/热搜索，也没有 Native P1/WIN。
+其它 activation/Softmax/attention/Fill 等遗漏仍在[全族接线表](../../../../evidence/correctness/cpu-ggml-mature-batch/adapter-audit.md)
+等待下一批成熟接线；Native card 仍 SCOPED。Compute + Graph **61,050 实现行 / 248 文件**。
+重开条件：本轮 ReLU 数值/alias、batch 广播/物理布局、生命周期或三交付的可复现反例。

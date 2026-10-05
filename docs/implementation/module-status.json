@@ -373,10 +373,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-mature-admission-batch.md",
-      "summary": "GB1–3 CANDIDATE ef9defea：ReLU NaN接缝/F32 rank3/4准入固定，Windows48/48、普通CPU/Graph与三交付已验；Linux同候选验收进行。专门接线审计564条冷记录已落表，Native冻结。",
-      "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19"
+      "summary": "GB1–3 CLOSED：ReLU NaN接缝/F32 rank3/4准入，两平台Provider48/48、普通CPU12通过/1旧fixture跳过、Graph15/15与三交付已验；P0/红队通过。其它成熟接线按全族表推进，Native冻结，不签CPU完成。",
+      "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-ggml-mature-batch/README.md"
+      }
     },
     {
       "module": "graph_provider_onednn",

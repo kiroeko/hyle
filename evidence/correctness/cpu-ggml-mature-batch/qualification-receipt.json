@@ -1,0 +1,56 @@
+{
+  "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+  "previous_registry_ref": "8430c9ad1d2430c57f4bec376b79642da0b11b93",
+  "platforms": {
+    "windows": {
+      "commands": 23,
+      "final_candidate_commands": 20,
+      "tests": {
+        "provider": {
+          "registered": 48,
+          "passed": 48,
+          "skipped": 0
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": 1
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": 0
+        }
+      }
+    },
+    "linux": {
+      "commands": 20,
+      "final_candidate_commands": 20,
+      "tests": {
+        "provider": {
+          "registered": 48,
+          "passed": 48,
+          "skipped": 0
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": 1
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": 0
+        }
+      }
+    }
+  },
+  "archive": {
+    "path": "qualification.zip",
+    "files": 63,
+    "bytes": 160310,
+    "sha256": "06412c1f93126633b41f9c624e999be6f9771ba1e44ac8da7836550a437e61f5"
+  },
+  "performance": "P0 only; no Native comparison or WIN",
+  "red_team": "PASS within GB1-GB3: original math retained; NaN fixed before downstream; public alias remains refused; rank/broadcast constraints retained; no hot search; selected direct/whole-region consumers and actual installed deliveries verified"
+}
