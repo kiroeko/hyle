@@ -1,0 +1,75 @@
+{
+  "candidate": "5ebd167aa29a5f2bb022c71ddfda6d96f3da6f47",
+  "previous_registry_ref": "37dd2362be9aa59dc77465b7ac42da31372f2e86",
+  "platforms": {
+    "windows": {
+      "commands": 25,
+      "final_candidate_commands": 19,
+      "tests": {
+        "provider": {
+          "registered": 52,
+          "passed": 52,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        }
+      }
+    },
+    "linux": {
+      "commands": 21,
+      "final_candidate_commands": 19,
+      "tests": {
+        "provider": {
+          "registered": 52,
+          "passed": 52,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        }
+      }
+    }
+  },
+  "archive": {
+    "path": "qualification.zip",
+    "files": 70,
+    "bytes": 181186,
+    "sha256": "b5490d0f27ae3a835de727387dd70cf77986cfe104f79ae98d0f41f7e0c1f9a3"
+  },
+  "performance": "P0; Native performance adjudication remains frozen",
+  "red_team": "PASS within TF1-TF4: original math; undefined rows sanitized before kernel and restored before downstream; original causal F16 unchanged; no-input exact bit Fill owns stable cold bytes; external alias refused; allocation/slot/OOM/close/replay reused and tested; actual public independent Direct/Graph journeys and both installed deliveries passed",
+  "terminal_checks": {
+    "selected": [
+      "docs",
+      "closure"
+    ],
+    "skipped_or_reused": 130,
+    "closure_previous_ref": "37dd2362be9aa59dc77465b7ac42da31372f2e86",
+    "closure": "PASS",
+    "docs": "PASS",
+    "diff": "PASS"
+  },
+  "cleanup": {
+    "windows_bytes": 576194810.0,
+    "linux_bytes": 85663059
+  }
+}

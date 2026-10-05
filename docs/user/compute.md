@@ -927,7 +927,7 @@ oneDNN的非空exact dense F32 MatMul也接收单任务`M < 16`，不以未裁�
 F32 batch 的 dense activation 与 plain contiguous-K 转置权重已接原 ggml 程序，支持原版可表达的
 共享/逐批及两 leading axes 广播；左小右大批次、row-major batch、零尺寸等未接域继续匹配具名残余。
 ggml ReLU 采用原 kernel 加内部原位 NaN 传播边界，覆盖 F32/F16/BF16；外部 input/output alias 仍拒绝。
-CPU ggml 的新接线候选另覆盖 dense F32/F16/BF16 最后轴 Softmax，支持 scale 和同类型 dense
+CPU ggml 另覆盖 dense F32/F16/BF16 最后轴 Softmax，支持 scale 和同类型 dense
 additive mask 的 NumPy 广播；其它 axis、Bool mask、LogSoftmax 仍拒绝。原 F32 scale/add/Softmax
 程序保持，特殊行在原核前转成安全行、原核后恢复 NaN，且修复发生在 Graph 下游消费之前。
 该边界增加一个 F32 安全 score 缓冲和两次线性检查；scale/mask 的独立原节点成本也计入，不能
@@ -935,8 +935,8 @@ additive mask 的 NumPy 广播；其它 axis、Bool mask、LogSoftmax 仍拒绝�
 非因果 BSHD SDPA 使用原 score→Softmax→value 程序，三 dtype、GQA 和 query 长于 key 的域
 由接入卡验收；原 causal F16 flash 路线保持。floating Fill 使用冷存的原生标量位与原 repeat，
 无输入，保留 signed zero、NaN payload，支持 Direct/Graph 和空输出。外部 alias 仍拒绝。
-这些新域的实际资格以当前 registry 与
-[接入卡](../implementation/tasks/compute/cpu-ggml-transformer-fill-admission.md)为准，未完成验收不写完整支持。
+这批具名域已通过 Windows/Linux 普通 Direct/Graph、变化输入和 source/static/shared 消费；
+其它域仍按当前 registry 与[接入卡](../implementation/tasks/compute/cpu-ggml-transformer-fill-admission.md)限定。
 这些接线不表示剩余 Native 胜负已经裁决，当前资格与限制以 registry 的接入卡为准。真实并行executor
 可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
 

@@ -1,6 +1,6 @@
 # CPU ggml：Softmax、非因果 Attention 与 Fill 批量接线
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `compute_provider_ggml`，baseline `be5d18f31`（完整身份由 Git/收据导出），Windows canonical。
 - trigger：[已完成全族审计](../../../../evidence/correctness/cpu-ggml-mature-batch/adapter-audit.md)的
@@ -57,6 +57,9 @@ pin/许可证/升级/loader 复用已关闭 runtime；C++ 三交付需实际新�
 `88729414fc26a1ab5ef8a3ec8e6889dda92fad44` 相同，后续两行改动只为 GCC 测试循环引用，未改变 witness。
 两平台 Provider52/52、普通CPU12通过/1旧模型fixture跳过、Graph15/15；同一普通三dtype消费者的
 Softmax→Copy 完整region、无输入 Fill→Copy Graph、非因果 GQA Direct/Graph 变化输入均通过。
-Linux 正在 source/static/shared，Windows 安装交付尚待完成，未完成门不签 PASS。
+Windows/Linux source/static/shared 同一普通消费者全部通过；TF1–4 CLOSED。
 首次 GCC 测试编译的 range-loop-construct 失败与两行纠正保留；没有关闭警告或改产品数学。
 Compute + Graph 统一实现 LOC **61,133 / 248 文件**，不含测试与 vendor；P0 成本见上，无 Native P1。
+
+七门在 TF1–4 有限范围通过，成本、失败/纠正、终审及限制见[终审证据](../../../../evidence/correctness/cpu-ggml-transformer-fill/README.md)。
+重开仅由本轮数值、布局、资源或三交付的可复现反例触发；其它 ledger 保持待处理，不签 CPU 完成。
