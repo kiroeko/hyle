@@ -369,8 +369,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30 AUDITED：Kimi MLA、GLM F32 QK576/V512的64/1 heads与原shape/资源检查已验，数学不变；当前固定画像与四路线A5已完成裁决，CPU代表片段P1通过。官方CPU低精度拒绝域和D6终审保留。"
+      "record": "docs/implementation/tasks/compute/cpu-ggml-gated-numeric-admission.md",
+      "summary": "CPU门控数值AUDITED重新定界：GN1原版SwiGLU后的原位-Inf语义边界，GN2三dtype/两布局/完整Graph与三交付资格化；公开形状与原数学核不变，Native/SIMD数学冻结，旧D5/GPU事实保持。"
     },
     {
       "module": "graph_provider_onednn",
