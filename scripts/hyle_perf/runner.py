@@ -561,10 +561,10 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
             raise ValidationError(f"unsupported runner control kind {kind!r}")
 
     if (contract["experiment"]["order_policy"] != "fixed-dual" or
-            contract["experiment"]["sample_schedule"] != [15, 31] or
+            contract["experiment"]["sample_schedule"] not in ([15], [15, 31]) or
             contract["experiment"]["holdout"] is not False):
         raise ValidationError(
-            "nanobench runner v1 fixes order=fixed-dual, samples=15->31, "
+            "nanobench runner v1 fixes order=fixed-dual, samples=15 or 15->31, "
             "and holdout=false")
     for workload_id, workload in contract_workloads.items():
         if workload["estimator"] != {

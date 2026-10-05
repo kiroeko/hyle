@@ -865,6 +865,17 @@ class RunnerBuildArtifactTest(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 validate_runner_extension(mutated)
 
+    def test_runner_accepts_fixed_n15_without_authorizing_escalation(self):
+        value = pilot_contract()
+        value["experiment"]["sample_schedule"] = [15]
+        validate_runner_extension(value)
+        self.assertEqual(value["experiment"]["sample_schedule"], [15])
+        for schedule in ([14], [31], [15, 29], [15, 31, 63]):
+            changed = copy.deepcopy(value)
+            changed["experiment"]["sample_schedule"] = schedule
+            with self.subTest(schedule=schedule), self.assertRaises(ValidationError):
+                validate_runner_extension(changed)
+
     def test_runner_v1_requires_product_telemetry_and_controlled_environment(self):
         value = pilot_contract()
         value["extensions"]["runner"]["executables"][0][

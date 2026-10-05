@@ -212,3 +212,7 @@ DeepSeek V4 Flash 官方 FP4 routed + FP8 shared MoE（H4096/N2048/router256/top
 一次八进程工作负载 A/A（两臂各四种执行/分配顺序）通过后，四种顺序各 n=15，
 5%非劣门，无 n=31 延长；初次 source/reference/config 包装失败不计产品样本。
 没有合格 A/A 时止于测量 INCONCLUSIVE，先查已有源码成本，不反复变换环境重测。
+
+首次启动在编译/采样前被执行器的硬编码 `[15,31]` 检查拒绝，产品样本零。
+已由[独立工具修复](../build/performance-fixed-n15-contract.md)允许合同预声明的 `[15]`；
+不改变产品、数学、统计门或本轮预算。
