@@ -401,10 +401,9 @@ detail::EnqueueResult submit(void *state, void *invocation, Queue &,
 AliasSupport alias(void *state, std::size_t output,
                    std::size_t input) noexcept {
   const auto &p = *static_cast<const Program *>(state);
-  return {.supported =
-              output == 0 && input == 0 && !p.inputs.empty() &&
-              p.inputs[0] == p.output &&
-              (p.operation.get_if<Copy>() || p.operation.get_if<Scatter>())};
+  return {.supported = output == 0 && input == 0 && !p.inputs.empty() &&
+                       p.inputs[0] == p.output &&
+                       p.operation.get_if<Scatter>()};
 }
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_program,

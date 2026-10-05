@@ -338,9 +338,13 @@ TEST(AtenCpuStorage,
       ASSERT_TRUE(buffers[1].view().write(index_bytes(index, ids)).ok());
       ASSERT_TRUE(output.view().write(poison).ok());
       auto done = invocation.submit(queue, inputs, std::span(&destination, 1));
-      ASSERT_TRUE(done);
+      ASSERT_TRUE(done) << done.error().message();
       EXPECT_TRUE(done->wait().IsOutOfRange());
       EXPECT_EQ(read(output), poison);
+      auto stale = invocation.submit(queue, inputs, std::span(&destination, 1));
+      ASSERT_FALSE(stale);
+      EXPECT_TRUE(stale.error().IsFailedPrecondition());
+      invocation = prepared.create_invocation().value();
     }
     const std::array<std::int64_t, 3> ids{2, 0, 2};
     ASSERT_TRUE(buffers[1].view().write(index_bytes(index, ids)).ok());
@@ -410,7 +414,7 @@ TEST(AtenCpuStorage,
       [](int seed) { return Bytes(33, std::byte(seed)); });
 }
 
-TEST(AtenCpuStorage, ExactCopyAndAssignInputZeroAliasPreserveStorage) {
+TEST(AtenCpuStorage, CopyRejectsAliasWhileAssignAcceptsExactInputZero) {
   if (!aten_cpu::provider())
     GTEST_SKIP() << "locked Torch CPU SDK disabled";
   auto context = Context::create(cpu::device(), aten_cpu::provider()).value();
@@ -421,9 +425,11 @@ TEST(AtenCpuStorage, ExactCopyAndAssignInputZeroAliasPreserveStorage) {
   ASSERT_TRUE(storage.view().write(logical(table, 1)).ok());
   const auto alias = TensorView::create(table, storage.view()).value();
   auto copied = prepare(context, Copy{}, table).value();
-  EXPECT_TRUE(copied.alias_support(0, 0)->supported);
+  EXPECT_FALSE(copied.alias_support(0, 0)->supported);
   auto ci = copied.create_invocation().value();
-  ASSERT_TRUE(ci.submit(queue, alias.as_const(), alias)->wait().ok());
+  auto denied = ci.submit(queue, alias.as_const(), alias);
+  ASSERT_FALSE(denied);
+  EXPECT_TRUE(denied.error().IsInvalidArgument());
   EXPECT_EQ(read(storage), logical(table, 1));
   const auto index = dense(DataType::kInt32, std::array<std::int64_t, 1>{3});
   const auto updates =

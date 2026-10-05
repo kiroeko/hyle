@@ -27,7 +27,8 @@
 - 数值与失败：Byte 是存储载体，保留宽整数/FP8/NaN payload/负零，不做 numeric reinterpret。
   Bool condition 按非零判真；I32/I64 索引先 checked 验界再写输出。Assign 的重复索引用原稳定 sort/
   mask/index_select 去重，再原 index_copy；不运行原库重复写 UB。exact input0 alias 只按原 copy 与
-  Scatter 的实际可行域资格化；其它 alias 明确拒绝。OOM/原库异常与 flush/close 保留真实失败。
+  Scatter 的实际可行域资格化；Copy 公共 trait 禁止 alias，其它 alias 明确拒绝。
+  失败终态 invocation 必须重建，重建后可恢复；OOM/原库异常与 flush/close 保留真实失败。
 - P0：Select/Fill/Copy/Concat O(payload)；Gather O(indices+selected payload)，必要 index packing；
   Assign O(N log N+selected payload+base copy)，包含 stable sort、winning update materialization。
   第三方内部 scratch/metadata 未给出完整上界时成本保持 unknown；不签 Native WIN、不跑自研 P1。
@@ -73,6 +74,15 @@ owner AUDITED，产品未改、产品 gate 均 UNPROVEN；不会继承原程序 
 5. public C++ factory 不暴露 ATen/C 类型；私有 pinned SDK 程序承担 native Tensor 生命周期。
 6. existing Native binary、source/static/shared export 与依赖复用；新增 header 必须同一消费者验证。
 7. 普通用户仅选 CPU；expert factory 用于资格与后续有限比较，禁止要求用户提供 timing profile。
+
+## 一次有限产品纠正
+
+候选 `685010865ec8fd43f6f2990cb5b72919515ca8eb` Windows 编译通过、Provider112/114通过。
+失败原始 XML/日志保留在 evidence：SI3 的 Copy 回调误声明 exact alias，违反既有 public
+`AliasPolicy::kNone`，即使原 ATen copy 可自拷贝也不能改变公共语义。仅收紧该回调为 Scatter
+exact input0，测试改成 Copy alias 明确拒绝。另一个失败是测试连续复用 failed invocation：
+普通 Runtime 既有合同在失败终态要求冷重建，测试验证旧槽拒绝并重建恢复，不改公共运行状态。
+两者不涉及原库 payload 数学或追加算子；这是本批唯一产品纠正，SI1–4范围不变。
 
 ## 验证状态
 
