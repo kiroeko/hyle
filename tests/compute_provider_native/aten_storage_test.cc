@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <thread>
 #include <vector>
 
 #include "hyle/compute/backends/cpu.h"
@@ -505,6 +507,32 @@ TEST(AtenCpuStorage, PrivateInvocationsAndCloseReleaseTrackedMetadata) {
               .ok());
       EXPECT_NE(read(oa), read(ob));
     }
+    auto second_queue = context.create_queue().value();
+    const auto expected_a = read(oa), expected_b = read(ob);
+    std::atomic<bool> good_a{false}, good_b{false};
+    auto concurrent = [&](auto &invocation, auto &own_queue, const auto &ids,
+                          auto &output, const auto &expected, auto &good) {
+      const std::array inputs{
+          sv, ConstTensorView::create(index, ids.view()).value()};
+      const auto destination = TensorView::create(od, output.view()).value();
+      for (int round = 0; round < 12; ++round) {
+        auto done = invocation.submit(own_queue, inputs, destination);
+        if (!done || !done->wait().ok())
+          return;
+        Bytes actual(output.size());
+        if (!output.view().read(actual).ok() || actual != expected)
+          return;
+      }
+      good.store(true);
+    };
+    std::thread first(
+        [&] { concurrent(a, queue, ia, oa, expected_a, good_a); });
+    std::thread second(
+        [&] { concurrent(b, second_queue, ib, ob, expected_b, good_b); });
+    first.join();
+    second.join();
+    EXPECT_TRUE(good_a.load());
+    EXPECT_TRUE(good_b.load());
     EXPECT_TRUE(context.close().ok());
     auto rejected = a.submit(
         queue,
