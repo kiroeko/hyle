@@ -1,6 +1,6 @@
 # D5：优先补齐 CPU / Apple 官方低精度三类缺口
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`5bb3d153bfe137feb6b7e3d22ced40e513b1fd5a`；Windows canonical，初始工作树干净。
 - 当前授权：2026-10-05 用户要求优先处理上一答的三类残余能力，再回到 Vulkan。
@@ -222,3 +222,20 @@ DeepSeek V4 Flash 官方 FP4 routed + FP8 shared MoE（H4096/N2048/router256/top
 量级引入约3%比率量化。本批唯一性能包装纠正：固定 nanobench 原计时一完整周期/臂，
 原 oracle 在每进程前后各一完整周期，原 native elapsed 输出17位精度。公共仪器、
 统计/控制/四顺序n=15、数学和产品候选不变。新输入再次冻结后只运行这批 A/A/P1。
+
+## CPU 固定候选与新增完整成本验收
+
+产品提交与三交付 SDK 为 `3c22b7b9f230abc86e749225174d86b59c79881e`；API、算法、布局、
+常态成本未随消费者修正改变。registry 的 CANDIDATE 标记在本次补登记；实际不可变产品与
+正确性/交付/P1原始身份保持，不伪称此前状态标记已写入，不重跑有效验证。
+
+新增性能消费者 `a8ec029a`、相同 Direct 来源 `a4f56461` 完成8个工作负载 A/A、
+四顺序各n=15（60产品进程）、30公共控制；两个完整官方MoE均PARITY/5%非劣PASS。
+严格重放QUALIFIED、paths_verified=true、当前证据政策适用；
+[性能原始证据](../../../../evidence/performance/cpu-official-fragments-p1/qualified-run/index.json)。
+GLM四顺序中位耗时差 -1.16%～+0.85%，最不利区间允许退化1.97%；
+DeepSeek -0.25%～+0.54%，最不利区间3.08%，均低于固定5%。
+这只签代表完整程序Graph/Direct成本，不声称数学SOTA、全模型推理或Pro独立P1。
+
+CPU-O1–O5 的产品/普通消费/资源/Windows三交付/WSL/P0/P1已取证；下一步只更新用户
+指南、8个CPU官方完整画像格和终审状态。Apple完整程序仍未成立，本卡不代签Apple。

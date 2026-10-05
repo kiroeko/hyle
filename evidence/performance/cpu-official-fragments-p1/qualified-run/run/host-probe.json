@@ -1,0 +1,791 @@
+{
+  "after": {
+    "environment": "windows",
+    "filesystem": {
+      "all_paths_qualified": true,
+      "paths": [
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "source",
+          "local_fixed": true,
+          "path": "C:\\public\\project-hyle\\hyle\\evidence\\performance\\cpu-official-fragments-p1\\consumer",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        },
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "build",
+          "local_fixed": true,
+          "path": "C:\\hv\\d5p1-official-r1",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        },
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "output",
+          "local_fixed": true,
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        },
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "peer-mature-direct",
+          "local_fixed": true,
+          "path": "C:\\hv\\d5p1ref",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        }
+      ]
+    },
+    "formal_capability": {
+      "independent-hardware": true,
+      "macos-qos": false,
+      "native-linux": false,
+      "windows": true,
+      "wsl2": false
+    },
+    "host": {
+      "identity_facts": {
+        "architecture": "AMD64",
+        "baseboard_manufacturer": "ASUSTeK COMPUTER INC.",
+        "baseboard_product": "ROG STRIX Z790-E GAMING WIFI",
+        "bios_version": "3001",
+        "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "cpu_vendor": "GenuineIntel",
+        "installed_memory_bytes": 68719476736,
+        "logical_cpu_count": 32,
+        "os_release": "11",
+        "os_version": "10.0.26200",
+        "processor_identifier": "Intel64 Family 6 Model 183 Stepping 1",
+        "system": "Windows",
+        "system_manufacturer": "ASUS",
+        "system_product": "System Product Name"
+      },
+      "logical_cpu_count": 32,
+      "machine": "AMD64",
+      "node_sha256": "90275dfb23dc5a103ca7fd8ee76c882075840f3b255ea1e08fd4c178701781e7",
+      "release": "11",
+      "stable_machine_id": {
+        "raw_identifier_recorded": false,
+        "sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+        "source": "windows-machine-guid-sha256"
+      },
+      "system": "Windows"
+    },
+    "observed_at_utc": "2026-10-05T08:57:26.176722+00:00",
+    "power": {
+      "active_scheme_guid": "e9a42b02-d5df-448d-aa00-03f14749eb61",
+      "active_scheme_name": "׿Խ����",
+      "battery_present": false,
+      "processor_settings_sha256": "5225f61b54d634d95d7df651d763234a58fde39a41cf5d21128de333256b9695",
+      "source": "ac"
+    },
+    "scheduler": {
+      "cpu_sets": [
+        {
+          "core_index": 0,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 256,
+          "logical_processor_index": 0
+        },
+        {
+          "core_index": 0,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 257,
+          "logical_processor_index": 1
+        },
+        {
+          "core_index": 2,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 258,
+          "logical_processor_index": 2
+        },
+        {
+          "core_index": 2,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 259,
+          "logical_processor_index": 3
+        },
+        {
+          "core_index": 4,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 260,
+          "logical_processor_index": 4
+        },
+        {
+          "core_index": 4,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 261,
+          "logical_processor_index": 5
+        },
+        {
+          "core_index": 6,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 262,
+          "logical_processor_index": 6
+        },
+        {
+          "core_index": 6,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 263,
+          "logical_processor_index": 7
+        },
+        {
+          "core_index": 8,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 264,
+          "logical_processor_index": 8
+        },
+        {
+          "core_index": 8,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 265,
+          "logical_processor_index": 9
+        },
+        {
+          "core_index": 10,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 266,
+          "logical_processor_index": 10
+        },
+        {
+          "core_index": 10,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 267,
+          "logical_processor_index": 11
+        },
+        {
+          "core_index": 12,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 268,
+          "logical_processor_index": 12
+        },
+        {
+          "core_index": 12,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 269,
+          "logical_processor_index": 13
+        },
+        {
+          "core_index": 14,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 270,
+          "logical_processor_index": 14
+        },
+        {
+          "core_index": 14,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 271,
+          "logical_processor_index": 15
+        },
+        {
+          "core_index": 16,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 272,
+          "logical_processor_index": 16
+        },
+        {
+          "core_index": 17,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 273,
+          "logical_processor_index": 17
+        },
+        {
+          "core_index": 18,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 274,
+          "logical_processor_index": 18
+        },
+        {
+          "core_index": 19,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 275,
+          "logical_processor_index": 19
+        },
+        {
+          "core_index": 20,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 276,
+          "logical_processor_index": 20
+        },
+        {
+          "core_index": 21,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 277,
+          "logical_processor_index": 21
+        },
+        {
+          "core_index": 22,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 278,
+          "logical_processor_index": 22
+        },
+        {
+          "core_index": 23,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 279,
+          "logical_processor_index": 23
+        },
+        {
+          "core_index": 24,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 280,
+          "logical_processor_index": 24
+        },
+        {
+          "core_index": 25,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 281,
+          "logical_processor_index": 25
+        },
+        {
+          "core_index": 26,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 282,
+          "logical_processor_index": 26
+        },
+        {
+          "core_index": 27,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 283,
+          "logical_processor_index": 27
+        },
+        {
+          "core_index": 28,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 284,
+          "logical_processor_index": 28
+        },
+        {
+          "core_index": 29,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 285,
+          "logical_processor_index": 29
+        },
+        {
+          "core_index": 30,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 286,
+          "logical_processor_index": 30
+        },
+        {
+          "core_index": 31,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 287,
+          "logical_processor_index": 31
+        }
+      ],
+      "hard_affinity_supported": true,
+      "maximum_efficiency_class": 1
+    },
+    "schema": "hyle-perf-machine-probe-v1"
+  },
+  "before": {
+    "environment": "windows",
+    "filesystem": {
+      "all_paths_qualified": true,
+      "paths": [
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "source",
+          "local_fixed": true,
+          "path": "C:\\public\\project-hyle\\hyle\\evidence\\performance\\cpu-official-fragments-p1\\consumer",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        },
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "build",
+          "local_fixed": true,
+          "path": "C:\\hv\\d5p1-official-r1",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        },
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "output",
+          "local_fixed": true,
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        },
+        {
+          "drive_type": "fixed",
+          "filesystem": "NTFS",
+          "label": "peer-mature-direct",
+          "local_fixed": true,
+          "path": "C:\\hv\\d5p1ref",
+          "qualifies_for_performance": true,
+          "root": "C:\\"
+        }
+      ]
+    },
+    "formal_capability": {
+      "independent-hardware": true,
+      "macos-qos": false,
+      "native-linux": false,
+      "windows": true,
+      "wsl2": false
+    },
+    "host": {
+      "identity_facts": {
+        "architecture": "AMD64",
+        "baseboard_manufacturer": "ASUSTeK COMPUTER INC.",
+        "baseboard_product": "ROG STRIX Z790-E GAMING WIFI",
+        "bios_version": "3001",
+        "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "cpu_vendor": "GenuineIntel",
+        "installed_memory_bytes": 68719476736,
+        "logical_cpu_count": 32,
+        "os_release": "11",
+        "os_version": "10.0.26200",
+        "processor_identifier": "Intel64 Family 6 Model 183 Stepping 1",
+        "system": "Windows",
+        "system_manufacturer": "ASUS",
+        "system_product": "System Product Name"
+      },
+      "logical_cpu_count": 32,
+      "machine": "AMD64",
+      "node_sha256": "90275dfb23dc5a103ca7fd8ee76c882075840f3b255ea1e08fd4c178701781e7",
+      "release": "11",
+      "stable_machine_id": {
+        "raw_identifier_recorded": false,
+        "sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+        "source": "windows-machine-guid-sha256"
+      },
+      "system": "Windows"
+    },
+    "observed_at_utc": "2026-10-05T08:23:14.870405+00:00",
+    "power": {
+      "active_scheme_guid": "e9a42b02-d5df-448d-aa00-03f14749eb61",
+      "active_scheme_name": "׿Խ����",
+      "battery_present": false,
+      "processor_settings_sha256": "5225f61b54d634d95d7df651d763234a58fde39a41cf5d21128de333256b9695",
+      "source": "ac"
+    },
+    "scheduler": {
+      "cpu_sets": [
+        {
+          "core_index": 0,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 256,
+          "logical_processor_index": 0
+        },
+        {
+          "core_index": 0,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 257,
+          "logical_processor_index": 1
+        },
+        {
+          "core_index": 2,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 258,
+          "logical_processor_index": 2
+        },
+        {
+          "core_index": 2,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 259,
+          "logical_processor_index": 3
+        },
+        {
+          "core_index": 4,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 260,
+          "logical_processor_index": 4
+        },
+        {
+          "core_index": 4,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 261,
+          "logical_processor_index": 5
+        },
+        {
+          "core_index": 6,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 262,
+          "logical_processor_index": 6
+        },
+        {
+          "core_index": 6,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 263,
+          "logical_processor_index": 7
+        },
+        {
+          "core_index": 8,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 264,
+          "logical_processor_index": 8
+        },
+        {
+          "core_index": 8,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 265,
+          "logical_processor_index": 9
+        },
+        {
+          "core_index": 10,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 266,
+          "logical_processor_index": 10
+        },
+        {
+          "core_index": 10,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 267,
+          "logical_processor_index": 11
+        },
+        {
+          "core_index": 12,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 268,
+          "logical_processor_index": 12
+        },
+        {
+          "core_index": 12,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 269,
+          "logical_processor_index": 13
+        },
+        {
+          "core_index": 14,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 270,
+          "logical_processor_index": 14
+        },
+        {
+          "core_index": 14,
+          "efficiency_class": 1,
+          "group": 0,
+          "id": 271,
+          "logical_processor_index": 15
+        },
+        {
+          "core_index": 16,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 272,
+          "logical_processor_index": 16
+        },
+        {
+          "core_index": 17,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 273,
+          "logical_processor_index": 17
+        },
+        {
+          "core_index": 18,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 274,
+          "logical_processor_index": 18
+        },
+        {
+          "core_index": 19,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 275,
+          "logical_processor_index": 19
+        },
+        {
+          "core_index": 20,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 276,
+          "logical_processor_index": 20
+        },
+        {
+          "core_index": 21,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 277,
+          "logical_processor_index": 21
+        },
+        {
+          "core_index": 22,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 278,
+          "logical_processor_index": 22
+        },
+        {
+          "core_index": 23,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 279,
+          "logical_processor_index": 23
+        },
+        {
+          "core_index": 24,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 280,
+          "logical_processor_index": 24
+        },
+        {
+          "core_index": 25,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 281,
+          "logical_processor_index": 25
+        },
+        {
+          "core_index": 26,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 282,
+          "logical_processor_index": 26
+        },
+        {
+          "core_index": 27,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 283,
+          "logical_processor_index": 27
+        },
+        {
+          "core_index": 28,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 284,
+          "logical_processor_index": 28
+        },
+        {
+          "core_index": 29,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 285,
+          "logical_processor_index": 29
+        },
+        {
+          "core_index": 30,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 286,
+          "logical_processor_index": 30
+        },
+        {
+          "core_index": 31,
+          "efficiency_class": 0,
+          "group": 0,
+          "id": 287,
+          "logical_processor_index": 31
+        }
+      ],
+      "hard_affinity_supported": true,
+      "maximum_efficiency_class": 1
+    },
+    "schema": "hyle-perf-machine-probe-v1"
+  },
+  "child_environment_policy": {
+    "cleared_names": [
+      "ASAN_OPTIONS",
+      "CPUPROFILE",
+      "DYLD_INSERT_LIBRARIES",
+      "DYLD_LIBRARY_PATH",
+      "GLIBC_TUNABLES",
+      "GOMP_CPU_AFFINITY",
+      "KMP_AFFINITY",
+      "LD_LIBRARY_PATH",
+      "LD_PRELOAD",
+      "LSAN_OPTIONS",
+      "MALLOC_CONF",
+      "MIMALLOC_OPTIONS",
+      "TRACY_ONLY_LOCALHOST",
+      "TSAN_OPTIONS",
+      "UBSAN_OPTIONS"
+    ],
+    "cleared_prefixes": [
+      "HYLE_BENCH_",
+      "HYLE_PERF_"
+    ],
+    "fixed_values": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "path_sha256": "c8c3812760c17d6c09704dadd247530f6f5e0164be15bc2a717afe57209f5545",
+    "raw_environment_recorded": false,
+    "schema": "hyle.perf.child-environment-policy/v2"
+  },
+  "child_policy": {
+    "affinity_mask": "0x14",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "caller_logical_cpu": 2,
+    "child_canary": {
+      "affinity_mask": "0x14",
+      "environment": "windows",
+      "gate": "PASS",
+      "mechanism": "inherited-process-policy-canary",
+      "ok": true,
+      "priority_class": "0x8000"
+    },
+    "cpu_set_id": 258,
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "distinct_physical_cores": true,
+    "environment": "windows",
+    "helper_placement": "native-runtime-managed",
+    "launcher_applied": true,
+    "logical_cpu": 2,
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "observed_affinity_mask": "0x14",
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "previous_affinity_mask": "0xffffffff",
+    "priority": "above-normal",
+    "required_efficiency_class": "maximum",
+    "reserved_physical_core_count": 2,
+    "sampling_topology": "native-runtime-pair",
+    "smt_sibling_logical_cpu": 3
+  },
+  "machine_gate": {
+    "errors": [],
+    "expected_child_policy": {
+      "affinity_mask": "0x14",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "caller_logical_cpu": 2,
+      "cpu_set_id": 258,
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "distinct_physical_cores": true,
+      "environment": "windows",
+      "helper_placement": "native-runtime-managed",
+      "logical_cpu": 2,
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "priority": "above-normal",
+      "required_efficiency_class": "maximum",
+      "reserved_physical_core_count": 2,
+      "sampling_topology": "native-runtime-pair",
+      "smt_sibling_logical_cpu": 3
+    },
+    "formal_claim": null,
+    "gate": "PASS",
+    "physical_host_identity": {
+      "environment": "windows",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WIN",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "registration_state": "REGISTERED_MATCH",
+      "required_host_facts_match": true,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": true,
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_source": "windows-machine-guid-sha256"
+    },
+    "profile_id": "W1-WIN",
+    "role": "engineering",
+    "warnings": []
+  },
+  "physical_host_identity": {
+    "environment": "windows",
+    "independent_hardware": true,
+    "mismatched_host_facts": [],
+    "physical_host_id": "W1",
+    "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+    "profile_id": "W1-WIN",
+    "profile_provisioned": true,
+    "raw_identifier_recorded": false,
+    "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+    "registration_state": "REGISTERED_MATCH",
+    "required_host_facts_match": true,
+    "schema": "hyle-perf-physical-host-identity-v1",
+    "stable_machine_id_matches_registered": true,
+    "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+    "stable_machine_id_source": "windows-machine-guid-sha256"
+  },
+  "sampling_mutex": {
+    "acquired_at_utc": "2026-10-05T08:23:14.492976+00:00",
+    "environment": "windows",
+    "mutex_key": "W1",
+    "owner_token_sha256": "1e0758f932e8609fdbf98a7aad00d6c7e0f04a95bf2b5d50fbccdac9aaac106f",
+    "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+    "physical_host_id": "W1",
+    "pid": 56532,
+    "profile_id": "W1-WIN",
+    "raw_owner_token_recorded": false,
+    "release_policy": "owner-token-match-only",
+    "schema": "hyle-perf-sampling-mutex-v1"
+  }
+}

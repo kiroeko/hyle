@@ -1,0 +1,191 @@
+{
+  "schema": "hyle.d5-native-workload-aa/v1",
+  "gate": "PASS",
+  "identity": {
+    "binary": "286f2924c8154344b9a1fd09744dbf7ef20b2c9cb766c1ec2f28e0ed87468579",
+    "inputs": "7902d4d936f08e41219dca85fe91e0e5e8bd4b7568dd99e9d36aa111d2dc804a",
+    "route": "cpu",
+    "sdk_manifest": "3be13d601c68b74682e957b5708953af005f667d2258b382aca246920bb644b3"
+  },
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "native_environment": "# D5_CPU_ENV omp=1 mkl=1 libtorch=2.8.0-cpu replay=managed",
+  "runs": [
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 0.9994643535858962,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 1.0032517217281192
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\selected-0-0.log",
+      "sha256": "461561e6e9e4622001df0f445273138e1feca22922516785ad8e27f2dff65803"
+    },
+    {
+      "route": "selected",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 0.9819738707012352,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 1.005022766114591
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\selected-0-1.log",
+      "sha256": "90e4ee7dfb7257a3687f91b9ad624724193902ed51f9627dd014522f19bc39b9"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 1.0005333380514785,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 1.0098102561060722
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\selected-1-0.log",
+      "sha256": "d5d805b4fafc8a31d02b71c3c5cb2db25a0a1a2c50f683f0e76960b2dda96fee"
+    },
+    {
+      "route": "selected",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 1.01950204499061,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 0.9803126815287362
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\selected-1-1.log",
+      "sha256": "5631af889214b08249491cbeba87082bb5acb49247bba35ae1d17ef430c2009e"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": false,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 0.9697211333606885,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 0.9833043188137559
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\peer-0-0.log",
+      "sha256": "c193fe858423ffa30bb705eea353015950a2a8fcdbcb6a16e7c95674ea1b1672"
+    },
+    {
+      "route": "peer",
+      "peer_first": false,
+      "allocation_first": true,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 1.0156530306526943,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 0.9809812150077899
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\peer-0-1.log",
+      "sha256": "80c6ad566698b0b9293c4d2c95fbacb235c882489c517324647c4e6bbf7224a2"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": false,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 1.0600489580247545,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 1.0055251045493836
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\peer-1-0.log",
+      "sha256": "61d00f7550f4c5fd8272465cf9132baa8104cb9aba89737447efe47f4da4f191"
+    },
+    {
+      "route": "peer",
+      "peer_first": true,
+      "allocation_first": true,
+      "ratios": {
+        "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": 1.013580907630074,
+        "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": 0.9831834638405376
+      },
+      "log": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\d5-aa-raw\\peer-1-1.log",
+      "sha256": "b112ea4053990135bd8fd098806dc3db8cd6998a5a0331e37418bb5167bb978d"
+    }
+  ],
+  "summaries": {
+    "selected/GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": {
+      "ratios": [
+        0.9994643535858962,
+        0.9819738707012352,
+        1.0005333380514785,
+        1.01950204499061
+      ],
+      "factor_medians": {
+        "all": 0.9999988458186874,
+        "peer_first=False": 0.9907191121435657,
+        "peer_first=True": 1.0100176915210444,
+        "allocation_first=False": 0.9999988458186874,
+        "allocation_first=True": 1.0007379578459226
+      }
+    },
+    "selected/DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": {
+      "ratios": [
+        1.0032517217281192,
+        1.005022766114591,
+        1.0098102561060722,
+        0.9803126815287362
+      ],
+      "factor_medians": {
+        "all": 1.0041372439213552,
+        "peer_first=False": 1.0041372439213552,
+        "peer_first=True": 0.9950614688174042,
+        "allocation_first=False": 1.0065309889170957,
+        "allocation_first=True": 0.9926677238216636
+      }
+    },
+    "peer/GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2": {
+      "ratios": [
+        0.9697211333606885,
+        1.0156530306526943,
+        1.0600489580247545,
+        1.013580907630074
+      ],
+      "factor_medians": {
+        "all": 1.0146169691413842,
+        "peer_first=False": 0.9926870820066914,
+        "peer_first=True": 1.036814932827414,
+        "allocation_first=False": 1.0148850456927216,
+        "allocation_first=True": 1.0146169691413842
+      }
+    },
+    "peer/DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3": {
+      "ratios": [
+        0.9833043188137559,
+        0.9809812150077899,
+        1.0055251045493836,
+        0.9831834638405376
+      ],
+      "factor_medians": {
+        "all": 0.9832438913271467,
+        "peer_first=False": 0.982142766910773,
+        "peer_first=True": 0.9943542841949606,
+        "allocation_first=False": 0.9944147116815698,
+        "allocation_first=True": 0.9820823394241638
+      }
+    }
+  },
+  "errors": []
+}

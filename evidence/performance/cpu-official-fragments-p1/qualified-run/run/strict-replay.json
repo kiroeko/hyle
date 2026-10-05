@@ -1,0 +1,13 @@
+{
+  "contract_sha256": "d781dfd024a152e993320ff51e316b339b267c430946b5fed1aa06ab320ca19f",
+  "current_certification_policy_eligible": true,
+  "environment_policy_compatibility": "CURRENT",
+  "manifest": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\manifest.json",
+  "paths_verified": true,
+  "product_gate_policy": "consumer-evidence-v1",
+  "product_interpretation": "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY",
+  "provenance_compatibility": "EXACT",
+  "provenance_renewal_ledger_sha256": null,
+  "provenance_renewals_applied": [],
+  "qualification": "QUALIFIED"
+}

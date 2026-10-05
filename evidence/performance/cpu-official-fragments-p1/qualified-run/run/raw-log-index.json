@@ -1,0 +1,1059 @@
+{
+  "entries": [
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-01.log",
+        "sha256": "3a8fff4bbcac1445f557c23cd64213a233d5d513726964e82856f91fa03abf70"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "9b7a85c067f4a66643347c4399252557",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-02.log",
+        "sha256": "7d768ec0a222043abaa7d51abbc628c769faa26e8c02ac4463e81c4259f0aedf"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "04d39dbe691a723daee6fd3ff6c69772",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-03.log",
+        "sha256": "12fd3ce72745512232bb13dabaa8e096d25eb1bdafc5ca37749e405ca2edc93e"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "6566f47a6c383b44de811d694e0e2524",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-04.log",
+        "sha256": "7bc585abaa1ed51cb203a3fd6ddd3ac8edc8bdadbb8acc18a69bc5ff124e4a86"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "b200eb41bc90460922e0d14835099b68",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-05.log",
+        "sha256": "db4ae12fef9fc797c9e5699c59604456bebe40f062325b6820941b69014154da"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "a566e0987aae8d2486adc878d46fbf85",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-06.log",
+        "sha256": "fc9d2d3f18b6caac93ae5b7fe65257e336ef9f312f45c2e22596f09128347b04"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "4ab20b63dd919a23e1b5dc48df045dd1",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-07.log",
+        "sha256": "5fc51f0bf85f589fd83d06e1d888432c091a22cf928fea2edebb70ed5a6c7b6e"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "2023304f56d555f429ceb2adb295a9e3",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-08.log",
+        "sha256": "79e8992bc4b3b127f742639b7aa8feff8b1082d8870ce6b8c7f40f265bb4d269"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "f8b9068cd6490e1a143f6c47ccf1d84d",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-09.log",
+        "sha256": "ce4558816b44b691a8fe04c27224cf1d8cdf86fb7ea259ee45db92ba66580034"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "2658e3aaca8f792470f41ea21e3e08d0",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-10.log",
+        "sha256": "b775b7f3b220abaff5005f52201ba28cb375f8568c599d12028258b8a018d549"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "0d3fe2787fb97281644848cdd120bfe6",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-11.log",
+        "sha256": "9f4ae0725ef1a7a1d78b6fc5e8cdbb21479d53dc75307036bf29ae0d94e7713a"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "954452e92563ad92ecf46fb4fb6dbb9d",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-12.log",
+        "sha256": "3fdce46fd9e97632b49162b6054f2300e80511e338f549c40ca9f5f1a8543ae6"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "4e8d0435a0787361892ab4e9c2074043",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-13.log",
+        "sha256": "bd4b11fafd0d06506cb8e109f1c9f683631fee426ce64f07e642bbde4098e514"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ac257a1de0faeebe1978989b5444a985",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-14.log",
+        "sha256": "ce51dbcc73bd6457377441b2de96602452cded288326d108af851e40995ef390"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "94e6f4d265e14a1310dabb28be8619dc",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-candidate-first-allocation-native-fragments-run-15.log",
+        "sha256": "34190e53fce43947b25a91f53e59305272851b7c26bdda6635eb2bb0e3b72311"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "5bb57206bdffcd84e1dd4bcecfc22456",
+      "stage": 15,
+      "stratum_id": "candidate-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-01.log",
+        "sha256": "e62d456ea60fa5fe1e89deae4f6f48b612f2202b37f7c3d1df9c4354d4fa1cf5"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "4b504e65576f8c28b9ba530fba1ddd7a",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-02.log",
+        "sha256": "a110f2b55beeb91777632e822bdde69cddaafb7a6987f45819dde230a368d254"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "b1b211e19fe387b6513586f6a72b3fb5",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-03.log",
+        "sha256": "b5d04898d48bccba10c46e0675a9fe0a9b768252792d144282f0cde3955dd9d9"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "ebe9409d78201d5df4434a67d6a839f4",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-04.log",
+        "sha256": "552f91ed867c5a2526b5b2002114e6fa26fa2ecaeec028ca50fbc798c47831a6"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "18ae303a7f0a7be5923513ae6c720acd",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-05.log",
+        "sha256": "2101d1f76f445fbbe36f5e43d017c2409e7e71530abad6134ded4feefb658760"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "99bde71041e45fd1fd43613da35cbf9f",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-06.log",
+        "sha256": "74f58aa2087cdf741e025f5d81cff513d8531db721ef30b95f288d8e80a04f75"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "02fdc2c841205c7aac9a8c8aad5588b8",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-07.log",
+        "sha256": "392b0d38fa114cac7e240cff1d18e6e73dd5651eb002ae62d5e65c8282200397"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "48261b4129921fee794ad5e866364002",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-08.log",
+        "sha256": "d4a8cdd39e5635d9d06cf993ccb7e3bfacd9cc97cf49e324da7affdb569f29bb"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "ef5be72a4f22f364ef7fce013e98f337",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-09.log",
+        "sha256": "9c96933d2ee82ba4eaac04a5c94ca174f2f90b401a07dbe76eb05e8ad871675c"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "6ce41b0eccf981d053906debd6028a78",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-10.log",
+        "sha256": "0b2a590ab5b5c8cba3935798c3d244c3a23a85d15b788aaceeb7d3eac7dab777"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "9affb9204aeaab096c123e7e601bbd01",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-11.log",
+        "sha256": "fd775b2542fffa511c03cb06b6c1b515190bce511df657130a68cc8596ce7fd8"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "7c7aed42e7862ffc69e02317f08f11e9",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-12.log",
+        "sha256": "fc8f0864c72d385922b2a4a180b063db3746c6f9068ba8dec1c48009bc5d5d28"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "b7f37e865b7718080b7dc84accaa580c",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-13.log",
+        "sha256": "a81ced6d976a1e6973435fcf0382a50e76a16aca746df7094088ba2cd7b354b5"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ee9d7303401de7ec70d0b49e10b81426",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-14.log",
+        "sha256": "d14b8ec9e6e2dc76307f24376e3adeee0d7426c5068400ee97ee2524c41a4e09"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "6d928748463c455a1c4b8ffc89d9b00b",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-candidate-first-peer-first-allocation-native-fragments-run-15.log",
+        "sha256": "783c124eedf26c260ce59c9a51c0f5d9eda5e0fb8ceb428e3c2bed83d7dd3edb"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "edbdf4e02f87270ad97c9a2020c0d0ec",
+      "stage": 15,
+      "stratum_id": "candidate-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-01.log",
+        "sha256": "07793cc1cd756ec74809e93fe1e0bb5b97fdda4f8ea1f34e92314670a4352f7a"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "3880efbeb2d04c7886e92dc3ec6d864c",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-02.log",
+        "sha256": "24b5d51d8e3d1fb52589b791822ece68552fec75e86ff1696a4e8a14575e4c11"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "5f5437cd72b7ab638859f273042f6918",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-03.log",
+        "sha256": "f5db536c71981a85b97c7557b51c1f678dabcd76849239f325b6ea242e7c6aae"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "fc8b7d6918bd30cce2ce18d3bc438dfa",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-04.log",
+        "sha256": "f181cf8240403ac658459be60840b30da12230bb675498f61d87ba7b1e357ebf"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "4e531662614d10af97fce593f2e7d560",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-05.log",
+        "sha256": "7253721412b5fdbdd144e0e0e0b7bbbc1c1853bce50c2dc88f66f0bda35a0021"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "ed412dca58975c0c86708bdb9a8a9a84",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-06.log",
+        "sha256": "e3d9e560bb18e1a49d97ddb56b656bf65cf1fea6b853784d9e5b6df136e97ae1"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "d1e623f1b4523c2a7bdf01ad0e639407",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-07.log",
+        "sha256": "6ecbdb3d3de727009839b6f95605e9a735594becc03081e66a4355f1dc36a863"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "36fe14ff011b00d2b9a98223df5b48fe",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-08.log",
+        "sha256": "55d6a6114af2e014c94c09eb315316c21ad8da26e2db426b1dd52ddf96c3c0bb"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "dd96432c340b59a64d10173e52f7bfb7",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-09.log",
+        "sha256": "03323cd424b4759e44a75c9ddb386372d7f333dc5f2b9787eb2a40d338863313"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "7e9fbd140685c693a4f26c453594e332",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-10.log",
+        "sha256": "de956d565a50d18967198a21077da56a07d5d485c2f36b21bb059da85a47c950"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "8d0837a3d96cf9378eedadf883bb6912",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-11.log",
+        "sha256": "c3adb163132b2af234cf099074e0114ca56cf3bc5e1f77f1de636661abffc60d"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "2935b2ac90c15bfa7f3bf1c85aa16d1e",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-12.log",
+        "sha256": "528dd2444b31c0c4939b83cb6cf4cfb65c13e510fd5d024dda3289b2b27221b1"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "1559672cd25b0a025ad2581d0576e915",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-13.log",
+        "sha256": "c4bf6583ee27d86724398b319936262ded28ab4ac3f1982809ff08006411bcaa"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "adf6918ed81e1fd45f7bb521b0b3155a",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-14.log",
+        "sha256": "b28a6d2944fe8a2d0712b39d095ff6d41e87e0fa50a491937b29d8bcc3ee4ef9"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "0db1e3a033157f57ed7a116c1f48271f",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-candidate-first-allocation-native-fragments-run-15.log",
+        "sha256": "3eec28df1527c72ae2cc30b1b35b6bf36b6d6a66ff2a673d44c84ed0fef1e8f3"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "5210921b638e094beb5e7f2c2dfc5763",
+      "stage": 15,
+      "stratum_id": "peer-first-candidate-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-01.log",
+        "sha256": "23d2e04d2056ce52d022761499fdb3b90541b644929b034290e45748268ccd99"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "5fd551369744d63c95efaa9e167e318a",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-02.log",
+        "sha256": "af083ad7e26bce3c8b681f55de03b61c4d1eef0111dbafc65648d35b40cc192a"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "2e06ebed6a37e6b85967ec7167f96c21",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-03.log",
+        "sha256": "99355b8bf600fdec727d8011c6812f6299785d91ba2c8a21c58e3835830bcbcd"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "dd881925857fac5c43473fb0ad59c718",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-04.log",
+        "sha256": "d41f83bfdce3dbc0e5d7f6f5a517ec999036ff4d67b480a930427521e2a8c4c5"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "d15bf2cbc6f7e744fdc9d7f2fa250fa8",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-05.log",
+        "sha256": "bdf6d7943f34deb3e02b3e420c28d4edf6a5d8ce5bb7849748c089a71fc1e981"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "ae580ea98ccbec135515baef5105dd85",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-06.log",
+        "sha256": "2c41551a65c322ca01a57e53efdb3633b026e8c1a2dddd59513c0dd65f1459fd"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "39cd0ae0e8d4f958a843c461a95d936c",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-07.log",
+        "sha256": "976e79968a951781ebff79407116e9e558b509fbb16dff75abb038a36da6a58a"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "238a4e743b3f8f15bda29ff485c1d18b",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-08.log",
+        "sha256": "5087666d335f2844c20d9871ced1f08a17894c541f0992e1cd63ad84bb4a21ec"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "ac1aeaebae7b70a083bb60e480f728ef",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-09.log",
+        "sha256": "51ed73c188312615598f381c33237d20423ba527709ddeeeb08338fafdd30f08"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "55881921dbe38a83a1b3600db72cbf85",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-10.log",
+        "sha256": "8c9a9428e50d87402b2b321b8eb96539e779d39999379574023b4228d02297e5"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "5d351700ca235f65b2b8d22d9f73b6ad",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-11.log",
+        "sha256": "b85ea9a50b83e150b072cc1707bc3164a5a88fb42138f5a63e01ae85cdc19e37"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "79e71a80eda75a48e3e37b1b22122af6",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-12.log",
+        "sha256": "665fbb203c060314f1eb95f20b2da0f2a98be8ef9c0f9ecbc33c1727272ec26b"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "0cc0e12975c71a5aae61f3e687568970",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-13.log",
+        "sha256": "3b2adde61b7f9502912cbaada487283908ce74ecd727d6c99ac0fcfb1372c5ca"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "d924614fdac568857766a721f7795823",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-14.log",
+        "sha256": "f8d8c3239f950f8e5fa6f534c6777d6688416036357f9dab7e3710b5d2376ef9"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "5f5507e11f31214cceb1a5b47b307c41",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "executable_id": "native-fragments",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\product-peer-first-peer-first-allocation-native-fragments-run-15.log",
+        "sha256": "41658723a8750a042983cbdc24d53a5224e8671266a703a8a6f4599061a99730"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "c83e6b7a99b7aee50afc84eb9bd8f2b7",
+      "stage": 15,
+      "stratum_id": "peer-first-peer-first-allocation"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-01.log",
+        "sha256": "2acac5cc2faf4f1c5fbe2d7e95bdccaf95c1edb7ae918705a6a93fa89b49f967"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "8a6fc13607c0309a560a1de25b0ddce3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-02.log",
+        "sha256": "2cc97d0b8a9506149e3ad09544bc80c2d92049d918ea7f37c6026219329881a6"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "25cc5e19756837d0a1beb9b5b9cde45b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-03.log",
+        "sha256": "53d404931ab1f77acacbfbd2beb2044c8ffca86281f7909cb9dd5e9ed90d599d"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "e7ee89c459fb766daaf391ba72240147",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-04.log",
+        "sha256": "23d3e9c3ea5ca004ff4bb0d08d8fa98f65c4c24d91b5c16efc310de4d61d84fd"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "53ad041314715a8557bcb9f6875b865b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-05.log",
+        "sha256": "3bc988d013c8accab1c50773d31a6694076979e945acae6e1e1581fe4bb9cef4"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "d4c1754df790072a0b6dede2e37162d3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-06.log",
+        "sha256": "66f89e4ca6d54843519a84132071e1a2919c5acc6854844368a663f610d2dc43"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "26e9ba7e48da9aa94dc60f6f82296b44",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-07.log",
+        "sha256": "7b0f9947027229f5aa4fae211b275a5636cd0460d60ffb86c110bea5c85d3581"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "5afb57c46944fc135bdacc13a87e2bed",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-08.log",
+        "sha256": "d2a498c5476826cc6a9237f28e437baf4326a465f2d208d2435d4427e53f6ecf"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "97a0749d62cc44ae0e6a034e62f1ec06",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-09.log",
+        "sha256": "17691e1bf2704ff1991829bc77ac8ada63dd14454ae2b5738b6583a944719df5"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "ed9d640a3673218fd0f7ed910e40d8c9",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-10.log",
+        "sha256": "36cde93f8b7775cbb9eec4cdd39f16d27258c91cce4dc5ece59ac29fd4b97556"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "549872f53d2e2d4dbdb8740b80ea95ac",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-11.log",
+        "sha256": "3759a0dec45f0335e1752cdfecbd4db904c13aa6651ddf48f902d073e270e602"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "bb83f786576375aa88c0669fa6e05368",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-12.log",
+        "sha256": "44a2c3dacdf1d5bfa6c78ad0692a5e4ebbfd563ec529e257c82d371ae69c78c8"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "f72df3bcb97753f6ebc7637dea518a2a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-13.log",
+        "sha256": "99d69929b8ee2011613fcb046f22988f20814473ca6c495f73d08ca2158e8578"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "f193ebe0fa5c5a79c4a6d403b71bda10",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-14.log",
+        "sha256": "faa32ef407d29fcf91360231a0c5d8f1e7a077991b13aa378287fb3ea8f15594"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "521ae8ad88bdf3bbc8d8adde3e187ce4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-candidate-first-run-15.log",
+        "sha256": "5ff264bf6c6d2183a931e1de51ed47870e2476f6be1b6009c25fef78abd6f20c"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "2addb932e9fbcef300264cdda05bd9c9",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-01.log",
+        "sha256": "ab16ea9e1e9c2ccea62c2e3836c471dab324c733b5808e36e9fa46cdd6e49abb"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "6b20db02f1eae402adc30658a142ddfa",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-02.log",
+        "sha256": "3f3247db4b1b0b834b53d7bc1bb619ca89fc7ffad6f8feef2ff63faa3558edde"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "e57e50d4f540ae2b2351cf06281356fd",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-03.log",
+        "sha256": "4e3554d6f51856f5c58a2c49604a9a039bf84134eeb592c4185812d163bb26b7"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "d38f75e9c37365a5183c6ed79d7e8ebe",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-04.log",
+        "sha256": "01ef2ee831dd959caee022e863f1984ad316d0f732544594705b82db00a86206"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "11612d392a07498c2f4256357f34025a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-05.log",
+        "sha256": "1075cd550e8c2016578b13186041b8df4e68366e4e6029fcf7987eeb184ade3f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "5f3e3ebfc6a831369addd49634d98d5f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-06.log",
+        "sha256": "2204ae535f8b82ee5e97efa54efd033d6315ea7d9bd3253d0f5d9b43d24152dd"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "8a246fba00258430301d7c5db2cbb30a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-07.log",
+        "sha256": "b2b6178f18292d0044d29602c18d7eb385fe7ba68bce088e5730a5c862067447"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "ed64cce28d4e5992034cbb7186f02053",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-08.log",
+        "sha256": "d03b8a14da0a037af6a16b649ca8657dd0df612f471e834b4f8fc854c66e109d"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "498f574327f651070e03c9ee8b8509e3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-09.log",
+        "sha256": "e7c98a07194a1735f5ce7bc7cb3002455845d9b1165e30ad375147caf2abc8e0"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "6355a05cd4a96ae4f2e759489dd38a5d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-10.log",
+        "sha256": "1d45c82c1ddbfe0952d051665068651612f35643756dd9daf238baa259dd2d4e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "eaca9c0c069036d488744fd239df7ce3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-11.log",
+        "sha256": "f5a40c01f0c3f063d1562775cf39898f917cf2aa6bdf3234c56d8e570106935b"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "76b731058b8e20306c402e6dc9c29d4f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-12.log",
+        "sha256": "db793b69edff0c94c45eaf23876f75c027494d1bd3e5711cadf7d6304da1644a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "c6cd10656bc3ef6cc56fe116f1a75c64",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-13.log",
+        "sha256": "c2bfecf1f6dcd056dc714912233c1cc94c2a5d14106d51fa800fcf199f0e8d7c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "ede488553cca993253b1be0f054320af",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-14.log",
+        "sha256": "a5b25ea05b167b8387ec213ef826980875f1dc223e7ba36b389fe1fad0f7ecb4"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "a337e72860725d7e7f11768340218642",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\cpu-official-p1-r2\\raw\\n-15\\control-peer-first-run-15.log",
+        "sha256": "35d1805e21b380ee17f62031e0926bb752296ddcbd4e3dd21798f07bd36aea86"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "a4e1a66f085451000be25ada02941d3d",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

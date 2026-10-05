@@ -1,0 +1,9 @@
+{
+  "reason": "exact marker of explicitly stopped owned first P1 wrapper; no live Windows owner or Linux benchmark",
+  "marker_sha256": "2742a1167db600ea5a5600473718024ae21e83b56d47dcf02c12a1c1cf4d903e",
+  "pid": 47688,
+  "profile_id": "W1-WIN",
+  "windows_pid_absent": true,
+  "wsl_benchmark_absent": true,
+  "action": "remove this unchanged single stale marker only"
+}
