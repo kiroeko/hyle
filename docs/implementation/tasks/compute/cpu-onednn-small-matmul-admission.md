@@ -1,6 +1,6 @@
 # CPU oneDNN：恢复小矩阵的真实准入
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -60,4 +60,10 @@
 
 ## 验证与裁决
 
-当前 AUDITED，产品尚未修改。各适用 gate 为 UNPROVEN，不签性能 WIN，也不关闭 CPU 逐域目标。
+固定产品候选为 `65a02982ac108d57b13769029f56a6a6903895be`；OM1/OM2 已实现，公开合同、数学、
+资源路径及冷准入停止变化。Windows 定向 7/7 和三交付已通过；Linux 批量 8/8、普通 Direct/Graph
+与动态安装消费者已通过，静态交付尚在验证。Linux 428 个注册 GTest 中 414 通过、14 因旧模型 fixture
+未部署跳过；这些旧测试不冒充本次通过，也不将本次数值准入写成全模型或 Native 性能裁决。
+
+本卡进入 CANDIDATE，适用 delivery 的总裁决仍为 UNPROVEN；终审以实际剩余收据为准。
+文档/状态提交不改变上述不可变产品候选，不据此重构建或重跑 P1；本卡不签性能 WIN，也不关闭 CPU 逐域目标。

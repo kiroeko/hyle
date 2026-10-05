@@ -1,6 +1,6 @@
 # CPU ggml：门控非有限值语义接缝
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -51,3 +51,14 @@ F32/F16 storage 与 packed 行映射，不增加完整激活算法或 ISA 扩张
 性能比较仍未开始；SIMD 基础与自研 payload 冻结。原 owner 已处 AUDITED，本次在同一阶段重新绑定
 此卡及具名 GN1/GN2；未改公开架构合同，不借旧卡授权新修改。SOURCE/资源/私有 ABI 审计已经固定，
 实现前 registry 必须指向此 AUDITED 卡；所有新资格仍为 UNPROVEN。
+
+## 固定候选与资格进度
+
+产品候选为 `65a02982ac108d57b13769029f56a6a6903895be`；GN1/GN2 已实现并停止变化。
+Linux ggml Provider 44/44 通过，包含三 dtype、packed/separate、非有限值与多线程变化输入重放；
+普通 CPU/Graph 批量测试通过，新增 gate→MatMul 完整 region 在三 dtype 实际消费修正后的中间值。
+旧模型 fixture 的 14 个跳过保持明确记录，不计为通过。Windows 数值批次与独立三交付仍待执行，
+总 correctness/delivery 尚不签 PASS。本卡为 CANDIDATE，接受收据后才能 terminal；Native 裁决未开始。
+
+验证期出现的 GCC 问题为旧 CPU 模型测试的 aggregate 默认初始化、GoogleTest 宏外缺少花括号；
+仅在该批 fixture 中修正，断言保留，警告不关闭，所有原失败日志保留。不是新数学优化预算。

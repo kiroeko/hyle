@@ -362,15 +362,17 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-onednn-small-matmul-admission.md",
-      "summary": "CPU小矩阵准入AUDITED：OM1删除无当前资格的serial M<16过滤，OM2固定小矩阵真实重放/普通入口/三交付测试；原版数学、API、资源与失败合同不变，Native胜负仍待逐域裁决。"
+      "summary": "CPU小矩阵准入CANDIDATE：OM1/OM2已实现，Windows定向与三交付、Linux批量与动态交付已验；静态交付收据待补。原数学/API/资源不变，不签Native WIN。",
+      "candidate": "65a02982ac108d57b13769029f56a6a6903895be"
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-ggml-gated-numeric-admission.md",
-      "summary": "CPU门控数值AUDITED重新定界：GN1原版SwiGLU后的原位-Inf语义边界，GN2三dtype/两布局/完整Graph与三交付资格化；公开形状与原数学核不变，Native/SIMD数学冻结，旧D5/GPU事实保持。"
+      "summary": "CPU门控数值CANDIDATE：GN1/GN2已实现；Linux 44/44与完整Graph中间值已验，Windows及独立三交付待补。原版SwiGLU加必要原位语义边界，Native/SIMD冻结。",
+      "candidate": "65a02982ac108d57b13769029f56a6a6903895be"
     },
     {
       "module": "graph_provider_onednn",

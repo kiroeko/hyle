@@ -36,12 +36,12 @@
 
 | Native 能力族 | 成熟重叠候选 | 不能用重叠域结果直接删除的边界 | 动作 |
 |---|---|---|---|
-| MatMul | ggml 非空 rank2 plain F32，row-major/转置权重；oneDNN 非空 dense F32、当前adapter限制serial M≥16 | Native F32 NumPy batch 广播、空K、非vendor可表达批次布局；M<16并非原kernel缺失 | ADMISSION_FIX_REQUIRED后DECISION_REQUIRED；旧M1 Native-vs-Native不是胜出 |
+| MatMul | ggml 非空 rank2 plain F32、contiguous-K 的转置权重；oneDNN 非空 exact dense row-major F32，已删除 serial M<16 过滤 | Native F32 NumPy batch 广播、空K、非vendor可表达批次布局；ggml 不声明一般 row-major RHS | DECISION_REQUIRED；两种物理布局分别匹配合格候选，旧M1 Native-vs-Native不是胜出 |
 | RMSNorm/LayerNorm | oneDNN dense浮点、input0精确原位；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、非vendor布局；原位不能一概归唯一 | DECISION_REQUIRED；普通out-of-place与oneDNN原位均须比较，旧Graph不能代签新融合 |
 | Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid；oneDNN dense F32稳定Softplus | 未接ReLU/SiLU/GELU/GELU-tanh、narrow Softplus、layout/alias/非有限值 | DECISION_REQUIRED，按kind/dtype分开 |
 | Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支 | number Min/Max的NaN/signed-zero、特殊alias/layout/scalar-width | DECISION_REQUIRED |
 | Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
-| GatedActivation | ggml SiLU已验有限输入的packed/separate浮点端口 | 已发现gate=-Inf时Native与ggml不等价；GELU/GELU-tanh原函数未接，alias/layout单列 | ADMISSION_FIX_REQUIRED；先裁决/资格化完整数值边界，再比较 |
+| GatedActivation | ggml SiLU的packed/separate浮点端口；已实现原位-Inf数值边界，批量资格进行中 | 原版数学核不改；GELU/GELU-tanh原函数未接，alias/layout单列 | ADMISSION_QUALIFICATION_PENDING；资格通过后才比较，边界检查和必要cast成本全部计入 |
 | RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
 | Softmax | ggml dense rank2 F32、axis−1、scale1、unmasked普通Softmax | mask/log-softmax、其它axis/scale/narrow/strides与非有限值 | DECISION_REQUIRED |
 | SDPA | ggml causal BSHD、unmasked、F32 accumulation，满足具体Q/K/V shape | non-causal/mask/BHSD/不同depth；Native仅相同Q/K/V heads | DECISION_REQUIRED，只测共同shape |
@@ -85,3 +85,14 @@ Unary/Gated激活必须核对NaN、±Inf与尾部，不能仅以同名算子或�
   不能拿有限随机数的通过外推整个域，不能直接启动性能比赛或因同名而删除自研。
 
 这次是准入/正确性诊断，不是性能比较、完整目录资格或产品完成。Native仍冻结，未增加任何数学。
+
+### 已落实的有限准入修正
+
+[oneDNN 小矩阵卡](cpu-onednn-small-matmul-admission.md)的 OM1/OM2 已实现：普通 M1/M4/M15/M16
+可使用原 BRGEMM，Windows 定向 7/7 与三交付已通过；Linux 批量验证仍在执行，尚未关闭。
+[ggml 门控卡](cpu-ggml-gated-numeric-admission.md)的 GN1/GN2 已实现：保留原版 SwiGLU 与整程序，
+在中间值进入下游之前处理 -Inf 极限，数值/资源/普通完整 Graph 与三交付仍按该卡资格化。
+这些是成熟实现的准入修正，不是 Native 性能裁决；不复用未经适配的 ggml 原函数成本作为公平基线。
+
+MatMul 的 Native 比较应保持调用方真实 RHS 物理布局：row-major 对 oneDNN；contiguous-K 转置布局
+对 ggml。若完整消费者需要变换布局，必须把变换成本列入该完整消费形状，不能零成本替换输入布局。

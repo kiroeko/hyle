@@ -921,8 +921,9 @@ oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它
 `[M,K] * [K,N]`；模型常见的
 物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K权重在满足ggml rank-2 F32准入时选择ggml；
 其余域继续匹配具名Native残余，不能将所有转置权重都描述为HYLE SIMD执行。
-SiLU的packed/separate门控在ggml合法域使用原版SwiGLU程序，不能把全部GatedActivation称为Native执行。
-oneDNN对单任务且`M < 16`的MatMul冷拒绝，后续仍按完整shape/layout匹配ggml或Native；
+SiLU的packed/separate门控在ggml合法域使用原版SwiGLU程序，并在内部中间值进入下游前处理
+`-Inf`的稳定零极限；该边界复用输出buffer，增加一次线性检查，其成本属于完整执行成本。
+oneDNN的非空exact dense F32 MatMul也接收单任务`M < 16`，不以未裁决的Native成本推断拒绝成熟能力；
 batched、零尺寸及其它未被成熟路径覆盖的已准入域由具名Native残余承载。真实并行executor
 可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
 
