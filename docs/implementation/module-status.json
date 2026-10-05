@@ -424,8 +424,8 @@
     {
       "module": "compute_provider_native",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md",
-      "summary": "CPU逐域SCOPED：用户要求裁决全部自研重叠域；标准构建/原版优化程序已独立关闭。先批量核对成熟准入/语义、固定有限FIX再修改产品；不签WIN、不扩写数学，SIMD基础保留，其它路线暂停。"
+      "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
+      "summary": "SI1–4 SCOPED：现存宽Select/I64索引/Assign/Fill及odd-byte存储成熟ATen准入；独立identity和普通默认接缝，原库程序与资源一批资格，Native数学冻结；无产品PASS或WIN。"
     },
     {
       "module": "compute_sched",
@@ -435,19 +435,14 @@
     {
       "module": "compute_route_cpu",
       "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md",
-      "summary": "CPU逐域SCOPED：用户要求裁决全部自研重叠域；标准构建/原版优化程序已独立关闭。先批量核对成熟准入/语义、固定有限FIX再修改产品；不签WIN、不扩写数学，SIMD基础保留，其它路线暂停。"
+      "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
+      "summary": "SI1–4 SCOPED：现存宽Select/I64索引/Assign/Fill及odd-byte存储成熟ATen准入；独立identity和普通默认接缝，原库程序与资源一批资格，Native数学冻结；无产品PASS或WIN。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB1–5 CLOSED：MatMul双向广播/row-major、任意轴Softmax、两SDPA布局与独立depth、15scalar位存储及合法空输入整region通过两平台58/58、普通Direct/Graph三交付；P0/终审。Native冻结，CPU未完成。",
-      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-ggml-layout-broadcast/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
+      "summary": "SI1–4 SCOPED：现存宽Select/I64索引/Assign/Fill及odd-byte存储成熟ATen准入；独立identity和普通默认接缝，原库程序与资源一批资格，Native数学冻结；无产品PASS或WIN。"
     },
     {
       "module": "compute_provider_cublas",
