@@ -50,6 +50,8 @@
 ## 冻结形状与七问
 
 普通入口仍为 `cpu::create_context()`、typed `prepare()` 与 `graph::compile()`；没有新增公开选项。
+ggml 的外部输入/输出 alias 仍按既有资源合同拒绝；内部原位 view 不代表公共原位支持。
+测试明确验证该拒绝，不将 Native 的原位档与成熟 out-of-place 偷换成同一域。
 版本/许可证/升级仍由已关闭 ggml runtime 管理，原数学源码与 CPU program ABI 保持；数值边界仅 adapter 拥有。
 资源、OOM、close、并发 invocation、completion 复用现有 checked binding 与 ggml pool/slot，
 provider 接口不引入新的线程/资源 owner。source/static/shared 的新消费必须实际验收。

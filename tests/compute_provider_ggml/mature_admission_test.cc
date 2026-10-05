@@ -45,6 +45,14 @@ template <class T> void relu(std::uint32_t threads) {
         if (alias && strided)
           continue;
         auto destination = TensorView::create(output_desc, alias ? input.view() : output.view()).value();
+        if (alias) {
+          // This provider still forbids external input/output alias. An
+          // internal inplace ggml boundary does not change that contract.
+          auto denied = invocation.submit(queue, source, destination);
+          ASSERT_FALSE(denied);
+          EXPECT_TRUE(denied.error().IsInvalidArgument());
+          continue;
+        }
         const auto allocations = stats.snapshot().total_allocs;
         for (const int seed : {0, 5, 0}) {
           for (std::int64_t row = 0; row < rows; ++row)
