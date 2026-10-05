@@ -418,10 +418,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-cpu-ds4-roundtrip-binding.md",
-      "summary": "D5 CPU ds4 原版 FP8 group64 / FP4 group32 接线固定；普通 Windows/WSL 和 Windows 三交付已通过，有限范围等待终审；完整官方 MoE 与其 P1 不计完成。",
-      "candidate": "dd3009f0ff2014de048e6a765d07746d5eba1bd4"
+      "summary": "D5 CPU ds4 原版 FP8 group64 / FP4 group32 有限接入已收口；Windows/WSL 普通入口、Windows 三交付与 P0 通过；不代签 group128、完整官方 MoE 或完整消费者 P1。",
+      "candidate": "dd3009f0ff2014de048e6a765d07746d5eba1bd4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/README.md"
+      }
     },
     {
       "module": "compute_sched",

@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-05",
+  "reason": "Remove temporary source transport archives after 58 permanent proof files were SHA-verified.",
+  "deleted_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding\\delivery-prepare\\product.tar",
+      "bytes": 31252480,
+      "sha256": "828a2eff51b1cda7190d31294fd14b83ac2e7587d6cf5860c204e95cfd822dc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding-recovery\\wsl\\source.tar",
+      "bytes": 39854080,
+      "sha256": "b689c23b3c2a9bb7039e534e41e06157efc7ea3580b54da14dbfd07bb4fe8d42"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding-recovery\\wsl-native\\source.tar",
+      "bytes": 39854080,
+      "sha256": "b689c23b3c2a9bb7039e534e41e06157efc7ea3580b54da14dbfd07bb4fe8d42"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding-recovery\\wsl-qualified\\source.tar",
+      "bytes": 39854080,
+      "sha256": "b689c23b3c2a9bb7039e534e41e06157efc7ea3580b54da14dbfd07bb4fe8d42"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding-recovery\\wsl-consumers\\source.tar",
+      "bytes": 39854080,
+      "sha256": "b689c23b3c2a9bb7039e534e41e06157efc7ea3580b54da14dbfd07bb4fe8d42"
+    }
+  ],
+  "deleted_bytes": 190668800,
+  "preserved": [
+    "Canonical checkout",
+    "Permanent evidence",
+    "Reusable producer/consumer builds",
+    "Dependency caches",
+    "Models"
+  ],
+  "metadata_correction": "PowerShell aggregation returned null for the OrderedDictionary records; filled the total from the five recorded pre-deletion byte counts. Per-file byte counts and SHA256 values remain unchanged."
+}

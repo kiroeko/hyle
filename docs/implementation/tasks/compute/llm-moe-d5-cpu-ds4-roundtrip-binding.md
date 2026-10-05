@@ -1,6 +1,6 @@
 # D5 CPU：原版 ds4 状态量化批量接线
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## 范围与重新打开依据
 
@@ -68,3 +68,46 @@ WSL 使用 oneDNN OFF 的实际 CPU/Graph 产品和两个独立消费者，产�
 
 有限能力范围仍只含两种成熟 roundtrip，group128、完整官方 MoE 与新增完整片段 P1 保持缺口。
 统一实现 LOC 为 60,481 行 / 242 文件；本轮补验没有产品代码变化。
+
+## 有限能力收口：2026-10-05
+
+本轮只关闭 N1–N4 的两个 CPU 状态量化原子，不关闭 D5 模型画像或 Graph/Vulkan 阻塞。
+能力和入口回映如下；semantic owner 为 `compute_ops`，算法来源为 ds4，
+执行/资源适配 owner 为 `compute_provider_native`，交付复用现有 lock/CMake/package 合同。
+
+| 能力族 | 当前旅程与边界 | 覆盖 / 动作 |
+|---|---|---|
+| FP8 group64 状态 roundtrip | BF16 dense whole-group 输入，经原函数量化再恢复 BF16；普通 CPU Direct/Graph | COMPLETE / BORROW |
+| FP4 group32 状态 roundtrip | 同一旅程，使用原 FP4 scale/nearest-even 合同 | COMPLETE / BORROW |
+| 已准备程序的资源与失败生命周期 | 既有映射/flush/close/Completion；失败实例退役，从原程序重建；metadata OOM 后恢复 | ROUTED / KEEP |
+
+全部入口仍为既有 `model_ops::block_quantization_roundtrip` 和 CPU prepare/Graph compile；
+没有新公开头、FFI、Provider 排序或运行时择优接口。普通用户说明在
+[Compute 指南](../../../user/compute.md)。这是既有通用原子的窄接入，没有模型加载或应用策略下沉，
+不需要另造正交 API。group128 与完整官方低精度 MoE 不在本卡关闭范围，D5 原 MUST 保留。
+
+| Gate | 实际证据与适用边界 | Verdict |
+|---|---|---|
+| scope | N1–N4 固定；仅两个已资格化成熟原函数域，无新增 HYLE 数学 | PASS |
+| architecture | 既有 Operation/Provider/资源路径；原函数、MIT、source/hash/lock 固定；不支持域明确拒绝 | PASS |
+| correctness | Windows 普通两入口及 WSL 两入口；数值、变化输入、别名、metadata OOM、accepted failure/退役/重建；逐项结果见本批 receipt | PASS |
+| delivery | Windows source/static/shared 三交付各 6 项；独立搬迁、依赖/许可与邻置 DLL 来源检查 | PASS |
+| usability_docs | 两种格式的普通入口、形状、非有限 payload 失败、实例重建和 group128 限制已写入用户指南 | PASS |
+| red_team | 候选后独立源码复核原函数/精度、资源关闭、可变状态隔离、私有头与许可交付；见证据的复核段 | PASS |
+| engineering_performance | 本卡预声明 P0：线性分组、有界栈转换、无新增热分配/共享 scratch/线程池/搜索；完整消费者 P1 未签 | PASS（P0） |
+
+命令、工具链、测试 XML、修正前失败/中止日志和 SHA 均在
+[本批收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/receipt.json)。
+WSL receipt 只签两个独立公共消费者，不签完整 Linux 套件或 Linux 三交付。
+本卡没有运行新的 sanitizer、GPU/Apple 或完整模型 P1，也没有把这些写成通过。
+原产品影响计划不代签全路线；按已存在的 Provider partial-region 合同验证本卡独立能力。
+本次 terminal 只改文档/状态/证据，selector 仅选 docs/closure，无产品重建或 P1。
+
+最终裁决为 **CLOSED（本轮有限能力）**；产品 candidate 仍为 `dd3009f0`。
+重开仅由该域可复现数值/UB/资源生命周期缺陷、相关 ds4 源码/许可/ABI 升级、
+真实新消费者所需的语义或合格同合同完整成本回归触发。完整官方 MoE、group128 和 D5
+Vulkan 数值/测量资格另属当前聚合尾项；不以这里的 CLOSED 自动解除。
+
+58 份永久证据逐项解压/核对 SHA 后，删除本批 5 份临时源码传输归档，共释放
+190,668,800 字节（约 182 MiB）；[清理收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/cleanup.json)
+保留每项路径、大小和摘要。可复用构建、依赖缓存、模型及 canonical 源码均保留。
