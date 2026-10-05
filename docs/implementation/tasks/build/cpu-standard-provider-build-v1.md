@@ -1,6 +1,6 @@
 # CPU标准构建：默认取得已验收Provider
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`59f68e326`，Windows canonical；CPU官方四画像新能力已独立CLOSED，工作树干净。
 - owner：`compute_provider_native`。用户要求普通用户只选CPU模式，HYLE处理成熟库依赖；
@@ -25,4 +25,18 @@
 P0为configure/缓存与target闭包成本；产品C++、SDK内容、执行路径不变，不重跑官方完整P1。
 公共锁加入SDK元数据不改变旧source记录与读取/验证核心；若发现需要改公共治理，另记具体问题。
 
-CPU自研算子逐域裁决由另一个有限卡承接用户最新要求，不以本构建任务宣布旧自研域获胜或全部清退。
+CPU自研算子逐域裁决由[有限裁决卡](../compute/cpu-native-provider-domain-decision.md)承接用户最新要求，
+不以本构建任务宣布旧自研域获胜或全部清退。CPU这两项完成前不处理Apple/CUDA/Vulkan剩余项。
+
+## AUDITED
+
+已核对CMake闭包：普通Compute/Graph默认CPU ON，其它三路线OFF；oneDNN AUTO已自动取得源码，
+ggml已在标准CPU闭包；只有Torch AUTO缺少自动取得。CPU SDK有明确已验Windows/Linux原archive/hash，
+无需新增数学、公共API或性能验证。源码cache核心只管source身份，不能把prebuilt SDK伪装成Git源树。
+CB1–3固定：中央锁增加SDK附属元数据；Native私有取得器在统一cache的独立SDK子区存一个平台/版本，
+本地archive直接验SHA/解包，默认在线取得，断网只复用本地输入/完整命中。显式坏root/archive失败，
+不静默换库。静态安装依赖shim先解析/取得同一SDK再find Torch，免用户重复列Torch prefix；
+shim/取得器/原锁随Native static development seam交付。OFF或未选CPU仍不访问SDK。
+增加一个普通CPU preset，现有CMake产品/route布尔与高级裁剪继续复用，不新增重复路线selector。
+缓存第一次完整解包核对build-version并保存文件SHA，命中核对完整文件清单；锁住单写入，
+不把中断目录当命中，不修改外部用户SDK。C++和原SDK字节不变，原P1身份复用。

@@ -418,9 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/cpu-standard-provider-build-v1.md",
-      "summary": "CPU标准构建SCOPED：默认CPU闭包应自动取得已验LibTorch CPU SDK，复用锁定archive与统一缓存，离线/裁剪显式；CPU原数学/44格及P1不变。自研逐域裁决另卡，尚未获胜/清退。"
+      "summary": "CPU标准构建AUDITED：CB1–3固定为中央锁SDK元数据、Native私有取得/统一缓存与离线、标准CPU preset及static consumer shim；原数学/44格/P1不变。随后只做CPU自研逐域与路由裁决。"
     },
     {
       "module": "compute_sched",
