@@ -259,10 +259,10 @@ template <class T> void attention_layouts() {
                d;
       };
       const ScaledDotProductAttention op{
-          .scale = .5F,
-          .causal = causal,
           .layout = bshd ? AttentionLayout::kBatchSequenceHeadDepth
-                         : AttentionLayout::kBatchHeadSequenceDepth};
+                         : AttentionLayout::kBatchHeadSequenceDepth,
+          .scale = .5F,
+          .causal = causal};
       auto prepared = prepare(context, op, qd, kd, vd);
       ASSERT_TRUE(prepared) << prepared.error().message();
       auto invocation = prepared->create_invocation();
@@ -387,6 +387,15 @@ TEST(GgmlCpuProvider, PlainStorageCopyConcatPreservesAllScalarBitsAndStrides) {
         std::vector<std::byte> av(a.size()), bv(b.size());
         for (std::size_t i = 0; i < bv.size(); ++i)
           bv[i] = std::byte((i * 17 + seed) & 255);
+        const std::array<std::uint64_t, 4> patterns{
+            0xffffffffffffffffULL, 0x8000000080008000ULL, 0x7ff812347fc17e25ULL,
+            0x0020000000000001ULL};
+        for (std::size_t i = 0;
+             i < (std::min)(patterns.size(), dense.element_count().value());
+             ++i) {
+          const auto bits = patterns[i];
+          std::memcpy(bv.data() + i * size, &bits, size);
+        }
         // Full 64-bit values/NaN payloads are deliberately opaque, never
         // float-converted.
         for (std::size_t i = 0; i < dense.element_count().value(); ++i)
