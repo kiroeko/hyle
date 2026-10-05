@@ -373,10 +373,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB1–5 CANDIDATE：Windows58/58与普通Direct/Graph已验；空输入region遗漏已定向修复。Linux/三交付待验，Native冻结。",
-      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364"
+      "summary": "LB1–5 CLOSED：MatMul双向广播/row-major、任意轴Softmax、两SDPA布局与独立depth、15scalar位存储及合法空输入整region通过两平台58/58、普通Direct/Graph三交付；P0/终审。Native冻结，CPU未完成。",
+      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-ggml-layout-broadcast/README.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -436,10 +440,14 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB1–5 CANDIDATE：Windows58/58与普通Direct/Graph已验；空输入region遗漏已定向修复。Linux/三交付待验，Native冻结。",
-      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364"
+      "summary": "LB1–5 CLOSED：MatMul双向广播/row-major、任意轴Softmax、两SDPA布局与独立depth、15scalar位存储及合法空输入整region通过两平台58/58、普通Direct/Graph三交付；P0/终审。Native冻结，CPU未完成。",
+      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-ggml-layout-broadcast/README.md"
+      }
     },
     {
       "module": "compute_provider_cublas",

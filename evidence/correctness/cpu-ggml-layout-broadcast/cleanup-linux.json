@@ -1,0 +1,12 @@
+[
+  {
+    "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-lb-consumer",
+    "bytes": 560414,
+    "deleted": true
+  },
+  {
+    "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/static-lb-consumer",
+    "bytes": 42557971,
+    "deleted": true
+  }
+]

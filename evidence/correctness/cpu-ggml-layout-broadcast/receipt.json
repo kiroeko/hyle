@@ -1,0 +1,132 @@
+{
+  "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364",
+  "previous_registry_ref": "7bdd026da8cfd6549e50f813250605e861dd9ff6",
+  "platforms": {
+    "windows": {
+      "commands": 35,
+      "final_candidate_commands": 19,
+      "tests": {
+        "provider": {
+          "registered": 58,
+          "passed": 58,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        }
+      },
+      "prior_failures": [
+        {
+          "name": "batch-build",
+          "args": [
+            "cmake",
+            "--build",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+            "--target",
+            "hyle_compute_provider_ggml_tests",
+            "hyle_compute_route_cpu_tests",
+            "hyle_graph_route_cpu_tests",
+            "cpu_mature_consumer",
+            "--parallel",
+            "2"
+          ],
+          "candidate": "5196138ef37af13879c9e5cb53859bfb4fe556bc",
+          "log": "2-batch-build.log",
+          "returncode": 2,
+          "seconds": 132.0
+        },
+        {
+          "name": "provider-tests",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml_test.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-layout-broadcast\\windows\\provider.xml"
+          ],
+          "candidate": "12f91662bea1c4ef1401d98ad202753730c4a396",
+          "log": "4-provider-tests.log",
+          "returncode": 1,
+          "seconds": 0.109
+        },
+        {
+          "name": "shared-source-ordinary",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_mature_consumer.exe"
+          ],
+          "candidate": "7a5dfe49865c5e7f98ac58ef557303c839a8a32d",
+          "log": "9-shared-source-ordinary.log",
+          "returncode": 5,
+          "seconds": 0.266
+        },
+        {
+          "name": "shared-source-ordinary",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_mature_consumer.exe"
+          ],
+          "candidate": "7a5dfe49865c5e7f98ac58ef557303c839a8a32d",
+          "log": "14-shared-source-ordinary.log",
+          "returncode": 5,
+          "seconds": 0.203
+        },
+        {
+          "name": "shared-source-ordinary",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_mature_consumer.exe"
+          ],
+          "candidate": "7a5dfe49865c5e7f98ac58ef557303c839a8a32d",
+          "log": "16-shared-source-ordinary.log",
+          "returncode": 5,
+          "seconds": 0.234
+        }
+      ]
+    },
+    "linux": {
+      "commands": 20,
+      "final_candidate_commands": 20,
+      "tests": {
+        "provider": {
+          "registered": 58,
+          "passed": 58,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        }
+      },
+      "prior_failures": []
+    }
+  },
+  "archive": {
+    "path": "qualification.zip",
+    "files": 77,
+    "bytes": 175838,
+    "sha256": "c99fda0faa3038ba0220a02e2176d21a2dc859565cf47ff002262adbd5721496"
+  },
+  "loc": {
+    "code": 61214,
+    "files": 248
+  },
+  "additional_tool_gate": {
+    "command": "python tests/compute_models/inputs_test.py",
+    "passed": 13,
+    "returncode": 0
+  },
+  "performance": "P0; no Native P1 or WIN",
+  "red_team": "PASS within LB1-LB5: original math/layout/byte-copy; wide storage does not admit wide math; legal empty inputs feed nonempty whole regions; empty region outputs remain refused; complete repack cost; existing lifecycle/alias/OOM and ordinary replay; both platform source/static/shared journeys"
+}
